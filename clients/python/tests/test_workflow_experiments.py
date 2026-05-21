@@ -590,7 +590,7 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
         "issues": [
             {
                 "severity": "warning",
-                "code": "MISSING_HIL_PREDICATE",
+                "code": "MISSING_REVIEW_PREDICATE",
                 "message": "Review gate needs a predicate",
                 "block_id": "extract_1",
             }
@@ -611,7 +611,7 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
 
     assert result.is_valid is True
     assert result.issues[0].severity == "warning"
-    assert result.issues[0].code == "MISSING_HIL_PREDICATE"
+    assert result.issues[0].code == "MISSING_REVIEW_PREDICATE"
     # Verify the second call was the diagnose-graph POST with the
     # unsaved-shape blocks/edges payload the backend expects.
     diagnose_call = client._prepared_request.call_args_list[1].args[0]
@@ -619,7 +619,7 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
     assert diagnose_call.url == "/workflows/wf_abc123/diagnose-graph"
     assert diagnose_call.data["re_propagate"] is True
     assert diagnose_call.data["blocks"][0]["id"] == "start-1"
-    assert diagnose_call.data["blocks"][0]["type"] == "start"
+    assert diagnose_call.data["blocks"][0]["type"] == "start-document"
     assert "position" in diagnose_call.data["blocks"][0]
 
 

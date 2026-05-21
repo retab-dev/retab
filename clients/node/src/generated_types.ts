@@ -1225,10 +1225,10 @@ export const ZCompletedStepLifecycle = z.object({
 });
 export type CompletedStepLifecycle = z.infer<typeof ZCompletedStepLifecycle>;
 
-export const ZWaitingForHumanStepLifecycle = z.object({
+export const ZAwaitingReviewStepLifecycle = z.object({
   status: z.literal('awaiting_review').default('awaiting_review'),
 });
-export type WaitingForHumanStepLifecycle = z.infer<typeof ZWaitingForHumanStepLifecycle>;
+export type AwaitingReviewStepLifecycle = z.infer<typeof ZAwaitingReviewStepLifecycle>;
 
 export const ZErrorStepLifecycle = z.object({
   status: z.literal('error').default('error'),
@@ -1256,7 +1256,7 @@ export const ZStepLifecycle = z.discriminatedUnion('status', [
   ZQueuedStepLifecycle,
   ZRunningStepLifecycle,
   ZCompletedStepLifecycle,
-  ZWaitingForHumanStepLifecycle,
+  ZAwaitingReviewStepLifecycle,
   ZErrorStepLifecycle,
   ZSkippedStepLifecycle,
   ZCancelledStepLifecycle,
@@ -1508,11 +1508,11 @@ export const ZRunningRun = z.object({
 });
 export type RunningRun = z.infer<typeof ZRunningRun>;
 
-export const ZWaitingForHumanRun = z.object({
+export const ZAwaitingReviewRun = z.object({
   status: z.literal('awaiting_review').default('awaiting_review'),
   waiting_for_block_ids: z.array(z.string()).default([]),
 });
-export type WaitingForHumanRun = z.infer<typeof ZWaitingForHumanRun>;
+export type AwaitingReviewRun = z.infer<typeof ZAwaitingReviewRun>;
 
 export const ZCompletedTerminal = z.object({
   status: z.literal('completed').default('completed'),
@@ -1538,7 +1538,7 @@ export type CancelledTerminal = z.infer<typeof ZCancelledTerminal>;
 export const ZRunLifecycle = z.discriminatedUnion('status', [
   ZPendingRun,
   ZRunningRun,
-  ZWaitingForHumanRun,
+  ZAwaitingReviewRun,
   ZCompletedTerminal,
   ZErrorTerminal,
   ZCancelledTerminal,

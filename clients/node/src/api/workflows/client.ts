@@ -25,7 +25,7 @@ import APIWorkflowExperiments from './experiments/client.js';
  *
  * Sub-clients:
  * - runs: Workflow run operations
- * - reviews: review overlay operations (list, get, approve, reject, escalate, edit, claim, release, waitFor)
+ * - reviews: review operations (list, get, append version, approve, reject, waitFor)
  * - blocks: Workflow block CRUD + simulate
  * - edges: Workflow edge CRUD
  * - artifacts: Workflow artifact dereference operations

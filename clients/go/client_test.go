@@ -185,7 +185,7 @@ func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
 			"issues": []map[string]any{
 				{
 					"severity": "warning",
-					"code":     "MISSING_HIL_PREDICATE",
+					"code":     "MISSING_REVIEW_PREDICATE",
 					"message":  "Review gate needs a predicate",
 					"block_id": "extract_1",
 				},
@@ -217,7 +217,7 @@ func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
 	if !diagnosis.IsValid || len(diagnosis.Issues) != 1 {
 		t.Fatalf("diagnosis = %#v", diagnosis)
 	}
-	if diagnosis.Issues[0].Severity != "warning" || diagnosis.Issues[0].Code != "MISSING_HIL_PREDICATE" {
+	if diagnosis.Issues[0].Severity != "warning" || diagnosis.Issues[0].Code != "MISSING_REVIEW_PREDICATE" {
 		t.Fatalf("issue = %#v", diagnosis.Issues[0])
 	}
 }

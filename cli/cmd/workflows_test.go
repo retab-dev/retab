@@ -134,7 +134,7 @@ func TestWorkflowExamplesUseCurrentDocumentFlag(t *testing.T) {
 	}
 }
 
-func TestWorkflowHelpGuidesHumanInTheLoopToGates(t *testing.T) {
+func TestWorkflowHelpGuidesReviewConfig(t *testing.T) {
 	surfaces := []struct {
 		name string
 		text string
@@ -153,8 +153,13 @@ func TestWorkflowHelpGuidesHumanInTheLoopToGates(t *testing.T) {
 			if strings.Contains(surface.text, staleBacktick) || strings.Contains(surface.text, staleTitle) {
 				t.Fatalf("%s should not describe HIL as a standalone block:\n%s", surface.name, surface.text)
 			}
+			for _, stale := range []string{"human-review gate", "review gate", "review gates"} {
+				if strings.Contains(surface.text, stale) {
+					t.Fatalf("%s should use review-centric wording without %q:\n%s", surface.name, stale, surface.text)
+				}
+			}
 			if !strings.Contains(surface.text, "config.review") && !strings.Contains(surface.text, "awaiting_review") && !strings.Contains(surface.text, "review") {
-				t.Fatalf("%s should guide users toward gates/reviews, got:\n%s", surface.name, surface.text)
+				t.Fatalf("%s should guide users toward review config/reviews, got:\n%s", surface.name, surface.text)
 			}
 		})
 	}

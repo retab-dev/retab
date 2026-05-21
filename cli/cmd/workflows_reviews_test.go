@@ -13,7 +13,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func reviewOverlayBody(rev int, status string) map[string]any {
+const reviewTestVersionID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+func reviewVersionBody(parentID any, snapshot map[string]any) map[string]any {
+	return map[string]any{
+		"parent_id":  parentID,
+		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
+		"origin":     "model_output",
+		"snapshot":   snapshot,
+		"created_at": "2026-05-18T09:00:00Z",
+	}
+}
+
+func reviewDecisionBody(verdict string, versionID string) map[string]any {
+	return map[string]any{
+		"verdict":    verdict,
+		"version_id": versionID,
+		"decided_by": map[string]any{"kind": "human", "id": "user_1", "display_name": "Reviewer"},
+		"decided_at": "2026-05-18T09:10:00Z",
+	}
+}
+
+func reviewOverlayBody(decision map[string]any) map[string]any {
 	return map[string]any{
 		"_id":                 "blockrun_1",
 		"organization_id":     "org_1",
@@ -24,36 +45,29 @@ func reviewOverlayBody(rev int, status string) map[string]any {
 		"block_run_id":        "blockrun_1",
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
-		"status":              status,
 		"awaiting_since":      "2026-05-18T09:00:00Z",
 		"priority":            0,
-		"rev":                 rev,
-		"versions": []any{map[string]any{
-			"seq": 0, "parent_seq": nil,
-			"author":         map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
-			"origin":         "model_output",
-			"snapshot":       map[string]any{"total": 100},
-			"content_sha256": "abc",
-			"created_at":     "2026-05-18T09:00:00Z",
-		}},
-		"decisions": []any{},
-		"audit":     []any{},
-		"head_seq":  0,
+		"versions_by_id": map[string]any{
+			reviewTestVersionID: reviewVersionBody(nil, map[string]any{"total": 100}),
+		},
+		"decision": decision,
 	}
 }
 
-func reviewQueueItemBody(reviewID string, runID string, blockID string, blockType string, status string, rev int, headSeq int, effectiveSeq *int) map[string]any {
-	item := reviewOverlayBody(rev, status)
-	item["_id"] = reviewID
-	item["workflow_run_id"] = runID
-	item["block_id"] = blockID
-	item["block_run_id"] = reviewID
-	item["block_type"] = blockType
-	item["head_seq"] = headSeq
-	if effectiveSeq != nil {
-		item["effective_seq"] = *effectiveSeq
+func reviewQueueItemBody(reviewID string, runID string, blockID string, blockType string) map[string]any {
+	return map[string]any{
+		"_id":                 reviewID,
+		"organization_id":     "org_1",
+		"workflow_id":         "wf_1",
+		"workflow_version_id": "wfv_1",
+		"workflow_run_id":     runID,
+		"block_id":            blockID,
+		"block_run_id":        reviewID,
+		"block_type":          blockType,
+		"triggered_by":        map[string]any{"kind": "always"},
+		"awaiting_since":      "2026-05-18T09:00:00Z",
+		"priority":            0,
 	}
-	return item
 }
 
 func TestReviewsListCommand(t *testing.T) {
@@ -65,7 +79,7 @@ func TestReviewsListCommand(t *testing.T) {
 		seenPath, seenQuery = r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":     []any{reviewOverlayBody(0, "awaiting_review")},
+			"data":     []any{reviewQueueItemBody("blockrun_1", "run_1", "blk_1", "extract")},
 			"has_more": false,
 		})
 	}))
@@ -74,13 +88,11 @@ func TestReviewsListCommand(t *testing.T) {
 
 	cmd := &cobra.Command{Use: "list", RunE: workflowsReviewsListCmd.RunE}
 	cmd.Flags().String("workflow-id", "", "")
-	cmd.Flags().Var(newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected"), "status", "")
-	cmd.Flags().Bool("mine", false, "")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "")
 	if err := cmd.Flags().Set("workflow-id", "wf_1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("mine", "true"); err != nil {
+	if err := cmd.Flags().Set("limit", "50"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -92,8 +104,11 @@ func TestReviewsListCommand(t *testing.T) {
 	if seenPath != "/workflows/reviews" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if !strings.Contains(seenQuery, "workflow_id=wf_1") || !strings.Contains(seenQuery, "mine=true") {
+	if !strings.Contains(seenQuery, "workflow_id=wf_1") || !strings.Contains(seenQuery, "limit=50") {
 		t.Fatalf("query = %s", seenQuery)
+	}
+	if strings.Contains(seenQuery, "mine=") || strings.Contains(seenQuery, "status=") {
+		t.Fatalf("query should not contain legacy filters: %s", seenQuery)
 	}
 	if !strings.Contains(stdout, "blockrun_1") {
 		t.Fatalf("stdout = %s", stdout)
@@ -103,17 +118,20 @@ func TestReviewsListCommand(t *testing.T) {
 	}
 }
 
-func TestReviewsListTableUsesReviewSpecificColumns(t *testing.T) {
+func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	effectiveSeq := 3
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		second := reviewQueueItemBody("review_2", "run_2", "blk_classify", "classify")
+		second["triggered_by"] = map[string]any{"kind": "category_in"}
+		second["awaiting_since"] = "2026-05-18T09:05:00Z"
+		second["priority"] = 7
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []any{
-				reviewQueueItemBody("review_1", "run_1", "blk_extract", "extract", "awaiting_review", 4, 2, nil),
-				reviewQueueItemBody("review_2", "run_2", "blk_classify", "classify", "approved", 8, 3, &effectiveSeq),
+				reviewQueueItemBody("review_1", "run_1", "blk_extract", "extract"),
+				second,
 			},
 			"has_more": false,
 		})
@@ -139,58 +157,78 @@ func TestReviewsListTableUsesReviewSpecificColumns(t *testing.T) {
 		t.Fatalf("expected table output, got JSON:\n%s", stdout)
 	}
 	for _, want := range []string{
-		"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "STATUS", "REV", "HEAD", "EFFECTIVE",
-		"review_1", "run_1", "blk_extract", "extract", "awaiting_review", "4", "2",
-		"review_2", "run_2", "blk_classify", "classify", "approved", "8", "3",
+		"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "AWAITING_SINCE", "PRIORITY", "TRIGGERED_BY",
+		"review_1", "run_1", "blk_extract", "extract",
+		"review_2", "run_2", "blk_classify", "classify",
+		"2026-05-18T09:00:00Z", "always",
+		"2026-05-18T09:05:00Z", "7", "category_in",
 	} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
-	if strings.Contains(strings.SplitN(stdout, "\n", 2)[0], "TYPE") && !strings.Contains(strings.SplitN(stdout, "\n", 2)[0], "BLOCK_TYPE") {
-		t.Fatalf("table header should not use ambiguous TYPE column:\n%s", stdout)
-	}
-	if strings.Contains(stdout, "0x") {
-		t.Fatalf("table should render effective_seq values, not pointer addresses:\n%s", stdout)
-	}
-	for _, line := range strings.Split(stdout, "\n") {
-		if !strings.Contains(line, "review_2") {
-			continue
+	header := strings.Fields(strings.SplitN(stdout, "\n", 2)[0])
+	for _, stale := range []string{"STATUS", "REV", "HEAD", "EFFECTIVE", "VERSION_ID", "DECISION"} {
+		if containsString(header, stale) {
+			t.Fatalf("table output contains stale %q column:\n%s", stale, stdout)
 		}
-		fields := strings.Fields(line)
-		if len(fields) == 0 || fields[len(fields)-1] != "3" {
-			t.Fatalf("effective_seq should be the final cell rendered as 3, got row %q", line)
-		}
-		return
-	}
-	t.Fatalf("missing review_2 row:\n%s", stdout)
-}
-
-func TestReviewsListRejectsBadStatusEnum(t *testing.T) {
-	cmd := &cobra.Command{Use: "list"}
-	cmd.Flags().Var(newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected"), "status", "")
-	if err := cmd.Flags().Set("status", "bogus"); err == nil {
-		t.Fatal("expected --status to reject an unknown value")
 	}
 }
 
-func TestReviewsEditAndApproveHelpExplainSnapshotVsReviewableValue(t *testing.T) {
-	for _, cmd := range []*cobra.Command{workflowsReviewsEditCmd, workflowsReviewsApproveCmd} {
-		if !strings.Contains(cmd.Long, "reviewable value") {
-			t.Fatalf("%s help should explain reviewable values:\n%s", cmd.Use, cmd.Long)
-		}
-		if !strings.Contains(cmd.Long, "full block output snapshot") {
-			t.Fatalf("%s help should distinguish full snapshots:\n%s", cmd.Use, cmd.Long)
-		}
-		if cmd.Flags().Lookup("reviewable-value-file") == nil {
-			t.Fatalf("%s should define --reviewable-value-file", cmd.Use)
+func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
+	for _, cmd := range []*cobra.Command{workflowsReviewsListCmd, workflowsReviewsVersionsCreateCmd, workflowsReviewsApproveCmd, workflowsReviewsRejectCmd} {
+		text := strings.Join([]string{cmd.Short, cmd.Long, cmd.Example}, "\n")
+		for _, stale := range []string{"reviewable value", "reviewable-value", "version_stamp", "version-stamp", "head_seq", "effective_seq", "audit history", "audit log"} {
+			if strings.Contains(text, stale) {
+				t.Fatalf("%s help contains stale %q:\n%s", cmd.Use, stale, text)
+			}
 		}
 	}
-	if workflowsReviewsApproveCmd.Flags().Lookup("snapshot-file") == nil {
-		t.Fatalf("%s should define --snapshot-file", workflowsReviewsApproveCmd.Use)
+	if workflowsReviewsApproveCmd.Flags().Lookup("version-id") == nil {
+		t.Fatalf("%s should define --version-id", workflowsReviewsApproveCmd.Use)
 	}
-	if strings.Contains(workflowsReviewsApproveCmd.Long, "edited-output-file") {
-		t.Fatalf("approve help should use --snapshot-file, got:\n%s", workflowsReviewsApproveCmd.Long)
+	if workflowsReviewsRejectCmd.Flags().Lookup("version-id") == nil {
+		t.Fatalf("%s should define --version-id", workflowsReviewsRejectCmd.Use)
+	}
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("from-version") == nil {
+		t.Fatalf("%s should define --from-version", workflowsReviewsVersionsCreateCmd.Use)
+	}
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file") == nil {
+		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsCreateCmd.Use)
+	}
+	for _, child := range workflowsReviewsCmd.Commands() {
+		if child.Name() == "edit" {
+			t.Fatalf("reviews edit command should not exist after create-version cutover")
+		}
+	}
+	if workflowsReviewsVersionsCmd.Commands()[0].Name() != "create" {
+		t.Fatalf("reviews versions should expose create, got %s", workflowsReviewsVersionsCmd.Commands()[0].Name())
+	}
+}
+
+func TestReviewsVersionsCreateHelpExplainsSnapshotShapes(t *testing.T) {
+	text := strings.Join([]string{
+		workflowsReviewsVersionsCreateCmd.Long,
+		workflowsReviewsVersionsCreateCmd.Example,
+		workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file").Usage,
+	}, "\n")
+	for _, want := range []string{
+		"Snapshot shapes are block-specific",
+		"extract:",
+		"classifier:",
+		"split:",
+		"for_each:",
+		`"category"`,
+		`"documents"`,
+		`"partitions"`,
+		"--snapshot-file -",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("create version help should explain snapshot shape %q, got:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "reviewable value") || strings.Contains(text, "reviewable-value") {
+		t.Fatalf("create version help should not reintroduce reviewable value wording:\n%s", text)
 	}
 }
 
@@ -205,9 +243,24 @@ func TestReviewsRejectHelpDoesNotPromiseRunCancellation(t *testing.T) {
 			t.Fatalf("reject help should use review/error wording, not %q:\n%s", stale, text)
 		}
 	}
-	for _, want := range []string{"reject", "review", "error"} {
+	for _, want := range []string{"reject", "review", "downstream"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("reject help should mention %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestReviewsEscalateReturnsLegacyUnsupportedMessage(t *testing.T) {
+	err := workflowsReviewsEscalateCmd.RunE(workflowsReviewsEscalateCmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected unsupported escalation error")
+	}
+	if !strings.Contains(err.Error(), "review escalation is not supported") {
+		t.Fatalf("expected unsupported escalation guidance, got %q", err.Error())
+	}
+	for _, stale := range []string{"required flag", "escalate-to"} {
+		if strings.Contains(err.Error(), stale) {
+			t.Fatalf("escalate should not surface stale %q wording, got %q", stale, err.Error())
 		}
 	}
 }
@@ -220,7 +273,7 @@ func TestReviewsGetCommand(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(3, "awaiting_review"))
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
@@ -234,8 +287,16 @@ func TestReviewsGetCommand(t *testing.T) {
 	if seenPath != "/workflows/reviews/run_1/blk_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if !strings.Contains(stdout, `"rev": 3`) {
+	if !strings.Contains(stdout, `"versions_by_id"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
+	}
+	for _, want := range []string{`"decision": null`, `"parent_id": null`, `"note": null`} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout should preserve %s:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, `"rev"`) || strings.Contains(stdout, `"head_seq"`) {
+		t.Fatalf("stdout contains stale overlay fields: %s", stdout)
 	}
 }
 
@@ -243,12 +304,9 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	effectiveSeq := 2
-	body := reviewOverlayBody(3, "awaiting_review")
-	body["effective_seq"] = effectiveSeq
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(body)
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
@@ -266,13 +324,274 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions"`) {
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions_by_id"`) {
 		t.Fatalf("expected table output, got JSON:\n%s", stdout)
 	}
-	for _, want := range []string{"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "STATUS", "REV", "HEAD", "EFFECTIVE", "blockrun_1", "run_1", "blk_1", "extract", "awaiting_review", "3", "0", "2"} {
+	for _, want := range []string{"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "blockrun_1", "run_1", "blk_1", "extract"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
+	}
+}
+
+func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var seenPath string
+	var seenMethod string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenMethod = r.Method
+		seenPath = r.URL.Path
+		body := reviewOverlayBody(nil)
+		body["block_type"] = "classifier"
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+			t.Fatalf("reviews schema: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	if seenMethod != http.MethodGet {
+		t.Fatalf("method = %s", seenMethod)
+	}
+	if seenPath != "/workflows/reviews/run_1/blk_1" {
+		t.Fatalf("path = %s", seenPath)
+	}
+	for _, want := range []string{
+		`"block_type": "classifier"`,
+		`"snapshot_schema"`,
+		`"category"`,
+		`"additionalProperties": false`,
+		`"Do not include confidence fields or other metadata."`,
+		`"create_usage"`,
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in schema output:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, `"reasoning"`) {
+		t.Fatalf("classifier schema should not advertise reasoning:\n%s", stdout)
+	}
+}
+
+func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
+	for _, tc := range []struct {
+		blockType string
+		want      []string
+		stale     []string
+	}{
+		{
+			blockType: "extract",
+			want: []string{
+				`"block_type": "extract"`,
+				`"additionalProperties": true`,
+				"Submit the extract output object itself.",
+				"Do not wrap it in an output field",
+			},
+			stale: []string{`"output":`, "reviewable_value", "head_seq", "effective_seq"},
+		},
+		{
+			blockType: "classifier",
+			want: []string{
+				`"block_type": "classifier"`,
+				`"required": [`,
+				`"category"`,
+				"Submit only the selected category.",
+			},
+			stale: []string{`"reasoning"`, `"confidence"`, "reviewable_value", "head_seq", "effective_seq"},
+		},
+		{
+			blockType: "split",
+			want: []string{
+				`"block_type": "split"`,
+				`"documents"`,
+				`"name"`,
+				`"pages"`,
+				"Submit the complete split list",
+			},
+			stale: []string{`"splits"`, `"chunks"`, `"output"`, "reviewable_value", "head_seq", "effective_seq"},
+		},
+		{
+			blockType: "for_each",
+			want: []string{
+				`"block_type": "for_each"`,
+				`"partitions"`,
+				`"key"`,
+				`"pages"`,
+				"split-by-key",
+				"Submit the complete partition list",
+			},
+			stale: []string{`"chunks"`, `"documents"`, `"output"`, "reviewable_value", "head_seq", "effective_seq"},
+		},
+	} {
+		t.Run(tc.blockType, func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			var requests int
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				if r.Method != http.MethodGet || r.URL.Path != "/workflows/reviews/run_1/blk_1" {
+					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+				}
+				body := reviewOverlayBody(nil)
+				body["block_type"] = tc.blockType
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(body)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
+			stdout, stderr := captureStd(t, func() {
+				if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+					t.Fatalf("reviews schema: %v", err)
+				}
+			})
+			if stderr != "" {
+				t.Fatalf("stderr = %s", stderr)
+			}
+			if requests != 1 {
+				t.Fatalf("requests = %d", requests)
+			}
+			for _, want := range tc.want {
+				if !strings.Contains(stdout, want) {
+					t.Fatalf("expected %q in schema output:\n%s", want, stdout)
+				}
+			}
+			for _, stale := range tc.stale {
+				if strings.Contains(stdout, stale) {
+					t.Fatalf("schema output should not contain stale %q:\n%s", stale, stdout)
+				}
+			}
+		})
+	}
+}
+
+func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := reviewOverlayBody(nil)
+		body["block_type"] = "split"
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"}); err != nil {
+			t.Fatalf("reviews schema: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	for _, want := range []string{"BLOCK_TYPE", "SCHEMA", "EXAMPLE", "NOTES", "CREATE_USAGE", "split", "documents", "retab workflows reviews versions create"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in table output:\n%s", want, stdout)
+		}
+	}
+}
+
+func TestReviewsSchemaCommandRejectsNonReviewableBlockType(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		body := reviewOverlayBody(nil)
+		body["block_type"] = "parse"
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"})
+		if err == nil {
+			t.Fatal("expected non-reviewable block type to fail")
+		}
+		if !strings.Contains(err.Error(), "parse") || !strings.Contains(err.Error(), "not reviewable") {
+			t.Fatalf("error = %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "block type \"parse\" is not reviewable") {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	if requests != 1 {
+		t.Fatalf("requests = %d", requests)
+	}
+}
+
+func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "review overlay not found"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_missing", "blk_1"})
+		if err == nil {
+			t.Fatal("expected missing overlay to fail")
+		}
+	})
+	if !strings.Contains(stderr, "404") || !strings.Contains(stderr, "review overlay not found") {
+		t.Fatalf("stderr = %s", stderr)
+	}
+}
+
+func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var reviewGets int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reviewGets++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newWaitTestCmd()
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+			t.Fatalf("reviews wait: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	if reviewGets != 1 {
+		t.Fatalf("reviewGets=%d", reviewGets)
+	}
+	if !strings.Contains(stdout, `"versions_by_id"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
+		t.Fatalf("stdout = %s", stdout)
 	}
 }
 
@@ -380,177 +699,7 @@ func TestReviewsWaitRejectsNonPositiveTimingFlags(t *testing.T) {
 	}
 }
 
-func TestReviewsClaimRejectsNonPositiveTTL(t *testing.T) {
-	t.Cleanup(func() { _ = workflowsReviewsClaimCmd.Flags().Set("ttl-seconds", "900") })
-
-	for _, value := range []string{"0", "-1", "29"} {
-		if err := workflowsReviewsClaimCmd.Flags().Set("ttl-seconds", value); err == nil {
-			t.Fatalf("expected --ttl-seconds=%s to fail", value)
-		}
-	}
-}
-
-func TestReviewsApproveSendsReviewableValueFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	valuePath := filepath.Join(t.TempDir(), "reviewable.json")
-	if err := os.WriteFile(valuePath, []byte(`{"total":110,"currency":"USD"}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	var body map[string]any
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(raw, &body)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"submission_status": "accepted",
-			"overlay":           reviewOverlayBody(1, "approved"),
-		})
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
-
-	cmd := newApproveTestCmd()
-	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("reviewable-value-file", valuePath); err != nil {
-		t.Fatal(err)
-	}
-	captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
-			t.Fatalf("reviews approve: %v", err)
-		}
-	})
-	reviewableValue, ok := body["reviewable_value"].(map[string]any)
-	if !ok {
-		t.Fatalf("reviewable_value missing from body: %#v", body)
-	}
-	if reviewableValue["total"] != float64(110) || reviewableValue["currency"] != "USD" {
-		t.Fatalf("reviewable_value = %#v", reviewableValue)
-	}
-	if _, ok := body["edited_output"]; ok {
-		t.Fatalf("reviewable approval should not also send edited_output: %#v", body)
-	}
-}
-
-func TestReviewsEditSendsReviewableValueFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	valuePath := filepath.Join(t.TempDir(), "reviewable.json")
-	if err := os.WriteFile(valuePath, []byte(`{"category":"Invoice"}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	var body map[string]any
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(raw, &body)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(1, "awaiting_review"))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
-
-	cmd := newEditTestCmd()
-	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("reviewable-value-file", valuePath); err != nil {
-		t.Fatal(err)
-	}
-	captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
-			t.Fatalf("reviews edit: %v", err)
-		}
-	})
-	reviewableValue, ok := body["reviewable_value"].(map[string]any)
-	if !ok {
-		t.Fatalf("reviewable_value missing from body: %#v", body)
-	}
-	if reviewableValue["category"] != "Invoice" {
-		t.Fatalf("reviewable_value = %#v", reviewableValue)
-	}
-	if _, ok := body["snapshot"]; ok {
-		t.Fatalf("reviewable edit should not also send snapshot: %#v", body)
-	}
-}
-
-func TestReviewsEditRejectsMutuallyExclusiveFilesBeforeVersionStampFetch(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	dir := t.TempDir()
-	snapshotPath := filepath.Join(dir, "snapshot.json")
-	reviewablePath := filepath.Join(dir, "reviewable.json")
-	if err := os.WriteFile(snapshotPath, []byte(`{"output":{"total":110}}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(reviewablePath, []byte(`{"total":120}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(7, "awaiting_review"))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
-
-	cmd := newEditTestCmd()
-	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("reviewable-value-file", reviewablePath); err != nil {
-		t.Fatal(err)
-	}
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
-	if err == nil {
-		t.Fatal("expected mutually exclusive file flags to fail")
-	}
-	if !strings.Contains(err.Error(), "mutually exclusive") {
-		t.Fatalf("error = %v", err)
-	}
-	if requests != 0 {
-		t.Fatalf("expected no network request before local validation, got %d", requests)
-	}
-}
-
-func TestReviewsEditReadsFileBeforeVersionStampFetch(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(7, "awaiting_review"))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
-
-	cmd := newEditTestCmd()
-	if err := cmd.Flags().Set("reviewable-value-file", filepath.Join(t.TempDir(), "missing.json")); err != nil {
-		t.Fatal(err)
-	}
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
-	if err == nil {
-		t.Fatal("expected missing file to fail")
-	}
-	if !strings.Contains(err.Error(), "--reviewable-value-file") {
-		t.Fatalf("error = %v", err)
-	}
-	if requests != 0 {
-		t.Fatalf("expected no network request before local file validation, got %d", requests)
-	}
-}
-
-func TestReviewsApproveSendsExplicitVersionStamp(t *testing.T) {
+func TestReviewsApproveSendsVersionID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -563,14 +712,14 @@ func TestReviewsApproveSendsExplicitVersionStamp(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayBody(1, "approved"),
+			"overlay":           reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
 		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
 	cmd := newApproveTestCmd()
-	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
@@ -581,15 +730,16 @@ func TestReviewsApproveSendsExplicitVersionStamp(t *testing.T) {
 	if seenPath != "/workflows/reviews/run_1/blk_1/decision" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if body["verdict"] != "approved" {
-		t.Fatalf("verdict = %#v", body["verdict"])
+	if body["verdict"] != "approved" || body["version_id"] != reviewTestVersionID {
+		t.Fatalf("body = %#v", body)
 	}
-	if body["version_stamp"] != float64(2) {
-		t.Fatalf("version_stamp = %#v", body["version_stamp"])
+	for _, stale := range []string{"version_stamp", "reviewable_value", "snapshot"} {
+		if _, ok := body[stale]; ok {
+			t.Fatalf("body contains stale %q: %#v", stale, body)
+		}
 	}
-	// An explicit --version-stamp must NOT trigger the auto-fetch warning.
-	if strings.Contains(stderr, "warning") {
-		t.Fatalf("unexpected stderr warning: %s", stderr)
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
 	}
 	if !strings.Contains(stdout, "accepted") {
 		t.Fatalf("stdout = %s", stdout)
@@ -600,12 +750,10 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	body := reviewOverlayBody(9, "approved")
-	body["effective_seq"] = 0
-	body["versions"] = []any{map[string]any{
-		"seq":      0,
-		"snapshot": map[string]any{"huge_nested_payload": strings.Repeat("x", 4096)},
-	}}
+	body := reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID))
+	body["versions_by_id"] = map[string]any{
+		reviewTestVersionID: reviewVersionBody(nil, map[string]any{"huge_nested_payload": strings.Repeat("x", 4096)}),
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -618,7 +766,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 
 	cmd := newApproveTestCmd()
 	cmd.PersistentFlags().String("output", "table", "")
-	if err := cmd.Flags().Set("version-stamp", "8"); err != nil {
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
@@ -629,110 +777,86 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, "huge_nested_payload") {
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions_by_id"`) || strings.Contains(stdout, "huge_nested_payload") {
 		t.Fatalf("expected concise table output, got:\n%s", stdout)
 	}
-	for _, want := range []string{"SUBMISSION", "REVIEW_ID", "RUN_ID", "BLOCK_ID", "STATUS", "REV", "accepted", "blockrun_1", "run_1", "blk_1", "approved", "9"} {
+	for _, want := range []string{"SUBMISSION", "REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "VERDICT", "VERSION_ID", "accepted", "blockrun_1", "run_1", "blk_1", "extract", "approved", reviewTestVersionID} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
 }
 
-func TestReviewsApproveWithoutVersionStampFetchesAndWarns(t *testing.T) {
+func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
+	snapshotPath := filepath.Join(t.TempDir(), "snapshot.json")
+	if err := os.WriteFile(snapshotPath, []byte(`{"output":{"total":110,"currency":"USD"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var seenPath string
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.Method == http.MethodGet {
-			// the auto-fetch read — current rev is 7
-			_ = json.NewEncoder(w).Encode(reviewOverlayBody(7, "awaiting_review"))
-			return
-		}
+		seenPath = r.URL.Path
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &body)
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"submission_status": "accepted",
-			"overlay":           reviewOverlayBody(8, "approved"),
-		})
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
-	cmd := newApproveTestCmd() // --version-stamp left unset
-	_, stderr := captureStd(t, func() {
+	cmd := newVersionsCreateTestCmd()
+	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("from-version", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("origin", "human_created"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("note", "fixed total"); err != nil {
+		t.Fatal(err)
+	}
+	captureStd(t, func() {
 		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
-			t.Fatalf("reviews approve: %v", err)
+			t.Fatalf("reviews versions create: %v", err)
 		}
 	})
-	if body["version_stamp"] != float64(7) {
-		t.Fatalf("expected auto-fetched version_stamp 7, got %#v", body["version_stamp"])
+	if seenPath != "/workflows/reviews/run_1/blk_1/versions" {
+		t.Fatalf("path = %s", seenPath)
 	}
-	if !strings.Contains(stderr, "warning") || !strings.Contains(stderr, "rev 7") {
-		t.Fatalf("expected an auto-fetch warning on stderr, got: %q", stderr)
+	snapshot, ok := body["snapshot"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing from body: %#v", body)
 	}
-	if strings.Contains(stderr, "no protection") {
-		t.Fatalf("auto-fetch warning should not incorrectly claim CAS is disabled: %q", stderr)
+	output, ok := snapshot["output"].(map[string]any)
+	if !ok || output["total"] != float64(110) || output["currency"] != "USD" {
+		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if !strings.Contains(stderr, "reviews get") {
-		t.Fatalf("auto-fetch warning should point scripts to reviews get, got: %q", stderr)
+	if body["parent_id"] != reviewTestVersionID || body["origin"] != "human_created" || body["note"] != "fixed total" {
+		t.Fatalf("body = %#v", body)
 	}
-}
-
-func TestReviewsApproveRejectsMutuallyExclusiveFilesBeforeVersionStampFetch(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	dir := t.TempDir()
-	editedPath := filepath.Join(dir, "edited.json")
-	reviewablePath := filepath.Join(dir, "reviewable.json")
-	if err := os.WriteFile(editedPath, []byte(`{"total":110}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(reviewablePath, []byte(`{"total":120}`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(7, "awaiting_review"))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
-
-	cmd := newApproveTestCmd()
-	if err := cmd.Flags().Set("snapshot-file", editedPath); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("reviewable-value-file", reviewablePath); err != nil {
-		t.Fatal(err)
-	}
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
-	if err == nil {
-		t.Fatal("expected mutually exclusive file flags to fail")
-	}
-	if !strings.Contains(err.Error(), "mutually exclusive") {
-		t.Fatalf("error = %v", err)
-	}
-	if requests != 0 {
-		t.Fatalf("expected no network request before local validation, got %d", requests)
+	for _, stale := range []string{"version_stamp", "reviewable_value", "command_id"} {
+		if _, ok := body[stale]; ok {
+			t.Fatalf("body contains stale %q: %#v", stale, body)
+		}
 	}
 }
 
-func TestReviewsApproveReadsSnapshotBeforeCredentials(t *testing.T) {
+func TestReviewsVersionsCreateReadsSnapshotBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := newApproveTestCmd()
+	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", filepath.Join(t.TempDir(), "missing.json")); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("version-stamp", "1"); err != nil {
+	if err := cmd.Flags().Set("from-version", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -748,16 +872,15 @@ func TestReviewsApproveReadsSnapshotBeforeCredentials(t *testing.T) {
 	}
 }
 
-func TestReviewsRejectRequiresReason(t *testing.T) {
+func TestReviewsRejectRequiresReasonBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := &cobra.Command{Use: "reject", RunE: workflowsReviewsRejectCmd.RunE}
-	cmd.Flags().Int("version-stamp", 0, "")
-	cmd.Flags().String("reason", "", "")
-	cmd.Flags().String("command-id", "", "")
-	// reason left blank — RunE must reject before any request.
+	cmd := newRejectTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
 	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
 	if err == nil {
 		t.Fatal("expected reject to fail without --reason")
@@ -767,6 +890,106 @@ func TestReviewsRejectRequiresReason(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "credentials") {
 		t.Fatalf("error %q checked credentials before validating --reason", err.Error())
+	}
+}
+
+func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+		args []string
+	}{
+		{name: "approve", cmd: newApproveTestCmd(), args: []string{"run_1", "blk_1"}},
+		{name: "reject", cmd: newRejectTestCmd(), args: []string{"run_1", "blk_1"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.cmd.Flags().Set("version-id", "ver_abc"); err != nil {
+				t.Fatal(err)
+			}
+			if tc.name == "reject" {
+				if err := tc.cmd.Flags().Set("reason", "not an invoice"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			err := tc.cmd.RunE(tc.cmd, tc.args)
+			if err == nil {
+				t.Fatal("expected malformed version id error")
+			}
+			if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "64-character hex") {
+				t.Fatalf("error = %v", err)
+			}
+			if strings.Contains(err.Error(), "credentials") {
+				t.Fatalf("error %q checked credentials before validating --version-id", err.Error())
+			}
+		})
+	}
+}
+
+func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	snapshotPath := filepath.Join(t.TempDir(), "snapshot.json")
+	if err := os.WriteFile(snapshotPath, []byte(`{"output":{"total":110}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newVersionsCreateTestCmd()
+	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("from-version", "ver_abc"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected malformed parent id error")
+	}
+	if !strings.Contains(err.Error(), "--from-version") || !strings.Contains(err.Error(), "64-character hex") {
+		t.Fatalf("error = %v", err)
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before validating --from-version", err.Error())
+	}
+}
+
+func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(reviewDecisionBody("rejected", reviewTestVersionID)),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newRejectTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("reason", "not an invoice"); err != nil {
+		t.Fatal(err)
+	}
+	captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+			t.Fatalf("reviews reject: %v", err)
+		}
+	})
+	if body["verdict"] != "rejected" || body["version_id"] != reviewTestVersionID || body["reason"] != "not an invoice" {
+		t.Fatalf("body = %#v", body)
 	}
 }
 
@@ -790,9 +1013,6 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 	}
 
 	cmd := newEscalateTestCmd()
-	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
-		t.Fatal(err)
-	}
 	if err := cmd.Flags().Set("reason", "needs senior sign-off"); err != nil {
 		t.Fatal(err)
 	}
@@ -804,7 +1024,7 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected disabled escalation command to fail locally")
 	}
-	for _, want := range []string{"not supported", "approve", "reject", "edit"} {
+	for _, want := range []string{"not supported", "approve", "reject", "versions create"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q should contain %q", err.Error(), want)
 		}
@@ -816,53 +1036,41 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 
 func newApproveTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsApproveCmd.RunE}
-	cmd.Flags().Int("version-stamp", 0, "")
-	cmd.Flags().String("snapshot-file", "", "")
-	cmd.Flags().String("edited-output-file", "", "")
-	cmd.Flags().String("reviewable-value-file", "", "")
-	cmd.Flags().Int("on-seq", 0, "")
-	cmd.Flags().Int("effective-seq", 0, "")
-	cmd.Flags().String("command-id", "", "")
+	cmd.Flags().String("version-id", "", "")
 	return cmd
 }
 
-func newEditTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "edit", RunE: workflowsReviewsEditCmd.RunE}
-	cmd.Flags().Int("version-stamp", 0, "")
+func newRejectTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "reject", RunE: workflowsReviewsRejectCmd.RunE}
+	cmd.Flags().String("version-id", "", "")
+	cmd.Flags().String("reason", "", "")
+	return cmd
+}
+
+func newVersionsCreateTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "create", RunE: workflowsReviewsVersionsCreateCmd.RunE}
+	cmd.Flags().String("from-version", "", "")
 	cmd.Flags().String("snapshot-file", "", "")
-	cmd.Flags().String("reviewable-value-file", "", "")
-	cmd.Flags().Var(newEnumStringFlagValue("--origin", "human_edit", "agent_edit"), "origin", "")
+	cmd.Flags().Var(newEnumStringFlagValue("--origin", "human_created", "agent_created"), "origin", "")
 	cmd.Flags().String("note", "", "")
-	cmd.Flags().String("command-id", "", "")
 	return cmd
 }
 
 func TestReviewEnumFlagsShowAllowedValues(t *testing.T) {
-	statusFlag := newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected")
-	err := statusFlag.Set("bogus")
-	if err == nil {
-		t.Fatal("expected invalid status to fail")
-	}
-	if !strings.Contains(err.Error(), "awaiting_review | approved | rejected") {
-		t.Fatalf("status error should show allowed values, got: %v", err)
-	}
-
-	originFlag := newEnumStringFlagValue("--origin", "human_edit", "agent_edit")
-	err = originFlag.Set("typo")
+	originFlag := newEnumStringFlagValue("--origin", "human_created", "agent_created")
+	err := originFlag.Set("typo")
 	if err == nil {
 		t.Fatal("expected invalid origin to fail")
 	}
-	if !strings.Contains(err.Error(), "human_edit | agent_edit") {
+	if !strings.Contains(err.Error(), "human_created | agent_created") {
 		t.Fatalf("origin error should show allowed values, got: %v", err)
 	}
 }
 
 func newEscalateTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "escalate", RunE: workflowsReviewsEscalateCmd.RunE}
-	cmd.Flags().Int("version-stamp", 0, "")
 	cmd.Flags().String("reason", "", "")
 	cmd.Flags().String("escalate-to", "", "")
-	cmd.Flags().String("command-id", "", "")
 	return cmd
 }
 
@@ -871,4 +1079,13 @@ func newWaitTestCmd() *cobra.Command {
 	cmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "")
 	cmd.Flags().Var(&positiveIntFlagValue{value: "2"}, "poll-interval", "")
 	return cmd
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }

@@ -32,6 +32,21 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksHelpUsesReviewCentricBlockNames(t *testing.T) {
+	help := workflowsBlocksCmd.Long + "\n" + workflowsBlocksCmd.Example
+
+	for _, want := range []string{"`classifier`", "review config", "--merge-config-file"} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("blocks help should mention %q, got:\n%s", want, help)
+		}
+	}
+	for _, stale := range []string{"`classify`", "review gate", "review gates"} {
+		if strings.Contains(help, stale) {
+			t.Fatalf("blocks help should not use stale %q, got:\n%s", stale, help)
+		}
+	}
+}
+
 func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 	help := workflowsBlocksUpdateCmd.Long + "\n" + workflowsBlocksUpdateCmd.Example
 
@@ -39,7 +54,8 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 		`"review"`,
 		`"predicate"`,
 		`"kind":"always"`,
-		`--config-file -`,
+		`--merge-config-file -`,
+		`only when replacing the whole typed config`,
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks update help should show review config guidance %q, got:\n%s", want, help)

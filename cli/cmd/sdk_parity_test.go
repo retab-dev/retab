@@ -20,6 +20,7 @@ type sdkOperation struct {
 var sdkMethodCommandAliases = map[string]string{
 	"ConfigHistory":      "",
 	"CreateBatch":        "create-batch",
+	"CreateVersion":      "versions create",
 	"CreateStream":       "stream",
 	"CreateUpload":       "create-upload",
 	"CompleteUpload":     "complete-upload",

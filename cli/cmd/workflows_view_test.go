@@ -265,7 +265,7 @@ func TestWorkflowsViewCommandFetchesEntitiesAndPrintsASCII(t *testing.T) {
 		"Workflow: Invoice flow (wf_graph)",
 		"| Start",
 		"| Extract totals",
-		"| start [start]",
+		"| start [start-document]",
 		"| extract [extract]",
 		"--->",
 	} {

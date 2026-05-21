@@ -99,7 +99,7 @@ func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req
 		if block.ID == "start" {
 			hasLiteralStartID = true
 		}
-		if block.Type == "start" {
+		if isStartDocumentBlock(block) {
 			startBlockIDs = append(startBlockIDs, block.ID)
 		}
 	}
@@ -271,7 +271,7 @@ branches).
 
 For dynamic routing blocks, source handles are built from route
 ` + "`handle_key`" + ` values: ` + "`output-file-booking-confirmation`" + `
-for split/classify file routes and ` + "`output-json-needs-review`" + `
+for split/classifier file routes and ` + "`output-json-needs-review`" + `
 for conditional JSON routes. If a route omits ` + "`handle_key`" + `, Retab
 derives one from the human label by lowercasing it and replacing spaces with
 hyphens.

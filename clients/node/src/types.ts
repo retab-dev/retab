@@ -872,13 +872,12 @@ export const ZBlockSimulation = z
 export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
 
 // ---------------------------------------------------------------------------
-// Workflow review overlay (served under /workflows/reviews)
+// Workflow reviews (served under /workflows/reviews)
 //
-// A versioned sidecar attached to a gated workflow block run. Actor-neutral by
+// A review record attached to a gated workflow block run. Actor-neutral by
 // construction: a proposal authored by a model, an agent, or a human all flow
 // through the SAME types and methods. `Actor.kind` is descriptive data — code
-// never branches on it. Every mutating call carries a `version_stamp` (the
-// overlay's `rev`); the server returns HTTP 409 if the rev has advanced.
+// never branches on it.
 // ---------------------------------------------------------------------------
 
 /** Who performed a review action. `kind` is descriptive only — never branched on. */
@@ -894,12 +893,10 @@ export type Actor = z.infer<typeof ZActor>;
 /** One immutable snapshot of the block output in the version history. */
 export const ZOutputVersion = z
   .object({
-    seq: z.number(),
-    parent_seq: z.number().nullable().default(null),
+    parent_id: z.string().nullable().default(null),
     author: ZActor,
-    origin: z.enum(['model_output', 'agent_edit', 'human_edit', 'revert']),
+    origin: z.enum(['model_output', 'agent_created', 'human_created']),
     snapshot: z.record(z.unknown()),
-    content_sha256: z.string(),
     note: z.string().nullable().default(null),
     created_at: z.string(),
   })
@@ -909,59 +906,23 @@ export type OutputVersion = z.infer<typeof ZOutputVersion>;
 /** A verdict recorded against a specific output version. */
 export const ZReviewDecision = z
   .object({
-    decision_id: z.string(),
     verdict: z.enum(['approved', 'rejected']),
+    version_id: z.string(),
     decided_by: ZActor,
     decided_at: z.string(),
-    on_seq: z.number(),
-    effective_seq: z.number().nullable().default(null),
     reason: z.string().nullable().default(null),
-    supersedes_decision_id: z.string().nullable().default(null),
   })
   .passthrough();
 export type ReviewDecision = z.infer<typeof ZReviewDecision>;
 
-/** One row of the overlay's append-only audit log. */
-export const ZAuditEntry = z
-  .object({
-    entry_id: z.string(),
-    action: z.string(),
-    actor: ZActor,
-    at: z.string(),
-    rev_observed: z.number(),
-    rev_result: z.number().nullable().default(null),
-    detail: z.record(z.unknown()).default({}),
-  })
-  .passthrough();
-export type AuditEntry = z.infer<typeof ZAuditEntry>;
-
-/** A soft, advisory lock held by an actor while it works on the review. */
-export const ZReviewClaim = z
-  .object({
-    holder: ZActor,
-    claimed_at: z.string(),
-    expires_at: z.string(),
-  })
-  .passthrough();
-export type ReviewClaim = z.infer<typeof ZReviewClaim>;
-
-/** The block-specific JSON value a reviewer edits. */
-export const ZReviewableValue = z
-  .object({
-    kind: z.enum(['extract', 'split', 'classifier', 'for_each', 'partition']),
-    source_seq: z.number(),
-    snapshot_path: z.array(z.string()),
-    value: z.record(z.unknown()),
-    effective_output: z.record(z.unknown()),
-  })
-  .passthrough();
-export type ReviewableValue = z.infer<typeof ZReviewableValue>;
-
-/** The full versioned review sidecar for one gated block run. */
+/** The full versioned review for one gated block run.
+ *
+ * The backend strips `organization_id` and `runtime_block_id` from public
+ * responses, so neither is modeled here.
+ */
 export const ZReviewOverlay = z
   .object({
     _id: z.string(),
-    organization_id: z.string(),
     workflow_id: z.string(),
     workflow_version_id: z.string(),
     workflow_run_id: z.string(),
@@ -969,27 +930,18 @@ export const ZReviewOverlay = z
     block_run_id: z.string(),
     block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
-    status: z.enum(['awaiting_review', 'approved', 'rejected']),
     awaiting_since: z.string(),
-    decided_at: z.string().nullable().default(null),
     priority: z.number(),
-    rev: z.number(),
-    claim: ZReviewClaim.nullable().default(null),
-    versions: z.array(ZOutputVersion).default([]),
-    decisions: z.array(ZReviewDecision).default([]),
-    audit: z.array(ZAuditEntry).default([]),
-    head_seq: z.number(),
-    effective_seq: z.number().nullable().default(null),
-    reviewable_value: ZReviewableValue.nullable().default(null),
+    versions_by_id: z.record(ZOutputVersion),
+    decision: ZReviewDecision.nullable().default(null),
   })
   .strip();
 export type ReviewOverlay = z.infer<typeof ZReviewOverlay>;
 
-/** A lightweight overlay summary returned by `reviews.list(...)` — no version history. */
+/** A lightweight review summary returned by `reviews.list(...)` — no version history. */
 export const ZReviewQueueItem = z
   .object({
     _id: z.string(),
-    organization_id: z.string(),
     workflow_id: z.string(),
     workflow_version_id: z.string(),
     workflow_run_id: z.string(),
@@ -997,14 +949,8 @@ export const ZReviewQueueItem = z
     block_run_id: z.string(),
     block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
-    status: z.enum(['awaiting_review', 'approved', 'rejected']),
     awaiting_since: z.string(),
-    decided_at: z.string().nullable().default(null),
     priority: z.number(),
-    rev: z.number(),
-    claim: ZReviewClaim.nullable().default(null),
-    head_seq: z.number(),
-    effective_seq: z.number().nullable().default(null),
   })
   .strip();
 export type ReviewQueueItem = z.infer<typeof ZReviewQueueItem>;
@@ -1018,11 +964,36 @@ export const ZReviewQueueResponse = z
   .passthrough();
 export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
 
+/** Status of the Temporal resume signal sent after a decision is committed.
+ *
+ * `"resumed"`: signal succeeded; the workflow run advanced past the gate.
+ * `"skipped"`: defensive — there was no decision to resume (should not occur).
+ * `"failed"`: the signal raised; the decision IS committed but the run did
+ *   NOT advance. Inspect `resume_error` for context and retry via your own
+ *   reconciliation path.
+ */
+export const ZResumeStatus = z.enum(['resumed', 'skipped', 'failed']);
+export type ResumeStatus = z.infer<typeof ZResumeStatus>;
+
+/**
+ * Submission status returned by `reviews.approve/reject(...)`.
+ *
+ * - `"accepted"`: decision committed AND the Temporal resume signal succeeded.
+ * - `"already_applied"`: idempotent replay of an identical `(verdict, version_id)`.
+ * - `"accepted_pending_resume"`: decision committed, but the Temporal resume
+ *   signal failed. The workflow has NOT advanced. Inspect `resume_error` and
+ *   reconcile out-of-band.
+ */
+export const ZSubmissionStatus = z.enum(['accepted', 'already_applied', 'accepted_pending_resume']);
+export type SubmissionStatus = z.infer<typeof ZSubmissionStatus>;
+
 /** Envelope returned by `reviews.approve/reject(...)`. */
 export const ZSubmitDecisionResponse = z
   .object({
-    submission_status: z.enum(['accepted', 'already_received', 'already_applied']),
-    overlay: ZReviewOverlay,
+    submission_status: ZSubmissionStatus,
+    review: ZReviewOverlay,
+    resume_status: ZResumeStatus.default('resumed'),
+    resume_error: z.string().nullable().default(null),
   })
   .passthrough();
 export type SubmitDecisionResponse = z.infer<typeof ZSubmitDecisionResponse>;

@@ -13,13 +13,13 @@ var workflowsBlocksCmd = &cobra.Command{
 	Long: `Add, configure, and inspect the nodes of a workflow graph.
 
 A block is one processing step — ` + "`extract`" + `, ` + "`split`" + `,
-` + "`classify`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
+` + "`classifier`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, etc. Each block has a typed input,
 typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 
 The workhorse here is ` + "`update`" + ` — once a block is on the graph, tune
 its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
-or deep-merge review gates with ` + "`--merge-config-file`" + ` rather than
+or deep-merge review config with ` + "`--merge-config-file`" + ` rather than
 deleting and re-creating. To test a config change without
 re-running the whole workflow, use ` + "`workflows blocks simulate`" + ` to
 replay one block against a past run's input.`,
@@ -332,9 +332,11 @@ the typed config blob (` + "`--config-file`" + `) to adjust the prompt,
 schema, model, or thresholds without re-creating the block — your
 upstream/downstream wiring is preserved.
 
-To add or change review, include ` + "`review`" + ` inside the config file, for
-example ` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `. Use
-` + "`null`" + ` as the review value to remove review from the block.
+To add or change only review, deep-merge a small patch with
+` + "`--merge-config-file`" + `, for example
+` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `. Use ` + "`null`" + `
+as the review value to remove review from the block. Use ` + "`--config-file`" + `
+only when replacing the whole typed config.
 
 Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 ` + "`parent-id`" + `) only affect the visual editor.`,
@@ -344,7 +346,7 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 
   # Add review to an existing block
   printf '{"review":{"predicate":{"kind":"always"}}}' |
-    retab workflows blocks update wf_abc123 blk_def456 --config-file -
+    retab workflows blocks update wf_abc123 blk_def456 --merge-config-file -
 
   # Rename a block's label
   retab workflows blocks update wf_abc123 blk_def456 \

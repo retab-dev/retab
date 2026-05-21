@@ -184,7 +184,7 @@ Review-based: when a block pauses for review, the run enters status
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a block run awaiting review, then ` + "`reviews approve`" + ` or ` + "`reviews reject`" + `
-to decide it. Use ` + "`reviews edit`" + ` to append a corrected output before approving.
+to decide it. Use ` + "`reviews versions create`" + ` to append a corrected output before approving.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -203,7 +203,7 @@ For declarative regression testing of workflow outputs, see
 
   # Approve a block run awaiting review
   retab workflows reviews approve run_xyz789 blk_review_1 \
-    --version-stamp 0`,
+    --version-id 9d6d...`,
 }
 
 var workflowsRunsCreateCmd = &cobra.Command{
@@ -342,7 +342,7 @@ func resolveWorkflowRunDocumentAliases(
 	}
 	var startDocumentBlocks []retab.WorkflowBlock
 	for _, block := range blocks.Data {
-		if block.Type == "start" {
+		if isStartDocumentBlock(block) {
 			startDocumentBlocks = append(startDocumentBlocks, block)
 		}
 	}

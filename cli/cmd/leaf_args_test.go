@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -44,6 +47,16 @@ func TestListCommandsRejectExtraPositionalArgs(t *testing.T) {
 // is NOT an arg-count rejection — these ids don't exist, so a server
 // round-trip error is fine; "accepts 0 arg(s)" is not.
 func TestArgTakingCommandsStillAcceptTheirArg(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "not found"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
 	for _, args := range [][]string{
 		{"files", "get", "file_nonexistent"},
 		{"workflows", "get", "wf_nonexistent"},

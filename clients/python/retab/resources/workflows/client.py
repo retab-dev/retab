@@ -140,7 +140,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
-        reviews: review overlay operations (queue, approve, reject, escalate)
+        reviews: review operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         artifacts: Workflow artifact dereference operations
@@ -344,7 +344,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
-        reviews: review overlay operations (queue, approve, reject, escalate)
+        reviews: review operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         specs: Declarative workflow YAML validation, planning, apply, and export
