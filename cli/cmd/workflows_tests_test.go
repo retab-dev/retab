@@ -301,7 +301,7 @@ func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected local parse error for --limit=-1")
 			}
-			if !strings.Contains(err.Error(), "between 0 and 100") {
+			if !strings.Contains(err.Error(), "between 1 and 100") {
 				t.Fatalf("error %q does not mention backend limit range", err.Error())
 			}
 			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
@@ -327,7 +327,7 @@ func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected local parse error for --limit=101")
 			}
-			if !strings.Contains(err.Error(), "between 0 and 100") {
+			if !strings.Contains(err.Error(), "between 1 and 100") {
 				t.Fatalf("error %q does not mention backend limit range", err.Error())
 			}
 			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {

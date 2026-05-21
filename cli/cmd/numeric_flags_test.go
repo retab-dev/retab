@@ -197,7 +197,7 @@ func TestSharedListLimitFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) 
 			if !strings.Contains(err.Error(), "between 1 and 100") {
 				t.Fatalf("error %q does not mention backend limit range", err.Error())
 			}
-			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
+			if resetErr := tc.cmd.Flags().Set("limit", "1"); resetErr != nil {
 				t.Fatalf("reset --limit: %v", resetErr)
 			}
 		})
