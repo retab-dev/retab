@@ -340,6 +340,15 @@ func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflow
 	return &result, nil
 }
 
+func (s *WorkflowArtifactsService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (*WorkflowArtifact, error) {
+	if artifactID == "" {
+		return nil, fmt.Errorf("retab: artifactID is required")
+	}
+	var result WorkflowArtifact
+	err := s.client.do(ctx, http.MethodGet, "/workflows/artifacts/"+url.PathEscape(artifactID), nil, nil, &result, opts...)
+	return &result, err
+}
+
 // decodeArtifactListResponse normalises both response shapes into the
 // PaginatedList envelope. It sniffs the first non-whitespace byte: `[`
 // is a bare array, `{` is the envelope. Anything else is a protocol
@@ -1304,6 +1313,15 @@ func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, 
 	return &result, err
 }
 
+func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
+	if resultID == "" {
+		return nil, fmt.Errorf("retab: resultID is required")
+	}
+	var result WorkflowTestRunRecord
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
+	return &result, err
+}
+
 func addQuery(values url.Values, key string, value string) {
 	if value != "" {
 		values.Set(key, value)
@@ -1667,6 +1685,15 @@ func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID st
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	var result PaginatedList[ExperimentResult]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results", query, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*ExperimentResult, error) {
+	if resultID == "" {
+		return nil, fmt.Errorf("retab: resultID is required")
+	}
+	var result ExperimentResult
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
 	return &result, err
 }
 

@@ -338,6 +338,64 @@ func TestWorkflowsBlocksUpdateRejectsReplaceAndMergeConfigTogether(t *testing.T)
 	}
 }
 
+// Regression for CLI probing 2026-05: a clearly invalid value like
+// `not@a-domain` passed to `--allowed-domain` was accepted because the
+// validator only refused blank strings. The CLI now rejects shapes that
+// cannot match any real inbound email — saving a misconfigured allowlist
+// is silently broken otherwise (no email ever matches, no error ever
+// surfaces).
+func TestWorkflowsUpdateRejectsMalformedAllowlistValuesBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name      string
+		flag      string
+		value     string
+		wantError string
+	}{
+		{name: "domain with @", flag: "allowed-domain", value: "not@a-domain", wantError: "--allowed-domain"},
+		{name: "domain with no dot", flag: "allowed-domain", value: "localhost", wantError: "--allowed-domain"},
+		{name: "sender without @", flag: "allowed-sender", value: "no-at-sign", wantError: "--allowed-sender"},
+		{name: "sender empty local part", flag: "allowed-sender", value: "@example.com", wantError: "--allowed-sender"},
+		{name: "sender empty domain part", flag: "allowed-sender", value: "ops@", wantError: "--allowed-sender"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for malformed allowlist value, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "test-workflow-update", RunE: workflowsUpdateCmd.RunE}
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("description", "", "")
+			cmd.Flags().StringArray("allowed-sender", nil, "")
+			cmd.Flags().StringArray("allowed-domain", nil, "")
+
+			if err := cmd.Flags().Set(tc.flag, tc.value); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"wf_123"})
+			if err == nil {
+				t.Fatalf("expected error for --%s=%q", tc.flag, tc.value)
+			}
+			if unwrapped := errors.Unwrap(err); unwrapped != nil {
+				err = unwrapped
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not name %s", err.Error(), tc.wantError)
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
+			}
+		})
+	}
+}
+
 func TestWorkflowsUpdateRejectsBlankEmailAllowlistValuesBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -436,6 +494,135 @@ func TestWorkflowsRejectBlankNamesBeforeRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Regression for CLI probing 2026-05: “workflows update --allowed-domain x“
+// used to wipe the existing “allowed_senders“ list (and vice versa)
+// because the CLI sent only the explicitly-provided list to a
+// full-replace PATCH endpoint. The user's mental model is patch
+// semantics — omitting a flag should leave that list alone.
+func TestWorkflowsUpdatePreservesUnspecifiedEmailAllowlist(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name            string
+		setFlag         string
+		setValue        string
+		wantSenders     []string
+		wantDomains     []string
+		existingTrigger map[string]any
+	}{
+		{
+			name:     "providing only --allowed-domain preserves senders",
+			setFlag:  "allowed-domain",
+			setValue: "new.com",
+			existingTrigger: map[string]any{
+				"allowed_senders": []string{"keep@example.com"},
+				"allowed_domains": []string{"old.com"},
+			},
+			wantSenders: []string{"keep@example.com"},
+			wantDomains: []string{"new.com"},
+		},
+		{
+			name:     "providing only --allowed-sender preserves domains",
+			setFlag:  "allowed-sender",
+			setValue: "new@x.com",
+			existingTrigger: map[string]any{
+				"allowed_senders": []string{"old@x.com"},
+				"allowed_domains": []string{"keep.com"},
+			},
+			wantSenders: []string{"new@x.com"},
+			wantDomains: []string{"keep.com"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var patchBody map[string]any
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch {
+				case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_abc":
+					_ = json.NewEncoder(w).Encode(map[string]any{
+						"id":            "wf_abc",
+						"name":          "Existing",
+						"email_trigger": tc.existingTrigger,
+					})
+				case r.Method == http.MethodPatch && r.URL.Path == "/workflows/wf_abc":
+					if err := json.NewDecoder(r.Body).Decode(&patchBody); err != nil {
+						t.Fatalf("decode patch: %v", err)
+					}
+					_ = json.NewEncoder(w).Encode(map[string]any{
+						"id":            "wf_abc",
+						"name":          "Existing",
+						"email_trigger": patchBody["email_trigger"],
+					})
+				default:
+					t.Fatalf("unexpected %s %s", r.Method, r.URL.Path)
+				}
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "update", RunE: workflowsUpdateCmd.RunE}
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("description", "", "")
+			cmd.Flags().StringArray("allowed-sender", nil, "")
+			cmd.Flags().StringArray("allowed-domain", nil, "")
+			if err := cmd.Flags().Set(tc.setFlag, tc.setValue); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := cmd.RunE(cmd, []string{"wf_abc"}); err != nil {
+				t.Fatalf("update: %v", err)
+			}
+
+			trigger, ok := patchBody["email_trigger"].(map[string]any)
+			if !ok {
+				t.Fatalf("PATCH body had no email_trigger: %#v", patchBody)
+			}
+			gotSenders := castStrings(trigger["allowed_senders"])
+			gotDomains := castStrings(trigger["allowed_domains"])
+			if !equalStrings(gotSenders, tc.wantSenders) {
+				t.Fatalf("allowed_senders = %v, want %v", gotSenders, tc.wantSenders)
+			}
+			if !equalStrings(gotDomains, tc.wantDomains) {
+				t.Fatalf("allowed_domains = %v, want %v", gotDomains, tc.wantDomains)
+			}
+		})
+	}
+}
+
+func castStrings(value any) []string {
+	if value == nil {
+		return nil
+	}
+	raw, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(raw))
+	for _, v := range raw {
+		s, ok := v.(string)
+		if !ok {
+			return nil
+		}
+		out = append(out, s)
+	}
+	return out
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestWorkflowListExamplesUsePaginatedEnvelope(t *testing.T) {
