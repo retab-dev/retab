@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 )
 
 const reviewID = "rev_1"
@@ -394,35 +393,5 @@ func TestWorkflowReviewVersionsRequiresInputs(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "ParentID is required") {
 		t.Fatalf("expected ParentID required error, got %v", err)
-	}
-}
-
-func TestWorkflowReviewsWaitForPollsUntilPending(t *testing.T) {
-	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		w.Header().Set("Content-Type", "application/json")
-		if calls == 1 {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "no review"})
-			return
-		}
-		_ = json.NewEncoder(w).Encode(reviewJSON(false))
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	review, err := client.Workflows.Reviews.WaitFor(context.Background(), reviewID, &ReviewWaitForParams{
-		PollInterval: time.Millisecond,
-		Timeout:      time.Second,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 || review.Decision != nil {
-		t.Fatalf("calls=%d review=%#v", calls, review)
 	}
 }

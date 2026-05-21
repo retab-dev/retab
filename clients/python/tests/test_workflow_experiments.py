@@ -1,5 +1,4 @@
-"""Smoke tests for `client.workflows.experiments.*`, `client.workflows.diagnose`, and
-`client.workflows.blocks.simulate`.
+"""Smoke tests for `client.workflows.experiments.*` and `client.workflows.diagnose`.
 
 Mirrors the existing pattern from `test_workflow_tests.py`: mock the
 underlying `client._prepared_request` so we can assert on the constructed
@@ -221,19 +220,6 @@ def test_experiments_delete_uses_delete_method() -> None:
     assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
 
 
-def test_experiments_duplicate_posts_to_create_endpoint_with_source_id() -> None:
-    """Duplicate is a discriminated create — body carries ``source_experiment_id``."""
-    client = MagicMock()
-    client._prepared_request.return_value = {**_EXPERIMENT_RESPONSE, "id": "exp_copy"}
-
-    Workflows(client=client).experiments.duplicate(workflow_id="wf_abc123", experiment_id="exp_abc")
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
-    assert request.data == {"source_experiment_id": "exp_abc"}
-
-
 # ---------------------------------------------------------------------------
 # runs — create, list, get, cancel, results, metrics
 # ---------------------------------------------------------------------------
@@ -286,15 +272,16 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments/exp_abc/runs?workflow_id=wf_abc123"
-    assert request.data == {}
+    assert request.url == "/workflows/experiments/runs"
+    assert request.data == {
+        "experiment_id": "exp_abc",
+        "workflow_id": "wf_abc123",
+    }
     assert run.id == "exprun_1"
     assert run.lifecycle.status == "pending"
 
 
-def test_experiments_runs_create_default_body_is_empty_dict() -> None:
-    """No overrides → empty body. Backend's ``RunExperimentRequest`` has
-    all-optional fields, so an empty body is the canonical no-op shape."""
+def test_experiments_runs_create_body_carries_parent_ids() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _experiment_run_response()
 
@@ -304,7 +291,22 @@ def test_experiments_runs_create_default_body_is_empty_dict() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data == {}
+    assert request.data == {
+        "experiment_id": "exp_abc",
+        "workflow_id": "wf_abc123",
+    }
+
+
+def test_experiments_runs_create_allows_omitting_workflow_id() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _experiment_run_response()
+
+    Workflows(client=client).experiments.runs.create(experiment_id="exp_abc")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/experiments/runs"
+    assert request.data == {"experiment_id": "exp_abc"}
 
 
 def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
@@ -320,7 +322,10 @@ def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data == {}
+    assert request.data == {
+        "experiment_id": "exp_abc",
+        "workflow_id": "wf_abc123",
+    }
     assert not hasattr(Workflows(client=client).experiments.runs, "run_document")
 
 
@@ -533,26 +538,17 @@ def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
 
 
 # ---------------------------------------------------------------------------
-# eligible-blocks
+# removed public surfaces
 # ---------------------------------------------------------------------------
 
 
-def test_experiments_list_eligible_blocks_uses_eligible_blocks_subroute() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {"blocks": []}
-
-    Workflows(client=client).experiments.list_eligible_blocks("wf_abc123")
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/experiments/eligible-blocks?workflow_id=wf_abc123"
-
-
-def test_experiments_do_not_expose_run_batch_surface() -> None:
+def test_experiments_do_not_expose_removed_surfaces() -> None:
     experiments = Workflows(client=MagicMock()).experiments
 
     assert "prepare_run_batch" not in dir(experiments)
     assert "run_batch" not in dir(experiments)
+    assert "duplicate" not in dir(experiments)
+    assert "list_eligible_blocks" not in dir(experiments)
 
 
 # ---------------------------------------------------------------------------
@@ -560,33 +556,9 @@ def test_experiments_do_not_expose_run_batch_surface() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
+def test_workflows_diagnose_posts_directly() -> None:
     client = MagicMock()
 
-    entities_payload = {
-        "workflow": {
-            "id": "wf_abc123",
-            "name": "Test",
-            "description": "",
-            "published": None,
-            "email_trigger": {"allowed_senders": [], "allowed_domains": []},
-            "created_at": _NOW,
-            "updated_at": _NOW,
-        },
-        "blocks": [
-            {
-                "id": "start-1",
-                "workflow_id": "wf_abc123",
-                "organization_id": "org_x",
-                "type": "start-document",
-                "label": "Start",
-                "position_x": 0,
-                "position_y": 0,
-                "config": None,
-            },
-        ],
-        "edges": [],
-    }
     diagnose_payload = {
         "is_valid": True,
         "issues": [
@@ -605,161 +577,34 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
             "start_document_blocks": 1,
         },
     }
-
-    # Two backend calls: one to fetch entities, one to diagnose. Order matters.
-    client._prepared_request.side_effect = [entities_payload, diagnose_payload]
+    client._prepared_request.return_value = diagnose_payload
 
     result = Workflows(client=client).diagnose("wf_abc123")
 
     assert result.is_valid is True
     assert result.issues[0].severity == "warning"
     assert result.issues[0].code == "MISSING_REVIEW_PREDICATE"
-    # Verify the second call was the diagnose-graph POST with the
-    # unsaved-shape blocks/edges payload the backend expects.
-    diagnose_call = client._prepared_request.call_args_list[1].args[0]
+    assert client._prepared_request.call_count == 1
+    diagnose_call = client._prepared_request.call_args.args[0]
     assert diagnose_call.method == "POST"
     assert diagnose_call.url == "/workflows/wf_abc123/diagnose-graph"
-    assert diagnose_call.data["re_propagate"] is True
-    assert diagnose_call.data["blocks"][0]["id"] == "start-1"
-    assert diagnose_call.data["blocks"][0]["type"] == "start-document"
-    assert "position" in diagnose_call.data["blocks"][0]
+    assert diagnose_call.data == {"re_propagate": True}
 
 
 @pytest.mark.asyncio
-async def test_async_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
+async def test_async_workflows_diagnose_posts_directly() -> None:
     client = MagicMock()
 
-    entities_payload = {
-        "workflow": {
-            "id": "wf_abc123",
-            "name": "Test",
-            "description": "",
-            "published": None,
-            "email_trigger": {"allowed_senders": [], "allowed_domains": []},
-            "created_at": _NOW,
-            "updated_at": _NOW,
-        },
-        "blocks": [],
-        "edges": [],
-    }
     diagnose_payload = {
         "is_valid": False,
         "issues": [{"severity": "error", "code": "NO_START_BLOCK", "message": "no start"}],
         "suggestions": [],
         "stats": {"total_blocks": 0, "total_edges": 0, "block_types": {}, "start_document_blocks": 0},
     }
-    client._prepared_request = AsyncMock(side_effect=[entities_payload, diagnose_payload])
+    client._prepared_request = AsyncMock(return_value=diagnose_payload)
 
     result = await AsyncWorkflows(client=client).diagnose("wf_abc123")
 
     assert result.is_valid is False
     assert result.issues[0].code == "NO_START_BLOCK"
-
-
-# ---------------------------------------------------------------------------
-# Block simulate — keyed by run_id, NOT workflow_id
-# ---------------------------------------------------------------------------
-
-
-_SIMULATION_RESPONSE = {
-    "id": "sim_1",
-    "organization_id": "org_x",
-    "workflow_id": "wf_abc123",
-    "run_id": "wfr_1",
-    "block_id": "block_extract",
-    "block_type": "extract",
-    "success": True,
-    "handle_inputs": {"input-file-0": {"type": "file"}},
-    "handle_outputs": {"output-json-0": {"type": "json", "data": {"total": 1234.56}}},
-    "duration_ms": 412.0,
-    "skipped": False,
-}
-
-
-def test_blocks_simulate_uses_runs_steps_route() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _SIMULATION_RESPONSE
-
-    sim = Workflows(client=client).blocks.simulate(
-        run_id="wfr_1",
-        block_id="block_extract",
-        n_consensus=5,
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    # Simulations are a top-level resource: parent ids live in the body.
-    assert request.url == "/workflows/simulations"
-    assert request.data == {
-        "run_id": "wfr_1",
-        "step_id": "block_extract",
-        "n_consensus": 5,
-    }
-    assert sim.id == "sim_1"
-    assert sim.success is True
-
-
-def test_blocks_simulate_omits_check_eligibility_when_default() -> None:
-    """Default ``check_eligibility=True`` should NOT appear in the body —
-    sending it would be redundant with the server default and clutter logs."""
-    client = MagicMock()
-    client._prepared_request.return_value = _SIMULATION_RESPONSE
-
-    Workflows(client=client).blocks.simulate(
-        run_id="wfr_1",
-        block_id="block_extract",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data == {"run_id": "wfr_1", "step_id": "block_extract"}
-    assert "check_eligibility" not in request.data
-
-
-def test_blocks_simulate_with_check_eligibility_false_passes_param() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _SIMULATION_RESPONSE
-
-    Workflows(client=client).blocks.simulate(
-        run_id="wfr_1",
-        block_id="block_extract",
-        check_eligibility=False,
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data == {
-        "run_id": "wfr_1",
-        "step_id": "block_extract",
-        "check_eligibility": False,
-    }
-
-
-def test_blocks_simulate_with_step_id_for_for_each() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _SIMULATION_RESPONSE
-
-    Workflows(client=client).blocks.simulate(
-        run_id="wfr_1",
-        block_id="block_inside_for_each",
-        step_id="for_each-0/extract-0",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data == {
-        "run_id": "wfr_1",
-        "step_id": "for_each-0/extract-0",
-        "source_step_id": "for_each-0/extract-0",
-    }
-
-
-@pytest.mark.asyncio
-async def test_async_blocks_simulate_uses_runs_steps_route() -> None:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(return_value=_SIMULATION_RESPONSE)
-
-    await AsyncWorkflows(client=client).blocks.simulate(
-        run_id="wfr_1",
-        block_id="block_extract",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/simulations"
+    assert client._prepared_request.call_count == 1

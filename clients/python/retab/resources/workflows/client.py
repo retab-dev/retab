@@ -6,17 +6,15 @@ from ...types.standards import PreparedRequest
 from ...types.workflows import (
     Workflow,
     WorkflowDiagnosisResponse,
-    WorkflowResolvedSchemasResponse,
-    WorkflowSnapshot,
-    WorkflowWithEntities,
 )
 from .runs import WorkflowRuns, AsyncWorkflowRuns
 from .reviews import WorkflowReviews, AsyncWorkflowReviews
 from .artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
-from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
+from .blocks import AsyncWorkflowBlocks, WorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
 from .experiments import AsyncWorkflowExperiments, WorkflowExperiments
 from .specs import AsyncWorkflowSpecs, WorkflowSpecs
+from .steps import AsyncWorkflowSteps, WorkflowSteps
 from .tests import AsyncWorkflowTests, WorkflowTests
 
 
@@ -83,49 +81,13 @@ class WorkflowsMixin:
         data: Dict[str, Any] = {"description": description}
         return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/publish", data=data)
 
-    def prepare_duplicate(self, workflow_id: str) -> PreparedRequest:
-        """Prepare a request to duplicate a workflow."""
-        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/duplicate", data={})
-
-    def prepare_get_entities(self, workflow_id: str) -> PreparedRequest:
-        """Prepare a request to get a workflow with all its entities (blocks and edges)."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/entities")
-
-    def prepare_get_resolved_schemas(self, workflow_id: str) -> PreparedRequest:
-        """Prepare a request to get graph-derived schemas for all current-draft blocks."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/resolved-schemas")
-
-    def prepare_list_snapshots(
-        self,
-        workflow_id: str,
-        limit: int | None = None,
-    ) -> PreparedRequest:
-        """Prepare a request to list published snapshots for a workflow."""
-        params: Dict[str, Any] = {}
-        if limit is not None:
-            params["limit"] = limit
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/snapshots",
-            params=params or None,
-        )
-
     def prepare_diagnose(
         self,
         workflow_id: str,
-        blocks: List[Dict[str, Any]],
-        edges: List[Dict[str, Any]],
         re_propagate: bool = True,
     ) -> PreparedRequest:
-        """Prepare a request to diagnose a workflow's graph structure.
-
-        ``blocks`` and ``edges`` are the in-memory graph payload — for
-        diagnosing the persisted draft state, fetch with ``get_entities()``
-        first and pass the results.
-        """
+        """Prepare a request to diagnose a workflow's graph structure."""
         data: Dict[str, Any] = {
-            "blocks": blocks,
-            "edges": edges,
             "re_propagate": re_propagate,
         }
         return PreparedRequest(
@@ -140,6 +102,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
+        steps: Workflow step operations (get, list)
         reviews: review operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
@@ -150,6 +113,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = WorkflowRuns(client=client)
+        self.steps = WorkflowSteps(client=client)
         self.reviews = WorkflowReviews(client=client)
         self.artifacts = WorkflowArtifacts(client=client)
         self.blocks = WorkflowBlocks(client=client)
@@ -248,52 +212,6 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(request)
         return Workflow.model_validate(response)
 
-    def duplicate(self, workflow_id: str) -> Workflow:
-        """Duplicate a workflow with all its blocks and edges.
-
-        Returns:
-            Workflow: The new duplicated workflow (unpublished)
-        """
-        request = self.prepare_duplicate(workflow_id)
-        response = self._client._prepared_request(request)
-        return Workflow.model_validate(response)
-
-    def get_entities(self, workflow_id: str) -> WorkflowWithEntities:
-        """Get a workflow with all its entities (blocks and edges).
-
-        Returns:
-            WorkflowWithEntities: The workflow with its full graph structure.
-                Use ``.start_document_blocks`` and ``.start_json_blocks`` to discover input blocks.
-        """
-        request = self.prepare_get_entities(workflow_id)
-        response = self._client._prepared_request(request)
-        return WorkflowWithEntities.model_validate(response)
-
-    def get_resolved_schemas(self, workflow_id: str) -> WorkflowResolvedSchemasResponse:
-        """Get graph-derived schemas for all current-draft blocks in a workflow."""
-        request = self.prepare_get_resolved_schemas(workflow_id)
-        response = self._client._prepared_request(request)
-        return WorkflowResolvedSchemasResponse.model_validate(response)
-
-    def list_snapshots(
-        self,
-        workflow_id: str,
-        limit: int | None = None,
-    ) -> PaginatedList[WorkflowSnapshot]:
-        """List published snapshots for a workflow (newest first).
-
-        Returns the canonical
-        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
-        pagination envelope. ``limit`` bounds the page size (server default:
-        50, max 100). ID pagination is not yet implemented for this
-        endpoint.
-        """
-        request = self.prepare_list_snapshots(workflow_id, limit=limit)
-        response = self._client._prepared_request(request)
-        result = PaginatedList[WorkflowSnapshot](**response)
-        result.data = [WorkflowSnapshot.model_validate(item) for item in result.data]
-        return result
-
     def diagnose(
         self,
         workflow_id: str,
@@ -301,40 +219,10 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
     ) -> WorkflowDiagnosisResponse:
         """Diagnose the workflow's draft graph for structural/config issues.
 
-        Fetches the persisted draft entities first, then POSTs them to the
-        diagnose-graph endpoint. Returns a list of ``issues`` (errors must
-        be fixed before publish; warnings cover incomplete config and
-        human-review guidance) and ``stats``.
-
-        For diagnosing an in-memory editor graph that hasn't been saved
-        yet, build the request directly with :meth:`prepare_diagnose` and
-        pass your own ``blocks`` / ``edges`` payloads.
+        Calls the diagnose-graph endpoint directly. Returns a list of
+        ``issues`` and ``stats``.
         """
-        entities = self.get_entities(workflow_id)
-        blocks = [
-            {
-                "id": block.id,
-                "type": block.type,
-                "label": block.label,
-                "config": block.config,
-                "position": {"x": block.position_x, "y": block.position_y},
-                "width": block.width,
-                "height": block.height,
-                "parent_id": block.parent_id,
-            }
-            for block in entities.blocks
-        ]
-        edges = [
-            {
-                "id": edge.id,
-                "source": edge.source_block,
-                "target": edge.target_block,
-                "source_handle": edge.source_handle,
-                "target_handle": edge.target_handle,
-            }
-            for edge in entities.edges
-        ]
-        request = self.prepare_diagnose(workflow_id, blocks, edges, re_propagate=re_propagate)
+        request = self.prepare_diagnose(workflow_id, re_propagate=re_propagate)
         response = self._client._prepared_request(request)
         return WorkflowDiagnosisResponse.model_validate(response)
 
@@ -344,6 +232,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
+        steps: Workflow step operations (get, list)
         reviews: review operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
@@ -353,6 +242,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = AsyncWorkflowRuns(client=client)
+        self.steps = AsyncWorkflowSteps(client=client)
         self.reviews = AsyncWorkflowReviews(client=client)
         self.artifacts = AsyncWorkflowArtifacts(client=client)
         self.blocks = AsyncWorkflowBlocks(client=client)
@@ -425,66 +315,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         response = await self._client._prepared_request(request)
         return Workflow.model_validate(response)
 
-    async def duplicate(self, workflow_id: str) -> Workflow:
-        """Duplicate a workflow with all its blocks and edges."""
-        request = self.prepare_duplicate(workflow_id)
-        response = await self._client._prepared_request(request)
-        return Workflow.model_validate(response)
-
-    async def get_entities(self, workflow_id: str) -> WorkflowWithEntities:
-        """Get a workflow with all its entities (blocks and edges)."""
-        request = self.prepare_get_entities(workflow_id)
-        response = await self._client._prepared_request(request)
-        return WorkflowWithEntities.model_validate(response)
-
-    async def get_resolved_schemas(self, workflow_id: str) -> WorkflowResolvedSchemasResponse:
-        """Get graph-derived schemas for all current-draft blocks in a workflow."""
-        request = self.prepare_get_resolved_schemas(workflow_id)
-        response = await self._client._prepared_request(request)
-        return WorkflowResolvedSchemasResponse.model_validate(response)
-
-    async def list_snapshots(
-        self,
-        workflow_id: str,
-        limit: int | None = None,
-    ) -> PaginatedList[WorkflowSnapshot]:
-        """List published snapshots for a workflow (newest first)."""
-        request = self.prepare_list_snapshots(workflow_id, limit=limit)
-        response = await self._client._prepared_request(request)
-        result = PaginatedList[WorkflowSnapshot](**response)
-        result.data = [WorkflowSnapshot.model_validate(item) for item in result.data]
-        return result
-
     async def diagnose(
         self,
         workflow_id: str,
         re_propagate: bool = True,
     ) -> WorkflowDiagnosisResponse:
         """Diagnose the workflow's draft graph for structural/config issues."""
-        entities = await self.get_entities(workflow_id)
-        blocks = [
-            {
-                "id": block.id,
-                "type": block.type,
-                "label": block.label,
-                "config": block.config,
-                "position": {"x": block.position_x, "y": block.position_y},
-                "width": block.width,
-                "height": block.height,
-                "parent_id": block.parent_id,
-            }
-            for block in entities.blocks
-        ]
-        edges = [
-            {
-                "id": edge.id,
-                "source": edge.source_block,
-                "target": edge.target_block,
-                "source_handle": edge.source_handle,
-                "target_handle": edge.target_handle,
-            }
-            for edge in entities.edges
-        ]
-        request = self.prepare_diagnose(workflow_id, blocks, edges, re_propagate=re_propagate)
+        request = self.prepare_diagnose(workflow_id, re_propagate=re_propagate)
         response = await self._client._prepared_request(request)
         return WorkflowDiagnosisResponse.model_validate(response)

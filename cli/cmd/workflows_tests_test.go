@@ -535,7 +535,6 @@ func TestWorkflowsExperimentsConsensusFlagsMatchBackendContract(t *testing.T) {
 	}{
 		{name: "create", cmd: workflowsExperimentsCreateCmd},
 		{name: "update", cmd: workflowsExperimentsUpdateCmd},
-		{name: "block simulate", cmd: workflowsBlocksSimulateCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("n-consensus", "2")
@@ -886,48 +885,6 @@ func TestWorkflowsExperimentsMetricsViewsMatchBackendContract(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "by_document") || !strings.Contains(err.Error(), "votes") {
 			t.Fatalf("error %q does not mention backend view names", err.Error())
-		}
-	}
-}
-
-func TestWorkflowsExperimentsEligibleBlocksHonorsOutputTable(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Fatalf("method = %s, want GET", r.Method)
-		}
-		if r.URL.Path != "/workflows/experiments/eligible-blocks" || r.URL.Query().Get("workflow_id") != "wf_123" {
-			t.Fatalf("path = %s?%s, want eligible-blocks path", r.URL.Path, r.URL.RawQuery)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"blocks":[{"block_id":"blk_extract","block_label":"Extract","block_type":"extract","experiment_count":2}]}`))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
-
-	var err error
-	stdout, stderr := captureStd(t, func() {
-		err = workflowsExperimentsEligibleBlocksCmd.RunE(workflowsExperimentsEligibleBlocksCmd, []string{"wf_123"})
-	})
-	if err != nil {
-		t.Fatalf("eligible-blocks: %v", err)
-	}
-	if stderr != "" {
-		t.Fatalf("unexpected stderr: %q", stderr)
-	}
-	if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
-		t.Fatalf("expected table output, got JSON:\n%s", stdout)
-	}
-	for _, want := range []string{"ID", "NAME", "TYPE", "blk_extract", "Extract", "extract"} {
-		if !strings.Contains(stdout, want) {
-			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
 }

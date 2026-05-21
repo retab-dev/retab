@@ -146,13 +146,13 @@ Typical lifecycle:
   2. ` + "`workflows blocks create`" + ` / ` + "`workflows edges create`" + ` — wire the graph
   3. ` + "`workflows blocks update`" + ` — configure each block
   4. ` + "`workflows runs create`" + ` — execute against inputs
-  5. ` + "`workflows runs steps list`" + ` — inspect per-block output
+  5. ` + "`workflows steps list`" + ` — inspect per-block output
   6. ` + "`workflows tests create`" + ` — pin the expected output for regression`,
 	Example: `  # List your workflows
   retab workflows list
 
-  # Inspect a workflow's graph (blocks + edges in one call)
-  retab workflows entities wf_abc123
+  # Inspect a workflow's graph
+  retab workflows view wf_abc123
 
   # Run a workflow against an uploaded file
   retab workflows runs create wf_abc123 \
@@ -245,8 +245,8 @@ var workflowsGetCmd = &cobra.Command{
 	Long: `Fetch the workflow envelope: name, description, current draft and
 published versions, email-trigger settings, timestamps.
 
-For the resolved graph (blocks + edges), use ` + "`workflows entities`" + `.
-For per-block I/O schemas, use ` + "`workflows resolved-schemas`" + `.`,
+For a graph-shaped view, use ` + "`workflows view`" + `.
+For blocks and edges as JSON, use ` + "`workflows blocks list`" + ` and ` + "`workflows edges list`" + `.`,
 	Example: `  # Inspect a workflow
   retab workflows get wf_abc123
 
@@ -457,119 +457,6 @@ the warning.`,
 	}),
 }
 
-var workflowsDuplicateCmd = &cobra.Command{
-	Use:   "duplicate <workflow-id>",
-	Short: "Duplicate a workflow",
-	Long: `Deep-copy a workflow's draft graph, blocks, and edges into a new
-workflow with a fresh id. Useful for forking a production workflow to
-experiment without risk.
-
-Published versions and run history are NOT carried over.`,
-	Example: `  # Fork a workflow for tweaking
-  retab workflows duplicate wf_abc123
-
-  # Capture the new id
-  NEW=$(retab workflows duplicate wf_abc123 | jq -r '.id')`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Duplicate(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsSnapshotsCmd = &cobra.Command{
-	Use:   "snapshots <workflow-id>",
-	Short: "List published workflow snapshots",
-	Long: `List immutable published snapshots for a workflow, newest first.
-
-Each snapshot is a versioned frozen graph that can be used for forensic
-inspection or pinned runs. Use ` + "`--limit`" + ` to bound the page size.`,
-	Example: `  # Recent snapshots
-  retab workflows snapshots wf_abc123 --limit 5`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		limit, _ := cmd.Flags().GetInt("limit")
-		result, err := client.Workflows.ListSnapshots(ctx, args[0], &retab.ListSnapshotsParams{Limit: limit})
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsEntitiesCmd = &cobra.Command{
-	Use:   "entities <workflow-id>",
-	Short: "Get the workflow with its blocks and edges",
-	Long: `Return the workflow envelope plus the full graph in one call:
-blocks, edges, and connections. Use this when you need the complete
-picture in a single request — for inspection, exporting, or feeding into
-` + "`workflows diagnose --graph-file`" + `.`,
-	Example: `  # Dump the full graph
-  retab workflows entities wf_abc123
-
-  # Save to disk for offline editing or diffs
-  retab workflows entities wf_abc123 > wf_abc123.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.GetEntities(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsResolvedSchemasCmd = &cobra.Command{
-	Use:   "resolved-schemas <workflow-id>",
-	Short: "Get the resolved input/output schemas for every block",
-	Long: `Compute the resolved input and output JSON schemas for every
-block in the draft graph, after applying type propagation across edges.
-Useful for confirming a block sees the shape you expect before running.
-
-For a single block, prefer ` + "`workflows blocks resolved-schemas`" + `.`,
-	Example: `  # Inspect schemas across the whole graph
-  retab workflows resolved-schemas wf_abc123
-
-  # Grep for a specific block's output
-  retab workflows resolved-schemas wf_abc123 \
-    | jq '.blocks["blk_extract_1"].output_schema'`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.GetResolvedSchemas(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 var workflowsDiagnoseCmd = &cobra.Command{
 	Use:   "diagnose <workflow-id>",
 	Short: "Diagnose the persisted draft graph (use --graph-file to send an in-memory graph)",
@@ -580,14 +467,11 @@ review configuration warnings, unreachable paths.
 By default diagnoses the persisted draft. Pass ` + "`--graph-file`" + ` to
 diagnose an in-memory graph (e.g. before persisting changes) — the file
 must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
-` + "`re_propagate`" + ` fields, in the same shape as
-` + "`workflows entities`" + ` output.`,
+` + "`re_propagate`" + ` fields.`,
 	Example: `  # Diagnose the persisted draft
   retab workflows diagnose wf_abc123
 
   # Diagnose a proposed graph before persisting
-  retab workflows entities wf_abc123 > graph.json
-  # edit graph.json
   retab workflows diagnose wf_abc123 --graph-file ./graph.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -654,10 +538,8 @@ func init() {
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
 	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
-	workflowsSnapshotsCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max snapshots to return (1-100)")
-
 	workflowsDiagnoseCmd.Flags().String("graph-file", "", "JSON file with {blocks, edges, re_propagate} to diagnose without persisting")
 
-	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDuplicateCmd, workflowsSnapshotsCmd, workflowsEntitiesCmd, workflowsResolvedSchemasCmd, workflowsDiagnoseCmd)
+	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDiagnoseCmd)
 	rootCmd.AddCommand(workflowsCmd)
 }

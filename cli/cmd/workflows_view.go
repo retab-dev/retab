@@ -36,8 +36,7 @@ var workflowsViewCmd = &cobra.Command{
 	Use:   "view <workflow-id>",
 	Short: "Show a workflow as an ASCII graph",
 	Long: `Fetch the workflow's draft graph and render it as a compact ASCII
-map. This is a human-oriented view for terminal inspection; use
-` + "`workflows entities`" + ` when you need the full JSON payload.`,
+map. This is a human-oriented view for terminal inspection.`,
 	Example: `  # Inspect the graph shape in your terminal
   retab workflows view wf_abc123`,
 	Args: cobra.ExactArgs(1),
@@ -48,15 +47,34 @@ map. This is a human-oriented view for terminal inspection; use
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.GetEntities(ctx, args[0])
+		workflow, err := client.Workflows.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
-		return renderWorkflowASCIIView(cmd.OutOrStdout(), result)
+		blocks, err := client.Workflows.Blocks.List(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		edges, err := client.Workflows.Edges.List(ctx, args[0], nil)
+		if err != nil {
+			return err
+		}
+		graph := &workflowGraph{
+			Workflow: *workflow,
+			Blocks:   blocks.Data,
+			Edges:    edges.Data,
+		}
+		return renderWorkflowASCIIView(cmd.OutOrStdout(), graph)
 	}),
 }
 
-func renderWorkflowASCIIView(w io.Writer, graph *retab.WorkflowWithEntities) error {
+type workflowGraph struct {
+	Workflow retab.Workflow
+	Blocks   []retab.WorkflowBlock
+	Edges    []retab.WorkflowEdgeDoc
+}
+
+func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 	if graph == nil {
 		return fmt.Errorf("workflow graph is missing")
 	}

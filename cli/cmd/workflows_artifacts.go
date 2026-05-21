@@ -93,7 +93,7 @@ var workflowsArtifactsListCmd = &cobra.Command{
 
 The run id is positional, matching the other ` + "`workflows <X> list`" + `
 commands (` + "`workflows tests list <wf-id>`" + `,
-` + "`workflows runs steps list <run-id>`" + `, …): the positional slot is
+` + "`workflows steps list <run-id>`" + `, …): the positional slot is
 always the parent id, and flags are reserved for filters.`,
 	Example: `  # All artifacts from a run
   retab workflows artifacts list run_xyz789

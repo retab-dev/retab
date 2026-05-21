@@ -319,66 +319,31 @@ describe('workflows client', () => {
     expect(wf.published?.version_id).toBe('ver_0123456789abcdef0123456789abcdef');
   });
 
-  test('getEntities() returns blocks and edges', async () => {
-    const mockClient = new MockClient({
-      workflow: {
-        id: 'wf_1',
-        name: 'Test',
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
-      },
-      blocks: [
-        {
-          id: 'start-1',
-          workflow_id: 'wf_1',
-          draft_version: 'draft_1',
-          type: 'start-document',
-          label: 'Doc Input',
-        },
-        {
-          id: 'extract-1',
-          workflow_id: 'wf_1',
-          draft_version: 'draft_1',
-          type: 'extract',
-          label: 'Extract',
-        },
-      ],
-      edges: [
-        {
-          id: 'edge-1',
-          workflow_id: 'wf_1',
-          draft_version: 'draft_1',
-          source_block: 'start-1',
-          target_block: 'extract-1',
-        },
-      ],
-    });
-    const workflowsClient = new APIWorkflows(mockClient);
+  test('removed workflow methods are not exposed', () => {
+    const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    const entities = await workflowsClient.getEntities('wf_1');
-
-    expect(mockClient.lastFetchParams?.url).toBe('/workflows/wf_1/entities');
-    expect(entities.blocks).toHaveLength(2);
-    expect(entities.edges).toHaveLength(1);
-    expect(entities.edges[0]?.draft_version).toBe('draft_1');
-    expect(entities.blocks.filter((b) => b.type === 'start-document')).toHaveLength(1);
+    expect('duplicate' in workflowsClient).toBe(false);
+    expect('getEntities' in workflowsClient).toBe(false);
+    expect('get_entities' in workflowsClient).toBe(false);
+    expect('getResolvedSchemas' in workflowsClient).toBe(false);
+    expect('get_resolved_schemas' in workflowsClient).toBe(false);
+    expect('prepare_get_resolved_schemas' in workflowsClient).toBe(false);
+    expect('listSnapshots' in workflowsClient).toBe(false);
+    expect('list_snapshots' in workflowsClient).toBe(false);
+    expect('prepare_list_snapshots' in workflowsClient).toBe(false);
   });
 
   test('prepare_diagnose exposes the Python prepared-request surface', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
-    const blocks = [{ id: 'start-1', type: 'start-document' }];
-    const edges = [{ id: 'edge-1', source: 'start-1', target: 'extract-1' }];
 
-    expect(workflowsClient.prepare_diagnose('wf_1', blocks, edges, false)).toEqual({
+    expect(workflowsClient.prepare_diagnose('wf_1', false)).toEqual({
       url: '/workflows/wf_1/diagnose-graph',
       method: 'POST',
       body: {
-        blocks,
-        edges,
         re_propagate: false,
       },
     });
-    expect(workflowsClient.prepare_diagnose('wf_1', blocks, edges).body.re_propagate).toBe(true);
+    expect(workflowsClient.prepare_diagnose('wf_1').body.re_propagate).toBe(true);
   });
 
   test('diagnoseGraph preserves warning-only diagnoses', async () => {
@@ -411,6 +376,33 @@ describe('workflows client', () => {
     expect(diagnosis.is_valid).toBe(true);
     expect(diagnosis.issues[0]?.severity).toBe('warning');
     expect(diagnosis.issues[0]?.code).toBe('MISSING_REVIEW_PREDICATE');
+  });
+
+  test('diagnose() posts directly to the diagnose route', async () => {
+    const mockClient = new MockClient({
+      is_valid: true,
+      issues: [],
+      suggestions: [],
+      stats: {
+        total_blocks: 1,
+        total_edges: 0,
+        block_types: { 'start-document': 1 },
+        start_document_blocks: 1,
+      },
+    });
+    const workflowsClient = new APIWorkflows(mockClient);
+
+    await workflowsClient.diagnose('wf_1', { rePropagate: false });
+
+    expect(mockClient.lastFetchParams).toEqual({
+      url: '/workflows/wf_1/diagnose-graph',
+      method: 'POST',
+      body: {
+        re_propagate: false,
+      },
+      params: undefined,
+      headers: undefined,
+    });
   });
 
   test('artifacts prepare helpers expose the Python prepared-request surface', () => {
@@ -447,7 +439,11 @@ describe('workflows client', () => {
     expect('getMetrics' in workflowsClient.experiments).toBe(false);
     expect('get_content' in workflowsClient.experiments).toBe(false);
     expect('getContent' in workflowsClient.experiments).toBe(false);
-    expect(typeof workflowsClient.experiments.list_eligible_blocks).toBe('function');
+    expect('duplicate' in workflowsClient.experiments).toBe(false);
+    expect('prepare_duplicate' in workflowsClient.experiments).toBe(false);
+    expect('listEligibleBlocks' in workflowsClient.experiments).toBe(false);
+    expect('list_eligible_blocks' in workflowsClient.experiments).toBe(false);
+    expect('prepare_list_eligible_blocks' in workflowsClient.experiments).toBe(false);
     expect('prepare_run_batch' in workflowsClient.experiments).toBe(false);
     expect('run_batch' in workflowsClient.experiments).toBe(false);
     expect('runBatch' in workflowsClient.experiments).toBe(false);
@@ -467,9 +463,12 @@ describe('workflows client', () => {
       method: 'GET',
     });
     expect(workflowsClient.experiments.runs.prepare_create('wf_1', 'exp_1')).toEqual({
-      url: '/workflows/experiments/exp_1/runs?workflow_id=wf_1',
+      url: '/workflows/experiments/runs',
       method: 'POST',
-      body: {},
+      body: {
+        experiment_id: 'exp_1',
+        workflow_id: 'wf_1',
+      },
     });
     expect('prepare_run_document' in workflowsClient.experiments.runs).toBe(false);
     expect('run_document' in workflowsClient.experiments.runs).toBe(false);
@@ -490,27 +489,10 @@ describe('workflows client', () => {
     expect(mockClient.lastFetchParams?.method).toBe('DELETE');
   });
 
-  test('duplicate() sends POST to /workflows/{id}/duplicate', async () => {
-    const mockClient = new MockClient({
-      id: 'wf_copy',
-      name: 'Test (Copy)',
-      published: null,
-      email_trigger: { allowed_senders: [], allowed_domains: [] },
-      created_at: '2026-03-12T10:00:00Z',
-      updated_at: '2026-03-12T10:00:00Z',
-    });
-    const workflowsClient = new APIWorkflows(mockClient);
-
-    const wf = await workflowsClient.duplicate('wf_1');
-
-    expect(mockClient.lastFetchParams?.url).toBe('/workflows/wf_1/duplicate');
-    expect(wf.id).toBe('wf_copy');
-  });
-
-  test('runs.get() ignores legacy steps field (now fetched via steps.list())', async () => {
+  test('runs.get() ignores legacy steps field (now fetched via workflows.steps.list())', async () => {
     // Older servers may still include `steps` in the run payload; the SDK
     // no longer surfaces it on the WorkflowRun type. Per-step records are
-    // fetched via `client.workflows.runs.steps.list(run_id)`.
+    // fetched via `client.workflows.steps.list(run_id)`.
     const mockClient = new MockClient({
       id: 'run_123',
       workflow: {
@@ -615,73 +597,22 @@ describe('workflows client', () => {
     });
   });
 
-  test('blocks.createBatch() accepts camelCase request objects', async () => {
-    const mockClient = new MockClient([
-      { id: 'start-1', workflow_id: 'wf_1', draft_version: 'draft_1', type: 'start-document' },
-      { id: 'extract-1', workflow_id: 'wf_1', draft_version: 'draft_1', type: 'extract' },
-    ]);
-    const blocksClient = new APIWorkflowBlocks(mockClient);
-
-    const blocks = await blocksClient.createBatch('wf_1', [
-      { id: 'start-1', type: 'start-document' },
-      { id: 'extract-1', type: 'extract', positionX: 120, positionY: 80 },
-    ]);
-
-    expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/blocks/batch?workflow_id=wf_1',
-      method: 'POST',
-      body: [
-        {
-          id: 'start-1',
-          type: 'start-document',
-          label: '',
-          position_x: 0,
-          position_y: 0,
-          width: undefined,
-          height: undefined,
-          config: undefined,
-          parent_id: undefined,
-        },
-        {
-          id: 'extract-1',
-          type: 'extract',
-          label: '',
-          position_x: 120,
-          position_y: 80,
-          width: undefined,
-          height: undefined,
-          config: undefined,
-          parent_id: undefined,
-        },
-      ],
-      params: undefined,
-      headers: undefined,
-    });
-    expect(blocks.map((block) => block.id)).toEqual(['start-1', 'extract-1']);
-  });
-
-  test('blocks.prepare_simulate exposes the Python prepared-request surface', () => {
+  test('removed block methods are not exposed', () => {
     const blocksClient = new APIWorkflowBlocks(new MockClient({}));
 
-    expect(blocksClient.prepare_simulate('run_1', 'extract-1', 5, 'step_1', false)).toEqual({
-      url: '/workflows/simulations',
-      method: 'POST',
-      data: {
-        run_id: 'run_1',
-        step_id: 'step_1',
-        source_step_id: 'step_1',
-        n_consensus: 5,
-        check_eligibility: false,
-      },
-    });
-    expect(blocksClient.prepare_simulate('run_1', 'extract-1')).toEqual({
-      url: '/workflows/simulations',
-      method: 'POST',
-      data: {
-        run_id: 'run_1',
-        step_id: 'extract-1',
-      },
-    });
+    expect('configHistory' in blocksClient).toBe(false);
+    expect('config_history' in blocksClient).toBe(false);
+    expect('prepare_config_history' in blocksClient).toBe(false);
+    expect('getResolvedSchemas' in blocksClient).toBe(false);
+    expect('get_resolved_schemas' in blocksClient).toBe(false);
+    expect('prepare_get_resolved_schemas' in blocksClient).toBe(false);
+    expect('createBatch' in blocksClient).toBe(false);
+    expect('create_batch' in blocksClient).toBe(false);
+    expect('listSimulations' in blocksClient).toBe(false);
+    expect('list_simulations' in blocksClient).toBe(false);
+    expect('prepare_list_simulations' in blocksClient).toBe(false);
+    expect('simulate' in blocksClient).toBe(false);
+    expect('prepare_simulate' in blocksClient).toBe(false);
   });
 
   test('workflow blocks expose live-editing metadata', async () => {
@@ -721,52 +652,6 @@ describe('workflows client', () => {
     const block = await blocksClient.get('wf_1', 'extract-1');
 
     expect('resolved_schemas' in block).toBe(false);
-  });
-
-  test('workflow resolved schema endpoints parse public field_ref_drift', async () => {
-    const workflowSchemasClient = new MockClient({
-      workflow_id: 'wf_1',
-      draft_version: 'draft_1',
-      schemas: {
-        'extract-1': {
-          input_schemas: {},
-          output_schemas: {
-            'output-json-0': {
-              type: 'object',
-              properties: { invoice_number: { type: 'string' } },
-            },
-          },
-          field_ref_drift: { stale: true },
-        },
-      },
-    });
-    const workflowsClient = new APIWorkflows(workflowSchemasClient);
-    const workflowSchemas = await workflowsClient.getResolvedSchemas('wf_1');
-
-    expect(workflowSchemasClient.lastFetchParams?.url).toBe('/workflows/wf_1/resolved-schemas');
-    expect(workflowSchemas.schemas['extract-1'].field_ref_drift?.stale).toBe(true);
-    expect(
-      workflowSchemas.schemas['extract-1'].output_schemas['output-json-0']?.properties
-        .invoice_number.type
-    ).toBe('string');
-
-    const blockSchemasClient = new MockClient({
-      workflow_id: 'wf_1',
-      block_id: 'extract-1',
-      draft_version: 'draft_1',
-      schema: {
-        input_schemas: {},
-        output_schemas: { 'output-json-0': { type: 'object' } },
-        field_ref_drift: null,
-      },
-    });
-    const blocksClient = new APIWorkflowBlocks(blockSchemasClient);
-    const blockSchemas = await blocksClient.getResolvedSchemas('wf_1', 'extract-1');
-
-    expect(blockSchemasClient.lastFetchParams?.url).toBe(
-      '/workflows/blocks/extract-1/resolved-schemas?workflow_id=wf_1'
-    );
-    expect(blockSchemas.schema.field_ref_drift).toBeNull();
   });
 
   test('step execution responses ignore removed payload schemas', () => {
@@ -845,38 +730,13 @@ describe('workflows client', () => {
     expect('terminal' in parsed).toBe(false);
   });
 
-  test('edges.createBatch() accepts camelCase request objects', async () => {
-    const mockClient = new MockClient([
-      {
-        id: 'edge-1',
-        workflow_id: 'wf_1',
-        draft_version: 'draft_1',
-        source_block: 'start-1',
-        target_block: 'extract-1',
-      },
-    ]);
-    const edgesClient = new APIWorkflowEdges(mockClient);
+  test('removed edge methods are not exposed', () => {
+    const edgesClient = new APIWorkflowEdges(new MockClient({}));
 
-    const edges = await edgesClient.createBatch('wf_1', [
-      { id: 'edge-1', sourceBlock: 'start-1', targetBlock: 'extract-1' },
-    ]);
-
-    expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/edges/batch?workflow_id=wf_1',
-      method: 'POST',
-      body: [
-        {
-          id: 'edge-1',
-          source_block: 'start-1',
-          target_block: 'extract-1',
-          source_handle: undefined,
-          target_handle: undefined,
-        },
-      ],
-      params: undefined,
-      headers: undefined,
-    });
-    expect(edges.map((edge) => edge.id)).toEqual(['edge-1']);
+    expect('createBatch' in edgesClient).toBe(false);
+    expect('create_batch' in edgesClient).toBe(false);
+    expect('deleteAll' in edgesClient).toBe(false);
+    expect('delete_all' in edgesClient).toBe(false);
   });
 
   test('runs.create() passes FileRef documents without content', async () => {
@@ -895,9 +755,10 @@ describe('workflows client', () => {
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/wf_1/run',
+      url: '/workflows/runs',
       method: 'POST',
       body: {
+        workflow_id: 'wf_1',
         documents: {
           start_1: {
             id: 'file_existing',
@@ -928,9 +789,10 @@ describe('workflows client', () => {
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/wf_1/run',
+      url: '/workflows/runs',
       method: 'POST',
       body: {
+        workflow_id: 'wf_1',
         documents: {
           start_1: {
             filename: 'note.txt',
@@ -964,16 +826,16 @@ describe('workflows client', () => {
     expect(result.cancellation_status).toBe('cancelled');
   });
 
-  test('runs.restart() sends POST to /restart', async () => {
+  test('runs.restart() sends POST to flat run creation route', async () => {
     const mockClient = new MockClient(makeV2Run({ id: 'run_2', lifecycle: { status: 'running' } }));
     const runsClient = new APIWorkflowRuns(mockClient);
 
     const run = await runsClient.restart('run_1', { commandId: 'cmd_2' });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/runs/run_1/restart',
+      url: '/workflows/runs',
       method: 'POST',
-      body: { command_id: 'cmd_2' },
+      body: { restart_of: 'run_1', command_id: 'cmd_2' },
       params: undefined,
       headers: undefined,
     });
@@ -1026,5 +888,8 @@ describe('workflow runs', () => {
     expect('waitForCompletion' in runsClient).toBe(false);
     expect('wait_for_completion' in runsClient).toBe(false);
     expect('createAndWait' in runsClient).toBe(false);
+    expect('getConfig' in runsClient).toBe(false);
+    expect('executionOrder' in runsClient).toBe(false);
+    expect('getDocumentUrl' in runsClient).toBe(false);
   });
 });

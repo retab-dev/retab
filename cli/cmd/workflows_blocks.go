@@ -20,9 +20,7 @@ typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 The workhorse here is ` + "`update`" + ` — once a block is on the graph, tune
 its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
 or deep-merge review config with ` + "`--merge-config-file`" + ` rather than
-deleting and re-creating. To test a config change without
-re-running the whole workflow, use ` + "`workflows blocks simulate`" + ` to
-replay one block against a past run's input.`,
+deleting and re-creating.`,
 	Example: `  # List blocks
   retab workflows blocks list wf_abc123
 
@@ -31,11 +29,7 @@ replay one block against a past run's input.`,
 
   # Tune just the config of an existing block
   retab workflows blocks update wf_abc123 blk_def456 \
-    --config-file ./new-config.json
-
-  # Test that config change against an existing run, without a full re-run
-  retab workflows blocks simulate \
-    --run-id run_xyz789 --block-id blk_def456`,
+    --config-file ./new-config.json`,
 }
 
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
@@ -162,32 +156,6 @@ parent group, and the typed config blob.`,
 	}),
 }
 
-var workflowsBlocksResolvedSchemasCmd = &cobra.Command{
-	Use:   "resolved-schemas <workflow-id> <block-id>",
-	Short: "Get the resolved schema for a single block",
-	Long: `Resolve the input and output JSON schemas for one block after
-propagating types from its upstream edges. Use this to confirm a block
-sees the shape you expect before running.
-
-For all blocks at once, use ` + "`workflows resolved-schemas`" + `.`,
-	Example: `  # Inspect schemas for one block
-  retab workflows blocks resolved-schemas wf_abc123 blk_def456`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Blocks.GetResolvedSchemas(ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 var workflowsBlocksCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id>",
 	Short: "Create a workflow block from --block-file",
@@ -207,9 +175,8 @@ Extract also supports ` + "`any_required_field_null`" + ` and ` + "`field_confid
 split and split-by-key ` + "`for_each`" + ` support ` + "`split_count_neq`" + `,
 ` + "`any_split_pages_lt`" + `, and ` + "`boundary_confidence_lt`" + `; classifier
 supports ` + "`category_in`" + ` and ` + "`top_margin_lt`" + `.
-Review is not a standalone block type.
+Review is not a standalone block type.`,
 
-For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
 	Example: `  # Add one block from a JSON file
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
@@ -263,60 +230,6 @@ For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		result, err := client.Workflows.Blocks.Create(ctx, args[0], req)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsBlocksCreateBatchCmd = &cobra.Command{
-	Use:   "create-batch <workflow-id>",
-	Short: "Create multiple workflow blocks from --blocks-file (JSON array)",
-	Long: `Add many blocks in one call. The file is a JSON array of block
-objects, each shaped like the ` + "`--block-file`" + ` payload accepted by
-` + "`workflows blocks create`" + `.
-
-Each block can include ` + "`config.review`" + ` when its type supports review.
-Review is not a standalone block type.
-
-Preferred when scaffolding an entire workflow programmatically — fewer
-round-trips and atomic from the caller's perspective.`,
-	Example: `  # Bulk-create a graph from a manifest
-  retab workflows blocks create-batch wf_abc123 \
-    --blocks-file ./graph/blocks.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path, _ := cmd.Flags().GetString("blocks-file")
-		if path == "" {
-			return fmt.Errorf("--blocks-file is required")
-		}
-		arr, err := readJSONArray(path)
-		if err != nil {
-			return err
-		}
-		if len(arr) == 0 {
-			return fmt.Errorf("--blocks-file: empty JSON array")
-		}
-		var reqs []retab.WorkflowBlockCreateRequest
-		for i, item := range arr {
-			obj, ok := item.(map[string]any)
-			if !ok {
-				return fmt.Errorf("--blocks-file[%d]: must be a JSON object", i)
-			}
-			r, err := parseBlockCreate(obj)
-			if err != nil {
-				return fmt.Errorf("--blocks-file[%d]: %w", i, err)
-			}
-			reqs = append(reqs, r)
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Blocks.CreateBatch(ctx, args[0], reqs)
 		if err != nil {
 			return err
 		}
@@ -453,61 +366,8 @@ deletion only affects the draft.`,
 	}),
 }
 
-var workflowsBlocksSimulateCmd = &cobra.Command{
-	Use:   "simulate",
-	Short: "Replay one block against an existing run",
-	Long: `Re-execute a single block using a past run's stored input,
-without re-running the whole workflow. The fastest feedback loop for
-tuning a block's config: update the config, simulate against a known
-input, compare outputs.
-
-Pass ` + "`--n-consensus`" + ` to draw multiple samples for variance
-testing.`,
-	Example: `  # Replay block blk_def456 against an existing run
-  retab workflows blocks simulate \
-    --run-id run_xyz789 --block-id blk_def456
-
-  # Replay with 3-sample consensus
-  retab workflows blocks simulate \
-    --run-id run_xyz789 --block-id blk_def456 --n-consensus 3`,
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		runID, err := requireNonBlankFlag(cmd, "run-id")
-		if err != nil {
-			return err
-		}
-		blockID, err := requireNonBlankFlag(cmd, "block-id")
-		if err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		stepID, _ := cmd.Flags().GetString("step-id")
-		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
-		req := retab.SimulateBlockRequest{
-			RunID:      runID,
-			BlockID:    blockID,
-			StepID:     stepID,
-			NConsensus: nConsensus,
-		}
-		if cmd.Flags().Changed("check-eligibility") {
-			v, _ := cmd.Flags().GetBool("check-eligibility")
-			req.CheckEligibility = &v
-		}
-		result, err := client.Workflows.Blocks.Simulate(ctx, req)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 func init() {
 	workflowsBlocksCreateCmd.Flags().String("block-file", "", "JSON file describing the block (or - for stdin)")
-	workflowsBlocksCreateBatchCmd.Flags().String("blocks-file", "", "JSON array of blocks (or - for stdin)")
 
 	workflowsBlocksUpdateCmd.Flags().String("label", "", "update label")
 	workflowsBlocksUpdateCmd.Flags().Float64("position-x", 0, "update X position")
@@ -518,14 +378,6 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file with new config (or - for stdin)")
 	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config (or - for stdin)")
 
-	workflowsBlocksSimulateCmd.Flags().String("run-id", "", "run id (required)")
-	workflowsBlocksSimulateCmd.Flags().String("block-id", "", "block id (required)")
-	workflowsBlocksSimulateCmd.Flags().String("step-id", "", "step id")
-	workflowsBlocksSimulateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
-	workflowsBlocksSimulateCmd.Flags().Bool("check-eligibility", true, "check block eligibility")
-	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("run-id")
-	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("block-id")
-
-	workflowsBlocksCmd.AddCommand(workflowsBlocksListCmd, workflowsBlocksGetCmd, workflowsBlocksResolvedSchemasCmd, workflowsBlocksCreateCmd, workflowsBlocksCreateBatchCmd, workflowsBlocksUpdateCmd, workflowsBlocksDeleteCmd, workflowsBlocksSimulateCmd)
+	workflowsBlocksCmd.AddCommand(workflowsBlocksListCmd, workflowsBlocksGetCmd, workflowsBlocksCreateCmd, workflowsBlocksUpdateCmd, workflowsBlocksDeleteCmd)
 	workflowsCmd.AddCommand(workflowsBlocksCmd)
 }

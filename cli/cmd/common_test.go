@@ -124,7 +124,7 @@ func TestRenderAPIErrorForCLISurfacesNestedErrorMessage(t *testing.T) {
 		Code:       "HTTP_EXCEPTION",
 		Message:    "An HTTP exception occurred.",
 		Method:     http.MethodPost,
-		URL:        "http://localhost:4000/v1/workflows/wf_1/run",
+		URL:        "http://localhost:4000/v1/workflows/runs",
 		Details: map[string]any{
 			"error": map[string]any{
 				"code":    "production_required_but_unpublished",

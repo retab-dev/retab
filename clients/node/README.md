@@ -73,8 +73,8 @@ if (currentRun.lifecycle.status === "cancelled") {
   throw new Error(currentRun.lifecycle.reason ?? "Workflow run was cancelled");
 }
 
-const steps = await retab.workflows.runs.steps.list(currentRun.id);
-const extractStep = await retab.workflows.runs.steps.get(currentRun.id, "extract-1");
+const steps = await retab.workflows.steps.list(currentRun.id);
+const extractStep = await retab.workflows.steps.get(currentRun.id, "extract-1");
 const artifact = extractStep.artifact
   ? await retab.workflows.artifacts.get(extractStep.artifact)
   : null;
@@ -82,7 +82,7 @@ const runArtifacts = await retab.workflows.artifacts.list({
   runId: currentRun.id,
 });
 
-console.log(steps.map((step) => `${step.block_id}: ${step.lifecycle.status}`));
+console.log(steps.data.map((step) => `${step.block_id}: ${step.lifecycle.status}`));
 console.log(extractStep.handle_outputs["output-json-0"]?.data);
 console.log(artifact);
 console.log(runArtifacts);

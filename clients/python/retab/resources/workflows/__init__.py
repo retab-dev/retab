@@ -1,6 +1,7 @@
 from .client import AsyncWorkflows, Workflows
 from .artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
 from .specs import AsyncWorkflowSpecs, WorkflowSpecs
+from .steps import AsyncWorkflowSteps, WorkflowSteps
 
 __all__ = [
     "Workflows",
@@ -9,4 +10,6 @@ __all__ = [
     "AsyncWorkflowArtifacts",
     "WorkflowSpecs",
     "AsyncWorkflowSpecs",
+    "WorkflowSteps",
+    "AsyncWorkflowSteps",
 ]

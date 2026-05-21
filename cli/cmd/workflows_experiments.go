@@ -29,8 +29,8 @@ experiment via ` + "`workflows experiments runs create`" + `.
 
 For deterministic regression testing of a single pinned assertion, see
 ` + "`retab workflows tests --help`" + `.`,
-	Example: `  # See which blocks support experiments
-  retab workflows experiments eligible-blocks wf_abc123
+	Example: `  # List experiments for a workflow
+  retab workflows experiments list wf_abc123
 
   # Create an experiment on one block, capturing documents from real runs
   retab workflows experiments create wf_abc123 \
@@ -303,69 +303,6 @@ production runs and artifacts are unaffected.`,
 	}),
 }
 
-var workflowsExperimentsDuplicateCmd = &cobra.Command{
-	Use:   "duplicate <workflow-id> <experiment-id>",
-	Short: "Duplicate an experiment",
-	Long: `Fork an existing experiment with the same document set and
-config — convenient when iterating on minor variations without losing
-the previous experiment's results.`,
-	Example: `  # Fork an experiment for tweaking
-  retab workflows experiments duplicate wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Experiments.Duplicate(ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsExperimentsEligibleBlocksCmd = &cobra.Command{
-	Use:   "eligible-blocks <workflow-id>",
-	Short: "List blocks eligible for experiments",
-	Long: `List the blocks in a workflow that can host an experiment.
-Not every block type is eligible — typically ` + "`extract`" + `,
-` + "`classifier`" + `, and other LLM-backed blocks are supported. Use this
-to discover what to experiment on before calling
-` + "`workflows experiments create`" + `.`,
-	Example: `  # See which blocks support experiments
-  retab workflows experiments eligible-blocks wf_abc123`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Experiments.ListEligibleBlocks(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printEligibleBlocksResult(cmd, result)
-	}),
-}
-
-func printEligibleBlocksResult(cmd *cobra.Command, result *retab.EligibleBlockListResponse) error {
-	var raw string
-	if cmd != nil {
-		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
-			raw = f.Value.String()
-		}
-	}
-	if raw != string(OutputTable) {
-		return printResult(cmd, result)
-	}
-	return printResult(cmd, map[string]any{"data": result.Blocks})
-}
-
 // ---- experiment runs subgroup ----
 
 var workflowsExperimentsRunsCmd = &cobra.Command{
@@ -397,7 +334,11 @@ document in its set.`,
   retab workflows experiments runs create wf_abc123 exp_pqr678`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/"+url.PathEscape(args[0])+"/experiments/"+url.PathEscape(args[1])+"/runs", nil, map[string]any{})
+		body := map[string]any{
+			"workflow_id":   args[0],
+			"experiment_id": args[1],
+		}
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs", nil, body)
 		if err != nil {
 			return err
 		}
@@ -580,6 +521,6 @@ func init() {
 	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
 	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
 	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd, workflowsExperimentsRunsResultsCmd, workflowsExperimentsRunsMetricsCmd)
-	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsDuplicateCmd, workflowsExperimentsEligibleBlocksCmd, workflowsExperimentsRunsCmd)
+	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd)
 	workflowsCmd.AddCommand(workflowsExperimentsCmd)
 }

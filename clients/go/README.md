@@ -8,7 +8,7 @@ This Go SDK mirrors the Node SDK service tree:
 - `client.Extractions`, `client.Parses`, `client.Splits`, `client.Classifications`, `client.Partitions`
 - `client.Edits` and `client.Edits.Templates`
 - `client.Jobs`
-- `client.Workflows`, including `Runs`, `Runs.Steps`, `Blocks`, `Edges`, `Tests`, and `Tests.Runs`
+- `client.Workflows`, including `Runs`, `Steps`, `Blocks`, `Edges`, `Tests`, and `Tests.Runs`
 
 `Steps.List` returns the step roster/status summaries for a run. `Steps.Get` requires both the run ID and block ID and returns the full execution record for that single step.
 
@@ -45,12 +45,12 @@ func main() {
 	}
 	fmt.Println(run.ID, run.Lifecycle.Status)
 
-	stepSummaries, err := client.Workflows.Runs.Steps.List(ctx, run.ID)
+	stepSummaries, err := client.Workflows.Steps.List(ctx, run.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, summary := range stepSummaries {
-		step, err := client.Workflows.Runs.Steps.Get(ctx, run.ID, summary.BlockID)
+	for _, summary := range stepSummaries.Data {
+		step, err := client.Workflows.Steps.Get(ctx, run.ID, summary.BlockID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -121,7 +121,7 @@ if err != nil {
 	log.Fatal(err)
 }
 
-step, err := client.Workflows.Runs.Steps.Get(ctx, run.ID, "extract-1")
+step, err := client.Workflows.Steps.Get(ctx, run.ID, "extract-1")
 if err != nil {
 	log.Fatal(err)
 }

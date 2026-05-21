@@ -18,28 +18,22 @@ type sdkOperation struct {
 }
 
 var sdkMethodCommandAliases = map[string]string{
-	"ConfigHistory":      "",
-	"CreateBatch":        "create-batch",
-	"CreateVersion":      "versions create",
-	"CreateStream":       "stream",
-	"CreateUpload":       "create-upload",
-	"CompleteUpload":     "complete-upload",
-	"DiagnoseGraph":      "diagnose",
-	"GetConfig":          "config",
-	"GetDocumentURL":     "document-url",
-	"GetDownloadLink":    "download-link",
-	"GetEntities":        "entities",
-	"GetRef":             "",
-	"GetResolvedSchemas": "resolved-schemas",
-	"ListEligibleBlocks": "eligible-blocks",
-	"ListSimulations":    "",
-	"ListSnapshots":      "snapshots",
-	"WaitFor":            "wait",
-	"WaitForCompletion":  "wait",
+	"CreateStream":      "stream",
+	"CreateUpload":      "create-upload",
+	"CompleteUpload":    "complete-upload",
+	"DiagnoseGraph":     "diagnose",
+	"GetDownloadLink":   "download-link",
+	"GetRef":            "",
+	"WaitForCompletion": "wait",
 }
 
 var sdkResourceCommandAliases = map[string]string{
 	"Specs": "spec",
+}
+
+var workflowCLIOnlyCommands = map[string]string{
+	"workflows reviews schema": "local schema helper composed from reviews get",
+	"workflows view":           "terminal graph renderer composed from workflow graph reads",
 }
 
 func TestCLIExposesGoSDKOperationSurface(t *testing.T) {
@@ -68,6 +62,37 @@ func TestCLIExposesGoSDKOperationSurface(t *testing.T) {
 	sort.Strings(missing)
 	if len(missing) > 0 {
 		t.Fatalf("CLI is missing commands for SDK operations:\n%s", strings.Join(missing, "\n"))
+	}
+}
+
+func TestWorkflowCLICommandsDoNotDriftFromGoSDK(t *testing.T) {
+	client, err := retab.NewClient("test-key")
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	expected := map[string]bool{}
+	for _, operation := range collectSDKOperations(reflect.TypeOf(client).Elem()) {
+		if strings.HasPrefix(operation.commandPath, "workflows ") {
+			expected[operation.commandPath] = true
+		}
+	}
+
+	available := collectLeafCommandPaths(rootCmd)
+	var stale []string
+	for commandPath := range available {
+		if !strings.HasPrefix(commandPath, "workflows ") {
+			continue
+		}
+		if expected[commandPath] || workflowCLIOnlyCommands[commandPath] != "" {
+			continue
+		}
+		stale = append(stale, "retab "+commandPath)
+	}
+
+	sort.Strings(stale)
+	if len(stale) > 0 {
+		t.Fatalf("workflow CLI exposes commands not present in Go SDK:\n%s", strings.Join(stale, "\n"))
 	}
 }
 

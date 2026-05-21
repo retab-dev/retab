@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -176,7 +177,7 @@ var workflowsRunsCmd = &cobra.Command{
 
 A run is one execution of a workflow against a set of inputs. Use this
 subgroup to start runs (` + "`create`" + `), watch their lifecycle
-(` + "`get`" + `, ` + "`steps list`" + `), or restart failed runs
+(` + "`get`" + `, ` + "`workflows steps list`" + `), or restart failed runs
 (` + "`restart`" + `).
 
 Review-based: when a block pauses for review, the run enters status
@@ -196,7 +197,7 @@ For declarative regression testing of workflow outputs, see
   retab workflows runs get run_xyz789
 
   # Stream per-block execution records
-  retab workflows runs steps list run_xyz789
+  retab workflows steps list run_xyz789
 
   # Cancel an in-flight run
   retab workflows runs cancel run_xyz789
@@ -229,7 +230,7 @@ JSON instead of (or alongside) documents.
 
 By default the workflow's latest published version runs; pin a specific
 version with ` + "`--version`" + `. Inspect the resulting run with
-` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.
+` + "`workflows runs get`" + ` or ` + "`workflows steps list`" + `.
 
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
@@ -314,12 +315,117 @@ removed in a future release.`,
 				return err
 			}
 		}
-		result, err := client.Workflows.Runs.Create(ctx, req)
+		body, err := workflowRunCreateRequestBody(req)
+		if err != nil {
+			return err
+		}
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/runs", nil, body)
 		if err != nil {
 			return err
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+func workflowRunCreateRequestBody(request retab.CreateWorkflowRunRequest) (map[string]any, error) {
+	if request.WorkflowID == "" {
+		return nil, fmt.Errorf("workflow_id is required")
+	}
+	body := map[string]any{"workflow_id": request.WorkflowID}
+	if request.Documents != nil {
+		documents, err := workflowRunDocumentsRequestBody(request.Documents)
+		if err != nil {
+			return nil, err
+		}
+		body["documents"] = documents
+	}
+	if request.JSONInputs != nil {
+		body["json_inputs"] = request.JSONInputs
+	}
+	if request.Version == "" {
+		body["version"] = "production"
+	} else {
+		body["version"] = request.Version
+	}
+	return body, nil
+}
+
+func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[string]string, error) {
+	body := map[string]map[string]string{}
+	for blockID, document := range documents {
+		descriptor, err := workflowRunDocumentRequestBody(blockID, document)
+		if err != nil {
+			return nil, err
+		}
+		body[blockID] = descriptor
+	}
+	return body, nil
+}
+
+func workflowRunDocumentRequestBody(blockID string, document any) (map[string]string, error) {
+	switch value := document.(type) {
+	case retab.MIMEData:
+		return workflowRunMIMEDataRequestBody(blockID, value), nil
+	case *retab.MIMEData:
+		if value == nil {
+			return nil, fmt.Errorf("workflow run document %s must not be nil", blockID)
+		}
+		return workflowRunMIMEDataRequestBody(blockID, *value), nil
+	case map[string]string:
+		return normalizeWorkflowRunDocumentRequestBody(blockID, value), nil
+	case map[string]any:
+		descriptor := map[string]string{}
+		for _, key := range []string{"filename", "url", "content", "mime_type"} {
+			raw, ok := value[key]
+			if !ok {
+				continue
+			}
+			text, ok := raw.(string)
+			if !ok {
+				return nil, fmt.Errorf("workflow run document %s field %q must be a string", blockID, key)
+			}
+			if text != "" {
+				descriptor[key] = text
+			}
+		}
+		return normalizeWorkflowRunDocumentRequestBody(blockID, descriptor), nil
+	default:
+		mimeData, err := retab.InferMIMEData(document)
+		if err != nil {
+			return nil, fmt.Errorf("workflow run document %s must be a document descriptor or supported MIME input: %w", blockID, err)
+		}
+		return workflowRunMIMEDataRequestBody(blockID, mimeData), nil
+	}
+}
+
+func workflowRunMIMEDataRequestBody(blockID string, mimeData retab.MIMEData) map[string]string {
+	descriptor := map[string]string{}
+	if mimeData.Filename != "" {
+		descriptor["filename"] = mimeData.Filename
+	}
+	if mimeData.URL != "" {
+		descriptor["url"] = mimeData.URL
+	}
+	if mimeData.Content != "" {
+		descriptor["content"] = mimeData.Content
+	}
+	if mimeData.MIMEType != "" {
+		descriptor["mime_type"] = mimeData.MIMEType
+	}
+	return normalizeWorkflowRunDocumentRequestBody(blockID, descriptor)
+}
+
+func normalizeWorkflowRunDocumentRequestBody(blockID string, descriptor map[string]string) map[string]string {
+	normalized := map[string]string{}
+	for key, value := range descriptor {
+		if value != "" {
+			normalized[key] = value
+		}
+	}
+	if normalized["filename"] == "" {
+		normalized["filename"] = blockID
+	}
+	return normalized
 }
 
 func resolveWorkflowRunDocumentAliases(
@@ -368,7 +474,7 @@ var workflowsRunsGetCmd = &cobra.Command{
 	Short: "Get a workflow run",
 	Long: `Fetch a run's metadata: status, trigger type, timestamps,
 duration, cost, error info, final outputs. For per-block detail use
-` + "`workflows runs steps list`" + `.`,
+` + "`workflows steps list`" + `.`,
 	Example: `  # Inspect a run
   retab workflows runs get run_xyz789
 
@@ -414,9 +520,9 @@ status, trigger type, date range, cost, and duration. Page by run id
 		if err := validateWorkflowRunsListFilters(cmd); err != nil {
 			return err
 		}
-		// Honour <workflow-id> positional (matches workflows entities /
-		// blocks list / edges create convention). The flag
-		// form stays supported. If both are set and they disagree, error
+		// Honour <workflow-id> positional (matches blocks list / edges
+		// create convention). The flag form stays supported. If both are
+		// set and they disagree, error
 		// — silently picking one would mask real user mistakes.
 		flagID, _ := cmd.Flags().GetString("workflow-id")
 		var posID string
@@ -576,98 +682,23 @@ or ` + "`--command-id`" + ` for idempotency.`,
   retab workflows runs restart run_xyz789
 
   # Restart against the current draft config
-  retab workflows runs restart run_xyz789 --config-source draft`,
+ retab workflows runs restart run_xyz789 --config-source draft`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		commandID, _ := cmd.Flags().GetString("command-id")
 		configSourceValue, _ := cmd.Flags().GetString("config-source")
 		configSource, err := parseWorkflowRunConfigSource(configSourceValue)
 		if err != nil {
 			return err
 		}
-		result, err := client.Workflows.Runs.Restart(ctx, args[0], retab.WorkflowRunCommandRequest{CommandID: commandID, ConfigSource: configSource})
-		if err != nil {
-			return err
+		body := map[string]any{
+			"restart_of":    args[0],
+			"config_source": configSource,
 		}
-		return printResult(cmd, result)
-	}),
-}
-
-// The v1 review commands (submit-review / get-review / get-agent-review) were removed in
-// the hard cutover to reviews — see `workflows reviews`.
-
-var workflowsRunsConfigCmd = &cobra.Command{
-	Use:   "config <run-id>",
-	Short: "Get the workflow config used by a run",
-	Long: `Return the frozen workflow config (blocks, edges, per-block
-config) as it was at the moment the run started. Useful for forensics
-when a workflow has changed since the run executed and you want to
-understand what produced a given output.`,
-	Example: `  # Audit the config that produced an old run
-  retab workflows runs config run_xyz789`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
+		if commandID != "" {
+			body["command_id"] = commandID
 		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Runs.GetConfig(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsRunsExecutionOrderCmd = &cobra.Command{
-	Use:   "execution-order <run-id>",
-	Short: "Get the execution order for a run",
-	Long: `Return the topological order in which the run's blocks were (or
-will be) executed. Helpful for understanding scheduling when a run
-contains branches, parallel paths, or conditionals.`,
-	Example: `  # See the order blocks ran in
-  retab workflows runs execution-order run_xyz789`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Runs.ExecutionOrder(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var workflowsRunsDocumentURLCmd = &cobra.Command{
-	Use:   "document-url <run-id> <block-id>",
-	Short: "Get the document URL stored at a run/block",
-	Long: `Return a time-limited URL to the document a block consumed (or
-produced) during a run. Useful for downloading the exact bytes the
-workflow saw.`,
-	Example: `  # Fetch the original input document
-  retab workflows runs document-url run_xyz789 blk_start_1`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Runs.GetDocumentURL(ctx, args[0], args[1])
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/runs", nil, body)
 		if err != nil {
 			return err
 		}
@@ -746,32 +777,32 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 
 // ---- steps subgroup ----
 
-var workflowsRunsStepsCmd = &cobra.Command{
+var workflowsStepsCmd = &cobra.Command{
 	Use:   "steps",
 	Short: "Inspect workflow run steps",
 	Long: `A step is the execution record of one block within a run —
 input it saw, output it produced, error if any, timing, cost. Steps are
 the entry point for debugging: when a run output looks wrong, list its
-steps and pull the offending one with ` + "`workflows runs steps get`" + `
+steps and pull the offending one with ` + "`workflows steps get`" + `
 to see exactly what the block did.`,
 	Example: `  # List every step in a run
-  retab workflows runs steps list run_xyz789
+  retab workflows steps list run_xyz789
 
-  # Pull the full execution record for one block
-  retab workflows runs steps get run_xyz789 blk_extract_1`,
+  # Pull the full execution record for one step
+  retab workflows steps get step_extract_1`,
 }
 
-var workflowsRunsStepsListCmd = &cobra.Command{
+var workflowsStepsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List run steps",
 	Long: `List every step in a run — one record per block execution.
 Includes status, timing, and a summary of input/output sizes. For the
 full input/output payload of one step use ` + "`steps get`" + `.`,
 	Example: `  # List steps
-  retab workflows runs steps list run_xyz789
+  retab workflows steps list run_xyz789
 
   # Find the first failed step
-  retab workflows runs steps list run_xyz789 \
+  retab workflows steps list run_xyz789 \
     | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -781,7 +812,7 @@ full input/output payload of one step use ` + "`steps get`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Runs.Steps.List(ctx, args[0])
+		result, err := client.Workflows.Steps.List(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -789,23 +820,23 @@ full input/output payload of one step use ` + "`steps get`" + `.`,
 	}),
 }
 
-var workflowsRunsStepsGetCmd = &cobra.Command{
-	Use:   "get <run-id> <block-id>",
+var workflowsStepsGetCmd = &cobra.Command{
+	Use:   "get <step-id>",
 	Short: "Get the full step execution record",
-	Long: `Return everything about one block's execution in a run: the
+	Long: `Return everything about one step execution in a run: the
 exact input payload, the produced output, any error, timing, cost, and
 model usage if applicable.
 
 This is the canonical entry point when debugging a run that produced
-the wrong output — find the offending block, inspect its inputs, and
-correlate against the block's config.`,
+the wrong output — find the offending step id, inspect its inputs, and
+correlate against the step's block config.`,
 	Example: `  # Pull the full record for a single step
-  retab workflows runs steps get run_xyz789 blk_extract_1
+  retab workflows steps get step_extract_1
 
   # Save the input payload for offline replay
-  retab workflows runs steps get run_xyz789 blk_extract_1 \
+  retab workflows steps get step_extract_1 \
     | jq '.handle_inputs' > inputs.json`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -813,7 +844,41 @@ correlate against the block's config.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Runs.Steps.Get(ctx, args[0], args[1])
+		result, err := client.Workflows.Steps.Get(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
+var workflowsStepsQueryCmd = &cobra.Command{
+	Use:   "query <workflow-id>",
+	Short: "Query joined workflow step rows",
+	Long: `Query joined step rows for a workflow. Use this when you need the
+flat step record joined with its execution fingerprint for debugging,
+comparison, or experiment analysis.`,
+	Example: `  # Query recent extract steps for a workflow
+  retab workflows steps query wf_abc123 --block-type extract --status completed --limit 20`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+
+		request := retab.StepsQueryRequest{WorkflowID: args[0]}
+		request.BlockID, _ = cmd.Flags().GetString("block-id")
+		request.BlockType, _ = cmd.Flags().GetString("block-type")
+		request.SourceKind, _ = cmd.Flags().GetString("source-kind")
+		request.Status, _ = cmd.Flags().GetStringArray("status")
+		if cmd.Flags().Changed("limit") {
+			request.Limit, _ = cmd.Flags().GetInt("limit")
+		}
+
+		result, err := client.Workflows.Steps.Query(ctx, request)
 		if err != nil {
 			return err
 		}
@@ -871,7 +936,14 @@ func init() {
 	_ = workflowsRunsExportCmd.MarkFlagRequired("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
-	workflowsRunsStepsCmd.AddCommand(workflowsRunsStepsListCmd, workflowsRunsStepsGetCmd)
-	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsConfigCmd, workflowsRunsExecutionOrderCmd, workflowsRunsDocumentURLCmd, workflowsRunsExportCmd, workflowsRunsStepsCmd)
+	workflowsStepsQueryCmd.Flags().String("block-id", "", "filter by block id")
+	workflowsStepsQueryCmd.Flags().String("block-type", "", "filter by block type")
+	workflowsStepsQueryCmd.Flags().String("source-kind", "", "filter by source kind")
+	workflowsStepsQueryCmd.Flags().StringArray("status", nil, "filter by lifecycle status (repeatable)")
+	workflowsStepsQueryCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max rows to return (1-1000)")
+
+	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd, workflowsStepsQueryCmd)
+	workflowsCmd.AddCommand(workflowsStepsCmd)
+	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsExportCmd)
 	workflowsCmd.AddCommand(workflowsRunsCmd)
 }

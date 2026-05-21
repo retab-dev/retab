@@ -3,8 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.runs.steps.client import AsyncWorkflowSteps, WorkflowSteps
 from retab.resources.workflows.artifacts.client import AsyncWorkflowArtifacts, WorkflowArtifacts
+from retab.resources.workflows.client import AsyncWorkflows, Workflows
+from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
+from retab.resources.workflows.steps.client import AsyncWorkflowSteps, WorkflowSteps
 from retab.types.workflows import model as workflow_model
 from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
 
@@ -35,6 +37,28 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
     assert steps.list_metadata.after is None
+
+
+def test_workflow_steps_are_exposed_on_workflows_not_runs() -> None:
+    client = MagicMock()
+
+    workflows = Workflows(client=client)
+    runs = WorkflowRuns(client=client)
+
+    assert isinstance(workflows.steps, WorkflowSteps)
+    with pytest.raises(AttributeError):
+        object.__getattribute__(runs, "steps")
+
+
+def test_async_workflow_steps_are_exposed_on_workflows_not_runs() -> None:
+    client = MagicMock()
+
+    workflows = AsyncWorkflows(client=client)
+    runs = AsyncWorkflowRuns(client=client)
+
+    assert isinstance(workflows.steps, AsyncWorkflowSteps)
+    with pytest.raises(AttributeError):
+        object.__getattribute__(runs, "steps")
 
 
 def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> None:
@@ -163,11 +187,11 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "handle_inputs": None,
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "extract-1")
+    step = WorkflowSteps(client=client).get("step_extract_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/steps/extract-1?run_id=run_123"
+    assert request.url == "/workflows/steps/step_extract_1"
     assert step.handle_outputs is not None
     assert step.artifact is not None
     assert step.artifact.model_dump() == {"operation": "extraction", "id": "ext_123"}
@@ -209,7 +233,7 @@ def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
         "handle_inputs": {},
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "function-1")
+    step = WorkflowSteps(client=client).get("step_function_1")
 
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json_ref"
@@ -247,7 +271,7 @@ def test_workflow_steps_get_accepts_partition_artifact() -> None:
         "handle_inputs": None,
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "for_each-1")
+    step = WorkflowSteps(client=client).get("step_for_each_1")
 
     assert step.artifact is not None
     assert step.artifact.operation == "partition"
@@ -273,7 +297,7 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
         }
     )
 
-    step = await AsyncWorkflowSteps(client=client).get("run_123", "start-json-1")
+    step = await AsyncWorkflowSteps(client=client).get("step_start_json_1")
 
     assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
@@ -321,14 +345,14 @@ def test_workflow_steps_list_with_block_ids() -> None:
     assert result[0].artifact.operation == "extraction"
 
 
-def test_workflow_steps_get_requires_block_id() -> None:
+def test_workflow_steps_get_requires_step_id() -> None:
     client = MagicMock()
     steps = WorkflowSteps(client=client)
 
     with pytest.raises(TypeError):
-        steps.get("run_123")  # type: ignore[call-arg]
-    with pytest.raises(TypeError, match="block_id is required"):
-        steps.get("run_123", "")  # type: ignore[arg-type]
+        steps.get()  # type: ignore[call-arg]
+    with pytest.raises(TypeError, match="step_id is required"):
+        steps.get("")  # type: ignore[arg-type]
 
     client._prepared_request.assert_not_called()
 
@@ -358,7 +382,7 @@ def test_workflow_steps_get_no_json_output() -> None:
         "handle_inputs": None,
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "parse-1")
+    step = WorkflowSteps(client=client).get("step_parse_1")
     assert step.extracted_data is None
     assert step.get_json_output("output-file-0") is None
 
@@ -375,7 +399,7 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
         "handle_inputs": None,
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "start-1")
+    step = WorkflowSteps(client=client).get("step_start_1")
     assert step.extracted_data is None
 
 
@@ -395,7 +419,7 @@ def test_step_execution_response_uses_lifecycle_for_failed_step() -> None:
         "handle_inputs": None,
     }
 
-    step = WorkflowSteps(client=client).get("run_123", "extract-1")
+    step = WorkflowSteps(client=client).get("step_extract_1")
 
     assert step.lifecycle.status == "error"
     assert step.lifecycle.message == "LLM returned malformed JSON"

@@ -36,10 +36,7 @@ dynamic ports.`,
 
   # Wire two blocks; "start" resolves to the workflow's single start-document block
   retab workflows edges create wf_abc123 \
-    --source-block start --target-block blk_extract_1
-
-  # Clear the entire graph wiring (blocks remain)
-  retab workflows edges delete-all wf_abc123`,
+    --source-block start --target-block blk_extract_1`,
 }
 
 func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
@@ -328,66 +325,6 @@ you may pass the friendly input name from the block config, such as
 	}),
 }
 
-var workflowsEdgesCreateBatchCmd = &cobra.Command{
-	Use:   "create-batch <workflow-id>",
-	Short: "Create multiple edges from --edges-file (JSON array)",
-	Long: `Wire many edges in one call. The file is a JSON array of edge
-objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
-` + "`source_handle`" + `, ` + "`target_handle`" + `, ` + "`id`" + `.
-
-Batch creation supports the same friendly aliases as ` + "`edges create`" + `:
-` + "`source_block: \"start\"`" + ` resolves to the generated start-document block, and
-` + "`target_handle: \"document\"`" + ` resolves to the target block's document
-input handle.`,
-	Example: `  # Bulk-wire a graph from a manifest
-  retab workflows edges create-batch wf_abc123 \
-    --edges-file ./graph/edges.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path, _ := cmd.Flags().GetString("edges-file")
-		if path == "" {
-			return fmt.Errorf("--edges-file is required")
-		}
-		arr, err := readJSONArray(path)
-		if err != nil {
-			return err
-		}
-		if len(arr) == 0 {
-			return fmt.Errorf("--edges-file: empty JSON array")
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		var reqs []retab.WorkflowEdgeCreateRequest
-		for i, item := range arr {
-			obj, ok := item.(map[string]any)
-			if !ok {
-				return fmt.Errorf("--edges-file[%d]: must be a JSON object", i)
-			}
-			req := parseEdgeCreate(obj)
-			if err := validateWorkflowEdgeCreate(req); err != nil {
-				return fmt.Errorf("--edges-file[%d]: %w", i, err)
-			}
-			if err := resolveWorkflowEdgeAliases(ctx, client, args[0], &req); err != nil {
-				return fmt.Errorf("--edges-file[%d]: %w", i, err)
-			}
-			if _, hasExplicitID := obj["id"].(string); !hasExplicitID {
-				req.ID = ""
-			}
-			ensureWorkflowEdgeID(&req)
-			reqs = append(reqs, req)
-		}
-		result, err := client.Workflows.Edges.CreateBatch(ctx, args[0], reqs)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 var workflowsEdgesDeleteCmd = &cobra.Command{
 	Use:   "delete <workflow-id> <edge-id>",
 	Short: "Delete an edge",
@@ -411,32 +348,6 @@ severed.`,
 	}),
 }
 
-var workflowsEdgesDeleteAllCmd = &cobra.Command{
-	Use:   "delete-all <workflow-id>",
-	Short: "Delete all edges in a workflow",
-	Long: `Sever every edge in the draft graph at once. Blocks remain;
-re-wire from scratch with ` + "`workflows edges create`" + ` or
-` + "`workflows edges create-batch`" + `. Useful when scripting a graph
-rewrite.`,
-	Example: `  # Reset the wiring before re-creating from a manifest
-  retab workflows edges delete-all wf_abc123
-  retab workflows edges create-batch wf_abc123 --edges-file ./edges.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Workflows.Edges.DeleteAll(ctx, args[0]); err != nil {
-			return err
-		}
-		confirmDeleted("all edges in workflow", args[0])
-		return nil
-	}),
-}
-
 func init() {
 	workflowsEdgesListCmd.Flags().String("source-block", "", "filter by source block")
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
@@ -449,8 +360,6 @@ func init() {
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("source-block")
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("target-block")
 
-	workflowsEdgesCreateBatchCmd.Flags().String("edges-file", "", "JSON array of edges (or - for stdin)")
-
-	workflowsEdgesCmd.AddCommand(workflowsEdgesListCmd, workflowsEdgesGetCmd, workflowsEdgesCreateCmd, workflowsEdgesCreateBatchCmd, workflowsEdgesDeleteCmd, workflowsEdgesDeleteAllCmd)
+	workflowsEdgesCmd.AddCommand(workflowsEdgesListCmd, workflowsEdgesGetCmd, workflowsEdgesCreateCmd, workflowsEdgesDeleteCmd)
 	workflowsCmd.AddCommand(workflowsEdgesCmd)
 }

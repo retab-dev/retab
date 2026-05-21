@@ -97,7 +97,6 @@ func TestWorkflowsListRejectsOverLimitLocally(t *testing.T) {
 		cmd  *cobra.Command
 	}{
 		{name: "workflows list", cmd: workflowsListCmd},
-		{name: "workflows snapshots", cmd: workflowsSnapshotsCmd},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -465,58 +464,6 @@ func TestWorkflowListExamplesUsePaginatedEnvelope(t *testing.T) {
 	}
 }
 
-func TestWorkflowBatchCreateRejectsEmptyArraysLocally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		hits.Add(1)
-		http.Error(w, "server should not be reached", http.StatusInternalServerError)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	emptyArrayPath := t.TempDir() + "/empty.json"
-	if err := os.WriteFile(emptyArrayPath, []byte("[]"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	cases := []struct {
-		name string
-		cmd  *cobra.Command
-		flag string
-	}{
-		{name: "blocks", cmd: workflowsBlocksCreateBatchCmd, flag: "blocks-file"},
-		{name: "edges", cmd: workflowsEdgesCreateBatchCmd, flag: "edges-file"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			before := hits.Load()
-			tc.cmd.SetContext(context.Background())
-			t.Cleanup(func() { tc.cmd.SetContext(nil) })
-			if err := tc.cmd.Flags().Set(tc.flag, emptyArrayPath); err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() { _ = tc.cmd.Flags().Set(tc.flag, "") })
-
-			var err error
-			_, stderr := captureStd(t, func() {
-				err = tc.cmd.RunE(tc.cmd, []string{"wf_empty"})
-			})
-			if err == nil {
-				t.Fatalf("expected empty-array error")
-			}
-			if !strings.Contains(stderr, "empty JSON array") {
-				t.Fatalf("stderr %q does not mention empty JSON array", stderr)
-			}
-			if got := hits.Load(); got != before {
-				t.Fatalf("server was hit %d time(s), want no new requests", got-before)
-			}
-		})
-	}
-}
-
 func TestWorkflowsDiagnoseGraphFileRejectsMalformedGraphLocally(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -677,59 +624,6 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 	}
 	if !strings.Contains(stdout, `"is_valid": true`) {
 		t.Fatalf("expected diagnosis response, got:\n%s", stdout)
-	}
-}
-
-func TestWorkflowsResolvedSchemasHonorsTableOutputFallback(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Fatalf("method = %s, want GET", r.Method)
-		}
-		if r.URL.Path != "/workflows/wf_schema/resolved-schemas" {
-			t.Fatalf("path = %s, want resolved-schemas", r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"workflow_id": "wf_schema",
-			"schemas": map[string]any{
-				"start": map[string]any{"output_schemas": map[string]any{}},
-			},
-		})
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
-
-	stdout, stderr := captureStd(t, func() {
-		if err := workflowsResolvedSchemasCmd.RunE(workflowsResolvedSchemasCmd, []string{"wf_schema"}); err != nil {
-			t.Fatalf("resolved-schemas: %v", err)
-		}
-	})
-	if !strings.Contains(stderr, "falling back to json") {
-		t.Fatalf("expected table fallback warning, got stderr %q", stderr)
-	}
-	if !strings.Contains(stdout, `"workflow_id": "wf_schema"`) {
-		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
-	}
-}
-
-func TestWorkflowsSnapshotsCommandRegistered(t *testing.T) {
-	cmd, _, err := rootCmd.Find([]string{"workflows", "snapshots", "wf_abc"})
-	if err != nil {
-		t.Fatalf("workflows snapshots not registered: %v", err)
-	}
-	if cmd.Name() != "snapshots" {
-		t.Fatalf("resolved command = %q, want snapshots", cmd.Name())
-	}
-	if cmd.Flags().Lookup("limit") == nil {
-		t.Fatal("workflows snapshots should expose --limit")
 	}
 }
 
