@@ -270,7 +270,6 @@ describe('APIWorkflowReviews request shapes', () => {
       body: {
         verdict: 'approved',
         version_id: VERSION_ID,
-        reason: null,
       },
       params: undefined,
       headers: undefined,
@@ -296,6 +295,35 @@ describe('APIWorkflowReviews request shapes', () => {
       version_id: VERSION_ID,
       reason: 'wrong total',
     });
+  });
+
+  test('approve() omits the reason key when none is provided', async () => {
+    const mock = new MockClient({
+      submission_status: 'accepted',
+      review: OVERLAY_JSON,
+      resume_status: 'resumed',
+      resume_error: null,
+    });
+    const reviews = new APIWorkflowReviews(mock);
+
+    await reviews.approve('run_1', 'extract-1', { versionId: VERSION_ID });
+
+    const body = mock.lastFetchParams?.body as Record<string, unknown>;
+    expect('reason' in body).toBe(false);
+  });
+
+  test('createVersion() omits the note key when none is provided', async () => {
+    const mock = new MockClient(OVERLAY_JSON);
+    const reviews = new APIWorkflowReviews(mock);
+
+    await reviews.createVersion('run_1', 'extract-1', {
+      snapshot: { category: 'Invoice' },
+      parentId: VERSION_ID,
+    });
+
+    const body = mock.lastFetchParams?.body as Record<string, unknown>;
+    expect('note' in body).toBe(false);
+    expect(body.origin).toBe('human_created');
   });
 
   test('createVersion() posts a new snapshot version to /versions', async () => {

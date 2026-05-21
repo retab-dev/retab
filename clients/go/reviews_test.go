@@ -241,7 +241,7 @@ func TestWorkflowReviewsApproveSendsVersionID(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayJSON(true),
+			"review":            reviewOverlayJSON(true),
 			"resume_status":     "resumed",
 		})
 	}))
@@ -266,7 +266,7 @@ func TestWorkflowReviewsApproveSendsVersionID(t *testing.T) {
 	if _, ok := body["version_stamp"]; ok {
 		t.Fatalf("body includes removed version_stamp: %#v", body)
 	}
-	if resp.SubmissionStatus != "accepted" || resp.Overlay.Decision == nil {
+	if resp.SubmissionStatus != "accepted" || resp.Review.Decision == nil {
 		t.Fatalf("resp = %#v", resp)
 	}
 	if resp.ResumeStatus != "resumed" {
@@ -282,7 +282,7 @@ func TestWorkflowReviewsApproveSurfaceResumeFailure(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayJSON(true),
+			"review":            reviewOverlayJSON(true),
 			"resume_status":     "failed",
 			"resume_error":      "Workflow run not found for run_id=run_1",
 		})
@@ -325,7 +325,7 @@ func TestWorkflowReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayJSON(true),
+			"review":            reviewOverlayJSON(true),
 		})
 	}))
 	defer server.Close()

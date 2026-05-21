@@ -489,10 +489,34 @@ type ReviewQueueResponse struct {
 // server. ResumeStatus reflects whether the downstream workflow actually
 // resumed — a "failed" resume means the decision is committed but the
 // workflow did not pick up the signal (e.g. Temporal returned an error); the
-// associated ResumeError carries the underlying message for diagnostics.
+// associated ResumeError carries the underlying message for diagnostics. When
+// the resume signal fails on a fresh write, SubmissionStatus is upgraded to
+// "accepted_pending_resume" — the decision is durable but the workflow has
+// not advanced past the gate yet; a reconcile loop will retry.
 type SubmitReviewDecisionResponse struct {
-	SubmissionStatus string        `json:"submission_status"` // accepted | already_applied
-	Overlay          ReviewOverlay `json:"overlay"`
+	SubmissionStatus string        `json:"submission_status"` // accepted | already_applied | accepted_pending_resume
+	Review           ReviewOverlay `json:"review"`
 	ResumeStatus     string        `json:"resume_status,omitempty"` // resumed | skipped | failed
 	ResumeError      *string       `json:"resume_error,omitempty"`
 }
+
+// Submission status string constants returned by Approve / Reject.
+const (
+	// SubmissionStatusAccepted means the decision was written and the
+	// downstream workflow was successfully signalled to resume.
+	SubmissionStatusAccepted = "accepted"
+	// SubmissionStatusAlreadyApplied means the same (verdict, version_id) was
+	// already on file — the idempotency mechanism, safe to retry.
+	SubmissionStatusAlreadyApplied = "already_applied"
+	// SubmissionStatusAcceptedPendingResume means the decision write succeeded
+	// but the Temporal resume signal failed. The reconcile loop will retry;
+	// inspect ResumeStatus and ResumeError on the response for diagnostics.
+	SubmissionStatusAcceptedPendingResume = "accepted_pending_resume"
+)
+
+// Resume status string constants reported on Approve / Reject responses.
+const (
+	ResumeStatusResumed = "resumed"
+	ResumeStatusSkipped = "skipped"
+	ResumeStatusFailed  = "failed"
+)
