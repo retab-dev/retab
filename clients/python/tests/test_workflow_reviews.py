@@ -10,25 +10,27 @@ from retab.exceptions import NotFoundError
 from retab.resources.workflows.reviews.client import AsyncWorkflowReviews, WorkflowReviews
 from retab.types.workflows import (
     Actor,
-    AppendVersionResponse,
-    OutputVersion,
     Review,
     ReviewDecision,
     ReviewQueueResponse,
     ReviewSummary,
+    ReviewVersion,
+    ReviewVersionListResponse,
     SubmitDecisionResponse,
 )
 
 _NOW = "2026-05-01T14:30:00Z"
 _REVIEW_ID = "rev_1"
-_VERSION_ID = "a" * 64
-_CHILD_VERSION_ID = "b" * 64
+_VERSION_ID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
+_CHILD_VERSION_ID = "rvr_BBBBBBBBBBBBBBBBBBBBBBBBBB"
 
 _ACTOR_HUMAN = {"kind": "human", "id": "user_1", "display_name": "Ada"}
 _ACTOR_MODEL = {"kind": "model", "id": "gpt", "display_name": "Extractor"}
 _ACTOR_AGENT = {"kind": "agent", "id": "agent_1", "display_name": "Reviewer Agent"}
 
 _OUTPUT_VERSION = {
+    "id": _VERSION_ID,
+    "review_id": _REVIEW_ID,
     "parent_id": None,
     "author": _ACTOR_MODEL,
     "snapshot": {"output": {"total": 100, "currency": "USD"}},
@@ -56,16 +58,15 @@ _REVIEW = {
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence", "threshold": 0.8},
     "created_at": _NOW,
-    "versions": {
-        _VERSION_ID: _OUTPUT_VERSION,
-        _CHILD_VERSION_ID: {
-            **_OUTPUT_VERSION,
-            "parent_id": _VERSION_ID,
-            "author": _ACTOR_AGENT,
-            "snapshot": {"output": {"total": 150, "currency": "USD"}},
-        },
-    },
     "decision": _DECISION,
+}
+
+_CHILD_OUTPUT_VERSION = {
+    **_OUTPUT_VERSION,
+    "id": _CHILD_VERSION_ID,
+    "parent_id": _VERSION_ID,
+    "author": _ACTOR_AGENT,
+    "snapshot": {"output": {"total": 150, "currency": "USD"}},
 }
 
 _SUMMARY = {
@@ -88,8 +89,7 @@ _SUMMARY = {
 def test_review_round_trips() -> None:
     review = Review.model_validate(_REVIEW)
     assert review.id == _REVIEW_ID
-    assert set(review.versions) == {_VERSION_ID, _CHILD_VERSION_ID}
-    assert review.versions[_CHILD_VERSION_ID].parent_id == _VERSION_ID
+    assert "versions" not in review.model_dump()
     assert review.decision is not None
     assert review.decision.version_id == _VERSION_ID
 
@@ -121,10 +121,22 @@ def test_submit_decision_response_accepts_pending_resume() -> None:
     assert resp.resume_error == "Temporal signal queued for retry"
 
 
-def test_append_version_response_round_trips() -> None:
-    resp = AppendVersionResponse.model_validate({"append_status": "accepted", "version_id": _CHILD_VERSION_ID, "review": _REVIEW})
-    assert resp.version_id == _CHILD_VERSION_ID
-    assert resp.review.versions[_CHILD_VERSION_ID].parent_id == _VERSION_ID
+def test_review_version_round_trips() -> None:
+    version = ReviewVersion.model_validate(_CHILD_OUTPUT_VERSION)
+    assert version.id == _CHILD_VERSION_ID
+    assert version.review_id == _REVIEW_ID
+    assert version.parent_id == _VERSION_ID
+
+
+def test_review_version_list_response_round_trips() -> None:
+    resp = ReviewVersionListResponse.model_validate(
+        {
+            "data": [_OUTPUT_VERSION, _CHILD_OUTPUT_VERSION],
+            "list_metadata": {"before": _VERSION_ID, "after": _CHILD_VERSION_ID},
+        }
+    )
+    assert resp.has_more is True
+    assert resp.data[1].id == _CHILD_VERSION_ID
 
 
 def test_actor_kind_is_neutral_data_not_a_branch() -> None:
@@ -134,7 +146,7 @@ def test_actor_kind_is_neutral_data_not_a_branch() -> None:
 
 
 def test_output_version_and_decision_round_trip() -> None:
-    version = OutputVersion.model_validate(_OUTPUT_VERSION)
+    version = ReviewVersion.model_validate(_OUTPUT_VERSION)
     assert version.parent_id is None
     assert version.author.kind == "model"
 
@@ -146,7 +158,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
     reviews = WorkflowReviews(client=MagicMock())
     request = reviews.prepare_list(
         workflow_id="wf_1",
-        run_id="run_1",
+        workflow_run_id="run_1",
         block_id="extract-1",
         step_id="step_1",
         iteration_key="0",
@@ -159,7 +171,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
         "limit": 10,
         "decision_status": "decided",
         "workflow_id": "wf_1",
-        "run_id": "run_1",
+        "workflow_run_id": "run_1",
         "block_id": "extract-1",
         "step_id": "step_1",
         "iteration_key": "0",
@@ -172,19 +184,39 @@ def test_prepare_get_builds_review_id_url() -> None:
     assert request.url == f"/workflows/reviews/{_REVIEW_ID}"
 
 
-def test_prepare_append_version_posts_parent_version_id() -> None:
-    request = WorkflowReviews(client=MagicMock()).prepare_append_version(
-        _REVIEW_ID,
+def test_reviews_has_no_append_version_methods() -> None:
+    """``append_version`` is gone — versions are CRUD-created via ``versions.create``."""
+    sync_reviews = WorkflowReviews(client=MagicMock())
+    assert not hasattr(sync_reviews, "append_version"), "WorkflowReviews.append_version must be removed; use versions.create instead."
+    assert not hasattr(sync_reviews, "prepare_append_version"), "WorkflowReviewsMixin.prepare_append_version must be removed; use versions.prepare_create instead."
+    async_reviews = AsyncWorkflowReviews(client=MagicMock())
+    assert not hasattr(async_reviews, "append_version"), "AsyncWorkflowReviews.append_version must be removed; use versions.create instead."
+
+
+def test_review_versions_prepare_create_get_list() -> None:
+    versions = WorkflowReviews(client=MagicMock()).versions
+    create = versions.prepare_create(
+        review_id=_REVIEW_ID,
         snapshot={"category": "Invoice"},
-        parent_version_id=_VERSION_ID,
-        note="changed category",
+        parent_id=_VERSION_ID,
     )
-    assert request.method == "POST"
-    assert request.url == f"/workflows/reviews/{_REVIEW_ID}/versions"
-    assert request.data == {
+    get = versions.prepare_get(_CHILD_VERSION_ID)
+    list_request = versions.prepare_list(review_id=_REVIEW_ID, limit=25, after=_VERSION_ID)
+    assert create.method == "POST"
+    assert create.url == "/workflows/reviews/versions"
+    assert create.data == {
+        "review_id": _REVIEW_ID,
         "snapshot": {"category": "Invoice"},
-        "parent_version_id": _VERSION_ID,
-        "note": "changed category",
+        "parent_id": _VERSION_ID,
+    }
+    assert get.method == "GET"
+    assert get.url == f"/workflows/reviews/versions/{_CHILD_VERSION_ID}"
+    assert list_request.method == "GET"
+    assert list_request.url == "/workflows/reviews/versions"
+    assert list_request.params == {
+        "review_id": _REVIEW_ID,
+        "limit": 25,
+        "after": _VERSION_ID,
     }
 
 
@@ -198,27 +230,38 @@ def test_prepare_approve_and_reject_use_split_endpoints() -> None:
     assert reject.data == {"version_id": _VERSION_ID, "reason": "wrong vendor"}
 
 
-def test_list_get_approve_append_parse_responses() -> None:
+def test_list_get_approve_parse_responses() -> None:
     client = MagicMock()
     client._prepared_request.side_effect = [
         {"data": [_SUMMARY], "list_metadata": {"before": None, "after": None}},
         _REVIEW,
         {"submission_status": "accepted", "review": _REVIEW, "resume_status": "resumed"},
-        {"append_status": "accepted", "version_id": _CHILD_VERSION_ID, "review": _REVIEW},
     ]
     reviews = WorkflowReviews(client=client)
 
-    assert isinstance(reviews.list(workflow_id="wf_1"), ReviewQueueResponse)
+    queue = reviews.list(workflow_id="wf_1")
+    assert isinstance(queue, ReviewQueueResponse)
+    # The list row projection carries seed_version_id + version_count.
+    assert queue.data[0].seed_version_id == _VERSION_ID
+    assert queue.data[0].version_count == 2
     assert isinstance(reviews.get(_REVIEW_ID), Review)
     assert reviews.approve(_REVIEW_ID, version_id=_VERSION_ID).resume_status == "resumed"
-    assert (
-        reviews.append_version(
-            _REVIEW_ID,
-            snapshot={"category": "Invoice"},
-            parent_version_id=_VERSION_ID,
-        ).version_id
-        == _CHILD_VERSION_ID
-    )
+
+
+def test_review_versions_create_get_list_parse_responses() -> None:
+    client = MagicMock()
+    client._prepared_request.side_effect = [
+        _CHILD_OUTPUT_VERSION,
+        _CHILD_OUTPUT_VERSION,
+        {
+            "data": [_OUTPUT_VERSION, _CHILD_OUTPUT_VERSION],
+            "list_metadata": {"before": None, "after": None},
+        },
+    ]
+    versions = WorkflowReviews(client=client).versions
+    assert versions.create(review_id=_REVIEW_ID, snapshot={"category": "Invoice"}).id == _CHILD_VERSION_ID
+    assert versions.get(_CHILD_VERSION_ID).parent_id == _VERSION_ID
+    assert versions.list(review_id=_REVIEW_ID).data[0].id == _VERSION_ID
 
 
 def test_reject_requires_reason_keyword() -> None:

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -361,19 +362,39 @@ func TestWorkflowBlocksPrepareSimulateMatchesPythonSurface(t *testing.T) {
 		StepID:           "step_123",
 		CheckEligibility: &checkEligibility,
 	})
-	if prepared.URL != "/workflows/runs/run_123/steps/extract-1/simulate" || prepared.Method != http.MethodPost {
+	if prepared.URL != "/workflows/simulations" || prepared.Method != http.MethodPost {
 		t.Fatalf("prepared simulate = %#v", prepared)
 	}
-	if prepared.Params.Get("n_consensus") != "5" || prepared.Params.Get("step_id") != "step_123" || prepared.Params.Get("check_eligibility") != "false" {
-		t.Fatalf("prepared simulate params = %#v", prepared.Params)
+	body, ok := prepared.Body.(map[string]any)
+	if !ok {
+		t.Fatalf("prepared simulate body type = %T", prepared.Body)
+	}
+	if body["run_id"] != "run_123" || body["step_id"] != "step_123" || body["source_step_id"] != "step_123" {
+		t.Fatalf("prepared simulate body = %#v", body)
+	}
+	if body["n_consensus"] != 5 || body["check_eligibility"] != false {
+		t.Fatalf("prepared simulate body = %#v", body)
 	}
 
 	prepared = client.Workflows.Blocks.PrepareSimulate(SimulateBlockRequest{
 		RunID:   "run_123",
 		BlockID: "extract-1",
 	})
-	if len(prepared.Params) != 0 {
-		t.Fatalf("expected default simulate params to be empty: %#v", prepared.Params)
+	body, ok = prepared.Body.(map[string]any)
+	if !ok {
+		t.Fatalf("default prepared simulate body type = %T", prepared.Body)
+	}
+	if body["run_id"] != "run_123" || body["step_id"] != "extract-1" {
+		t.Fatalf("default prepared simulate body = %#v", body)
+	}
+	if _, ok := body["source_step_id"]; ok {
+		t.Fatalf("default prepared simulate should not include source_step_id: %#v", body)
+	}
+	if _, ok := body["n_consensus"]; ok {
+		t.Fatalf("default prepared simulate should not include n_consensus: %#v", body)
+	}
+	if _, ok := body["check_eligibility"]; ok {
+		t.Fatalf("default prepared simulate should not include check_eligibility: %#v", body)
 	}
 }
 
@@ -479,7 +500,7 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/exp_123/runs":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/experiments/exp_123/runs" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&runBody); err != nil {
 				t.Fatal(err)
 			}
@@ -736,11 +757,13 @@ func TestWorkflowRunStepsGetRequiresBlockID(t *testing.T) {
 func TestWorkflowRunStepsGet(t *testing.T) {
 	var seenMethod string
 	var seenPath string
+	var seenQuery url.Values
 	var seenAPIKey string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod = r.Method
 		seenPath = r.URL.Path
+		seenQuery = r.URL.Query()
 		seenAPIKey = r.Header.Get("Api-Key")
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -780,8 +803,8 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 	if seenMethod != http.MethodGet {
 		t.Fatalf("method = %s", seenMethod)
 	}
-	if seenPath != "/workflows/runs/run_123/steps/extract-1" {
-		t.Fatalf("path = %s", seenPath)
+	if seenPath != "/workflows/steps/extract-1" || seenQuery.Get("run_id") != "run_123" {
+		t.Fatalf("path = %s?%s", seenPath, seenQuery.Encode())
 	}
 	if seenAPIKey != "test-key" {
 		t.Fatalf("api key = %s", seenAPIKey)

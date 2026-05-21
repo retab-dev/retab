@@ -224,8 +224,8 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	var sawGet bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/blocks/blk_extract" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/blk_extract" || r.URL.Query().Get("workflow_id") != "wf_123" {
+			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		sawGet = true
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -265,7 +265,7 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks/blk_extract":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.Query().Get("workflow_id") == "wf_123":
 			sawGet = true
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id":   "blk_extract",
@@ -278,7 +278,7 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 					},
 				},
 			})
-		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/wf_123/blocks/blk_extract":
+		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.Query().Get("workflow_id") == "wf_123":
 			sawPatch = true
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -749,8 +749,8 @@ func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
 // fresh draft" scenario.
 func TestWarnIfEmptyWorkflowOnPublish_StartOnly(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/workflows/wf_abc/blocks" {
-			t.Errorf("unexpected path: %s", r.URL.Path)
+		if r.URL.Path != "/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_abc" {
+			t.Errorf("unexpected path: %s?%s", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

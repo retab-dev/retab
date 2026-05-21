@@ -5,10 +5,11 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
-  ZAppendVersionResponse,
-  ZReviewOverlay,
-  ZReviewQueueItem,
+  ZReview,
   ZReviewQueueResponse,
+  ZReviewSummary,
+  ZReviewVersion,
+  ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
 } from '../src/types';
 
@@ -27,47 +28,46 @@ const REAL_REVIEW_FROM_BACKEND = {
   block_type: 'extract',
   triggered_by: { kind: 'any_required_field_null' },
   created_at: '2026-05-21T09:00:00Z',
-  versions: {
-    [VERSION_ID]: {
-      parent_id: null,
-      author: { kind: 'model', id: 'm', display_name: 'Model' },
-      snapshot: { total: 100 },
-      note: null,
-      created_at: '2026-05-21T09:00:00Z',
-    },
-  },
   decision: null,
 };
 
 const REAL_SUMMARY_FROM_BACKEND = {
-  id: REVIEW_ID,
-  workflow_id: 'wf_1',
-  workflow_run_id: 'run_1',
-  block_id: 'extract-1',
-  step_id: 'step_1',
-  parent_step_id: null,
-  iteration_key: null,
-  block_type: 'extract',
-  triggered_by: { kind: 'any_required_field_null' },
-  created_at: '2026-05-21T09:00:00Z',
+  ...REAL_REVIEW_FROM_BACKEND,
   seed_version_id: VERSION_ID,
   version_count: 1,
-  decision: null,
+};
+
+const REAL_VERSION_FROM_BACKEND = {
+  id: VERSION_ID,
+  review_id: REVIEW_ID,
+  parent_id: null,
+  author: { kind: 'model', id: 'm', display_name: 'Model' },
+  snapshot: { total: 100 },
+  note: null,
+  created_at: '2026-05-21T09:00:00Z',
 };
 
 describe('backend wire-shape vs SDK Zod schemas', () => {
-  test('ZReviewOverlay parses the review-id addressed response with versions', () => {
-    const result = ZReviewOverlay.safeParse(REAL_REVIEW_FROM_BACKEND);
+  test('ZReview parses the review-id addressed response without versions', () => {
+    const result = ZReview.safeParse(REAL_REVIEW_FROM_BACKEND);
     if (!result.success) {
-      console.error('ZReviewOverlay failed:', JSON.stringify(result.error.issues, null, 2));
+      console.error('ZReview failed:', JSON.stringify(result.error.issues, null, 2));
     }
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewQueueItem parses a summary with seed_version_id', () => {
-    const result = ZReviewQueueItem.safeParse(REAL_SUMMARY_FROM_BACKEND);
+  test('ZReviewVersion parses a flat review version', () => {
+    const result = ZReviewVersion.safeParse(REAL_VERSION_FROM_BACKEND);
     if (!result.success) {
-      console.error('ZReviewQueueItem failed:', JSON.stringify(result.error.issues, null, 2));
+      console.error('ZReviewVersion failed:', JSON.stringify(result.error.issues, null, 2));
+    }
+    expect(result.success).toBe(true);
+  });
+
+  test('ZReviewSummary parses queue projection fields', () => {
+    const result = ZReviewSummary.safeParse(REAL_SUMMARY_FROM_BACKEND);
+    if (!result.success) {
+      console.error('ZReviewSummary failed:', JSON.stringify(result.error.issues, null, 2));
     }
     expect(result.success).toBe(true);
   });
@@ -83,14 +83,16 @@ describe('backend wire-shape vs SDK Zod schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('ZAppendVersionResponse parses {append_status, version_id, review}', () => {
-    const result = ZAppendVersionResponse.safeParse({
-      append_status: 'already_exists',
-      version_id: VERSION_ID,
-      review: REAL_REVIEW_FROM_BACKEND,
+  test('ZReviewVersionListResponse parses {data, list_metadata}', () => {
+    const result = ZReviewVersionListResponse.safeParse({
+      data: [REAL_VERSION_FROM_BACKEND],
+      list_metadata: { before: null, after: null },
     });
     if (!result.success) {
-      console.error('ZAppendVersionResponse failed:', JSON.stringify(result.error.issues, null, 2));
+      console.error(
+        'ZReviewVersionListResponse failed:',
+        JSON.stringify(result.error.issues, null, 2)
+      );
     }
     expect(result.success).toBe(true);
   });

@@ -10,9 +10,10 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....exceptions import NotFoundError
 from ....types.standards import PreparedRequest
 from ....types.workflows.reviews import (
-    AppendVersionResponse,
     Review,
     ReviewQueueResponse,
+    ReviewVersion,
+    ReviewVersionListResponse,
     SubmitDecisionResponse,
 )
 
@@ -25,7 +26,7 @@ class WorkflowReviewsMixin:
     def prepare_list(
         self,
         workflow_id: str | None = None,
-        run_id: str | None = None,
+        workflow_run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -38,8 +39,8 @@ class WorkflowReviewsMixin:
         params: Dict[str, Any] = {"limit": limit, "decision_status": decision_status}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
-        if run_id is not None:
-            params["run_id"] = run_id
+        if workflow_run_id is not None:
+            params["workflow_run_id"] = workflow_run_id
         if block_id is not None:
             params["block_id"] = block_id
         if step_id is not None:
@@ -55,27 +56,6 @@ class WorkflowReviewsMixin:
     def prepare_get(self, review_id: str) -> PreparedRequest:
         """Prepare a request to fetch one review."""
         return PreparedRequest(method="GET", url=f"/workflows/reviews/{review_id}")
-
-    def prepare_append_version(
-        self,
-        review_id: str,
-        *,
-        snapshot: dict,
-        parent_version_id: str,
-        note: str | None = None,
-    ) -> PreparedRequest:
-        """Prepare a request to append a new output version to the review."""
-        data: Dict[str, Any] = {
-            "snapshot": snapshot,
-            "parent_version_id": parent_version_id,
-        }
-        if note is not None:
-            data["note"] = note
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/reviews/{review_id}/versions",
-            data=data,
-        )
 
     def prepare_approve(self, review_id: str, *, version_id: str) -> PreparedRequest:
         """Prepare a request to approve one version."""
@@ -94,16 +74,166 @@ class WorkflowReviewsMixin:
         )
 
 
+class WorkflowReviewVersionsMixin:
+    """Mixin providing shared prepare methods for review version operations."""
+
+    def prepare_create(
+        self,
+        *,
+        review_id: str,
+        snapshot: dict,
+        parent_id: str | None = None,
+        note: str | None = None,
+    ) -> PreparedRequest:
+        """Prepare a request to create one immutable review version."""
+        data: Dict[str, Any] = {
+            "review_id": review_id,
+            "snapshot": snapshot,
+            "parent_id": parent_id,
+        }
+        if note is not None:
+            data["note"] = note
+        return PreparedRequest(
+            method="POST",
+            url="/workflows/reviews/versions",
+            data={key: value for key, value in data.items() if value is not None},
+        )
+
+    def prepare_get(self, version_id: str) -> PreparedRequest:
+        """Prepare a request to fetch one review version."""
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/reviews/versions/{version_id}",
+        )
+
+    def prepare_list(
+        self,
+        *,
+        review_id: str,
+        limit: int = 50,
+        before: str | None = None,
+        after: str | None = None,
+    ) -> PreparedRequest:
+        """Prepare a request to list versions for one review."""
+        params: Dict[str, Any] = {"review_id": review_id, "limit": limit}
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        return PreparedRequest(
+            method="GET",
+            url="/workflows/reviews/versions",
+            params=params,
+        )
+
+
+def _parse_review_version_response(response: Any) -> ReviewVersion:
+    return ReviewVersion.model_validate(response)
+
+
+class WorkflowReviewVersions(SyncAPIResource, WorkflowReviewVersionsMixin):
+    """Workflow review versions API wrapper for synchronous operations."""
+
+    def create(
+        self,
+        *,
+        review_id: str,
+        snapshot: dict,
+        parent_id: str | None = None,
+        note: str | None = None,
+    ) -> ReviewVersion:
+        """Create one immutable review version."""
+        request = self.prepare_create(
+            review_id=review_id,
+            snapshot=snapshot,
+            parent_id=parent_id,
+            note=note,
+        )
+        response = self._client._prepared_request(request)
+        return _parse_review_version_response(response)
+
+    def get(self, version_id: str) -> ReviewVersion:
+        """Fetch one review version by id."""
+        request = self.prepare_get(version_id)
+        response = self._client._prepared_request(request)
+        return ReviewVersion.model_validate(response)
+
+    def list(
+        self,
+        *,
+        review_id: str,
+        limit: int = 50,
+        before: str | None = None,
+        after: str | None = None,
+    ) -> ReviewVersionListResponse:
+        """List versions for one review."""
+        request = self.prepare_list(
+            review_id=review_id,
+            limit=limit,
+            before=before,
+            after=after,
+        )
+        response = self._client._prepared_request(request)
+        return ReviewVersionListResponse.model_validate(response)
+
+
+class AsyncWorkflowReviewVersions(AsyncAPIResource, WorkflowReviewVersionsMixin):
+    """Workflow review versions API wrapper for asynchronous operations."""
+
+    async def create(
+        self,
+        *,
+        review_id: str,
+        snapshot: dict,
+        parent_id: str | None = None,
+        note: str | None = None,
+    ) -> ReviewVersion:
+        """Create one immutable review version."""
+        request = self.prepare_create(
+            review_id=review_id,
+            snapshot=snapshot,
+            parent_id=parent_id,
+            note=note,
+        )
+        response = await self._client._prepared_request(request)
+        return _parse_review_version_response(response)
+
+    async def get(self, version_id: str) -> ReviewVersion:
+        """Fetch one review version by id."""
+        request = self.prepare_get(version_id)
+        response = await self._client._prepared_request(request)
+        return ReviewVersion.model_validate(response)
+
+    async def list(
+        self,
+        *,
+        review_id: str,
+        limit: int = 50,
+        before: str | None = None,
+        after: str | None = None,
+    ) -> ReviewVersionListResponse:
+        """List versions for one review."""
+        request = self.prepare_list(
+            review_id=review_id,
+            limit=limit,
+            before=before,
+            after=after,
+        )
+        response = await self._client._prepared_request(request)
+        return ReviewVersionListResponse.model_validate(response)
+
+
 class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
     """Workflow reviews API wrapper for synchronous operations."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.versions = WorkflowReviewVersions(client=self._client)
 
     def list(
         self,
         workflow_id: str | None = None,
-        run_id: str | None = None,
+        workflow_run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -115,7 +245,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
-            run_id=run_id,
+            workflow_run_id=workflow_run_id,
             block_id=block_id,
             step_id=step_id,
             iteration_key=iteration_key,
@@ -145,24 +275,6 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         response = self._client._prepared_request(request)
         return SubmitDecisionResponse.model_validate(response)
 
-    def append_version(
-        self,
-        review_id: str,
-        *,
-        snapshot: dict,
-        parent_version_id: str,
-        note: str | None = None,
-    ) -> AppendVersionResponse:
-        """Append a new output version to the review's version graph."""
-        request = self.prepare_append_version(
-            review_id,
-            snapshot=snapshot,
-            parent_version_id=parent_version_id,
-            note=note,
-        )
-        response = self._client._prepared_request(request)
-        return AppendVersionResponse.model_validate(response)
-
     def wait_for(
         self,
         review_id: str,
@@ -189,11 +301,12 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.versions = AsyncWorkflowReviewVersions(client=self._client)
 
     async def list(
         self,
         workflow_id: str | None = None,
-        run_id: str | None = None,
+        workflow_run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -205,7 +318,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
-            run_id=run_id,
+            workflow_run_id=workflow_run_id,
             block_id=block_id,
             step_id=step_id,
             iteration_key=iteration_key,
@@ -234,24 +347,6 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         request = self.prepare_reject(review_id, version_id=version_id, reason=reason)
         response = await self._client._prepared_request(request)
         return SubmitDecisionResponse.model_validate(response)
-
-    async def append_version(
-        self,
-        review_id: str,
-        *,
-        snapshot: dict,
-        parent_version_id: str,
-        note: str | None = None,
-    ) -> AppendVersionResponse:
-        """Append a new output version to the review's version graph."""
-        request = self.prepare_append_version(
-            review_id,
-            snapshot=snapshot,
-            parent_version_id=parent_version_id,
-            note=note,
-        )
-        response = await self._client._prepared_request(request)
-        return AppendVersionResponse.model_validate(response)
 
     async def wait_for(
         self,

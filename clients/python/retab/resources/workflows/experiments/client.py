@@ -1,6 +1,6 @@
 """Python SDK client for the workflow experiments API.
 
-Mirrors the REST endpoints under ``/v1/workflows/{workflow_id}/experiments``.
+Mirrors the REST endpoints under ``/v1/workflows/experiments?workflow_id={workflow_id}``.
 The MCP tool surface (``experiments_create``, ``experiments_runs_create``,
 ``experiments_runs_metrics_get``, ...) calls the same routes — this resource is
 the SDK-side equivalent so callers don't have to construct raw requests.
@@ -109,20 +109,20 @@ class WorkflowExperimentsMixin:
         )
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/experiments",
+            url=f"/workflows/experiments?workflow_id={workflow_id}",
             data=body,
         )
 
     def prepare_list(self, workflow_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/experiments",
+            url=f"/workflows/experiments?workflow_id={workflow_id}",
         )
 
     def prepare_get(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}",
+            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
         )
 
     def prepare_update(
@@ -144,27 +144,33 @@ class WorkflowExperimentsMixin:
         )
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}",
+            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
             data=body,
         )
 
     def prepare_delete(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}",
+            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
         )
 
     def prepare_duplicate(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
+        """Duplicate an existing experiment.
+
+        Backend route: ``POST /v1/workflows/experiments`` with
+        ``source_experiment_id`` in the body. The duplicate creation path
+        is the same endpoint as fresh creation — the body discriminates.
+        """
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/duplicate",
-            data={},
+            url=f"/workflows/experiments?workflow_id={workflow_id}",
+            data={"source_experiment_id": experiment_id},
         )
 
     def prepare_list_eligible_blocks(self, workflow_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/experiments/eligible-blocks",
+            url=f"/workflows/experiments/eligible-blocks?workflow_id={workflow_id}",
         )
 
 
@@ -188,7 +194,7 @@ class ExperimentRunsMixin:
         data: Dict[str, Any] = {}
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/runs",
+            url=f"/workflows/experiments/{experiment_id}/runs?workflow_id={workflow_id}",
             data=data,
         )
 

@@ -12,7 +12,7 @@ import {
 
 /**
  * Workflow tests API client. Mirrors the eight backend endpoints
- * under `/v1/workflows/{workflow_id}/tests` plus the nested run
+ * under `/v1/workflows/tests?workflow_id={workflow_id}` plus the nested run
  * endpoints.
  *
  * Sub-clients:
@@ -63,7 +63,7 @@ export default class APIWorkflowTests extends CompositionClient {
     if (target !== undefined) body.target = target;
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
     return {
-      url: `/workflows/${workflowId}/tests/runs`,
+      url: `/workflows/tests/runs?workflow_id=${workflowId}`,
       method: 'POST',
       body,
     };
@@ -108,7 +108,7 @@ export default class APIWorkflowTests extends CompositionClient {
       body.name = name;
     }
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/${workflowId}/tests`,
+      url: `/workflows/tests?workflow_id=${workflowId}`,
       method: 'POST',
       body: { ...body, ...(options?.body || {}) },
       params: options?.params,
@@ -130,7 +130,7 @@ export default class APIWorkflowTests extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowTest> {
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/${workflowId}/tests/${testId}`,
+      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -161,7 +161,7 @@ export default class APIWorkflowTests extends CompositionClient {
     // the escape hatch — matches sibling `APIWorkflowRuns.list`
     // precedence (runs/client.ts).
     return this._fetchJson(ZWorkflowTestListResponse, {
-      url: `/workflows/${workflowId}/tests`,
+      url: `/workflows/tests?workflow_id=${workflowId}`,
       method: 'GET',
       params: { ...baseParams, ...(options?.params || {}) },
       headers: options?.headers,
@@ -200,7 +200,7 @@ export default class APIWorkflowTests extends CompositionClient {
     if (source !== undefined) body.source = source;
 
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/${workflowId}/tests/${testId}`,
+      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
       method: 'PATCH',
       body: { ...body, ...(options?.body || {}) },
       params: options?.params,
@@ -222,7 +222,7 @@ export default class APIWorkflowTests extends CompositionClient {
     options?: RequestOptions
   ): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/${workflowId}/tests/${testId}`,
+      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,

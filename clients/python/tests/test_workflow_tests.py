@@ -110,7 +110,7 @@ def test_create_posts_to_tests_route_with_full_body() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/tests"
+    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
     # Pydantic dumps the discriminated union with `type` set explicitly.
     assert request.data["target"] == {"type": "block", "block_id": "block_extract"}
     assert request.data["source"] == {
@@ -192,7 +192,7 @@ def test_get_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
+    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
 
 
 def test_list_uses_tests_route_with_filter() -> None:
@@ -210,7 +210,7 @@ def test_list_uses_tests_route_with_filter() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/tests"
+    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
     assert request.params == {"limit": 25, "target_block_id": "block_extract"}
     assert result.data == []
     assert result.list_metadata.before is None
@@ -242,7 +242,7 @@ def test_delete_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
+    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
 
 
 # ---------------------------------------------------------------------------
@@ -267,10 +267,8 @@ def test_update_only_includes_fields_the_caller_passed() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
-    assert request.data == {"name": "renamed"}, (
-        f"PATCH body must only carry the field the caller passed; got {request.data!r}"
-    )
+    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
+    assert request.data == {"name": "renamed"}, f"PATCH body must only carry the field the caller passed; got {request.data!r}"
 
 
 def test_update_with_assertion_serializes_assertion_only() -> None:
@@ -324,7 +322,7 @@ def test_runs_create_with_test_id_only() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/tests/runs"
+    assert request.url == "/workflows/tests/runs?workflow_id=wf_abc123"
     assert request.data == {"test_id": "wfnodetest_abc"}
     assert response.lifecycle.status == "pending"
     assert response.id == "wftestrun_q1z2"
@@ -500,7 +498,7 @@ async def test_async_create_posts_to_tests_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/tests"
+    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
     assert test.id == "wfnodetest_abc"
 
 
@@ -535,9 +533,7 @@ def test_update_with_no_kwargs_produces_empty_patch_body() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data == {}, (
-        f"update() with no field kwargs must send an empty body; got {request.data!r}"
-    )
+    assert request.data == {}, f"update() with no field kwargs must send an empty body; got {request.data!r}"
 
 
 def test_workflow_test_response_parses_legacy_doc_with_null_assertion() -> None:

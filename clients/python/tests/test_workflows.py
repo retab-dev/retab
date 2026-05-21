@@ -495,7 +495,7 @@ def test_workflow_blocks_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/blocks"
+    assert request.url == "/workflows/blocks?workflow_id=wf_1"
     assert request.data == {
         "id": "extract-1",
         "type": "extract",
@@ -529,7 +529,7 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/wf_1/blocks/extract-1"
+    assert request.url == "/workflows/blocks/extract-1?workflow_id=wf_1"
     assert request.data == {"label": "Renamed", "position_x": 200.0}
     assert block.label == "Renamed"
 
@@ -551,7 +551,7 @@ def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/blocks/batch"
+    assert request.url == "/workflows/blocks/batch?workflow_id=wf_1"
     assert request.data == [
         {"id": "start-1", "type": "start-document", "label": "", "position_x": 0.0, "position_y": 0.0},
         {"id": "extract-1", "type": "extract", "label": "", "position_x": 0.0, "position_y": 0.0},
@@ -657,7 +657,7 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/edges"
+    assert request.url == "/workflows/edges?workflow_id=wf_1"
     assert request.data == {
         "id": "edge-1",
         "source_block": "start-1",
@@ -688,7 +688,7 @@ def test_workflow_edges_create_batch_accepts_typed_requests() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/edges/batch"
+    assert request.url == "/workflows/edges/batch?workflow_id=wf_1"
     assert request.data == [
         {"id": "edge-1", "source_block": "start-1", "target_block": "extract-1"},
     ]

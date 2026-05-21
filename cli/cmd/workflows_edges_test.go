@@ -60,10 +60,10 @@ func TestWorkflowsEdgesCreateResolvesSourceStartAliasBeforeGeneratingID(t *testi
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[{"id":"blk_generated_start","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -112,8 +112,8 @@ func TestWorkflowsEdgesGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/wf_123/edges/edge_1" {
-			t.Fatalf("path = %s, want edge get", r.URL.Path)
+		if r.URL.Path != "/workflows/edges/edge_1" || r.URL.Query().Get("workflow_id") != "wf_123" {
+			t.Fatalf("path = %s?%s, want edge get", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -153,10 +153,10 @@ func TestWorkflowsEdgesCreateResolvesTargetStartAlias(t *testing.T) {
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[{"id":"extract_1","type":"extract"},{"id":"blk_generated_start","type":"start-document"}]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -196,13 +196,13 @@ func TestWorkflowsEdgesCreateResolvesFriendlyTargetInputHandle(t *testing.T) {
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
 				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"extract_1","type":"extract","config":{"inputs":[{"name":"document","type":"file","is_primary":true}]}}
 			]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -260,13 +260,13 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForDefaultFileInput(t *testin
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
 				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"split_1","type":"split","config":{"subdocuments":[{"name":"invoice"}]}}
 			]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -312,13 +312,13 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForClassifier(t *testing.T) {
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
 				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"classifier_1","type":"classifier","config":{"categories":[{"name":"invoice"}]}}
 			]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -383,7 +383,7 @@ func TestWorkflowsEdgesListTableIncludesHandles(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{
 				"data": [
@@ -444,14 +444,14 @@ func TestWorkflowsEdgesCreateBatchResolvesFriendlyAliasesBeforeGeneratingIDs(t *
 	var posted []map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
 				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"extract_1","type":"extract","config":{"inputs":[{"name":"document","type":"file","is_primary":true}]}},
 				{"id":"split_1","type":"split","config":{"subdocuments":[{"name":"invoice"}]}}
 			]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges/batch":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges/batch" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}
@@ -518,10 +518,10 @@ func TestWorkflowsEdgesCreateRejectsAmbiguousStartAlias(t *testing.T) {
 	var postHits atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[{"id":"start_a","type":"start-document"},{"id":"start_b","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			postHits.Add(1)
 			http.Error(w, "server should not be reached", http.StatusInternalServerError)
 		default:
@@ -561,10 +561,10 @@ func TestWorkflowsEdgesCreateKeepsLiteralStartBlockID(t *testing.T) {
 	var posted map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[{"id":"start","type":"document"},{"id":"generated_start","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_123":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
 			}

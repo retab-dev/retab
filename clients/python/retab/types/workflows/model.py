@@ -1088,7 +1088,7 @@ class WorkflowDiagnosisResponse(RetabBaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Block simulation (POST /workflows/runs/{run_id}/steps/{block_id}/simulate)
+# Block simulation (POST /workflows/simulations, body { step_id, run_id, ... })
 # ---------------------------------------------------------------------------
 
 

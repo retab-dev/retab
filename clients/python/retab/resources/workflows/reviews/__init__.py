@@ -1,3 +1,13 @@
-from .client import AsyncWorkflowReviews, WorkflowReviews
+from .client import (
+    AsyncWorkflowReviewVersions,
+    AsyncWorkflowReviews,
+    WorkflowReviewVersions,
+    WorkflowReviews,
+)
 
-__all__ = ["WorkflowReviews", "AsyncWorkflowReviews"]
+__all__ = [
+    "WorkflowReviewVersions",
+    "WorkflowReviews",
+    "AsyncWorkflowReviewVersions",
+    "AsyncWorkflowReviews",
+]

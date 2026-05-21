@@ -20,24 +20,24 @@ import (
 // a clear flag-shape error before the request leaves the client.
 var reviewVersionIDPattern = regexp.MustCompile(`^rvr_[A-Z2-7]{26}$`)
 
-// The `workflows reviews` command group drives the review overlay —
-// the versioned sidecar attached to a block run awaiting review. The surface is
-// actor-neutral: a correction proposed by a model, an agent, or a human all
-// flow through the same append-version / approve pair.
+// The `workflows reviews` command group drives reviews for block runs awaiting
+// review. The surface is actor-neutral: a correction proposed by a model, an
+// agent, or a human all flow through the same create-version / approve pair.
 //
 // Decisions name the exact content-addressed version id being approved or
-// rejected. Appended versions add a complete snapshot under versions.
+// rejected. Created versions add a complete immutable snapshot.
 
 var workflowsReviewsCmd = &cobra.Command{
 	Use:   "reviews",
 	Short: "Review block runs awaiting review",
-	Long: `Drive the review overlay: list the review queue, inspect a
+	Long: `Drive reviews: list the review queue, inspect a
 block run's output history, post corrections, and submit a verdict
 (approve / reject).
 
-Each block run awaiting review has a review overlay. The overlay stores
-immutable output snapshots in ` + "`versions`" + ` and one terminal
-` + "`decision`" + `. Decisions approve or reject one exact ` + "`version_id`" + `.`,
+Each block run awaiting review has review metadata, immutable output versions,
+and one terminal ` + "`decision`" + `. Decisions approve or reject one exact
+` + "`version_id`" + `. Versions are listed separately with
+` + "`reviews versions list <review-id>`" + `.`,
 	Example: `  # See what's waiting for review
   retab workflows reviews list
 
@@ -107,17 +107,16 @@ exclusive.`,
 
 var workflowsReviewsGetCmd = &cobra.Command{
 	Use:   "get <review-id>",
-	Short: "Get the full review",
-	Long: `Return the full review: immutable output versions in
-` + "`versions`" + ` plus the terminal ` + "`decision`" + ` when one exists.
+	Short: "Get review metadata and decision",
+	Long: `Return review metadata plus the terminal ` + "`decision`" + ` when one exists.
 Use ` + "`reviews schema`" + ` when you need the snapshot shape for a correction.`,
 	Example: `  # Inspect a review
   retab workflows reviews get rev_123
 
   # Pick a version id to approve
-  retab workflows reviews get rev_123 | jq '.versions | keys'
+  retab workflows reviews versions list rev_123
 
-  # See the JSON shape expected by reviews versions append
+  # See the JSON shape expected by reviews versions create
   retab workflows reviews schema rev_123`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -145,13 +144,13 @@ type reviewSnapshotSchema struct {
 
 var workflowsReviewsSchemaCmd = &cobra.Command{
 	Use:   "schema <review-id>",
-	Short: "Show the snapshot shape accepted by reviews versions append",
-	Long: `Show the exact JSON snapshot shape accepted by ` + "`reviews versions append`" + ` for
+	Short: "Show the snapshot shape accepted by reviews versions create",
+	Long: `Show the exact JSON snapshot shape accepted by ` + "`reviews versions create`" + ` for
 this review. The command fetches the review to read the stored
 ` + "`block_type`" + `, then prints the block-specific snapshot contract.
 
 This is guidance for authoring ` + "`--snapshot-file`" + `. It does not add fields
-to the review overlay and it does not change the stored review object.`,
+to the review and it does not change the stored review object.`,
 	Example: `  # See what corrected-output.json must contain
   retab workflows reviews schema rev_123
 
@@ -174,7 +173,7 @@ to the review overlay and it does not change the stored review object.`,
 			return err
 		}
 		schema.CreateUsage = fmt.Sprintf(
-			"retab workflows reviews versions append %s --parent-version-id <rvr_...> --snapshot-file <snapshot.json>",
+			"retab workflows reviews versions create %s --parent-id <rvr_...> --snapshot-file <snapshot.json>",
 			args[0],
 		)
 		return printReviewSchemaResult(cmd, schema)
@@ -185,9 +184,9 @@ var workflowsReviewsApproveCmd = &cobra.Command{
 	Use:   "approve <review-id>",
 	Short: "Approve a reviewed block output",
 	Long: `Approve one exact output version so the run resumes. To approve a
-correction, first append it with ` + "`reviews versions append`" + `, then approve the
+correction, first create it with ` + "`reviews versions create`" + `, then approve the
 returned content-addressed version id.
-Any version in ` + "`versions`" + ` is a valid approval target.`,
+Any version returned by ` + "`reviews versions list`" + ` is a valid approval target.`,
 	Example: `  retab workflows reviews approve rev_123 --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 	Args:    cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -247,31 +246,86 @@ var workflowsReviewsEscalateCmd = &cobra.Command{
 	Use:    "escalate <review-id>",
 	Short:  "Unsupported legacy review escalation command",
 	Hidden: true,
-	Long: `Review escalation is not supported by the review overlay API.
-Use ` + "`reviews approve`" + `, ` + "`reviews reject`" + `, or ` + "`reviews versions append`" + `.`,
+	Long: `Review escalation is not supported by the review API.
+Use ` + "`reviews approve`" + `, ` + "`reviews reject`" + `, or ` + "`reviews versions create`" + `.`,
 	Example: "",
 	Args:    cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("review escalation is not supported by the review API; use reviews approve, reviews reject, or reviews versions append")
+		return fmt.Errorf("review escalation is not supported by the review API; use reviews approve, reviews reject, or reviews versions create")
 	}),
 }
 
 var workflowsReviewsVersionsCmd = &cobra.Command{
 	Use:   "versions",
 	Short: "Manage immutable review output versions",
-	Long: `Manage immutable output versions inside a review overlay.
+	Long: `Manage immutable output versions for a review.
 
-Use ` + "`reviews versions append`" + ` to append a complete corrected snapshot.
+Use ` + "`reviews versions create`" + ` to create a complete corrected snapshot.
 Existing versions are never mutated.`,
 }
 
-var workflowsReviewsVersionsAppendCmd = &cobra.Command{
-	Use:   "append <review-id>",
-	Short: "Append an immutable review output version",
-	Long: `Append a new immutable output version in the review's version graph,
+var workflowsReviewsVersionsListCmd = &cobra.Command{
+	Use:   "list <review-id>",
+	Short: "List immutable review output versions",
+	Long: `List immutable output versions for one review. The review id is required
+because versions are queried per review.`,
+	Example: `  retab workflows reviews versions list rev_123
+  retab workflows reviews versions list rev_123 --after rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		params := &retab.ListReviewVersionsParams{ReviewID: args[0]}
+		params.Before, _ = cmd.Flags().GetString("before")
+		params.After, _ = cmd.Flags().GetString("after")
+		if params.Before != "" && params.After != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
+		if cmd.Flags().Changed("limit") {
+			params.Limit, _ = cmd.Flags().GetInt("limit")
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Reviews.Versions.List(ctx, params)
+		if err != nil {
+			return err
+		}
+		return printReviewVersionsResult(cmd, result)
+	}),
+}
+
+var workflowsReviewsVersionsGetCmd = &cobra.Command{
+	Use:     "get <version-id>",
+	Short:   "Get one immutable review output version",
+	Example: `  retab workflows reviews versions get rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+	Args:    cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if !reviewVersionIDPattern.MatchString(args[0]) {
+			return fmt.Errorf("version-id must be a rvr_<26-char base32> version id")
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Reviews.Versions.Get(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printReviewVersionResult(cmd, result)
+	}),
+}
+
+var workflowsReviewsVersionsCreateCmd = &cobra.Command{
+	Use:   "create <review-id>",
+	Short: "Create an immutable review output version",
+	Long: `Create a new immutable output version in the review's version graph,
 leaving it awaiting review. ` + "`--snapshot-file`" + ` must contain a full block
-output snapshot: the entire JSON object, not a patch. ` + "`--parent-version-id`" + `
-sets the ` + "`parent_version_id`" + ` for the version this snapshot derives from.
+output snapshot: the entire JSON object, not a patch. ` + "`--parent-id`" + `
+sets the ` + "`parent_id`" + ` for the version this snapshot derives from.
 
 Snapshot shapes are block-specific:
   extract:    ` + "`{\"invoice_number\":\"INV-1\",\"total\":1200}`" + `
@@ -280,14 +334,14 @@ Snapshot shapes are block-specific:
   for_each:   ` + "`{\"partitions\":[{\"key\":\"invoice\",\"pages\":[1,2]}]}`" + `
 
 Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
-	Example: `  # Append a corrected output version from a full snapshot
-  retab workflows reviews versions append rev_123 \
-    --parent-version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file ./corrected-output.json --note "fixed currency"
+	Example: `  # Create a corrected output version from a full snapshot
+  retab workflows reviews versions create rev_123 \
+    --parent-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file ./corrected-output.json --note "fixed currency"
 
   # Pipe a classifier correction
   printf '{"category":"booking_confirmation"}' |
-    retab workflows reviews versions append rev_123 \
-      --parent-version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file -`,
+    retab workflows reviews versions create rev_123 \
+      --parent-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
@@ -300,7 +354,7 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 			return fmt.Errorf("--snapshot-file: %w", err)
 		}
 		snapshot = data
-		parentVersionID, err := requireReviewVersionIDFlag(cmd, "parent-version-id")
+		parentID, err := requireReviewVersionIDFlag(cmd, "parent-id")
 		if err != nil {
 			return err
 		}
@@ -310,14 +364,17 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.AppendReviewVersionRequest{ParentVersionID: parentVersionID}
-		req.Snapshot = snapshot
+		req := retab.CreateReviewVersionRequest{
+			ReviewID: args[0],
+			ParentID: parentID,
+			Snapshot: snapshot,
+		}
 		req.Note, _ = cmd.Flags().GetString("note")
-		result, err := client.Workflows.Reviews.AppendVersion(ctx, args[0], req)
+		result, err := client.Workflows.Reviews.Versions.Create(ctx, req)
 		if err != nil {
 			return err
 		}
-		return printReviewAppendResult(cmd, result)
+		return printReviewVersionResult(cmd, result)
 	}),
 }
 
@@ -406,23 +463,26 @@ func printReviewOverlayResult(cmd *cobra.Command, result *retab.Review) error {
 	return printJSON(result)
 }
 
-func printReviewAppendResult(cmd *cobra.Command, result *retab.AppendReviewVersionResponse) error {
+func printReviewVersionsResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ReviewVersion]) error {
 	format, err := ResolveOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
 	}
 	if format == OutputTable {
-		row := map[string]any{
-			"append_status":   result.AppendStatus,
-			"version_id":      result.VersionID,
-			"id":              result.Review.ID,
-			"workflow_run_id": result.Review.WorkflowRunID,
-			"block_id":        result.Review.BlockID,
-			"block_type":      result.Review.BlockType,
-		}
+		return RenderList(os.Stdout, OutputTable, result, reviewVersionColumns)
+	}
+	return printJSON(result)
+}
+
+func printReviewVersionResult(cmd *cobra.Command, result *retab.ReviewVersion) error {
+	format, err := ResolveOutputFormat(cmd, os.Stdout)
+	if err != nil {
+		return err
+	}
+	if format == OutputTable {
 		return RenderList(os.Stdout, OutputTable, struct {
-			Data []map[string]any `json:"data"`
-		}{Data: []map[string]any{row}}, reviewAppendColumns)
+			Data []*retab.ReviewVersion `json:"data"`
+		}{Data: []*retab.ReviewVersion{result}}, reviewVersionColumns)
 	}
 	return printJSON(result)
 }
@@ -537,13 +597,13 @@ var reviewDecisionColumns = []TableColumn{
 	}},
 }
 
-var reviewAppendColumns = []TableColumn{
-	{Header: "APPEND", Extract: func(row any) string { return reviewQueueCell(row, "append_status") }},
-	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "id") }},
-	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
-	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
-	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "VERSION_ID", Extract: func(row any) string { return reviewQueueCell(row, "version_id") }},
+var reviewVersionColumns = []TableColumn{
+	{Header: "VERSION_ID", Extract: func(row any) string { return reviewQueueCell(row, "id") }},
+	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "review_id") }},
+	{Header: "PARENT_ID", Extract: func(row any) string { return reviewQueueCell(row, "parent_id") }},
+	{Header: "AUTHOR", Extract: func(row any) string { return reviewQueueCell(row, "author.display_name") }},
+	{Header: "AUTHOR_KIND", Extract: func(row any) string { return reviewQueueCell(row, "author.kind") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return reviewQueueCell(row, "created_at") }},
 }
 
 var reviewSchemaColumns = []TableColumn{
@@ -744,16 +804,25 @@ func init() {
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("version-id")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
-	workflowsReviewsVersionsAppendCmd.Flags().String("parent-version-id", "", "rvr_<26-char base32> parent version id for the new version (required)")
-	workflowsReviewsVersionsAppendCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
-	workflowsReviewsVersionsAppendCmd.Flags().String("note", "", "free-text rationale for the version")
-	_ = workflowsReviewsVersionsAppendCmd.MarkFlagRequired("parent-version-id")
-	_ = workflowsReviewsVersionsAppendCmd.MarkFlagRequired("snapshot-file")
+	workflowsReviewsVersionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
+	workflowsReviewsVersionsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
+	workflowsReviewsVersionsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
+	workflowsReviewsVersionsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+
+	workflowsReviewsVersionsCreateCmd.Flags().String("parent-id", "", "rvr_<26-char base32> parent version id for the new version (required)")
+	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
+	workflowsReviewsVersionsCreateCmd.Flags().String("note", "", "free-text rationale for the version")
+	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("parent-id")
+	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")
 
 	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "max seconds to wait until review is required")
 	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "2"}, "poll-interval", "seconds between polls")
 
-	workflowsReviewsVersionsCmd.AddCommand(workflowsReviewsVersionsAppendCmd)
+	workflowsReviewsVersionsCmd.AddCommand(
+		workflowsReviewsVersionsListCmd,
+		workflowsReviewsVersionsGetCmd,
+		workflowsReviewsVersionsCreateCmd,
+	)
 	workflowsReviewsCmd.AddCommand(
 		workflowsReviewsListCmd,
 		workflowsReviewsGetCmd,

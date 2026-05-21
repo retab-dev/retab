@@ -98,7 +98,7 @@ func TestRenderAPIErrorForCLIDefaultHidesRawHTTPDebug(t *testing.T) {
 		Code:       "HTTP_EXCEPTION",
 		Message:    "An HTTP exception occurred.",
 		Method:     http.MethodPost,
-		URL:        "http://localhost:4000/v1/workflows/wf_1/blocks",
+		URL:        "http://localhost:4000/v1/workflows/blocks?workflow_id=wf_1",
 		Details: map[string]any{
 			"error": "Invalid config for for_each block. Problem: review is only available for map_method='split_by_key'.",
 		},
@@ -110,7 +110,7 @@ func TestRenderAPIErrorForCLIDefaultHidesRawHTTPDebug(t *testing.T) {
 	if !strings.Contains(got, "Invalid config for for_each block") {
 		t.Fatalf("rendered error should surface the useful message:\n%s", got)
 	}
-	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/wf_1/blocks"} {
+	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/blocks?workflow_id=wf_1"} {
 		if strings.Contains(got, raw) {
 			t.Fatalf("default CLI error should hide raw HTTP detail %q:\n%s", raw, got)
 		}
@@ -153,14 +153,14 @@ func TestRenderAPIErrorForCLIDebugKeepsRawHTTPDebug(t *testing.T) {
 		Code:       "HTTP_EXCEPTION",
 		Message:    "An HTTP exception occurred.",
 		Method:     http.MethodPost,
-		URL:        "http://localhost:4000/v1/workflows/wf_1/blocks",
+		URL:        "http://localhost:4000/v1/workflows/blocks?workflow_id=wf_1",
 		Details:    map[string]any{"error": "Invalid config for for_each block."},
 		Body:       `{"detail":{"code":"HTTP_EXCEPTION"}}`,
 	}
 
 	got := renderAPIErrorForCLI(cmd, apiErr)
 
-	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/wf_1/blocks"} {
+	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/blocks?workflow_id=wf_1"} {
 		if !strings.Contains(got, raw) {
 			t.Fatalf("--debug CLI error should include raw HTTP detail %q:\n%s", raw, got)
 		}

@@ -898,8 +898,8 @@ func TestWorkflowsExperimentsEligibleBlocksHonorsOutputTable(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/wf_123/experiments/eligible-blocks" {
-			t.Fatalf("path = %s, want eligible-blocks path", r.URL.Path)
+		if r.URL.Path != "/workflows/experiments/eligible-blocks" || r.URL.Query().Get("workflow_id") != "wf_123" {
+			t.Fatalf("path = %s?%s, want eligible-blocks path", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"blocks":[{"block_id":"blk_extract","block_label":"Extract","block_type":"extract","experiment_count":2}]}`))

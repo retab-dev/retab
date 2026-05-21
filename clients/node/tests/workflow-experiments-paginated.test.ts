@@ -1,8 +1,8 @@
 /**
  * Pin the canonical PaginatedList envelope (`{data, list_metadata}`) for the
- * two list endpoints under `/v1/workflows/{wf}/experiments`:
+ * two list endpoints under `/v1/workflows/experiments?workflow_id={wf}`:
  *
- *   GET /v1/workflows/{wf}/experiments
+ *   GET /v1/workflows/experiments?workflow_id={wf}
  *   GET /v1/workflows/experiments/runs?workflow_id=...&experiment_id=...
  *
  * Both routes used to return non-canonical shapes (a bare list and the
@@ -96,7 +96,7 @@ describe('workflows.experiments.list paginated envelope', () => {
     const page = await experiments.list('wf_1');
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_1/experiments',
+      url: '/workflows/experiments?workflow_id=wf_1',
       method: 'GET',
     });
     expect(page.data).toHaveLength(1);

@@ -18,21 +18,21 @@ class WorkflowBlocksMixin:
 
     def prepare_list(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to list all blocks for a workflow."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks")
+        return PreparedRequest(method="GET", url=f"/workflows/blocks?workflow_id={workflow_id}")
 
     def prepare_get(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get a single block."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks/{block_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/blocks/{block_id}?workflow_id={workflow_id}")
 
     def prepare_get_resolved_schemas(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get graph-derived schemas for one block."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks/{block_id}/resolved-schemas")
+        return PreparedRequest(method="GET", url=f"/workflows/blocks/{block_id}/resolved-schemas?workflow_id={workflow_id}")
 
     def prepare_config_history(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to fetch the config-version timeline for a block."""
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/blocks/{block_id}/config-history",
+            url=f"/workflows/blocks/{block_id}/config-history?workflow_id={workflow_id}",
         )
 
     def prepare_create(
@@ -42,7 +42,7 @@ class WorkflowBlocksMixin:
     ) -> PreparedRequest:
         """Prepare a request to create a new block."""
         data = request.model_dump(exclude_none=True)
-        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/blocks", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/blocks?workflow_id={workflow_id}", data=data)
 
     def prepare_create_batch(
         self,
@@ -52,7 +52,7 @@ class WorkflowBlocksMixin:
         """Prepare a request to create multiple blocks at once."""
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/blocks/batch",
+            url=f"/workflows/blocks/batch?workflow_id={workflow_id}",
             data=[block.model_dump(exclude_none=True) for block in blocks],
         )
 
@@ -63,11 +63,11 @@ class WorkflowBlocksMixin:
     ) -> PreparedRequest:
         """Prepare a request to partially update a block."""
         data = request.model_dump(exclude_none=True, exclude={"block_id"})
-        return PreparedRequest(method="PATCH", url=f"/workflows/{workflow_id}/blocks/{request.block_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/workflows/blocks/{request.block_id}?workflow_id={workflow_id}", data=data)
 
     def prepare_delete(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to delete a block (also deletes connected edges)."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}/blocks/{block_id}")
+        return PreparedRequest(method="DELETE", url=f"/workflows/blocks/{block_id}?workflow_id={workflow_id}")
 
     def prepare_list_simulations(
         self,
@@ -81,7 +81,7 @@ class WorkflowBlocksMixin:
             params["limit"] = limit
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/runs/{run_id}/steps/{block_id}/simulations",
+            url=f"/workflows/steps/{block_id}/simulations?run_id={run_id}",
             params=params or None,
         )
 
@@ -95,24 +95,24 @@ class WorkflowBlocksMixin:
     ) -> PreparedRequest:
         """Prepare a request to replay one block with the current draft config.
 
-        Note: this is keyed by ``run_id`` (the workflow run whose inputs are
-        replayed), NOT by ``workflow_id`` — the backend route lives under
-        ``/v1/workflows/runs/{run_id}/steps/{block_id}/simulate``.
+        Backend route: ``POST /v1/workflows/simulations`` — simulations are
+        a top-level resource, with ``step_id`` and ``run_id`` carried in the
+        request body (no parent ids in the URL).
         """
-        params: Dict[str, Any] = {}
+        body: Dict[str, Any] = {
+            "run_id": run_id,
+            "step_id": step_id if step_id is not None else block_id,
+        }
+        if step_id is not None and step_id != block_id:
+            body["source_step_id"] = step_id
         if n_consensus is not None:
-            params["n_consensus"] = n_consensus
-        if step_id is not None:
-            params["step_id"] = step_id
-        # Only send when overriding the default — the backend defaults to
-        # ``True``, and sending ``check_eligibility=true`` redundantly would
-        # be noise.
+            body["n_consensus"] = n_consensus
         if not check_eligibility:
-            params["check_eligibility"] = False
+            body["check_eligibility"] = False
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/runs/{run_id}/steps/{block_id}/simulate",
-            params=params or None,
+            url="/workflows/simulations",
+            data=body,
         )
 
 

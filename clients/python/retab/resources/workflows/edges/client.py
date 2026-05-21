@@ -21,11 +21,11 @@ class WorkflowEdgesMixin:
             params["source_block"] = source_block
         if target_block is not None:
             params["target_block"] = target_block
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/edges", params=params or None)
+        return PreparedRequest(method="GET", url=f"/workflows/edges?workflow_id={workflow_id}", params=params or None)
 
     def prepare_get(self, workflow_id: str, edge_id: str) -> PreparedRequest:
         """Prepare a request to get a single edge."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/edges/{edge_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/edges/{edge_id}?workflow_id={workflow_id}")
 
     def prepare_create(
         self,
@@ -34,7 +34,7 @@ class WorkflowEdgesMixin:
     ) -> PreparedRequest:
         """Prepare a request to create a new edge."""
         data = request.model_dump(exclude_none=True)
-        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/edges", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/edges?workflow_id={workflow_id}", data=data)
 
     def prepare_create_batch(
         self,
@@ -44,17 +44,17 @@ class WorkflowEdgesMixin:
         """Prepare a request to create multiple edges at once."""
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/edges/batch",
+            url=f"/workflows/edges/batch?workflow_id={workflow_id}",
             data=[edge.model_dump(exclude_none=True) for edge in edges],
         )
 
     def prepare_delete(self, workflow_id: str, edge_id: str) -> PreparedRequest:
         """Prepare a request to delete an edge."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}/edges/{edge_id}")
+        return PreparedRequest(method="DELETE", url=f"/workflows/edges/{edge_id}?workflow_id={workflow_id}")
 
     def prepare_delete_all(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to delete all edges for a workflow."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}/edges")
+        return PreparedRequest(method="DELETE", url=f"/workflows/edges?workflow_id={workflow_id}")
 
 
 class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):

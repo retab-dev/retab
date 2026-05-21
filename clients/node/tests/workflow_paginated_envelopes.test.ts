@@ -11,13 +11,13 @@ import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
 // `{ data, list_metadata: { before: null, after: null } }` envelope on the
 // seven workflow GRAPH list endpoints converted from bare arrays.
 //
-//   GET /v1/workflows/{wf}/blocks                                     -> PaginatedList[WorkflowBlock]
-//   GET /v1/workflows/{wf}/blocks/{id}/config-history                 -> PaginatedList[BlockConfigVersion]
-//   GET /v1/workflows/{wf}/edges                                      -> PaginatedList[WorkflowEdgeDoc]
+//   GET /v1/workflows/blocks?workflow_id={wf}                                     -> PaginatedList[WorkflowBlock]
+//   GET /v1/workflows/blocks/{id}/config-history?workflow_id={wf}                 -> PaginatedList[BlockConfigVersion]
+//   GET /v1/workflows/edges?workflow_id={wf}                                      -> PaginatedList[WorkflowEdgeDoc]
 //   GET /v1/workflows/artifacts                                       -> PaginatedList[WorkflowArtifact]
-//   GET /v1/workflows/{wf}/snapshots                                  -> PaginatedList[WorkflowSnapshot]
-//   GET /v1/workflows/runs/{run}/steps                                -> PaginatedList[WorkflowRunStep]
-//   GET /v1/workflows/runs/{run}/steps/{block}/simulations            -> PaginatedList[BlockSimulation]
+//   GET /v1/workflows/snapshots?workflow_id={wf}                                  -> PaginatedList[WorkflowSnapshot]
+//   GET /v1/workflows/steps?run_id={run}                              -> PaginatedList[WorkflowRunStep]
+//   GET /v1/workflows/steps/{block}/simulations?run_id={run}          -> PaginatedList[BlockSimulation]
 
 class EnvelopeClient extends AbstractClient {
   public lastFetchParams: Record<string, unknown> | null = null;
@@ -58,7 +58,9 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     const blocks = new APIWorkflowBlocks(client);
     const result = await blocks.list('wf_aaa');
 
-    expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/wf_aaa/blocks');
+    expect((client.lastFetchParams as { url: string }).url).toBe(
+      '/workflows/blocks?workflow_id=wf_aaa'
+    );
     expect(result.data).toHaveLength(1);
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });
@@ -80,7 +82,7 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     const result = await blocks.configHistory('wf_aaa', 'extract-1');
 
     expect((client.lastFetchParams as { url: string }).url).toBe(
-      '/workflows/wf_aaa/blocks/extract-1/config-history'
+      '/workflows/blocks/extract-1/config-history?workflow_id=wf_aaa'
     );
     expect(result.data).toHaveLength(1);
     expect(result.list_metadata).toEqual({ before: null, after: null });
@@ -101,7 +103,7 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     const result = await blocks.listSimulations('run_aaa', 'extract-1', { limit: 5 });
 
     expect((client.lastFetchParams as { url: string }).url).toBe(
-      '/workflows/runs/run_aaa/steps/extract-1/simulations'
+      '/workflows/steps/extract-1/simulations?run_id=run_aaa'
     );
     expect((client.lastFetchParams as { params: Record<string, unknown> }).params).toEqual({
       limit: 5,
@@ -123,7 +125,9 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     const edges = new APIWorkflowEdges(client);
     const result = await edges.list('wf_aaa');
 
-    expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/wf_aaa/edges');
+    expect((client.lastFetchParams as { url: string }).url).toBe(
+      '/workflows/edges?workflow_id=wf_aaa'
+    );
     expect(result.data).toHaveLength(1);
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });
@@ -153,7 +157,7 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     const steps = new APIWorkflowRunSteps(client);
     const result = await steps.list('run_aaa');
 
-    expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/runs/run_aaa/steps');
+    expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/steps?run_id=run_aaa');
     expect(result.data).toHaveLength(1);
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });

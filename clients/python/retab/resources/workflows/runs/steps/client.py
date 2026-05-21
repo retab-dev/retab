@@ -16,11 +16,11 @@ class WorkflowStepsMixin:
 
     def prepare_get(self, run_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get lifecycle and handles for a specific step."""
-        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps/{block_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/steps/{block_id}?run_id={run_id}")
 
     def prepare_list(self, run_id: str) -> PreparedRequest:
         """Prepare a request to list all persisted step documents for a run."""
-        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps")
+        return PreparedRequest(method="GET", url=f"/workflows/steps?run_id={run_id}")
 
 
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):

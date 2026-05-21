@@ -100,7 +100,7 @@ def test_experiments_create_posts_to_workflow_experiments_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments"
+    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
     assert request.data["block_id"] == "block_extract"
     assert request.data["name"] == "Q1 invoices"
     assert request.data["n_consensus"] == 5
@@ -158,7 +158,7 @@ def test_experiments_update_sends_only_provided_fields() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc"
+    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
     assert request.data == {"name": "Renamed"}
 
 
@@ -192,7 +192,7 @@ def test_experiments_list_uses_get() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments"
+    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
     assert len(page.data) == 1
     assert page.data[0].id == "exp_abc"
     assert page.list_metadata.before is None
@@ -207,7 +207,7 @@ def test_experiments_get_uses_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc"
+    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
 
 
 def test_experiments_delete_uses_delete_method() -> None:
@@ -218,10 +218,11 @@ def test_experiments_delete_uses_delete_method() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc"
+    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
 
 
-def test_experiments_duplicate_posts_to_duplicate_subroute() -> None:
+def test_experiments_duplicate_posts_to_create_endpoint_with_source_id() -> None:
+    """Duplicate is a discriminated create — body carries ``source_experiment_id``."""
     client = MagicMock()
     client._prepared_request.return_value = {**_EXPERIMENT_RESPONSE, "id": "exp_copy"}
 
@@ -229,7 +230,8 @@ def test_experiments_duplicate_posts_to_duplicate_subroute() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/duplicate"
+    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
+    assert request.data == {"source_experiment_id": "exp_abc"}
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +286,7 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
+    assert request.url == "/workflows/experiments/exp_abc/runs?workflow_id=wf_abc123"
     assert request.data == {}
     assert run.id == "exprun_1"
     assert run.lifecycle.status == "pending"
@@ -543,7 +545,7 @@ def test_experiments_list_eligible_blocks_uses_eligible_blocks_subroute() -> Non
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments/eligible-blocks"
+    assert request.url == "/workflows/experiments/eligible-blocks?workflow_id=wf_abc123"
 
 
 def test_experiments_do_not_expose_run_batch_surface() -> None:
@@ -686,16 +688,19 @@ def test_blocks_simulate_uses_runs_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    # Route is keyed by run_id (under /workflows/runs/...), not workflow_id —
-    # exact URL match is what the regression check guards.
-    assert request.url == "/workflows/runs/wfr_1/steps/block_extract/simulate"
-    assert request.params == {"n_consensus": 5}
+    # Simulations are a top-level resource: parent ids live in the body.
+    assert request.url == "/workflows/simulations"
+    assert request.data == {
+        "run_id": "wfr_1",
+        "step_id": "block_extract",
+        "n_consensus": 5,
+    }
     assert sim.id == "sim_1"
     assert sim.success is True
 
 
 def test_blocks_simulate_omits_check_eligibility_when_default() -> None:
-    """Default ``check_eligibility=True`` should NOT appear in the query string —
+    """Default ``check_eligibility=True`` should NOT appear in the body —
     sending it would be redundant with the server default and clutter logs."""
     client = MagicMock()
     client._prepared_request.return_value = _SIMULATION_RESPONSE
@@ -706,7 +711,8 @@ def test_blocks_simulate_omits_check_eligibility_when_default() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.params is None
+    assert request.data == {"run_id": "wfr_1", "step_id": "block_extract"}
+    assert "check_eligibility" not in request.data
 
 
 def test_blocks_simulate_with_check_eligibility_false_passes_param() -> None:
@@ -720,7 +726,11 @@ def test_blocks_simulate_with_check_eligibility_false_passes_param() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.params == {"check_eligibility": False}
+    assert request.data == {
+        "run_id": "wfr_1",
+        "step_id": "block_extract",
+        "check_eligibility": False,
+    }
 
 
 def test_blocks_simulate_with_step_id_for_for_each() -> None:
@@ -734,7 +744,11 @@ def test_blocks_simulate_with_step_id_for_for_each() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.params == {"step_id": "for_each-0/extract-0"}
+    assert request.data == {
+        "run_id": "wfr_1",
+        "step_id": "for_each-0/extract-0",
+        "source_step_id": "for_each-0/extract-0",
+    }
 
 
 @pytest.mark.asyncio
@@ -748,4 +762,4 @@ async def test_async_blocks_simulate_uses_runs_steps_route() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/runs/wfr_1/steps/block_extract/simulate"
+    assert request.url == "/workflows/simulations"

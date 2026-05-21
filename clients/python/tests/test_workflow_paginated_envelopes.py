@@ -3,13 +3,13 @@
 Pins the wire-shape contract for the seven endpoints converted from bare
 arrays to ``PaginatedList[T]`` envelopes:
 
-    GET /v1/workflows/{wf}/blocks                                       -> PaginatedList[WorkflowBlock]
-    GET /v1/workflows/{wf}/blocks/{id}/config-history                   -> PaginatedList[BlockConfigVersion]
-    GET /v1/workflows/{wf}/edges                                        -> PaginatedList[WorkflowEdgeDoc]
+    GET /v1/workflows/blocks?workflow_id={wf}                                       -> PaginatedList[WorkflowBlock]
+    GET /v1/workflows/blocks/{id}/config-history?workflow_id={wf}                   -> PaginatedList[BlockConfigVersion]
+    GET /v1/workflows/edges?workflow_id={wf}                                        -> PaginatedList[WorkflowEdgeDoc]
     GET /v1/workflows/artifacts                                         -> PaginatedList[WorkflowArtifact]
-    GET /v1/workflows/{wf}/snapshots                                    -> PaginatedList[WorkflowSnapshot]
-    GET /v1/workflows/runs/{run_id}/steps                               -> PaginatedList[WorkflowRunStep]
-    GET /v1/workflows/runs/{run_id}/steps/{block_id}/simulations        -> PaginatedList[BlockSimulation]
+    GET /v1/workflows/snapshots?workflow_id={wf}                                    -> PaginatedList[WorkflowSnapshot]
+    GET /v1/workflows/steps?run_id={run_id}                               -> PaginatedList[WorkflowRunStep]
+    GET /v1/workflows/steps/{step_id}?run_id={run_id}/simulations        -> PaginatedList[BlockSimulation]
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def test_workflow_blocks_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_aaa/blocks"
+    assert request.url == "/workflows/blocks?workflow_id=wf_aaa"
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "extract-1"
@@ -78,7 +78,7 @@ def test_workflow_blocks_config_history_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_aaa/blocks/extract-1/config-history"
+    assert request.url == "/workflows/blocks/extract-1/config-history?workflow_id=wf_aaa"
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].config_fingerprint == "fp_1"
@@ -105,7 +105,7 @@ def test_workflow_edges_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_aaa/edges"
+    assert request.url == "/workflows/edges?workflow_id=wf_aaa"
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "edge-1"
@@ -177,7 +177,7 @@ def test_workflow_simulations_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs/run_aaa/steps/extract-1/simulations"
+    assert request.url == "/workflows/steps/extract-1/simulations?run_id=run_aaa"
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "sim_1"

@@ -14,7 +14,7 @@ import {
 
 /**
  * Workflow experiments API client. Mirrors the REST endpoints under
- * `/v1/workflows/{workflow_id}/experiments` and the Python SDK's
+ * `/v1/workflows/experiments?workflow_id={workflow_id}` and the Python SDK's
  * `client.workflows.experiments.*`.
  *
  * The MCP tools (`experiments_create`, `experiments_runs_create`,
@@ -78,7 +78,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
     if (documentCaptures !== undefined) body.document_captures = documentCaptures;
     if (documents !== undefined) body.documents = documents;
     return {
-      url: `/workflows/${workflowId}/experiments`,
+      url: `/workflows/experiments?workflow_id=${workflowId}`,
       method: 'POST',
       body,
     };
@@ -86,14 +86,14 @@ export default class APIWorkflowExperiments extends CompositionClient {
 
   prepare_list(workflowId: string): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/experiments`,
+      url: `/workflows/experiments?workflow_id=${workflowId}`,
       method: 'GET',
     };
   }
 
   prepare_get(workflowId: string, experimentId: string): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/experiments/${experimentId}`,
+      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
       method: 'GET',
     };
   }
@@ -119,7 +119,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
     if (documents !== undefined) body.documents = documents;
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
     return {
-      url: `/workflows/${workflowId}/experiments/${experimentId}`,
+      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
       method: 'PATCH',
       body,
     };
@@ -127,7 +127,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
 
   prepare_delete(workflowId: string, experimentId: string): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/experiments/${experimentId}`,
+      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
       method: 'DELETE',
     };
   }
@@ -135,17 +135,18 @@ export default class APIWorkflowExperiments extends CompositionClient {
   prepare_duplicate(
     workflowId: string,
     experimentId: string
-  ): { url: string; method: string; body: Record<string, never> } {
+  ): { url: string; method: string; body: { source_experiment_id: string } } {
+    // Duplicate is a discriminated create — body carries source_experiment_id.
     return {
-      url: `/workflows/${workflowId}/experiments/${experimentId}/duplicate`,
+      url: `/workflows/experiments?workflow_id=${workflowId}`,
       method: 'POST',
-      body: {},
+      body: { source_experiment_id: experimentId },
     };
   }
 
   prepare_list_eligible_blocks(workflowId: string): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/experiments/eligible-blocks`,
+      url: `/workflows/experiments/eligible-blocks?workflow_id=${workflowId}`,
       method: 'GET',
     };
   }

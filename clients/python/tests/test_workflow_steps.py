@@ -30,7 +30,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs/run_123/steps"
+    assert request.url == "/workflows/steps?run_id=run_123"
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -112,7 +112,7 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs/run_123/steps"
+    assert request.url == "/workflows/steps?run_id=run_123"
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -167,7 +167,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs/run_123/steps/extract-1"
+    assert request.url == "/workflows/steps/extract-1?run_id=run_123"
     assert step.handle_outputs is not None
     assert step.artifact is not None
     assert step.artifact.model_dump() == {"operation": "extraction", "id": "ext_123"}
@@ -314,7 +314,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs/run_123/steps"
+    assert request.url == "/workflows/steps?run_id=run_123"
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
     assert result[0].artifact is not None

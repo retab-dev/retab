@@ -249,9 +249,14 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, que
 		return nil, fmt.Errorf("retab: invalid request path: %w", err)
 	}
 	requestURL := baseURL.ResolveReference(relativeURL)
-	if query != nil {
-		requestURL.RawQuery = query.Encode()
+	existingQuery := requestURL.Query()
+	for key, values := range query {
+		existingQuery.Del(key)
+		for _, value := range values {
+			existingQuery.Add(key, value)
+		}
 	}
+	requestURL.RawQuery = existingQuery.Encode()
 
 	var bodyReader io.Reader
 	if body != nil {

@@ -59,7 +59,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
    */
   async list(workflowId: string, options?: RequestOptions): Promise<PaginatedList> {
     return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/${workflowId}/blocks`,
+      url: `/workflows/blocks?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -68,7 +68,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
 
   prepare_config_history(workflowId: string, blockId: string): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/blocks/${blockId}/config-history`,
+      url: `/workflows/blocks/${blockId}/config-history?workflow_id=${workflowId}`,
       method: 'GET',
     };
   }
@@ -85,7 +85,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<PaginatedList> {
     return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/${workflowId}/blocks/${blockId}/config-history`,
+      url: `/workflows/blocks/${blockId}/config-history?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -112,7 +112,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     const params: Record<string, unknown> = {};
     if (limit !== undefined && limit !== null) params.limit = limit;
     return {
-      url: `/workflows/runs/${runId}/steps/${blockId}/simulations`,
+      url: `/workflows/steps/${blockId}/simulations?run_id=${runId}`,
       method: 'GET',
       ...(Object.keys(params).length > 0 ? { params } : {}),
     };
@@ -137,7 +137,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
       }).filter(([, value]) => value !== undefined)
     );
     return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/runs/${runId}/steps/${blockId}/simulations`,
+      url: `/workflows/steps/${blockId}/simulations?run_id=${runId}`,
       method: 'GET',
       params,
       headers: options?.headers,
@@ -158,7 +158,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
    */
   async get(workflowId: string, blockId: string, options?: RequestOptions): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/${workflowId}/blocks/${blockId}`,
+      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -170,7 +170,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     blockId: string
   ): { url: string; method: string } {
     return {
-      url: `/workflows/${workflowId}/blocks/${blockId}/resolved-schemas`,
+      url: `/workflows/blocks/${blockId}/resolved-schemas?workflow_id=${workflowId}`,
       method: 'GET',
     };
   }
@@ -184,7 +184,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<BlockResolvedSchemasResponse> {
     return this._fetchJson(ZBlockResolvedSchemasResponse, {
-      url: `/workflows/${workflowId}/blocks/${blockId}/resolved-schemas`,
+      url: `/workflows/blocks/${blockId}/resolved-schemas?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -218,7 +218,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/${workflowId}/blocks`,
+      url: `/workflows/blocks?workflow_id=${workflowId}`,
       method: 'POST',
       body: {
         ...serializeBlockCreateRequest(request),
@@ -241,7 +241,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowBlock[]> {
     return this._fetchJson(z.array(ZWorkflowBlock), {
-      url: `/workflows/${workflowId}/blocks/batch`,
+      url: `/workflows/blocks/batch?workflow_id=${workflowId}`,
       method: 'POST',
       body: blocks.map((block) => serializeBlockCreateRequest(block)),
       params: options?.params,
@@ -267,7 +267,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/${workflowId}/blocks/${blockId}`,
+      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
       method: 'PATCH',
       body: {
         ...serializeBlockUpdateRequest(request),
@@ -283,7 +283,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
    */
   async delete(workflowId: string, blockId: string, options?: RequestOptions): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/${workflowId}/blocks/${blockId}`,
+      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,
@@ -299,17 +299,22 @@ export default class APIWorkflowBlocks extends CompositionClient {
   ): {
     url: string;
     method: string;
-    params?: Record<string, unknown>;
+    data?: Record<string, unknown>;
   } {
-    const params: Record<string, unknown> = {};
-    if (nConsensus !== undefined && nConsensus !== null) params.n_consensus = nConsensus;
-    if (stepId !== undefined && stepId !== null) params.step_id = stepId;
-    if (!checkEligibility) params.check_eligibility = false;
+    const data: Record<string, unknown> = {
+      run_id: runId,
+      step_id: stepId !== undefined && stepId !== null ? stepId : blockId,
+    };
+    if (stepId !== undefined && stepId !== null && stepId !== blockId) {
+      data.source_step_id = stepId;
+    }
+    if (nConsensus !== undefined && nConsensus !== null) data.n_consensus = nConsensus;
+    if (!checkEligibility) data.check_eligibility = false;
 
     return {
-      url: `/workflows/runs/${runId}/steps/${blockId}/simulate`,
+      url: '/workflows/simulations',
       method: 'POST',
-      ...(Object.keys(params).length > 0 ? { params } : {}),
+      data,
     };
   }
 
@@ -317,9 +322,8 @@ export default class APIWorkflowBlocks extends CompositionClient {
    * Replay one block using inputs from a previous run + the current
    * draft config.
    *
-   * Note: this is keyed by `runId` (the workflow run whose inputs are
-   * replayed), NOT by `workflowId` — the backend route lives under
-   * `/v1/workflows/runs/{run_id}/steps/{block_id}/simulate`.
+   * Backend route: `POST /v1/workflows/simulations` — simulations are a
+   * top-level resource, with `step_id` and `run_id` carried in the body.
    *
    * @example
    * ```typescript
@@ -352,7 +356,8 @@ export default class APIWorkflowBlocks extends CompositionClient {
     return this._fetchJson(ZBlockSimulation, {
       url: request.url,
       method: request.method,
-      params: { ...(request.params || {}), ...(options?.params || {}) },
+      body: { ...request.data, ...(options?.body || {}) },
+      params: options?.params,
       headers: options?.headers,
     });
   }

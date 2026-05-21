@@ -837,7 +837,7 @@ export const ZWorkflowDiagnosisResponse = z
 export type WorkflowDiagnosisResponse = z.infer<typeof ZWorkflowDiagnosisResponse>;
 
 // ---------------------------------------------------------------------------
-// Block simulation (POST /workflows/runs/{run_id}/steps/{block_id}/simulate)
+// Block simulation (POST /workflows/simulations, body { step_id, run_id, ... })
 // ---------------------------------------------------------------------------
 
 export const ZStepArtifactRef = z
@@ -888,20 +888,14 @@ export const ZActor = z
   .passthrough();
 export type Actor = z.infer<typeof ZActor>;
 
-/** One immutable snapshot of the block output in the version history. */
-export const ZOutputVersion = z
-  .object({
-    parent_id: z.string().nullable().default(null),
-    author: ZActor,
-    snapshot: z.record(z.unknown()),
-    note: z.string().nullable().default(null),
-    created_at: z.string(),
-  })
-  .strict();
-export type OutputVersion = z.infer<typeof ZOutputVersion>;
-
-/** A verdict recorded against a specific output version. */
-export const ZReviewDecision = z
+/** A verdict recorded against a specific output version.
+ *
+ * Plain (non-discriminated) shape — but `reason` is required iff
+ * `verdict === "rejected"`. The two-endpoint approve/reject wire surface
+ * enforces this on the server; the schema below enforces it on parse so
+ * the SDK refuses to accept a malformed decision from any source.
+ */
+export const ZDecision = z
   .object({
     verdict: z.enum(['approved', 'rejected']),
     version_id: z.string(),
@@ -909,11 +903,27 @@ export const ZReviewDecision = z
     decided_at: z.string(),
     reason: z.string().nullable().default(null),
   })
-  .passthrough();
-export type ReviewDecision = z.infer<typeof ZReviewDecision>;
+  .passthrough()
+  .superRefine((value, ctx) => {
+    if (value.verdict === 'rejected' && (value.reason === null || value.reason === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'reason is required when verdict is "rejected"',
+        path: ['reason'],
+      });
+    }
+    if (value.verdict === 'approved' && value.reason !== null && value.reason !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'reason must be null when verdict is "approved"',
+        path: ['reason'],
+      });
+    }
+  });
+export type Decision = z.infer<typeof ZDecision>;
 
-/** The full versioned review for one gated block run. */
-export const ZReviewOverlay = z
+/** A review gate and its terminal decision. Version history lives in ReviewVersion. */
+export const ZReview = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
@@ -926,18 +936,20 @@ export const ZReviewOverlay = z
     block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
     created_at: z.string(),
-    versions: z.record(ZOutputVersion),
-    decision: ZReviewDecision.nullable().default(null),
+    decision: ZDecision.nullable().default(null),
   })
-  .strip();
-export type ReviewOverlay = z.infer<typeof ZReviewOverlay>;
-export type Review = ReviewOverlay;
+  .strict();
+export type Review = z.infer<typeof ZReview>;
 
-/** A lightweight review summary returned by `reviews.list(...)` — no version history. */
+/** One review queue row — `Review` projection plus a `seed_version_id` /
+ * `version_count` projection computed server-side against the versions
+ * collection. Returned by `reviews.list(...)`.
+ */
 export const ZReviewSummary = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
+    workflow_version_id: z.string(),
     workflow_run_id: z.string(),
     block_id: z.string(),
     step_id: z.string(),
@@ -946,14 +958,26 @@ export const ZReviewSummary = z
     block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
     created_at: z.string(),
+    decision: ZDecision.nullable().default(null),
     seed_version_id: z.string(),
-    version_count: z.number(),
-    decision: ZReviewDecision.nullable().default(null),
+    version_count: z.number().int().nonnegative(),
   })
-  .strip();
+  .strict();
 export type ReviewSummary = z.infer<typeof ZReviewSummary>;
-export const ZReviewQueueItem = ZReviewSummary;
-export type ReviewQueueItem = z.infer<typeof ZReviewQueueItem>;
+
+/** One immutable content-addressed snapshot for a review. */
+export const ZReviewVersion = z
+  .object({
+    id: z.string(),
+    review_id: z.string(),
+    parent_id: z.string().nullable().default(null),
+    author: ZActor,
+    snapshot: z.record(z.unknown()),
+    note: z.string().nullable().default(null),
+    created_at: z.string(),
+  })
+  .strict();
+export type ReviewVersion = z.infer<typeof ZReviewVersion>;
 
 /** Boundary resource IDs for page navigation. */
 export const ZListMetadata = z
@@ -977,6 +1001,15 @@ export const ZReviewQueueResponse = z
   .passthrough();
 export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
 
+/** Envelope returned by `reviews.versions.list(...)`. */
+export const ZReviewVersionListResponse = z
+  .object({
+    data: z.array(ZReviewVersion).default([]),
+    list_metadata: ZListMetadata,
+  })
+  .passthrough();
+export type ReviewVersionListResponse = z.infer<typeof ZReviewVersionListResponse>;
+
 /** Status of the Temporal resume signal sent after a decision is committed.
  *
  * `"resumed"`: signal succeeded; the workflow run advanced past the gate.
@@ -991,29 +1024,17 @@ export type ResumeStatus = z.infer<typeof ZResumeStatus>;
  * Submission status returned by `reviews.approve/reject(...)`.
  *
  * - `"accepted"`: decision committed.
+ * - `"already_applied"`: the same terminal decision was already committed.
+ * - `"conflict"`: another terminal decision was already committed.
  */
-export const ZSubmissionStatus = z.enum(['accepted']);
+export const ZSubmissionStatus = z.enum(['accepted', 'already_applied', 'conflict']);
 export type SubmissionStatus = z.infer<typeof ZSubmissionStatus>;
-
-/** Status returned by `reviews.append_version(...)`. */
-export const ZAppendStatus = z.enum(['accepted', 'already_exists']);
-export type AppendStatus = z.infer<typeof ZAppendStatus>;
-
-/** Envelope returned by `reviews.append_version(...)`. */
-export const ZAppendVersionResponse = z
-  .object({
-    append_status: ZAppendStatus,
-    version_id: z.string(),
-    review: ZReviewOverlay,
-  })
-  .passthrough();
-export type AppendVersionResponse = z.infer<typeof ZAppendVersionResponse>;
 
 /** Envelope returned by `reviews.approve/reject(...)`. */
 export const ZSubmitDecisionResponse = z
   .object({
     submission_status: ZSubmissionStatus,
-    review: ZReviewOverlay,
+    review: ZReview,
     resume_status: ZResumeStatus.default('resumed'),
     resume_error: z.string().nullable().default(null),
   })

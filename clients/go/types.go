@@ -405,8 +405,7 @@ type CancelWorkflowResponse struct {
 }
 
 // The v1 decision and managed-agent review types were removed in the hard
-// cutover to the review overlay. See the Review* types below and
-// WorkflowReviewsService.
+// cutover to reviews. See the Review* types below and WorkflowReviewsService.
 
 type WorkflowRunExportResponse struct {
 	CSVData string `json:"csv_data"`
@@ -414,11 +413,11 @@ type WorkflowRunExportResponse struct {
 	Columns int    `json:"columns"`
 }
 
-// --- review overlay (workflows.reviews) ----------------------------
+// --- reviews (workflows.reviews) -----------------------------------
 //
 // A review is a first-class resource addressed by review id. Workflow/run/block
 // identifiers are context and list filters only. Version ids are content hashes
-// and versions are keyed by id.
+// exposed through the flat review versions resource.
 // Actor symmetry is a hard rule — model, agent, and human are one shape and
 // Kind is data, never branched on.
 
@@ -429,8 +428,10 @@ type ReviewActor struct {
 	DisplayName string `json:"display_name"`
 }
 
-// ReviewOutputVersion is one immutable, full JSON snapshot of a block output.
-type ReviewOutputVersion struct {
+// ReviewVersion is one immutable, full JSON snapshot of a block output.
+type ReviewVersion struct {
+	ID        string         `json:"id"`
+	ReviewID  string         `json:"review_id"`
 	ParentID  *string        `json:"parent_id"`
 	Author    ReviewActor    `json:"author"`
 	Snapshot  map[string]any `json:"snapshot"`
@@ -447,21 +448,20 @@ type ReviewDecisionRecord struct {
 	Reason    *string     `json:"reason"`
 }
 
-// Review is the full review sidecar for one reviewed block run.
+// Review is the review metadata and terminal decision for one reviewed block run.
 type Review struct {
-	ID                string                         `json:"id"`
-	WorkflowID        string                         `json:"workflow_id"`
-	WorkflowVersionID string                         `json:"workflow_version_id"`
-	WorkflowRunID     string                         `json:"workflow_run_id"`
-	BlockID           string                         `json:"block_id"`
-	StepID            string                         `json:"step_id"`
-	ParentStepID      *string                        `json:"parent_step_id"`
-	IterationKey      *string                        `json:"iteration_key"`
-	BlockType         string                         `json:"block_type"`
-	TriggeredBy       map[string]any                 `json:"triggered_by"`
-	CreatedAt         time.Time                      `json:"created_at"`
-	Versions          map[string]ReviewOutputVersion `json:"versions"`
-	Decision          *ReviewDecisionRecord          `json:"decision"`
+	ID                string                `json:"id"`
+	WorkflowID        string                `json:"workflow_id"`
+	WorkflowVersionID string                `json:"workflow_version_id"`
+	WorkflowRunID     string                `json:"workflow_run_id"`
+	BlockID           string                `json:"block_id"`
+	StepID            string                `json:"step_id"`
+	ParentStepID      *string               `json:"parent_step_id"`
+	IterationKey      *string               `json:"iteration_key"`
+	BlockType         string                `json:"block_type"`
+	TriggeredBy       map[string]any        `json:"triggered_by"`
+	CreatedAt         time.Time             `json:"created_at"`
+	Decision          *ReviewDecisionRecord `json:"decision"`
 }
 
 // ReviewSummary is the lightweight review-queue projection.
@@ -490,12 +490,6 @@ type ReviewSummary struct {
 // requires the cursor fields in PaginationCursor (Before/After).
 type ReviewQueueResponse = PaginatedList[ReviewSummary]
 
-type AppendReviewVersionResponse struct {
-	AppendStatus string `json:"append_status"` // accepted | already_exists
-	VersionID    string `json:"version_id"`
-	Review       Review `json:"review"`
-}
-
 // SubmitReviewDecisionResponse is the result of a verdict submission.
 //
 // SubmissionStatus reflects whether the decision write was accepted on the
@@ -514,11 +508,6 @@ type SubmitReviewDecisionResponse struct {
 const (
 	// SubmissionStatusAccepted means the decision was written.
 	SubmissionStatusAccepted = "accepted"
-)
-
-const (
-	AppendStatusAccepted      = "accepted"
-	AppendStatusAlreadyExists = "already_exists"
 )
 
 // Resume status string constants reported on Approve / Reject responses.

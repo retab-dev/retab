@@ -42,7 +42,7 @@ export default class APIWorkflowTestRuns extends CompositionClient {
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
 
     return this._fetchJson(ZWorkflowTestRun, {
-      url: `/workflows/${workflowId}/tests/runs`,
+      url: `/workflows/tests/runs?workflow_id=${workflowId}`,
       method: 'POST',
       body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
       params: options?.params,
