@@ -530,7 +530,7 @@ func TestWorkflowsRunsListRejectsInvalidListFlagsLocally(t *testing.T) {
 		wantError string
 		reset     string
 	}{
-		{name: "negative limit", flag: "limit", value: "-1", wantError: "between 0 and 100", reset: "0"},
+		{name: "negative limit", flag: "limit", value: "-1", wantError: "between 1 and 100", reset: "1"},
 		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
 		{name: "invalid from date", flag: "from-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
 		{name: "invalid to date", flag: "to-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
@@ -556,10 +556,10 @@ func TestWorkflowsRunsListRejectsOverLimitLocally(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected local parse error for --limit=101")
 	}
-	if !strings.Contains(err.Error(), "between 0 and 100") {
+	if !strings.Contains(err.Error(), "between 1 and 100") {
 		t.Fatalf("error %q does not mention backend limit range", err.Error())
 	}
-	if resetErr := workflowsRunsListCmd.Flags().Set("limit", "0"); resetErr != nil {
+	if resetErr := workflowsRunsListCmd.Flags().Set("limit", "1"); resetErr != nil {
 		t.Fatalf("reset --limit: %v", resetErr)
 	}
 }
