@@ -531,6 +531,117 @@ func TestWorkflowsRunsCreateRejectsConflictingDocumentSourcesForSameBlock(t *tes
 	}
 }
 
+func TestWorkflowsRunsCreateRejectsDuplicateDocumentFlag(t *testing.T) {
+	// `retab workflows runs create wf_x --document start=a --document start=b`
+	// used to silently keep the last entry. Now the second occurrence is a
+	// hard error so users notice the misconfiguration.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for duplicate --document, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	tempDir := t.TempDir()
+	docPathA := filepath.Join(tempDir, "a.pdf")
+	docPathB := filepath.Join(tempDir, "b.pdf")
+	for _, p := range []string{docPathA, docPathB} {
+		if err := os.WriteFile(p, []byte("%PDF-1.4 fake"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document", "start="+docPathA); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("document", "start="+docPathB); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected duplicate --document error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--document") {
+		t.Fatalf("error %q should name the --document flag", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+func TestWorkflowsRunsCreateRejectsDuplicateAcrossDocumentAndDocumentUrl(t *testing.T) {
+	// Pin the existing cross-source guard: when the same block id appears
+	// in both `--document` and `--document-url`, the command must refuse
+	// before any server call.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for cross-flag duplicate, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	tempDir := t.TempDir()
+	docPath := filepath.Join(tempDir, "invoice.pdf")
+	if err := os.WriteFile(docPath, []byte("%PDF-1.4 fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document", "start="+docPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("document-url", "start=https://example.com/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected cross-flag duplicate error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--document") || !strings.Contains(err.Error(), "--document-url") {
+		t.Fatalf("error %q should name both conflicting flags", err.Error())
+	}
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -1403,22 +1514,64 @@ func TestParseDocumentArgs_MixedFlagsUnionOneWarning(t *testing.T) {
 	}
 }
 
-func TestParseDocumentArgs_NewFlagWinsOnCollision(t *testing.T) {
+func TestParseDocumentArgs_RejectsCollisionBetweenDocumentAndDocumentFile(t *testing.T) {
+	// A given block-id must appear in at most one of `--document` /
+	// `--document-file`. Previously the new flag silently won on collision
+	// (the loser was discarded with no error), which was surprising and
+	// hid user typos. The fix errors instead, naming the offending block.
 	var warn bytes.Buffer
-	got, err := parseDocumentArgs(
+	_, err := parseDocumentArgs(
 		[]string{"start=./new.pdf"},
 		[]string{"start=./legacy.pdf"},
 		&warn,
 	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err == nil {
+		t.Fatal("expected error when --document and --document-file collide on the same block id")
 	}
-	if len(got) != 1 || got["start"] != "./new.pdf" {
-		t.Fatalf("got %v, want {start: ./new.pdf} (--document overrides --document-file)", got)
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
 	}
-	// Still exactly one warning line because the legacy flag was used.
-	if strings.Count(warn.String(), "\n") != 1 {
-		t.Fatalf("expected exactly one warning line, got %q", warn.String())
+	if !strings.Contains(err.Error(), "--document") || !strings.Contains(err.Error(), "--document-file") {
+		t.Fatalf("error %q should name both conflicting flags", err.Error())
+	}
+}
+
+func TestParseDocumentArgs_RejectsDuplicateDocumentFlag(t *testing.T) {
+	// Two `--document` flags with the same block id silently overrode each
+	// other before the fix. Now the second occurrence is a hard error so
+	// the user notices the typo / scripting bug.
+	var warn bytes.Buffer
+	_, err := parseDocumentArgs(
+		[]string{"start=./a.pdf", "start=./b.pdf"},
+		nil,
+		&warn,
+	)
+	if err == nil {
+		t.Fatal("expected error for duplicate --document block-id")
+	}
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--document") {
+		t.Fatalf("error %q should name the --document flag", err.Error())
+	}
+}
+
+func TestParseDocumentArgs_RejectsDuplicateDocumentFileFlag(t *testing.T) {
+	var warn bytes.Buffer
+	_, err := parseDocumentArgs(
+		nil,
+		[]string{"start=./a.pdf", "start=./b.pdf"},
+		&warn,
+	)
+	if err == nil {
+		t.Fatal("expected error for duplicate --document-file block-id")
+	}
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--document-file") {
+		t.Fatalf("error %q should name the --document-file flag", err.Error())
 	}
 }
 

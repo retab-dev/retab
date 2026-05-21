@@ -747,6 +747,70 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 	}
 }
 
+// TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether pins the
+// mutual-exclusion contract between --captures-file and --documents-file.
+// The help text describes them as alternatives ("Provide the input
+// documents in one of two ways"), so passing both must fail client-side
+// before any file I/O or network call.
+func TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	capturesFile := filepath.Join(dir, "captures.json")
+	documentsFile := filepath.Join(dir, "documents.json")
+	if err := os.WriteFile(capturesFile, []byte(`[{"workflow_run_id":"run_123","step_id":"step_123"}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(documentsFile, []byte(`[{"handle_inputs":{"foo":"bar"}}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsExperimentsCreateCmd.Flags().Set("block-id", "blk_123"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsExperimentsCreateCmd.Flags().Set("name", "experiment"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsExperimentsCreateCmd.Flags().Set("captures-file", capturesFile); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsExperimentsCreateCmd.Flags().Set("documents-file", documentsFile); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
+		_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
+		_ = workflowsExperimentsCreateCmd.Flags().Set("captures-file", "")
+		_ = workflowsExperimentsCreateCmd.Flags().Set("documents-file", "")
+	})
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected mutual-exclusion error for --captures-file and --documents-file")
+	}
+	if !strings.Contains(stderr, "--captures-file") || !strings.Contains(stderr, "--documents-file") {
+		t.Fatalf("stderr %q does not mention both flag names", stderr)
+	}
+	if !strings.Contains(stderr, "cannot be used together") {
+		t.Fatalf("stderr %q does not match expected mutual-exclusion wording", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")

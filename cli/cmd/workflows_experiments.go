@@ -149,6 +149,14 @@ After creation, create a run with
 		if err != nil {
 			return err
 		}
+		// --captures-file and --documents-file are described in the help
+		// text as alternatives ("Provide the input documents in one of two
+		// ways"). Reject the combination client-side before any file I/O
+		// or network call so users don't silently get only one of the two
+		// sources used.
+		if err := validateMutuallyExclusiveChangedFlags(cmd, "captures-file", "documents-file"); err != nil {
+			return err
+		}
 		req := retab.CreateExperimentRequest{}
 		req.WorkflowID = workflowID
 		req.BlockID = blockID

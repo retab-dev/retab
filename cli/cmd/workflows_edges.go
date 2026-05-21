@@ -312,6 +312,13 @@ you may pass the friendly input name from the block config, such as
 		req.SourceHandle, _ = cmd.Flags().GetString("source-handle")
 		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
 		req.ID, _ = cmd.Flags().GetString("id")
+		// Trim whitespace on block ids so values like "start  " (e.g. from
+		// shell completion or copy/paste) don't hit the server verbatim and
+		// produce a confusing 404. The "is required" check still runs on
+		// the trimmed value below so "   " is rejected with the existing
+		// message rather than slipping through as a valid id.
+		req.SourceBlock = strings.TrimSpace(req.SourceBlock)
+		req.TargetBlock = strings.TrimSpace(req.TargetBlock)
 		idWasExplicit := strings.TrimSpace(req.ID) != ""
 		if err := validateWorkflowEdgeCreate(req); err != nil {
 			return err
