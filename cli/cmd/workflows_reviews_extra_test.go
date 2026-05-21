@@ -397,3 +397,39 @@ func TestReviewsListTableOmitsFooterWhenNoMorePages(t *testing.T) {
 		t.Fatalf("expected no footer when there are no more pages, got %q", stderr)
 	}
 }
+
+// reviews schema --output table used to render nested maps via Go's default
+// fmt.Sprintf %v, producing `map[k:v]` debug noise that's illegible in a table
+// cell. Pin the new compact-JSON rendering so this can't regress.
+func TestReviewsSchemaTableRendersStructuredCellsAsJSON(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := reviewOverlayBody(nil)
+		body["block_type"] = "split"
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"}); err != nil {
+			t.Fatalf("reviews schema: %v", err)
+		}
+	})
+	if strings.Contains(stdout, "map[") {
+		t.Fatalf("schema table cell contains Go-debug map output (`map[...]`):\n%s", stdout)
+	}
+	for _, want := range []string{`{"`, `"required":["documents"]`, `[1]`} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected JSON-style cell containing %q:\n%s", want, stdout)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -174,7 +175,14 @@ var workflowsReviewsApproveCmd = &cobra.Command{
 	Short: "Approve a reviewed block output",
 	Long: `Approve one exact output version so the run resumes. To approve a
 correction, first create it with ` + "`reviews versions create`" + `, then approve the
-returned content-addressed version id.`,
+returned content-addressed version id.
+
+` + "`--version-id`" + ` must be a HEAD version — one that has no child version
+appended on top of it. Approving a superseded version would silently discard
+any corrections made after it, so the server rejects this with HTTP 422 and
+names the current head. If two reviewers forked from the same parent, multiple
+heads can exist; pick one of them, or create one corrected version that
+supersedes both before approving.`,
 	Example: `  retab workflows reviews approve run_xyz789 blk_extract_1 --version-id 9d6d...`,
 	Args:    cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -508,10 +516,24 @@ var reviewDecisionColumns = []TableColumn{
 
 var reviewSchemaColumns = []TableColumn{
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "SCHEMA", Extract: func(row any) string { return reviewQueueCell(row, "schema") }},
-	{Header: "EXAMPLE", Extract: func(row any) string { return reviewQueueCell(row, "example") }},
-	{Header: "NOTES", Extract: func(row any) string { return reviewQueueCell(row, "notes") }},
+	{Header: "SCHEMA", Extract: func(row any) string { return reviewSchemaJSONCell(row, "schema") }},
+	{Header: "EXAMPLE", Extract: func(row any) string { return reviewSchemaJSONCell(row, "example") }},
+	{Header: "NOTES", Extract: func(row any) string { return reviewSchemaJSONCell(row, "notes") }},
 	{Header: "CREATE_USAGE", Extract: func(row any) string { return reviewQueueCell(row, "create_usage") }},
+}
+
+// reviewSchemaJSONCell renders structured values (maps, slices) as compact JSON
+// rather than Go's `map[k:v]` debug format, which is illegible in a table cell.
+func reviewSchemaJSONCell(row any, key string) string {
+	v, ok := rowField(row, key)
+	if !ok || cellIsEmpty(v) {
+		return ""
+	}
+	encoded, err := json.Marshal(v)
+	if err != nil {
+		return reviewQueueCell(row, key)
+	}
+	return string(encoded)
 }
 
 func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {

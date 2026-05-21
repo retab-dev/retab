@@ -1249,6 +1249,12 @@ type ApproveReviewRequest struct {
 
 // Approve approves a reviewed block output.
 //
+// VersionID must be a HEAD version — one with no child appended on top of it.
+// Approving a superseded ancestor would silently discard the corrections
+// layered above it, so the server rejects this with HTTP 422 and names the
+// current head in the error message. To approve a correction, first call
+// CreateVersion to author it, then pass the returned version id here.
+//
 // Submitting the same (verdict, VersionID) twice returns
 // SubmissionStatus="already_applied" — this is the idempotency mechanism, so
 // callers can retry transient failures safely. If another reviewer decided

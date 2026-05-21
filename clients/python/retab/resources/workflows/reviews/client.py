@@ -160,16 +160,26 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
     ) -> SubmitDecisionResponse:
         """Approve the gated block output.
 
+        ``version_id`` must be a HEAD version — one with no child appended on
+        top of it. Approving a superseded ancestor would silently discard the
+        corrections layered above it, so the server rejects this with HTTP 422
+        and names the current head in the error. To approve a correction,
+        first call :meth:`create_version` to author it, then pass the returned
+        version id here.
+
         Args:
             run_id: The workflow run id.
             block_id: The gated block id.
             version_id: Content-hash id of the exact version being approved.
+                Must be a HEAD version (no descendant in ``versions_by_id``).
 
         Returns:
             SubmitDecisionResponse: Submission status and the updated review.
 
         Raises:
             ConflictError: HTTP 409 — the review already has a terminal decision.
+            ValidationError: HTTP 422 — the version is superseded by a newer
+                version. The error message names the current head.
         """
         request = self.prepare_decision(
             run_id,
@@ -364,16 +374,26 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
     ) -> SubmitDecisionResponse:
         """Approve the gated block output.
 
+        ``version_id`` must be a HEAD version — one with no child appended on
+        top of it. Approving a superseded ancestor would silently discard the
+        corrections layered above it, so the server rejects this with HTTP 422
+        and names the current head in the error. To approve a correction,
+        first call :meth:`create_version` to author it, then pass the returned
+        version id here.
+
         Args:
             run_id: The workflow run id.
             block_id: The gated block id.
             version_id: Content-hash id of the exact version being approved.
+                Must be a HEAD version (no descendant in ``versions_by_id``).
 
         Returns:
             SubmitDecisionResponse: Submission status and the updated review.
 
         Raises:
             ConflictError: HTTP 409 — the review already has a terminal decision.
+            ValidationError: HTTP 422 — the version is superseded by a newer
+                version. The error message names the current head.
         """
         request = self.prepare_decision(
             run_id,
