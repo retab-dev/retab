@@ -1186,39 +1186,47 @@ type ReviewWaitForParams struct {
 
 // ListReviewsParams filters the review queue.
 //
-// Decision selects which slice of the queue to return: "none" (the server
-// default) lists overlays still awaiting review; the empty string omits the
-// filter so all overlays — open and decided — are returned.
+// DecisionStatus selects which slice of the queue to return: "pending" (the
+// default), "approved", "rejected", "decided", or "all".
 //
 // Before and After are opaque cursor strings copied verbatim from a previous
 // response's list_metadata. Setting both at the same time is a client error.
 type ListReviewsParams struct {
-	WorkflowID string // restrict to one workflow
-	Limit      int    // page size, 1-200
-	Decision   string // "none" for the open queue, "" to include decided overlays
-	Before     string // cursor for the previous page (from list_metadata.before)
-	After      string // cursor for the next page (from list_metadata.after)
+	WorkflowID     string // restrict to one workflow
+	RunID          string // restrict to one workflow run
+	BlockID        string // restrict to one workflow block
+	StepID         string // restrict to one execution step
+	IterationKey   string // restrict to one for_each iteration key
+	Limit          int    // page size, 1-200
+	DecisionStatus string // pending | approved | rejected | decided | all
+	Before         string // cursor for the previous page (from list_metadata.before)
+	After          string // cursor for the next page (from list_metadata.after)
 }
 
 // List returns a page of the review queue — block runs awaiting review,
 // hottest first. The response is the standard cursor envelope: inspect
 // result.ListMetadata.After to detect truncation and pass it back as the
 // After param on the next call to fetch the following page.
-func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[ReviewQueueItem], error) {
+func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[ReviewSummary], error) {
 	query := url.Values{}
+	query.Set("decision_status", "pending")
 	if params != nil {
 		if params.Before != "" && params.After != "" {
 			return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
 		}
 		addQuery(query, "workflow_id", params.WorkflowID)
-		addQuery(query, "decision", params.Decision)
+		addQuery(query, "run_id", params.RunID)
+		addQuery(query, "block_id", params.BlockID)
+		addQuery(query, "step_id", params.StepID)
+		addQuery(query, "iteration_key", params.IterationKey)
+		addQuery(query, "decision_status", params.DecisionStatus)
 		addQuery(query, "before", params.Before)
 		addQuery(query, "after", params.After)
 		if params.Limit > 0 {
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result PaginatedList[ReviewQueueItem]
+	var result PaginatedList[ReviewSummary]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews", query, nil, &result, opts...)
 	if err != nil {
 		return nil, err
@@ -1226,20 +1234,17 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 	return &result, nil
 }
 
-// Get returns the full review overlay for one reviewed run/block.
-func (s *WorkflowReviewsService) Get(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*ReviewOverlay, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
+// Get returns the full review by id.
+func (s *WorkflowReviewsService) Get(ctx context.Context, reviewID string, opts ...RequestOption) (*Review, error) {
+	if reviewID == "" {
+		return nil, fmt.Errorf("retab: reviewID is required")
 	}
-	if blockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
-	var overlay ReviewOverlay
-	err := s.client.do(ctx, http.MethodGet, reviewsPath(runID, blockID), nil, nil, &overlay, opts...)
+	var review Review
+	err := s.client.do(ctx, http.MethodGet, reviewPath(reviewID), nil, nil, &review, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &overlay, nil
+	return &review, nil
 }
 
 // ApproveReviewRequest approves one exact reviewed output version.
@@ -1249,11 +1254,9 @@ type ApproveReviewRequest struct {
 
 // Approve approves a reviewed block output.
 //
-// VersionID must be a HEAD version — one with no child appended on top of it.
-// Approving a superseded ancestor would silently discard the corrections
-// layered above it, so the server rejects this with HTTP 422 and names the
-// current head in the error message. To approve a correction, first call
-// CreateVersion to author it, then pass the returned version id here.
+// VersionID can be any id in the review's versions map. To approve a
+// correction, first call AppendVersion to author it, then pass the returned
+// version id here.
 //
 // Submitting the same (verdict, VersionID) twice returns
 // SubmissionStatus="already_applied" — this is the idempotency mechanism, so
@@ -1263,18 +1266,11 @@ type ApproveReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually resumed
 // downstream — Response.SubmissionStatus only reflects the decision write.
-// When the decision is durable but the Temporal resume signal fails on a
-// fresh write, SubmissionStatus is "accepted_pending_resume" and ResumeError
-// carries the underlying message; the server's reconcile loop will retry.
-func (s *WorkflowReviewsService) Approve(ctx context.Context, runID string, blockID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+func (s *WorkflowReviewsService) Approve(ctx context.Context, reviewID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")
 	}
-	body := map[string]any{
-		"verdict":    "approved",
-		"version_id": request.VersionID,
-	}
-	return s.submitDecision(ctx, runID, blockID, body, opts...)
+	return s.submitDecision(ctx, reviewID, "approve", map[string]any{"version_id": request.VersionID}, opts...)
 }
 
 // RejectReviewRequest rejects the reviewed output. The runtime records a
@@ -1294,75 +1290,61 @@ type RejectReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually cancelled
 // downstream — Response.SubmissionStatus only reflects the decision write.
-// When the decision is durable but the Temporal resume signal fails on a
-// fresh write, SubmissionStatus is "accepted_pending_resume" and ResumeError
-// carries the underlying message; the server's reconcile loop will retry.
-func (s *WorkflowReviewsService) Reject(ctx context.Context, runID string, blockID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+func (s *WorkflowReviewsService) Reject(ctx context.Context, reviewID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")
 	}
 	if request.Reason == "" {
 		return nil, fmt.Errorf("retab: Reason is required for Reject")
 	}
-	body := map[string]any{
-		"verdict":    "rejected",
-		"version_id": request.VersionID,
-		"reason":     request.Reason,
-	}
-	return s.submitDecision(ctx, runID, blockID, body, opts...)
+	body := map[string]any{"version_id": request.VersionID, "reason": request.Reason}
+	return s.submitDecision(ctx, reviewID, "reject", body, opts...)
 }
 
-func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID string, blockID string, body map[string]any, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if blockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
+func (s *WorkflowReviewsService) submitDecision(ctx context.Context, reviewID string, action string, body map[string]any, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+	if reviewID == "" {
+		return nil, fmt.Errorf("retab: reviewID is required")
 	}
 	var result SubmitReviewDecisionResponse
-	err := s.client.do(ctx, http.MethodPost, reviewsPath(runID, blockID)+"/decision", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, reviewPath(reviewID)+"/"+action, nil, body, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// CreateReviewVersionRequest creates a corrective output version without deciding.
-type CreateReviewVersionRequest struct {
-	Snapshot map[string]any // full reviewed output snapshot
-	ParentID string         // parent content-hash version id
-	Note     string         // optional rationale
+// AppendReviewVersionRequest appends a corrective output version without deciding.
+type AppendReviewVersionRequest struct {
+	Snapshot        map[string]any // full reviewed output snapshot
+	ParentVersionID string         // parent content-hash version id
+	Note            string         // optional rationale
 }
 
-// CreateVersion appends a new output version to the overlay's version history.
-func (s *WorkflowReviewsService) CreateVersion(ctx context.Context, runID string, blockID string, request CreateReviewVersionRequest, opts ...RequestOption) (*ReviewOverlay, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if blockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
+// AppendVersion appends a new output version to the review's version graph.
+func (s *WorkflowReviewsService) AppendVersion(ctx context.Context, reviewID string, request AppendReviewVersionRequest, opts ...RequestOption) (*AppendReviewVersionResponse, error) {
+	if reviewID == "" {
+		return nil, fmt.Errorf("retab: reviewID is required")
 	}
 	if request.Snapshot == nil {
 		return nil, fmt.Errorf("retab: Snapshot is required")
 	}
-	if request.ParentID == "" {
-		return nil, fmt.Errorf("retab: ParentID is required")
+	if request.ParentVersionID == "" {
+		return nil, fmt.Errorf("retab: ParentVersionID is required")
 	}
-	body := map[string]any{"snapshot": request.Snapshot, "parent_id": request.ParentID}
+	body := map[string]any{"snapshot": request.Snapshot, "parent_version_id": request.ParentVersionID}
 	if request.Note != "" {
 		body["note"] = request.Note
 	}
-	var overlay ReviewOverlay
-	err := s.client.do(ctx, http.MethodPost, reviewsPath(runID, blockID)+"/versions", nil, body, &overlay, opts...)
+	var result AppendReviewVersionResponse
+	err := s.client.do(ctx, http.MethodPost, reviewPath(reviewID)+"/versions", nil, body, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &overlay, nil
+	return &result, nil
 }
 
-// WaitFor polls until the block is awaiting review. A 404 means the workflow
-// has not reached the review point yet, so polling continues.
-func (s *WorkflowReviewsService) WaitFor(ctx context.Context, runID string, blockID string, params *ReviewWaitForParams, opts ...RequestOption) (*ReviewOverlay, error) {
+// WaitFor polls until the review exists and is pending.
+func (s *WorkflowReviewsService) WaitFor(ctx context.Context, reviewID string, params *ReviewWaitForParams, opts ...RequestOption) (*Review, error) {
 	pollInterval := 2 * time.Second
 	timeout := 2 * time.Minute
 	if params != nil {
@@ -1377,9 +1359,9 @@ func (s *WorkflowReviewsService) WaitFor(ctx context.Context, runID string, bloc
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	for {
-		overlay, err := s.Get(ctx, runID, blockID, opts...)
-		if err == nil && overlay.Decision == nil {
-			return overlay, nil
+		review, err := s.Get(ctx, reviewID, opts...)
+		if err == nil && review.Decision == nil {
+			return review, nil
 		}
 		if err != nil {
 			var apiErr *APIError
@@ -1398,8 +1380,8 @@ func (s *WorkflowReviewsService) WaitFor(ctx context.Context, runID string, bloc
 	}
 }
 
-func reviewsPath(runID, blockID string) string {
-	return "/workflows/reviews/" + url.PathEscape(runID) + "/" + url.PathEscape(blockID)
+func reviewPath(reviewID string) string {
+	return "/workflows/reviews/" + url.PathEscape(reviewID)
 }
 
 type WorkflowTestsService struct {

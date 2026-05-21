@@ -22,10 +22,14 @@ func setReviewsBaseURL(t *testing.T, url string) {
 func newReviewsListTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "list", RunE: workflowsReviewsListCmd.RunE}
 	cmd.Flags().String("workflow-id", "", "")
+	cmd.Flags().String("run-id", "", "")
+	cmd.Flags().String("block-id", "", "")
+	cmd.Flags().String("step-id", "", "")
+	cmd.Flags().String("iteration-key", "", "")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "")
-	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
-	_ = decisionFlag.Set("none")
-	cmd.Flags().Var(decisionFlag, "decision", "")
+	decisionFlag := newEnumStringFlagValue("--decision-status", "pending", "approved", "rejected", "decided", "all")
+	_ = decisionFlag.Set("pending")
+	cmd.Flags().Var(decisionFlag, "decision-status", "")
 	cmd.Flags().String("before", "", "")
 	cmd.Flags().String("after", "", "")
 	cmd.MarkFlagsMutuallyExclusive("before", "after")
@@ -49,7 +53,7 @@ func TestReviewsListPassesDecisionFlag(t *testing.T) {
 	setReviewsBaseURL(t, server.URL)
 
 	cmd := newReviewsListTestCmd()
-	if err := cmd.Flags().Set("decision", "any"); err != nil {
+	if err := cmd.Flags().Set("decision-status", "all"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,12 +62,12 @@ func TestReviewsListPassesDecisionFlag(t *testing.T) {
 			t.Fatalf("reviews list: %v", err)
 		}
 	})
-	if !strings.Contains(seenQuery, "decision=any") {
-		t.Fatalf("expected decision=any in query, got %q", seenQuery)
+	if !strings.Contains(seenQuery, "decision_status=all") {
+		t.Fatalf("expected decision_status=all in query, got %q", seenQuery)
 	}
 }
 
-func TestReviewsListDefaultsDecisionToNone(t *testing.T) {
+func TestReviewsListDefaultsDecisionStatusToPending(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -85,8 +89,8 @@ func TestReviewsListDefaultsDecisionToNone(t *testing.T) {
 			t.Fatalf("reviews list: %v", err)
 		}
 	})
-	if !strings.Contains(seenQuery, "decision=none") {
-		t.Fatalf("expected decision=none by default, got %q", seenQuery)
+	if !strings.Contains(seenQuery, "decision_status=pending") {
+		t.Fatalf("expected decision_status=pending by default, got %q", seenQuery)
 	}
 }
 
@@ -99,8 +103,8 @@ func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"submission_status": "accepted_pending_resume",
-			"resume_status":     "failed",
+			"submission_status": "accepted",
+			"resume_status":     "pending",
 			"resume_error":      resumeErr,
 			"review":            reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
 		})
@@ -114,7 +118,7 @@ func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews approve: %v", err)
 		}
 	})
@@ -123,7 +127,7 @@ func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
 	}
 	for _, want := range []string{
 		"SUBMISSION", "RESUME_STATUS", "RESUME_ERROR",
-		"accepted_pending_resume", "failed",
+		"accepted", "pending",
 		"Workflow run not found for run_id=run_x",
 	} {
 		if !strings.Contains(stdout, want) {
@@ -156,7 +160,7 @@ func TestReviewsGetTableShowsDecisionColumnsForDecidedOverlay(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews get: %v", err)
 		}
 	})
@@ -190,7 +194,7 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews get: %v", err)
 		}
 	})
@@ -216,10 +220,10 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 	}
 	dataRow := lines[len(lines)-1]
 	dataCols := strings.Fields(dataRow)
-	// reviewOverlayColumns has 9 columns; an open overlay should render
-	// 7 populated cells (queue projection only), so Fields() returns 7.
-	if len(dataCols) != 7 {
-		t.Fatalf("expected 7 populated cells for open overlay (last 2 empty), got %d:\n%s", len(dataCols), stdout)
+	// reviewOverlayColumns has 10 columns; an open overlay should render
+	// 8 populated cells (queue projection only), so Fields() returns 8.
+	if len(dataCols) != 8 {
+		t.Fatalf("expected 8 populated cells for open overlay (last 2 empty), got %d:\n%s", len(dataCols), stdout)
 	}
 	for _, bad := range []string{"<nil>", "approved", "rejected"} {
 		if strings.Contains(stdout, bad) {
@@ -233,16 +237,20 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 // to hand-roll the same payload.
 func reviewQueueRowJSON(blockRunID string) map[string]any {
 	return map[string]any{
-		"_id":                 blockRunID,
-		"workflow_id":         "wf_1",
-		"workflow_version_id": "wfv_1",
-		"workflow_run_id":     "run_1",
-		"block_id":            "blk_1",
-		"block_run_id":        blockRunID,
-		"block_type":          "extract",
-		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
-		"awaiting_since":      "2026-05-21T09:00:00Z",
-		"priority":            0,
+		"id":              blockRunID,
+		"workflow_id":     "wf_1",
+		"workflow_run_id": "run_1",
+		"block_id":        "blk_1",
+		"step_id":         "step_1",
+		"parent_step_id":  nil,
+		"iteration_key":   nil,
+		"block_type":      "extract",
+		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
+		"awaiting_since":  "2026-05-21T09:00:00Z",
+		"priority":        0,
+		"seed_version_id": reviewTestVersionID,
+		"version_count":   1,
+		"decision":        nil,
 	}
 }
 
@@ -420,7 +428,7 @@ func TestReviewsSchemaTableRendersStructuredCellsAsJSON(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, _ := captureStd(t, func() {
-		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews schema: %v", err)
 		}
 	})

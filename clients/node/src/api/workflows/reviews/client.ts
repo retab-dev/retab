@@ -1,8 +1,10 @@
 import { APIError, CompositionClient, RequestOptions } from '../../../client.js';
 import {
+  AppendVersionResponse,
   ReviewOverlay,
   ReviewQueueResponse,
   SubmitDecisionResponse,
+  ZAppendVersionResponse,
   ZReviewOverlay,
   ZReviewQueueResponse,
   ZSubmitDecisionResponse,
@@ -11,10 +13,13 @@ import {
 /**
  * Decision-state filter for {@link APIWorkflowReviews.list}.
  *
- * - `'none'` (default): only open reviews (the work queue).
- * - `'any'`: include reviews that already have a terminal decision.
+ * - `'pending'` (default): only open reviews.
+ * - `'approved'`: approved reviews only.
+ * - `'rejected'`: rejected reviews only.
+ * - `'decided'`: approved or rejected reviews.
+ * - `'all'`: no decision-state filter.
  */
-export type ReviewDecisionFilter = 'none' | 'any';
+export type ReviewDecisionStatus = 'pending' | 'approved' | 'rejected' | 'decided' | 'all';
 
 type PreparedReviewRequest = {
   url: string;
@@ -31,132 +36,141 @@ function withoutOrigin(body: Record<string, unknown> | undefined): Record<string
 /**
  * Actor-neutral client for workflow reviews.
  *
- * Drives the review loop served under `/workflows/reviews`: list the queue,
- * fetch a review, post new output versions, and submit verdicts.
- *
- * Actor symmetry is a hard rule here. A proposal authored by a model, an
- * agent, or a human goes through the same create-version / approve pair.
- * `Actor.kind` is data carried on the review — no method, parameter, or branch
- * in this client depends on it.
- *
- * Usage: `client.workflows.reviews.list()`
+ * Drives the review loop served under `/workflows/reviews`: list summaries,
+ * fetch a review by id, append output versions, and approve or reject one
+ * exact version.
  */
 export default class APIWorkflowReviews extends CompositionClient {
   constructor(client: CompositionClient) {
     super(client);
   }
 
-  prepare_list(
-    workflowId?: string,
+  prepare_list({
+    workflowId,
+    runId,
+    blockId,
+    stepId,
+    iterationKey,
     limit = 50,
-    decision: ReviewDecisionFilter = 'none',
-    before?: string,
-    after?: string
-  ): PreparedReviewRequest {
-    const params: Record<string, unknown> = { limit, decision };
+    decisionStatus = 'pending',
+    before,
+    after,
+  }: {
+    workflowId?: string;
+    runId?: string;
+    blockId?: string;
+    stepId?: string;
+    iterationKey?: string;
+    limit?: number;
+    decisionStatus?: ReviewDecisionStatus;
+    before?: string;
+    after?: string;
+  } = {}): PreparedReviewRequest {
+    const params: Record<string, unknown> = { limit, decision_status: decisionStatus };
     if (workflowId !== undefined) params.workflow_id = workflowId;
+    if (runId !== undefined) params.run_id = runId;
+    if (blockId !== undefined) params.block_id = blockId;
+    if (stepId !== undefined) params.step_id = stepId;
+    if (iterationKey !== undefined) params.iteration_key = iterationKey;
     if (before !== undefined) params.before = before;
     if (after !== undefined) params.after = after;
     return { url: '/workflows/reviews', method: 'GET', params };
   }
 
-  prepare_get(runId: string, blockId: string): PreparedReviewRequest {
-    return { url: `/workflows/reviews/${runId}/${blockId}`, method: 'GET' };
+  prepare_get(reviewId: string): PreparedReviewRequest {
+    return { url: `/workflows/reviews/${reviewId}`, method: 'GET' };
   }
 
-  prepare_create_version(
-    runId: string,
-    blockId: string,
+  prepare_append_version(
+    reviewId: string,
     {
       snapshot,
-      parentId,
+      parentVersionId,
       note,
     }: {
       snapshot: Record<string, unknown>;
-      parentId: string;
+      parentVersionId: string;
       note?: string | null;
     }
   ): PreparedReviewRequest {
     const body: Record<string, unknown> = {
       snapshot,
-      parent_id: parentId,
+      parent_version_id: parentVersionId,
     };
     if (note !== undefined && note !== null) {
       body.note = note;
     }
     return {
-      url: `/workflows/reviews/${runId}/${blockId}/versions`,
+      url: `/workflows/reviews/${reviewId}/versions`,
       method: 'POST',
       body,
     };
   }
 
-  prepare_decision(
-    runId: string,
-    blockId: string,
-    {
-      verdict,
-      versionId,
-      reason,
-    }: {
-      verdict: 'approved' | 'rejected';
-      versionId: string;
-      reason?: string;
-    }
-  ): PreparedReviewRequest {
-    const body: Record<string, unknown> = {
-      verdict,
-      version_id: versionId,
-    };
-    if (reason !== undefined) {
-      body.reason = reason;
-    }
+  prepare_approve(reviewId: string, versionId: string): PreparedReviewRequest {
     return {
-      url: `/workflows/reviews/${runId}/${blockId}/decision`,
+      url: `/workflows/reviews/${reviewId}/approve`,
       method: 'POST',
-      body,
+      body: { version_id: versionId },
+    };
+  }
+
+  prepare_reject(reviewId: string, versionId: string, reason: string): PreparedReviewRequest {
+    return {
+      url: `/workflows/reviews/${reviewId}/reject`,
+      method: 'POST',
+      body: { version_id: versionId, reason },
     };
   }
 
   /**
-   * List review-queue items.
+   * List review summaries.
    *
    * @param workflowId - Restrict the queue to a single workflow.
+   * @param runId - Restrict the queue to a single workflow run.
+   * @param blockId - Restrict the queue to a workflow block.
+   * @param stepId - Restrict the queue to one execution step.
+   * @param iterationKey - Restrict the queue to one for_each iteration key.
    * @param limit - Page size (1-200). Defaults to 50.
-   * @param decision - `'none'` (default) returns only open reviews; `'any'` includes decided ones.
-   * @param before - Cursor — only return reviews that appear before this review id
-   *   in the result order. Use `list_metadata.before` from the previous page.
-   *   Mutually exclusive with `after`.
-   * @param after - Cursor — only return reviews that appear after this review id
-   *   in the result order. Use `list_metadata.after` from the previous page.
-   *   Mutually exclusive with `before`.
-   * @returns A page of lightweight `ReviewQueueItem` summaries plus a `list_metadata`
-   *   cursor (`{ before, after }`). `list_metadata.after !== null` means another page exists.
-   *
-   * @example
-   * ```typescript
-   * const queue = await client.workflows.reviews.list({ workflowId: 'wf_1' });
-   * const audit = await client.workflows.reviews.list({ decision: 'any' });
-   * const next = await client.workflows.reviews.list({ after: queue.list_metadata.after! });
-   * ```
+   * @param decisionStatus - Defaults to `'pending'`.
+   * @param before - Cursor from `list_metadata.before`.
+   * @param after - Cursor from `list_metadata.after`.
    */
   async list(
     {
       workflowId,
+      runId,
+      blockId,
+      stepId,
+      iterationKey,
       limit = 50,
-      decision = 'none',
+      decisionStatus = 'pending',
       before,
       after,
     }: {
       workflowId?: string;
+      runId?: string;
+      blockId?: string;
+      stepId?: string;
+      iterationKey?: string;
       limit?: number;
-      decision?: ReviewDecisionFilter;
+      decisionStatus?: ReviewDecisionStatus;
       before?: string;
       after?: string;
     } = {},
     options?: RequestOptions
   ): Promise<ReviewQueueResponse> {
-    const request = this.prepare_list(workflowId, limit, decision, before, after);
+    const request = this.prepare_list({
+      workflowId,
+      runId,
+      blockId,
+      stepId,
+      iterationKey,
+      limit,
+      decisionStatus,
+      before,
+      after,
+    });
 
     return this._fetchJson(ZReviewQueueResponse, {
       url: request.url,
@@ -167,15 +181,12 @@ export default class APIWorkflowReviews extends CompositionClient {
   }
 
   /**
-   * Fetch the full review for a gated block run.
+   * Fetch the full review by id.
    *
-   * @param runId - The workflow run id.
-   * @param blockId - The gated block id.
-   * @returns The full review, including version history, the terminal decision.
-   * @throws `APIError` with `.status === 404` when no review exists for this block yet.
+   * @throws `APIError` with `.status === 404` when no review exists.
    */
-  async get(runId: string, blockId: string, options?: RequestOptions): Promise<ReviewOverlay> {
-    const request = this.prepare_get(runId, blockId);
+  async get(reviewId: string, options?: RequestOptions): Promise<ReviewOverlay> {
+    const request = this.prepare_get(reviewId);
     return this._fetchJson(ZReviewOverlay, {
       url: request.url,
       method: request.method,
@@ -184,27 +195,9 @@ export default class APIWorkflowReviews extends CompositionClient {
     });
   }
 
-  /**
-   * Approve the gated block output.
-   *
-   * `versionId` must be a HEAD version — one with no child appended on top of
-   * it. Approving a superseded ancestor would silently discard the corrections
-   * layered above it, so the server rejects this with HTTP 422 and names the
-   * current head in the error detail. To approve a correction, first call
-   * {@link createVersion} to author it, then pass the returned `version_id` here.
-   *
-   * @param runId - The workflow run id.
-   * @param blockId - The gated block id.
-   * @param versionId - Content-hash id of the exact version being approved.
-   *   Must be a HEAD version (no descendant in `versions_by_id`).
-   * @returns Submission status and the updated review.
-   * @throws `APIError` with `.status === 409` when the review already has a terminal decision.
-   * @throws `APIError` with `.status === 422` when the version is superseded
-   *   by a newer one; the error message names the current head.
-   */
+  /** Approve one exact output version. */
   async approve(
-    runId: string,
-    blockId: string,
+    reviewId: string,
     {
       versionId,
     }: {
@@ -212,30 +205,19 @@ export default class APIWorkflowReviews extends CompositionClient {
     },
     options?: RequestOptions
   ): Promise<SubmitDecisionResponse> {
-    return this._decision(
-      runId,
-      blockId,
-      {
-        verdict: 'approved',
-        versionId,
-      },
-      options
-    );
+    const request = this.prepare_approve(reviewId, versionId);
+    return this._fetchJson(ZSubmitDecisionResponse, {
+      url: request.url,
+      method: request.method,
+      body: { ...request.body, ...(options?.body || {}) },
+      params: options?.params,
+      headers: options?.headers,
+    });
   }
 
-  /**
-   * Reject the gated block output.
-   *
-   * @param runId - The workflow run id.
-   * @param blockId - The gated block id.
-   * @param versionId - Content-hash id of the exact version being rejected.
-   * @param reason - Why the output was rejected — required so every rejection is auditable.
-   * @returns Submission status and the updated review.
-   * @throws `APIError` with `.status === 409` when the review already has a terminal decision.
-   */
+  /** Reject one exact output version. */
   async reject(
-    runId: string,
-    blockId: string,
+    reviewId: string,
     {
       versionId,
       reason,
@@ -245,41 +227,37 @@ export default class APIWorkflowReviews extends CompositionClient {
     },
     options?: RequestOptions
   ): Promise<SubmitDecisionResponse> {
-    return this._decision(runId, blockId, { verdict: 'rejected', versionId, reason }, options);
+    const request = this.prepare_reject(reviewId, versionId, reason);
+    return this._fetchJson(ZSubmitDecisionResponse, {
+      url: request.url,
+      method: request.method,
+      body: { ...request.body, ...(options?.body || {}) },
+      params: options?.params,
+      headers: options?.headers,
+    });
   }
 
-  /**
-   * Append a new output version to the review's version history.
-   *
-   * @param runId - The workflow run id.
-   * @param blockId - The gated block id.
-   * @param snapshot - The new output payload to record as a version.
-   * @param parentId - Content-hash id of the parent version.
-   * @param note - Optional free-text note attached to the version.
-   * @returns The review with the new version appended.
-   * @throws `APIError` with `.status === 409` when the review already has a terminal decision.
-   */
-  async createVersion(
-    runId: string,
-    blockId: string,
+  /** Append a new output version to the review's version graph. */
+  async appendVersion(
+    reviewId: string,
     {
       snapshot,
-      parentId,
+      parentVersionId,
       note,
     }: {
       snapshot: Record<string, unknown>;
-      parentId: string;
+      parentVersionId: string;
       note?: string | null;
     },
     options?: RequestOptions
-  ): Promise<ReviewOverlay> {
-    const request = this.prepare_create_version(runId, blockId, {
+  ): Promise<AppendVersionResponse> {
+    const request = this.prepare_append_version(reviewId, {
       snapshot,
-      parentId,
+      parentVersionId,
       note,
     });
 
-    return this._fetchJson(ZReviewOverlay, {
+    return this._fetchJson(ZAppendVersionResponse, {
       url: request.url,
       method: request.method,
       body: withoutOrigin({ ...request.body, ...(options?.body || {}) }),
@@ -288,23 +266,23 @@ export default class APIWorkflowReviews extends CompositionClient {
     });
   }
 
+  async append_version(
+    reviewId: string,
+    request: {
+      snapshot: Record<string, unknown>;
+      parentVersionId: string;
+      note?: string | null;
+    },
+    options?: RequestOptions
+  ): Promise<AppendVersionResponse> {
+    return this.appendVersion(reviewId, request, options);
+  }
+
   /**
-   * Poll until the block is gated and awaiting review.
-   *
-   * Calls {@link get} on a loop until the review exists and has no terminal
-   * decision. A 404 means the workflow has not reached the gate yet —
-   * that is not an error, polling continues.
-   *
-   * @param runId - The workflow run id.
-   * @param blockId - The gated block id.
-   * @param timeoutMs - Maximum milliseconds to wait before giving up. Defaults to 120000.
-   * @param pollIntervalMs - Milliseconds to sleep between polls. Defaults to 2000.
-   * @returns The review once it is awaiting review.
-   * @throws `Error` when the review did not reach `awaiting_review` in time.
+   * Poll until a review exists and has no terminal decision.
    */
   async waitFor(
-    runId: string,
-    blockId: string,
+    reviewId: string,
     {
       timeoutMs = 120000,
       pollIntervalMs = 2000,
@@ -317,9 +295,9 @@ export default class APIWorkflowReviews extends CompositionClient {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       try {
-        const overlay = await this.get(runId, blockId, options);
-        if (overlay.decision === null) {
-          return overlay;
+        const review = await this.get(reviewId, options);
+        if (review.decision === null) {
+          return review;
         }
       } catch (error) {
         if (!(error instanceof APIError && error.status === 404)) {
@@ -327,54 +305,20 @@ export default class APIWorkflowReviews extends CompositionClient {
         }
       }
       if (Date.now() >= deadline) {
-        throw new Error(
-          `Review for run '${runId}' block '${blockId}' ` +
-            `was not awaiting_review within ${timeoutMs}ms`
-        );
+        throw new Error(`Review '${reviewId}' was not pending within ${timeoutMs}ms`);
       }
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
   }
 
   async wait_for(
-    runId: string,
-    blockId: string,
+    reviewId: string,
     options?: {
       timeoutMs?: number;
       pollIntervalMs?: number;
     },
     requestOptions?: RequestOptions
   ): Promise<ReviewOverlay> {
-    return this.waitFor(runId, blockId, options, requestOptions);
-  }
-
-  /** Shared verdict submission against `POST /workflows/reviews/{runId}/{blockId}/decision`. */
-  private async _decision(
-    runId: string,
-    blockId: string,
-    {
-      verdict,
-      versionId,
-      reason,
-    }: {
-      verdict: 'approved' | 'rejected';
-      versionId: string;
-      reason?: string;
-    },
-    options?: RequestOptions
-  ): Promise<SubmitDecisionResponse> {
-    const request = this.prepare_decision(runId, blockId, {
-      verdict,
-      versionId,
-      reason,
-    });
-
-    return this._fetchJson(ZSubmitDecisionResponse, {
-      url: request.url,
-      method: request.method,
-      body: { ...request.body, ...(options?.body || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
+    return this.waitFor(reviewId, options, requestOptions);
   }
 }

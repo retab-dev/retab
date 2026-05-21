@@ -11,10 +11,11 @@ import (
 	"time"
 )
 
+const reviewID = "rev_1"
 const reviewVersionID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 const reviewChildVersionID = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
-func reviewOverlayJSON(decided bool) map[string]any {
+func reviewJSON(decided bool) map[string]any {
 	decision := any(nil)
 	if decided {
 		decision = map[string]any{
@@ -26,19 +27,19 @@ func reviewOverlayJSON(decided bool) map[string]any {
 		}
 	}
 	return map[string]any{
-		"_id":                 "blockrun_1",
-		"organization_id":     "org_1",
+		"id":                  reviewID,
 		"workflow_id":         "wf_1",
 		"workflow_version_id": "wfv_1",
 		"workflow_run_id":     "run_1",
 		"block_id":            "blk_1",
-		"block_run_id":        "blockrun_1",
-		"runtime_block_id":    nil,
+		"step_id":             "step_1",
+		"parent_step_id":      nil,
+		"iteration_key":       nil,
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
 		"awaiting_since":      "2026-05-18T09:00:00Z",
 		"priority":            0,
-		"versions_by_id": map[string]any{
+		"versions": map[string]any{
 			reviewVersionID: map[string]any{
 				"parent_id":  nil,
 				"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
@@ -56,28 +57,33 @@ func reviewOverlayJSON(decided bool) map[string]any {
 	}
 }
 
-func TestWorkflowReviewsList(t *testing.T) {
+func reviewSummaryJSON() map[string]any {
+	return map[string]any{
+		"id":              reviewID,
+		"workflow_id":     "wf_1",
+		"workflow_run_id": "run_1",
+		"block_id":        "blk_1",
+		"step_id":         "step_1",
+		"parent_step_id":  nil,
+		"iteration_key":   nil,
+		"block_type":      "extract",
+		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
+		"awaiting_since":  "2026-05-18T09:00:00Z",
+		"priority":        0,
+		"seed_version_id": reviewVersionID,
+		"version_count":   1,
+		"decision":        nil,
+	}
+}
+
+func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 	var seenMethod, seenPath, seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data": []any{
-				map[string]any{
-					"_id":                 "blockrun_1",
-					"organization_id":     "org_1",
-					"workflow_id":         "wf_1",
-					"workflow_version_id": "wfv_1",
-					"workflow_run_id":     "run_1",
-					"block_id":            "blk_1",
-					"block_run_id":        "blockrun_1",
-					"block_type":          "extract",
-					"triggered_by":        map[string]any{"kind": "any_required_field_null"},
-					"awaiting_since":      "2026-05-18T09:00:00Z",
-					"priority":            0,
-				},
-			},
-			"list_metadata": map[string]any{"before": nil, "after": "blockrun_1"},
+			"data":          []any{reviewSummaryJSON()},
+			"list_metadata": map[string]any{"before": nil, "after": reviewID},
 		})
 	}))
 	defer server.Close()
@@ -87,148 +93,35 @@ func TestWorkflowReviewsList(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp, err := client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{
-		WorkflowID: "wf_1", Limit: 25, Decision: "none",
+		WorkflowID: "wf_1", RunID: "run_1", BlockID: "blk_1", StepID: "step_1", IterationKey: "0",
+		Limit: 25, DecisionStatus: "decided",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet {
-		t.Fatalf("method = %s", seenMethod)
+	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews" {
+		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
-	if seenPath != "/workflows/reviews" {
-		t.Fatalf("path = %s", seenPath)
-	}
-	for _, want := range []string{"workflow_id=wf_1", "limit=25", "decision=none"} {
+	for _, want := range []string{
+		"workflow_id=wf_1", "run_id=run_1", "block_id=blk_1", "step_id=step_1",
+		"iteration_key=0", "limit=25", "decision_status=decided",
+	} {
 		if !strings.Contains(seenQuery, want) {
 			t.Fatalf("query %q missing %q", seenQuery, want)
 		}
 	}
-	if strings.Contains(seenQuery, "status=") || strings.Contains(seenQuery, "mine=") {
-		t.Fatalf("query includes removed filters: %q", seenQuery)
+	if strings.Contains(seenQuery, "decision=") {
+		t.Fatalf("query includes removed decision filter: %q", seenQuery)
 	}
-	if len(resp.Data) != 1 {
+	if len(resp.Data) != 1 || resp.Data[0].SeedVersionID != reviewVersionID {
 		t.Fatalf("resp = %#v", resp)
 	}
-	// The new pagination contract: list_metadata.after carries the cursor
-	// for the next page. has_more is no longer emitted by the backend.
-	if resp.ListMetadata.After != "blockrun_1" {
-		t.Fatalf("ListMetadata.After = %q (want %q)", resp.ListMetadata.After, "blockrun_1")
-	}
-	if resp.ListMetadata.Before != "" {
-		t.Fatalf("ListMetadata.Before = %q (want empty)", resp.ListMetadata.Before)
+	if resp.ListMetadata.After != reviewID {
+		t.Fatalf("after = %q", resp.ListMetadata.After)
 	}
 }
 
-// TestWorkflowReviewsListPassesBeforeAndAfterCursors pins that the SDK
-// threads --before / --after into the outbound query.
-func TestWorkflowReviewsListPassesBeforeAndAfterCursors(t *testing.T) {
-	cases := []struct {
-		name   string
-		params ListReviewsParams
-		want   string
-	}{
-		{"after only", ListReviewsParams{After: "blockrun_xyz"}, "after=blockrun_xyz"},
-		{"before only", ListReviewsParams{Before: "blockrun_abc"}, "before=blockrun_abc"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			var seenQuery string
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				seenQuery = r.URL.RawQuery
-				w.Header().Set("Content-Type", "application/json")
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"data":          []any{},
-					"list_metadata": map[string]any{"before": nil, "after": nil},
-				})
-			}))
-			defer server.Close()
-
-			client, err := NewClient("test-key", WithBaseURL(server.URL))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := client.Workflows.Reviews.List(context.Background(), &tc.params); err != nil {
-				t.Fatal(err)
-			}
-			if !strings.Contains(seenQuery, tc.want) {
-				t.Fatalf("query %q missing %q", seenQuery, tc.want)
-			}
-		})
-	}
-}
-
-// TestWorkflowReviewsListRejectsBeforeAndAfterTogether pins that the SDK
-// fails early when both cursors are set; no HTTP call is made.
-func TestWorkflowReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
-	called := false
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		called = true
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{
-		Before: "blockrun_a", After: "blockrun_b",
-	})
-	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
-		t.Fatalf("expected mutual-exclusion error, got %v", err)
-	}
-	if called {
-		t.Fatalf("HTTP server was called despite mutex violation")
-	}
-}
-
-// TestWorkflowReviewsListDecodesCursorEnvelope pins that the canonical wire
-// shape — populated and null cursors — decodes into PaginationCursor.
-func TestWorkflowReviewsListDecodesCursorEnvelope(t *testing.T) {
-	cases := []struct {
-		name        string
-		body        string
-		wantAfter   string
-		wantBefore  string
-		wantDataLen int
-	}{
-		{
-			name:        "populated after cursor",
-			body:        `{"data":[{"_id":"blockrun_1","workflow_id":"wf_1","workflow_version_id":"wfv_1","workflow_run_id":"run_1","block_id":"blk_1","block_run_id":"blockrun_1","block_type":"extract","triggered_by":{"kind":"any_required_field_null"},"awaiting_since":"2026-05-21T09:00:00Z","priority":0}],"list_metadata":{"before":null,"after":"blockrun_next"}}`,
-			wantAfter:   "blockrun_next",
-			wantDataLen: 1,
-		},
-		{
-			name:        "null cursors",
-			body:        `{"data":[],"list_metadata":{"before":null,"after":null}}`,
-			wantDataLen: 0,
-		},
-		{
-			name:        "populated before cursor",
-			body:        `{"data":[],"list_metadata":{"before":"blockrun_prev","after":null}}`,
-			wantBefore:  "blockrun_prev",
-			wantDataLen: 0,
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			var resp PaginatedList[ReviewQueueItem]
-			if err := json.Unmarshal([]byte(tc.body), &resp); err != nil {
-				t.Fatalf("decode: %v", err)
-			}
-			if len(resp.Data) != tc.wantDataLen {
-				t.Fatalf("data len = %d (want %d): %#v", len(resp.Data), tc.wantDataLen, resp.Data)
-			}
-			if resp.ListMetadata.After != tc.wantAfter {
-				t.Fatalf("after = %q (want %q)", resp.ListMetadata.After, tc.wantAfter)
-			}
-			if resp.ListMetadata.Before != tc.wantBefore {
-				t.Fatalf("before = %q (want %q)", resp.ListMetadata.Before, tc.wantBefore)
-			}
-		})
-	}
-}
-
-func TestWorkflowReviewsListOmitsDecisionWhenEmpty(t *testing.T) {
+func TestWorkflowReviewsListDefaultsToPending(t *testing.T) {
 	var seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenQuery = r.URL.RawQuery
@@ -241,11 +134,22 @@ func TestWorkflowReviewsListOmitsDecisionWhenEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{Limit: 5}); err != nil {
+	if _, err := client.Workflows.Reviews.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(seenQuery, "decision=") {
-		t.Fatalf("empty Decision should omit the query param: %q", seenQuery)
+	if !strings.Contains(seenQuery, "decision_status=pending") {
+		t.Fatalf("default query = %q", seenQuery)
+	}
+}
+
+func TestWorkflowReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
+	client, err := NewClient("test-key", WithBaseURL("http://example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{Before: "a", After: "b"})
+	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("expected mutual-exclusion error, got %v", err)
 	}
 }
 
@@ -254,7 +158,7 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod, seenPath = r.Method, r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayJSON(true))
+		_ = json.NewEncoder(w).Encode(reviewJSON(true))
 	}))
 	defer server.Close()
 
@@ -262,91 +166,32 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	overlay, err := client.Workflows.Reviews.Get(context.Background(), "run_1", "blk_1")
+	review, err := client.Workflows.Reviews.Get(context.Background(), reviewID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet {
-		t.Fatalf("method = %s", seenMethod)
+	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/"+reviewID {
+		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
-	if seenPath != "/workflows/reviews/run_1/blk_1" {
-		t.Fatalf("path = %s", seenPath)
+	if len(review.Versions) != 2 {
+		t.Fatalf("versions = %#v", review.Versions)
 	}
-	if len(overlay.VersionsByID) != 2 {
-		t.Fatalf("versions_by_id = %#v", overlay.VersionsByID)
-	}
-	if overlay.VersionsByID[reviewChildVersionID].ParentID == nil || *overlay.VersionsByID[reviewChildVersionID].ParentID != reviewVersionID {
-		t.Fatalf("child version = %#v", overlay.VersionsByID[reviewChildVersionID])
-	}
-	if overlay.Decision == nil || overlay.Decision.VersionID != reviewVersionID {
-		t.Fatalf("decision = %#v", overlay.Decision)
-	}
-	encoded, err := json.Marshal(overlay)
-	if err != nil {
-		t.Fatal(err)
-	}
-	encodedText := string(encoded)
-	for _, want := range []string{`"parent_id":null`, `"note":null`, `"reason":null`} {
-		if !strings.Contains(encodedText, want) {
-			t.Fatalf("marshaled overlay should preserve %s: %s", want, encodedText)
-		}
+	if review.Versions[reviewChildVersionID].ParentID == nil || *review.Versions[reviewChildVersionID].ParentID != reviewVersionID {
+		t.Fatalf("child version = %#v", review.Versions[reviewChildVersionID])
 	}
 }
 
-func TestWorkflowReviewsGetRequiresIDs(t *testing.T) {
+func TestWorkflowReviewsGetRequiresReviewID(t *testing.T) {
 	client, err := NewClient("test-key", WithBaseURL("http://example.invalid"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.Get(context.Background(), "", "blk_1"); err == nil {
-		t.Fatal("expected error for empty runID")
-	}
-	if _, err := client.Workflows.Reviews.Get(context.Background(), "run_1", ""); err == nil {
-		t.Fatal("expected error for empty blockID")
+	if _, err := client.Workflows.Reviews.Get(context.Background(), ""); err == nil {
+		t.Fatal("expected error for empty reviewID")
 	}
 }
 
-func TestWorkflowReviewsWaitForPollsUntilAwaitingReview(t *testing.T) {
-	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		w.Header().Set("Content-Type", "application/json")
-		if calls == 1 {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "no overlay"})
-			return
-		}
-		_ = json.NewEncoder(w).Encode(reviewOverlayJSON(false))
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	overlay, err := client.Workflows.Reviews.WaitFor(context.Background(), "run_1", "blk_1", &ReviewWaitForParams{
-		PollInterval: time.Millisecond,
-		Timeout:      time.Second,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 {
-		t.Fatalf("calls = %d", calls)
-	}
-	if overlay.Decision != nil {
-		t.Fatalf("overlay = %#v", overlay)
-	}
-	encoded, err := json.Marshal(overlay)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(encoded), `"decision":null`) {
-		t.Fatalf("marshaled awaiting overlay should preserve decision:null: %s", string(encoded))
-	}
-}
-
-func TestWorkflowReviewsApproveSendsVersionID(t *testing.T) {
+func TestWorkflowReviewsApproveSendsVersionIDToApproveEndpoint(t *testing.T) {
 	var seenPath string
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +201,7 @@ func TestWorkflowReviewsApproveSendsVersionID(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"review":            reviewOverlayJSON(true),
+			"review":            reviewJSON(true),
 			"resume_status":     "resumed",
 		})
 	}))
@@ -366,40 +211,29 @@ func TestWorkflowReviewsApproveSendsVersionID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
-		VersionID: reviewVersionID,
-	})
+	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, ApproveReviewRequest{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenPath != "/workflows/reviews/run_1/blk_1/decision" {
+	if seenPath != "/workflows/reviews/"+reviewID+"/approve" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if body["verdict"] != "approved" || body["version_id"] != reviewVersionID {
+	if body["version_id"] != reviewVersionID || body["verdict"] != nil {
 		t.Fatalf("body = %#v", body)
 	}
-	if _, ok := body["version_stamp"]; ok {
-		t.Fatalf("body includes removed version_stamp: %#v", body)
-	}
-	if resp.SubmissionStatus != "accepted" || resp.Review.Decision == nil {
+	if resp.ResumeStatus != "resumed" || resp.Review.Decision == nil {
 		t.Fatalf("resp = %#v", resp)
 	}
-	if resp.ResumeStatus != "resumed" {
-		t.Fatalf("ResumeStatus = %q (want \"resumed\")", resp.ResumeStatus)
-	}
-	if resp.ResumeError != nil {
-		t.Fatalf("ResumeError = %#v (want nil)", resp.ResumeError)
-	}
 }
 
-func TestWorkflowReviewsApproveSurfaceResumeFailure(t *testing.T) {
+func TestWorkflowReviewsApproveSurfacesPendingResume(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"review":            reviewOverlayJSON(true),
-			"resume_status":     "failed",
-			"resume_error":      "Workflow run not found for run_id=run_1",
+			"review":            reviewJSON(true),
+			"resume_status":     "pending",
+			"resume_error":      "Temporal signal queued for retry",
 		})
 	}))
 	defer server.Close()
@@ -408,91 +242,27 @@ func TestWorkflowReviewsApproveSurfaceResumeFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
-		VersionID: reviewVersionID,
-	})
+	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, ApproveReviewRequest{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ResumeStatus != "failed" {
-		t.Fatalf("ResumeStatus = %q (want \"failed\")", resp.ResumeStatus)
+	if resp.ResumeStatus != "pending" {
+		t.Fatalf("ResumeStatus = %q", resp.ResumeStatus)
 	}
 	if resp.ResumeError == nil || *resp.ResumeError == "" {
-		t.Fatalf("ResumeError = %#v (want non-empty)", resp.ResumeError)
+		t.Fatalf("ResumeError = %#v", resp.ResumeError)
 	}
 }
 
-func TestWorkflowReviewsApproveRequiresVersionID(t *testing.T) {
-	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{}); err == nil || !strings.Contains(err.Error(), "VersionID is required") {
-		t.Fatalf("expected VersionID required error, got %v", err)
-	}
-}
-
-func TestWorkflowReviewsRejectSendsVersionIDAndReason(t *testing.T) {
-	var body map[string]any
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(raw, &body)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"submission_status": "accepted",
-			"review":            reviewOverlayJSON(true),
-		})
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), "run_1", "blk_1", RejectReviewRequest{
-		VersionID: reviewVersionID, Reason: "wrong document",
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if body["verdict"] != "rejected" || body["version_id"] != reviewVersionID || body["reason"] != "wrong document" {
-		t.Fatalf("reject body = %#v", body)
-	}
-}
-
-func TestWorkflowReviewsRejectRequiresReason(t *testing.T) {
-	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), "run_1", "blk_1", RejectReviewRequest{
-		VersionID: reviewVersionID,
-	}); err == nil || !strings.Contains(err.Error(), "Reason is required") {
-		t.Fatalf("expected Reason required error, got %v", err)
-	}
-}
-
-func TestWorkflowReviewsRejectRequiresVersionID(t *testing.T) {
-	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), "run_1", "blk_1", RejectReviewRequest{
-		Reason: "wrong document",
-	}); err == nil || !strings.Contains(err.Error(), "VersionID is required") {
-		t.Fatalf("expected VersionID required error, got %v", err)
-	}
-}
-
-func TestWorkflowReviewsCreateVersionPostsSnapshotVersion(t *testing.T) {
+func TestWorkflowReviewsRejectSendsVersionIDAndReasonToRejectEndpoint(t *testing.T) {
 	var seenPath string
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenPath = r.URL.Path
 		raw, _ := io.ReadAll(r.Body)
-		body = map[string]any{}
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayJSON(false))
+		_ = json.NewEncoder(w).Encode(map[string]any{"submission_status": "accepted", "review": reviewJSON(true)})
 	}))
 	defer server.Close()
 
@@ -500,37 +270,117 @@ func TestWorkflowReviewsCreateVersionPostsSnapshotVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.CreateVersion(context.Background(), "run_1", "blk_1", CreateReviewVersionRequest{
-		Snapshot: map[string]any{"category": "Invoice"}, ParentID: reviewVersionID, Note: "fixed category",
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{
+		VersionID: reviewVersionID, Reason: "wrong document",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if seenPath != "/workflows/reviews/run_1/blk_1/versions" {
-		t.Fatalf("create-version path = %s", seenPath)
+	if seenPath != "/workflows/reviews/"+reviewID+"/reject" {
+		t.Fatalf("path = %s", seenPath)
 	}
-	if body["parent_id"] != reviewVersionID || body["snapshot"] == nil {
-		t.Fatalf("create-version body = %#v", body)
-	}
-	if _, ok := body["origin"]; ok {
-		t.Fatalf("create-version body includes removed origin: %#v", body)
-	}
-	if _, ok := body["version_stamp"]; ok {
-		t.Fatalf("create-version body includes removed version_stamp: %#v", body)
-	}
-	if _, ok := body["reviewable_value"]; ok {
-		t.Fatalf("create-version body includes removed reviewable_value: %#v", body)
+	if body["version_id"] != reviewVersionID || body["reason"] != "wrong document" || body["verdict"] != nil {
+		t.Fatalf("body = %#v", body)
 	}
 }
 
-func TestWorkflowReviewsCreateVersionRequiresParentID(t *testing.T) {
+func TestWorkflowReviewsRejectRequiresInputs(t *testing.T) {
 	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.Reviews.CreateVersion(context.Background(), "run_1", "blk_1", CreateReviewVersionRequest{
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{Reason: "wrong"}); err == nil || !strings.Contains(err.Error(), "VersionID is required") {
+		t.Fatalf("expected VersionID required error, got %v", err)
+	}
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{VersionID: reviewVersionID}); err == nil || !strings.Contains(err.Error(), "Reason is required") {
+		t.Fatalf("expected Reason required error, got %v", err)
+	}
+}
+
+func TestWorkflowReviewsAppendVersionPostsParentVersionID(t *testing.T) {
+	var seenPath string
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"append_status": "accepted",
+			"version_id":    reviewChildVersionID,
+			"review":        reviewJSON(false),
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := client.Workflows.Reviews.AppendVersion(context.Background(), reviewID, AppendReviewVersionRequest{
+		Snapshot: map[string]any{"category": "Invoice"}, ParentVersionID: reviewVersionID, Note: "fixed category",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seenPath != "/workflows/reviews/"+reviewID+"/versions" {
+		t.Fatalf("append-version path = %s", seenPath)
+	}
+	if body["parent_version_id"] != reviewVersionID || body["snapshot"] == nil {
+		t.Fatalf("append-version body = %#v", body)
+	}
+	if body["parent_id"] != nil || body["origin"] != nil {
+		t.Fatalf("append-version body includes removed fields: %#v", body)
+	}
+	if resp.AppendStatus != "accepted" || resp.VersionID != reviewChildVersionID {
+		t.Fatalf("resp = %#v", resp)
+	}
+}
+
+func TestWorkflowReviewsAppendVersionRequiresInputs(t *testing.T) {
+	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Reviews.AppendVersion(context.Background(), "", AppendReviewVersionRequest{
+		Snapshot: map[string]any{"category": "Invoice"}, ParentVersionID: reviewVersionID,
+	})
+	if err == nil || !strings.Contains(err.Error(), "reviewID is required") {
+		t.Fatalf("expected reviewID required error, got %v", err)
+	}
+	_, err = client.Workflows.Reviews.AppendVersion(context.Background(), reviewID, AppendReviewVersionRequest{
 		Snapshot: map[string]any{"category": "Invoice"},
 	})
-	if err == nil || !strings.Contains(err.Error(), "ParentID is required") {
-		t.Fatalf("expected ParentID required error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "ParentVersionID is required") {
+		t.Fatalf("expected ParentVersionID required error, got %v", err)
+	}
+}
+
+func TestWorkflowReviewsWaitForPollsUntilPending(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		if calls == 1 {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "no review"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(reviewJSON(false))
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	review, err := client.Workflows.Reviews.WaitFor(context.Background(), reviewID, &ReviewWaitForParams{
+		PollInterval: time.Millisecond,
+		Timeout:      time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 || review.Decision != nil {
+		t.Fatalf("calls=%d review=%#v", calls, review)
 	}
 }
