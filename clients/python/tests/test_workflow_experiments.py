@@ -454,6 +454,19 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     assert page.data[0].document_id == "expdoc_1"
 
 
+def test_experiments_runs_results_get_uses_flat_result_id_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _EXPERIMENT_RESULT
+
+    result = Workflows(client=client).experiments.runs.results.get("expresult_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/experiments/results/expresult_1"
+    assert result.id == "expresult_1"
+    assert result.document_id == "expdoc_1"
+
+
 def test_experiments_runs_metrics_summary_view_default() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {

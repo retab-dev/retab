@@ -488,10 +488,16 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 The draft remains editable after publishing; iterate freely, then publish
 again to cut a new version.
 
-By default, publishing a draft that contains only the auto-added ` + "`start_document`" + `
-block (i.e. an effectively empty workflow) prints a warning to stderr but
-proceeds — the publish itself succeeds. Pass ` + "`--force`" + ` to skip
-the warning.`,
+Before publishing, the CLI runs ` + "`workflows diagnose`" + ` against the
+draft graph:
+
+  * Any issue with ` + "`severity=\"error\"`" + ` aborts the publish — fix
+    the issue or pass ` + "`--force`" + ` to publish anyway.
+  * Warnings are printed to stderr but do not block.
+
+The empty-workflow check still runs (a draft with only the auto-added
+` + "`start_document`" + ` block produces a no-op published version);
+` + "`--force`" + ` suppresses that warning too.`,
 	Example: `  # Publish with a release note
   retab workflows publish wf_abc123 \
     --description "v3: tighter line-item schema"
@@ -500,7 +506,7 @@ the warning.`,
   retab workflows runs create wf_abc123 \
     --version v3 --document start=./invoice.pdf
 
-  # Skip the "empty workflow" warning when intentionally publishing a stub
+  # Skip diagnose errors and the empty-workflow warning (use with care)
   retab workflows publish wf_abc123 --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -512,10 +518,19 @@ the warning.`,
 		defer cancel()
 		description, _ := cmd.Flags().GetString("description")
 		force, _ := cmd.Flags().GetBool("force")
+		// Pre-flight diagnose. Without this, publish happily snapshots
+		// graphs with disconnected blocks / missing inputs and the user
+		// only discovers the problem at run time as a silently `skipped`
+		// step. Errors abort the publish; warnings print to stderr.
+		// --force bypasses the check entirely for the CI-stub case
+		// (and for the rare "I know what I'm doing" moment).
 		if !force {
 			// stderr is the warning sink: it doesn't pollute the JSON
 			// payload on stdout that callers pipe into `jq`.
 			warnIfEmptyWorkflowOnPublish(ctx, client, args[0], cmd.ErrOrStderr())
+			if err := abortPublishOnDiagnoseErrors(ctx, client, args[0], cmd.ErrOrStderr()); err != nil {
+				return err
+			}
 		}
 		result, err := client.Workflows.Publish(ctx, args[0], retab.PublishWorkflowRequest{Description: description})
 		if err != nil {
@@ -523,6 +538,48 @@ the warning.`,
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// abortPublishOnDiagnoseErrors runs the same diagnose the user would have
+// run by hand and refuses to publish when there are “severity="error"“
+// issues. Warnings are surfaced to stderr but never block (mirrors the
+// existing empty-workflow warning policy: cautious, not paternalistic).
+//
+// A failure to run diagnose itself does NOT block the publish — diagnose
+// is a UX safety net, not a precondition. A flaky server or a CLI/server
+// version drift that breaks the diagnose contract must not keep users
+// from shipping. The publish call will still surface real auth/server
+// failures with its own error.
+func abortPublishOnDiagnoseErrors(ctx context.Context, client *retab.Client, workflowID string, warnTo io.Writer) error {
+	diagnosis, err := client.Workflows.Diagnose(ctx, workflowID)
+	if err != nil {
+		// Diagnose failure is non-fatal — see function doc.
+		fmt.Fprintf(warnTo, "note: skipping pre-publish diagnose (%v)\n", err)
+		return nil
+	}
+	if diagnosis == nil {
+		return nil
+	}
+	var errs []retab.WorkflowDiagnosisIssue
+	var warns []retab.WorkflowDiagnosisIssue
+	for _, issue := range diagnosis.Issues {
+		switch strings.ToLower(issue.Severity) {
+		case "error":
+			errs = append(errs, issue)
+		case "warning":
+			warns = append(warns, issue)
+		}
+	}
+	for _, w := range warns {
+		fmt.Fprintf(warnTo, "warning: diagnose: %s (%s)\n", w.Message, w.Code)
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	for _, e := range errs {
+		fmt.Fprintf(warnTo, "error: diagnose: %s (%s)\n", e.Message, e.Code)
+	}
+	return fmt.Errorf("diagnose reported %d error(s); fix them or pass --force to publish anyway", len(errs))
 }
 
 var workflowsDiagnoseCmd = &cobra.Command{

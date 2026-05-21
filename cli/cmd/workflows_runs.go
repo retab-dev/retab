@@ -123,11 +123,57 @@ var allowedWorkflowStepStatuses = map[string]bool{
 
 const workflowStepStatusValues = "pending, running, completed, skipped, error, awaiting_review, cancelled"
 
+// Block types accepted by the “--block-type“ filter on
+// “workflows steps query“. Kept aligned with the “BlockType“ Literal
+// in “backend/.../workflows/models.py“. Internal/sentinel types are
+// included on purpose — query is a read path and operators occasionally
+// need to inspect persisted sentinel steps when debugging loop
+// materialization. The block-create surface enforces a stricter subset
+// (see “NON_USER_CREATABLE_BLOCK_TYPES“ on the server).
+var allowedWorkflowBlockTypes = map[string]bool{
+	"start_document":            true,
+	"start_json":                true,
+	"note":                      true,
+	"parse":                     true,
+	"edit":                      true,
+	"extract":                   true,
+	"split":                     true,
+	"classifier":                true,
+	"conditional":               true,
+	"api_call":                  true,
+	"review":                    true,
+	"function":                  true,
+	"while_loop":                true,
+	"for_each":                  true,
+	"merge_dicts":               true,
+	"while_loop_sentinel_start": true,
+	"while_loop_sentinel_end":   true,
+	"for_each_sentinel_start":   true,
+	"for_each_sentinel_end":     true,
+}
+
+const workflowBlockTypeValues = "start_document, start_json, note, parse, edit, extract, split, classifier, conditional, api_call, review, function, while_loop, for_each, merge_dicts, while_loop_sentinel_start, while_loop_sentinel_end, for_each_sentinel_start, for_each_sentinel_end"
+
+// Step fingerprint source kinds — what produced the step row. Kept
+// aligned with “StepFingerprintSourceKind“ in
+// “backend/.../workflows/steps/fingerprints/models.py“.
+var allowedWorkflowStepSourceKinds = map[string]bool{
+	"workflow_run":      true,
+	"simulate_block":    true,
+	"block_eval":        true,
+	"experiment_replay": true,
+}
+
+const workflowStepSourceKindValues = "workflow_run, simulate_block, block_eval, experiment_replay"
+
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
 	if err := validateEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateMutuallyExclusiveChangedFlags(cmd, "status", "statuses"); err != nil {
 		return err
 	}
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
@@ -136,7 +182,10 @@ func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
 		return err
 	}
-	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+	if err := validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
+		return err
+	}
+	return validateMutuallyExclusiveChangedFlags(cmd, "trigger-type", "trigger-types")
 }
 
 func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
@@ -150,6 +199,13 @@ func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
 		return err
 	}
 	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+}
+
+func validateMutuallyExclusiveChangedFlags(cmd *cobra.Command, left string, right string) error {
+	if cmd.Flags().Changed(left) && cmd.Flags().Changed(right) {
+		return fmt.Errorf("--%s and --%s cannot be used together", left, right)
+	}
+	return nil
 }
 
 func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
@@ -577,6 +633,9 @@ status, trigger type, date range, cost, and duration. Page by run id
 		params.TriggerTypes = triggerTypes
 		params.FromDate, _ = cmd.Flags().GetString("from-date")
 		params.ToDate, _ = cmd.Flags().GetString("to-date")
+		if err := validateDateRange("from-date", "to-date", params.FromDate, params.ToDate); err != nil {
+			return err
+		}
 		params.Search, _ = cmd.Flags().GetString("search")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
 		fields, err := nonBlankStringArrayFlag(cmd, "fields")
@@ -738,25 +797,41 @@ or ` + "`--command-id`" + ` for idempotency.`,
 }
 
 var workflowsRunsExportCmd = &cobra.Command{
-	Use:   "export",
+	Use:   "export <workflow-id> [flags]",
 	Short: "Export workflow runs as CSV",
 	Long: `Bulk-export the outputs of many runs of a workflow as CSV,
-focused on one block's output. Filter by status, date range, trigger
-type, or an explicit set of run ids. Use ` + "`--preferred-column`" + ` to
-pin column order.`,
+focused on one block's output. Pass the workflow id as the first
+positional argument (matching the rest of the ` + "`workflows runs`" + `
+group). Filter by status, date range, trigger type, or an explicit set
+of run ids. Use ` + "`--preferred-column`" + ` to pin column order.
+
+CSV shape: the default delimiter is ` + "`;`" + ` (convenient for Excel
+in EU locales where ` + "`,`" + ` is the decimal separator) but hostile
+to pandas / RFC-4180 consumers. Pass ` + "`--delimiter ,`" + ` for the
+portable shape. ` + "`--quote`" + ` and ` + "`--line-delimiter`" + ` are
+also configurable.`,
 	Example: `  # Export every successful run of a block to CSV
-  retab workflows runs export \
-    --workflow-id wf_abc123 --block-id blk_extract_1 \
+  retab workflows runs export wf_abc123 \
+    --block-id blk_extract_1 \
     --status completed \
     --from-date 2026-05-01
 
+  # Pandas-friendly CSV (RFC-4180 delimiter)
+  retab workflows runs export wf_abc123 \
+    --block-id blk_extract_1 --delimiter ,
+
   # Export a specific set of runs with custom columns
-  retab workflows runs export \
-    --workflow-id wf_abc123 --block-id blk_extract_1 \
+  retab workflows runs export wf_abc123 \
+    --block-id blk_extract_1 \
     --run-id run_xyz789 --run-id run_aaa000 \
     --preferred-column invoice_id --preferred-column total`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateWorkflowRunsExportFilters(cmd); err != nil {
+			return err
+		}
+		workflowID, err := resolveWorkflowIDArg(cmd, args)
+		if err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -766,7 +841,7 @@ pin column order.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.ExportWorkflowRunsRequest{}
-		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
 		req.ExportSource, _ = cmd.Flags().GetString("export-source")
 		selectedRunIDs, err := nonBlankStringArrayFlag(cmd, "run-id")
@@ -778,6 +853,9 @@ pin column order.`,
 		req.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")
 		req.FromDate, _ = cmd.Flags().GetString("from-date")
 		req.ToDate, _ = cmd.Flags().GetString("to-date")
+		if err := validateDateRange("from-date", "to-date", req.FromDate, req.ToDate); err != nil {
+			return err
+		}
 		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 		if err != nil {
 			return err
@@ -788,6 +866,30 @@ pin column order.`,
 			return err
 		}
 		req.PreferredColumns = preferredColumns
+		// CSV shape flags. Validated client-side so the user sees a clean
+		// "must be a single character" error instead of a 400 from the
+		// server with the same message.
+		if cmd.Flags().Changed("delimiter") {
+			d, _ := cmd.Flags().GetString("delimiter")
+			if len([]rune(d)) != 1 {
+				return fmt.Errorf("--delimiter must be a single character")
+			}
+			req.Delimiter = d
+		}
+		if cmd.Flags().Changed("line-delimiter") {
+			ld, _ := cmd.Flags().GetString("line-delimiter")
+			if ld == "" {
+				return fmt.Errorf("--line-delimiter must not be empty")
+			}
+			req.LineDelimiter = ld
+		}
+		if cmd.Flags().Changed("quote") {
+			q, _ := cmd.Flags().GetString("quote")
+			if len([]rune(q)) != 1 {
+				return fmt.Errorf("--quote must be a single character")
+			}
+			req.Quote = q
+		}
 		result, err := client.Workflows.Runs.Export(ctx, req)
 		if err != nil {
 			return err
@@ -920,7 +1022,18 @@ comparison, or experiment analysis.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 
+		// Validate enum filters client-side so the user gets a clean
+		// "want: ..." error instead of a silent empty result set.
+		// Without these, the server happily filters on a typo'd value
+		// (``--block-type extrct``) and returns ``[]`` — the most
+		// confusing failure mode for an operator debugging a run.
 		if err := validateEnumArrayFlag(cmd, "status", allowedWorkflowStepStatuses, workflowStepStatusValues); err != nil {
+			return err
+		}
+		if err := validateEnumFlag(cmd, "block-type", allowedWorkflowBlockTypes, workflowBlockTypeValues); err != nil {
+			return err
+		}
+		if err := validateEnumFlag(cmd, "source-kind", allowedWorkflowStepSourceKinds, workflowStepSourceKindValues); err != nil {
 			return err
 		}
 
@@ -978,7 +1091,7 @@ func init() {
 	workflowsRunsRestartCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
 
-	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (required)")
+	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsRunsExportCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsRunsExportCmd.Flags().String("export-source", "", "export source (default outputs)")
 	workflowsRunsExportCmd.Flags().StringArray("run-id", nil, "filter to selected run ids (repeatable)")
@@ -989,7 +1102,16 @@ func init() {
 	workflowsRunsExportCmd.Flags().StringArray("trigger-types", nil, "trigger types (repeatable)")
 	workflowsRunsExportCmd.Flags().StringArray("preferred-column", nil, "preferred CSV column (repeatable)")
 	workflowsRunsExportCmd.Flags().Bool("raw", false, "write raw CSV to stdout (default for TTY); JSON envelope is used for non-TTY unless --raw or --output table")
-	_ = workflowsRunsExportCmd.MarkFlagRequired("workflow-id")
+	// CSV shape flags — defaults come from the server side. The default
+	// delimiter is ``;`` (Excel-friendly in EU locales) which is hostile
+	// to pandas / RFC-4180 consumers; pass ``--delimiter ,`` for the
+	// portable shape.
+	workflowsRunsExportCmd.Flags().String("delimiter", "", "CSV field delimiter (single character; server default ';')")
+	workflowsRunsExportCmd.Flags().String("line-delimiter", "", "CSV line terminator (server default '\\n')")
+	workflowsRunsExportCmd.Flags().String("quote", "", "CSV quote character (single character; server default '\"')")
+	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
+	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
+	_ = workflowsRunsExportCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
 	workflowsStepsQueryCmd.Flags().String("block-id", "", "filter by block id")

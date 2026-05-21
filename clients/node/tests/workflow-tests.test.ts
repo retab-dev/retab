@@ -410,12 +410,29 @@ describe('workflows.tests.runs', () => {
     expect(result.data[0]?.outputs).toEqual({ 'output-json-0': { total: 1234.56 } });
   });
 
+  test('runs.results.get() uses the flat result id route', async () => {
+    const mockClient = new MockClient(RESULT_RESPONSE);
+    const tests = new APIWorkflowTests(mockClient);
+
+    const result = await tests.runs.results.get({
+      resultId: 'wfresult_abc',
+    });
+
+    expect(mockClient.lastFetchParams).toMatchObject({
+      url: '/workflows/tests/results/wfresult_abc',
+      method: 'GET',
+    });
+    expect(result.id).toBe('wfresult_abc');
+    expect(result.test_id).toBe('wfnodetest_abc');
+  });
+
   test('legacy execute and scoped run aliases are not exposed', () => {
     const tests = new APIWorkflowTests(new MockClient({}));
     expect('execute' in tests).toBe(false);
     expect('getExecution' in tests.runs).toBe(false);
     expect('get_execution' in tests.runs).toBe(false);
     expect(typeof tests.runs.results).toBe('object');
+    expect(typeof tests.runs.results.get).toBe('function');
   });
 });
 

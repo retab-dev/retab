@@ -451,6 +451,19 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
     assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
 
 
+def test_runs_results_get_uses_flat_result_id_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _RESULT_RESPONSE
+
+    result = Workflows(client=client).tests.runs.results.get("wfresult_abc")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/tests/results/wfresult_abc"
+    assert result.id == "wfresult_abc"
+    assert result.test_id == "wfnodetest_abc"
+
+
 def test_tests_hard_cutover_removes_legacy_execute_and_scoped_run_aliases() -> None:
     client = MagicMock()
     tests = Workflows(client=client).tests
@@ -458,6 +471,7 @@ def test_tests_hard_cutover_removes_legacy_execute_and_scoped_run_aliases() -> N
     assert not hasattr(tests, "execute")
     assert not hasattr(tests.runs, "get_execution")
     assert hasattr(tests.runs, "results")
+    assert hasattr(tests.runs.results, "get")
     assert not callable(tests.runs.results)
 
 

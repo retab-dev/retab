@@ -92,6 +92,46 @@ type StepArtifactRef struct {
 	ID        string `json:"id"`
 }
 
+// BlockSimulation is the persisted result of replaying one workflow block
+// against a prior run's inputs through POST /workflows/simulations.
+type BlockSimulation struct {
+	ID                  string                     `json:"id"`
+	WorkflowID          string                     `json:"workflow_id"`
+	RunID               string                     `json:"run_id"`
+	BlockID             string                     `json:"block_id"`
+	BlockType           string                     `json:"block_type"`
+	Success             bool                       `json:"success"`
+	HandleInputs        map[string]any             `json:"handle_inputs,omitempty"`
+	Artifact            *StepArtifactRef           `json:"artifact,omitempty"`
+	HandleOutputs       map[string]any             `json:"handle_outputs,omitempty"`
+	RoutingDecision     []string                   `json:"routing_decision,omitempty"`
+	Error               string                     `json:"error,omitempty"`
+	DurationMS          *float64                   `json:"duration_ms,omitempty"`
+	Skipped             bool                       `json:"skipped,omitempty"`
+	CreatedAt           *time.Time                 `json:"created_at,omitempty"`
+	BlockConfig         map[string]any             `json:"block_config,omitempty"`
+	StepID              string                     `json:"step_id,omitempty"`
+	AvailableIterations []BlockSimulationIteration `json:"available_iterations,omitempty"`
+	Raw                 json.RawMessage            `json:"-"`
+}
+
+func (s *BlockSimulation) UnmarshalJSON(data []byte) error {
+	type alias BlockSimulation
+	aux := (*alias)(s)
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0], data...)
+	return nil
+}
+
+// BlockSimulationIteration is one iteration step available for a simulation.
+type BlockSimulationIteration struct {
+	StepID         string `json:"step_id,omitempty"`
+	IterationIndex *int   `json:"iteration_index,omitempty"`
+	Label          string `json:"label,omitempty"`
+}
+
 // ContainerContextData identifies loop/container context for a step.
 type ContainerContextData struct {
 	ContainerID       string `json:"container_id"`
@@ -524,9 +564,18 @@ type SubmitReviewDecisionResponse struct {
 }
 
 // Submission status string constants returned by Approve / Reject.
+// Kept aligned with “SubmissionStatus“ Literal in
+// “backend/.../workflows/reviews/api_models.py“.
 const (
 	// SubmissionStatusAccepted means the decision was written.
 	SubmissionStatusAccepted = "accepted"
+	// SubmissionStatusAlreadyApplied means the exact same decision was
+	// already recorded; the call is idempotent and successful.
+	SubmissionStatusAlreadyApplied = "already_applied"
+	// SubmissionStatusConflict means the review already has a *different*
+	// decision (e.g. you tried to reject an already-approved review). The
+	// submission was NOT applied; the existing decision stands.
+	SubmissionStatusConflict = "conflict"
 )
 
 // Resume status string constants reported on Approve / Reject responses.

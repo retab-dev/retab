@@ -98,6 +98,17 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 	return obj, nil
 }
 
+// validateWorkflowTestName rejects empty or whitespace-only test names so
+// `workflows tests create`/`update` stay consistent with sibling commands
+// (`workflows create`, `workflows experiments create/update`) that already
+// trap blank names client-side.
+func validateWorkflowTestName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("test name must not be blank")
+	}
+	return nil
+}
+
 func validateWorkflowTestAssertion(assertion map[string]any) error {
 	target, ok := assertion["target"].(map[string]any)
 	if !ok || target == nil {
@@ -206,6 +217,9 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		req := retab.WorkflowTestCreateRequest{}
 		req.WorkflowID = workflowID
 		req.Name, _ = cmd.Flags().GetString("name")
+		if err := validateWorkflowTestName(req.Name); err != nil {
+			return err
+		}
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
 			return err
@@ -253,7 +267,7 @@ var workflowsTestsGetCmd = &cobra.Command{
 	Long: `Fetch a test's definition: target block, source input, assertion
 output, name, timestamps.`,
 	Example: `  # Inspect a test
-  retab workflows tests get tst_jkl012`,
+  retab workflows tests get wfnodetest_jkl012`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -308,11 +322,11 @@ a deliberate schema or prompt change makes the old assertion stale — the
 intent is to ratify the new output as the new baseline, not to silence
 flaky runs.`,
 	Example: `  # Refresh the assertion after a deliberate schema change
-  retab workflows tests update tst_jkl012 \
+  retab workflows tests update wfnodetest_jkl012 \
     --assertion-file ./new-assertion.json
 
   # Rename a test
-  retab workflows tests update tst_jkl012 \
+  retab workflows tests update wfnodetest_jkl012 \
     --name "Invoice 17 baseline (v2 schema)"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -324,6 +338,11 @@ flaky runs.`,
 		}
 		req := retab.WorkflowTestUpdateRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
+		if cmd.Flags().Changed("name") {
+			if err := validateWorkflowTestName(req.Name); err != nil {
+				return err
+			}
+		}
 		assertion, err := resolveJSONMap(cmd, "assertion-file")
 		if err != nil {
 			return err
@@ -361,11 +380,21 @@ flaky runs.`,
 var workflowsTestsDeleteCmd = &cobra.Command{
 	Use:   "delete <test-id>",
 	Short: "Delete a test",
-	Long:  `Permanently delete a regression test and its run history.`,
-	Example: `  # Drop a stale test
-  retab workflows tests delete tst_jkl012`,
+	Long: `Permanently delete a regression test and its run history.
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal. Run history is removed alongside the test definition.`,
+	Example: `  # Drop a stale test (interactive, asks to confirm)
+  retab workflows tests delete wfnodetest_jkl012
+
+  # Skip the prompt in scripts
+  retab workflows tests delete wfnodetest_jkl012 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "test", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -397,7 +426,7 @@ result records.`,
   retab workflows tests runs results list wftestrun_mno345
 
   # Recent runs for one test
-  retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012`,
+  retab workflows tests runs list --workflow-id wf_abc123 --test-id wfnodetest_jkl012`,
 }
 
 var workflowsTestsRunsCreateCmd = &cobra.Command{
@@ -437,7 +466,7 @@ var workflowsTestsRunsListCmd = &cobra.Command{
 	Long: `List workflow-test runs. Filter by workflow, test, target block,
 status, trigger, date, or cursor.`,
 	Example: `  # Recent runs for one test
-  retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012 --limit 50`,
+  retab workflows tests runs list --workflow-id wf_abc123 --test-id wfnodetest_jkl012 --limit 50`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateWorkflowTestsRunsListFilters(cmd); err != nil {
@@ -538,6 +567,20 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
+var workflowsTestsRunsResultsGetCmd = &cobra.Command{
+	Use:   "get <result-id>",
+	Short: "Get a workflow-test result",
+	Long:  `Fetch one workflow-test result by flat result id.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(args[0]), nil, nil)
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 func init() {
 	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
@@ -576,8 +619,10 @@ func init() {
 	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
 	workflowsTestsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
-	workflowsTestsRunsResultsCmd.AddCommand(workflowsTestsRunsResultsListCmd)
+	workflowsTestsRunsResultsCmd.AddCommand(workflowsTestsRunsResultsListCmd, workflowsTestsRunsResultsGetCmd)
 	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsCancelCmd, workflowsTestsRunsResultsCmd)
+	workflowsTestsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsRunsCmd)
 	workflowsCmd.AddCommand(workflowsTestsCmd)
 }

@@ -31,6 +31,13 @@ class WorkflowArtifactsMixin:
             params={key: value for key, value in params.items() if value is not None},
         )
 
+    def prepare_get(self, artifact_id: str) -> PreparedRequest:
+        """Prepare a request to fetch one workflow artifact by flat id."""
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/artifacts/{artifact_id}",
+        )
+
 
 class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
     """Workflow artifact API wrapper for synchronous operations."""
@@ -53,6 +60,12 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         result.data = [WorkflowArtifact.model_validate(item) for item in result.data]
         return result
 
+    def get(self, artifact_id: str) -> WorkflowArtifact:
+        """Fetch one dereferenced workflow artifact by flat artifact id."""
+        request = self.prepare_get(artifact_id)
+        response = self._client._prepared_request(request)
+        return WorkflowArtifact.model_validate(response)
+
 
 class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
     """Workflow artifact API wrapper for asynchronous operations."""
@@ -74,3 +87,9 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         result = PaginatedList[WorkflowArtifact](**response)
         result.data = [WorkflowArtifact.model_validate(item) for item in result.data]
         return result
+
+    async def get(self, artifact_id: str) -> WorkflowArtifact:
+        """Fetch one dereferenced workflow artifact by flat artifact id."""
+        request = self.prepare_get(artifact_id)
+        response = await self._client._prepared_request(request)
+        return WorkflowArtifact.model_validate(response)

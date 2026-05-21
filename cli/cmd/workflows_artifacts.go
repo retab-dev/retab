@@ -42,12 +42,49 @@ files, etc.
 
 Artifacts are separate objects from the run that produced them: they
 survive ` + "`workflows runs delete`" + ` so you can reference outputs long
-after their run is gone. List every artifact tied to a run.`,
+after their run is gone. List every artifact tied to a run, or fetch one
+by id with ` + "`get`" + `.`,
 	Example: `  # All artifacts produced by a run
   retab workflows artifacts list run_xyz789
 
   # Just the extract block's artifacts
-  retab workflows artifacts list run_xyz789 --block-id blk_extract_1`,
+  retab workflows artifacts list run_xyz789 --block-id blk_extract_1
+
+  # Fetch one artifact by id
+  retab workflows artifacts get extr_lz1_abc`,
+}
+
+var workflowsArtifactsGetCmd = &cobra.Command{
+	Use:   "get <artifact-id>",
+	Short: "Get one workflow artifact by id",
+	Long: `Fetch a single artifact produced by a workflow run.
+
+The artifact id appears on each ` + "`workflows steps list`" + ` row as
+` + "`artifact.id`" + ` (e.g. ` + "`extr_lz1_…`" + ` for an extraction,
+` + "`clss_…`" + ` for a classification).
+
+Backing route: ` + "`GET /workflows/artifacts/{artifact_id}`" + `. The server
+derives the backing collection from the id prefix.`,
+	Example: `  # Fetch one extraction artifact
+  retab workflows artifacts get extr_lz1_abc
+
+  # Fetch one classification artifact
+  retab workflows artifacts get clss_xyz_123`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		artifactID := args[0]
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Artifacts.Get(ctx, artifactID)
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
 }
 
 var workflowsArtifactsListCmd = &cobra.Command{
@@ -96,6 +133,6 @@ func init() {
 	workflowsArtifactsListCmd.Flags().String("operation", "", "filter by operation")
 	workflowsArtifactsListCmd.Flags().String("block-id", "", "filter by block id")
 
-	workflowsArtifactsCmd.AddCommand(workflowsArtifactsListCmd)
+	workflowsArtifactsCmd.AddCommand(workflowsArtifactsGetCmd, workflowsArtifactsListCmd)
 	workflowsCmd.AddCommand(workflowsArtifactsCmd)
 }

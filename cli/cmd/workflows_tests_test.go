@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -42,6 +43,42 @@ func TestResolveWorkflowIDArg_PositionalAlone(t *testing.T) {
 	}
 	if warn.Len() != 0 {
 		t.Fatalf("expected no warning, got %q", warn.String())
+	}
+}
+
+func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/tests/results/wfresult_123" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":      "wfresult_123",
+			"run_id":  "wftestrun_123",
+			"test_id": "wfnodetest_123",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsTestsRunsResultsGetCmd.RunE(workflowsTestsRunsResultsGetCmd, []string{"wfresult_123"}); err != nil {
+			t.Fatalf("test result get: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if strings.Join(requests, ",") != "GET /workflows/tests/results/wfresult_123" {
+		t.Fatalf("requests = %v", requests)
+	}
+	if !strings.Contains(stdout, `"id": "wfresult_123"`) {
+		t.Fatalf("expected stdout to contain result id, got:\n%s", stdout)
 	}
 }
 
@@ -522,6 +559,7 @@ func TestWorkflowsTestsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T)
 			cmd:  workflowsTestsCreateCmd,
 			args: []string{"wf_123"},
 			flags: map[string]string{
+				"name":           "baseline",
 				"target-file":    invalidTarget,
 				"source-file":    validSource,
 				"assertion-file": validAssertion,
@@ -533,6 +571,7 @@ func TestWorkflowsTestsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T)
 			cmd:  workflowsTestsCreateCmd,
 			args: []string{"wf_123"},
 			flags: map[string]string{
+				"name":           "baseline",
 				"target-file":    validTarget,
 				"source-file":    invalidSource,
 				"assertion-file": validAssertion,
@@ -836,6 +875,146 @@ func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
 				t.Fatalf("server was hit %d time(s), want 0", got-before)
 			}
 		})
+	}
+}
+
+// TestWorkflowsTestsRejectBlankNameBeforeRequest mirrors the equivalent
+// experiments-side guard. `workflows tests create` previously accepted a
+// whitespace-only --name and stored it as-is; `workflows tests update`
+// did the same. Both should fail locally with the same wording the
+// sibling workflow / experiment commands use, and must NOT reach the
+// server.
+func TestWorkflowsTestsRejectBlankNameBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	sourcePath := filepath.Join(dir, "source.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	for path, body := range map[string]string{
+		targetPath:    `{"type":"block","block_id":"blk_1"}`,
+		sourcePath:    `{"type":"manual","handle_inputs":{}}`,
+		assertionPath: `{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"exists"}}`,
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cases := []struct {
+		name  string
+		cmd   *cobra.Command
+		args  []string
+		setup func(t *testing.T)
+	}{
+		{
+			name: "create",
+			cmd:  workflowsTestsCreateCmd,
+			args: []string{"wf_123"},
+			setup: func(t *testing.T) {
+				t.Helper()
+				if err := workflowsTestsCreateCmd.Flags().Set("target-file", targetPath); err != nil {
+					t.Fatal(err)
+				}
+				if err := workflowsTestsCreateCmd.Flags().Set("source-file", sourcePath); err != nil {
+					t.Fatal(err)
+				}
+				if err := workflowsTestsCreateCmd.Flags().Set("assertion-file", assertionPath); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() {
+					_ = workflowsTestsCreateCmd.Flags().Set("target-file", "")
+					_ = workflowsTestsCreateCmd.Flags().Set("source-file", "")
+					_ = workflowsTestsCreateCmd.Flags().Set("assertion-file", "")
+				})
+			},
+		},
+		{
+			name:  "update",
+			cmd:   workflowsTestsUpdateCmd,
+			args:  []string{"tst_123"},
+			setup: func(t *testing.T) { t.Helper() },
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			tc.setup(t)
+			if err := tc.cmd.Flags().Set("name", "   "); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				_ = tc.cmd.Flags().Set("name", "")
+				tc.cmd.Flags().Lookup("name").Changed = false
+			})
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, tc.args)
+			})
+			if err == nil {
+				t.Fatal("expected blank test name error")
+			}
+			if !strings.Contains(stderr, "test name") || !strings.Contains(stderr, "must not be blank") {
+				t.Fatalf("stderr %q does not mention blank test name", stderr)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want 0", got-before)
+			}
+		})
+	}
+}
+
+// TestWorkflowsTestsUpdateAllowsAbsentNameFlag confirms that an update
+// invocation that doesn't touch --name still works (the blank-name guard
+// must only run when --name is explicitly passed). Without this nuance,
+// `update --assertion-file ...` would erroneously error.
+func TestWorkflowsTestsUpdateAllowsAbsentNameFlag(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"tst_123","name":"unchanged"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	assertionPath := filepath.Join(dir, "assertion.json")
+	if err := os.WriteFile(assertionPath, []byte(`{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"exists"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsTestsUpdateCmd.Flags().Set("assertion-file", assertionPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsTestsUpdateCmd.Flags().Set("assertion-file", "")
+		workflowsTestsUpdateCmd.Flags().Lookup("name").Changed = false
+	})
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"tst_123"})
+	})
+	if err != nil {
+		t.Fatalf("update without --name should succeed, got %v", err)
+	}
+	if got := hits.Load(); got != 1 {
+		t.Fatalf("server was hit %d time(s), want 1", got)
 	}
 }
 

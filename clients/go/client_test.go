@@ -340,6 +340,10 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if preparedList.URL != "/workflows/artifacts" || preparedList.Method != http.MethodGet || preparedList.Params.Get("run_id") != "run_123" {
 		t.Fatalf("prepared artifact list = %#v", preparedList)
 	}
+	preparedGet := client.Workflows.Artifacts.PrepareGet("ext_123")
+	if preparedGet.URL != "/workflows/artifacts/ext_123" || preparedGet.Method != http.MethodGet {
+		t.Fatalf("prepared artifact get = %#v", preparedGet)
+	}
 
 	artifacts, err := client.Workflows.Artifacts.List(context.Background(), ListWorkflowArtifactsParams{
 		RunID:     "run_123",
@@ -358,7 +362,14 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
 	}
-	if strings.Join(requests, ",") != "GET /workflows/artifacts" {
+	artifact, err := client.Workflows.Artifacts.Get(context.Background(), "ext_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if (*artifact)["id"] != "ext_123" || (*artifact)["operation"] != "extraction" {
+		t.Fatalf("artifact = %#v", artifact)
+	}
+	if strings.Join(requests, ",") != "GET /workflows/artifacts,GET /workflows/artifacts/ext_123" {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
@@ -381,6 +392,18 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data":          []map[string]any{},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/results/expresult_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":            "expresult_123",
+				"run_id":        "exprun_123",
+				"experiment_id": "exp_123",
+				"document_id":   "expdoc_123",
+				"lifecycle":     map[string]any{"status": "completed"},
+				"timing":        map[string]any{},
+				"block_kind":    "extract",
+				"handle_inputs": map[string]any{},
+				"attempt":       1,
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/experiments/runs/exprun_123/cancel":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -415,6 +438,13 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if len(results.Data) != 0 || rawQuery != "limit=25" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
+	runResult, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "expresult_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runResult.ID != "expresult_123" || runResult.RunID != "exprun_123" {
+		t.Fatalf("runResult = %#v", runResult)
+	}
 	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
@@ -432,10 +462,46 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	expected := []string{
 		"GET /workflows/experiments/runs/exprun_123",
 		"GET /workflows/experiments/runs/exprun_123/results",
+		"GET /workflows/experiments/results/expresult_123",
 		"POST /workflows/experiments/runs/exprun_123/cancel",
 		"GET /workflows/experiments/runs/exprun_123/metrics",
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/tests/results/wfresult_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":      "wfresult_123",
+				"run_id":  "wftestrun_123",
+				"test_id": "wfnodetest_123",
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := client.Workflows.Tests.Runs.Results.Get(context.Background(), "wfresult_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if (*result)["id"] != "wfresult_123" || (*result)["test_id"] != "wfnodetest_123" {
+		t.Fatalf("result = %#v", result)
+	}
+	if strings.Join(requests, ",") != "GET /workflows/tests/results/wfresult_123" {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
@@ -654,6 +720,11 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 			name:    "WorkflowBlocksService",
 			service: &WorkflowBlocksService{},
 			methods: []string{"ConfigHistory", "GetResolvedSchemas", "CreateBatch", "ListSimulations", "PrepareSimulate", "Simulate"},
+		},
+		{
+			name:    "WorkflowStepsService",
+			service: &WorkflowStepsService{},
+			methods: []string{"ListSimulations", "PrepareListSimulations", "PrepareSimulate", "Simulate"},
 		},
 		{
 			name:    "WorkflowEdgesService",

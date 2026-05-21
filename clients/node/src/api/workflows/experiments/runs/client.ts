@@ -2,10 +2,12 @@ import { CompositionClient, RequestOptions } from '../../../../client.js';
 import {
   ExperimentMetricView,
   ExperimentMetricsResponse,
+  ExperimentResult,
   ExperimentResultListResponse,
   ExperimentRun,
   ExperimentRunListResponse,
   ZExperimentMetricsResponse,
+  ZExperimentResult,
   ZExperimentResultListResponse,
   ZExperimentRun,
   ZExperimentRunListResponse,
@@ -269,6 +271,13 @@ export class APIWorkflowExperimentRunResults extends CompositionClient {
     super(client);
   }
 
+  prepare_get(resultId: string): { url: string; method: string } {
+    return {
+      url: `/workflows/experiments/results/${resultId}`,
+      method: 'GET',
+    };
+  }
+
   async list(
     { runId, limit = 20 }: { runId: string; limit?: number },
     options?: RequestOptions
@@ -281,6 +290,18 @@ export class APIWorkflowExperimentRunResults extends CompositionClient {
     });
   }
 
+  async get(
+    { resultId }: { resultId: string },
+    options?: RequestOptions
+  ): Promise<ExperimentResult> {
+    const request = this.prepare_get(resultId);
+    return this._fetchJson(ZExperimentResult, {
+      url: request.url,
+      method: request.method,
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
 }
 
 export class APIWorkflowExperimentRunMetrics extends CompositionClient {

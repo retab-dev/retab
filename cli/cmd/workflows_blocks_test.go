@@ -113,6 +113,53 @@ func TestParseBlockCreateRejectsStandaloneReviewBlock(t *testing.T) {
 	}
 }
 
+func TestParseBlockCreateRejectsMismatchedWorkflowID(t *testing.T) {
+	// If the block-file body carries a ``workflow_id`` that disagrees
+	// with the positional ``<workflow-id>``, the CLI must reject the
+	// request rather than silently dropping the body field. Otherwise a
+	// stale automation script can target the wrong workflow and the user
+	// will never know.
+	_, err := parseBlockCreateForWorkflow(
+		"wrk_REAL",
+		map[string]any{
+			"id":          "x",
+			"workflow_id": "wrk_FAKE",
+			"type":        "extract",
+		},
+	)
+	if err == nil {
+		t.Fatal("expected mismatched workflow_id to be rejected")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "workflow_id") {
+		t.Fatalf("error should mention workflow_id, got %q", msg)
+	}
+	if !strings.Contains(msg, "wrk_REAL") || !strings.Contains(msg, "wrk_FAKE") {
+		t.Fatalf("error should name both ids, got %q", msg)
+	}
+}
+
+func TestParseBlockCreateAcceptsMatchingOrAbsentWorkflowID(t *testing.T) {
+	// Absent in body → fine (positional wins, body never said anything).
+	if _, err := parseBlockCreateForWorkflow(
+		"wrk_REAL",
+		map[string]any{"id": "x", "type": "extract"},
+	); err != nil {
+		t.Fatalf("absent body workflow_id should be accepted, got %v", err)
+	}
+	// Matching in body → fine (echo of the positional).
+	if _, err := parseBlockCreateForWorkflow(
+		"wrk_REAL",
+		map[string]any{
+			"id":          "x",
+			"workflow_id": "wrk_REAL",
+			"type":        "extract",
+		},
+	); err != nil {
+		t.Fatalf("matching body workflow_id should be accepted, got %v", err)
+	}
+}
+
 func TestParseBlockCreateRejectsLegacyHilConfig(t *testing.T) {
 	_, err := parseBlockCreate(map[string]any{
 		"id":   "extract_hil",

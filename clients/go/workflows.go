@@ -17,6 +17,7 @@ type WorkflowsService struct {
 	Steps       *WorkflowStepsService
 	Reviews     *WorkflowReviewsService
 	Artifacts   *WorkflowArtifactsService
+	Simulations *WorkflowSimulationsService
 	Blocks      *WorkflowBlocksService
 	Edges       *WorkflowEdgesService
 	Specs       *WorkflowSpecsService
@@ -33,6 +34,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		Versions: &WorkflowReviewVersionsService{client: client},
 	}
 	service.Artifacts = &WorkflowArtifactsService{client: client}
+	service.Simulations = &WorkflowSimulationsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
 	service.Specs = &WorkflowSpecsService{client: client}
@@ -310,6 +312,13 @@ func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParam
 	}
 }
 
+func (s *WorkflowArtifactsService) PrepareGet(artifactID string) PreparedRequest {
+	return PreparedRequest{
+		URL:    "/workflows/artifacts/" + url.PathEscape(artifactID),
+		Method: http.MethodGet,
+	}
+}
+
 // List returns workflow artifacts produced by a single run.
 //
 // Response-shape tolerance: production currently returns a bare JSON
@@ -340,6 +349,20 @@ func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflow
 	return &result, nil
 }
 
+// Get returns the single artifact identified by `artifactID`. The server
+// dispatches to the right backing collection based on the id prefix (e.g.
+// `extr_…` → extraction, `clss_…` → classification); an unknown prefix
+// surfaces as a 404 from the API.
+func (s *WorkflowArtifactsService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (*WorkflowArtifact, error) {
+	if artifactID == "" {
+		return nil, fmt.Errorf("retab: artifactID is required")
+	}
+	var result WorkflowArtifact
+	prepared := s.PrepareGet(artifactID)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, nil, nil, &result, opts...)
+	return &result, err
+}
+
 // decodeArtifactListResponse normalises both response shapes into the
 // PaginatedList envelope. It sniffs the first non-whitespace byte: `[`
 // is a bare array, `{` is the envelope. Anything else is a protocol
@@ -368,6 +391,54 @@ func decodeArtifactListResponse(raw json.RawMessage) (PaginatedList[WorkflowArti
 
 type WorkflowBlocksService struct {
 	client *Client
+}
+
+type WorkflowSimulationsService struct {
+	client *Client
+}
+
+type CreateWorkflowSimulationRequest struct {
+	RunID            string `json:"run_id"`
+	BlockID          string `json:"block_id"`
+	SourceStepID     string `json:"source_step_id,omitempty"`
+	NConsensus       int    `json:"n_consensus,omitempty"`
+	CheckEligibility *bool  `json:"check_eligibility,omitempty"`
+}
+
+type ListWorkflowSimulationsParams struct {
+	RunID   string
+	BlockID string
+	Limit   int
+}
+
+func (s *WorkflowSimulationsService) Create(ctx context.Context, request CreateWorkflowSimulationRequest, opts ...RequestOption) (*BlockSimulation, error) {
+	if request.RunID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if request.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	var result BlockSimulation
+	err := s.client.do(ctx, http.MethodPost, "/workflows/simulations", nil, request, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowSimulationsService) List(ctx context.Context, params ListWorkflowSimulationsParams, opts ...RequestOption) (*PaginatedList[BlockSimulation], error) {
+	if params.RunID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if params.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	query := url.Values{}
+	query.Set("run_id", params.RunID)
+	query.Set("block_id", params.BlockID)
+	if params.Limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", params.Limit))
+	}
+	var result PaginatedList[BlockSimulation]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/simulations", query, nil, &result, opts...)
+	return &result, err
 }
 
 type WorkflowBlockCreateRequest struct {
@@ -786,6 +857,18 @@ type ExportWorkflowRunsRequest struct {
 	ToDate           string
 	TriggerTypes     []string
 	PreferredColumns []string
+	// CSV shape controls. All three default to the server's defaults
+	// (``;`` / ``\n`` / ``"``) when left empty. ``Delimiter`` and
+	// ``Quote`` must each be a single character if non-empty;
+	// ``LineDelimiter`` must be non-empty if set.
+	//
+	// The server default ``;`` is convenient in EU locales (Excel uses
+	// ``;`` when ``,`` is the decimal separator) but is hostile to
+	// pandas / RFC-4180 consumers. Set ``Delimiter`` to "," for the
+	// portable shape.
+	Delimiter     string
+	LineDelimiter string
+	Quote         string
 }
 
 func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflowRunsRequest, opts ...RequestOption) (*WorkflowRunExportResponse, error) {
@@ -825,6 +908,19 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 	}
 	if len(request.TriggerTypes) > 0 {
 		body["trigger_types"] = request.TriggerTypes
+	}
+	// CSV shape controls — forwarded only when explicitly set so the
+	// server falls back to its own defaults (and so pre-this-field
+	// servers don't reject an unexpected field; the route accepts
+	// extras silently regardless, but omitting keeps the wire small).
+	if request.Delimiter != "" {
+		body["delimiter"] = request.Delimiter
+	}
+	if request.LineDelimiter != "" {
+		body["line_delimiter"] = request.LineDelimiter
+	}
+	if request.Quote != "" {
+		body["quote"] = request.Quote
 	}
 	var result WorkflowRunExportResponse
 	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export-payload", nil, body, &result, opts...)
@@ -917,7 +1013,10 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 			return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
 		}
 		addQuery(query, "workflow_id", params.WorkflowID)
-		addQuery(query, "run_id", params.RunID)
+		// Server's reviews list endpoint takes ``workflow_run_id``, NOT
+		// ``run_id`` — sending ``run_id`` is silently dropped by FastAPI's
+		// extra-query-param handling, so the filter never reached the server.
+		addQuery(query, "workflow_run_id", params.RunID)
 		addQuery(query, "block_id", params.BlockID)
 		addQuery(query, "step_id", params.StepID)
 		addQuery(query, "iteration_key", params.IterationKey)
@@ -1309,6 +1408,15 @@ func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, 
 	return &result, err
 }
 
+func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
+	if resultID == "" {
+		return nil, fmt.Errorf("retab: resultID is required")
+	}
+	var result WorkflowTestRunRecord
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
+	return &result, err
+}
+
 func addQuery(values url.Values, key string, value string) {
 	if value != "" {
 		values.Set(key, value)
@@ -1672,6 +1780,15 @@ func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID st
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	var result PaginatedList[ExperimentResult]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results", query, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*ExperimentResult, error) {
+	if resultID == "" {
+		return nil, fmt.Errorf("retab: resultID is required")
+	}
+	var result ExperimentResult
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
 	return &result, err
 }
 

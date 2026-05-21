@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -79,6 +81,13 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 	return req, nil
 }
 
+func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
+	if bodyWorkflowID, ok := obj["workflow_id"].(string); ok && bodyWorkflowID != "" && bodyWorkflowID != workflowID {
+		return retab.WorkflowBlockCreateRequest{}, fmt.Errorf("block-file workflow_id %q does not match positional workflow id %q", bodyWorkflowID, workflowID)
+	}
+	return parseBlockCreate(obj)
+}
+
 func rejectLegacyReviewConfig(config map[string]any) error {
 	if config == nil {
 		return nil
@@ -136,9 +145,18 @@ var workflowsBlocksGetCmd = &cobra.Command{
 	Use:   "get <block-id>",
 	Short: "Get a workflow block",
 	Long: `Fetch a single block's full definition: type, label, position,
-parent group, and the typed config blob.`,
+parent group, and the typed config blob.
+
+Pass ` + "`--workflow-id`" + ` only when the block id is not unique within
+your organization — typically pre-uniqueness dev / staging data where
+custom block ids (` + "`block_split`" + `, ` + "`block_extract`" + `) were
+created in multiple workflows. The server's 409 response on a duplicate
+lists the colliding workflow_ids so you know what to pass.`,
 	Example: `  # Inspect a block
   retab workflows blocks get blk_def456
+
+  # Disambiguate a legacy duplicate id
+  retab workflows blocks get block_split --workflow-id wf_abc123
 
   # Save a block's config for offline editing
   retab workflows blocks get blk_def456 \
@@ -151,12 +169,27 @@ parent group, and the typed config blob.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.Get(ctx, args[0])
+		opts := workflowBlockLookupOpts(cmd)
+		result, err := client.Workflows.Blocks.Get(ctx, args[0], opts...)
 		if err != nil {
 			return err
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// workflowBlockLookupOpts builds the optional “workflow_id“ query
+// parameter for blocks get/update/delete. Empty flag → no option, so
+// the URL stays identical to the original flat-resource shape.
+func workflowBlockLookupOpts(cmd *cobra.Command) []retab.RequestOption {
+	workflowID, _ := cmd.Flags().GetString("workflow-id")
+	workflowID = strings.TrimSpace(workflowID)
+	if workflowID == "" {
+		return nil
+	}
+	return []retab.RequestOption{
+		retab.WithRequestParams(url.Values{"workflow_id": []string{workflowID}}),
+	}
 }
 
 var workflowsBlocksCreateCmd = &cobra.Command{
@@ -222,7 +255,7 @@ Review is not a standalone block type.`,
 		if err != nil {
 			return err
 		}
-		req, err := parseBlockCreate(obj)
+		req, err := parseBlockCreateForWorkflow(args[0], obj)
 		if err != nil {
 			return err
 		}
@@ -354,7 +387,8 @@ the visual editor.`,
 			req.Config = patch
 			req.ConfigMode = "merge"
 		}
-		result, err := client.Workflows.Blocks.Update(ctx, args[0], req)
+		opts := workflowBlockLookupOpts(cmd)
+		result, err := client.Workflows.Blocks.Update(ctx, args[0], req, opts...)
 		if err != nil {
 			return err
 		}
@@ -367,18 +401,29 @@ var workflowsBlocksDeleteCmd = &cobra.Command{
 	Short: "Delete a workflow block",
 	Long: `Remove a block from the draft graph. Edges that referenced this
 block are also deleted. Past runs that used this block remain intact —
-deletion only affects the draft.`,
-	Example: `  # Remove a block
-  retab workflows blocks delete blk_def456`,
+deletion only affects the draft.
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal.`,
+	Example: `  # Remove a block (interactive, asks to confirm)
+  retab workflows blocks delete blk_def456
+
+  # Skip the prompt in scripts
+  retab workflows blocks delete blk_def456 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "block", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Blocks.Delete(ctx, args[0]); err != nil {
+		opts := workflowBlockLookupOpts(cmd)
+		if err := client.Workflows.Blocks.Delete(ctx, args[0], opts...); err != nil {
 			return err
 		}
 		confirmDeleted("block", args[0])
@@ -397,6 +442,8 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().String("parent-id", "", "update parent id")
 	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file to use as the full new config — REPLACES the existing config (or - for stdin)")
 	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config; nulls delete keys (RFC 7396) (or - for stdin)")
+
+	workflowsBlocksDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	workflowsBlocksCmd.AddCommand(workflowsBlocksListCmd, workflowsBlocksGetCmd, workflowsBlocksCreateCmd, workflowsBlocksUpdateCmd, workflowsBlocksDeleteCmd)
 	workflowsCmd.AddCommand(workflowsBlocksCmd)

@@ -1,9 +1,11 @@
 import { CompositionClient, RequestOptions } from '../../../../client.js';
 import {
   WorkflowTestBlockTarget,
+  WorkflowTestResult,
   WorkflowTestResultListResponse,
   WorkflowTestRunListResponse,
   WorkflowTestRun,
+  ZWorkflowTestResult,
   ZWorkflowTestResultListResponse,
   ZWorkflowTestRunListResponse,
   ZWorkflowTestRun,
@@ -161,6 +163,13 @@ export class APIWorkflowTestRunResults extends CompositionClient {
     super(client);
   }
 
+  prepare_get(resultId: string): { url: string; method: string } {
+    return {
+      url: `/workflows/tests/results/${resultId}`,
+      method: 'GET',
+    };
+  }
+
   async list(
     { runId, limit = 20 }: { runId: string; limit?: number },
     options?: RequestOptions
@@ -169,6 +178,19 @@ export class APIWorkflowTestRunResults extends CompositionClient {
       url: `/workflows/tests/runs/${runId}/results`,
       method: 'GET',
       params: { limit, ...(options?.params || {}) },
+      headers: options?.headers,
+    });
+  }
+
+  async get(
+    { resultId }: { resultId: string },
+    options?: RequestOptions
+  ): Promise<WorkflowTestResult> {
+    const request = this.prepare_get(resultId);
+    return this._fetchJson(ZWorkflowTestResult, {
+      url: request.url,
+      method: request.method,
+      params: options?.params,
       headers: options?.headers,
     });
   }
