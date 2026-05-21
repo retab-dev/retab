@@ -161,7 +161,7 @@ export default class APIWorkflowReviews extends CompositionClient {
 
   prepare_list({
     workflowId,
-    workflowRunId,
+    runId,
     blockId,
     stepId,
     iterationKey,
@@ -171,7 +171,7 @@ export default class APIWorkflowReviews extends CompositionClient {
     after,
   }: {
     workflowId?: string;
-    workflowRunId?: string;
+    runId?: string;
     blockId?: string;
     stepId?: string;
     iterationKey?: string;
@@ -182,7 +182,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   } = {}): PreparedReviewRequest {
     const params: Record<string, unknown> = { limit, decision_status: decisionStatus };
     if (workflowId !== undefined) params.workflow_id = workflowId;
-    if (workflowRunId !== undefined) params.workflow_run_id = workflowRunId;
+    if (runId !== undefined) params.run_id = runId;
     if (blockId !== undefined) params.block_id = blockId;
     if (stepId !== undefined) params.step_id = stepId;
     if (iterationKey !== undefined) params.iteration_key = iterationKey;
@@ -215,7 +215,7 @@ export default class APIWorkflowReviews extends CompositionClient {
    * List review summaries.
    *
    * @param workflowId - Restrict the queue to a single workflow.
-   * @param workflowRunId - Restrict the queue to a single workflow run.
+   * @param runId - Restrict the queue to a single workflow run.
    * @param blockId - Restrict the queue to a workflow block.
    * @param stepId - Restrict the queue to one execution step.
    * @param iterationKey - Restrict the queue to one for_each iteration key.
@@ -227,7 +227,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   async list(
     {
       workflowId,
-      workflowRunId,
+      runId,
       blockId,
       stepId,
       iterationKey,
@@ -237,7 +237,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after,
     }: {
       workflowId?: string;
-      workflowRunId?: string;
+      runId?: string;
       blockId?: string;
       stepId?: string;
       iterationKey?: string;
@@ -250,7 +250,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   ): Promise<WorkflowReviewQueue> {
     const request = this.prepare_list({
       workflowId,
-      workflowRunId,
+      runId,
       blockId,
       stepId,
       iterationKey,

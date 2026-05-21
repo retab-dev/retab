@@ -290,7 +290,7 @@ describe('APIWorkflowReviews request shapes', () => {
 
     await reviews.list({
       workflowId: 'wf_1',
-      workflowRunId: 'run_1',
+      runId: 'run_1',
       blockId: 'extract-1',
       limit: 25,
     });
@@ -302,7 +302,7 @@ describe('APIWorkflowReviews request shapes', () => {
         decision_status: 'pending',
         limit: 25,
         workflow_id: 'wf_1',
-        workflow_run_id: 'run_1',
+        run_id: 'run_1',
         block_id: 'extract-1',
       },
       headers: undefined,

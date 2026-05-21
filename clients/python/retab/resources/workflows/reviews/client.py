@@ -23,7 +23,7 @@ class WorkflowReviewsMixin:
     def prepare_list(
         self,
         workflow_id: str | None = None,
-        workflow_run_id: str | None = None,
+        run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -36,8 +36,8 @@ class WorkflowReviewsMixin:
         params: Dict[str, Any] = {"limit": limit, "decision_status": decision_status}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
-        if workflow_run_id is not None:
-            params["workflow_run_id"] = workflow_run_id
+        if run_id is not None:
+            params["run_id"] = run_id
         if block_id is not None:
             params["block_id"] = block_id
         if step_id is not None:
@@ -244,7 +244,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
     def list(
         self,
         workflow_id: str | None = None,
-        workflow_run_id: str | None = None,
+        run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -256,7 +256,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
-            workflow_run_id=workflow_run_id,
+            run_id=run_id,
             block_id=block_id,
             step_id=step_id,
             iteration_key=iteration_key,
@@ -297,7 +297,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
     async def list(
         self,
         workflow_id: str | None = None,
-        workflow_run_id: str | None = None,
+        run_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
@@ -309,7 +309,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
-            workflow_run_id=workflow_run_id,
+            run_id=run_id,
             block_id=block_id,
             step_id=step_id,
             iteration_key=iteration_key,
