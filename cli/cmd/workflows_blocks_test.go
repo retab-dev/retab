@@ -188,7 +188,7 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/blocks/blk_1" || r.URL.Query().Get("workflow_id") != "wf_blocks" {
+		if r.URL.Path != "/workflows/blocks/blk_1" || r.URL.RawQuery != "" {
 			t.Fatalf("path = %s?%s, want block get", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -208,7 +208,7 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsBlocksGetCmd.RunE(workflowsBlocksGetCmd, []string{"wf_blocks", "blk_1"}); err != nil {
+		if err := workflowsBlocksGetCmd.RunE(workflowsBlocksGetCmd, []string{"blk_1"}); err != nil {
 			t.Fatalf("blocks get: %v", err)
 		}
 	})

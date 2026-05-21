@@ -329,7 +329,7 @@ func TestWorkflowsBlocksUpdateRejectsReplaceAndMergeConfigTogether(t *testing.T)
 		t.Fatal(err)
 	}
 
-	err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"})
+	err := cmd.RunE(cmd, []string{"blk_extract"})
 	if err == nil {
 		t.Fatal("expected mutually exclusive config flags to fail")
 	}

@@ -110,7 +110,7 @@ func TestWorkflowsEdgesGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/edges/edge_1" || r.URL.Query().Get("workflow_id") != "wf_123" {
+		if r.URL.Path != "/workflows/edges/edge_1" || r.URL.RawQuery != "" {
 			t.Fatalf("path = %s?%s, want edge get", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -132,7 +132,7 @@ func TestWorkflowsEdgesGetHonorsTableOutputFallback(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsEdgesGetCmd.RunE(workflowsEdgesGetCmd, []string{"wf_123", "edge_1"}); err != nil {
+		if err := workflowsEdgesGetCmd.RunE(workflowsEdgesGetCmd, []string{"edge_1"}); err != nil {
 			t.Fatalf("edges get: %v", err)
 		}
 	})
