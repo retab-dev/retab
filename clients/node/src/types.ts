@@ -895,12 +895,11 @@ export const ZOutputVersion = z
   .object({
     parent_id: z.string().nullable().default(null),
     author: ZActor,
-    origin: z.enum(['model_output', 'agent_created', 'human_created']),
     snapshot: z.record(z.unknown()),
     note: z.string().nullable().default(null),
     created_at: z.string(),
   })
-  .passthrough();
+  .strict();
 export type OutputVersion = z.infer<typeof ZOutputVersion>;
 
 /** A verdict recorded against a specific output version. */

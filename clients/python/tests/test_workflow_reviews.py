@@ -29,7 +29,6 @@ _ACTOR_AGENT = {"kind": "agent", "id": "agent_1", "display_name": "Reviewer Agen
 _OUTPUT_VERSION = {
     "parent_id": None,
     "author": _ACTOR_MODEL,
-    "origin": "model_output",
     "snapshot": {"output": {"total": 100, "currency": "USD"}},
     "note": None,
     "created_at": _NOW,
@@ -62,7 +61,6 @@ _OVERLAY = {
             **_OUTPUT_VERSION,
             "parent_id": _VERSION_ID,
             "author": _ACTOR_AGENT,
-            "origin": "agent_created",
             "snapshot": {"output": {"total": 150, "currency": "USD"}},
         },
     },
@@ -102,7 +100,6 @@ _PUBLIC_OVERLAY = {
             **_OUTPUT_VERSION,
             "parent_id": _VERSION_ID,
             "author": _ACTOR_AGENT,
-            "origin": "agent_created",
             "snapshot": {"output": {"total": 150, "currency": "USD"}},
         },
     },
@@ -230,6 +227,7 @@ def test_actor_kind_is_neutral_data_not_a_branch() -> None:
 def test_output_version_and_decision_round_trip() -> None:
     version = OutputVersion.model_validate(_OUTPUT_VERSION)
     assert version.parent_id is None
+    assert version.author.kind == "model"
     assert version.snapshot == {"output": {"total": 100, "currency": "USD"}}
 
     decision = ReviewDecision.model_validate(_DECISION)
@@ -265,7 +263,6 @@ def test_prepare_create_version_posts_snapshot_to_versions() -> None:
         "extract-1",
         snapshot={"category": "Invoice"},
         parent_id=_VERSION_ID,
-        origin="agent_created",
         note="changed category",
     )
     assert request.method == "POST"
@@ -273,7 +270,6 @@ def test_prepare_create_version_posts_snapshot_to_versions() -> None:
     assert request.data == {
         "snapshot": {"category": "Invoice"},
         "parent_id": _VERSION_ID,
-        "origin": "agent_created",
         "note": "changed category",
     }
 
@@ -331,7 +327,9 @@ def test_get_parses_overlay() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1"
-    assert overlay.versions_by_id[_VERSION_ID].origin == "model_output"
+    model_root = overlay.versions_by_id[_VERSION_ID]
+    assert model_root.author.kind == "model"
+    assert model_root.parent_id is None
 
 
 def test_approve_sends_approved_verdict() -> None:
@@ -370,7 +368,7 @@ def test_create_version_posts_version_and_returns_overlay() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
     assert request.data["parent_id"] == _VERSION_ID
-    assert request.data["origin"] == "human_created"
+    assert "origin" not in request.data
     assert isinstance(overlay, ReviewOverlay)
 
 

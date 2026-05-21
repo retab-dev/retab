@@ -50,7 +50,6 @@ const ACTOR_JSON = {
 const OUTPUT_VERSION_JSON = {
   parent_id: null,
   author: { kind: 'model', id: 'model_1', display_name: 'Model' },
-  origin: 'model_output',
   snapshot: { output: { invoice_number: 'INV-001', total: 100 } },
   note: null,
   created_at: '2026-05-18T10:00:00Z',
@@ -81,7 +80,6 @@ const OVERLAY_JSON = {
       ...OUTPUT_VERSION_JSON,
       parent_id: VERSION_ID,
       author: ACTOR_JSON,
-      origin: 'agent_created',
       snapshot: { output: { invoice_number: 'INV-001', total: 150 } },
     },
   },
@@ -112,8 +110,14 @@ describe('review zod schemas', () => {
   test('ZOutputVersion round-trips a full version', () => {
     const version = ZOutputVersion.parse(OUTPUT_VERSION_JSON);
     expect(version.parent_id).toBe(null);
-    expect(version.origin).toBe('model_output');
+    expect(version.author.kind).toBe('model');
     expect(version.snapshot).toEqual({ output: { invoice_number: 'INV-001', total: 100 } });
+  });
+
+  test('ZOutputVersion rejects removed origin fields', () => {
+    expect(() =>
+      ZOutputVersion.parse({ ...OUTPUT_VERSION_JSON, origin: 'model_output' })
+    ).toThrow();
   });
 
   test('ZReviewDecision round-trips and carries version_id', () => {
@@ -351,7 +355,25 @@ describe('APIWorkflowReviews request shapes', () => {
 
     const body = mock.lastFetchParams?.body as Record<string, unknown>;
     expect('note' in body).toBe(false);
-    expect(body.origin).toBe('human_created');
+    expect('origin' in body).toBe(false);
+  });
+
+  test('createVersion() strips origin from request option body overrides', async () => {
+    const mock = new MockClient(OVERLAY_JSON);
+    const reviews = new APIWorkflowReviews(mock);
+
+    await reviews.createVersion(
+      'run_1',
+      'extract-1',
+      {
+        snapshot: { category: 'Invoice' },
+        parentId: VERSION_ID,
+      },
+      { body: { origin: 'human_created' } }
+    );
+
+    const body = mock.lastFetchParams?.body as Record<string, unknown>;
+    expect('origin' in body).toBe(false);
   });
 
   test('createVersion() posts a new snapshot version to /versions', async () => {
@@ -361,7 +383,6 @@ describe('APIWorkflowReviews request shapes', () => {
     await reviews.createVersion('run_1', 'extract-1', {
       snapshot: { category: 'Invoice' },
       parentId: VERSION_ID,
-      origin: 'agent_created',
       note: 'agent proposal',
     });
 
@@ -371,7 +392,6 @@ describe('APIWorkflowReviews request shapes', () => {
       body: {
         snapshot: { category: 'Invoice' },
         parent_id: VERSION_ID,
-        origin: 'agent_created',
         note: 'agent proposal',
       },
       params: undefined,

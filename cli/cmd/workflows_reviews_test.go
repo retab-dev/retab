@@ -19,7 +19,6 @@ func reviewVersionBody(parentID any, snapshot map[string]any) map[string]any {
 	return map[string]any{
 		"parent_id":  parentID,
 		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
-		"origin":     "model_output",
 		"snapshot":   snapshot,
 		"created_at": "2026-05-18T09:00:00Z",
 	}
@@ -818,9 +817,6 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("origin", "human_created"); err != nil {
-		t.Fatal(err)
-	}
 	if err := cmd.Flags().Set("note", "fixed total"); err != nil {
 		t.Fatal(err)
 	}
@@ -840,10 +836,10 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 	if !ok || output["total"] != float64(110) || output["currency"] != "USD" {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if body["parent_id"] != reviewTestVersionID || body["origin"] != "human_created" || body["note"] != "fixed total" {
+	if body["parent_id"] != reviewTestVersionID || body["note"] != "fixed total" {
 		t.Fatalf("body = %#v", body)
 	}
-	for _, stale := range []string{"version_stamp", "reviewable_value", "command_id"} {
+	for _, stale := range []string{"origin", "version_stamp", "reviewable_value", "command_id"} {
 		if _, ok := body[stale]; ok {
 			t.Fatalf("body contains stale %q: %#v", stale, body)
 		}
@@ -1054,19 +1050,18 @@ func newVersionsCreateTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "create", RunE: workflowsReviewsVersionsCreateCmd.RunE}
 	cmd.Flags().String("parent-id", "", "")
 	cmd.Flags().String("snapshot-file", "", "")
-	cmd.Flags().Var(newEnumStringFlagValue("--origin", "human_created", "agent_created"), "origin", "")
 	cmd.Flags().String("note", "", "")
 	return cmd
 }
 
 func TestReviewEnumFlagsShowAllowedValues(t *testing.T) {
-	originFlag := newEnumStringFlagValue("--origin", "human_created", "agent_created")
-	err := originFlag.Set("typo")
+	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
+	err := decisionFlag.Set("typo")
 	if err == nil {
-		t.Fatal("expected invalid origin to fail")
+		t.Fatal("expected invalid decision to fail")
 	}
-	if !strings.Contains(err.Error(), "human_created | agent_created") {
-		t.Fatalf("origin error should show allowed values, got: %v", err)
+	if !strings.Contains(err.Error(), "none | any") {
+		t.Fatalf("decision error should show allowed values, got: %v", err)
 	}
 }
 

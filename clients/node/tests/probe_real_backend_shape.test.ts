@@ -39,7 +39,6 @@ const REAL_OVERLAY_FROM_BACKEND = {
     [VERSION_ID]: {
       parent_id: null,
       author: { kind: 'model', id: 'm', display_name: 'Model' },
-      origin: 'model_output',
       snapshot: { total: 100 },
       note: null,
       created_at: '2026-05-21T09:00:00Z',

@@ -8,9 +8,6 @@ import {
   ZSubmitDecisionResponse,
 } from '../../../types.js';
 
-/** Provenance accepted when posting a new version through {@link APIWorkflowReviews.createVersion}. */
-export type VersionOrigin = 'human_created' | 'agent_created';
-
 /**
  * Decision-state filter for {@link APIWorkflowReviews.list}.
  *
@@ -25,6 +22,11 @@ type PreparedReviewRequest = {
   params?: Record<string, unknown>;
   body?: Record<string, unknown>;
 };
+
+function withoutOrigin(body: Record<string, unknown> | undefined): Record<string, unknown> {
+  const { origin: _origin, ...cleanBody } = body || {};
+  return cleanBody;
+}
 
 /**
  * Actor-neutral client for workflow reviews.
@@ -68,19 +70,16 @@ export default class APIWorkflowReviews extends CompositionClient {
     {
       snapshot,
       parentId,
-      origin = 'human_created',
       note,
     }: {
       snapshot: Record<string, unknown>;
       parentId: string;
-      origin?: VersionOrigin;
       note?: string | null;
     }
   ): PreparedReviewRequest {
     const body: Record<string, unknown> = {
       snapshot,
       parent_id: parentId,
-      origin,
     };
     if (note !== undefined && note !== null) {
       body.note = note;
@@ -243,15 +242,10 @@ export default class APIWorkflowReviews extends CompositionClient {
   /**
    * Append a new output version to the review's version history.
    *
-   * A proposal authored by a model, an agent, or a human uses this same call —
-   * the only difference is `origin`, which is descriptive provenance, not a
-   * behavioral switch.
-   *
    * @param runId - The workflow run id.
    * @param blockId - The gated block id.
    * @param snapshot - The new output payload to record as a version.
    * @param parentId - Content-hash id of the parent version.
-   * @param origin - Provenance of the snapshot: `human_created` or `agent_created`. Defaults to `human_created`.
    * @param note - Optional free-text note attached to the version.
    * @returns The review with the new version appended.
    * @throws `APIError` with `.status === 409` when the review already has a terminal decision.
@@ -262,12 +256,10 @@ export default class APIWorkflowReviews extends CompositionClient {
     {
       snapshot,
       parentId,
-      origin = 'human_created',
       note,
     }: {
       snapshot: Record<string, unknown>;
       parentId: string;
-      origin?: VersionOrigin;
       note?: string | null;
     },
     options?: RequestOptions
@@ -275,14 +267,13 @@ export default class APIWorkflowReviews extends CompositionClient {
     const request = this.prepare_create_version(runId, blockId, {
       snapshot,
       parentId,
-      origin,
       note,
     });
 
     return this._fetchJson(ZReviewOverlay, {
       url: request.url,
       method: request.method,
-      body: { ...request.body, ...(options?.body || {}) },
+      body: withoutOrigin({ ...request.body, ...(options?.body || {}) }),
       params: options?.params,
       headers: options?.headers,
     });

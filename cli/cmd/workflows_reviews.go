@@ -275,7 +275,7 @@ for a paused block.`,
   # Pipe a classifier correction
   printf '{"category":"booking_confirmation"}' |
     retab workflows reviews versions create run_xyz789 blk_classifier_1 \
-      --parent-id 2b8a... --snapshot-file - --origin human_created`,
+      --parent-id 2b8a... --snapshot-file -`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
@@ -300,7 +300,6 @@ for a paused block.`,
 		defer cancel()
 		req := retab.CreateReviewVersionRequest{ParentID: parentID}
 		req.Snapshot = snapshot
-		req.Origin, _ = cmd.Flags().GetString("origin")
 		req.Note, _ = cmd.Flags().GetString("note")
 		result, err := client.Workflows.Reviews.CreateVersion(ctx, args[0], args[1], req)
 		if err != nil {
@@ -689,9 +688,6 @@ func init() {
 
 	workflowsReviewsVersionsCreateCmd.Flags().String("parent-id", "", "64-character content-addressed parent_id for the new version (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
-	workflowsReviewsVersionsCreateCmd.Flags().Var(
-		newEnumStringFlagValue("--origin", "human_created", "agent_created"),
-		"origin", "version provenance: human_created | agent_created")
 	workflowsReviewsVersionsCreateCmd.Flags().String("note", "", "free-text rationale for the version")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("parent-id")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")

@@ -432,7 +432,6 @@ type ReviewActor struct {
 type ReviewOutputVersion struct {
 	ParentID  *string        `json:"parent_id"`
 	Author    ReviewActor    `json:"author"`
-	Origin    string         `json:"origin"` // model_output | agent_created | human_created
 	Snapshot  map[string]any `json:"snapshot"`
 	Note      *string        `json:"note"`
 	CreatedAt time.Time      `json:"created_at"`

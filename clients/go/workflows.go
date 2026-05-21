@@ -1325,13 +1325,10 @@ func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID strin
 type CreateReviewVersionRequest struct {
 	Snapshot map[string]any // full reviewed output snapshot
 	ParentID string         // parent content-hash version id
-	Origin   string         // human_created (default) | agent_created
 	Note     string         // optional rationale
 }
 
 // CreateVersion appends a new output version to the overlay's version history.
-// A version authored by a human or an agent uses this same call — Origin is
-// descriptive provenance, not a behavioral switch.
 func (s *WorkflowReviewsService) CreateVersion(ctx context.Context, runID string, blockID string, request CreateReviewVersionRequest, opts ...RequestOption) (*ReviewOverlay, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
@@ -1346,9 +1343,6 @@ func (s *WorkflowReviewsService) CreateVersion(ctx context.Context, runID string
 		return nil, fmt.Errorf("retab: ParentID is required")
 	}
 	body := map[string]any{"snapshot": request.Snapshot, "parent_id": request.ParentID}
-	if request.Origin != "" {
-		body["origin"] = request.Origin
-	}
 	if request.Note != "" {
 		body["note"] = request.Note
 	}
