@@ -1003,10 +1003,7 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 			return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
 		}
 		addQuery(query, "workflow_id", params.WorkflowID)
-		// Server's reviews list endpoint takes ``workflow_run_id``, NOT
-		// ``run_id`` — sending ``run_id`` is silently dropped by FastAPI's
-		// extra-query-param handling, so the filter never reached the server.
-		addQuery(query, "workflow_run_id", params.RunID)
+		addQuery(query, "run_id", params.RunID)
 		addQuery(query, "block_id", params.BlockID)
 		addQuery(query, "step_id", params.StepID)
 		addQuery(query, "iteration_key", params.IterationKey)
