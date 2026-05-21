@@ -201,10 +201,6 @@ describe('workflow steps client', () => {
       'StepExecutionsBatchResponse',
       'ZTerminalState',
       'TerminalState',
-      'ZStepsQueryRequest',
-      'StepsQueryRequest',
-      'ZStepQueryResult',
-      'StepQueryResult',
       'ZStepFingerprintJoined',
       'StepFingerprintJoined',
     ];
@@ -254,6 +250,7 @@ describe('workflow steps client', () => {
   test('does not expose removed query fetches', () => {
     const stepsClient = new APIWorkflowSteps(new MockClient());
     expect('query' in stepsClient).toBe(false);
+    expect('prepare_query' in stepsClient).toBe(false);
     expect('getAll' in stepsClient).toBe(false);
     expect('get_all' in stepsClient).toBe(false);
     expect('getMany' in stepsClient).toBe(false);

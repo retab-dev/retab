@@ -372,7 +372,6 @@ var allowedJobEndpoints = map[string]bool{
 	"/v1/classifications":          true,
 	"/v1/schemas/generate":         true,
 	"/v1/edits":                    true,
-	"/v1/edits/templates/fill":     true,
 	"/v1/edits/templates/generate": true,
 	"/v1/edit/templates/fill":      true,
 	"/v1/edit/templates/generate":  true,

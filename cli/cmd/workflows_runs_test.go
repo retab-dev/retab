@@ -858,6 +858,81 @@ func TestWorkflowsStepsGetExampleNamesARealResponseField(t *testing.T) {
 	}
 }
 
+// `runs delete` is destructive in the same way `workflows delete` is:
+// it permanently removes the run document and every step record. It used
+// to delete silently with no confirmation flag, breaking the convention
+// established by the rest of the destructive delete commands
+// (`workflows delete`, `workflows blocks delete`, `workflows edges delete`,
+// `workflows experiments delete`, `workflows tests delete`). This pin
+// keeps `runs delete` aligned: without --yes and without a TTY stdin,
+// the command refuses, and the server is never contacted.
+func TestWorkflowsRunsDeleteRefusesWithoutYesWhenStdinNotATTY(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached when --yes is not passed and stdin is not a TTY, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	// Reset --yes between tests so a previous test's setting can't leak in.
+	if err := workflowsRunsDeleteCmd.Flags().Set("yes", "false"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := workflowsRunsDeleteCmd.RunE(workflowsRunsDeleteCmd, []string{"run_xyz"})
+	if err == nil {
+		t.Fatal("expected refusal error when --yes not passed and stdin not a TTY")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	for _, want := range []string{"--yes", "run", "run_xyz"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error %q does not contain %q", err.Error(), want)
+		}
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+func TestWorkflowsRunsDeleteWithYesSendsDelete(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var sawDelete atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Fatalf("unexpected method %s", r.Method)
+		}
+		if !strings.HasSuffix(r.URL.Path, "/run_xyz") {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		sawDelete.Store(true)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsDeleteCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsDeleteCmd.Flags().Set("yes", "false")
+	})
+
+	if err := workflowsRunsDeleteCmd.RunE(workflowsRunsDeleteCmd, []string{"run_xyz"}); err != nil {
+		t.Fatalf("delete with --yes should succeed, got %v", err)
+	}
+	if !sawDelete.Load() {
+		t.Fatal("expected DELETE request to be issued")
+	}
+}
+
 func TestWorkflowsStepsGetUsesStepIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

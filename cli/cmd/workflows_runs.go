@@ -662,11 +662,22 @@ var workflowsRunsDeleteCmd = &cobra.Command{
 	Short: "Delete a workflow run",
 	Long: `Permanently delete a run and its step records. Artifacts
 produced by the run are preserved separately (see
-` + "`workflows artifacts`" + `).`,
-	Example: `  # Delete a run
-  retab workflows runs delete run_xyz789`,
+` + "`workflows artifacts`" + `).
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal. Mirrors the contract of ` + "`workflows delete`" + `,
+` + "`workflows blocks delete`" + `, etc.`,
+	Example: `  # Delete a run (interactive, asks to confirm)
+  retab workflows runs delete run_xyz789
+
+  # Skip the prompt in scripts
+  retab workflows runs delete run_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "run", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -1001,6 +1012,7 @@ func init() {
 	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "min-duration", "min duration (ms)")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "max-duration", "max duration (ms)")
 
+	workflowsRunsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	workflowsRunsCancelCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")

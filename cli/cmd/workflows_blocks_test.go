@@ -248,6 +248,61 @@ func TestWorkflowsBlocksUpdateRejectsLegacyHilConfigBeforeCredentials(t *testing
 	}
 }
 
+func TestWorkflowsBlocksUpdateRejectsEmptyMergeConfigBeforeHTTP(t *testing.T) {
+	// Regression: ``--merge-config-file`` pointing at an empty JSON object
+	// used to round-trip ``{"config_mode":"merge"}`` to the server because
+	// Go's ``json.Marshal`` drops empty-map ``Config`` fields via
+	// ``omitempty``. The server then returned a confusing 422 saying
+	// ``config_mode is only meaningful when 'config' is also provided``.
+	// The CLI must catch this client-side and explain it before any HTTP
+	// call is made.
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	patchPath := filepath.Join(t.TempDir(), "empty-patch.json")
+	if err := os.WriteFile(patchPath, []byte(`{}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksUpdateCmd.Flags().Set("merge-config-file", patchPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsBlocksUpdateCmd.Flags().Set("merge-config-file", "") })
+
+	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"blk_123"})
+	if err == nil {
+		t.Fatal("expected empty merge patch to be rejected")
+	}
+	if !strings.Contains(err.Error(), "--merge-config-file") {
+		t.Fatalf("error should mention --merge-config-file, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "no keys") && !strings.Contains(err.Error(), "empty") {
+		t.Fatalf("error should explain the patch is empty, got %q", err.Error())
+	}
+	if httpCalled {
+		t.Fatal("CLI must reject empty merge patch before any HTTP call")
+	}
+}
+
+func TestWorkflowsBlocksCreateHelpExampleHasUniquePlaceholderID(t *testing.T) {
+	// Regression: the inline example used to hard-code
+	// ``"id": "extract_review"``. Block ids are unique per organization,
+	// so a user pasting the example twice always hit a 409 on the second
+	// run. The example must use a placeholder that signals "replace me"
+	// — never a fixed literal that obviously collides.
+	help := workflowsBlocksCreateCmd.Long + "\n" + workflowsBlocksCreateCmd.Example
+	if strings.Contains(help, `"id": "extract_review"`) {
+		t.Fatalf("blocks create example must not hard-code a colliding id, got:\n%s", help)
+	}
+}
+
 func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
