@@ -822,18 +822,25 @@ func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
 	short := workflowASCIIShortID(block.ID)
 	// Box content is capped at workflowASCIIMaxBoxWidth-4. When id+tag would
 	// overflow, shorten the id further so the type tag survives — the type
-	// is more useful than the trailing 6 chars of an opaque id.
+	// is more useful than the trailing chars of an opaque id.
 	maxLen := workflowASCIIMaxBoxWidth - 4
 	if len(short)+len(typeTag) <= maxLen {
 		return short + typeTag
 	}
 	idBudget := maxLen - len(typeTag)
-	const minIDBudget = 8 // need room for prefix + "..." + suffix
-	if idBudget < minIDBudget {
+	switch {
+	case idBudget >= 10:
+		// Room for prefix + "..." + 4-char suffix.
+		prefix := idBudget - 7
+		return block.ID[:prefix] + "..." + block.ID[len(block.ID)-4:] + typeTag
+	case idBudget >= 5:
+		// Tight budget — drop the suffix, keep at least 2 chars of prefix.
+		prefix := idBudget - 3
+		return block.ID[:prefix] + "..." + typeTag
+	default:
+		// Type tag eats the whole budget; let the canvas truncate the tail.
 		return short + typeTag
 	}
-	prefix := idBudget - 7 // reserve 3 for "..." and 4 for suffix
-	return block.ID[:prefix] + "..." + block.ID[len(block.ID)-4:] + typeTag
 }
 
 func workflowASCIIShortID(id string) string {
