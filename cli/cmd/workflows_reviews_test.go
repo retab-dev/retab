@@ -712,7 +712,7 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
+			"review":            reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
 		})
 	}))
 	defer server.Close()
@@ -758,7 +758,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           body,
+			"review":            body,
 		})
 	}))
 	defer server.Close()
@@ -970,7 +970,7 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"submission_status": "accepted",
-			"overlay":           reviewOverlayBody(reviewDecisionBody("rejected", reviewTestVersionID)),
+			"review":            reviewOverlayBody(reviewDecisionBody("rejected", reviewTestVersionID)),
 		})
 	}))
 	defer server.Close()

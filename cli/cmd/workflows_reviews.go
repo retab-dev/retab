@@ -375,14 +375,14 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDec
 	if format == OutputTable {
 		row := map[string]any{
 			"submission_status": result.SubmissionStatus,
-			"_id":               result.Overlay.ID,
-			"workflow_run_id":   result.Overlay.WorkflowRunID,
-			"block_id":          result.Overlay.BlockID,
-			"block_type":        result.Overlay.BlockType,
+			"_id":               result.Review.ID,
+			"workflow_run_id":   result.Review.WorkflowRunID,
+			"block_id":          result.Review.BlockID,
+			"block_type":        result.Review.BlockType,
 		}
-		if result.Overlay.Decision != nil {
-			row["verdict"] = result.Overlay.Decision.Verdict
-			row["version_id"] = result.Overlay.Decision.VersionID
+		if result.Review.Decision != nil {
+			row["verdict"] = result.Review.Decision.Verdict
+			row["version_id"] = result.Review.Decision.VersionID
 		}
 		return RenderList(os.Stdout, OutputTable, struct {
 			Data []map[string]any `json:"data"`

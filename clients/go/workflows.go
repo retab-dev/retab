@@ -1245,6 +1245,9 @@ type ApproveReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually resumed
 // downstream — Response.SubmissionStatus only reflects the decision write.
+// When the decision is durable but the Temporal resume signal fails on a
+// fresh write, SubmissionStatus is "accepted_pending_resume" and ResumeError
+// carries the underlying message; the server's reconcile loop will retry.
 func (s *WorkflowReviewsService) Approve(ctx context.Context, runID string, blockID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")
@@ -1273,6 +1276,9 @@ type RejectReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually cancelled
 // downstream — Response.SubmissionStatus only reflects the decision write.
+// When the decision is durable but the Temporal resume signal fails on a
+// fresh write, SubmissionStatus is "accepted_pending_resume" and ResumeError
+// carries the underlying message; the server's reconcile loop will retry.
 func (s *WorkflowReviewsService) Reject(ctx context.Context, runID string, blockID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")

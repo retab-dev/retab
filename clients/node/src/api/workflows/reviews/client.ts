@@ -73,15 +73,18 @@ export default class APIWorkflowReviews extends CompositionClient {
       note?: string | null;
     }
   ): PreparedReviewRequest {
+    const body: Record<string, unknown> = {
+      snapshot,
+      parent_id: parentId,
+      origin,
+    };
+    if (note !== undefined && note !== null) {
+      body.note = note;
+    }
     return {
       url: `/workflows/reviews/${runId}/${blockId}/versions`,
       method: 'POST',
-      body: {
-        snapshot,
-        parent_id: parentId,
-        origin,
-        note: note ?? null,
-      },
+      body,
     };
   }
 
@@ -98,14 +101,17 @@ export default class APIWorkflowReviews extends CompositionClient {
       reason?: string;
     }
   ): PreparedReviewRequest {
+    const body: Record<string, unknown> = {
+      verdict,
+      version_id: versionId,
+    };
+    if (reason !== undefined) {
+      body.reason = reason;
+    }
     return {
       url: `/workflows/reviews/${runId}/${blockId}/decision`,
       method: 'POST',
-      body: {
-        verdict,
-        version_id: versionId,
-        reason: reason ?? null,
-      },
+      body,
     };
   }
 
