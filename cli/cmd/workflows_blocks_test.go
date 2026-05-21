@@ -142,7 +142,7 @@ func TestWorkflowsBlocksUpdateReadsConfigFileBeforeCredentials(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = workflowsBlocksUpdateCmd.Flags().Set("config-file", "") })
 
-	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"wf_123", "blk_123"})
+	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"blk_123"})
 	if err == nil {
 		t.Fatal("expected missing config file error")
 	}
@@ -168,7 +168,7 @@ func TestWorkflowsBlocksUpdateRejectsLegacyHilConfigBeforeCredentials(t *testing
 	}
 	t.Cleanup(func() { _ = workflowsBlocksUpdateCmd.Flags().Set("config-file", "") })
 
-	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"wf_123", "blk_123"})
+	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"blk_123"})
 	if err == nil {
 		t.Fatal("expected legacy config.hil error")
 	}

@@ -696,7 +696,7 @@ func TestWorkflowsExperimentsUpdateReadsDocumentFilesBeforeCredentials(t *testin
 	}
 	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("documents-file", "") })
 
-	err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_123", "exp_123"})
+	err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"exp_123"})
 	if err == nil {
 		t.Fatal("expected missing documents file error")
 	}
@@ -984,7 +984,7 @@ func TestWorkflowsTestsUpdateReadsLocalFilesBeforeCredentials(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = workflowsTestsUpdateCmd.Flags().Set("assertion-file", "") })
 
-	err := workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"wf_123", "test_123"})
+	err := workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"test_123"})
 	if err == nil {
 		t.Fatal("expected missing assertion file error")
 	}
