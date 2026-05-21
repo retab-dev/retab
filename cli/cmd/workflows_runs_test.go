@@ -650,6 +650,42 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 	}
 }
 
+// Regression for CLI probing 2026-05: `workflows steps query --status garbage`
+// silently went through to the server, which returned `[]` rather than an
+// error. The CLI now matches `workflows runs list` and validates the enum
+// client-side before issuing the request.
+func TestWorkflowsStepsQueryRejectsInvalidStatusBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for invalid --status, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsStepsQueryCmd.Flags().Set("status", "banana"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsStepsQueryCmd, "status") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsStepsQueryCmd.RunE(workflowsStepsQueryCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected local validation error for --status=banana")
+	}
+	if !strings.Contains(stderr, "invalid --status") {
+		t.Fatalf("stderr %q does not mention invalid --status", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
