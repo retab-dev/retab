@@ -727,7 +727,17 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 				if err := workflowsExperimentsCreateCmd.Flags().Set(name, value); err != nil {
 					t.Fatal(err)
 				}
-				t.Cleanup(func() { _ = workflowsExperimentsCreateCmd.Flags().Set(name, "") })
+				// Reset the value AND the Changed bit. Cobra's Set("")
+				// keeps Changed=true, which would otherwise leak into the
+				// next subtest and trip the captures-vs-documents mutual
+				// exclusion check.
+				flagName := name
+				t.Cleanup(func() {
+					_ = workflowsExperimentsCreateCmd.Flags().Set(flagName, "")
+					if f := workflowsExperimentsCreateCmd.Flags().Lookup(flagName); f != nil {
+						f.Changed = false
+					}
+				})
 			}
 
 			var err error
@@ -791,6 +801,13 @@ func TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether(t *testing.T) 
 		_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("captures-file", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("documents-file", "")
+		// Cobra's Set("") keeps Changed=true; clear it so neighbour tests
+		// don't see stale "changed" state.
+		for _, name := range []string{"captures-file", "documents-file"} {
+			if f := workflowsExperimentsCreateCmd.Flags().Lookup(name); f != nil {
+				f.Changed = false
+			}
+		}
 	})
 
 	var err error
@@ -830,6 +847,12 @@ func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testin
 		_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("captures-file", "")
+		// Cobra's Set("") keeps Changed=true; clear it so the captures
+		// vs. documents mutual-exclusion check in neighbour tests does
+		// not see stale "changed" state.
+		if f := workflowsExperimentsCreateCmd.Flags().Lookup("captures-file"); f != nil {
+			f.Changed = false
+		}
 	})
 
 	err := workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"})
@@ -853,7 +876,12 @@ func TestWorkflowsExperimentsUpdateReadsDocumentFilesBeforeCredentials(t *testin
 	if err := workflowsExperimentsUpdateCmd.Flags().Set("documents-file", missingPath); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("documents-file", "") })
+	t.Cleanup(func() {
+		_ = workflowsExperimentsUpdateCmd.Flags().Set("documents-file", "")
+		if f := workflowsExperimentsUpdateCmd.Flags().Lookup("documents-file"); f != nil {
+			f.Changed = false
+		}
+	})
 
 	err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"exp_123"})
 	if err == nil {
