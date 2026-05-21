@@ -105,6 +105,19 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 
 	canvas := newWorkflowASCIICanvas(workflowASCIICanvasSize(boxes))
 	showEdgeLabels := workflowASCIIShouldShowEdgeLabels(len(graph.Edges), len(visibleBlocks))
+	// Draw boxes FIRST, then edges. drawFloatingEdgeLabel's collision
+	// detection (skip if any target cell != ' ') only works against
+	// content that is already on the canvas. If edges drew first, a
+	// floating label landing on a box border row (startY ± 2) would see
+	// only blank cells, write the whole label freely, then drawBox would
+	// overwrite ONLY the cells inside the box borders — leaving the
+	// label's tail (the chars past the box's right border) visible in
+	// the gap between boxes. That was the source of the "ion" artifact
+	// at the top of the rendered graph for edges with long handle names
+	// like "output-file-booking-confirmation".
+	for _, box := range boxes {
+		canvas.drawBox(box)
+	}
 	for _, edge := range workflowASCIISortedEdges(graph.Edges) {
 		source, hasSource := boxesByID[edge.SourceBlock]
 		target, hasTarget := boxesByID[edge.TargetBlock]
@@ -112,9 +125,6 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 			continue
 		}
 		canvas.drawEdge(source, target, edge, showEdgeLabels)
-	}
-	for _, box := range boxes {
-		canvas.drawBox(box)
 	}
 
 	if _, err := fmt.Fprint(w, canvas.String()); err != nil {
