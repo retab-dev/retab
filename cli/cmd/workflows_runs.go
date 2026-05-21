@@ -109,7 +109,7 @@ const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, res
 const workflowRunExportSourceValues = "outputs, inputs"
 
 // Step statuses are a superset of run statuses: orchestrator-level
-// ``skipped`` shows up here but not on a run as a whole. Kept aligned
+// `skipped` shows up here but not on a run as a whole. Kept aligned
 // with `StepStatusLiteral` in `backend/.../steps/query.py`.
 var allowedWorkflowStepStatuses = map[string]bool{
 	"pending":         true,
