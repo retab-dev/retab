@@ -222,10 +222,12 @@ Review is not a standalone block type.`,
 	Example: `  # Add one block from a JSON file
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
-  # Minimal extract block with review
+  # Minimal extract block with review (replace the id with one unique
+  # to your organization, or drop the field entirely to let the server
+  # generate an opaque blk_<nanoid>)
   cat > extract-review.json <<'JSON'
   {
-    "id": "extract_review",
+    "id": "your-extract-block-id",
     "type": "extract",
     "label": "Extract with review",
     "position_x": 420,
@@ -382,6 +384,16 @@ the visual editor.`,
 			}
 			if err := rejectLegacyReviewConfig(patch); err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
+			}
+			// Empty patches must be rejected client-side. Go's
+			// `json.Marshal` drops `Config map[string]any` via `omitempty`
+			// when the map is empty, so we'd send just
+			// `{"config_mode":"merge"}` to the server and trip a 422
+			// (`config_mode is only meaningful when 'config' is also
+			// provided`). That error is opaque to the user — surface the
+			// real reason here.
+			if len(patch) == 0 {
+				return fmt.Errorf("--merge-config-file %s: patch contains no keys; nothing to merge", mergeConfigPath)
 			}
 			// Send the raw patch and let the server deep-merge it. The
 			// route now implements RFC 7396 (dicts recurse, arrays/scalars
