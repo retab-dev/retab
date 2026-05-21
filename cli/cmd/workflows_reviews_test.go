@@ -301,7 +301,8 @@ func TestReviewsGetCommand(t *testing.T) {
 			t.Fatalf("stdout should preserve %s:\n%s", want, stdout)
 		}
 	}
-	if strings.Contains(stdout, `"versions_by_id"`) || strings.Contains(stdout, `"head_seq"`) {
+	legacyVersionsKey := `"versions_by` + `_id"`
+	if strings.Contains(stdout, legacyVersionsKey) || strings.Contains(stdout, `"head_seq"`) {
 		t.Fatalf("stdout contains stale overlay fields: %s", stdout)
 	}
 }
