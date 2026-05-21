@@ -527,6 +527,7 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 			},
 			Notes: []string{
 				"Submit only the selected category.",
+				"The category must exactly match one configured classifier category.",
 				"Do not include confidence fields or other metadata.",
 			},
 		}, nil
