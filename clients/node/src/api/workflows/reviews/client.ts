@@ -187,11 +187,20 @@ export default class APIWorkflowReviews extends CompositionClient {
   /**
    * Approve the gated block output.
    *
+   * `versionId` must be a HEAD version — one with no child appended on top of
+   * it. Approving a superseded ancestor would silently discard the corrections
+   * layered above it, so the server rejects this with HTTP 422 and names the
+   * current head in the error detail. To approve a correction, first call
+   * {@link createVersion} to author it, then pass the returned `version_id` here.
+   *
    * @param runId - The workflow run id.
    * @param blockId - The gated block id.
    * @param versionId - Content-hash id of the exact version being approved.
+   *   Must be a HEAD version (no descendant in `versions_by_id`).
    * @returns Submission status and the updated review.
    * @throws `APIError` with `.status === 409` when the review already has a terminal decision.
+   * @throws `APIError` with `.status === 422` when the version is superseded
+   *   by a newer one; the error message names the current head.
    */
   async approve(
     runId: string,
