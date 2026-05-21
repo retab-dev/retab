@@ -437,7 +437,7 @@ describe('workflows client', () => {
     expect('runBatch' in workflowsClient.experiments).toBe(false);
     expect(typeof workflowsClient.experiments.runs.get).toBe('function');
     expect(typeof workflowsClient.experiments.runs.cancel).toBe('function');
-    expect('get' in workflowsClient.experiments.runs.results).toBe(false);
+    expect(typeof workflowsClient.experiments.runs.results.get).toBe('function');
     expect(typeof workflowsClient.experiments.runs.metrics.get).toBe('function');
     expect('get_content' in workflowsClient.experiments.runs).toBe(false);
     expect('getContent' in workflowsClient.experiments.runs).toBe(false);

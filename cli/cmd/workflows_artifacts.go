@@ -40,9 +40,9 @@ var workflowsArtifactsCmd = &cobra.Command{
 parsed documents, extracted JSON blobs, classification results, edited
 files, etc.
 
-	Artifacts are separate objects from the run that produced them: they
-	survive ` + "`workflows runs delete`" + ` so you can reference outputs long
-	after their run is gone. List every artifact tied to a run.`,
+Artifacts are separate objects from the run that produced them: they
+survive ` + "`workflows runs delete`" + ` so you can reference outputs long
+after their run is gone. List every artifact tied to a run.`,
 	Example: `  # All artifacts produced by a run
   retab workflows artifacts list run_xyz789
 

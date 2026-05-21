@@ -20,7 +20,8 @@ typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 The workhorse here is ` + "`update`" + `. Once a block is on the graph,
 swap its full config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
 (REPLACE) or patch a slice with ` + "`--merge-config-file ./patch.json`" + `
-(deep merge, RFC 7396) rather than deleting and re-creating.`,
+(deep merge, RFC 7396) rather than deleting and re-creating. Use review config
+inside supported block configs instead of adding a separate review block.`,
 	Example: `  # List blocks
   retab workflows blocks list wf_abc123
 
@@ -246,6 +247,7 @@ explicit server-side modes:
 ` + "`--config-file`" + ` REPLACES the typed config — the file is treated
 as the full new config and any existing key not in the file is dropped.
 Use this for a clean swap (new prompt, new schema, etc.).
+Only use ` + "`--config-file`" + ` for review changes when replacing the whole typed config.
 
 ` + "`--merge-config-file`" + ` DEEP-MERGES a patch into the existing
 config (RFC 7396 JSON Merge Patch). Dicts recurse, arrays/scalars replace,
