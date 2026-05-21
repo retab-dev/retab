@@ -713,7 +713,7 @@ or ` + "`--command-id`" + ` for idempotency.`,
   retab workflows runs restart run_xyz789
 
   # Restart against the current draft config
- retab workflows runs restart run_xyz789 --config-source draft`,
+  retab workflows runs restart run_xyz789 --config-source draft`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		commandID, _ := cmd.Flags().GetString("command-id")

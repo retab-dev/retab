@@ -136,7 +136,12 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 		}
 	}
 	isolatedBlocks := workflowASCIIIsolatedBlocks(visibleBlocks, graph.Edges)
-	if len(isolatedBlocks) > 0 {
+	// Suppress the "Disconnected" line for the freshly-`workflows create`'d
+	// shape: one block, which is the auto-added start_document placeholder,
+	// and zero edges. That block is "isolated" only in the trivial sense
+	// that nothing has been wired to it yet — surfacing it as a warning
+	// misleads users still scaffolding their graph.
+	if len(isolatedBlocks) > 0 && !isFreshScaffoldShape(visibleBlocks, graph.Edges) {
 		if _, err := fmt.Fprintf(w, "Disconnected: %s\n", strings.Join(isolatedBlocks, ", ")); err != nil {
 			return err
 		}
@@ -198,6 +203,17 @@ func workflowASCIIVisibleBlocks(blocks []retab.WorkflowBlock, edges []retab.Work
 		visible = append(visible, block)
 	}
 	return visible, hiddenNotes
+}
+
+// isFreshScaffoldShape matches the canonical empty workflow: exactly one
+// start_document block, zero edges. Keeps the predicate aligned with
+// `isStartDocumentBlock` so both spellings + the legacy “"start"“ value
+// are handled (see “isEffectivelyEmptyDraft“ for the publish-time twin).
+func isFreshScaffoldShape(blocks []retab.WorkflowBlock, edges []retab.WorkflowEdgeDoc) bool {
+	if len(edges) != 0 || len(blocks) != 1 {
+		return false
+	}
+	return isStartDocumentBlock(blocks[0])
 }
 
 func workflowASCIIIsolatedBlocks(blocks []retab.WorkflowBlock, edges []retab.WorkflowEdgeDoc) []string {
