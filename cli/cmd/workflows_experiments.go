@@ -255,9 +255,6 @@ previously-captured results for that experiment.`,
 		}
 		if cmd.Flags().Changed("n-consensus") {
 			v, _ := cmd.Flags().GetInt("n-consensus")
-			if v == 0 {
-				return fmt.Errorf("invalid --n-consensus 0 (want: 3 | 5 | 7)")
-			}
 			req.NConsensus = &v
 		}
 		captures, explicit, err := parseExperimentDocs(cmd)
