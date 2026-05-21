@@ -223,7 +223,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	var sawGet bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/blk_extract" || r.URL.Query().Get("workflow_id") != "wf_123" {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/blk_extract" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		sawGet = true
@@ -238,7 +238,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "get", RunE: workflowsBlocksGetCmd.RunE}
-	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"blk_extract"}); err != nil {
 		t.Fatalf("blocks get: %v", err)
 	}
 	if !sawGet {
@@ -246,7 +246,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	}
 }
 
-func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *testing.T) {
+func TestWorkflowsBlocksUpdateMergeConfigSendsPatchMode(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -259,39 +259,22 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 		t.Fatal(err)
 	}
 
-	var sawGet bool
 	var sawPatch bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.Query().Get("workflow_id") == "wf_123":
-			sawGet = true
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":   "blk_extract",
-				"type": "extract",
-				"config": map[string]any{
-					"model": "retab-small",
-					"json_schema": map[string]any{
-						"type":     "object",
-						"required": []string{"total"},
-					},
-				},
-			})
-		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.Query().Get("workflow_id") == "wf_123":
+		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.RawQuery == "":
 			sawPatch = true
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode patch: %v", err)
 			}
 			config := body["config"].(map[string]any)
-			if config["model"] != "retab-small" {
-				t.Fatalf("model not preserved in patch body: %#v", config)
-			}
-			if config["json_schema"] == nil {
-				t.Fatalf("json_schema not preserved in patch body: %#v", config)
-			}
 			if config["review"] == nil {
-				t.Fatalf("review not merged into patch body: %#v", config)
+				t.Fatalf("review patch missing from body: %#v", config)
+			}
+			if body["config_mode"] != "merge" {
+				t.Fatalf("config_mode = %#v, want merge", body["config_mode"])
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id":     "blk_extract",
@@ -318,11 +301,11 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 		t.Fatal(err)
 	}
 
-	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"blk_extract"}); err != nil {
 		t.Fatalf("blocks update: %v", err)
 	}
-	if !sawGet || !sawPatch {
-		t.Fatalf("expected GET then PATCH, sawGet=%v sawPatch=%v", sawGet, sawPatch)
+	if !sawPatch {
+		t.Fatal("expected PATCH")
 	}
 }
 
