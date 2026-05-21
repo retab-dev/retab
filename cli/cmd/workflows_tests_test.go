@@ -226,9 +226,7 @@ func TestWorkflowsTestsRunsCreateRejectsUnsupportedConsensusLocally(t *testing.T
 	if !strings.Contains(err.Error(), "3, 5, or 7") {
 		t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
 	}
-	if resetErr := workflowsTestsRunsCreateCmd.Flags().Set("n-consensus", "0"); resetErr != nil {
-		t.Fatalf("reset --n-consensus: %v", resetErr)
-	}
+	resetConsensusFlag(t, workflowsTestsRunsCreateCmd)
 }
 
 func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
@@ -544,46 +542,40 @@ func TestWorkflowsExperimentsConsensusFlagsMatchBackendContract(t *testing.T) {
 			if !strings.Contains(err.Error(), "3, 5, or 7") {
 				t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
 			}
-			if resetErr := tc.cmd.Flags().Set("n-consensus", "0"); resetErr != nil {
-				t.Fatalf("reset --n-consensus: %v", resetErr)
-			}
+			resetConsensusFlag(t, tc.cmd)
 		})
 	}
 }
 
-func TestWorkflowsExperimentsUpdateRejectsExplicitZeroConsensusBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		hits.Add(1)
-		http.Error(w, "server should not be reached", http.StatusInternalServerError)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		_ = workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0")
-		workflowsExperimentsUpdateCmd.Flags().Lookup("n-consensus").Changed = false
-	})
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_123", "exp_123"})
-	})
+func TestWorkflowsExperimentsUpdateRejectsExplicitZeroConsensus(t *testing.T) {
+	// Explicit --n-consensus=0 must fail at flag-parsing time with the same
+	// error users see in --help (no "0" listed as a valid value), so scripts
+	// that pass 0 don't reach the server with an ambiguous payload.
+	err := workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0")
 	if err == nil {
-		t.Fatal("expected explicit zero consensus error")
+		t.Fatal("expected --n-consensus=0 to be rejected by Set")
 	}
-	if !strings.Contains(stderr, "invalid --n-consensus 0") {
-		t.Fatalf("stderr %q does not mention invalid zero consensus", stderr)
+	if !strings.Contains(err.Error(), "3, 5, or 7") {
+		t.Fatalf("error %q does not match --help text", err.Error())
 	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want no requests", got)
+	if strings.Contains(err.Error(), "0, 3, 5, or 7") {
+		t.Fatalf("error %q still lists 0 as valid", err.Error())
 	}
+}
+
+// resetConsensusFlag clears the --n-consensus flag back to its unset state.
+// The flag rejects "0" at parse time, so a Set("0") reset is no longer valid;
+// reach into the flag's value directly.
+func resetConsensusFlag(t *testing.T, cmd *cobra.Command) {
+	t.Helper()
+	flag := cmd.Flags().Lookup("n-consensus")
+	if flag == nil {
+		t.Fatalf("cmd %q has no --n-consensus flag", cmd.Name())
+	}
+	if v, ok := flag.Value.(*consensusFlagValue); ok {
+		v.value = ""
+	}
+	flag.Changed = false
 }
 
 func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *testing.T) {

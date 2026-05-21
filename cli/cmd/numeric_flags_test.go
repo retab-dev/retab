@@ -47,8 +47,12 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 			if wantError == "" {
 				wantError = "non-negative"
 			}
-			if !strings.Contains(err.Error(), wantError) && !strings.Contains(err.Error(), "0, 3, 5, or 7") {
+			if !strings.Contains(err.Error(), wantError) && !strings.Contains(err.Error(), "3, 5, or 7") {
 				t.Fatalf("error %q does not contain a numeric validation hint", err.Error())
+			}
+			if _, isConsensus := tc.cmd.Flags().Lookup(tc.flag).Value.(*consensusFlagValue); isConsensus {
+				resetConsensusFlag(t, tc.cmd)
+				return
 			}
 			reset := tc.reset
 			if reset == "" {
