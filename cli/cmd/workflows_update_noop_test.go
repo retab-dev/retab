@@ -87,7 +87,7 @@ func TestWorkflowsUpdateCommandsRejectNoOpBeforeRequest(t *testing.T) {
 				http.Error(w, "server should not be reached", http.StatusInternalServerError)
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			cmd := &cobra.Command{Use: "test-update", RunE: tc.runE}
 			tc.registerFlags(cmd)

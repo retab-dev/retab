@@ -47,10 +47,14 @@ export default class APIWorkflowReviews extends CompositionClient {
   prepare_list(
     workflowId?: string,
     limit = 50,
-    decision: ReviewDecisionFilter = 'none'
+    decision: ReviewDecisionFilter = 'none',
+    before?: string,
+    after?: string
   ): PreparedReviewRequest {
     const params: Record<string, unknown> = { limit, decision };
     if (workflowId !== undefined) params.workflow_id = workflowId;
+    if (before !== undefined) params.before = before;
+    if (after !== undefined) params.after = after;
     return { url: '/workflows/reviews', method: 'GET', params };
   }
 
@@ -121,12 +125,20 @@ export default class APIWorkflowReviews extends CompositionClient {
    * @param workflowId - Restrict the queue to a single workflow.
    * @param limit - Page size (1-200). Defaults to 50.
    * @param decision - `'none'` (default) returns only open reviews; `'any'` includes decided ones.
-   * @returns A page of lightweight `ReviewQueueItem` summaries plus a `has_more` flag.
+   * @param before - Cursor — only return reviews that appear before this review id
+   *   in the result order. Use `list_metadata.before` from the previous page.
+   *   Mutually exclusive with `after`.
+   * @param after - Cursor — only return reviews that appear after this review id
+   *   in the result order. Use `list_metadata.after` from the previous page.
+   *   Mutually exclusive with `before`.
+   * @returns A page of lightweight `ReviewQueueItem` summaries plus a `list_metadata`
+   *   cursor (`{ before, after }`). `list_metadata.after !== null` means another page exists.
    *
    * @example
    * ```typescript
    * const queue = await client.workflows.reviews.list({ workflowId: 'wf_1' });
    * const audit = await client.workflows.reviews.list({ decision: 'any' });
+   * const next = await client.workflows.reviews.list({ after: queue.list_metadata.after! });
    * ```
    */
   async list(
@@ -134,14 +146,18 @@ export default class APIWorkflowReviews extends CompositionClient {
       workflowId,
       limit = 50,
       decision = 'none',
+      before,
+      after,
     }: {
       workflowId?: string;
       limit?: number;
       decision?: ReviewDecisionFilter;
+      before?: string;
+      after?: string;
     } = {},
     options?: RequestOptions
   ): Promise<ReviewQueueResponse> {
-    const request = this.prepare_list(workflowId, limit, decision);
+    const request = this.prepare_list(workflowId, limit, decision, before, after);
 
     return this._fetchJson(ZReviewQueueResponse, {
       url: request.url,

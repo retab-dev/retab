@@ -88,6 +88,9 @@ override and takes precedence over anything written to disk.`,
 		// Discovery + browser OAuth flow.
 		effectiveBaseURL := baseURL
 		if effectiveBaseURL == "" {
+			effectiveBaseURL = os.Getenv("RETAB_API_BASE_URL")
+		}
+		if effectiveBaseURL == "" {
 			effectiveBaseURL = os.Getenv("RETAB_BASE_URL")
 		}
 		disc, err := fetchOAuthDiscovery(ctx, effectiveBaseURL)
@@ -208,6 +211,9 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 			source = "~/.retab/config.json (api_key)"
 		}
 		baseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+		if baseURL == "" {
+			baseURL = os.Getenv("RETAB_API_BASE_URL")
+		}
 		if baseURL == "" {
 			baseURL = os.Getenv("RETAB_BASE_URL")
 		}

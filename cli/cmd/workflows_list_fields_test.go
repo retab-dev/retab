@@ -27,7 +27,7 @@ func TestWorkflowsListFieldsTrimmingSurvivesToOutput(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[{"id":"wf_trim_1"}],"list_metadata":{"after":"wf_trim_1"}}`))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsListCmd.Flags().Set("fields", "id"); err != nil {
 		t.Fatal(err)

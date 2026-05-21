@@ -21,7 +21,7 @@ func TestParsesCreateRejectsBlankModelBeforeRequest(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-parse", RunE: parsesCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -59,7 +59,7 @@ func TestFilesCreateUploadRejectsBlankRequiredStringsBeforeRequest(t *testing.T)
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-file-upload", RunE: filesCreateUploadCmd.RunE}
 	cmd.Flags().String("filename", "", "")
@@ -96,7 +96,7 @@ func TestEditsCreateRejectsBlankInstructionsBeforeRequest(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-edit", RunE: editsCreateCmd.RunE}
 	addDocumentFlags(cmd)

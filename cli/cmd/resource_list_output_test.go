@@ -49,7 +49,7 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 				})
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 				t.Fatal(err)
@@ -107,7 +107,7 @@ func TestEditTemplatesListHonorsOutputTable(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)

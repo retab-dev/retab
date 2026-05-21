@@ -7,6 +7,7 @@ from typing import Any, Literal, TypeAlias
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
+from retab.types.pagination import ListMetadata
 
 # ---------------------------------------------------------------------------
 # Enums / literals
@@ -133,12 +134,25 @@ class ReviewQueueItem(RetabBaseModel):
 
 
 class ReviewQueueResponse(RetabBaseModel):
-    """Envelope returned by ``reviews.list(...)``."""
+    """Envelope returned by ``reviews.list(...)``.
+
+    Pages are cursored via :class:`ListMetadata`'s ``before`` / ``after`` ids.
+    ``has_more`` is a derived convenience: ``True`` iff ``list_metadata.after``
+    is not ``None``.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
     data: list[ReviewQueueItem] = Field(default_factory=list, description="Page of queue items.")
-    has_more: bool = Field(..., description="Whether more items exist past this page.")
+    list_metadata: ListMetadata = Field(
+        ...,
+        description="Boundary resource IDs for page navigation (before/after).",
+    )
+
+    @property
+    def has_more(self) -> bool:
+        """Whether there are more pages available after this page's last review id."""
+        return self.list_metadata.after is not None
 
 
 class SubmitDecisionResponse(RetabBaseModel):

@@ -8,7 +8,7 @@
  *   - `SubmitDecisionResponse` uses the field `overlay`, NOT `review`.
  *   - `SubmitDecisionResponse` now carries `resume_status` and `resume_error`.
  *   - `ReviewQueueItemResponse` strips `organization_id` and `runtime_block_id`.
- *   - List response has `data` + `has_more`.
+ *   - List response has `data` + `list_metadata` ({before, after}).
  *
  * If any of these mismatch, every real SDK call will throw a ZodError.
  */
@@ -85,10 +85,10 @@ describe('backend wire-shape vs SDK Zod schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewQueueResponse parses {data, has_more} with stripped rows', () => {
+  test('ZReviewQueueResponse parses {data, list_metadata} with stripped rows', () => {
     const result = ZReviewQueueResponse.safeParse({
       data: [REAL_QUEUE_ITEM_FROM_BACKEND],
-      has_more: false,
+      list_metadata: { before: null, after: null },
     });
     if (!result.success) {
       console.error('ZReviewQueueResponse failed:', JSON.stringify(result.error.issues, null, 2));

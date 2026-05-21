@@ -144,7 +144,14 @@ def test_review_queue_item_round_trips_without_overlay_history() -> None:
 
 
 def test_review_queue_response_round_trips() -> None:
-    resp = ReviewQueueResponse.model_validate({"data": [_QUEUE_ITEM], "has_more": True})
+    resp = ReviewQueueResponse.model_validate(
+        {
+            "data": [_QUEUE_ITEM],
+            "list_metadata": {"before": None, "after": "brun_xxx"},
+        }
+    )
+    assert resp.list_metadata.before is None
+    assert resp.list_metadata.after == "brun_xxx"
     assert resp.has_more is True
     assert resp.data[0].block_id == "extract-1"
 
@@ -171,7 +178,13 @@ def test_public_queue_item_parses_without_organization_id() -> None:
 
 
 def test_public_queue_response_round_trips() -> None:
-    resp = ReviewQueueResponse.model_validate({"data": [_PUBLIC_QUEUE_ITEM], "has_more": False})
+    resp = ReviewQueueResponse.model_validate(
+        {
+            "data": [_PUBLIC_QUEUE_ITEM],
+            "list_metadata": {"before": None, "after": None},
+        }
+    )
+    assert resp.list_metadata.after is None
     assert resp.has_more is False
     assert resp.data[0].organization_id is None
 
@@ -281,7 +294,10 @@ def test_prepare_decision_posts_verdict_and_version_id() -> None:
 
 def test_list_parses_queue_response() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"data": [_QUEUE_ITEM], "has_more": False}
+    client._prepared_request.return_value = {
+        "data": [_QUEUE_ITEM],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     result = WorkflowReviews(client=client).list(workflow_id="wf_1")
 
@@ -289,6 +305,22 @@ def test_list_parses_queue_response() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/reviews"
     assert isinstance(result, ReviewQueueResponse)
+    assert result.has_more is False
+
+
+def test_list_forwards_before_and_after_cursors() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "data": [_QUEUE_ITEM],
+        "list_metadata": {"before": None, "after": "brun_xxx"},
+    }
+
+    result = WorkflowReviews(client=client).list(after="brun_prev", limit=25)
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.params == {"limit": 25, "decision": "none", "after": "brun_prev"}
+    assert result.has_more is True
+    assert result.list_metadata.after == "brun_xxx"
 
 
 def test_get_parses_overlay() -> None:

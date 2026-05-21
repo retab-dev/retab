@@ -82,7 +82,7 @@ func init() {
 	rootCmd.Version = version
 
 	rootCmd.PersistentFlags().String("api-key", "", "Retab API key (env: RETAB_API_KEY)")
-	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_BASE_URL)")
+	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_API_BASE_URL)")
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
 	rootCmd.PersistentFlags().Var(&outputFlagValue{}, "output", "output format: json | table (default: auto-detect)")
 

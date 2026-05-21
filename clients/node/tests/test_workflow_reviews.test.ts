@@ -151,9 +151,10 @@ describe('review zod schemas', () => {
   test('ZReviewQueueItem round-trips and ZReviewQueueResponse wraps it', () => {
     const response = ZReviewQueueResponse.parse({
       data: [QUEUE_ITEM_JSON],
-      has_more: true,
+      list_metadata: { before: null, after: 'brun_xxx' },
     });
-    expect(response.has_more).toBe(true);
+    expect(response.list_metadata.before).toBeNull();
+    expect(response.list_metadata.after).toBe('brun_xxx');
     expect(response.data[0]?.block_id).toBe('extract-1');
     expect(ZReviewQueueItem.parse(QUEUE_ITEM_JSON).priority).toBe(5);
   });
@@ -207,7 +208,10 @@ describe('review zod schemas', () => {
 
 describe('APIWorkflowReviews request shapes', () => {
   test('list() builds the queue GET with snake_case params', async () => {
-    const mock = new MockClient({ data: [QUEUE_ITEM_JSON], has_more: false });
+    const mock = new MockClient({
+      data: [QUEUE_ITEM_JSON],
+      list_metadata: { before: null, after: null },
+    });
     const reviews = new APIWorkflowReviews(mock);
 
     await reviews.list({ workflowId: 'wf_1', limit: 25 });
@@ -221,7 +225,10 @@ describe('APIWorkflowReviews request shapes', () => {
   });
 
   test('list() defaults to limit=50 and decision="none"', async () => {
-    const mock = new MockClient({ data: [], has_more: false });
+    const mock = new MockClient({
+      data: [],
+      list_metadata: { before: null, after: null },
+    });
     const reviews = new APIWorkflowReviews(mock);
 
     await reviews.list();
@@ -230,12 +237,33 @@ describe('APIWorkflowReviews request shapes', () => {
   });
 
   test('list({ decision: "any" }) includes decided reviews', async () => {
-    const mock = new MockClient({ data: [], has_more: false });
+    const mock = new MockClient({
+      data: [],
+      list_metadata: { before: null, after: null },
+    });
     const reviews = new APIWorkflowReviews(mock);
 
     await reviews.list({ decision: 'any' });
 
     expect(mock.lastFetchParams?.params).toEqual({ decision: 'any', limit: 50 });
+  });
+
+  test('list({ after }) forwards cursor and surfaces list_metadata', async () => {
+    const mock = new MockClient({
+      data: [QUEUE_ITEM_JSON],
+      list_metadata: { before: null, after: 'brun_xxx' },
+    });
+    const reviews = new APIWorkflowReviews(mock);
+
+    const result = await reviews.list({ after: 'brun_prev', limit: 25 });
+
+    expect(mock.lastFetchParams?.params).toEqual({
+      decision: 'none',
+      limit: 25,
+      after: 'brun_prev',
+    });
+    expect(result.list_metadata.after).toBe('brun_xxx');
+    expect(result.list_metadata.before).toBeNull();
   });
 
   test('get() builds the overlay GET route', async () => {

@@ -40,7 +40,7 @@ func TestNewExtractionRequestValidatesMetadataBeforeResolvingFileID(t *testing.T
 		_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newExtractionRequestTestCmd(t)
 	if err := cmd.Flags().Set("file-id", "file_123"); err != nil {

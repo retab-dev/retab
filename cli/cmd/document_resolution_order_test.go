@@ -43,7 +43,7 @@ func TestClassificationValidatesCategoriesFileBeforeResolvingFileID(t *testing.T
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-classification", RunE: classificationsCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -76,7 +76,7 @@ func TestClassificationValidatesCategoriesFileBeforeResolvingFileID(t *testing.T
 
 func TestClassificationReadsCategoriesFileBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-classification", RunE: classificationsCreateCmd.RunE}
@@ -115,7 +115,7 @@ func TestClassificationRejectsMalformedCategoriesBeforeResolvingFileID(t *testin
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	categoriesPath := writeJSONTempFile(t, `[{"description":"missing name"}]`)
 
@@ -155,7 +155,7 @@ func TestSplitValidatesSubdocumentsFileBeforeResolvingFileID(t *testing.T) {
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-split", RunE: splitsCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -186,7 +186,7 @@ func TestSplitValidatesSubdocumentsFileBeforeResolvingFileID(t *testing.T) {
 
 func TestSplitReadsSubdocumentsFileBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-split", RunE: splitsCreateCmd.RunE}
@@ -223,7 +223,7 @@ func TestSplitRejectsMalformedSubdocumentsBeforeResolvingFileID(t *testing.T) {
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	subdocumentsPath := writeJSONTempFile(t, `[{"description":"missing name"}]`)
 
@@ -261,7 +261,7 @@ func TestEditTemplateCreateValidatesFormFieldsBeforeResolvingFileID(t *testing.T
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-edit-template", RunE: editsTemplatesCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -289,7 +289,7 @@ func TestEditTemplateCreateValidatesFormFieldsBeforeResolvingFileID(t *testing.T
 
 func TestEditTemplateCreateReadsFormFieldsBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-edit-template", RunE: editsTemplatesCreateCmd.RunE}
@@ -323,7 +323,7 @@ func TestEditTemplateCreateRejectsBlankNameBeforeResolvingFileID(t *testing.T) {
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	fieldsPath := writeJSONTempFile(t, `[{"key":"name","description":"Name","type":"text","bbox":{"left":0,"top":0,"width":1,"height":1,"page":1}}]`)
 
@@ -353,7 +353,7 @@ func TestEditTemplateCreateRejectsBlankNameBeforeResolvingFileID(t *testing.T) {
 
 func TestParseCreateReadsDocumentBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-parse", RunE: parsesCreateCmd.RunE}
@@ -384,7 +384,7 @@ func TestParseCreateReadsDocumentBeforeCredentials(t *testing.T) {
 
 func TestPartitionCreateReadsDocumentBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
@@ -417,7 +417,7 @@ func TestPartitionCreateReadsDocumentBeforeCredentials(t *testing.T) {
 
 func TestEditCreateReadsDocumentBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-edit", RunE: editsCreateCmd.RunE}
@@ -449,7 +449,7 @@ func TestEditCreateReadsDocumentBeforeCredentials(t *testing.T) {
 
 func TestExtractionCreateReadsSchemaBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-extraction", RunE: extractionsCreateCmd.RunE}
@@ -476,7 +476,7 @@ func TestExtractionCreateReadsSchemaBeforeCredentials(t *testing.T) {
 
 func TestExtractionStreamReadsSchemaBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-extraction-stream", RunE: extractionsStreamCmd.RunE}
@@ -508,7 +508,7 @@ func TestSchemasGenerateValidatesDocumentsFileBeforeResolvingFileID(t *testing.T
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-schema-generate", RunE: schemasGenerateCmd.RunE}
 	cmd.Flags().StringArray("file", nil, "")
@@ -543,7 +543,7 @@ func TestSchemasGenerateRejectsBlankURLBeforeResolvingFileID(t *testing.T) {
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-schema-generate", RunE: schemasGenerateCmd.RunE}
 	cmd.Flags().StringArray("file", nil, "")
@@ -578,7 +578,7 @@ func TestClassificationRejectsBlankModelBeforeResolvingFileID(t *testing.T) {
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	categoriesPath := writeJSONTempFile(t, `[{"name":"invoice","description":"invoice docs"}]`)
 
@@ -618,7 +618,7 @@ func TestPartitionRejectsBlankRequiredStringsBeforeResolvingFileID(t *testing.T)
 	var hits atomic.Int32
 	server := fakeFileLinkServer(t, &hits)
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -679,7 +679,7 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
 	addDocumentFlags(cmd)
@@ -735,7 +735,7 @@ func TestPartitionCreateForwardsExplicitFalseAllowOverlapFlag(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
 	addDocumentFlags(cmd)

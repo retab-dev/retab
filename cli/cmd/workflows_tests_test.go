@@ -330,7 +330,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 				_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			if err := tc.cmd.Flags().Set("limit", "7"); err != nil {
 				t.Fatal(err)
@@ -401,7 +401,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 				_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			if err := tc.cmd.Flags().Set("limit", "0"); err != nil {
 				t.Fatal(err)
@@ -436,7 +436,7 @@ func TestWorkflowsTestsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T)
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	validTarget := filepath.Join(dir, "target.json")
@@ -562,7 +562,7 @@ func TestWorkflowsExperimentsUpdateRejectsExplicitZeroConsensusBeforeRequest(t *
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0"); err != nil {
 		t.Fatal(err)
@@ -597,7 +597,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	emptyCaptures := filepath.Join(dir, "empty-captures.json")
@@ -664,7 +664,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-captures.json")
 	if err := workflowsExperimentsCreateCmd.Flags().Set("block-id", "blk_123"); err != nil {
@@ -697,7 +697,7 @@ func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testin
 func TestWorkflowsExperimentsUpdateReadsDocumentFilesBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-documents.json")
 	if err := workflowsExperimentsUpdateCmd.Flags().Set("documents-file", missingPath); err != nil {
@@ -727,7 +727,7 @@ func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	docsFile := filepath.Join(t.TempDir(), "documents.json")
 	if err := os.WriteFile(docsFile, []byte(`[{"handle_inputs":{}}]`), 0o600); err != nil {
@@ -849,7 +849,7 @@ func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background())
 	t.Cleanup(func() { workflowsExperimentsRunsMetricsGetCmd.SetContext(nil) })
@@ -905,7 +905,7 @@ func TestWorkflowsExperimentsEligibleBlocksHonorsOutputTable(t *testing.T) {
 		_, _ = w.Write([]byte(`{"blocks":[{"block_id":"blk_extract","block_label":"Extract","block_type":"extract","experiment_count":2}]}`))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -942,7 +942,7 @@ func TestWorkflowsTestsCreateRejectsAssertionMissingTargetBeforeRequest(t *testi
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	targetPath := filepath.Join(dir, "target.json")
@@ -988,7 +988,7 @@ func TestWorkflowsTestsCreateRejectsAssertionMissingTargetBeforeRequest(t *testi
 func TestWorkflowsTestsCreateReadsLocalFilesBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	dir := t.TempDir()
 	targetPath := filepath.Join(dir, "target.json")
@@ -1027,7 +1027,7 @@ func TestWorkflowsTestsCreateReadsLocalFilesBeforeCredentials(t *testing.T) {
 func TestWorkflowsTestsUpdateReadsLocalFilesBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-assertion.json")
 	if err := workflowsTestsUpdateCmd.Flags().Set("assertion-file", missingPath); err != nil {
