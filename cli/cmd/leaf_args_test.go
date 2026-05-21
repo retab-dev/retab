@@ -55,7 +55,7 @@ func TestArgTakingCommandsStillAcceptTheirArg(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "not found"})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	for _, args := range [][]string{
 		{"files", "get", "file_nonexistent"},

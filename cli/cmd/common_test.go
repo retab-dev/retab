@@ -308,7 +308,7 @@ func TestFilenameFromURL(t *testing.T) {
 // dogfooding rather than as a unit test.
 func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir()) // ensure no ~/.retab/config.json bleeds through
 
 	cmd := &cobra.Command{}
@@ -346,7 +346,7 @@ func TestResolveDocumentFileIDUsesDurableMIMEData(t *testing.T) {
 		}`))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{}
 	cmd.PersistentFlags().String("api-key", "", "")

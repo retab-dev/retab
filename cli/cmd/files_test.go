@@ -176,7 +176,7 @@ func TestResolveDownloadDest(t *testing.T) {
 
 func TestFilesUploadReadsLocalFileBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	err := filesUploadCmd.RunE(filesUploadCmd, []string{"/tmp/missing.pdf"})
@@ -324,7 +324,7 @@ func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := filesCreateUploadCmd.Flags().Set("filename", "direct.txt"); err != nil {
 		t.Fatal(err)
@@ -390,7 +390,7 @@ func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	filesListCmd.SetContext(context.Background())
 	t.Cleanup(func() { filesListCmd.SetContext(nil) })

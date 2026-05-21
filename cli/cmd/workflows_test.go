@@ -71,7 +71,7 @@ func TestWorkflowsListRejectsInvalidListFlagsLocally(t *testing.T) {
 func TestWorkflowsDiagnoseReadsGraphFileBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := t.TempDir() + "/missing-graph.json"
 	if err := workflowsDiagnoseCmd.Flags().Set("graph-file", missingPath); err != nil {
@@ -236,7 +236,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "get", RunE: workflowsBlocksGetCmd.RunE}
 	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
@@ -304,7 +304,7 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "update", RunE: workflowsBlocksUpdateCmd.RunE}
 	cmd.Flags().String("label", "", "")
@@ -376,7 +376,7 @@ func TestWorkflowsUpdateRejectsBlankEmailAllowlistValuesBeforeRequest(t *testing
 				t.Fatalf("server should not be reached for invalid allowlist value, got %s %s", r.Method, r.URL.Path)
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			cmd := &cobra.Command{Use: "test-workflow-update", RunE: workflowsUpdateCmd.RunE}
 			cmd.Flags().String("name", "", "")
@@ -425,7 +425,7 @@ func TestWorkflowsRejectBlankNamesBeforeRequest(t *testing.T) {
 				t.Fatalf("server should not be reached for blank workflow name, got %s %s", r.Method, r.URL.Path)
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			cmd := &cobra.Command{Use: "test-workflow-" + tc.name, RunE: tc.cmd.RunE}
 			cmd.Flags().String("name", "", "")
@@ -475,7 +475,7 @@ func TestWorkflowBatchCreateRejectsEmptyArraysLocally(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	emptyArrayPath := t.TempDir() + "/empty.json"
 	if err := os.WriteFile(emptyArrayPath, []byte("[]"), 0o600); err != nil {
@@ -527,7 +527,7 @@ func TestWorkflowsDiagnoseGraphFileRejectsMalformedGraphLocally(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cases := []struct {
 		name      string
@@ -628,7 +628,7 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	graphPath := t.TempDir() + "/entities.json"
 	graph := `{
@@ -700,7 +700,7 @@ func TestWorkflowsResolvedSchemasHonorsTableOutputFallback(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)

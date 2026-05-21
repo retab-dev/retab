@@ -17,7 +17,7 @@ func TestWorkflowsBlocksSimulateRejectsBlankRequiredStringsBeforeRequest(t *test
 		t.Fatalf("server should not be reached for blank simulate flag, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsBlocksSimulateCmd.Flags().Set("run-id", "   "); err != nil {
 		t.Fatal(err)

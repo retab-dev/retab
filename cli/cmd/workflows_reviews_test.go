@@ -84,7 +84,7 @@ func TestReviewsListCommand(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "list", RunE: workflowsReviewsListCmd.RunE}
 	cmd.Flags().String("workflow-id", "", "")
@@ -137,7 +137,7 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -190,8 +190,11 @@ func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
 	if workflowsReviewsRejectCmd.Flags().Lookup("version-id") == nil {
 		t.Fatalf("%s should define --version-id", workflowsReviewsRejectCmd.Use)
 	}
-	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("from-version") == nil {
-		t.Fatalf("%s should define --from-version", workflowsReviewsVersionsCreateCmd.Use)
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("parent-id") == nil {
+		t.Fatalf("%s should define --parent-id", workflowsReviewsVersionsCreateCmd.Use)
+	}
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("from-version") != nil {
+		t.Fatalf("%s should not define legacy --from-version", workflowsReviewsVersionsCreateCmd.Use)
 	}
 	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file") == nil {
 		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsCreateCmd.Use)
@@ -276,7 +279,7 @@ func TestReviewsGetCommand(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "get", RunE: workflowsReviewsGetCmd.RunE}
 	stdout, _ := captureStd(t, func() {
@@ -309,7 +312,7 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -349,7 +352,7 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(body)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
 	stdout, stderr := captureStd(t, func() {
@@ -449,7 +452,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(body)
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
 			stdout, stderr := captureStd(t, func() {
@@ -488,7 +491,7 @@ func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(body)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -523,7 +526,7 @@ func TestReviewsSchemaCommandRejectsNonReviewableBlockType(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(body)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	_, stderr := captureStd(t, func() {
 		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"})
@@ -552,7 +555,7 @@ func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "review overlay not found"})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	_, stderr := captureStd(t, func() {
 		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_missing", "blk_1"})
@@ -576,7 +579,7 @@ func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newWaitTestCmd()
 	stdout, stderr := captureStd(t, func() {
@@ -622,7 +625,7 @@ func TestReviewsWaitStopsWhenRunTerminalBeforeOverlayExists(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newWaitTestCmd()
 	if err := cmd.Flags().Set("timeout", "30"); err != nil {
@@ -666,7 +669,7 @@ func TestReviewsWaitFailsFastWhenRunIsMissing(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newWaitTestCmd()
 	err := cmd.RunE(cmd, []string{"run_missing", "blk_1"})
@@ -716,7 +719,7 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newApproveTestCmd()
 	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
@@ -762,7 +765,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newApproveTestCmd()
 	cmd.PersistentFlags().String("output", "table", "")
@@ -806,13 +809,13 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("from-version", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 	if err := cmd.Flags().Set("origin", "human_created"); err != nil {
@@ -849,14 +852,14 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 
 func TestReviewsVersionsCreateReadsSnapshotBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", filepath.Join(t.TempDir(), "missing.json")); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("from-version", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -874,7 +877,7 @@ func TestReviewsVersionsCreateReadsSnapshotBeforeCredentials(t *testing.T) {
 
 func TestReviewsRejectRequiresReasonBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := newRejectTestCmd()
@@ -895,7 +898,7 @@ func TestReviewsRejectRequiresReasonBeforeCredentials(t *testing.T) {
 
 func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	for _, tc := range []struct {
@@ -931,7 +934,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 
 func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	snapshotPath := filepath.Join(t.TempDir(), "snapshot.json")
@@ -943,7 +946,7 @@ func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("from-version", "ver_abc"); err != nil {
+	if err := cmd.Flags().Set("parent-id", "ver_abc"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -951,11 +954,11 @@ func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected malformed parent id error")
 	}
-	if !strings.Contains(err.Error(), "--from-version") || !strings.Contains(err.Error(), "64-character hex") {
+	if !strings.Contains(err.Error(), "--parent-id") || !strings.Contains(err.Error(), "64-character hex") {
 		t.Fatalf("error = %v", err)
 	}
 	if strings.Contains(err.Error(), "credentials") {
-		t.Fatalf("error %q checked credentials before validating --from-version", err.Error())
+		t.Fatalf("error %q checked credentials before validating --parent-id", err.Error())
 	}
 }
 
@@ -974,7 +977,7 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := newRejectTestCmd()
 	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
@@ -1003,7 +1006,7 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 		t.Fatalf("reviews escalate should not reach backend, got %s %s", r.Method, r.URL.Path)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if !workflowsReviewsEscalateCmd.Hidden {
 		t.Fatal("reviews escalate should be hidden from help")
@@ -1049,7 +1052,7 @@ func newRejectTestCmd() *cobra.Command {
 
 func newVersionsCreateTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "create", RunE: workflowsReviewsVersionsCreateCmd.RunE}
-	cmd.Flags().String("from-version", "", "")
+	cmd.Flags().String("parent-id", "", "")
 	cmd.Flags().String("snapshot-file", "", "")
 	cmd.Flags().Var(newEnumStringFlagValue("--origin", "human_created", "agent_created"), "origin", "")
 	cmd.Flags().String("note", "", "")

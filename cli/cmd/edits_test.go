@@ -23,7 +23,7 @@ func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached for invalid form fields, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	documentPath := filepath.Join(dir, "template.txt")
@@ -73,7 +73,7 @@ func TestEditTemplatesUpdateRejectsNoFieldsBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached when no update fields are set, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	// The `edits templates update` help promises "At least one of the two
 	// flags must be set." Invoking it with neither --name nor
@@ -108,7 +108,7 @@ func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached for blank template name, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-edit-template-update", RunE: editsTemplatesUpdateCmd.RunE}
 	cmd.Flags().String("name", "", "")
@@ -132,7 +132,7 @@ func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
 
 func TestEditTemplatesUpdateReadsFormFieldsBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-edit-template-update", RunE: editsTemplatesUpdateCmd.RunE}

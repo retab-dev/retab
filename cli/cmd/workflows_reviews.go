@@ -43,12 +43,20 @@ var workflowsReviewsListCmd = &cobra.Command{
 	Short: "List block runs awaiting review",
 	Long: `List the review queue — block runs awaiting review and their lifecycle,
 hottest first. Version history and the terminal decision payload are omitted; pull
-one item with ` + "`reviews get`" + ` to see it.`,
+one item with ` + "`reviews get`" + ` to see it.
+
+Use ` + "`--decision`" + ` to control which slice of the queue is returned.
+` + "`--decision none`" + ` (the default) returns the open queue: overlays still
+awaiting review. ` + "`--decision any`" + ` returns every overlay, including ones
+already approved or rejected, so an operator can review past decisions.`,
 	Example: `  # The whole org's awaiting-review queue
   retab workflows reviews list
 
   # Only one workflow
-  retab workflows reviews list --workflow-id wf_abc123`,
+  retab workflows reviews list --workflow-id wf_abc123
+
+  # Include decided overlays in the listing
+  retab workflows reviews list --decision any`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -59,6 +67,7 @@ one item with ` + "`reviews get`" + ` to see it.`,
 		defer cancel()
 		params := &retab.ListReviewsParams{}
 		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		params.Decision, _ = cmd.Flags().GetString("decision")
 		if cmd.Flags().Changed("limit") {
 			params.Limit, _ = cmd.Flags().GetInt("limit")
 		}
@@ -139,7 +148,7 @@ to the review overlay and it does not change the stored review object.`,
 			return err
 		}
 		schema.CreateUsage = fmt.Sprintf(
-			"retab workflows reviews versions create %s %s --from-version <version_id> --snapshot-file <snapshot.json>",
+			"retab workflows reviews versions create %s %s --parent-id <version_id> --snapshot-file <snapshot.json>",
 			args[0],
 			args[1],
 		)
@@ -235,8 +244,8 @@ var workflowsReviewsVersionsCreateCmd = &cobra.Command{
 	Short: "Create an immutable review output version",
 	Long: `Create a new immutable output version in the overlay's version history,
 leaving it awaiting review. ` + "`--snapshot-file`" + ` must contain a full block
-output snapshot: the entire JSON object, not a patch. ` + "`--from-version`" + `
-names the version this snapshot was authored from.
+output snapshot: the entire JSON object, not a patch. ` + "`--parent-id`" + `
+sets the ` + "`parent_id`" + ` field to the version this snapshot derives from.
 
 Snapshot shapes are block-specific:
   extract:    ` + "`{\"invoice_number\":\"INV-1\",\"total\":1200}`" + `
@@ -248,12 +257,12 @@ Run ` + "`reviews schema <run-id> <block-id>`" + ` to print the snapshot contrac
 for a paused block.`,
 	Example: `  # Create a corrected output version from a full snapshot
   retab workflows reviews versions create run_xyz789 blk_extract_1 \
-    --from-version 2b8a... --snapshot-file ./corrected-output.json --note "fixed currency"
+    --parent-id 2b8a... --snapshot-file ./corrected-output.json --note "fixed currency"
 
   # Pipe a classifier correction
   printf '{"category":"booking_confirmation"}' |
     retab workflows reviews versions create run_xyz789 blk_classifier_1 \
-      --from-version 2b8a... --snapshot-file - --origin human_created`,
+      --parent-id 2b8a... --snapshot-file - --origin human_created`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
@@ -266,7 +275,7 @@ for a paused block.`,
 			return fmt.Errorf("--snapshot-file: %w", err)
 		}
 		snapshot = data
-		parentID, err := requireReviewVersionIDFlag(cmd, "from-version")
+		parentID, err := requireReviewVersionIDFlag(cmd, "parent-id")
 		if err != nil {
 			return err
 		}
@@ -362,7 +371,7 @@ func printReviewOverlayResult(cmd *cobra.Command, result *retab.ReviewOverlay) e
 	if format == OutputTable {
 		return RenderList(os.Stdout, OutputTable, struct {
 			Data []*retab.ReviewOverlay `json:"data"`
-		}{Data: []*retab.ReviewOverlay{result}}, reviewQueueColumns)
+		}{Data: []*retab.ReviewOverlay{result}}, reviewOverlayColumns)
 	}
 	return printJSON(result)
 }
@@ -379,6 +388,10 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDec
 			"workflow_run_id":   result.Review.WorkflowRunID,
 			"block_id":          result.Review.BlockID,
 			"block_type":        result.Review.BlockType,
+			"resume_status":     result.ResumeStatus,
+		}
+		if result.ResumeError != nil {
+			row["resume_error"] = *result.ResumeError
 		}
 		if result.Review.Decision != nil {
 			row["verdict"] = result.Review.Decision.Verdict
@@ -439,6 +452,24 @@ var reviewQueueColumns = []TableColumn{
 	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
 }
 
+// reviewOverlayColumns extends reviewQueueColumns with the terminal decision
+// snapshot. `reviews get` can return either an open overlay (decision is nil)
+// or a decided overlay; the VERDICT and DECIDED_VERSION_ID columns stay empty
+// for open overlays so the table still renders cleanly.
+var reviewOverlayColumns = []TableColumn{
+	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "_id") }},
+	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
+	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
+	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
+	{Header: "AWAITING_SINCE", Extract: func(row any) string { return reviewQueueCell(row, "awaiting_since") }},
+	{Header: "PRIORITY", Extract: func(row any) string { return reviewQueueCell(row, "priority") }},
+	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
+	{Header: "VERDICT", Extract: func(row any) string { return reviewQueueCell(row, "decision.verdict") }},
+	{Header: "DECIDED_VERSION_ID", Extract: func(row any) string {
+		return truncateReviewCell(reviewQueueCell(row, "decision.version_id"), 12)
+	}},
+}
+
 var reviewDecisionColumns = []TableColumn{
 	{Header: "SUBMISSION", Extract: func(row any) string { return reviewQueueCell(row, "submission_status") }},
 	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "_id") }},
@@ -447,6 +478,10 @@ var reviewDecisionColumns = []TableColumn{
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
 	{Header: "VERDICT", Extract: func(row any) string { return reviewQueueCell(row, "verdict") }},
 	{Header: "VERSION_ID", Extract: func(row any) string { return reviewQueueCell(row, "version_id") }},
+	{Header: "RESUME_STATUS", Extract: func(row any) string { return reviewQueueCell(row, "resume_status") }},
+	{Header: "RESUME_ERROR", Extract: func(row any) string {
+		return truncateReviewCell(reviewQueueCell(row, "resume_error"), 60)
+	}},
 }
 
 var reviewSchemaColumns = []TableColumn{
@@ -561,12 +596,28 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 				"for_each review is only available for split-by-key blocks.",
 				"pages are 1-based positive integers.",
 				"pages must be sorted ascending with no duplicates inside one partition.",
+				"If the for_each block has allow_overlap=false, one page cannot appear in more than one partition.",
 				"Submit the complete partition list, not only the changed partition.",
 			},
 		}, nil
 	default:
 		return reviewSnapshotSchema{}, fmt.Errorf("block type %q is not reviewable", blockType)
 	}
+}
+
+// truncateReviewCell shortens long string cells so the table view stays
+// readable. An empty input stays empty; otherwise the first `limit` runes
+// are kept and an ellipsis is appended when truncation actually happened.
+// JSON output never goes through this — the raw fields stay intact.
+func truncateReviewCell(value string, limit int) string {
+	if value == "" || limit <= 0 {
+		return value
+	}
+	runes := []rune(value)
+	if len(runes) <= limit {
+		return value
+	}
+	return string(runes[:limit]) + "..."
 }
 
 func reviewQueueCell(row any, key string) string {
@@ -597,6 +648,9 @@ func requireReviewVersionIDFlag(cmd *cobra.Command, name string) (string, error)
 func init() {
 	workflowsReviewsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsReviewsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
+	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
+	_ = decisionFlag.Set("none")
+	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision", "review slice to list: none (open queue, default) | any (include decided overlays)")
 
 	workflowsReviewsApproveCmd.Flags().String("version-id", "", "64-character content-addressed version id to approve (required)")
 	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")
@@ -606,13 +660,13 @@ func init() {
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("version-id")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
-	workflowsReviewsVersionsCreateCmd.Flags().String("from-version", "", "64-character content-addressed parent version id this snapshot was authored from (required)")
+	workflowsReviewsVersionsCreateCmd.Flags().String("parent-id", "", "64-character content-addressed parent_id for the new version (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().Var(
 		newEnumStringFlagValue("--origin", "human_created", "agent_created"),
 		"origin", "version provenance: human_created | agent_created")
 	workflowsReviewsVersionsCreateCmd.Flags().String("note", "", "free-text rationale for the version")
-	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("from-version")
+	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("parent-id")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")
 
 	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "max seconds to wait until review is required")

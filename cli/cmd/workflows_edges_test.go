@@ -74,7 +74,7 @@ func TestWorkflowsEdgesCreateResolvesSourceStartAliasBeforeGeneratingID(t *testi
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -126,7 +126,7 @@ func TestWorkflowsEdgesGetHonorsTableOutputFallback(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -167,7 +167,7 @@ func TestWorkflowsEdgesCreateResolvesTargetStartAlias(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "extract_1"); err != nil {
@@ -213,7 +213,7 @@ func TestWorkflowsEdgesCreateResolvesFriendlyTargetInputHandle(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -277,7 +277,7 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForDefaultFileInput(t *testin
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -329,7 +329,7 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForClassifier(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -404,7 +404,7 @@ func TestWorkflowsEdgesListTableIncludesHandles(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -462,7 +462,7 @@ func TestWorkflowsEdgesCreateBatchResolvesFriendlyAliasesBeforeGeneratingIDs(t *
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", edgesPath); err != nil {
 		t.Fatal(err)
@@ -529,7 +529,7 @@ func TestWorkflowsEdgesCreateRejectsAmbiguousStartAlias(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -575,7 +575,7 @@ func TestWorkflowsEdgesCreateKeepsLiteralStartBlockID(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	resetWorkflowEdgesCreateFlags(t)
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
@@ -607,7 +607,7 @@ func TestWorkflowsEdgesCreateRejectsEmptyEndpointsBeforeRequest(t *testing.T) {
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", ""); err != nil {
 		t.Fatal(err)
@@ -678,7 +678,7 @@ func TestWorkflowsEdgesCreateBatchRejectsEmptyEndpointsBeforeRequest(t *testing.
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	edgesFile := t.TempDir() + "/edges.json"
 	if err := os.WriteFile(edgesFile, []byte(`[{"source_block":"","target_block":"block_b"}]`), 0o600); err != nil {
@@ -707,7 +707,7 @@ func TestWorkflowsEdgesCreateBatchRejectsEmptyEndpointsBeforeRequest(t *testing.
 func TestWorkflowsEdgesCreateBatchReadsLocalFileBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-edges.json")
 	if err := workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", missingPath); err != nil {

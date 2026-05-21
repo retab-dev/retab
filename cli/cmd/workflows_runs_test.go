@@ -33,7 +33,7 @@ func TestParseDocumentArgs_DocumentFlagOnly_NoWarning(t *testing.T) {
 func TestWorkflowsRunsCreateReadsDocumentBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-document.pdf")
 	if err := workflowsRunsCreateCmd.Flags().Set("document", "start="+missingPath); err != nil {
@@ -73,7 +73,7 @@ func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	docPath := filepath.Join(dir, "invoice.txt")
@@ -177,7 +177,7 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
@@ -235,7 +235,7 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	dir := t.TempDir()
 	docsPath := filepath.Join(dir, "documents.json")
@@ -310,7 +310,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	docsPath := filepath.Join(t.TempDir(), "documents.json")
 	if err := os.WriteFile(
@@ -362,7 +362,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
@@ -400,7 +400,7 @@ func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testi
 		t.Fatalf("server should not be reached for invalid document-url, got %s %s", r.Method, r.URL.Path)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
@@ -489,7 +489,7 @@ func TestWorkflowsRunsListRejectsBlankFieldsBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached for blank fields flag, got %s %s", r.Method, r.URL.Path)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsRunsListCmd.Flags().Set("fields", "   "); err != nil {
 		t.Fatal(err)
@@ -541,7 +541,7 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 				t.Fatalf("server should not be reached for invalid local filter, got %s %s", r.Method, r.URL.String())
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			if err := tc.cmd.Flags().Set(tc.flag, tc.value); err != nil {
 				t.Fatal(err)
@@ -601,7 +601,7 @@ func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsRunsRestartCmd.Flags().Set("command-id", "cmd_restart"); err != nil {
 		t.Fatal(err)
@@ -640,7 +640,7 @@ func TestWorkflowsRunsRestartRejectsInvalidConfigSourceLocally(t *testing.T) {
 		t.Fatalf("server should not be reached for invalid config source, got %s %s", r.Method, r.URL.Path)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := workflowsRunsRestartCmd.Flags().Set("config-source", "preview"); err != nil {
 		t.Fatal(err)
@@ -808,7 +808,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	flags := map[string]string{
 		"workflow-id":   "wf_123",
@@ -867,7 +867,7 @@ func TestWorkflowsRunsExportRejectsBlankStringArrayFlagsBeforeRequest(t *testing
 				t.Fatalf("server should not be reached for invalid export flag, got %s %s", r.Method, r.URL.Path)
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			flags := map[string]string{
 				"workflow-id": "wf_123",

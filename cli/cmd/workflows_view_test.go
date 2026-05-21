@@ -251,7 +251,7 @@ func TestWorkflowsViewCommandFetchesEntitiesAndPrintsASCII(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	stdout, stderr := captureStd(t, func() {
 		if err := workflowsViewCmd.RunE(workflowsViewCmd, []string{"wf_graph"}); err != nil {

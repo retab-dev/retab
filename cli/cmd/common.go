@@ -175,6 +175,9 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 		apiKey = os.Getenv("RETAB_API_KEY")
 	}
 	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_API_BASE_URL")
+	}
+	if baseURL == "" {
 		baseURL = os.Getenv("RETAB_BASE_URL")
 	}
 
@@ -229,6 +232,9 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	baseURL := flagBaseURL
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_API_BASE_URL")
 	}
 	if baseURL == "" {
 		baseURL = os.Getenv("RETAB_BASE_URL")

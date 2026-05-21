@@ -955,11 +955,24 @@ export const ZReviewQueueItem = z
   .strip();
 export type ReviewQueueItem = z.infer<typeof ZReviewQueueItem>;
 
-/** Envelope returned by `reviews.list(...)`. */
+/** Boundary resource IDs for page navigation. */
+export const ZListMetadata = z
+  .object({
+    before: z.string().nullable(),
+    after: z.string().nullable(),
+  })
+  .passthrough();
+export type ListMetadata = z.infer<typeof ZListMetadata>;
+
+/** Envelope returned by `reviews.list(...)`.
+ *
+ * Pages are cursored via `list_metadata.before` / `list_metadata.after`.
+ * `has_more` is a derived convenience: `list_metadata.after !== null`.
+ */
 export const ZReviewQueueResponse = z
   .object({
     data: z.array(ZReviewQueueItem).default([]),
-    has_more: z.boolean(),
+    list_metadata: ZListMetadata,
   })
   .passthrough();
 export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;

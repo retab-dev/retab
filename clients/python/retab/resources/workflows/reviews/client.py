@@ -25,11 +25,17 @@ class WorkflowReviewsMixin:
         workflow_id: str | None = None,
         limit: int = 50,
         decision: Literal["none", "any"] = "none",
+        before: str | None = None,
+        after: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to list review-queue items."""
         params: Dict[str, Any] = {"limit": limit, "decision": decision}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
         return PreparedRequest(method="GET", url="/workflows/reviews", params=params)
 
     def prepare_get(self, run_id: str, block_id: str) -> PreparedRequest:
@@ -97,6 +103,8 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         workflow_id: str | None = None,
         limit: int = 50,
         decision: Literal["none", "any"] = "none",
+        before: str | None = None,
+        after: str | None = None,
     ) -> ReviewQueueResponse:
         """List review-queue items.
 
@@ -106,12 +114,25 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             decision: Use ``decision='any'`` to include reviews that already have
                 a terminal decision; the default ``'none'`` shows only those still
                 awaiting a decision.
+            before: Cursor — only return reviews that appear before this review
+                id in the result order. Use ``list_metadata.before`` from the
+                previous page. Mutually exclusive with ``after``.
+            after: Cursor — only return reviews that appear after this review id
+                in the result order. Use ``list_metadata.after`` from the
+                previous page. Mutually exclusive with ``before``.
 
         Returns:
             ReviewQueueResponse: A page of lightweight :class:`ReviewQueueItem`
-            summaries plus a ``has_more`` flag.
+            summaries plus a ``list_metadata`` cursor (and a derived
+            ``has_more`` property).
         """
-        request = self.prepare_list(workflow_id=workflow_id, limit=limit, decision=decision)
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            limit=limit,
+            decision=decision,
+            before=before,
+            after=after,
+        )
         response = self._client._prepared_request(request)
         return ReviewQueueResponse.model_validate(response)
 
@@ -293,6 +314,8 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         workflow_id: str | None = None,
         limit: int = 50,
         decision: Literal["none", "any"] = "none",
+        before: str | None = None,
+        after: str | None = None,
     ) -> ReviewQueueResponse:
         """List review-queue items.
 
@@ -302,12 +325,25 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             decision: Use ``decision='any'`` to include reviews that already have
                 a terminal decision; the default ``'none'`` shows only those still
                 awaiting a decision.
+            before: Cursor — only return reviews that appear before this review
+                id in the result order. Use ``list_metadata.before`` from the
+                previous page. Mutually exclusive with ``after``.
+            after: Cursor — only return reviews that appear after this review id
+                in the result order. Use ``list_metadata.after`` from the
+                previous page. Mutually exclusive with ``before``.
 
         Returns:
             ReviewQueueResponse: A page of lightweight :class:`ReviewQueueItem`
-            summaries plus a ``has_more`` flag.
+            summaries plus a ``list_metadata`` cursor (and a derived
+            ``has_more`` property).
         """
-        request = self.prepare_list(workflow_id=workflow_id, limit=limit, decision=decision)
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            limit=limit,
+            decision=decision,
+            before=before,
+            after=after,
+        )
         response = await self._client._prepared_request(request)
         return ReviewQueueResponse.model_validate(response)
 

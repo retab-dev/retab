@@ -266,7 +266,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		env  string // e.g. "RETAB_API_KEY" (empty if not env-bound)
 	}{
 		{"--api-key", "KEY", "Retab API key", "RETAB_API_KEY"},
-		{"--base-url", "URL", "Retab API base URL", "RETAB_BASE_URL"},
+		{"--base-url", "URL", "Retab API base URL", "RETAB_API_BASE_URL"},
 		{"--debug", "", "verbose debug output", ""},
 		{"--output", "FORMAT", "output format: json | table (default: auto)", ""},
 		{"-h, --help", "", "show this help", ""},

@@ -83,7 +83,7 @@ func TestSchemasGenerateFileMissingReportsClearError(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	schemasGenerateCmd.SetContext(context.Background())
 	t.Cleanup(func() { schemasGenerateCmd.SetContext(nil) })
@@ -129,7 +129,7 @@ func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	schemasGenerateCmd.SetContext(context.Background())
 	t.Cleanup(func() { schemasGenerateCmd.SetContext(nil) })

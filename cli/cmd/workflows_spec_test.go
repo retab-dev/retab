@@ -187,7 +187,7 @@ func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	path := filepath.Join(t.TempDir(), "workflow.yaml")
 	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
@@ -230,7 +230,7 @@ func TestWorkflowsSpecValidateHonorsTableOutputFallback(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	path := filepath.Join(t.TempDir(), "workflow.yaml")
 	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
@@ -282,7 +282,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	path := filepath.Join(t.TempDir(), "workflow.yaml")
 	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
@@ -332,7 +332,7 @@ func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	path := filepath.Join(t.TempDir(), "workflow.yaml")
 	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
@@ -516,7 +516,7 @@ func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	workflowsSpecExportCmd.SetContext(context.Background())
 	t.Cleanup(func() { workflowsSpecExportCmd.SetContext(nil) })

@@ -18,7 +18,7 @@ func TestParsesCreateRejectsInvalidTableParsingFormatBeforeRequest(t *testing.T)
 		http.Error(w, "server should not be reached", http.StatusInternalServerError)
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := parsesCreateCmd.Flags().Set("table-parsing-format", "banana"); err != nil {
 		t.Fatal(err)

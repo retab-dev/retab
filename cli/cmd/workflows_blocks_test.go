@@ -114,7 +114,7 @@ func TestParseBlockCreateRejectsLegacyHilConfig(t *testing.T) {
 func TestWorkflowsBlocksCreateReadsLocalFileBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-block.json")
 	if err := workflowsBlocksCreateCmd.Flags().Set("block-file", missingPath); err != nil {
@@ -137,7 +137,7 @@ func TestWorkflowsBlocksCreateReadsLocalFileBeforeCredentials(t *testing.T) {
 func TestWorkflowsBlocksCreateBatchReadsLocalFileBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-blocks.json")
 	if err := workflowsBlocksCreateBatchCmd.Flags().Set("blocks-file", missingPath); err != nil {
@@ -160,7 +160,7 @@ func TestWorkflowsBlocksCreateBatchReadsLocalFileBeforeCredentials(t *testing.T)
 func TestWorkflowsBlocksUpdateReadsConfigFileBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	missingPath := filepath.Join(t.TempDir(), "missing-config.json")
 	if err := workflowsBlocksUpdateCmd.Flags().Set("config-file", missingPath); err != nil {
@@ -183,7 +183,7 @@ func TestWorkflowsBlocksUpdateReadsConfigFileBeforeCredentials(t *testing.T) {
 func TestWorkflowsBlocksUpdateRejectsLegacyHilConfigBeforeCredentials(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 
 	configPath := filepath.Join(t.TempDir(), "hil-config.json")
 	if err := os.WriteFile(configPath, []byte(`{"hil":{"predicate":{"kind":"always"}}}`), 0o600); err != nil {
@@ -226,7 +226,7 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)

@@ -38,7 +38,7 @@ func TestJobsListOutputTable(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestJobsWaitHelpMentionsEveryTerminalStatus(t *testing.T) {
 
 func TestJobsCreateReadsRequestFileBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "test-jobs-create", RunE: jobsCreateCmd.RunE}
@@ -190,7 +190,7 @@ func TestJobsListRejectsInvalidFilterValuesBeforeRequest(t *testing.T) {
 				t.Fatalf("server should not be reached for invalid local filter, got %s %s", r.Method, r.URL.String())
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			if err := jobsListCmd.Flags().Set(tc.flag, tc.value); err != nil {
 				t.Fatal(err)
@@ -244,7 +244,7 @@ func TestJobsListNormalizesDocumentTypesLikeBackend(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	for _, value := range []string{"PDF,pdf", " docx ", "pdf"} {
 		if err := jobsListCmd.Flags().Set("document-type", value); err != nil {
@@ -317,7 +317,7 @@ func TestJobsListRejectsInvalidFilterCombinationsBeforeRequest(t *testing.T) {
 				t.Fatalf("server should not be reached for invalid local filter, got %s %s", r.Method, r.URL.String())
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			for flag, value := range tc.flags {
 				if err := jobsListCmd.Flags().Set(flag, value); err != nil {
@@ -353,7 +353,7 @@ func TestJobsCreateRejectsInvalidEndpointBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached for invalid local endpoint, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	requestFile := t.TempDir() + "/request.json"
 	if err := os.WriteFile(requestFile, []byte(`{"document":{"url":"https://example.com/doc.pdf"}}`), 0o600); err != nil {
@@ -395,7 +395,7 @@ func TestJobsCreateRejectsBlankEndpointBeforeRequest(t *testing.T) {
 		t.Fatalf("server should not be reached for blank local endpoint, got %s %s", r.Method, r.URL.String())
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	requestFile := t.TempDir() + "/request.json"
 	if err := os.WriteFile(requestFile, []byte(`{"document":{"url":"https://example.com/doc.pdf"}}`), 0o600); err != nil {
@@ -451,7 +451,7 @@ func TestJobsCreateRejectsInvalidMetadataBeforeRequest(t *testing.T) {
 				t.Fatalf("server should not be reached for invalid local metadata, got %s %s", r.Method, r.URL.String())
 			}))
 			defer server.Close()
-			t.Setenv("RETAB_BASE_URL", server.URL)
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 			requestFile := t.TempDir() + "/request.json"
 			if err := os.WriteFile(requestFile, []byte(`{"document":{"url":"https://example.com/doc.pdf"}}`), 0o600); err != nil {
@@ -512,7 +512,7 @@ func TestJobsWaitReturnsNonZeroForFailedJob(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	var err error
 	stdout, stderr := captureStd(t, func() {
@@ -568,7 +568,7 @@ func TestJobsRetrieveReturnsZeroForFailedJob(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	t.Setenv("RETAB_BASE_URL", server.URL)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	var err error
 	stdout, stderr := captureStd(t, func() {
