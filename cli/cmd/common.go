@@ -873,6 +873,9 @@ func collectListParams(cmd *cobra.Command) retab.ListParams {
 }
 
 func getIntFlagOrDefault(cmd *cobra.Command, name string, defaultValue int) int {
+	if !cmd.Flags().Changed(name) {
+		return defaultValue
+	}
 	value, _ := cmd.Flags().GetInt(name)
 	if value > 0 {
 		return value

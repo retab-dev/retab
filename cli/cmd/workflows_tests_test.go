@@ -457,12 +457,12 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 			defer server.Close()
 			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-			if err := tc.cmd.Flags().Set("limit", "0"); err != nil {
-				t.Fatal(err)
-			}
+			// Mark the flag as unset so the command falls back to its
+			// documented default. The flag's value retains whatever the
+			// previous test left behind — that's fine because
+			// getIntFlagOrDefault now consults Changed before reading.
 			tc.cmd.Flags().Lookup("limit").Changed = false
 			t.Cleanup(func() {
-				_ = tc.cmd.Flags().Set("limit", "0")
 				tc.cmd.Flags().Lookup("limit").Changed = false
 			})
 
