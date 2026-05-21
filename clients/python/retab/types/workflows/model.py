@@ -857,7 +857,7 @@ class WorkflowBlockCreateRequest(RetabBaseModel):
     parent_id: Optional[str] = None
 
 
-class WorkflowBlockUpdateRequest(RetabBaseModel):
+class UpdateWorkflowBlockRequest(RetabBaseModel):
     """Typed request payload for updating a workflow block."""
 
     model_config = ConfigDict(extra="ignore")

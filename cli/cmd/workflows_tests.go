@@ -355,7 +355,7 @@ flaky runs.`,
 			!cmd.Flags().Changed("source-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --name, --assertion-file, or --source-file")
 		}
-		req := retab.WorkflowTestUpdateRequest{}
+		req := retab.UpdateWorkflowTestRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
 		if cmd.Flags().Changed("name") {
 			trimmed, err := validateWorkflowTestName(req.Name)

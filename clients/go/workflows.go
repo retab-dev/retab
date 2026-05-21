@@ -461,7 +461,7 @@ type WorkflowBlockCreateRequest struct {
 	ParentID  string         `json:"parent_id,omitempty"`
 }
 
-type WorkflowBlockUpdateRequest struct {
+type UpdateWorkflowBlockRequest struct {
 	Label     *string        `json:"label,omitempty"`
 	PositionX *float64       `json:"position_x,omitempty"`
 	PositionY *float64       `json:"position_y,omitempty"`
@@ -535,7 +535,7 @@ func (s *WorkflowBlocksService) Create(ctx context.Context, workflowID string, r
 	return &block, err
 }
 
-func (s *WorkflowBlocksService) Update(ctx context.Context, blockID string, request WorkflowBlockUpdateRequest, opts ...RequestOption) (*WorkflowBlock, error) {
+func (s *WorkflowBlocksService) Update(ctx context.Context, blockID string, request UpdateWorkflowBlockRequest, opts ...RequestOption) (*WorkflowBlock, error) {
 	if blockID == "" {
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
@@ -1202,7 +1202,7 @@ type WorkflowTestCreateRequest struct {
 	Name       string   `json:"name,omitempty"`
 }
 
-type WorkflowTestUpdateRequest struct {
+type UpdateWorkflowTestRequest struct {
 	Name      string   `json:"name,omitempty"`
 	Assertion Resource `json:"assertion,omitempty"`
 	Source    Resource `json:"source,omitempty"`
@@ -1321,7 +1321,7 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	return &result, err
 }
 
-func (s *WorkflowTestsService) Update(ctx context.Context, testID string, request WorkflowTestUpdateRequest, opts ...RequestOption) (*WorkflowTest, error) {
+func (s *WorkflowTestsService) Update(ctx context.Context, testID string, request UpdateWorkflowTestRequest, opts ...RequestOption) (*WorkflowTest, error) {
 	if testID == "" {
 		return nil, fmt.Errorf("retab: testID is required")
 	}

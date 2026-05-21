@@ -739,7 +739,7 @@ export type WorkflowBlockCreateRequest = {
   parentId?: string;
 };
 
-export type WorkflowBlockUpdateRequest = {
+export type UpdateWorkflowBlockRequest = {
   label?: string;
   positionX?: number;
   positionY?: number;
