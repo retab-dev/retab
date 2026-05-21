@@ -143,7 +143,7 @@ describe('workflow steps client', () => {
     expect(artifacts.list_metadata).toEqual({ before: null, after: null });
   });
 
-  test('get() uses the public step artifact route', async () => {
+  test('get() uses the public step id route', async () => {
     class GetMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;
 
@@ -157,22 +157,19 @@ describe('workflow steps client', () => {
         this.lastFetchParams = params;
         return new Response(
           JSON.stringify({
+            step_id: 'step_123',
+            run_id: 'run_123',
+            workflow_id: 'wf_123',
             block_id: 'extract-1',
             block_type: 'extract',
-            block_label: 'Extract',
-            lifecycle: { status: 'completed' },
-            artifact: {
-              operation: 'extraction',
-              id: 'ext_123',
-            },
-            output: { removed: true },
+            status: 'completed',
             handle_outputs: {
               'output-json-0': {
                 type: 'json',
                 data: { invoice_number: 'INV-001' },
               },
             },
-            handle_inputs: null,
+            handle_inputs: {},
           }),
           {
             status: 200,
@@ -193,16 +190,73 @@ describe('workflow steps client', () => {
       params: undefined,
       headers: undefined,
     });
+    expect(step.step_id).toBe('step_123');
+    expect(step.run_id).toBe('run_123');
     expect(step.block_id).toBe('extract-1');
-    expect(step.artifact).toEqual({
-      operation: 'extraction',
-      id: 'ext_123',
-    });
+    expect(step.status).toBe('completed');
     expect('output' in step).toBe(false);
+    expect('artifact' in step).toBe(false);
     expect('artifacts' in step).toBe(false);
     expect('artifact_view' in step).toBe(false);
     expect('metadata' in step).toBe(false);
     expect(step.handle_outputs?.['output-json-0']).toBeDefined();
+  });
+
+  test('query() posts the current query request body', async () => {
+    class QueryMockClient extends AbstractClient {
+      public lastFetchParams: Record<string, unknown> | null = null;
+
+      protected async _fetch(params: {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+        headers?: Record<string, unknown>;
+        body?: Record<string, unknown>;
+      }): Promise<Response> {
+        this.lastFetchParams = params;
+        return new Response(
+          JSON.stringify([
+            {
+              step_id: 'step_123',
+              run_id: 'run_123',
+              workflow_id: 'wf_123',
+              block_id: 'extract-1',
+              block_type: 'extract',
+              status: 'completed',
+              handle_outputs: {},
+              handle_inputs: {},
+            },
+          ]),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    const mockClient = new QueryMockClient();
+    const stepsClient = new APIWorkflowSteps(mockClient);
+    const steps = await stepsClient.query({
+      workflow_id: 'wf_123',
+      block_id: 'extract-1',
+      status: ['completed'],
+      limit: 25,
+    });
+
+    expect(mockClient.lastFetchParams).toEqual({
+      url: '/workflows/steps/query',
+      method: 'POST',
+      body: {
+        workflow_id: 'wf_123',
+        block_id: 'extract-1',
+        status: ['completed'],
+        limit: 25,
+      },
+      params: undefined,
+      headers: undefined,
+    });
+    expect(steps.map((step) => step.step_id)).toEqual(['step_123']);
   });
 
   test('does not export removed step execution response aliases', () => {
@@ -250,7 +304,7 @@ describe('workflow steps client', () => {
     expect(steps.data[0] && 'split_documents' in steps.data[0]).toBe(false);
   });
 
-  test('get() is the single-step execution fetch', async () => {
+  test('get() is the single-step query row fetch', async () => {
     const stepsClient = new APIWorkflowSteps(new MockClient());
 
     expect(stepsClient.get.length).toBe(2);
@@ -259,7 +313,7 @@ describe('workflow steps client', () => {
     ).rejects.toThrow('stepId is required');
   });
 
-  test('only exposes get for full execution fetches', () => {
+  test('only exposes get and query for step row fetches', () => {
     const stepsClient = new APIWorkflowSteps(new MockClient());
     expect('getAll' in stepsClient).toBe(false);
     expect('get_all' in stepsClient).toBe(false);
@@ -267,21 +321,19 @@ describe('workflow steps client', () => {
     expect('get_many' in stepsClient).toBe(false);
   });
 
-  test('get() accepts partition artifacts on for_each steps', async () => {
-    class GetPartitionMockClient extends AbstractClient {
+  test('get() accepts for_each step query rows', async () => {
+    class GetForEachMockClient extends AbstractClient {
       protected async _fetch(): Promise<Response> {
         return new Response(
           JSON.stringify({
+            step_id: 'step_for_each_1',
+            run_id: 'run_123',
+            workflow_id: 'wf_123',
             block_id: 'for_each-1',
             block_type: 'for_each',
-            block_label: 'For Each',
-            lifecycle: { status: 'completed' },
-            artifact: {
-              operation: 'partition',
-              id: 'prtn_123',
-            },
-            handle_outputs: null,
-            handle_inputs: null,
+            status: 'completed',
+            handle_outputs: {},
+            handle_inputs: {},
           }),
           {
             status: 200,
@@ -291,12 +343,11 @@ describe('workflow steps client', () => {
       }
     }
 
-    const stepsClient = new APIWorkflowSteps(new GetPartitionMockClient());
+    const stepsClient = new APIWorkflowSteps(new GetForEachMockClient());
     const step = await stepsClient.get('step_for_each_1');
 
-    expect(step.artifact).toEqual({
-      operation: 'partition',
-      id: 'prtn_123',
-    });
+    expect(step.step_id).toBe('step_for_each_1');
+    expect(step.block_type).toBe('for_each');
+    expect(step.status).toBe('completed');
   });
 });

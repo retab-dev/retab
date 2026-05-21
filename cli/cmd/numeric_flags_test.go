@@ -147,6 +147,29 @@ func TestConsensusFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
 	}
 }
 
+func TestWorkflowConsensusFlagErrorMatchesHelp(t *testing.T) {
+	// The flag's help text on all three consumers reads "(3, 5, or 7)" — the
+	// validator's error should match. Passing 0 explicitly should be rejected
+	// (Cobra's Changed() handles the "not provided" path without needing 0 as
+	// a sentinel inside Set).
+	for _, cmd := range []*cobra.Command{
+		workflowsTestsRunsCreateCmd,
+		workflowsExperimentsCreateCmd,
+		workflowsExperimentsUpdateCmd,
+	} {
+		err := cmd.Flags().Set("n-consensus", "0")
+		if err == nil {
+			t.Fatalf("%s: expected --n-consensus=0 to be rejected", cmd.Name())
+		}
+		if strings.Contains(err.Error(), "0, 3, 5, or 7") {
+			t.Fatalf("%s: error %q still lists 0 as a valid value", cmd.Name(), err.Error())
+		}
+		if !strings.Contains(err.Error(), "3, 5, or 7") {
+			t.Fatalf("%s: error %q does not match help text \"3, 5, or 7\"", cmd.Name(), err.Error())
+		}
+	}
+}
+
 func TestSharedListLimitFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
 	cases := []struct {
 		name string

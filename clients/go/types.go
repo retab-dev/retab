@@ -190,49 +190,6 @@ func (s StepExecutionResponse) ExtractedData() any {
 	return s.JSONOutput("output-json-0")
 }
 
-// StepsQueryRequest filters the joined workflow steps query surface.
-type StepsQueryRequest struct {
-	WorkflowID  string   `json:"workflow_id"`
-	BlockID     string   `json:"block_id,omitempty"`
-	BlockType   string   `json:"block_type,omitempty"`
-	SourceKind  string   `json:"source_kind,omitempty"`
-	Status      []string `json:"status,omitempty"`
-	Limit       int      `json:"limit,omitempty"`
-}
-
-// StepFingerprintJoined is the fingerprint projection embedded in step query results.
-type StepFingerprintJoined struct {
-	InputFingerprint              string         `json:"input_fingerprint"`
-	SchemaFingerprint             string         `json:"schema_fingerprint"`
-	DefinitionFingerprint         string         `json:"definition_fingerprint"`
-	ResolvedDefinitionFingerprint string         `json:"resolved_definition_fingerprint"`
-	EffectiveExecutionFingerprint string         `json:"effective_execution_fingerprint"`
-	HandleInputsFingerprint       string         `json:"handle_inputs_fingerprint"`
-	EffectiveConfig               map[string]any `json:"effective_config"`
-	RuntimeOverrides              map[string]any `json:"runtime_overrides"`
-	CohortID                      string         `json:"cohort_id,omitempty"`
-	SourceFileID                  string         `json:"source_file_id,omitempty"`
-	SourceFilename                string         `json:"source_filename,omitempty"`
-}
-
-// StepQueryResult is one joined row from POST /workflows/steps/query.
-type StepQueryResult struct {
-	StepID        string                 `json:"step_id"`
-	RunID         string                 `json:"run_id"`
-	WorkflowID    string                 `json:"workflow_id"`
-	BlockID       string                 `json:"block_id"`
-	BlockType     string                 `json:"block_type"`
-	Status        string                 `json:"status"`
-	StartedAt     *time.Time             `json:"started_at,omitempty"`
-	CompletedAt   *time.Time             `json:"completed_at,omitempty"`
-	DurationMS    *int                   `json:"duration_ms,omitempty"`
-	Iteration     *int                   `json:"iteration,omitempty"`
-	IsIteration   bool                   `json:"is_iteration"`
-	HandleInputs  map[string]any         `json:"handle_inputs"`
-	HandleOutputs map[string]any         `json:"handle_outputs"`
-	Fingerprint   *StepFingerprintJoined `json:"fingerprint,omitempty"`
-}
-
 // StepsQueryRequest is the request body for POST /workflows/steps/query.
 type StepsQueryRequest struct {
 	WorkflowID string   `json:"workflow_id"`
