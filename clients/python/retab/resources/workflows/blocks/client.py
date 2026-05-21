@@ -4,7 +4,7 @@ from ....types.standards import PreparedRequest
 from ....types.workflows import (
     WorkflowBlock,
     WorkflowBlockCreateRequest,
-    WorkflowBlockUpdateRequest,
+    UpdateWorkflowBlockRequest,
 )
 
 
@@ -31,7 +31,7 @@ class WorkflowBlocksMixin:
 
     def prepare_update(
         self,
-        request: WorkflowBlockUpdateRequest,
+        request: UpdateWorkflowBlockRequest,
     ) -> PreparedRequest:
         """Prepare a request to partially update a block."""
         data = request.model_dump(exclude_none=True, exclude={"block_id"})
@@ -76,7 +76,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
 
     @staticmethod
     def _coerce_update_request(
-        request: WorkflowBlockUpdateRequest | None,
+        request: UpdateWorkflowBlockRequest | None,
         block_id: str | None,
         label: str | None,
         position_x: float | None,
@@ -85,12 +85,12 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         height: float | None,
         config: dict | None,
         parent_id: str | None,
-    ) -> WorkflowBlockUpdateRequest:
+    ) -> UpdateWorkflowBlockRequest:
         if request is not None:
             return request
         if block_id is None:
             raise TypeError("block_id is required when request is not provided")
-        return WorkflowBlockUpdateRequest(
+        return UpdateWorkflowBlockRequest(
             block_id=block_id,
             label=label,
             position_x=position_x,
@@ -156,7 +156,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         height: float | None = None,
         config: dict | None = None,
         parent_id: str | None = None,
-        request: WorkflowBlockUpdateRequest | None = None,
+        request: UpdateWorkflowBlockRequest | None = None,
     ) -> WorkflowBlock:
         """Update a block with partial data."""
         update_request = self._coerce_update_request(
@@ -238,7 +238,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         height: float | None = None,
         config: dict | None = None,
         parent_id: str | None = None,
-        request: WorkflowBlockUpdateRequest | None = None,
+        request: UpdateWorkflowBlockRequest | None = None,
     ) -> WorkflowBlock:
         """Update a block with partial data."""
         update_request = self._coerce_update_request(

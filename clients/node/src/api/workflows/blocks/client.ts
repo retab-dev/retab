@@ -3,7 +3,7 @@ import {
   PaginatedList,
   WorkflowBlock,
   WorkflowBlockCreateRequest,
-  WorkflowBlockUpdateRequest,
+  UpdateWorkflowBlockRequest,
   ZPaginatedList,
   ZWorkflowBlock,
 } from '../../../types.js';
@@ -22,7 +22,7 @@ function serializeBlockCreateRequest(request: WorkflowBlockCreateRequest): Recor
   };
 }
 
-function serializeBlockUpdateRequest(request: WorkflowBlockUpdateRequest): Record<string, unknown> {
+function serializeBlockUpdateRequest(request: UpdateWorkflowBlockRequest): Record<string, unknown> {
   return {
     label: request.label,
     position_x: request.positionX,
@@ -109,7 +109,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
    */
   async update(
     blockId: string,
-    request: WorkflowBlockUpdateRequest,
+    request: UpdateWorkflowBlockRequest,
     options?: RequestOptions
   ): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {

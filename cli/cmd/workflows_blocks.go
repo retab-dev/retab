@@ -331,7 +331,7 @@ the visual editor.`,
 			!cmd.Flags().Changed("config-file") && !cmd.Flags().Changed("merge-config-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, --config-file, or --merge-config-file")
 		}
-		req := retab.WorkflowBlockUpdateRequest{}
+		req := retab.UpdateWorkflowBlockRequest{}
 		if cmd.Flags().Changed("label") {
 			v, _ := cmd.Flags().GetString("label")
 			req.Label = &v

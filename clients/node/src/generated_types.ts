@@ -1421,7 +1421,7 @@ export const ZWorkflowBlockCreateRequest = z.lazy(() =>
 );
 export type WorkflowBlockCreateRequest = z.infer<typeof ZWorkflowBlockCreateRequest>;
 
-export const ZWorkflowBlockUpdateRequest = z.lazy(() =>
+export const ZUpdateWorkflowBlockRequest = z.lazy(() =>
   z.object({
     block_id: z.string(),
     label: z.string().nullable().optional(),
@@ -1433,7 +1433,7 @@ export const ZWorkflowBlockUpdateRequest = z.lazy(() =>
     parent_id: z.string().nullable().optional(),
   })
 );
-export type WorkflowBlockUpdateRequest = z.infer<typeof ZWorkflowBlockUpdateRequest>;
+export type UpdateWorkflowBlockRequest = z.infer<typeof ZUpdateWorkflowBlockRequest>;
 
 export const ZWorkflowEdgeCreateRequest = z.lazy(() =>
   z.object({

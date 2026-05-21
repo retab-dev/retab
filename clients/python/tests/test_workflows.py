@@ -21,7 +21,7 @@ from retab.types.workflows.model import (
     Workflow,
     HandlePayload,
     WorkflowBlockCreateRequest,
-    WorkflowBlockUpdateRequest,
+    UpdateWorkflowBlockRequest,
     WorkflowEdgeCreateRequest,
     StepExecutionResponse,
     BlockSimulation,
@@ -613,7 +613,7 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
     }
 
     block = WorkflowBlocks(client=client).update(
-        request=WorkflowBlockUpdateRequest(
+        request=UpdateWorkflowBlockRequest(
             block_id="extract-1",
             label="Renamed",
             position_x=200,
