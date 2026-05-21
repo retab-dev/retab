@@ -344,6 +344,22 @@ func TestWorkflowsListPropagatesFieldsParam(t *testing.T) {
 	}
 }
 
+// TestWorkflowsListRejectsBeforeAndAfterTogether mirrors the mutual-exclusion
+// guard that sibling List methods (e.g. WorkflowReviewsService.List,
+// WorkflowReviewVersionsService.List) already enforce: a single request cannot
+// paginate forward and backward at the same time, so the SDK rejects this
+// upfront rather than letting the server arbitrate.
+func TestWorkflowsListRejectsBeforeAndAfterTogether(t *testing.T) {
+	client, err := NewClient("test-key", WithBaseURL("http://example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.List(context.Background(), &ListWorkflowsParams{Before: "wf_a", After: "wf_b"})
+	if err == nil || !strings.Contains(err.Error(), "Before and After are mutually exclusive") {
+		t.Fatalf("expected mutual-exclusion error, got %v", err)
+	}
+}
+
 func TestFetchJSONRequiresJSONContentType(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")

@@ -670,6 +670,84 @@ func TestWorkflowsEdgesCreatePassesThroughServerEdgeIDConflictWhenIDIsExplicit(t
 	}
 }
 
+func TestWorkflowsEdgesCreateTrimsBlockIDWhitespace(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posted map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges" && r.URL.RawQuery == "":
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id":"edge_created","workflow_id":"wf_123","source_block":"start_1","target_block":"extract_inv"}`))
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	resetWorkflowEdgesCreateFlags(t)
+	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start_1  "); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsEdgesCreateCmd.Flags().Set("target-block", "  extract_inv"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsEdgesCreateCmd.RunE(workflowsEdgesCreateCmd, []string{"wf_123"})
+	})
+	if err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if got := posted["source_block"]; got != "start_1" {
+		t.Fatalf("source_block = %v, want trimmed start_1", got)
+	}
+	if got := posted["target_block"]; got != "extract_inv" {
+		t.Fatalf("target_block = %v, want trimmed extract_inv", got)
+	}
+}
+
+func TestWorkflowsEdgesCreateRejectsWhitespaceOnlyBlockID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for whitespace-only block id, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	resetWorkflowEdgesCreateFlags(t)
+	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "   "); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsEdgesCreateCmd.Flags().Set("target-block", "extract_inv"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsEdgesCreateCmd.RunE(workflowsEdgesCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected source_block is required error for whitespace-only value")
+	}
+	if !strings.Contains(stderr, "source_block is required") {
+		t.Fatalf("stderr %q does not mention source_block is required", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func resetWorkflowEdgesCreateFlags(t *testing.T) {
 	t.Helper()
 	for name, value := range map[string]string{
