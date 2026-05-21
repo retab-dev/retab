@@ -167,11 +167,11 @@ func (v *consensusFlagValue) Set(raw string) error {
 		return err
 	}
 	switch parsed {
-	case 0, 3, 5, 7:
+	case 3, 5, 7:
 		v.value = raw
 		return nil
 	default:
-		return fmt.Errorf("must be 0, 3, 5, or 7")
+		return fmt.Errorf("must be 3, 5, or 7")
 	}
 }
 
