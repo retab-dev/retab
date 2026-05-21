@@ -390,7 +390,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 			t.Cleanup(func() {
-				_ = tc.cmd.Flags().Set("limit", "0")
+				_ = tc.cmd.Flags().Set("limit", "20")
 				tc.cmd.Flags().Lookup("limit").Changed = false
 			})
 
