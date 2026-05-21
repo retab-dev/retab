@@ -10,7 +10,7 @@ import (
 
 // TestWorkflowExperimentsListUsesPaginatedEnvelope pins the canonical
 // `{"data": [...], "list_metadata": {"before": null, "after": null}}` envelope
-// for `GET /v1/workflows/{wf}/experiments`. The route used to ship a bare
+// for `GET /v1/workflows/experiments?workflow_id={wf}`. The route used to ship a bare
 // list — the migration to PaginatedList is a deliberate breaking change.
 func TestWorkflowExperimentsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +128,7 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 }
 
 // TestWorkflowTestsListUsesPaginatedEnvelope pins the canonical envelope for
-// `GET /v1/workflows/{wf}/tests` (was `{"tests": [...]}`).
+// `GET /v1/workflows/tests?workflow_id={wf}` (was `{"tests": [...]}`).
 func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -229,8 +229,8 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 
 func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_1/tests/runs" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/tests/runs" || r.URL.Query().Get("workflow_id") != "wf_1" {
+			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

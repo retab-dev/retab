@@ -1,4 +1,4 @@
-"""Pydantic models mirroring the wire format of `/v1/workflows/{workflow_id}/experiments`.
+"""Pydantic models mirroring the wire format of `/v1/workflows/experiments?workflow_id={workflow_id}`.
 
 Backend source of truth lives in
 ``backend/main_server/main_server/services/v1/workflows/experiments/``

@@ -34,7 +34,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
       throw new TypeError('blockId is required');
     }
     return this._fetchJson(ZStepExecutionResponse, {
-      url: `/workflows/runs/${runId}/steps/${blockId}`,
+      url: `/workflows/steps/${blockId}?run_id=${runId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -59,7 +59,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
    */
   async list(runId: string, options?: RequestOptions): Promise<PaginatedList> {
     return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/runs/${runId}/steps`,
+      url: `/workflows/steps?run_id=${runId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,

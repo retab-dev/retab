@@ -30,7 +30,10 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		client: client,
 		Steps:  &WorkflowRunStepsService{client: client},
 	}
-	service.Reviews = &WorkflowReviewsService{client: client}
+	service.Reviews = &WorkflowReviewsService{
+		client:   client,
+		Versions: &WorkflowReviewVersionsService{client: client},
+	}
 	service.Artifacts = &WorkflowArtifactsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
@@ -507,7 +510,7 @@ func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opt
 	// matching the rest of the SDK. Drop the bare-array branch once the
 	// server is consistent.
 	var raw json.RawMessage
-	if err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, nil, &raw, opts...); err != nil {
+	if err := s.client.do(ctx, http.MethodGet, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), nil, nil, &raw, opts...); err != nil {
 		return nil, err
 	}
 	trimmed := bytes.TrimLeft(raw, " \t\r\n")
@@ -553,7 +556,7 @@ func (s *WorkflowBlocksService) ConfigHistory(ctx context.Context, workflowID st
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var result PaginatedList[BlockConfigVersion]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID)+"/config-history", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID)+"/config-history?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -584,7 +587,7 @@ func (s *WorkflowBlocksService) ListSimulations(ctx context.Context, runID strin
 	err := s.client.do(
 		ctx,
 		http.MethodGet,
-		"/workflows/runs/"+url.PathEscape(runID)+"/steps/"+url.PathEscape(blockID)+"/simulations",
+		"/workflows/steps/"+url.PathEscape(blockID)+"/simulations?run_id="+url.QueryEscape(runID),
 		query,
 		nil,
 		&result,
@@ -604,7 +607,7 @@ func (s *WorkflowBlocksService) Get(ctx context.Context, workflowID string, bloc
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID), nil, nil, &block, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &block, opts...)
 	return &block, err
 }
 
@@ -616,7 +619,7 @@ func (s *WorkflowBlocksService) GetResolvedSchemas(ctx context.Context, workflow
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var result BlockResolvedSchemasResponse
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID)+"/resolved-schemas", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID)+"/resolved-schemas?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -625,7 +628,7 @@ func (s *WorkflowBlocksService) Create(ctx context.Context, workflowID string, r
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, request, &block, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), nil, request, &block, opts...)
 	return &block, err
 }
 
@@ -634,7 +637,7 @@ func (s *WorkflowBlocksService) CreateBatch(ctx context.Context, workflowID stri
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result []WorkflowBlock
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/blocks/batch", nil, blocks, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks/batch?workflow_id="+url.QueryEscape(workflowID), nil, blocks, &result, opts...)
 	return result, err
 }
 
@@ -646,7 +649,7 @@ func (s *WorkflowBlocksService) Update(ctx context.Context, workflowID string, b
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID), nil, request, &block, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, request, &block, opts...)
 	return &block, err
 }
 
@@ -657,13 +660,13 @@ func (s *WorkflowBlocksService) Delete(ctx context.Context, workflowID string, b
 	if blockID == "" {
 		return fmt.Errorf("retab: blockID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
 }
 
 // SimulateBlockRequest replays one block using inputs from a previous run
-// plus the current draft block config. Note that the route is keyed by
-// run_id, NOT workflow_id — the backend lives at
-// /v1/workflows/runs/{run_id}/steps/{block_id}/simulate.
+// plus the current draft block config. The backend route is
+// POST /v1/workflows/simulations — simulations are a top-level resource with
+// step_id and run_id carried in the request body.
 type SimulateBlockRequest struct {
 	RunID            string `json:"-"`
 	BlockID          string `json:"-"`
@@ -694,20 +697,27 @@ type BlockSimulation struct {
 }
 
 func prepareSimulateBlockRequest(request SimulateBlockRequest) PreparedRequest {
-	query := url.Values{}
-	if request.NConsensus != 0 {
-		query.Set("n_consensus", fmt.Sprintf("%d", request.NConsensus))
+	stepID := request.StepID
+	if stepID == "" {
+		stepID = request.BlockID
 	}
-	addQuery(query, "step_id", request.StepID)
-	// Only send when overriding the default — the backend already defaults
-	// to true and `?check_eligibility=true` would be redundant.
+	body := map[string]any{
+		"run_id":  request.RunID,
+		"step_id": stepID,
+	}
+	if request.StepID != "" && request.StepID != request.BlockID {
+		body["source_step_id"] = request.StepID
+	}
+	if request.NConsensus != 0 {
+		body["n_consensus"] = request.NConsensus
+	}
 	if request.CheckEligibility != nil && !*request.CheckEligibility {
-		query.Set("check_eligibility", "false")
+		body["check_eligibility"] = false
 	}
 	return PreparedRequest{
-		URL:    "/workflows/runs/" + url.PathEscape(request.RunID) + "/steps/" + url.PathEscape(request.BlockID) + "/simulate",
+		URL:    "/workflows/simulations",
 		Method: http.MethodPost,
-		Params: query,
+		Body:   body,
 	}
 }
 
@@ -728,7 +738,7 @@ func (s *WorkflowBlocksService) Simulate(ctx context.Context, request SimulateBl
 	}
 	var result BlockSimulation
 	prepared := prepareSimulateBlockRequest(request)
-	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &result, opts...)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, prepared.Body, &result, opts...)
 	return &result, err
 }
 
@@ -763,7 +773,7 @@ func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, para
 		addQuery(query, "target_block", params.TargetBlock)
 	}
 	var result PaginatedList[WorkflowEdgeDoc]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/edges", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), query, nil, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -778,7 +788,7 @@ func (s *WorkflowEdgesService) Get(ctx context.Context, workflowID string, edgeI
 		return nil, fmt.Errorf("retab: edgeID is required")
 	}
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/edges/"+url.PathEscape(edgeID), nil, nil, &edge, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/edges/"+url.PathEscape(edgeID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &edge, opts...)
 	return &edge, err
 }
 
@@ -787,7 +797,7 @@ func (s *WorkflowEdgesService) Create(ctx context.Context, workflowID string, re
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/edges", nil, request, &edge, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), nil, request, &edge, opts...)
 	return &edge, err
 }
 
@@ -796,7 +806,7 @@ func (s *WorkflowEdgesService) CreateBatch(ctx context.Context, workflowID strin
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result []WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/edges/batch", nil, edges, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/edges/batch?workflow_id="+url.QueryEscape(workflowID), nil, edges, &result, opts...)
 	return result, err
 }
 
@@ -807,14 +817,14 @@ func (s *WorkflowEdgesService) Delete(ctx context.Context, workflowID string, ed
 	if edgeID == "" {
 		return fmt.Errorf("retab: edgeID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/edges/"+url.PathEscape(edgeID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/edges/"+url.PathEscape(edgeID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
 }
 
 func (s *WorkflowEdgesService) DeleteAll(ctx context.Context, workflowID string, opts ...RequestOption) error {
 	if workflowID == "" {
 		return fmt.Errorf("retab: workflowID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/edges", nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
 }
 
 type WorkflowRunsService struct {
@@ -1154,7 +1164,7 @@ func (s *WorkflowRunStepsService) List(ctx context.Context, runID string, opts .
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result PaginatedList[WorkflowRunStep]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/steps", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/steps?run_id="+url.QueryEscape(runID), nil, nil, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1169,13 +1179,20 @@ func (s *WorkflowRunStepsService) Get(ctx context.Context, runID string, blockID
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var step StepExecutionResponse
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/steps/"+url.PathEscape(blockID), nil, nil, &step, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/steps/"+url.PathEscape(blockID)+"?run_id="+url.QueryEscape(runID), nil, nil, &step, opts...)
 	return &step, err
 }
 
-// WorkflowReviewsService drives the actor-neutral review overlay served under
+// WorkflowReviewsService drives the actor-neutral review surface served under
 // /workflows/reviews.
 type WorkflowReviewsService struct {
+	client   *Client
+	Versions *WorkflowReviewVersionsService
+}
+
+// WorkflowReviewVersionsService manages immutable review version resources
+// served under /workflows/reviews/versions.
+type WorkflowReviewVersionsService struct {
 	client *Client
 }
 
@@ -1247,6 +1264,84 @@ func (s *WorkflowReviewsService) Get(ctx context.Context, reviewID string, opts 
 	return &review, nil
 }
 
+type ListReviewVersionsParams struct {
+	ReviewID string
+	Limit    int
+	Before   string
+	After    string
+}
+
+// List returns immutable versions for one review. ReviewID is required.
+func (s *WorkflowReviewVersionsService) List(ctx context.Context, params *ListReviewVersionsParams, opts ...RequestOption) (*PaginatedList[ReviewVersion], error) {
+	if params == nil || params.ReviewID == "" {
+		return nil, fmt.Errorf("retab: ReviewID is required")
+	}
+	if params.Before != "" && params.After != "" {
+		return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
+	}
+	query := url.Values{}
+	query.Set("review_id", params.ReviewID)
+	addQuery(query, "before", params.Before)
+	addQuery(query, "after", params.After)
+	if params.Limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", params.Limit))
+	}
+	var result PaginatedList[ReviewVersion]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews/versions", query, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// Get returns one immutable review version by id.
+func (s *WorkflowReviewVersionsService) Get(ctx context.Context, versionID string, opts ...RequestOption) (*ReviewVersion, error) {
+	if versionID == "" {
+		return nil, fmt.Errorf("retab: versionID is required")
+	}
+	var version ReviewVersion
+	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews/versions/"+url.PathEscape(versionID), nil, nil, &version, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &version, nil
+}
+
+// CreateReviewVersionRequest creates a corrected review version.
+type CreateReviewVersionRequest struct {
+	ReviewID string
+	ParentID string
+	Snapshot map[string]any
+	Note     string
+}
+
+// Create creates an immutable corrected output version for a review.
+func (s *WorkflowReviewVersionsService) Create(ctx context.Context, request CreateReviewVersionRequest, opts ...RequestOption) (*ReviewVersion, error) {
+	if request.ReviewID == "" {
+		return nil, fmt.Errorf("retab: ReviewID is required")
+	}
+	if request.ParentID == "" {
+		return nil, fmt.Errorf("retab: ParentID is required")
+	}
+	if request.Snapshot == nil {
+		return nil, fmt.Errorf("retab: Snapshot is required")
+	}
+	body := map[string]any{
+		"review_id": request.ReviewID,
+		"parent_id": request.ParentID,
+		"snapshot":  request.Snapshot,
+	}
+	if request.Note != "" {
+		body["note"] = request.Note
+	}
+	var version ReviewVersion
+	err := s.client.do(ctx, http.MethodPost, "/workflows/reviews/versions", nil, body, &version, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &version, nil
+}
+
 // ApproveReviewRequest approves one exact reviewed output version.
 type ApproveReviewRequest struct {
 	VersionID string // content-hash id of the version being approved
@@ -1254,9 +1349,9 @@ type ApproveReviewRequest struct {
 
 // Approve approves a reviewed block output.
 //
-// VersionID can be any id in the review's versions map. To approve a
-// correction, first call AppendVersion to author it, then pass the returned
-// version id here.
+// VersionID can be any id returned by Reviews.Versions.List for this review.
+// To approve a correction, first call Reviews.Versions.Create to author it,
+// then pass the returned version id here.
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually resumed
 // downstream — Response.SubmissionStatus only reflects the decision write.
@@ -1296,36 +1391,6 @@ func (s *WorkflowReviewsService) submitDecision(ctx context.Context, reviewID st
 	}
 	var result SubmitReviewDecisionResponse
 	err := s.client.do(ctx, http.MethodPost, reviewPath(reviewID)+"/"+action, nil, body, &result, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// AppendReviewVersionRequest appends a corrective output version without deciding.
-type AppendReviewVersionRequest struct {
-	Snapshot        map[string]any // full reviewed output snapshot
-	ParentVersionID string         // parent content-hash version id
-	Note            string         // optional rationale
-}
-
-// AppendVersion appends a new output version to the review's version graph.
-func (s *WorkflowReviewsService) AppendVersion(ctx context.Context, reviewID string, request AppendReviewVersionRequest, opts ...RequestOption) (*AppendReviewVersionResponse, error) {
-	if reviewID == "" {
-		return nil, fmt.Errorf("retab: reviewID is required")
-	}
-	if request.Snapshot == nil {
-		return nil, fmt.Errorf("retab: Snapshot is required")
-	}
-	if request.ParentVersionID == "" {
-		return nil, fmt.Errorf("retab: ParentVersionID is required")
-	}
-	body := map[string]any{"snapshot": request.Snapshot, "parent_version_id": request.ParentVersionID}
-	if request.Note != "" {
-		body["note"] = request.Note
-	}
-	var result AppendReviewVersionResponse
-	err := s.client.do(ctx, http.MethodPost, reviewPath(reviewID)+"/versions", nil, body, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1434,7 +1499,7 @@ type ListWorkflowTestRunsParams struct {
 type ListWorkflowTestRunsRequest = ListWorkflowTestRunsParams
 
 // WorkflowTestListResponse is the canonical PaginatedList envelope for
-// `GET /v1/workflows/{wf}/tests`. Kept as a type alias so callers can
+// `GET /v1/workflows/tests?workflow_id={wf}`. Kept as a type alias so callers can
 // keep referring to the named type while the underlying shape rides the
 // shared `{data, list_metadata}` envelope.
 type WorkflowTestListResponse = PaginatedList[WorkflowTest]
@@ -1477,7 +1542,7 @@ func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestC
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/tests?workflow_id="+url.QueryEscape(request.WorkflowID), nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1489,7 +1554,7 @@ func (s *WorkflowTestsService) Get(ctx context.Context, workflowID string, testI
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1505,7 +1570,7 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	addQuery(query, "target_block_id", request.TargetBlockID)
 	var result PaginatedList[WorkflowTest]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests?workflow_id="+url.QueryEscape(request.WorkflowID), query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1517,7 +1582,7 @@ func (s *WorkflowTestsService) Update(ctx context.Context, workflowID string, te
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -1528,7 +1593,7 @@ func (s *WorkflowTestsService) Delete(ctx context.Context, workflowID string, te
 	if testID == "" {
 		return fmt.Errorf("retab: testID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
 }
 
 func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWorkflowTestRunRequest, opts ...RequestOption) (*WorkflowTestRun, error) {
@@ -1538,7 +1603,7 @@ func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWork
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
 	var result WorkflowTestRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests/runs", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs?workflow_id="+url.QueryEscape(request.WorkflowID), nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1629,7 +1694,7 @@ func addCSVQuery(values url.Values, key string, value []string) {
 
 // ---------------------------------------------------------------------------
 // Workflow experiments (consensus evaluation)
-// Mirrors /v1/workflows/{workflow_id}/experiments — see the Python SDK at
+// Mirrors /v1/workflows/experiments?workflow_id={workflow_id} — see the Python SDK at
 // retab/resources/workflows/experiments/client.py for the canonical surface.
 // ---------------------------------------------------------------------------
 
@@ -1850,7 +1915,7 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(request.WorkflowID)+"/experiments",
+		"/workflows/experiments?workflow_id="+url.QueryEscape(request.WorkflowID),
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1865,7 +1930,7 @@ func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result PaginatedList[ExperimentResponse]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/experiments", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1879,7 +1944,7 @@ func (s *WorkflowExperimentsService) Get(ctx context.Context, workflowID, experi
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
 		nil, nil, &result, opts...)
 	return &result, err
 }
@@ -1907,7 +1972,7 @@ func (s *WorkflowExperimentsService) Update(ctx context.Context, workflowID, exp
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodPatch,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1921,11 +1986,14 @@ func (s *WorkflowExperimentsService) Delete(ctx context.Context, workflowID, exp
 		return fmt.Errorf("retab: experimentID is required")
 	}
 	return s.client.do(ctx, http.MethodDelete,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
 		nil, nil, nil, opts...)
 }
 
 // Duplicate copies an experiment definition. The duplicate has no runs.
+// Backend route: POST /v1/workflows/experiments with source_experiment_id
+// in the body. The duplicate creation path shares the same endpoint as
+// fresh creation — the body discriminates.
 func (s *WorkflowExperimentsService) Duplicate(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
@@ -1935,8 +2003,8 @@ func (s *WorkflowExperimentsService) Duplicate(ctx context.Context, workflowID, 
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/duplicate",
-		nil, map[string]any{}, &result, opts...)
+		"/workflows/experiments?workflow_id="+url.QueryEscape(workflowID),
+		nil, map[string]any{"source_experiment_id": experimentID}, &result, opts...)
 	return &result, err
 }
 
@@ -1948,7 +2016,7 @@ func (s *WorkflowExperimentsService) ListEligibleBlocks(ctx context.Context, wor
 	}
 	var result EligibleBlockListResponse
 	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/eligible-blocks",
+		"/workflows/experiments/eligible-blocks?workflow_id="+url.QueryEscape(workflowID),
 		nil, nil, &result, opts...)
 	return &result, err
 }
@@ -1964,7 +2032,7 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 	body := map[string]any{}
 	var result ExperimentRun
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
+		"/workflows/experiments/"+url.PathEscape(experimentID)+"/runs?workflow_id="+url.QueryEscape(workflowID),
 		nil, body, &result, opts...)
 	return &result, err
 }

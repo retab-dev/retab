@@ -22,9 +22,12 @@ const reviewTestVersionID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 func reviewVersionBody(parentID any, snapshot map[string]any) map[string]any {
 	return map[string]any{
+		"id":         reviewTestVersionID,
+		"review_id":  "rev_1",
 		"parent_id":  parentID,
 		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
 		"snapshot":   snapshot,
+		"note":       nil,
 		"created_at": "2026-05-18T09:00:00Z",
 	}
 }
@@ -51,10 +54,7 @@ func reviewOverlayBody(decision map[string]any) map[string]any {
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
 		"created_at":          "2026-05-18T09:00:00Z",
-		"versions": map[string]any{
-			reviewTestVersionID: reviewVersionBody(nil, map[string]any{"total": 100}),
-		},
-		"decision": decision,
+		"decision":            decision,
 	}
 }
 
@@ -184,7 +184,7 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 }
 
 func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
-	for _, cmd := range []*cobra.Command{workflowsReviewsListCmd, workflowsReviewsVersionsAppendCmd, workflowsReviewsApproveCmd, workflowsReviewsRejectCmd} {
+	for _, cmd := range []*cobra.Command{workflowsReviewsListCmd, workflowsReviewsVersionsCreateCmd, workflowsReviewsApproveCmd, workflowsReviewsRejectCmd} {
 		text := strings.Join([]string{cmd.Short, cmd.Long, cmd.Example}, "\n")
 		for _, stale := range []string{"reviewable value", "reviewable-value", "version_stamp", "version-stamp", "head_seq", "effective_seq", "audit history", "audit log"} {
 			if strings.Contains(text, stale) {
@@ -198,30 +198,41 @@ func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
 	if workflowsReviewsRejectCmd.Flags().Lookup("version-id") == nil {
 		t.Fatalf("%s should define --version-id", workflowsReviewsRejectCmd.Use)
 	}
-	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("parent-version-id") == nil {
-		t.Fatalf("%s should define --parent-version-id", workflowsReviewsVersionsAppendCmd.Use)
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("parent-id") == nil {
+		t.Fatalf("%s should define --parent-id", workflowsReviewsVersionsCreateCmd.Use)
 	}
-	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("from-version") != nil {
-		t.Fatalf("%s should not define legacy --from-version", workflowsReviewsVersionsAppendCmd.Use)
+	for _, stale := range []string{"parent-version-id", "from-version"} {
+		if workflowsReviewsVersionsCreateCmd.Flags().Lookup(stale) != nil {
+			t.Fatalf("%s should not define legacy --%s", workflowsReviewsVersionsCreateCmd.Use, stale)
+		}
 	}
-	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("snapshot-file") == nil {
-		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsAppendCmd.Use)
+	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file") == nil {
+		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsCreateCmd.Use)
 	}
 	for _, child := range workflowsReviewsCmd.Commands() {
 		if child.Name() == "edit" {
-			t.Fatalf("reviews edit command should not exist after append-version cutover")
+			t.Fatalf("reviews edit command should not exist after create-version cutover")
 		}
 	}
-	if workflowsReviewsVersionsCmd.Commands()[0].Name() != "append" {
-		t.Fatalf("reviews versions should expose append, got %s", workflowsReviewsVersionsCmd.Commands()[0].Name())
+	versionCommands := map[string]bool{}
+	for _, child := range workflowsReviewsVersionsCmd.Commands() {
+		versionCommands[child.Name()] = true
+	}
+	for _, want := range []string{"list", "get", "create"} {
+		if !versionCommands[want] {
+			t.Fatalf("reviews versions should expose %s, got %#v", want, versionCommands)
+		}
+	}
+	if versionCommands["append"] {
+		t.Fatalf("reviews versions should not expose legacy append")
 	}
 }
 
-func TestReviewsVersionsAppendHelpExplainsSnapshotShapes(t *testing.T) {
+func TestReviewsVersionsCreateHelpExplainsSnapshotShapes(t *testing.T) {
 	text := strings.Join([]string{
-		workflowsReviewsVersionsAppendCmd.Long,
-		workflowsReviewsVersionsAppendCmd.Example,
-		workflowsReviewsVersionsAppendCmd.Flags().Lookup("snapshot-file").Usage,
+		workflowsReviewsVersionsCreateCmd.Long,
+		workflowsReviewsVersionsCreateCmd.Example,
+		workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file").Usage,
 	}, "\n")
 	for _, want := range []string{
 		"Snapshot shapes are block-specific",
@@ -235,11 +246,11 @@ func TestReviewsVersionsAppendHelpExplainsSnapshotShapes(t *testing.T) {
 		"--snapshot-file -",
 	} {
 		if !strings.Contains(text, want) {
-			t.Fatalf("append version help should explain snapshot shape %q, got:\n%s", want, text)
+			t.Fatalf("create version help should explain snapshot shape %q, got:\n%s", want, text)
 		}
 	}
 	if strings.Contains(text, "reviewable value") || strings.Contains(text, "reviewable-value") {
-		t.Fatalf("append version help should not reintroduce reviewable value wording:\n%s", text)
+		t.Fatalf("create version help should not reintroduce reviewable value wording:\n%s", text)
 	}
 }
 
@@ -298,10 +309,10 @@ func TestReviewsGetCommand(t *testing.T) {
 	if seenPath != "/workflows/reviews/rev_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if !strings.Contains(stdout, `"versions"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
+	if strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
 	}
-	for _, want := range []string{`"decision": null`, `"parent_id": null`, `"note": null`} {
+	for _, want := range []string{`"decision": null`, `"id": "rev_1"`, `"block_type": "extract"`} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("stdout should preserve %s:\n%s", want, stdout)
 		}
@@ -343,6 +354,71 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
+	}
+}
+
+func TestReviewsVersionsListCommandRequiresReviewIDAndQueriesFlatRoute(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var seenPath, seenQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath, seenQuery = r.URL.Path, r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data":          []any{reviewVersionBody(nil, map[string]any{"total": 100})},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newVersionsListTestCmd()
+	stdout, _ := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews versions list: %v", err)
+		}
+	})
+	if seenPath != "/workflows/reviews/versions" {
+		t.Fatalf("path = %s", seenPath)
+	}
+	if !strings.Contains(seenQuery, "review_id=rev_1") {
+		t.Fatalf("query = %s", seenQuery)
+	}
+	for _, stale := range []string{"parent_id="} {
+		if strings.Contains(seenQuery, stale) {
+			t.Fatalf("query %q should not contain %q", seenQuery, stale)
+		}
+	}
+	if !strings.Contains(stdout, `"data"`) || !strings.Contains(stdout, `"review_id": "rev_1"`) {
+		t.Fatalf("stdout = %s", stdout)
+	}
+}
+
+func TestReviewsVersionsGetCommandFetchesFlatVersion(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var seenPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reviewVersionBody(nil, map[string]any{"total": 100}))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "get", RunE: workflowsReviewsVersionsGetCmd.RunE}
+	stdout, _ := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{reviewTestVersionID}); err != nil {
+			t.Fatalf("reviews versions get: %v", err)
+		}
+	})
+	if seenPath != "/workflows/reviews/versions/"+reviewTestVersionID {
+		t.Fatalf("path = %s", seenPath)
+	}
+	if !strings.Contains(stdout, `"id": "`+reviewTestVersionID+`"`) || !strings.Contains(stdout, `"snapshot"`) {
+		t.Fatalf("stdout = %s", stdout)
 	}
 }
 
@@ -515,7 +591,7 @@ func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	for _, want := range []string{"BLOCK_TYPE", "SCHEMA", "EXAMPLE", "NOTES", "CREATE_USAGE", "split", "documents", "retab workflows reviews versions append"} {
+	for _, want := range []string{"BLOCK_TYPE", "SCHEMA", "EXAMPLE", "NOTES", "CREATE_USAGE", "split", "documents", "retab workflows reviews versions create"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
@@ -602,7 +678,7 @@ func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
 	if reviewGets != 1 {
 		t.Fatalf("reviewGets=%d", reviewGets)
 	}
-	if !strings.Contains(stdout, `"versions"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
+	if strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
 	}
 }
@@ -777,7 +853,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 	}
 }
 
-func TestReviewsVersionsAppendSendsSnapshotAndParentVersionID(t *testing.T) {
+func TestReviewsVersionsCreateSendsSnapshotReviewIDAndParentID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -793,20 +869,16 @@ func TestReviewsVersionsAppendSendsSnapshotAndParentVersionID(t *testing.T) {
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"append_status": "accepted",
-			"version_id":    reviewTestVersionID,
-			"review":        reviewOverlayBody(nil),
-		})
+		_ = json.NewEncoder(w).Encode(reviewVersionBody(reviewTestVersionID, map[string]any{"output": map[string]any{"total": 110, "currency": "USD"}}))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := newVersionsAppendTestCmd()
+	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-version-id", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 	if err := cmd.Flags().Set("note", "fixed total"); err != nil {
@@ -814,10 +886,10 @@ func TestReviewsVersionsAppendSendsSnapshotAndParentVersionID(t *testing.T) {
 	}
 	captureStd(t, func() {
 		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
-			t.Fatalf("reviews versions append: %v", err)
+			t.Fatalf("reviews versions create: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/rev_1/versions" {
+	if seenPath != "/workflows/reviews/versions" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	snapshot, ok := body["snapshot"].(map[string]any)
@@ -828,26 +900,26 @@ func TestReviewsVersionsAppendSendsSnapshotAndParentVersionID(t *testing.T) {
 	if !ok || output["total"] != float64(110) || output["currency"] != "USD" {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if body["parent_version_id"] != reviewTestVersionID || body["note"] != "fixed total" {
+	if body["review_id"] != "rev_1" || body["parent_id"] != reviewTestVersionID || body["note"] != "fixed total" {
 		t.Fatalf("body = %#v", body)
 	}
-	for _, stale := range []string{"parent_id", "origin", "version_stamp", "reviewable_value", "command_id"} {
+	for _, stale := range []string{"parent_version_id", "origin", "version_stamp", "reviewable_value", "command_id"} {
 		if _, ok := body[stale]; ok {
 			t.Fatalf("body contains stale %q: %#v", stale, body)
 		}
 	}
 }
 
-func TestReviewsVersionsAppendReadsSnapshotBeforeCredentials(t *testing.T) {
+func TestReviewsVersionsCreateReadsSnapshotBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := newVersionsAppendTestCmd()
+	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", filepath.Join(t.TempDir(), "missing.json")); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-version-id", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -920,7 +992,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 	}
 }
 
-func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testing.T) {
+func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
@@ -930,11 +1002,11 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 		t.Fatal(err)
 	}
 
-	cmd := newVersionsAppendTestCmd()
+	cmd := newVersionsCreateTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-version-id", "rvr_abc"); err != nil {
+	if err := cmd.Flags().Set("parent-id", "rvr_abc"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -942,11 +1014,11 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 	if err == nil {
 		t.Fatal("expected malformed parent id error")
 	}
-	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "rvr_") {
+	if !strings.Contains(err.Error(), "--parent-id") || !strings.Contains(err.Error(), "rvr_") {
 		t.Fatalf("error = %v", err)
 	}
 	if strings.Contains(err.Error(), "credentials") {
-		t.Fatalf("error %q checked credentials before validating --parent-version-id", err.Error())
+		t.Fatalf("error %q checked credentials before validating --parent-id", err.Error())
 	}
 }
 
@@ -1075,7 +1147,7 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected disabled escalation command to fail locally")
 	}
-	for _, want := range []string{"not supported", "approve", "reject", "versions append"} {
+	for _, want := range []string{"not supported", "approve", "reject", "versions create"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q should contain %q", err.Error(), want)
 		}
@@ -1098,11 +1170,19 @@ func newRejectTestCmd() *cobra.Command {
 	return cmd
 }
 
-func newVersionsAppendTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "append", RunE: workflowsReviewsVersionsAppendCmd.RunE}
-	cmd.Flags().String("parent-version-id", "", "")
+func newVersionsCreateTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "create", RunE: workflowsReviewsVersionsCreateCmd.RunE}
+	cmd.Flags().String("parent-id", "", "")
 	cmd.Flags().String("snapshot-file", "", "")
 	cmd.Flags().String("note", "", "")
+	return cmd
+}
+
+func newVersionsListTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "list", RunE: workflowsReviewsVersionsListCmd.RunE}
+	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "")
+	cmd.Flags().String("before", "", "")
+	cmd.Flags().String("after", "", "")
 	return cmd
 }
 

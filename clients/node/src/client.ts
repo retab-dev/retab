@@ -342,15 +342,15 @@ export class FetcherClient extends AbstractClient {
     bodyMime?: 'application/json' | 'multipart/form-data';
     body?: Record<string, any> | unknown[];
   }): Promise<Response> {
-    let query = '';
+    let url = new URL((this.options.baseUrl || 'https://api.retab.com/v1') + params.url);
     if (params.params) {
-      query =
-        '?' +
-        new URLSearchParams(
-          Object.fromEntries(Object.entries(params.params).filter(([_, v]) => v !== undefined))
-        ).toString();
+      for (const [key, value] of Object.entries(params.params)) {
+        if (value !== undefined) {
+          url.searchParams.set(key, String(value));
+        }
+      }
     }
-    let url = (this.options.baseUrl || 'https://api.retab.com/v1') + params.url + query;
+    let urlString = url.toString();
     let headers = params.headers || {};
     let init: RequestInit = {
       method: params.method,
@@ -381,9 +381,9 @@ export class FetcherClient extends AbstractClient {
     headers['Api-Key'] = apiKey;
     init.headers = headers;
     init.signal = AbortSignal.timeout(this.timeout);
-    let res = await fetch(url, init);
+    let res = await fetch(urlString, init);
     if (!res.ok) {
-      throw await buildAPIError(res, params.method, url);
+      throw await buildAPIError(res, params.method, urlString);
     }
     return res;
   }

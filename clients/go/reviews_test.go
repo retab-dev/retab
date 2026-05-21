@@ -15,6 +15,18 @@ const reviewID = "rev_1"
 const reviewVersionID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 const reviewChildVersionID = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
+func reviewVersionJSON(versionID string, parentID any) map[string]any {
+	return map[string]any{
+		"id":         versionID,
+		"review_id":  reviewID,
+		"parent_id":  parentID,
+		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
+		"snapshot":   map[string]any{"output": map[string]any{"total": 100, "currency": "USD"}},
+		"note":       nil,
+		"created_at": "2026-05-18T09:00:00Z",
+	}
+}
+
 func reviewJSON(decided bool) map[string]any {
 	decision := any(nil)
 	if decided {
@@ -38,21 +50,7 @@ func reviewJSON(decided bool) map[string]any {
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
 		"created_at":          "2026-05-18T09:00:00Z",
-		"versions": map[string]any{
-			reviewVersionID: map[string]any{
-				"parent_id":  nil,
-				"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
-				"snapshot":   map[string]any{"output": map[string]any{"total": 100, "currency": "USD"}},
-				"created_at": "2026-05-18T09:00:00Z",
-			},
-			reviewChildVersionID: map[string]any{
-				"parent_id":  reviewVersionID,
-				"author":     map[string]any{"kind": "agent", "id": "agent_1", "display_name": "Agent"},
-				"snapshot":   map[string]any{"output": map[string]any{"total": 110, "currency": "USD"}},
-				"created_at": "2026-05-18T09:01:00Z",
-			},
-		},
-		"decision": decision,
+		"decision":            decision,
 	}
 }
 
@@ -171,11 +169,8 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/"+reviewID {
 		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
-	if len(review.Versions) != 2 {
-		t.Fatalf("versions = %#v", review.Versions)
-	}
-	if review.Versions[reviewChildVersionID].ParentID == nil || *review.Versions[reviewChildVersionID].ParentID != reviewVersionID {
-		t.Fatalf("child version = %#v", review.Versions[reviewChildVersionID])
+	if review.Decision == nil || review.Decision.VersionID != reviewVersionID {
+		t.Fatalf("decision = %#v", review.Decision)
 	}
 }
 
@@ -294,19 +289,29 @@ func TestWorkflowReviewsRejectRequiresInputs(t *testing.T) {
 	}
 }
 
-func TestWorkflowReviewsAppendVersionPostsParentVersionID(t *testing.T) {
+func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 	var seenPath string
+	var seenQuery string
+	var seenMethod string
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seenPath = r.URL.Path
-		raw, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(raw, &body)
+		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"append_status": "accepted",
-			"version_id":    reviewChildVersionID,
-			"review":        reviewJSON(false),
-		})
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/reviews/versions":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []any{reviewVersionJSON(reviewVersionID, nil), reviewVersionJSON(reviewChildVersionID, reviewVersionID)},
+				"list_metadata": map[string]any{"before": nil, "after": reviewChildVersionID},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/reviews/versions/"+reviewChildVersionID:
+			_ = json.NewEncoder(w).Encode(reviewVersionJSON(reviewChildVersionID, reviewVersionID))
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/reviews/versions":
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &body)
+			_ = json.NewEncoder(w).Encode(reviewVersionJSON(reviewChildVersionID, reviewVersionID))
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.String())
+		}
 	}))
 	defer server.Close()
 
@@ -314,42 +319,81 @@ func TestWorkflowReviewsAppendVersionPostsParentVersionID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.AppendVersion(context.Background(), reviewID, AppendReviewVersionRequest{
-		Snapshot: map[string]any{"category": "Invoice"}, ParentVersionID: reviewVersionID, Note: "fixed category",
+
+	list, err := client.Workflows.Reviews.Versions.List(context.Background(), &ListReviewVersionsParams{
+		ReviewID: reviewID, Limit: 25,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenPath != "/workflows/reviews/"+reviewID+"/versions" {
-		t.Fatalf("append-version path = %s", seenPath)
+	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/versions" {
+		t.Fatalf("list request = %s %s", seenMethod, seenPath)
 	}
-	if body["parent_version_id"] != reviewVersionID || body["snapshot"] == nil {
-		t.Fatalf("append-version body = %#v", body)
+	for _, want := range []string{"review_id=" + reviewID, "limit=25"} {
+		if !strings.Contains(seenQuery, want) {
+			t.Fatalf("list query %q missing %q", seenQuery, want)
+		}
 	}
-	if body["parent_id"] != nil || body["origin"] != nil {
-		t.Fatalf("append-version body includes removed fields: %#v", body)
+	for _, stale := range []string{"parent_id="} {
+		if strings.Contains(seenQuery, stale) {
+			t.Fatalf("list query %q should not contain %q", seenQuery, stale)
+		}
 	}
-	if resp.AppendStatus != "accepted" || resp.VersionID != reviewChildVersionID {
-		t.Fatalf("resp = %#v", resp)
+	if len(list.Data) != 2 || list.Data[1].ParentID == nil || *list.Data[1].ParentID != reviewVersionID {
+		t.Fatalf("list = %#v", list)
+	}
+
+	version, err := client.Workflows.Reviews.Versions.Get(context.Background(), reviewChildVersionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/versions/"+reviewChildVersionID {
+		t.Fatalf("get request = %s %s", seenMethod, seenPath)
+	}
+	if version.ID != reviewChildVersionID || version.ReviewID != reviewID {
+		t.Fatalf("version = %#v", version)
+	}
+
+	created, err := client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
+		ReviewID: reviewID, ParentID: reviewVersionID, Snapshot: map[string]any{"category": "Invoice"}, Note: "fixed category",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seenMethod != http.MethodPost || seenPath != "/workflows/reviews/versions" {
+		t.Fatalf("create request = %s %s", seenMethod, seenPath)
+	}
+	if body["review_id"] != reviewID || body["parent_id"] != reviewVersionID || body["snapshot"] == nil {
+		t.Fatalf("create body = %#v", body)
+	}
+	if body["parent_version_id"] != nil || body["origin"] != nil {
+		t.Fatalf("create body includes removed fields: %#v", body)
+	}
+	if created.ID != reviewChildVersionID {
+		t.Fatalf("created = %#v", created)
 	}
 }
 
-func TestWorkflowReviewsAppendVersionRequiresInputs(t *testing.T) {
+func TestWorkflowReviewVersionsRequiresInputs(t *testing.T) {
 	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.Reviews.AppendVersion(context.Background(), "", AppendReviewVersionRequest{
-		Snapshot: map[string]any{"category": "Invoice"}, ParentVersionID: reviewVersionID,
-	})
-	if err == nil || !strings.Contains(err.Error(), "reviewID is required") {
-		t.Fatalf("expected reviewID required error, got %v", err)
+	_, err = client.Workflows.Reviews.Versions.List(context.Background(), nil)
+	if err == nil || !strings.Contains(err.Error(), "ReviewID is required") {
+		t.Fatalf("expected ReviewID required error, got %v", err)
 	}
-	_, err = client.Workflows.Reviews.AppendVersion(context.Background(), reviewID, AppendReviewVersionRequest{
+	_, err = client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
 		Snapshot: map[string]any{"category": "Invoice"},
 	})
-	if err == nil || !strings.Contains(err.Error(), "ParentVersionID is required") {
-		t.Fatalf("expected ParentVersionID required error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "ReviewID is required") {
+		t.Fatalf("expected ReviewID required error, got %v", err)
+	}
+	_, err = client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
+		ReviewID: reviewID, Snapshot: map[string]any{"category": "Invoice"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "ParentID is required") {
+		t.Fatalf("expected ParentID required error, got %v", err)
 	}
 }
 

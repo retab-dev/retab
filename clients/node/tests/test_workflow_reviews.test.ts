@@ -4,13 +4,12 @@ import APIWorkflowReviews from '../src/api/workflows/reviews/client';
 import { AbstractClient } from '../src/client';
 import {
   ZActor,
-  ZAppendVersionResponse,
-  ZOutputVersion,
-  ZReviewDecision,
-  ZReviewOverlay,
-  ZReviewQueueItem,
+  ZDecision,
+  ZReview,
   ZReviewQueueResponse,
   ZReviewSummary,
+  ZReviewVersion,
+  ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
 } from '../src/types';
 
@@ -50,7 +49,9 @@ const ACTOR_JSON = {
   display_name: 'Reviewer Agent',
 };
 
-const OUTPUT_VERSION_JSON = {
+const REVIEW_VERSION_JSON = {
+  id: VERSION_ID,
+  review_id: REVIEW_ID,
   parent_id: null,
   author: { kind: 'model', id: 'model_1', display_name: 'Model' },
   snapshot: { output: { invoice_number: 'INV-001', total: 100 } },
@@ -66,7 +67,7 @@ const DECISION_JSON = {
   reason: null,
 };
 
-const OVERLAY_JSON = {
+const REVIEW_JSON = {
   id: REVIEW_ID,
   workflow_id: 'wf_1',
   workflow_version_id: 'wfv_1',
@@ -78,32 +79,22 @@ const OVERLAY_JSON = {
   block_type: 'extract',
   triggered_by: { kind: 'confidence_below', threshold: 0.8 },
   created_at: '2026-05-18T09:58:00Z',
-  versions: {
-    [VERSION_ID]: OUTPUT_VERSION_JSON,
-    [CHILD_VERSION_ID]: {
-      ...OUTPUT_VERSION_JSON,
-      parent_id: VERSION_ID,
-      author: ACTOR_JSON,
-      snapshot: { output: { invoice_number: 'INV-001', total: 150 } },
-    },
-  },
   decision: DECISION_JSON,
 };
 
-const QUEUE_ITEM_JSON = {
-  id: REVIEW_ID,
-  workflow_id: 'wf_1',
-  workflow_run_id: 'run_1',
-  block_id: 'extract-1',
-  step_id: 'step_1',
-  parent_step_id: null,
-  iteration_key: null,
-  block_type: 'extract',
-  triggered_by: { kind: 'always' },
-  created_at: '2026-05-18T09:58:00Z',
+const REVIEW_SUMMARY_JSON = {
+  ...REVIEW_JSON,
+  decision: null,
   seed_version_id: VERSION_ID,
   version_count: 1,
-  decision: null,
+};
+
+const CHILD_REVIEW_VERSION_JSON = {
+  ...REVIEW_VERSION_JSON,
+  id: CHILD_VERSION_ID,
+  parent_id: VERSION_ID,
+  author: ACTOR_JSON,
+  snapshot: { output: { invoice_number: 'INV-001', total: 150 } },
 };
 
 describe('review zod schemas', () => {
@@ -114,78 +105,132 @@ describe('review zod schemas', () => {
     }
   });
 
-  test('ZOutputVersion round-trips a full version', () => {
-    const version = ZOutputVersion.parse(OUTPUT_VERSION_JSON);
+  test('ZReviewVersion round-trips a full top-level version', () => {
+    const version = ZReviewVersion.parse(REVIEW_VERSION_JSON);
+    expect(version.id).toBe(VERSION_ID);
+    expect(version.review_id).toBe(REVIEW_ID);
     expect(version.parent_id).toBe(null);
     expect(version.author.kind).toBe('model');
     expect(version.snapshot).toEqual({ output: { invoice_number: 'INV-001', total: 100 } });
   });
 
-  test('ZOutputVersion rejects removed origin fields', () => {
+  test('ZReviewVersion rejects removed origin fields', () => {
     expect(() =>
-      ZOutputVersion.parse({ ...OUTPUT_VERSION_JSON, origin: 'model_output' })
+      ZReviewVersion.parse({ ...REVIEW_VERSION_JSON, origin: 'model_output' })
     ).toThrow();
   });
 
-  test('ZReviewDecision round-trips and carries version_id', () => {
-    for (const verdict of ['approved', 'rejected'] as const) {
-      const decision = ZReviewDecision.parse({ ...DECISION_JSON, verdict });
-      expect(decision.verdict).toBe(verdict);
-      expect(decision.version_id).toBe(VERSION_ID);
-    }
+  test('ZDecision round-trips an approved decision with reason null', () => {
+    const decision = ZDecision.parse(DECISION_JSON);
+    expect(decision.verdict).toBe('approved');
+    expect(decision.version_id).toBe(VERSION_ID);
+    expect(decision.reason).toBeNull();
   });
 
-  test('ZReviewOverlay round-trips versions and decision', () => {
-    const overlay = ZReviewOverlay.parse(OVERLAY_JSON);
-    expect(overlay.id).toBe(REVIEW_ID);
-    expect(Object.keys(overlay.versions)).toEqual([VERSION_ID, CHILD_VERSION_ID]);
-    expect(overlay.versions[CHILD_VERSION_ID]?.parent_id).toBe(VERSION_ID);
-    expect(overlay.decision?.version_id).toBe(VERSION_ID);
+  test('ZDecision round-trips a rejected decision with a non-empty reason', () => {
+    const decision = ZDecision.parse({
+      ...DECISION_JSON,
+      verdict: 'rejected',
+      reason: 'wrong total',
+    });
+    expect(decision.verdict).toBe('rejected');
+    expect(decision.reason).toBe('wrong total');
   });
 
-  test('ZReviewOverlay accepts for_each reviews addressed by review id', () => {
-    const overlay = ZReviewOverlay.parse({
-      ...OVERLAY_JSON,
+  test('ZDecision rejects an approved decision that carries a reason', () => {
+    expect(() =>
+      ZDecision.parse({ ...DECISION_JSON, verdict: 'approved', reason: 'should not be set' })
+    ).toThrow();
+  });
+
+  test('ZDecision rejects a rejected decision missing a reason', () => {
+    expect(() =>
+      ZDecision.parse({ ...DECISION_JSON, verdict: 'rejected', reason: null })
+    ).toThrow();
+    expect(() => ZDecision.parse({ ...DECISION_JSON, verdict: 'rejected', reason: '' })).toThrow();
+  });
+
+  test('ZReview round-trips review metadata and decision without embedded versions', () => {
+    const review = ZReview.parse(REVIEW_JSON);
+    expect(review.id).toBe(REVIEW_ID);
+    expect('versions' in review).toBe(false);
+    expect(review.decision?.version_id).toBe(VERSION_ID);
+  });
+
+  test('ZReview rejects embedded versions from the pre-cutover shape', () => {
+    expect(() =>
+      ZReview.parse({
+        ...REVIEW_JSON,
+        versions: { [VERSION_ID]: REVIEW_VERSION_JSON },
+      })
+    ).toThrow();
+  });
+
+  test('ZReview accepts for_each reviews addressed by review id', () => {
+    const review = ZReview.parse({
+      ...REVIEW_JSON,
       block_id: 'blk_for_each',
       step_id: 'step_child',
       parent_step_id: 'step_parent',
       iteration_key: 'line-1',
       block_type: 'for_each',
     });
-    expect(overlay.block_type).toBe('for_each');
-    expect(overlay.parent_step_id).toBe('step_parent');
-    expect(overlay.iteration_key).toBe('line-1');
+    expect(review.block_type).toBe('for_each');
+    expect(review.parent_step_id).toBe('step_parent');
+    expect(review.iteration_key).toBe('line-1');
   });
 
-  test('ZReviewSummary round-trips seed_version_id and ZReviewQueueResponse wraps it', () => {
+  test('ZReviewSummary carries seed_version_id and version_count', () => {
+    const summary = ZReviewSummary.parse(REVIEW_SUMMARY_JSON);
+    expect(summary.id).toBe(REVIEW_ID);
+    expect(summary.seed_version_id).toBe(VERSION_ID);
+    expect(summary.version_count).toBe(1);
+    expect('versions' in (summary as Record<string, unknown>)).toBe(false);
+  });
+
+  test('ZReviewSummary rejects rows missing seed_version_id', () => {
+    const { seed_version_id: _seed, ...withoutSeed } = REVIEW_SUMMARY_JSON;
+    expect(() => ZReviewSummary.parse(withoutSeed)).toThrow();
+  });
+
+  test('ZReviewSummary rejects rows missing version_count', () => {
+    const { version_count: _count, ...withoutCount } = REVIEW_SUMMARY_JSON;
+    expect(() => ZReviewSummary.parse(withoutCount)).toThrow();
+  });
+
+  test('ZReviewQueueResponse wraps ReviewSummary rows with seed_version_id and version_count', () => {
     const response = ZReviewQueueResponse.parse({
-      data: [QUEUE_ITEM_JSON],
+      data: [REVIEW_SUMMARY_JSON],
       list_metadata: { before: null, after: REVIEW_ID },
     });
     expect(response.list_metadata.before).toBeNull();
     expect(response.list_metadata.after).toBe(REVIEW_ID);
     expect(response.data[0]?.seed_version_id).toBe(VERSION_ID);
-    expect(ZReviewSummary.parse(QUEUE_ITEM_JSON).version_count).toBe(1);
-    expect(ZReviewQueueItem.parse(QUEUE_ITEM_JSON).step_id).toBe('step_1');
+    expect(response.data[0]?.version_count).toBe(1);
   });
 
-  test('ZAppendVersionResponse round-trips append status + version id + review', () => {
-    for (const status of ['accepted', 'already_exists'] as const) {
-      const parsed = ZAppendVersionResponse.parse({
-        append_status: status,
-        version_id: CHILD_VERSION_ID,
-        review: OVERLAY_JSON,
-      });
-      expect(parsed.append_status).toBe(status);
-      expect(parsed.version_id).toBe(CHILD_VERSION_ID);
-      expect(parsed.review.versions[CHILD_VERSION_ID]?.parent_id).toBe(VERSION_ID);
-    }
+  test('ZReviewQueueResponse rejects pre-cutover Review rows that omit summary fields', () => {
+    expect(() =>
+      ZReviewQueueResponse.parse({
+        data: [{ ...REVIEW_JSON, decision: null }],
+        list_metadata: { before: null, after: null },
+      })
+    ).toThrow();
+  });
+
+  test('ZReviewVersionListResponse wraps flat versions for one review', () => {
+    const parsed = ZReviewVersionListResponse.parse({
+      data: [REVIEW_VERSION_JSON, CHILD_REVIEW_VERSION_JSON],
+      list_metadata: { before: null, after: CHILD_VERSION_ID },
+    });
+    expect(parsed.data.map((version) => version.id)).toEqual([VERSION_ID, CHILD_VERSION_ID]);
+    expect(parsed.data[1]?.parent_id).toBe(VERSION_ID);
   });
 
   test('ZSubmitDecisionResponse round-trips submission status + review + resume_status', () => {
     const parsed = ZSubmitDecisionResponse.parse({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
       resume_status: 'resumed',
       resume_error: null,
     });
@@ -198,7 +243,7 @@ describe('review zod schemas', () => {
   test('ZSubmitDecisionResponse defaults resume_status to resumed when backend omits it', () => {
     const parsed = ZSubmitDecisionResponse.parse({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
     });
     expect(parsed.resume_status).toBe('resumed');
     expect(parsed.resume_error).toBe(null);
@@ -207,7 +252,7 @@ describe('review zod schemas', () => {
   test('ZSubmitDecisionResponse surfaces resume_status="pending" with an error message', () => {
     const parsed = ZSubmitDecisionResponse.parse({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
       resume_status: 'pending',
       resume_error: 'Workflow run not found for run_id=run_1',
     });
@@ -219,7 +264,7 @@ describe('review zod schemas', () => {
     expect(() =>
       ZSubmitDecisionResponse.parse({
         submission_status: 'queued',
-        review: OVERLAY_JSON,
+        review: REVIEW_JSON,
         resume_status: 'pending',
         resume_error: 'Workflow run not found',
       })
@@ -227,7 +272,7 @@ describe('review zod schemas', () => {
     expect(() =>
       ZSubmitDecisionResponse.parse({
         submission_status: 'accepted',
-        review: OVERLAY_JSON,
+        review: REVIEW_JSON,
         resume_status: 'queued',
         resume_error: 'Workflow run not found',
       })
@@ -238,12 +283,17 @@ describe('review zod schemas', () => {
 describe('APIWorkflowReviews request shapes', () => {
   test('list() builds the queue GET with snake_case params', async () => {
     const mock = new MockClient({
-      data: [QUEUE_ITEM_JSON],
+      data: [REVIEW_SUMMARY_JSON],
       list_metadata: { before: null, after: null },
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.list({ workflowId: 'wf_1', runId: 'run_1', blockId: 'extract-1', limit: 25 });
+    await reviews.list({
+      workflowId: 'wf_1',
+      workflowRunId: 'run_1',
+      blockId: 'extract-1',
+      limit: 25,
+    });
 
     expect(mock.lastFetchParams).toEqual({
       url: '/workflows/reviews',
@@ -252,7 +302,7 @@ describe('APIWorkflowReviews request shapes', () => {
         decision_status: 'pending',
         limit: 25,
         workflow_id: 'wf_1',
-        run_id: 'run_1',
+        workflow_run_id: 'run_1',
         block_id: 'extract-1',
       },
       headers: undefined,
@@ -285,7 +335,7 @@ describe('APIWorkflowReviews request shapes', () => {
 
   test('list({ after, stepId, iterationKey }) forwards cursors and execution filters', async () => {
     const mock = new MockClient({
-      data: [QUEUE_ITEM_JSON],
+      data: [REVIEW_SUMMARY_JSON],
       list_metadata: { before: null, after: REVIEW_ID },
     });
     const reviews = new APIWorkflowReviews(mock);
@@ -306,13 +356,15 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     expect(result.list_metadata.after).toBe(REVIEW_ID);
     expect(result.list_metadata.before).toBeNull();
+    expect(result.data[0]?.seed_version_id).toBe(VERSION_ID);
+    expect(result.data[0]?.version_count).toBe(1);
   });
 
   test('get() builds the review GET route', async () => {
-    const mock = new MockClient(OVERLAY_JSON);
+    const mock = new MockClient(REVIEW_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.get(REVIEW_ID);
+    const review = await reviews.get(REVIEW_ID);
 
     expect(mock.lastFetchParams).toEqual({
       url: `/workflows/reviews/${REVIEW_ID}`,
@@ -320,13 +372,14 @@ describe('APIWorkflowReviews request shapes', () => {
       params: undefined,
       headers: undefined,
     });
-    expect(overlay.id).toBe(REVIEW_ID);
+    expect(review.id).toBe(REVIEW_ID);
+    expect('versions' in (review as Record<string, unknown>)).toBe(false);
   });
 
   test('approve() posts version_id to the approve endpoint and surfaces resume_status', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
       resume_status: 'resumed',
       resume_error: null,
     });
@@ -351,7 +404,7 @@ describe('APIWorkflowReviews request shapes', () => {
   test('reject() posts version_id and reason to the reject endpoint', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
       resume_status: 'resumed',
       resume_error: null,
     });
@@ -369,7 +422,7 @@ describe('APIWorkflowReviews request shapes', () => {
   test('approve() omits the reason key', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
-      review: OVERLAY_JSON,
+      review: REVIEW_JSON,
       resume_status: 'resumed',
       resume_error: null,
     });
@@ -381,15 +434,12 @@ describe('APIWorkflowReviews request shapes', () => {
     expect('reason' in body).toBe(false);
   });
 
-  test('appendVersion() omits the note key when none is provided', async () => {
-    const mock = new MockClient({
-      append_status: 'accepted',
-      version_id: CHILD_VERSION_ID,
-      review: OVERLAY_JSON,
-    });
+  test('versions.create() omits the note key when none is provided', async () => {
+    const mock = new MockClient(CHILD_REVIEW_VERSION_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.appendVersion(REVIEW_ID, {
+    await reviews.versions.create({
+      reviewId: REVIEW_ID,
       snapshot: { category: 'Invoice' },
       parentVersionId: VERSION_ID,
     });
@@ -399,65 +449,94 @@ describe('APIWorkflowReviews request shapes', () => {
     expect('origin' in body).toBe(false);
   });
 
-  // The pre-cutover SDK silently stripped `origin` from append-version
-  // request bodies (the `withoutOrigin` shim). The greenfield reviews
-  // surface dropped the `origin` field entirely — there is nothing on
-  // the server to silently absorb. Hard-cutover stance: pass extra
-  // body keys through verbatim so the server surfaces a clean rejection
-  // instead of the SDK hiding the user's mistake. No assertion here,
-  // just a note for whoever greps the test file looking for the old
-  // pinning.
-
-  test('appendVersion() posts a new snapshot version to /versions', async () => {
-    const mock = new MockClient({
-      append_status: 'accepted',
-      version_id: CHILD_VERSION_ID,
-      review: OVERLAY_JSON,
-    });
+  test('versions.create() posts a new snapshot version to the flat versions route', async () => {
+    const mock = new MockClient(CHILD_REVIEW_VERSION_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    const result = await reviews.appendVersion(REVIEW_ID, {
+    const result = await reviews.versions.create({
+      reviewId: REVIEW_ID,
       snapshot: { category: 'Invoice' },
       parentVersionId: VERSION_ID,
       note: 'agent proposal',
     });
 
     expect(mock.lastFetchParams).toEqual({
-      url: `/workflows/reviews/${REVIEW_ID}/versions`,
+      url: '/workflows/reviews/versions',
       method: 'POST',
       body: {
+        review_id: REVIEW_ID,
+        parent_id: VERSION_ID,
         snapshot: { category: 'Invoice' },
-        parent_version_id: VERSION_ID,
         note: 'agent proposal',
       },
       params: undefined,
       headers: undefined,
     });
-    expect(result.append_status).toBe('accepted');
-    expect(result.version_id).toBe(CHILD_VERSION_ID);
+    expect(result.id).toBe(CHILD_VERSION_ID);
+  });
+
+  test('versions.get() fetches one flat review version', async () => {
+    const mock = new MockClient(REVIEW_VERSION_JSON);
+    const reviews = new APIWorkflowReviews(mock);
+
+    const version = await reviews.versions.get(VERSION_ID);
+
+    expect(mock.lastFetchParams).toEqual({
+      url: `/workflows/reviews/versions/${VERSION_ID}`,
+      method: 'GET',
+      params: undefined,
+      headers: undefined,
+    });
+    expect(version.review_id).toBe(REVIEW_ID);
+  });
+
+  test('versions.list() requires review_id and forwards cursors', async () => {
+    const mock = new MockClient({
+      data: [REVIEW_VERSION_JSON, CHILD_REVIEW_VERSION_JSON],
+      list_metadata: { before: null, after: CHILD_VERSION_ID },
+    });
+    const reviews = new APIWorkflowReviews(mock);
+
+    const result = await reviews.versions.list({
+      reviewId: REVIEW_ID,
+      after: VERSION_ID,
+      limit: 25,
+    });
+
+    expect(mock.lastFetchParams).toEqual({
+      url: '/workflows/reviews/versions',
+      method: 'GET',
+      params: {
+        review_id: REVIEW_ID,
+        after: VERSION_ID,
+        limit: 25,
+      },
+      headers: undefined,
+    });
+    expect(result.data[1]?.id).toBe(CHILD_VERSION_ID);
   });
 
   test('waitFor() returns the review once it has no decision', async () => {
-    const mock = new MockClient({ ...OVERLAY_JSON, decision: null });
+    const mock = new MockClient({ ...REVIEW_JSON, decision: null });
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
+    const review = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
 
-    expect(overlay.decision).toBe(null);
+    expect(review.decision).toBe(null);
     expect(mock.lastFetchParams?.url).toBe(`/workflows/reviews/${REVIEW_ID}`);
   });
 
   test('wait_for() aliases waitFor() for Python parity', async () => {
-    const mock = new MockClient({ ...OVERLAY_JSON, decision: null });
+    const mock = new MockClient({ ...REVIEW_JSON, decision: null });
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.wait_for(REVIEW_ID, { pollIntervalMs: 1 });
+    const review = await reviews.wait_for(REVIEW_ID, { pollIntervalMs: 1 });
 
-    expect(overlay.decision).toBe(null);
+    expect(review.decision).toBe(null);
   });
 
   test('waitFor() throws a plain Error on timeout when the review is already decided', async () => {
-    const mock = new MockClient(OVERLAY_JSON);
+    const mock = new MockClient(REVIEW_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
     await expect(reviews.waitFor(REVIEW_ID, { timeoutMs: 5, pollIntervalMs: 1 })).rejects.toThrow(
@@ -476,7 +555,7 @@ describe('APIWorkflowReviews request shapes', () => {
             headers: { 'Content-Type': 'application/json' },
           });
         }
-        return new Response(JSON.stringify({ ...OVERLAY_JSON, decision: null }), {
+        return new Response(JSON.stringify({ ...REVIEW_JSON, decision: null }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -484,9 +563,9 @@ describe('APIWorkflowReviews request shapes', () => {
     }
 
     const reviews = new APIWorkflowReviews(new FlakyClient());
-    const overlay = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
+    const review = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
 
     expect(calls).toBe(2);
-    expect(overlay.decision).toBe(null);
+    expect(review.decision).toBe(null);
   });
 });

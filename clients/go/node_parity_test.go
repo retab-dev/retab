@@ -356,17 +356,21 @@ func TestFetchJSONRequiresJSONContentType(t *testing.T) {
 func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests = append(requests, r.Method+" "+r.URL.Path)
+		request := r.Method + " " + r.URL.Path
+		if r.URL.RawQuery != "" {
+			request = r.Method + "?" + r.URL.RawQuery + " " + r.URL.Path
+		}
+		requests = append(requests, request)
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/wf_123/blocks":
+		case "/workflows/blocks":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data": []Resource{{
 					"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start-document",
 				}},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
-		case "/workflows/wf_123/edges":
+		case "/workflows/edges":
 			if r.Method == http.MethodDelete {
 				w.WriteHeader(http.StatusNoContent)
 				return
@@ -375,7 +379,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 				"data":          []Resource{},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
-		case "/workflows/wf_123/tests":
+		case "/workflows/tests":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
 		case "/workflows/tests/runs":
 			_ = json.NewEncoder(w).Encode(Resource{
@@ -414,7 +418,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/tests,GET /workflows/tests/runs"
+	want := "GET?workflow_id=wf_123 /workflows/blocks,GET?workflow_id=wf_123 /workflows/edges,DELETE?workflow_id=wf_123 /workflows/edges,GET?limit=50&workflow_id=wf_123 /workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /workflows/tests/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}

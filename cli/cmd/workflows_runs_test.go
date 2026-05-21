@@ -101,7 +101,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
 					{"id": "block_generated", "type": "start-document", "label": "Document"},
@@ -287,7 +287,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
 					{"id": "block_generated", "type": "start-document", "label": "Document"},
@@ -350,8 +350,8 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 	var hits atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/blocks" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_123" {
+			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

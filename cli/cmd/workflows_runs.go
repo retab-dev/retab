@@ -184,7 +184,7 @@ Review-based: when a block pauses for review, the run enters status
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a block run awaiting review, then ` + "`reviews approve`" + ` or ` + "`reviews reject`" + `
-to decide it. Use ` + "`reviews versions append`" + ` to append a corrected output before approving.
+to decide it. Use ` + "`reviews versions create`" + ` to create a corrected output before approving.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -600,7 +600,7 @@ or ` + "`--command-id`" + ` for idempotency.`,
 }
 
 // The v1 review commands (submit-review / get-review / get-agent-review) were removed in
-// the hard cutover to the review overlay — see `workflows reviews`.
+// the hard cutover to reviews — see `workflows reviews`.
 
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",

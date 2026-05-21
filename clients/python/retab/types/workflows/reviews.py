@@ -25,10 +25,7 @@ ReviewBlockType = Literal["extract", "classifier", "split", "for_each"]
 ReviewVerdict = Literal["approved", "rejected"]
 
 #: Lifecycle status of a decision submission.
-SubmissionStatus = Literal["accepted"]
-
-#: Lifecycle status of an append-version request.
-AppendStatus = Literal["accepted", "already_exists"]
+SubmissionStatus = Literal["accepted", "already_applied", "conflict"]
 
 #: Whether the gated workflow run was signalled to resume after a decision.
 ResumeStatus = Literal["pending", "resumed", "skipped"]
@@ -55,11 +52,13 @@ class Actor(RetabBaseModel):
     display_name: str = Field(..., description="Human-readable name for UI surfaces.")
 
 
-class OutputVersion(RetabBaseModel):
+class ReviewVersion(RetabBaseModel):
     """One immutable reviewed output snapshot."""
 
     model_config = ConfigDict(extra="ignore")
 
+    id: VersionId = Field(..., description="Content-addressed version id.")
+    review_id: str = Field(..., description="Review this version belongs to.")
     parent_id: VersionId | None = Field(default=None, description="Parent content-hash version id; None for the model output.")
     author: Actor = Field(..., description="Who created this version.")
     snapshot: dict[str, Any] = Field(..., description="The block output payload at this version.")
@@ -68,7 +67,12 @@ class OutputVersion(RetabBaseModel):
 
 
 class ReviewDecision(RetabBaseModel):
-    """The terminal verdict recorded against one exact output version."""
+    """The terminal verdict recorded against one exact output version.
+
+    Plain shape — ``reason`` is required iff ``verdict == "rejected"``, but
+    the invariant lives in the two action endpoints (``approve`` / ``reject``)
+    rather than in a discriminated union here.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -100,7 +104,6 @@ class Review(RetabBaseModel):
     block_type: ReviewBlockType = Field(..., description="Type of the gated block.")
     triggered_by: dict[str, Any] = Field(..., description="Discriminated review predicate that opened the gate.")
     created_at: datetime.datetime = Field(..., description="When the review was created.")
-    versions: dict[VersionId, OutputVersion] = Field(..., description="Output versions keyed by content-hash id.")
     decision: ReviewDecision | None = Field(default=None, description="Terminal decision, if one has been made.")
 
 
@@ -146,6 +149,23 @@ class ReviewQueueResponse(RetabBaseModel):
         return self.list_metadata.after is not None
 
 
+class ReviewVersionListResponse(RetabBaseModel):
+    """Envelope returned by ``reviews.versions.list(...)``."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: list[ReviewVersion] = Field(default_factory=list, description="Page of review versions.")
+    list_metadata: ListMetadata = Field(
+        ...,
+        description="Boundary resource IDs for page navigation (before/after).",
+    )
+
+    @property
+    def has_more(self) -> bool:
+        """Whether there are more pages available after this page's last version id."""
+        return self.list_metadata.after is not None
+
+
 class SubmitDecisionResponse(RetabBaseModel):
     """Envelope returned by ``reviews.approve/reject(...)``.
 
@@ -166,30 +186,19 @@ class SubmitDecisionResponse(RetabBaseModel):
     )
 
 
-class AppendVersionResponse(RetabBaseModel):
-    """Envelope returned by ``reviews.append_version(...)``."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    append_status: AppendStatus = Field(..., description="Append lifecycle status.")
-    version_id: VersionId = Field(..., description="Version id that now contains the submitted snapshot.")
-    review: Review = Field(..., description="The review after the version append.")
-
-
 __all__ = [
     "ActorKind",
     "ReviewBlockType",
     "ReviewVerdict",
     "SubmissionStatus",
-    "AppendStatus",
     "ResumeStatus",
     "VersionId",
     "Actor",
-    "OutputVersion",
+    "ReviewVersion",
     "ReviewDecision",
     "Review",
     "ReviewSummary",
     "ReviewQueueResponse",
-    "AppendVersionResponse",
+    "ReviewVersionListResponse",
     "SubmitDecisionResponse",
 ]

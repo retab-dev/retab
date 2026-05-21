@@ -1,6 +1,6 @@
 """Python SDK client for the workflow tests API.
 
-Mirrors the eight backend endpoints under ``/v1/workflows/{workflow_id}/tests``
+Mirrors the eight backend endpoints under ``/v1/workflows/tests?workflow_id={workflow_id}``
 plus the nested run endpoints. Sync and async variants share a `WorkflowTestsMixin`
 that builds `PreparedRequest`s — same pattern as `WorkflowRuns` /
 `WorkflowRunsMixin` in the sibling `runs` resource.
@@ -87,7 +87,7 @@ def _prepare_create_run(
         data["n_consensus"] = n_consensus
     return PreparedRequest(
         method="POST",
-        url=f"/workflows/{workflow_id}/tests/runs",
+        url=f"/workflows/tests/runs?workflow_id={workflow_id}",
         data=data,
     )
 
@@ -113,14 +113,14 @@ class WorkflowTestsMixin:
             data["name"] = name
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/tests",
+            url=f"/workflows/tests?workflow_id={workflow_id}",
             data=data,
         )
 
     def prepare_get(self, workflow_id: str, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/tests/{test_id}",
+            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
         )
 
     def prepare_list(
@@ -135,7 +135,7 @@ class WorkflowTestsMixin:
             params["target_block_id"] = target_block_id
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/tests",
+            url=f"/workflows/tests?workflow_id={workflow_id}",
             params=params,
         )
 
@@ -160,14 +160,14 @@ class WorkflowTestsMixin:
             data["source"] = _dump_source(source)
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/{workflow_id}/tests/{test_id}",
+            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
             data=data,
         )
 
     def prepare_delete(self, workflow_id: str, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/{workflow_id}/tests/{test_id}",
+            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
         )
 
     def prepare_create_run(

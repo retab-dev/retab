@@ -1,12 +1,14 @@
 import { APIError, CompositionClient, RequestOptions } from '../../../client.js';
 import {
-  AppendVersionResponse,
-  ReviewOverlay,
+  Review,
   ReviewQueueResponse,
+  ReviewVersion,
+  ReviewVersionListResponse,
   SubmitDecisionResponse,
-  ZAppendVersionResponse,
-  ZReviewOverlay,
+  ZReview,
   ZReviewQueueResponse,
+  ZReviewVersion,
+  ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
 } from '../../../types.js';
 
@@ -29,20 +31,134 @@ type PreparedReviewRequest = {
 };
 
 /**
- * Actor-neutral client for workflow reviews.
+ * Flat CRUD client for review versions.
  *
- * Drives the review loop served under `/workflows/reviews`: list summaries,
- * fetch a review by id, append output versions, and approve or reject one
- * exact version.
+ * Versions are immutable resources served under `/workflows/reviews/versions`.
  */
-export default class APIWorkflowReviews extends CompositionClient {
+export class APIWorkflowReviewVersions extends CompositionClient {
   constructor(client: CompositionClient) {
     super(client);
   }
 
+  prepare_create({
+    reviewId,
+    parentVersionId,
+    snapshot,
+    note,
+  }: {
+    reviewId: string;
+    parentVersionId?: string | null;
+    snapshot: Record<string, unknown>;
+    note?: string | null;
+  }): PreparedReviewRequest {
+    const body: Record<string, unknown> = {
+      review_id: reviewId,
+      parent_id: parentVersionId ?? null,
+      snapshot,
+    };
+    if (note !== undefined && note !== null) {
+      body.note = note;
+    }
+    return {
+      url: '/workflows/reviews/versions',
+      method: 'POST',
+      body,
+    };
+  }
+
+  prepare_get(versionId: string): PreparedReviewRequest {
+    return { url: `/workflows/reviews/versions/${versionId}`, method: 'GET' };
+  }
+
+  prepare_list({
+    reviewId,
+    limit = 50,
+    before,
+    after,
+  }: {
+    reviewId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+  }): PreparedReviewRequest {
+    const params: Record<string, unknown> = {
+      review_id: reviewId,
+      limit,
+    };
+    if (before !== undefined) params.before = before;
+    if (after !== undefined) params.after = after;
+    return { url: '/workflows/reviews/versions', method: 'GET', params };
+  }
+
+  /** Create an immutable snapshot version for a review. */
+  async create(
+    request: {
+      reviewId: string;
+      parentVersionId?: string | null;
+      snapshot: Record<string, unknown>;
+      note?: string | null;
+    },
+    options?: RequestOptions
+  ): Promise<ReviewVersion> {
+    const prepared = this.prepare_create(request);
+    return this._fetchJson(ZReviewVersion, {
+      url: prepared.url,
+      method: prepared.method,
+      body: { ...prepared.body, ...(options?.body || {}) },
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
+
+  /** Fetch one immutable review version. */
+  async get(versionId: string, options?: RequestOptions): Promise<ReviewVersion> {
+    const request = this.prepare_get(versionId);
+    return this._fetchJson(ZReviewVersion, {
+      url: request.url,
+      method: request.method,
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
+
+  /** List versions for one review. `reviewId` is required. */
+  async list(
+    request: {
+      reviewId: string;
+      limit?: number;
+      before?: string;
+      after?: string;
+    },
+    options?: RequestOptions
+  ): Promise<ReviewVersionListResponse> {
+    const prepared = this.prepare_list(request);
+    return this._fetchJson(ZReviewVersionListResponse, {
+      url: prepared.url,
+      method: prepared.method,
+      params: { ...prepared.params, ...(options?.params || {}) },
+      headers: options?.headers,
+    });
+  }
+}
+
+/**
+ * Actor-neutral client for workflow reviews.
+ *
+ * Drives the review loop served under `/workflows/reviews`: list reviews,
+ * fetch a review by id, manage immutable versions, and approve or reject one
+ * exact version through action endpoints.
+ */
+export default class APIWorkflowReviews extends CompositionClient {
+  public versions: APIWorkflowReviewVersions;
+
+  constructor(client: CompositionClient) {
+    super(client);
+    this.versions = new APIWorkflowReviewVersions(this);
+  }
+
   prepare_list({
     workflowId,
-    runId,
+    workflowRunId,
     blockId,
     stepId,
     iterationKey,
@@ -52,7 +168,7 @@ export default class APIWorkflowReviews extends CompositionClient {
     after,
   }: {
     workflowId?: string;
-    runId?: string;
+    workflowRunId?: string;
     blockId?: string;
     stepId?: string;
     iterationKey?: string;
@@ -63,7 +179,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   } = {}): PreparedReviewRequest {
     const params: Record<string, unknown> = { limit, decision_status: decisionStatus };
     if (workflowId !== undefined) params.workflow_id = workflowId;
-    if (runId !== undefined) params.run_id = runId;
+    if (workflowRunId !== undefined) params.workflow_run_id = workflowRunId;
     if (blockId !== undefined) params.block_id = blockId;
     if (stepId !== undefined) params.step_id = stepId;
     if (iterationKey !== undefined) params.iteration_key = iterationKey;
@@ -74,32 +190,6 @@ export default class APIWorkflowReviews extends CompositionClient {
 
   prepare_get(reviewId: string): PreparedReviewRequest {
     return { url: `/workflows/reviews/${reviewId}`, method: 'GET' };
-  }
-
-  prepare_append_version(
-    reviewId: string,
-    {
-      snapshot,
-      parentVersionId,
-      note,
-    }: {
-      snapshot: Record<string, unknown>;
-      parentVersionId: string;
-      note?: string | null;
-    }
-  ): PreparedReviewRequest {
-    const body: Record<string, unknown> = {
-      snapshot,
-      parent_version_id: parentVersionId,
-    };
-    if (note !== undefined && note !== null) {
-      body.note = note;
-    }
-    return {
-      url: `/workflows/reviews/${reviewId}/versions`,
-      method: 'POST',
-      body,
-    };
   }
 
   prepare_approve(reviewId: string, versionId: string): PreparedReviewRequest {
@@ -122,7 +212,7 @@ export default class APIWorkflowReviews extends CompositionClient {
    * List review summaries.
    *
    * @param workflowId - Restrict the queue to a single workflow.
-   * @param runId - Restrict the queue to a single workflow run.
+   * @param workflowRunId - Restrict the queue to a single workflow run.
    * @param blockId - Restrict the queue to a workflow block.
    * @param stepId - Restrict the queue to one execution step.
    * @param iterationKey - Restrict the queue to one for_each iteration key.
@@ -134,7 +224,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   async list(
     {
       workflowId,
-      runId,
+      workflowRunId,
       blockId,
       stepId,
       iterationKey,
@@ -144,7 +234,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after,
     }: {
       workflowId?: string;
-      runId?: string;
+      workflowRunId?: string;
       blockId?: string;
       stepId?: string;
       iterationKey?: string;
@@ -157,7 +247,7 @@ export default class APIWorkflowReviews extends CompositionClient {
   ): Promise<ReviewQueueResponse> {
     const request = this.prepare_list({
       workflowId,
-      runId,
+      workflowRunId,
       blockId,
       stepId,
       iterationKey,
@@ -180,9 +270,9 @@ export default class APIWorkflowReviews extends CompositionClient {
    *
    * @throws `APIError` with `.status === 404` when no review exists.
    */
-  async get(reviewId: string, options?: RequestOptions): Promise<ReviewOverlay> {
+  async get(reviewId: string, options?: RequestOptions): Promise<Review> {
     const request = this.prepare_get(reviewId);
-    return this._fetchJson(ZReviewOverlay, {
+    return this._fetchJson(ZReview, {
       url: request.url,
       method: request.method,
       params: options?.params,
@@ -232,47 +322,6 @@ export default class APIWorkflowReviews extends CompositionClient {
     });
   }
 
-  /** Append a new output version to the review's version graph. */
-  async appendVersion(
-    reviewId: string,
-    {
-      snapshot,
-      parentVersionId,
-      note,
-    }: {
-      snapshot: Record<string, unknown>;
-      parentVersionId: string;
-      note?: string | null;
-    },
-    options?: RequestOptions
-  ): Promise<AppendVersionResponse> {
-    const request = this.prepare_append_version(reviewId, {
-      snapshot,
-      parentVersionId,
-      note,
-    });
-
-    return this._fetchJson(ZAppendVersionResponse, {
-      url: request.url,
-      method: request.method,
-      body: { ...request.body, ...(options?.body || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async append_version(
-    reviewId: string,
-    request: {
-      snapshot: Record<string, unknown>;
-      parentVersionId: string;
-      note?: string | null;
-    },
-    options?: RequestOptions
-  ): Promise<AppendVersionResponse> {
-    return this.appendVersion(reviewId, request, options);
-  }
-
   /**
    * Poll until a review exists and has no terminal decision.
    */
@@ -286,7 +335,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       pollIntervalMs?: number;
     } = {},
     options?: RequestOptions
-  ): Promise<ReviewOverlay> {
+  ): Promise<Review> {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       try {
@@ -313,7 +362,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       pollIntervalMs?: number;
     },
     requestOptions?: RequestOptions
-  ): Promise<ReviewOverlay> {
+  ): Promise<Review> {
     return this.waitFor(reviewId, options, requestOptions);
   }
 }

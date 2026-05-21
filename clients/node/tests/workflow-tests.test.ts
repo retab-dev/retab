@@ -129,7 +129,7 @@ describe('workflows.tests.create()', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests',
+      url: '/workflows/tests?workflow_id=wf_abc123',
       method: 'POST',
       body: {
         target: { type: 'block', block_id: 'block_extract' },
@@ -180,7 +180,7 @@ describe('workflows.tests CRUD URL shapes', () => {
     await tests.get({ workflowId: 'wf_abc123', testId: 'wfnodetest_abc' });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests/wfnodetest_abc',
+      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
       method: 'GET',
     });
   });
@@ -199,7 +199,7 @@ describe('workflows.tests CRUD URL shapes', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests',
+      url: '/workflows/tests?workflow_id=wf_abc123',
       method: 'GET',
       params: { limit: 25, target_block_id: 'block_extract' },
     });
@@ -236,7 +236,7 @@ describe('workflows.tests CRUD URL shapes', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests/wfnodetest_abc',
+      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
       method: 'DELETE',
     });
   });
@@ -257,7 +257,7 @@ describe('workflows.tests.update()', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests/wfnodetest_abc',
+      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
       method: 'PATCH',
       body: { name: 'renamed' },
     });
@@ -297,7 +297,7 @@ describe('workflows.tests.runs.create()', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/wf_abc123/tests/runs',
+      url: '/workflows/tests/runs?workflow_id=wf_abc123',
       method: 'POST',
       body: { test_id: 'wfnodetest_abc' },
     });

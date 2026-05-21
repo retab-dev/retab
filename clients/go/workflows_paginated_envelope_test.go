@@ -12,13 +12,13 @@ import (
 // shape conversion of the seven workflow GRAPH list endpoints from bare
 // arrays to PaginatedList[T] envelopes.
 //
-//	GET /v1/workflows/{wf}/blocks                                    -> PaginatedList[WorkflowBlock]
-//	GET /v1/workflows/{wf}/blocks/{id}/config-history                -> PaginatedList[BlockConfigVersion]
-//	GET /v1/workflows/{wf}/edges                                     -> PaginatedList[WorkflowEdgeDoc]
+//	GET /v1/workflows/blocks?workflow_id={wf}                                    -> PaginatedList[WorkflowBlock]
+//	GET /v1/workflows/blocks/{id}/config-history?workflow_id={wf}                -> PaginatedList[BlockConfigVersion]
+//	GET /v1/workflows/edges?workflow_id={wf}                                     -> PaginatedList[WorkflowEdgeDoc]
 //	GET /v1/workflows/artifacts                                      -> PaginatedList[WorkflowArtifact]
-//	GET /v1/workflows/{wf}/snapshots                                 -> PaginatedList[WorkflowSnapshot]
-//	GET /v1/workflows/runs/{run}/steps                               -> PaginatedList[WorkflowRunStep]
-//	GET /v1/workflows/runs/{run}/steps/{block}/simulations           -> PaginatedList[BlockSimulation]
+//	GET /v1/workflows/snapshots?workflow_id={wf}                                 -> PaginatedList[WorkflowSnapshot]
+//	GET /v1/workflows/steps?run_id={run}                              -> PaginatedList[WorkflowRunStep]
+//	GET /v1/workflows/steps/{block}/simulations?run_id={run}          -> PaginatedList[BlockSimulation]
 func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	envelope := func(items ...map[string]any) map[string]any {
 		return map[string]any{
@@ -30,7 +30,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_aaa/blocks":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":          "extract-1",
 				"workflow_id": "wf_aaa",
@@ -39,7 +39,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"position_x":  0,
 				"position_y":  0,
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_aaa/blocks/extract-1/config-history":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/extract-1/config-history" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"config_fingerprint": "fp_1",
 				"block_type":         "extract",
@@ -50,7 +50,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"run_count":          7,
 				"is_current":         true,
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_aaa/edges":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":              "edge-1",
 				"workflow_id":     "wf_aaa",
@@ -76,7 +76,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"edge_count":   3,
 				"published_at": "2026-04-01T12:00:00Z",
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_aaa/steps":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/steps" && r.URL.Query().Get("run_id") == "run_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"run_id":          "run_aaa",
 				"organization_id": "org_1",
@@ -86,7 +86,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"block_label":     "Extract",
 				"lifecycle":       map[string]any{"status": "completed"},
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_aaa/steps/extract-1/simulations":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/steps/extract-1/simulations" && r.URL.Query().Get("run_id") == "run_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":          "sim_1",
 				"workflow_id": "wf_aaa",

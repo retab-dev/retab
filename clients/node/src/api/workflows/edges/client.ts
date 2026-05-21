@@ -49,7 +49,7 @@ export default class APIWorkflowEdges extends CompositionClient {
     );
 
     return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/${workflowId}/edges`,
+      url: `/workflows/edges?workflow_id=${workflowId}`,
       method: 'GET',
       params,
       headers: options?.headers,
@@ -65,7 +65,7 @@ export default class APIWorkflowEdges extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowEdgeDoc> {
     return this._fetchJson(ZWorkflowEdgeDoc, {
-      url: `/workflows/${workflowId}/edges/${edgeId}`,
+      url: `/workflows/edges/${edgeId}?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -92,7 +92,7 @@ export default class APIWorkflowEdges extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowEdgeDoc> {
     return this._fetchJson(ZWorkflowEdgeDoc, {
-      url: `/workflows/${workflowId}/edges`,
+      url: `/workflows/edges?workflow_id=${workflowId}`,
       method: 'POST',
       body: {
         ...serializeEdgeCreateRequest(request),
@@ -115,7 +115,7 @@ export default class APIWorkflowEdges extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowEdgeDoc[]> {
     return this._fetchJson(z.array(ZWorkflowEdgeDoc), {
-      url: `/workflows/${workflowId}/edges/batch`,
+      url: `/workflows/edges/batch?workflow_id=${workflowId}`,
       method: 'POST',
       body: edges.map((edge) => serializeEdgeCreateRequest(edge)),
       params: options?.params,
@@ -136,7 +136,7 @@ export default class APIWorkflowEdges extends CompositionClient {
    */
   async delete(workflowId: string, edgeId: string, options?: RequestOptions): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/${workflowId}/edges/${edgeId}`,
+      url: `/workflows/edges/${edgeId}?workflow_id=${workflowId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,
@@ -148,7 +148,7 @@ export default class APIWorkflowEdges extends CompositionClient {
    */
   async deleteAll(workflowId: string, options?: RequestOptions): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/${workflowId}/edges`,
+      url: `/workflows/edges?workflow_id=${workflowId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,

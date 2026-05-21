@@ -467,7 +467,7 @@ describe('workflows client', () => {
       method: 'GET',
     });
     expect(workflowsClient.experiments.runs.prepare_create('wf_1', 'exp_1')).toEqual({
-      url: '/workflows/wf_1/experiments/exp_1/runs',
+      url: '/workflows/experiments/exp_1/runs?workflow_id=wf_1',
       method: 'POST',
       body: {},
     });
@@ -628,7 +628,7 @@ describe('workflows client', () => {
     ]);
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/wf_1/blocks/batch',
+      url: '/workflows/blocks/batch?workflow_id=wf_1',
       method: 'POST',
       body: [
         {
@@ -664,17 +664,23 @@ describe('workflows client', () => {
     const blocksClient = new APIWorkflowBlocks(new MockClient({}));
 
     expect(blocksClient.prepare_simulate('run_1', 'extract-1', 5, 'step_1', false)).toEqual({
-      url: '/workflows/runs/run_1/steps/extract-1/simulate',
+      url: '/workflows/simulations',
       method: 'POST',
-      params: {
-        n_consensus: 5,
+      data: {
+        run_id: 'run_1',
         step_id: 'step_1',
+        source_step_id: 'step_1',
+        n_consensus: 5,
         check_eligibility: false,
       },
     });
     expect(blocksClient.prepare_simulate('run_1', 'extract-1')).toEqual({
-      url: '/workflows/runs/run_1/steps/extract-1/simulate',
+      url: '/workflows/simulations',
       method: 'POST',
+      data: {
+        run_id: 'run_1',
+        step_id: 'extract-1',
+      },
     });
   });
 
@@ -758,7 +764,7 @@ describe('workflows client', () => {
     const blockSchemas = await blocksClient.getResolvedSchemas('wf_1', 'extract-1');
 
     expect(blockSchemasClient.lastFetchParams?.url).toBe(
-      '/workflows/wf_1/blocks/extract-1/resolved-schemas'
+      '/workflows/blocks/extract-1/resolved-schemas?workflow_id=wf_1'
     );
     expect(blockSchemas.schema.field_ref_drift).toBeNull();
   });
@@ -856,7 +862,7 @@ describe('workflows client', () => {
     ]);
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/wf_1/edges/batch',
+      url: '/workflows/edges/batch?workflow_id=wf_1',
       method: 'POST',
       body: [
         {

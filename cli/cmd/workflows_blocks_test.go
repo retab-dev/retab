@@ -214,8 +214,8 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/wf_blocks/blocks/blk_1" {
-			t.Fatalf("path = %s, want block get", r.URL.Path)
+		if r.URL.Path != "/workflows/blocks/blk_1" || r.URL.Query().Get("workflow_id") != "wf_blocks" {
+			t.Fatalf("path = %s?%s, want block get", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

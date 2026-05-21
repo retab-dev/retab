@@ -8,8 +8,6 @@ func TestReviewWireConstantsMatchHardCutover(t *testing.T) {
 		constant string
 	}{
 		{"accepted", SubmissionStatusAccepted},
-		{"accepted", AppendStatusAccepted},
-		{"already_exists", AppendStatusAlreadyExists},
 		{"pending", ResumeStatusPending},
 		{"resumed", ResumeStatusResumed},
 		{"skipped", ResumeStatusSkipped},
