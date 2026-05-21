@@ -21,14 +21,8 @@ ActorKind = Literal["model", "agent", "human"]
 #: Block type the gated run belongs to.
 ReviewBlockType = Literal["extract", "classifier", "split", "for_each"]
 
-#: Provenance of an :class:`OutputVersion` snapshot.
-OutputVersionOrigin = Literal["model_output", "agent_created", "human_created"]
-
 #: Verdict carried by a :class:`ReviewDecision`.
 ReviewVerdict = Literal["approved", "rejected"]
-
-#: Origin accepted when posting a new version through ``reviews.create_version(...)``.
-VersionOrigin = Literal["human_created", "agent_created"]
 
 #: Lifecycle status of a decision submission.
 #: ``accepted`` — fresh decision recorded.
@@ -69,7 +63,6 @@ class OutputVersion(RetabBaseModel):
 
     parent_id: VersionId | None = Field(default=None, description="Parent content-hash version id; None for the model output.")
     author: Actor = Field(..., description="Who created this version.")
-    origin: OutputVersionOrigin = Field(..., description="How this snapshot was produced.")
     snapshot: dict[str, Any] = Field(..., description="The block output payload at this version.")
     note: str | None = Field(default=None, description="Optional free-text note attached to this version.")
     created_at: datetime.datetime = Field(..., description="When this version was created.")
@@ -179,9 +172,7 @@ class SubmitDecisionResponse(RetabBaseModel):
 __all__ = [
     "ActorKind",
     "ReviewBlockType",
-    "OutputVersionOrigin",
     "ReviewVerdict",
-    "VersionOrigin",
     "SubmissionStatus",
     "ResumeStatus",
     "VersionId",

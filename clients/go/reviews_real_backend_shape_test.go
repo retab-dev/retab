@@ -36,7 +36,6 @@ func realPublicOverlayJSON() map[string]any {
 			reviewVersionID: map[string]any{
 				"parent_id":  nil,
 				"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
-				"origin":     "model_output",
 				"snapshot":   map[string]any{"total": 100, "currency": nil},
 				"note":       nil,
 				"created_at": "2026-05-21T09:00:00Z",

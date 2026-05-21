@@ -42,14 +42,12 @@ func reviewOverlayJSON(decided bool) map[string]any {
 			reviewVersionID: map[string]any{
 				"parent_id":  nil,
 				"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
-				"origin":     "model_output",
 				"snapshot":   map[string]any{"output": map[string]any{"total": 100, "currency": "USD"}},
 				"created_at": "2026-05-18T09:00:00Z",
 			},
 			reviewChildVersionID: map[string]any{
 				"parent_id":  reviewVersionID,
 				"author":     map[string]any{"kind": "agent", "id": "agent_1", "display_name": "Agent"},
-				"origin":     "agent_created",
 				"snapshot":   map[string]any{"output": map[string]any{"total": 110, "currency": "USD"}},
 				"created_at": "2026-05-18T09:01:00Z",
 			},
@@ -503,15 +501,18 @@ func TestWorkflowReviewsCreateVersionPostsSnapshotVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := client.Workflows.Reviews.CreateVersion(context.Background(), "run_1", "blk_1", CreateReviewVersionRequest{
-		Snapshot: map[string]any{"category": "Invoice"}, ParentID: reviewVersionID, Origin: "human_created", Note: "fixed category",
+		Snapshot: map[string]any{"category": "Invoice"}, ParentID: reviewVersionID, Note: "fixed category",
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if seenPath != "/workflows/reviews/run_1/blk_1/versions" {
 		t.Fatalf("create-version path = %s", seenPath)
 	}
-	if body["origin"] != "human_created" || body["parent_id"] != reviewVersionID || body["snapshot"] == nil {
+	if body["parent_id"] != reviewVersionID || body["snapshot"] == nil {
 		t.Fatalf("create-version body = %#v", body)
+	}
+	if _, ok := body["origin"]; ok {
+		t.Fatalf("create-version body includes removed origin: %#v", body)
 	}
 	if _, ok := body["version_stamp"]; ok {
 		t.Fatalf("create-version body includes removed version_stamp: %#v", body)

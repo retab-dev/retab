@@ -10,7 +10,6 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....exceptions import NotFoundError
 from ....types.standards import PreparedRequest
 from ....types.workflows.reviews import (
-    VersionOrigin,
     ReviewOverlay,
     ReviewQueueResponse,
     SubmitDecisionResponse,
@@ -49,14 +48,12 @@ class WorkflowReviewsMixin:
         *,
         snapshot: dict,
         parent_id: str,
-        origin: VersionOrigin = "human_created",
         note: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to append a new output version to the review."""
         data: Dict[str, Any] = {
             "snapshot": snapshot,
             "parent_id": parent_id,
-            "origin": origin,
             "note": note,
         }
         return PreparedRequest(
@@ -223,21 +220,15 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         *,
         snapshot: dict,
         parent_id: str,
-        origin: VersionOrigin = "human_created",
         note: str | None = None,
     ) -> ReviewOverlay:
         """Append a new output version to the review's version history.
-
-        A proposal authored by a human or an agent uses this same call — the
-        only difference is ``origin``, which is descriptive provenance, not a
-        behavioral switch.
 
         Args:
             run_id: The workflow run id.
             block_id: The gated block id.
             snapshot: The new output payload to record as a version.
             parent_id: Content-hash id of the parent version.
-            origin: Provenance of the snapshot — ``human_created`` or ``agent_created``.
             note: Optional free-text note attached to the version.
 
         Returns:
@@ -251,7 +242,6 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             block_id,
             snapshot=snapshot,
             parent_id=parent_id,
-            origin=origin,
             note=note,
         )
         response = self._client._prepared_request(request)
@@ -434,21 +424,15 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         *,
         snapshot: dict,
         parent_id: str,
-        origin: VersionOrigin = "human_created",
         note: str | None = None,
     ) -> ReviewOverlay:
         """Append a new output version to the review's version history.
-
-        A proposal authored by a human or an agent uses this same call — the
-        only difference is ``origin``, which is descriptive provenance, not a
-        behavioral switch.
 
         Args:
             run_id: The workflow run id.
             block_id: The gated block id.
             snapshot: The new output payload to record as a version.
             parent_id: Content-hash id of the parent version.
-            origin: Provenance of the snapshot — ``human_created`` or ``agent_created``.
             note: Optional free-text note attached to the version.
 
         Returns:
@@ -462,7 +446,6 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             block_id,
             snapshot=snapshot,
             parent_id=parent_id,
-            origin=origin,
             note=note,
         )
         response = await self._client._prepared_request(request)
