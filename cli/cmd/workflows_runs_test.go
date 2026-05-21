@@ -692,6 +692,21 @@ func TestWorkflowsRunsStepsListExampleUsesPaginatedEnvelope(t *testing.T) {
 	}
 }
 
+// Regression guard for the steps-get help example. The pre-cutover hint
+// piped `jq '.input'` but the server response field is `handle_inputs`
+// (StepResponse in routes.py). A doc that names a non-existent field on
+// the live response is worse than no example — users copy-paste and get
+// empty output.
+func TestWorkflowsRunsStepsGetExampleNamesARealResponseField(t *testing.T) {
+	example := workflowsRunsStepsGetCmd.Example
+	if strings.Contains(example, "'.input'") || strings.Contains(example, ".input ") || strings.HasSuffix(strings.TrimSpace(example), ".input") {
+		t.Fatalf("steps get example references stale .input — StepResponse exposes .handle_inputs / .handle_outputs:\n%s", example)
+	}
+	if !strings.Contains(example, "handle_inputs") && !strings.Contains(example, "handle_outputs") {
+		t.Fatalf("steps get example should reference a real StepResponse field (handle_inputs / handle_outputs):\n%s", example)
+	}
+}
+
 func TestWorkflowsRunsGetHelpUsesLifecycleStatusPath(t *testing.T) {
 	if !strings.Contains(workflowsRunsGetCmd.Example, ".lifecycle.status") {
 		t.Fatalf("runs get example should read lifecycle.status:\n%s", workflowsRunsGetCmd.Example)

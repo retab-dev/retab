@@ -804,7 +804,7 @@ correlate against the block's config.`,
 
   # Save the input payload for offline replay
   retab workflows runs steps get run_xyz789 blk_extract_1 \
-    | jq '.input' > input.json`,
+    | jq '.handle_inputs' > inputs.json`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
