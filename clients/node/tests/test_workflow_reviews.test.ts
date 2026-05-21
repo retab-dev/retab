@@ -77,8 +77,7 @@ const OVERLAY_JSON = {
   iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'confidence_below', threshold: 0.8 },
-  awaiting_since: '2026-05-18T09:58:00Z',
-  priority: 5,
+  created_at: '2026-05-18T09:58:00Z',
   versions: {
     [VERSION_ID]: OUTPUT_VERSION_JSON,
     [CHILD_VERSION_ID]: {
@@ -101,8 +100,7 @@ const QUEUE_ITEM_JSON = {
   iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'always' },
-  awaiting_since: '2026-05-18T09:58:00Z',
-  priority: 5,
+  created_at: '2026-05-18T09:58:00Z',
   seed_version_id: VERSION_ID,
   version_count: 1,
   decision: null,
@@ -401,26 +399,14 @@ describe('APIWorkflowReviews request shapes', () => {
     expect('origin' in body).toBe(false);
   });
 
-  test('append_version() strips origin from request option body overrides', async () => {
-    const mock = new MockClient({
-      append_status: 'accepted',
-      version_id: CHILD_VERSION_ID,
-      review: OVERLAY_JSON,
-    });
-    const reviews = new APIWorkflowReviews(mock);
-
-    await reviews.append_version(
-      REVIEW_ID,
-      {
-        snapshot: { category: 'Invoice' },
-        parentVersionId: VERSION_ID,
-      },
-      { body: { origin: 'human_created' } }
-    );
-
-    const body = mock.lastFetchParams?.body as Record<string, unknown>;
-    expect('origin' in body).toBe(false);
-  });
+  // The pre-cutover SDK silently stripped `origin` from append-version
+  // request bodies (the `withoutOrigin` shim). The greenfield reviews
+  // surface dropped the `origin` field entirely — there is nothing on
+  // the server to silently absorb. Hard-cutover stance: pass extra
+  // body keys through verbatim so the server surfaces a clean rejection
+  // instead of the SDK hiding the user's mistake. No assertion here,
+  // just a note for whoever greps the test file looking for the old
+  // pinning.
 
   test('appendVersion() posts a new snapshot version to /versions', async () => {
     const mock = new MockClient({

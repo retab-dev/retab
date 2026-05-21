@@ -28,11 +28,6 @@ type PreparedReviewRequest = {
   body?: Record<string, unknown>;
 };
 
-function withoutOrigin(body: Record<string, unknown> | undefined): Record<string, unknown> {
-  const { origin: _origin, ...cleanBody } = body || {};
-  return cleanBody;
-}
-
 /**
  * Actor-neutral client for workflow reviews.
  *
@@ -260,7 +255,7 @@ export default class APIWorkflowReviews extends CompositionClient {
     return this._fetchJson(ZAppendVersionResponse, {
       url: request.url,
       method: request.method,
-      body: withoutOrigin({ ...request.body, ...(options?.body || {}) }),
+      body: { ...request.body, ...(options?.body || {}) },
       params: options?.params,
       headers: options?.headers,
     });
