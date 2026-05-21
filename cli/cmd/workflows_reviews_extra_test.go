@@ -122,8 +122,12 @@ func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
 			t.Fatalf("reviews approve: %v", err)
 		}
 	})
+	// Table mode renders RESUME_STATUS / RESUME_ERROR as columns on
+	// stdout, so the duplicate stderr nudge is intentionally suppressed
+	// to avoid double-reporting. The non-table path is covered by
+	// TestReviewsApproveSurfaces{Skipped,Pending}ResumeStatusToStderr.
 	if stderr != "" {
-		t.Fatalf("stderr = %s", stderr)
+		t.Fatalf("expected silent stderr in table mode (table already shows resume_status), got %q", stderr)
 	}
 	for _, want := range []string{
 		"SUBMISSION", "RESUME_STATUS", "RESUME_ERROR",
@@ -140,6 +144,77 @@ func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "...") {
 		t.Fatalf("expected truncation ellipsis in table output:\n%s", stdout)
+	}
+}
+
+func TestReviewsApproveStaysSilentWhenResumeStatusIsResumed(t *testing.T) {
+	// Symmetric pin: the stderr nudge must NOT fire when the engine
+	// successfully resumed — otherwise users would learn to ignore
+	// every approve output and miss the real signal.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"resume_status":     "resumed",
+			"review":            reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
+		})
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews approve: %v", err)
+		}
+	})
+	if strings.Contains(stderr, "resume_status") {
+		t.Fatalf("did not expect any resume_status note when status=resumed, got stderr:\n%s", stderr)
+	}
+}
+
+func TestReviewsApproveSurfacesSkippedResumeStatusToStderr(t *testing.T) {
+	// ``resume_status=skipped`` means the decision was recorded but the
+	// engine sent no resume signal (run was already terminal). Different
+	// from "pending" — pin the distinct wording so users can disambiguate
+	// from logs.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "already_applied",
+			"resume_status":     "skipped",
+			"review":            reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)),
+		})
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews approve: %v", err)
+		}
+	})
+	for _, want := range []string{
+		"resume_status=\"skipped\"",
+		"no resume signal was sent",
+		"already terminal",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("expected stderr to contain %q, got:\n%s", want, stderr)
+		}
 	}
 }
 

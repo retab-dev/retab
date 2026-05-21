@@ -230,65 +230,6 @@ func (s StepExecutionResponse) ExtractedData() any {
 	return s.JSONOutput("output-json-0")
 }
 
-// StepsQueryRequest is the request body for POST /workflows/steps/query.
-type StepsQueryRequest struct {
-	WorkflowID string   `json:"workflow_id"`
-	BlockID    string   `json:"block_id,omitempty"`
-	BlockType  string   `json:"block_type,omitempty"`
-	SourceKind string   `json:"source_kind,omitempty"`
-	Status     []string `json:"status,omitempty"`
-	Limit      int      `json:"limit,omitempty"`
-}
-
-// StepFingerprintJoined is the fingerprint projection embedded in a step query result.
-type StepFingerprintJoined struct {
-	InputFingerprint              string         `json:"input_fingerprint"`
-	SchemaFingerprint             string         `json:"schema_fingerprint"`
-	DefinitionFingerprint         string         `json:"definition_fingerprint"`
-	ResolvedDefinitionFingerprint string         `json:"resolved_definition_fingerprint"`
-	EffectiveExecutionFingerprint string         `json:"effective_execution_fingerprint"`
-	HandleInputsFingerprint       string         `json:"handle_inputs_fingerprint"`
-	EffectiveConfig               map[string]any `json:"effective_config"`
-	RuntimeOverrides              map[string]any `json:"runtime_overrides"`
-	CohortID                      *string        `json:"cohort_id"`
-	SourceFileID                  *string        `json:"source_file_id"`
-	SourceFilename                *string        `json:"source_filename"`
-}
-
-// StepQueryResult is one joined row returned by the public workflow steps query surface.
-type StepQueryResult struct {
-	StepID        string                 `json:"step_id"`
-	RunID         string                 `json:"run_id"`
-	WorkflowID    string                 `json:"workflow_id"`
-	BlockID       string                 `json:"block_id"`
-	BlockType     string                 `json:"block_type"`
-	Status        string                 `json:"status"`
-	StartedAt     *time.Time             `json:"started_at,omitempty"`
-	CompletedAt   *time.Time             `json:"completed_at,omitempty"`
-	DurationMS    *int                   `json:"duration_ms"`
-	Iteration     *int                   `json:"iteration"`
-	IsIteration   bool                   `json:"is_iteration"`
-	HandleInputs  map[string]any         `json:"handle_inputs"`
-	HandleOutputs map[string]any         `json:"handle_outputs"`
-	Fingerprint   *StepFingerprintJoined `json:"fingerprint"`
-}
-
-// UnmarshalJSON normalizes nullable handle maps to empty maps.
-func (s *StepQueryResult) UnmarshalJSON(data []byte) error {
-	type alias StepQueryResult
-	aux := (*alias)(s)
-	if err := json.Unmarshal(data, aux); err != nil {
-		return err
-	}
-	if s.HandleInputs == nil {
-		s.HandleInputs = map[string]any{}
-	}
-	if s.HandleOutputs == nil {
-		s.HandleOutputs = map[string]any{}
-	}
-	return nil
-}
-
 type RunLifecycle struct {
 	Status             string   `json:"status"`
 	WaitingForBlockIDs []string `json:"waiting_for_block_ids,omitempty"`

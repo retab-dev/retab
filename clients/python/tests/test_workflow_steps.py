@@ -8,20 +8,19 @@ from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.steps.client import AsyncWorkflowSteps, WorkflowSteps
 from retab.types.workflows import model as workflow_model
-from retab.types.workflows.model import StepExecutionResponse, StepsQueryRequest, WorkflowRun
+from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
 
 
-def _step_query_result_payload(**overrides) -> dict:
+def _workflow_run_step_payload(**overrides) -> dict:
     payload = {
         "step_id": "step_extract_1",
         "run_id": "run_123",
-        "workflow_id": "wf_123",
         "block_id": "extract-1",
         "block_type": "extract",
-        "status": "completed",
+        "block_label": "Extract",
+        "lifecycle": {"status": "completed"},
         "handle_inputs": {},
         "handle_outputs": {},
-        "fingerprint": None,
     }
     payload.update(overrides)
     return payload
@@ -173,21 +172,14 @@ async def test_async_workflow_artifacts_get_uses_flat_artifact_id_route() -> Non
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_extract_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "extract-1",
-        "block_type": "extract",
-        "status": "completed",
-        "handle_outputs": {
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        handle_outputs={
             "output-json-0": {
                 "type": "json",
                 "data": {"invoice_number": "INV-001"},
             },
         },
-        "handle_inputs": {},
-    }
+    )
 
     step = WorkflowSteps(client=client).get("step_extract_1")
 
@@ -196,51 +188,20 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert request.url == "/workflows/steps/step_extract_1"
     assert step.step_id == "step_extract_1"
     assert step.run_id == "run_123"
-    assert step.workflow_id == "wf_123"
     assert "output" not in step.model_dump()
     payload = step.handle_outputs["output-json-0"]
-    assert payload["type"] == "json"
-    assert payload["data"] == {"invoice_number": "INV-001"}
-
-
-def test_workflow_steps_query_uses_query_route_and_body() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = [
-        _step_query_result_payload(step_id="step_extract_1"),
-        _step_query_result_payload(step_id="step_parse_1", block_id="parse-1", block_type="parse"),
-    ]
-
-    steps = WorkflowSteps(client=client).query(
-        StepsQueryRequest(
-            workflow_id="wf_123",
-            block_id="extract-1",
-            status=["completed"],
-            limit=25,
-        )
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/steps/query"
-    assert request.data == {
-        "workflow_id": "wf_123",
-        "block_id": "extract-1",
-        "status": ["completed"],
-        "limit": 25,
-    }
-    assert [step.step_id for step in steps] == ["step_extract_1", "step_parse_1"]
+    assert payload.type == "json"
+    assert payload.data == {"invoice_number": "INV-001"}
 
 
 def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_function_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "function-1",
-        "block_type": "function",
-        "status": "completed",
-        "handle_outputs": {
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        step_id="step_function_1",
+        block_id="function-1",
+        block_type="function",
+        block_label="Function",
+        handle_outputs={
             "output-json-0": {
                 "type": "json_ref",
                 "artifact_ref": {
@@ -251,19 +212,18 @@ def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
                 "preview": {"truncated": True},
             },
         },
-        "handle_inputs": {},
-    }
+    )
 
     step = WorkflowSteps(client=client).get("step_function_1")
 
     payload = step.handle_outputs["output-json-0"]
-    assert payload["type"] == "json_ref"
-    assert payload["artifact_ref"] == {
+    assert payload.type == "json_ref"
+    assert payload.artifact_ref == {
         "operation": "workflow_step_json",
         "id": "artifact_123",
         "key": "output-json-0",
     }
-    assert payload["preview"] == {"truncated": True}
+    assert payload.preview == {"truncated": True}
 
 
 def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> None:
@@ -277,54 +237,53 @@ def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> N
     assert not hasattr(workflow_model, "TerminalState")
 
 
-def test_workflow_steps_get_accepts_iteration_fields() -> None:
+def test_workflow_steps_get_accepts_loop_container_fields() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_for_each_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "for_each-1",
-        "block_type": "for_each",
-        "status": "completed",
-        "iteration": 2,
-        "is_iteration": True,
-        "handle_outputs": {},
-        "handle_inputs": {},
-    }
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        step_id="step_for_each_1",
+        block_id="for_each-1",
+        block_type="for_each",
+        block_label="For each",
+        loop_containers=[
+            {
+                "container_id": "for_each-1",
+                "iteration": 2,
+                "is_parallel": True,
+                "parallel_item_index": 2,
+            }
+        ],
+    )
 
     step = WorkflowSteps(client=client).get("step_for_each_1")
 
-    assert step.iteration == 2
-    assert step.is_iteration is True
+    assert step.loop_containers[0].iteration == 2
+    assert step.loop_containers[0].is_parallel is True
 
 
 @pytest.mark.asyncio
 async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(
-        return_value={
-            "step_id": "step_start_json_1",
-            "run_id": "run_123",
-            "workflow_id": "wf_123",
-            "block_id": "start-json-1",
-            "block_type": "start_json",
-            "status": "completed",
-            "handle_outputs": {
+        return_value=_workflow_run_step_payload(
+            step_id="step_start_json_1",
+            block_id="start-json-1",
+            block_type="start_json",
+            block_label="Start JSON",
+            handle_outputs={
                 "output-json-0": {
                     "type": "json",
                     "data": {"payload": {"ok": True}},
                 },
             },
-            "handle_inputs": {},
-        }
+        )
     )
 
     step = await AsyncWorkflowSteps(client=client).get("step_start_json_1")
 
     assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
-    assert payload["type"] == "json"
-    assert payload["data"] == {"payload": {"ok": True}}
+    assert payload.type == "json"
+    assert payload.data == {"payload": {"ok": True}}
 
 
 def test_workflow_steps_list_with_block_ids() -> None:
@@ -378,8 +337,9 @@ def test_workflow_steps_get_requires_step_id() -> None:
     client._prepared_request.assert_not_called()
 
 
-def test_workflow_steps_only_exposes_get_and_query_for_step_row_fetches() -> None:
+def test_workflow_steps_does_not_expose_removed_query_fetches() -> None:
     steps = WorkflowSteps(client=MagicMock())
+    assert not hasattr(steps, "query")
     assert not hasattr(steps, "get_all")
     assert not hasattr(steps, "get_many")
     assert not hasattr(steps, "getAll")
@@ -388,59 +348,50 @@ def test_workflow_steps_only_exposes_get_and_query_for_step_row_fetches() -> Non
 
 def test_workflow_steps_get_accepts_non_json_handle_output() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_parse_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "parse-1",
-        "block_type": "parse",
-        "status": "completed",
-        "handle_outputs": {
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        step_id="step_parse_1",
+        block_id="parse-1",
+        block_type="parse",
+        block_label="Parse",
+        handle_outputs={
             "output-file-0": {
                 "type": "file",
                 "document": {"id": "file_123", "filename": "doc.pdf", "content": "...", "mime_type": "application/pdf"},
             },
         },
-        "handle_inputs": {},
-    }
+    )
 
     step = WorkflowSteps(client=client).get("step_parse_1")
-    assert step.handle_outputs["output-file-0"]["type"] == "file"
+    assert step.handle_outputs["output-file-0"].type == "file"
 
 
 def test_workflow_steps_get_accepts_empty_handle_outputs() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_start_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "start-1",
-        "block_type": "start_document",
-        "status": "completed",
-        "handle_outputs": {},
-        "handle_inputs": {},
-    }
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        step_id="step_start_1",
+        block_id="start-1",
+        block_type="start_document",
+        block_label="Start",
+    )
 
     step = WorkflowSteps(client=client).get("step_start_1")
     assert step.handle_outputs == {}
 
 
-def test_workflow_steps_get_uses_status_for_failed_step() -> None:
+def test_workflow_steps_get_uses_lifecycle_for_failed_step() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "step_id": "step_extract_1",
-        "run_id": "run_123",
-        "workflow_id": "wf_123",
-        "block_id": "extract-1",
-        "block_type": "extract",
-        "status": "error",
-        "handle_outputs": {},
-        "handle_inputs": {},
-    }
+    client._prepared_request.return_value = _workflow_run_step_payload(
+        step_id="step_extract_1",
+        block_id="extract-1",
+        block_type="extract",
+        block_label="Extract",
+        lifecycle={"status": "error", "message": "boom"},
+    )
 
     step = WorkflowSteps(client=client).get("step_extract_1")
 
-    assert step.status == "error"
+    assert step.lifecycle.status == "error"
+    assert "status" not in step.model_dump()
     assert "error" not in step.model_dump()
     assert "terminal" not in step.model_dump()
 

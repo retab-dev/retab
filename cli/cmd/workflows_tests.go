@@ -558,8 +558,9 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		query := url.Values{}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
+		query.Set("run_id", args[0])
 		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(args[0])+"/results", query, nil)
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/results", query, nil)
 		if err != nil {
 			return err
 		}

@@ -711,58 +711,6 @@ class StepExecutionResponse(StepCore):
         return self.get_json_output()
 
 
-class StepsQueryRequest(RetabBaseModel):
-    """Request body for ``POST /workflows/steps/query``."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    workflow_id: str
-    block_id: Optional[str] = None
-    block_type: Optional[str] = None
-    source_kind: Optional[str] = None
-    status: Optional[List[str]] = None
-    limit: Optional[int] = Field(default=None, ge=1, le=1000)
-
-
-class StepFingerprintJoined(RetabBaseModel):
-    """Fingerprint projection embedded in step query results."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    input_fingerprint: str
-    schema_fingerprint: str
-    definition_fingerprint: str
-    resolved_definition_fingerprint: str
-    effective_execution_fingerprint: str
-    handle_inputs_fingerprint: str
-    effective_config: Dict[str, Any] = Field(default_factory=dict)
-    runtime_overrides: Dict[str, Any] = Field(default_factory=dict)
-    cohort_id: Optional[str] = None
-    source_file_id: Optional[str] = None
-    source_filename: Optional[str] = None
-
-
-class StepQueryResult(RetabBaseModel):
-    """One joined row returned by the public workflow steps query surface."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    step_id: str
-    run_id: str
-    workflow_id: str
-    block_id: str
-    block_type: str
-    status: str
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
-    duration_ms: Optional[int] = None
-    iteration: Optional[int] = None
-    is_iteration: bool = False
-    handle_inputs: Dict[str, Any] = Field(default_factory=dict)
-    handle_outputs: Dict[str, Any] = Field(default_factory=dict)
-    fingerprint: Optional[StepFingerprintJoined] = None
-
-
 class WorkflowRunStep(StepCore):
     """Persisted public step document returned by list workflow run steps.
 

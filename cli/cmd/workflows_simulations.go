@@ -29,7 +29,7 @@ var workflowsSimulationsCreateCmd = &cobra.Command{
 configuration against inputs captured from an existing workflow run.
 
 The run id is positional; ` + "`--block-id`" + ` selects the block to replay.
-For for_each blocks, ` + "`--source-step-id`" + ` can pin a concrete iteration
+For for_each blocks, ` + "`--step-id`" + ` can pin a concrete iteration
 step.`,
 	Example: `  # Re-run one block
   retab workflows simulations create run_xyz789 --block-id blk_extract_1
@@ -37,7 +37,7 @@ step.`,
   # Pin a for_each iteration source step
   retab workflows simulations create run_xyz789 \
     --block-id blk_extract_1 \
-    --source-step-id step_iter_0_blk_extract_1`,
+    --step-id step_iter_0_blk_extract_1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		nConsensus := 0
@@ -58,7 +58,7 @@ step.`,
 		}
 		request := retab.CreateWorkflowSimulationRequest{RunID: args[0]}
 		request.BlockID, _ = cmd.Flags().GetString("block-id")
-		request.SourceStepID, _ = cmd.Flags().GetString("source-step-id")
+		request.StepID, _ = cmd.Flags().GetString("step-id")
 		request.NConsensus = nConsensus
 		noCheckEligibility, _ := cmd.Flags().GetBool("no-check-eligibility")
 		if noCheckEligibility {
@@ -124,7 +124,7 @@ func validateSimulationNConsensus(value int) error {
 
 func init() {
 	workflowsSimulationsCreateCmd.Flags().String("block-id", "", "block id to simulate (required)")
-	workflowsSimulationsCreateCmd.Flags().String("source-step-id", "", "specific iteration step id to source inputs from")
+	workflowsSimulationsCreateCmd.Flags().String("step-id", "", "specific iteration step id to source inputs from")
 	workflowsSimulationsCreateCmd.Flags().String("n-consensus", "", "override n_consensus for extract, split, or classifier blocks (3, 5, or 7)")
 	workflowsSimulationsCreateCmd.Flags().Bool("no-check-eligibility", false, "skip upstream drift eligibility checks")
 	_ = workflowsSimulationsCreateCmd.MarkFlagRequired("block-id")

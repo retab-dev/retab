@@ -400,7 +400,7 @@ type WorkflowSimulationsService struct {
 type CreateWorkflowSimulationRequest struct {
 	RunID            string `json:"run_id"`
 	BlockID          string `json:"block_id"`
-	SourceStepID     string `json:"source_step_id,omitempty"`
+	StepID           string `json:"step_id,omitempty"`
 	NConsensus       int    `json:"n_consensus,omitempty"`
 	CheckEligibility *bool  `json:"check_eligibility,omitempty"`
 }
@@ -947,26 +947,13 @@ func (s *WorkflowStepsService) List(ctx context.Context, runID string, opts ...R
 	return &result, nil
 }
 
-func (s *WorkflowStepsService) Get(ctx context.Context, stepID string, opts ...RequestOption) (*StepQueryResult, error) {
+func (s *WorkflowStepsService) Get(ctx context.Context, stepID string, opts ...RequestOption) (*WorkflowRunStep, error) {
 	if stepID == "" {
 		return nil, fmt.Errorf("retab: stepID is required")
 	}
-	var step StepQueryResult
+	var step WorkflowRunStep
 	err := s.client.do(ctx, http.MethodGet, "/workflows/steps/"+url.PathEscape(stepID), nil, nil, &step, opts...)
 	return &step, err
-}
-
-// Query returns joined step rows for the current workflow steps query surface.
-func (s *WorkflowStepsService) Query(ctx context.Context, request StepsQueryRequest, opts ...RequestOption) ([]StepQueryResult, error) {
-	if request.WorkflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if request.Limit < 0 {
-		return nil, fmt.Errorf("retab: limit must be positive")
-	}
-	var result []StepQueryResult
-	err := s.client.do(ctx, http.MethodPost, "/workflows/steps/query", nil, request, &result, opts...)
-	return result, err
 }
 
 // WorkflowReviewsService drives the actor-neutral review surface served under
@@ -1403,8 +1390,10 @@ func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, 
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
+	query := url.Values{}
+	query.Set("run_id", runID)
 	var result PaginatedList[WorkflowTestRunRecord]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID)+"/results", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1552,7 +1541,7 @@ type ExperimentResult struct {
 
 type ExperimentResultListResponse = PaginatedList[ExperimentResult]
 
-// ExperimentMetricsResponse is the GET /workflows/experiments/runs/{run_id}/metrics payload.
+// ExperimentMetricsResponse is the GET /workflows/experiments/metrics payload.
 //
 // Modelling the discriminated union (four "view" shapes plus two error
 // envelopes) here would couple the SDK to internal structural details. We
@@ -1598,7 +1587,7 @@ type ListExperimentRunsParams struct {
 	Order         string
 }
 
-// GetExperimentMetricsParams gathers the GET /workflows/experiments/runs/{run_id}/metrics
+// GetExperimentMetricsParams gathers the GET /workflows/experiments/metrics
 // query params.
 type GetExperimentMetricsParams struct {
 	View         string
@@ -1777,9 +1766,10 @@ func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID st
 		limit = 20
 	}
 	query := url.Values{}
+	query.Set("run_id", runID)
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	var result PaginatedList[ExperimentResult]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/results", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1811,9 +1801,10 @@ func (s *WorkflowExperimentRunMetricsService) Get(ctx context.Context, runID str
 			includePrior = *params.IncludePrior
 		}
 	}
+	query.Set("run_id", runID)
 	query.Set("view", view)
 	query.Set("include_prior", fmt.Sprintf("%t", includePrior))
 	var result ExperimentMetricsResponse
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/metrics", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/metrics", query, nil, &result, opts...)
 	return result, err
 }

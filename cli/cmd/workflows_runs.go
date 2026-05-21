@@ -108,64 +108,6 @@ const workflowRunStatusValues = "pending, running, completed, error, awaiting_re
 const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
-// Step statuses are a superset of run statuses: orchestrator-level
-// `skipped` shows up here but not on a run as a whole. Kept aligned
-// with `StepStatusLiteral` in `backend/.../steps/query.py`.
-var allowedWorkflowStepStatuses = map[string]bool{
-	"pending":         true,
-	"running":         true,
-	"completed":       true,
-	"skipped":         true,
-	"error":           true,
-	"awaiting_review": true,
-	"cancelled":       true,
-}
-
-const workflowStepStatusValues = "pending, running, completed, skipped, error, awaiting_review, cancelled"
-
-// Block types accepted by the “--block-type“ filter on
-// “workflows steps query“. Kept aligned with the “BlockType“ Literal
-// in “backend/.../workflows/models.py“. Internal/sentinel types are
-// included on purpose — query is a read path and operators occasionally
-// need to inspect persisted sentinel steps when debugging loop
-// materialization. The block-create surface enforces a stricter subset
-// (see “NON_USER_CREATABLE_BLOCK_TYPES“ on the server).
-var allowedWorkflowBlockTypes = map[string]bool{
-	"start_document":            true,
-	"start_json":                true,
-	"note":                      true,
-	"parse":                     true,
-	"edit":                      true,
-	"extract":                   true,
-	"split":                     true,
-	"classifier":                true,
-	"conditional":               true,
-	"api_call":                  true,
-	"review":                    true,
-	"function":                  true,
-	"while_loop":                true,
-	"for_each":                  true,
-	"merge_dicts":               true,
-	"while_loop_sentinel_start": true,
-	"while_loop_sentinel_end":   true,
-	"for_each_sentinel_start":   true,
-	"for_each_sentinel_end":     true,
-}
-
-const workflowBlockTypeValues = "start_document, start_json, note, parse, edit, extract, split, classifier, conditional, api_call, review, function, while_loop, for_each, merge_dicts, while_loop_sentinel_start, while_loop_sentinel_end, for_each_sentinel_start, for_each_sentinel_end"
-
-// Step fingerprint source kinds — what produced the step row. Kept
-// aligned with “StepFingerprintSourceKind“ in
-// “backend/.../workflows/steps/fingerprints/models.py“.
-var allowedWorkflowStepSourceKinds = map[string]bool{
-	"workflow_run":      true,
-	"simulate_block":    true,
-	"block_eval":        true,
-	"experiment_replay": true,
-}
-
-const workflowStepSourceKindValues = "workflow_run, simulate_block, block_eval, experiment_replay"
-
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
@@ -350,6 +292,27 @@ removed in a future release.`,
 			return err
 		}
 		urlFlags, _ := cmd.Flags().GetStringArray("document-url")
+		// Reject overlap between --document and --document-url for the
+		// same block id. Without this guard the second flag silently
+		// overwrites the first in req.Documents, producing surprising
+		// "which one won?" behavior and (when the URL was the loser) a
+		// 500 from the document-fetch path. Flag the conflict up-front.
+		for _, raw := range urlFlags {
+			key, _, ok := splitKV(raw)
+			if !ok {
+				continue
+			}
+			key = strings.TrimSpace(key)
+			if key == "" {
+				continue
+			}
+			if _, conflict := fileEntries[key]; conflict {
+				return fmt.Errorf(
+					"block %q has both --document and --document-url; pass exactly one source per block",
+					key,
+				)
+			}
+		}
 		if len(fileEntries) > 0 || len(urlFlags) > 0 {
 			if req.Documents == nil {
 				req.Documents = map[string]any{}
@@ -1005,55 +968,6 @@ correlate against the step's block config.`,
 	}),
 }
 
-var workflowsStepsQueryCmd = &cobra.Command{
-	Use:   "query <workflow-id>",
-	Short: "Query joined workflow step rows",
-	Long: `Query joined step rows for a workflow. Use this when you need the
-flat step record joined with its execution fingerprint for debugging,
-comparison, or experiment analysis.`,
-	Example: `  # Query recent extract steps for a workflow
-  retab workflows steps query wf_abc123 --block-type extract --status completed --limit 20`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-
-		// Validate enum filters client-side so the user gets a clean
-		// "want: ..." error instead of a silent empty result set.
-		// Without these, the server happily filters on a typo'd value
-		// (``--block-type extrct``) and returns ``[]`` — the most
-		// confusing failure mode for an operator debugging a run.
-		if err := validateEnumArrayFlag(cmd, "status", allowedWorkflowStepStatuses, workflowStepStatusValues); err != nil {
-			return err
-		}
-		if err := validateEnumFlag(cmd, "block-type", allowedWorkflowBlockTypes, workflowBlockTypeValues); err != nil {
-			return err
-		}
-		if err := validateEnumFlag(cmd, "source-kind", allowedWorkflowStepSourceKinds, workflowStepSourceKindValues); err != nil {
-			return err
-		}
-
-		request := retab.StepsQueryRequest{WorkflowID: args[0]}
-		request.BlockID, _ = cmd.Flags().GetString("block-id")
-		request.BlockType, _ = cmd.Flags().GetString("block-type")
-		request.SourceKind, _ = cmd.Flags().GetString("source-kind")
-		request.Status, _ = cmd.Flags().GetStringArray("status")
-		if cmd.Flags().Changed("limit") {
-			request.Limit, _ = cmd.Flags().GetInt("limit")
-		}
-
-		result, err := client.Workflows.Steps.Query(ctx, request)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 func init() {
 	workflowsRunsCreateCmd.Flags().String("version", "", "workflow version (defaults to production)")
 	workflowsRunsCreateCmd.Flags().String("documents-file", "", "JSON object {block-id: document} (or - for stdin)")
@@ -1114,13 +1028,7 @@ func init() {
 	_ = workflowsRunsExportCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
-	workflowsStepsQueryCmd.Flags().String("block-id", "", "filter by block id")
-	workflowsStepsQueryCmd.Flags().String("block-type", "", "filter by block type")
-	workflowsStepsQueryCmd.Flags().String("source-kind", "", "filter by source kind")
-	workflowsStepsQueryCmd.Flags().StringArray("status", nil, "filter by lifecycle status (repeatable)")
-	workflowsStepsQueryCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max rows to return (1-1000)")
-
-	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd, workflowsStepsQueryCmd)
+	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd)
 	workflowsCmd.AddCommand(workflowsStepsCmd)
 	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsExportCmd)
 	workflowsCmd.AddCommand(workflowsRunsCmd)

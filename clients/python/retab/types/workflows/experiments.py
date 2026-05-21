@@ -438,7 +438,7 @@ class ExperimentMetricsMissingError(RetabBaseModel):
     message: str
 
 
-# Full response surface from ``GET /workflows/experiments/runs/{run_id}/metrics``.
+# Full response surface from ``GET /workflows/experiments/metrics``.
 ExperimentMetricsResponse = Union[
     ExperimentMetricsViewResponse,
     ExperimentMetricsStaleError,

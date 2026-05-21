@@ -247,8 +247,8 @@ class ExperimentRunResultsMixin:
     def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/runs/{run_id}/results",
-            params={"limit": limit},
+            url="/workflows/experiments/results",
+            params={"run_id": run_id, "limit": limit},
         )
 
     def prepare_get(self, result_id: str) -> PreparedRequest:
@@ -269,7 +269,11 @@ class ExperimentRunMetricsMixin:
         include_prior: bool = True,
         prior_run_id: str | None = None,
     ) -> PreparedRequest:
-        params: Dict[str, Any] = {"view": view, "include_prior": include_prior}
+        params: Dict[str, Any] = {
+            "run_id": run_id,
+            "view": view,
+            "include_prior": include_prior,
+        }
         if document_id is not None:
             params["document_id"] = document_id
         if target_path is not None:
@@ -278,7 +282,7 @@ class ExperimentRunMetricsMixin:
             params["prior_run_id"] = prior_run_id
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/runs/{run_id}/metrics",
+            url="/workflows/experiments/metrics",
             params=params,
         )
 

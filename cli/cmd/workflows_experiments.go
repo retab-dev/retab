@@ -433,8 +433,9 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		query := url.Values{}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
+		query.Set("run_id", args[0])
 		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/results", query, nil)
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/results", query, nil)
 		if err != nil {
 			return err
 		}
@@ -494,6 +495,7 @@ numbers down to individual fields. Compare against a prior run with
 			}
 		}
 		query := url.Values{}
+		query.Set("run_id", args[0])
 		query.Set("view", view)
 		if documentID != "" {
 			query.Set("document_id", documentID)
@@ -506,7 +508,7 @@ numbers down to individual fields. Compare against a prior run with
 		}
 		includePrior, _ := cmd.Flags().GetBool("include-prior")
 		query.Set("include_prior", strconv.FormatBool(includePrior))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/metrics", query, nil)
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/metrics", query, nil)
 		if err != nil {
 			return err
 		}

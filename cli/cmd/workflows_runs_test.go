@@ -475,6 +475,62 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 	}
 }
 
+// Regression for 2026-05 CLI probing: passing both --document and
+// --document-url for the SAME block id used to silently overwrite one
+// with the other, and (depending on order) the lost --document-url
+// produced a 500 from the server's document-fetch path. Reject the
+// conflict up-front with a clear message instead.
+func TestWorkflowsRunsCreateRejectsConflictingDocumentSourcesForSameBlock(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for conflicting document sources, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	tempDir := t.TempDir()
+	docPath := tempDir + "/invoice.pdf"
+	if err := os.WriteFile(docPath, []byte("%PDF-1.4 fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document", "start="+docPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("document-url", "start=https://example.com/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected conflict error for same-block --document + --document-url")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "both --document and --document-url") {
+		t.Fatalf("error %q should mention the conflicting flags", err.Error())
+	}
+	if !strings.Contains(err.Error(), "start") {
+		t.Fatalf("error %q should name the offending block id", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -647,42 +703,6 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 				t.Fatalf("server was hit %d time(s), want 0", hits)
 			}
 		})
-	}
-}
-
-// Regression for CLI probing 2026-05: `workflows steps query --status garbage`
-// silently went through to the server, which returned `[]` rather than an
-// error. The CLI now matches `workflows runs list` and validates the enum
-// client-side before issuing the request.
-func TestWorkflowsStepsQueryRejectsInvalidStatusBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		t.Fatalf("server should not be reached for invalid --status, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsStepsQueryCmd.Flags().Set("status", "banana"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsStepsQueryCmd, "status") })
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsStepsQueryCmd.RunE(workflowsStepsQueryCmd, []string{"wf_123"})
-	})
-	if err == nil {
-		t.Fatal("expected local validation error for --status=banana")
-	}
-	if !strings.Contains(stderr, "invalid --status") {
-		t.Fatalf("stderr %q does not mention invalid --status", stderr)
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
 	}
 }
 
@@ -1102,6 +1122,83 @@ func TestWorkflowsRunsExportRawFlagWritesPlainCSVToStdout(t *testing.T) {
 		if strings.Contains(stdout, leak) {
 			t.Fatalf("--raw stdout leaked JSON envelope key %q:\n%s", leak, stdout)
 		}
+	}
+}
+
+func TestWorkflowsRunsListRejectsReversedDateRange(t *testing.T) {
+	// Regression: ``runs list --from-date 2026-05-01 --to-date 2026-04-01``
+	// used to silently return an empty data array — indistinguishable
+	// from "no runs match", which is the most common trigger of the
+	// "where did my runs go?" support thread. The fix rejects the
+	// reversed range at the CLI before any request leaves the client.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached for reversed date range, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	flags := map[string]string{
+		"from-date": "2026-05-01",
+		"to-date":   "2026-04-01",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+	}
+
+	err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	if err == nil {
+		t.Fatal("expected reversed-date error, got nil")
+	}
+	if !strings.Contains(err.Error(), "reversed") {
+		t.Fatalf("expected the error to call out the reversed range, got %q", err.Error())
+	}
+	for _, mustMention := range []string{"--from-date", "--to-date", "2026-05-01", "2026-04-01"} {
+		if !strings.Contains(err.Error(), mustMention) {
+			t.Fatalf("error %q should mention %q", err.Error(), mustMention)
+		}
+	}
+}
+
+func TestWorkflowsRunsListAcceptsEqualDateRange(t *testing.T) {
+	// Equal from/to is a legitimate "single-day window" filter — must
+	// NOT be rejected as a reversed range. Pin so the validator can't
+	// drift to a stricter < (strictly less) check.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	hits := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "list_metadata": map[string]any{}})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	flags := map[string]string{
+		"from-date": "2026-05-01",
+		"to-date":   "2026-05-01",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+	}
+
+	_, _ = captureStd(t, func() {
+		if err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil); err != nil {
+			t.Fatalf("equal from/to should be accepted, got %v", err)
+		}
+	})
+	if hits != 1 {
+		t.Fatalf("expected server to be hit once, got %d", hits)
 	}
 }
 

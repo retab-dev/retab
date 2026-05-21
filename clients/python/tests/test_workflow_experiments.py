@@ -450,7 +450,8 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/runs/exprun_1/results"
+    assert request.url == "/workflows/experiments/results"
+    assert request.params == {"run_id": "exprun_1", "limit": 20}
     assert page.data[0].document_id == "expdoc_1"
 
 
@@ -483,8 +484,12 @@ def test_experiments_runs_metrics_summary_view_default() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/runs/exprun_1/metrics"
-    assert request.params == {"view": "summary", "include_prior": True}
+    assert request.url == "/workflows/experiments/metrics"
+    assert request.params == {
+        "run_id": "exprun_1",
+        "view": "summary",
+        "include_prior": True,
+    }
 
 
 def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
@@ -506,6 +511,7 @@ def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.params == {
+        "run_id": "exprun_1",
         "view": "by_target",
         "include_prior": False,
         "target_path": "total",

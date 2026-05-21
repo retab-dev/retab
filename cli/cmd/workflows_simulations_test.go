@@ -36,9 +36,9 @@ func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	for flag, value := range map[string]string{
-		"block-id":       "blk_extract",
-		"source-step-id": "step_iter_0_blk_extract",
-		"n-consensus":    "5",
+		"block-id":    "blk_extract",
+		"step-id":     "step_iter_0_blk_extract",
+		"n-consensus": "5",
 	} {
 		if err := workflowsSimulationsCreateCmd.Flags().Set(flag, value); err != nil {
 			t.Fatalf("set --%s: %v", flag, err)
@@ -60,10 +60,10 @@ func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
 	if body["run_id"] != "run_123" || body["block_id"] != "blk_extract" {
 		t.Fatalf("body = %#v", body)
 	}
-	if _, ok := body["step_id"]; ok {
-		t.Fatalf("body must not send old step_id field: %#v", body)
+	if body["step_id"] != "step_iter_0_blk_extract" || body["n_consensus"] != float64(5) || body["check_eligibility"] != false {
+		t.Fatalf("body = %#v", body)
 	}
-	if body["source_step_id"] != "step_iter_0_blk_extract" || body["n_consensus"] != float64(5) || body["check_eligibility"] != false {
+	if _, ok := body["source_step_id"]; ok {
 		t.Fatalf("body = %#v", body)
 	}
 }

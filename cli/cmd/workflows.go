@@ -440,6 +440,24 @@ func validateWorkflowEmailAllowlistValue(flagName, value string) error {
 		if !strings.Contains(trimmed, ".") {
 			return fmt.Errorf("%s %q is not a valid domain (must contain a dot)", flagName, value)
 		}
+		if strings.HasPrefix(trimmed, ".") || strings.HasSuffix(trimmed, ".") {
+			return fmt.Errorf("%s %q is not a valid domain (must not start or end with '.')", flagName, value)
+		}
+		if strings.Contains(trimmed, "..") {
+			return fmt.Errorf("%s %q is not a valid domain (must not contain consecutive dots)", flagName, value)
+		}
+		for _, r := range trimmed {
+			isLetter := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+			isDigit := r >= '0' && r <= '9'
+			isAllowedPunct := r == '.' || r == '-'
+			if !isLetter && !isDigit && !isAllowedPunct {
+				return fmt.Errorf(
+					"%s %q is not a valid domain (allowed characters are letters, digits, '.' and '-')",
+					flagName,
+					value,
+				)
+			}
+		}
 	}
 	return nil
 }
