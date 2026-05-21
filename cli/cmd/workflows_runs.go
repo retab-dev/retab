@@ -203,7 +203,7 @@ For declarative regression testing of workflow outputs, see
 
   # Approve a review by id
   retab workflows reviews approve rev_123 \
-    --version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+    --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 }
 
 var workflowsRunsCreateCmd = &cobra.Command{
