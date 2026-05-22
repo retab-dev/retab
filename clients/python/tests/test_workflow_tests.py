@@ -405,8 +405,21 @@ _RESULT_RESPONSE = {
     "outputs": {"output-json-0": {"total": 1234.56}},
     "warnings": [],
     "skipped": False,
-    "verdict": {"status": "passed"},
+    "verdict": "passed",
 }
+
+
+def test_workflow_test_result_accepts_bare_string_verdict() -> None:
+    """Regression: the server emits ``verdict`` as one of the bare strings
+    ``"passed" | "failed" | "blocked"`` (or ``None``). The SDK type previously
+    declared it as ``dict[str, Any] | None``, which made every list+get call
+    against real data raise ``ValidationError``."""
+    from retab.types.workflows.tests import WorkflowTestResult
+
+    for verdict in ("passed", "failed", "blocked", None):
+        payload = {**_RESULT_RESPONSE, "verdict": verdict}
+        parsed = WorkflowTestResult.model_validate(payload)
+        assert parsed.verdict == verdict
 
 
 def test_runs_list_uses_canonical_runs_route() -> None:

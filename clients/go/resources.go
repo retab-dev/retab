@@ -617,12 +617,11 @@ type ListJobsParams struct {
 	IncludeResponse  *bool
 }
 
-type JobListResponse struct {
-	Data    []Job  `json:"data"`
-	FirstID string `json:"first_id,omitempty"`
-	LastID  string `json:"last_id,omitempty"`
-	HasMore bool   `json:"has_more"`
-}
+// JobListResponse is an alias for the canonical {data, list_metadata}
+// envelope every other Retab list endpoint uses. The legacy struct shape
+// {Data, FirstID, LastID, HasMore} drifted from the wire (which moved to
+// {data, list_metadata: {before, after}}) and is gone.
+type JobListResponse = PaginatedList[Job]
 
 type JobWaitForCompletionParams struct {
 	PollInterval    time.Duration

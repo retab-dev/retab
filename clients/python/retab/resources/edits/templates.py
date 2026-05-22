@@ -9,8 +9,6 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.edits import (
-    Edit,
-    EditConfig,
     EditTemplate,
     EditTemplateRequest,
     FormField,
@@ -84,29 +82,6 @@ class EditTemplatesMixin:
     def _prepare_delete(self, template_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/edits/templates/{template_id}")
 
-    def _prepare_fill(
-        self,
-        template_id: str,
-        instructions: str,
-        model: str | _Unset = UNSET,
-        color: str | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> PreparedRequest:
-        body: dict[str, Any] = {
-            "template_id": template_id,
-            "instructions": instructions,
-        }
-        if model is not UNSET:
-            body["model"] = model
-        if color is not UNSET:
-            body["config"] = EditConfig(color=color).model_dump(mode="json")
-        if bust_cache:
-            body["bust_cache"] = True
-        if extra_body:
-            body.update(extra_body)
-        return PreparedRequest(method="POST", url="/edits/templates/fill", data=body)
-
 
 class EditTemplates(SyncAPIResource, EditTemplatesMixin):
     def create(
@@ -153,25 +128,6 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
         request = self._prepare_delete(template_id)
         self._client._prepared_request(request)
 
-    def fill(
-        self,
-        template_id: str,
-        instructions: str,
-        model: str | _Unset = UNSET,
-        color: str | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> Edit:
-        request = self._prepare_fill(
-            template_id=template_id,
-            instructions=instructions,
-            model=model,
-            color=color,
-            bust_cache=bust_cache,
-            **extra_body,
-        )
-        return Edit.model_validate(self._client._prepared_request(request))
-
 
 class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
     async def create(
@@ -211,22 +167,3 @@ class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
     async def delete(self, template_id: str) -> None:
         request = self._prepare_delete(template_id)
         await self._client._prepared_request(request)
-
-    async def fill(
-        self,
-        template_id: str,
-        instructions: str,
-        model: str | _Unset = UNSET,
-        color: str | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> Edit:
-        request = self._prepare_fill(
-            template_id=template_id,
-            instructions=instructions,
-            model=model,
-            color=color,
-            bust_cache=bust_cache,
-            **extra_body,
-        )
-        return Edit.model_validate(await self._client._prepared_request(request))

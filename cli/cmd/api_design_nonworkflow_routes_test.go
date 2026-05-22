@@ -11,9 +11,8 @@ import (
 var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 	// SDK conveniences used by CLI commands but not part of the generated
 	// public API reference.
-	"DELETE /v1/files/{file_id}":    true,
-	"POST /v1/edits/templates/fill": true,
-	"POST /v1/extractions/stream":   true,
+	"DELETE /v1/files/{file_id}":  true,
+	"POST /v1/extractions/stream": true,
 }
 
 var approvedCLINonReferenceJobEndpoints = map[string]bool{
@@ -22,7 +21,6 @@ var approvedCLINonReferenceJobEndpoints = map[string]bool{
 	"/v1/documents/extract":        true,
 	"/v1/documents/parse":          true,
 	"/v1/documents/split":          true,
-	"/v1/edit/templates/fill":      true,
 	"/v1/edit/templates/generate":  true,
 	"/v1/edits/templates/generate": true,
 	"/v1/evals/extract/extract":    true,
@@ -151,9 +149,6 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Edits.Templates.Delete": {
 			{method: http.MethodDelete, path: "/edits/templates/{template_id}"},
-		},
-		"Edits.Templates.Fill": {
-			{method: http.MethodPost, path: "/edits/templates/fill"},
 		},
 		"Edits.Templates.Get": {
 			{method: http.MethodGet, path: "/edits/templates/{template_id}"},

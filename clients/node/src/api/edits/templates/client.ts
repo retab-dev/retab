@@ -1,12 +1,5 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZPaginatedList,
-  PaginatedList,
-  ZEdit,
-  Edit,
-} from '../../../types.js';
+import { ZMIMEData, MIMEDataInput, ZPaginatedList, PaginatedList } from '../../../types.js';
 import { ZEditTemplate, EditTemplate, ZFormField, FormField } from '../../../generated_types.js';
 
 export type EditTemplateCreateParams = {
@@ -28,19 +21,14 @@ export type EditTemplateUpdateParams = {
   form_fields?: FormField[] | null;
 };
 
-export type EditTemplateFillParams = {
-  template_id: string;
-  instructions: string;
-  model?: string;
-  color?: string;
-  bust_cache?: boolean;
-};
-
 /**
  * Edit Templates API client — resource-oriented surface for
- * `/v1/edits/templates` and `/v1/edits/templates/fill`.
+ * `/v1/edits/templates`.
  *
  * Mirrors the Python `retab.edits.templates` resource.
+ *
+ * To fill a template into an edit, call `client.edits.create({ template_id,
+ * instructions, model })` against the unified `POST /v1/edits` endpoint.
  */
 export default class APIEditsTemplates extends CompositionClient {
   constructor(client: CompositionClient) {
@@ -138,34 +126,6 @@ export default class APIEditsTemplates extends CompositionClient {
     return this._fetchJson({
       url: `/edits/templates/${template_id}`,
       method: 'DELETE',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Fill a template, producing an Edit resource.
-   *
-   * Posts to `/edits/templates/fill`.
-   */
-  async fill(params: EditTemplateFillParams, options?: RequestOptions): Promise<Edit> {
-    const body: Record<string, unknown> = {
-      template_id: params.template_id,
-      instructions: params.instructions,
-    };
-    if (params.model !== undefined) {
-      body['model'] = params.model;
-    }
-    if (params.color !== undefined) {
-      body['config'] = { color: params.color };
-    }
-    if (params.bust_cache) {
-      body['bust_cache'] = true;
-    }
-    return this._fetchJson(ZEdit, {
-      url: '/edits/templates/fill',
-      method: 'POST',
-      body: { ...body, ...(options?.body || {}) },
       params: options?.params,
       headers: options?.headers,
     });

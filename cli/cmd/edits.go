@@ -193,14 +193,14 @@ var editsTemplatesCmd = &cobra.Command{
 
 A template is a named, persisted set of form fields anchored to a sample
 document. Define it once with ` + "`retab edits templates create`" + `, then
-apply it to many target documents with ` + "`retab edits templates fill`" + `
-(or by passing ` + "`--template-id`" + ` to ` + "`retab edits create`" + `).
-This is the right pattern for repetitive form-fill, redaction, or markup
-workflows where the field shape is stable across documents.
+apply it to many target documents by passing ` + "`--template-id`" + ` to
+` + "`retab edits create`" + `. This is the right pattern for repetitive
+form-fill, redaction, or markup workflows where the field shape is stable
+across documents.
 
 Typical flow:
   1. ` + "`retab edits templates create`" + ` — define the template
-  2. ` + "`retab edits templates fill`" + ` — apply it to each new document`,
+  2. ` + "`retab edits create --template-id`" + ` — apply it to each new document`,
 }
 
 var editsTemplatesCreateCmd = &cobra.Command{
@@ -216,9 +216,8 @@ Each field must include ` + "`key`" + `, ` + "`description`" + `, ` + "`type`" +
 (supplied via the usual document flags) acts as the blueprint that future
 fills are anchored against.
 
-Once created, apply it to new documents with
-` + "`retab edits templates fill`" + ` or by passing ` + "`--template-id`" + ` to
-` + "`retab edits create`" + `.`,
+Once created, apply it to new documents by passing ` + "`--template-id`" + `
+to ` + "`retab edits create`" + `.`,
 	Example: `  # Define a template from a sample form
   retab edits templates create \
     --name "Standard Invoice Form" \
@@ -396,9 +395,9 @@ var editsTemplatesDeleteCmd = &cobra.Command{
 	Long: `Permanently delete an edit template.
 
 Destructive and irreversible. Existing edits made from this template are
-not removed, but ` + "`retab edits templates fill --template-id`" + ` will fail
-for this id afterwards. Take a backup with
-` + "`retab edits templates get`" + ` first if you may need the definition.
+not removed, but ` + "`retab edits create --template-id`" + ` will fail for
+this id afterwards. Take a backup with ` + "`retab edits templates get`" + `
+first if you may need the definition.
 
 Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
 otherwise the command refuses to delete when stdin is not a terminal.`,
@@ -424,61 +423,6 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 		}
 		confirmDeleted("edit template", args[0])
 		return nil
-	}),
-}
-
-var editsTemplatesFillCmd = &cobra.Command{
-	Use:   "fill",
-	Short: "Fill an edit template into an edit",
-	Long: `Apply a saved edit template against a target document.
-
-` + "`--template-id`" + ` selects the template (see
-` + "`retab edits templates list`" + `). ` + "`--instructions`" + ` describes what the
-fill pass should do — typically guidance about which fields to prioritize
-or how to interpret ambiguous content. The resulting edit is persisted and
-returned in full.
-
-For one-off edits without a template, use ` + "`retab edits create`" + ` instead.`,
-	Example: `  # Fill a template against a new document
-  retab edits templates fill \
-    --template-id tmpl_abc123 \
-    --instructions "Fill all fields from the document below" \
-    --model gpt-4o
-
-  # Override the annotation color for this fill
-  retab edits templates fill \
-    --template-id tmpl_abc123 \
-    --instructions "Fill required fields only" \
-    --color "#1677ff" --model gpt-4o`,
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		templateID, err := requireNonBlankFlag(cmd, "template-id")
-		if err != nil {
-			return err
-		}
-		instructions, err := requireNonBlankFlag(cmd, "instructions")
-		if err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		model, _ := cmd.Flags().GetString("model")
-		color, _ := cmd.Flags().GetString("color")
-		bustCache, _ := cmd.Flags().GetBool("bust-cache")
-		result, err := client.Edits.Templates.Fill(ctx, retab.EditTemplateFillRequest{
-			TemplateID:   templateID,
-			Instructions: instructions,
-			Model:        model,
-			Color:        color,
-			BustCache:    bustCache,
-		})
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
 	}),
 }
 
@@ -550,18 +494,10 @@ func init() {
 	editsTemplatesUpdateCmd.Flags().String("name", "", "update template name")
 	editsTemplatesUpdateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin)")
 
-	editsTemplatesFillCmd.Flags().String("template-id", "", "template id (required)")
-	editsTemplatesFillCmd.Flags().String("instructions", "", "instructions (required)")
-	editsTemplatesFillCmd.Flags().String("model", "", "model identifier")
-	editsTemplatesFillCmd.Flags().String("color", "", "edit color")
-	editsTemplatesFillCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
-	_ = editsTemplatesFillCmd.MarkFlagRequired("template-id")
-	_ = editsTemplatesFillCmd.MarkFlagRequired("instructions")
-
 	editsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	editsTemplatesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd, editsTemplatesFillCmd)
+	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd)
 	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsDeleteCmd, editsTemplatesCmd)
 	rootCmd.AddCommand(editsCmd)
 }

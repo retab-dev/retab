@@ -26,12 +26,7 @@ REMOVED_ROUTE_FRAGMENTS = {
     "/workflows/blocks/{block_id}/execute",
     "/workflows/blocks/execute",
 }
-APPROVED_NON_REFERENCE_ROUTES = {
-    # Existing SDK convenience route that is not part of the generated public
-    # API reference. Keep explicit so new non-reference routes cannot appear
-    # silently.
-    ("POST", "/v1/edits/templates/fill"),
-}
+APPROVED_NON_REFERENCE_ROUTES: set[tuple[str, str]] = set()
 
 
 def _stringish_ast_value(node: ast.AST) -> str | None:
