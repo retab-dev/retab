@@ -100,9 +100,13 @@ from .model import (
     WorkflowDiagnosisIssue,
     WorkflowDiagnosisStats,
     WorkflowDiagnosisResponse,
-    StoredBlockExecution,
-    BlockExecutionIteration,
 )
+
+# NOTE: `StoredBlockExecution` and `BlockExecutionIteration` are NOT
+# re-exported here. The single canonical import path is
+# `from retab.types.workflows.blocks.executions import
+# StoredBlockExecution` (matching the resource accessor
+# `client.workflows.blocks.executions`).
 from .reviews import (
     ActorKind,
     ReviewBlockType,
@@ -263,8 +267,6 @@ __all__ = [
     "WorkflowDiagnosisIssue",
     "WorkflowDiagnosisStats",
     "WorkflowDiagnosisResponse",
-    "StoredBlockExecution",
-    "BlockExecutionIteration",
     "ActorKind",
     "ReviewBlockType",
     "ReviewVerdict",

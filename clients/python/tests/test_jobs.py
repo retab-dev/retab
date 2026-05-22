@@ -13,7 +13,7 @@ import httpx
 import pytest
 
 from retab import Retab
-from retab.resources.jobs.client import AsyncJobs, Jobs
+from retab.resources.jobs import AsyncJobs, Jobs
 from retab.types.jobs import Job
 
 # ---------------------------------------------------------------------------

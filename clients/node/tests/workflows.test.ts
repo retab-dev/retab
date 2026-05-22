@@ -616,10 +616,10 @@ describe('workflows client', () => {
     expect('prepare_execute' in blocksClient).toBe(false);
   });
 
-  test('workflows expose block executions subresource', () => {
+  test('workflows expose blocks.executions subresource', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    expect(workflowsClient.block_executions).toBeInstanceOf(APIWorkflowBlockExecutions);
+    expect(workflowsClient.blocks.executions).toBeInstanceOf(APIWorkflowBlockExecutions);
   });
 
   test('workflow block executions create uses top-level route', async () => {

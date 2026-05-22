@@ -7,6 +7,7 @@ import {
   ZPaginatedList,
   ZWorkflowBlock,
 } from '../../../types.js';
+import APIWorkflowBlockExecutions from './executions/client.js';
 
 function serializeBlockCreateRequest(request: WorkflowBlockCreateRequest): Record<string, unknown> {
   return {
@@ -38,10 +39,17 @@ function serializeBlockUpdateRequest(request: UpdateWorkflowBlockRequest): Recor
  * Workflow Blocks API client for managing blocks in a workflow graph.
  *
  * Usage: `client.workflows.blocks.list(workflowId)`
+ *
+ * Sub-clients:
+ * - executions: Per-block execution operations
+ *   (`client.workflows.blocks.executions.create / .list`)
  */
 export default class APIWorkflowBlocks extends CompositionClient {
+  public executions: APIWorkflowBlockExecutions;
+
   constructor(client: CompositionClient) {
     super(client);
+    this.executions = new APIWorkflowBlockExecutions(this);
   }
 
   /**

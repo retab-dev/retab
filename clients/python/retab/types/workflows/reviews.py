@@ -30,6 +30,10 @@ SubmissionStatus = Literal["accepted", "already_applied", "conflict"]
 #: Whether the gated workflow run was signalled to resume after a decision.
 ResumeStatus = Literal["pending", "resumed", "skipped"]
 
+#: Filter applied to `WorkflowReviews.list` to narrow reviews by their
+#: decision lifecycle. The `"all"` sentinel disables filtering.
+ReviewDecisionStatus = Literal["pending", "approved", "rejected", "decided", "all"]
+
 VersionId: TypeAlias = str
 
 

@@ -331,8 +331,16 @@ function collectPythonClassMethods(
 function resolvePythonResourceFile(parentFile: string | null, resourceName: string): string | null {
   const baseDirectory = parentFile ? path.dirname(parentFile) : PYTHON_RESOURCES_DIR;
   const candidates = [
+    // Subdirectory with explicit ``client.py`` (legacy pattern).
     path.join(baseDirectory, resourceName, 'client.py'),
+    // Flat single-file module (post-flatten convention).
     path.join(baseDirectory, `${resourceName}.py`),
+    // Subdirectory whose implementation lives in ``__init__.py`` (used
+    // when the resource hosts child resources, e.g. ``workflows/`` and
+    // ``workflows/blocks/`` both keep their class definitions in their
+    // own ``__init__.py`` so the package import surface stays stable
+    // while a sibling sub-resource can live next to them).
+    path.join(baseDirectory, resourceName, '__init__.py'),
   ];
 
   for (const candidate of candidates) {

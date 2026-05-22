@@ -3,10 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.artifacts.client import AsyncWorkflowArtifacts, WorkflowArtifacts
-from retab.resources.workflows.client import AsyncWorkflows, Workflows
-from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
-from retab.resources.workflows.steps.client import AsyncWorkflowSteps, WorkflowSteps
+from retab.resources.workflows.artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
+from retab.resources.workflows import AsyncWorkflows, Workflows
+from retab.resources.workflows.runs import AsyncWorkflowRuns, WorkflowRuns
+from retab.resources.workflows.steps import AsyncWorkflowSteps, WorkflowSteps
 from retab.types.workflows import model as workflow_model
 from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
 

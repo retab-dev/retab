@@ -6,7 +6,7 @@ from typing import cast
 import pytest
 import httpx
 
-from retab.resources.extractions.client import AsyncExtractions, Extractions
+from retab.resources.extractions import AsyncExtractions, Extractions
 from retab import AsyncRetab, Retab
 from retab.types.extractions import ExtractionRequest
 from retab.types.mime import MIMEData
