@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pydantic import ValidationError
 
-from retab.resources.workflows.blocks.client import WorkflowBlocks
-from retab.resources.workflows.client import AsyncWorkflows, Workflows
-from retab.resources.workflows.edges.client import WorkflowEdges
-from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
-from retab.resources.workflows.block_executions.client import AsyncWorkflowBlockExecutions, WorkflowBlockExecutions
-from retab.resources.workflows.specs.client import AsyncWorkflowSpecs, WorkflowSpecs
+from retab.resources.workflows.blocks import WorkflowBlocks
+from retab.resources.workflows import AsyncWorkflows, Workflows
+from retab.resources.workflows.edges import WorkflowEdges
+from retab.resources.workflows.runs import AsyncWorkflowRuns, WorkflowRuns
+from retab.resources.workflows.blocks.executions import AsyncWorkflowBlockExecutions, WorkflowBlockExecutions
+from retab.resources.workflows.specs import AsyncWorkflowSpecs, WorkflowSpecs
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
     DeclarativeApplyResponse,
@@ -142,16 +142,16 @@ def test_async_workflows_exposes_specs_subresource() -> None:
     assert isinstance(workflows.specs, AsyncWorkflowSpecs)
 
 
-def test_workflows_exposes_block_executions_subresource() -> None:
+def test_workflows_blocks_exposes_executions_subresource() -> None:
     workflows = Workflows(client=MagicMock())
 
-    assert isinstance(workflows.block_executions, WorkflowBlockExecutions)
+    assert isinstance(workflows.blocks.executions, WorkflowBlockExecutions)
 
 
-def test_async_workflows_exposes_block_executions_subresource() -> None:
+def test_async_workflows_blocks_exposes_executions_subresource() -> None:
     workflows = AsyncWorkflows(client=MagicMock())
 
-    assert isinstance(workflows.block_executions, AsyncWorkflowBlockExecutions)
+    assert isinstance(workflows.blocks.executions, AsyncWorkflowBlockExecutions)
 
 
 def test_removed_workflow_methods_are_not_exposed() -> None:
@@ -164,9 +164,9 @@ def test_removed_workflow_methods_are_not_exposed() -> None:
     assert not hasattr(workflows.blocks, "config_history")
     assert not hasattr(workflows.blocks, "get_resolved_schemas")
     assert not hasattr(workflows.blocks, "create_batch")
-    assert not hasattr(workflows.blocks, "list_block_executions")
+    assert not hasattr(workflows.blocks, "list_executions")
     assert not hasattr(workflows.blocks, "execute")
-    assert not hasattr(workflows.block_executions, "execute")
+    assert not hasattr(workflows.blocks.executions, "execute")
     assert not hasattr(workflows.edges, "create_batch")
     assert not hasattr(workflows.edges, "delete_all")
     assert not hasattr(workflows.experiments, "duplicate")
@@ -186,7 +186,7 @@ def test_workflow_block_executions_create_uses_top_level_route() -> None:
         "created_at": "2026-03-12T10:00:00Z",
     }
 
-    block_execution = Workflows(client=client).block_executions.create(
+    block_execution = Workflows(client=client).blocks.executions.create(
         run_id="run_1",
         block_id="block_1",
         step_id="step_1",
@@ -224,7 +224,7 @@ def test_workflow_block_executions_list_uses_top_level_route() -> None:
         "list_metadata": {"before": None, "after": None},
     }
 
-    result = Workflows(client=client).block_executions.list(
+    result = Workflows(client=client).blocks.executions.list(
         run_id="run_1",
         block_id="block_1",
         limit=10,
@@ -256,7 +256,7 @@ async def test_async_workflow_block_executions_create_uses_top_level_route() -> 
         }
     )
 
-    block_execution = await AsyncWorkflows(client=client).block_executions.create(
+    block_execution = await AsyncWorkflows(client=client).blocks.executions.create(
         run_id="run_1",
         block_id="block_1",
         step_id="step_1",

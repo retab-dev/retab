@@ -13,17 +13,16 @@ import (
 )
 
 type WorkflowsService struct {
-	client          *Client
-	Runs            *WorkflowRunsService
-	Steps           *WorkflowStepsService
-	Reviews         *WorkflowReviewsService
-	Artifacts       *WorkflowArtifactsService
-	BlockExecutions *WorkflowBlockExecutionsService
-	Blocks          *WorkflowBlocksService
-	Edges           *WorkflowEdgesService
-	Specs           *WorkflowSpecsService
-	Tests           *WorkflowTestsService
-	Experiments     *WorkflowExperimentsService
+	client      *Client
+	Runs        *WorkflowRunsService
+	Steps       *WorkflowStepsService
+	Reviews     *WorkflowReviewsService
+	Artifacts   *WorkflowArtifactsService
+	Blocks      *WorkflowBlocksService
+	Edges       *WorkflowEdgesService
+	Specs       *WorkflowSpecsService
+	Tests       *WorkflowTestsService
+	Experiments *WorkflowExperimentsService
 }
 
 func newWorkflowsService(client *Client) *WorkflowsService {
@@ -35,8 +34,10 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		Versions: &WorkflowReviewVersionsService{client: client},
 	}
 	service.Artifacts = &WorkflowArtifactsService{client: client}
-	service.BlockExecutions = &WorkflowBlockExecutionsService{client: client}
-	service.Blocks = &WorkflowBlocksService{client: client}
+	service.Blocks = &WorkflowBlocksService{
+		client:     client,
+		Executions: &WorkflowBlockExecutionsService{client: client},
+	}
 	service.Edges = &WorkflowEdgesService{client: client}
 	service.Specs = &WorkflowSpecsService{client: client}
 	service.Tests = newWorkflowTestsService(client)
@@ -405,7 +406,8 @@ func decodeArtifactListResponse(raw json.RawMessage) (PaginatedList[WorkflowArti
 }
 
 type WorkflowBlocksService struct {
-	client *Client
+	client     *Client
+	Executions *WorkflowBlockExecutionsService
 }
 
 type WorkflowBlockExecutionsService struct {

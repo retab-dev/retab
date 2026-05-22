@@ -44,7 +44,7 @@ func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	}
 
 	checkEligibility := false
-	created, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{
+	created, err := client.Workflows.Blocks.Executions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{
 		RunID:            "run_123",
 		BlockID:          "blk_extract",
 		StepID:           "step_iter_0_blk_extract",
@@ -67,7 +67,7 @@ func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 		t.Fatalf("create body = %#v", createBody)
 	}
 
-	list, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{
+	list, err := client.Workflows.Blocks.Executions.List(context.Background(), ListWorkflowBlockExecutionsParams{
 		RunID:   "run_123",
 		BlockID: "blk_extract",
 		Limit:   10,
@@ -89,16 +89,16 @@ func TestWorkflowBlockExecutionsRequireRunAndBlockIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{BlockID: "blk_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{BlockID: "blk_1"}); err == nil {
 		t.Fatal("expected create without run id to fail")
 	}
-	if _, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{RunID: "run_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{RunID: "run_1"}); err == nil {
 		t.Fatal("expected create without block id to fail")
 	}
-	if _, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{BlockID: "blk_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.List(context.Background(), ListWorkflowBlockExecutionsParams{BlockID: "blk_1"}); err == nil {
 		t.Fatal("expected list without run id to fail")
 	}
-	if _, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{RunID: "run_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.List(context.Background(), ListWorkflowBlockExecutionsParams{RunID: "run_1"}); err == nil {
 		t.Fatal("expected list without block id to fail")
 	}
 }

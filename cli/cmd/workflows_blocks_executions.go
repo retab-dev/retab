@@ -8,7 +8,7 @@ import (
 )
 
 var workflowsBlockExecutionsCmd = &cobra.Command{
-	Use:   "block-executions",
+	Use:   "executions",
 	Short: "Run and inspect workflow block executions",
 	Long: `Create and list block executions for one block within a workflow run.
 
@@ -16,10 +16,10 @@ A block execution replays a block with the current draft configuration against
 inputs from an existing run. Use this to verify a block change before
 starting another full workflow run.`,
 	Example: `  # Re-run one block using inputs from a prior run
-  retab workflows block-executions create run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions create run_xyz789 --block-id blk_extract_1
 
   # List recent block executions for that run and block
-  retab workflows block-executions list run_xyz789 --block-id blk_extract_1`,
+  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1`,
 }
 
 var workflowsBlockExecutionsCreateCmd = &cobra.Command{
@@ -32,10 +32,10 @@ The run id is positional; ` + "`--block-id`" + ` selects the block to replay.
 For for_each blocks, ` + "`--step-id`" + ` can pin a concrete iteration
 step.`,
 	Example: `  # Re-run one block
-  retab workflows block-executions create run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions create run_xyz789 --block-id blk_extract_1
 
   # Pin a for_each iteration source step
-  retab workflows block-executions create run_xyz789 \
+  retab workflows blocks executions create run_xyz789 \
     --block-id blk_extract_1 \
     --step-id step_iter_0_blk_extract_1`,
 	Args: cobra.ExactArgs(1),
@@ -71,7 +71,7 @@ step.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.BlockExecutions.Create(ctx, request)
+		result, err := client.Workflows.Blocks.Executions.Create(ctx, request)
 		if err != nil {
 			return err
 		}
@@ -87,10 +87,10 @@ var workflowsBlockExecutionsListCmd = &cobra.Command{
 The run id is positional; ` + "`--block-id`" + ` selects the block whose
 block execution history should be returned.`,
 	Example: `  # List recent block executions
-  retab workflows block-executions list run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1
 
   # Limit the response size
-  retab workflows block-executions list run_xyz789 --block-id blk_extract_1 --limit 10`,
+  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1 --limit 10`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -102,7 +102,7 @@ block execution history should be returned.`,
 		params := retab.ListWorkflowBlockExecutionsParams{RunID: args[0]}
 		params.BlockID, _ = cmd.Flags().GetString("block-id")
 		params.Limit, _ = cmd.Flags().GetInt("limit")
-		result, err := client.Workflows.BlockExecutions.List(ctx, params)
+		result, err := client.Workflows.Blocks.Executions.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -134,5 +134,5 @@ func init() {
 	_ = workflowsBlockExecutionsListCmd.MarkFlagRequired("block-id")
 
 	workflowsBlockExecutionsCmd.AddCommand(workflowsBlockExecutionsCreateCmd, workflowsBlockExecutionsListCmd)
-	workflowsCmd.AddCommand(workflowsBlockExecutionsCmd)
+	workflowsBlocksCmd.AddCommand(workflowsBlockExecutionsCmd)
 }

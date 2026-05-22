@@ -142,7 +142,7 @@ def test_python_workflow_sdk_does_not_call_removed_routes() -> None:
 
 
 def test_python_workflow_review_versions_require_parent_id() -> None:
-    source = (SDK_ROOT / "retab" / "resources" / "workflows" / "reviews" / "client.py").read_text()
+    source = (SDK_ROOT / "retab" / "resources" / "workflows" / "reviews.py").read_text()
 
     assert "parent_id: str," in source
     assert 'raise ValueError("parent_id is required' in source

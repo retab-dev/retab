@@ -16,7 +16,6 @@ import APIWorkflowSpecs from './specs/client.js';
 import APIWorkflowTests from './tests/client.js';
 import APIWorkflowExperiments from './experiments/client.js';
 import APIWorkflowSteps from './steps/client.js';
-import APIWorkflowBlockExecutions from './block_executions/client.js';
 
 /**
  * Workflows API client for workflow operations.
@@ -31,7 +30,9 @@ import APIWorkflowBlockExecutions from './block_executions/client.js';
  * - specs: Declarative workflow YAML validation, planning, apply, and export
  * - tests: Workflow tests CRUD + execution + run history
  * - experiments: Consensus-experiments CRUD + per-run + metrics
- * - block executions: Workflow block execution operations
+ *
+ * Per-block execution operations live on ``blocks.executions``
+ * (``client.workflows.blocks.executions.create / .list``).
  */
 export default class APIWorkflows extends CompositionClient {
   public runs: APIWorkflowRuns;
@@ -43,7 +44,6 @@ export default class APIWorkflows extends CompositionClient {
   public specs: APIWorkflowSpecs;
   public tests: APIWorkflowTests;
   public experiments: APIWorkflowExperiments;
-  public block_executions: APIWorkflowBlockExecutions;
 
   constructor(client: CompositionClient) {
     super(client);
@@ -56,7 +56,6 @@ export default class APIWorkflows extends CompositionClient {
     this.specs = new APIWorkflowSpecs(this);
     this.tests = new APIWorkflowTests(this);
     this.experiments = new APIWorkflowExperiments(this);
-    this.block_executions = new APIWorkflowBlockExecutions(this);
   }
 
   /**

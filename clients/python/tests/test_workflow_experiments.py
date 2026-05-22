@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.client import AsyncWorkflows, Workflows
-from retab.resources.workflows.experiments.client import (
+from retab.resources.workflows import AsyncWorkflows, Workflows
+from retab.resources.workflows.experiments import (
     AsyncExperimentRuns,
     AsyncWorkflowExperiments,
     ExperimentRuns,

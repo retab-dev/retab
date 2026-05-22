@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.reviews.client import AsyncWorkflowReviews, WorkflowReviews
+from retab.resources.workflows.reviews import AsyncWorkflowReviews, WorkflowReviews
 from retab.types.workflows import (
     Actor,
     Review,

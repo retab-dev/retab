@@ -15,12 +15,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.artifacts.client import WorkflowArtifacts
-from retab.resources.workflows.blocks.client import (
+from retab.resources.workflows.artifacts import WorkflowArtifacts
+from retab.resources.workflows.blocks import (
     AsyncWorkflowBlocks,
     WorkflowBlocks,
 )
-from retab.resources.workflows.edges.client import WorkflowEdges
+from retab.resources.workflows.edges import WorkflowEdges
 from retab.types.pagination import PaginatedList
 
 
