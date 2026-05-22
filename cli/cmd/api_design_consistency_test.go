@@ -97,6 +97,18 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 	}
 }
 
+func TestDirectCLIJSONRequestCallsMatchOpenAPI(t *testing.T) {
+	openAPI := loadCLIOpenAPIContract(t)
+	routes := extractDirectCLIJSONRequestRoutes(readCLISource(t))
+	if len(routes) == 0 {
+		t.Fatal("no direct cliJSONRequest calls found")
+	}
+
+	for _, route := range routes {
+		assertCLIOpenAPIRoute(t, openAPI, route)
+	}
+}
+
 func workflowCLIRouteContract() []cliRouteContract {
 	return []cliRouteContract{
 		{method: http.MethodGet, path: "/workflows/reviews"},
@@ -120,6 +132,63 @@ func workflowCLIRouteContract() []cliRouteContract {
 		{method: http.MethodGet, path: "/workflows/tests/results"},
 		{method: http.MethodGet, path: "/workflows/tests/results/{result_id}"},
 	}
+}
+
+func extractDirectCLIJSONRequestRoutes(source string) []cliRouteContract {
+	callPattern := regexp.MustCompile(`cliJSONRequest\(\s*cmd,\s*http\.Method([A-Za-z]+),\s*([^,\n]+),`)
+	seen := map[string]cliRouteContract{}
+	for _, match := range callPattern.FindAllStringSubmatch(source, -1) {
+		route := cliRouteContract{
+			method: strings.ToUpper(match[1]),
+			path:   normalizeDirectCLIJSONRequestPath(match[2]),
+		}
+		if route.path == "" {
+			continue
+		}
+		seen[route.method+" "+route.path] = route
+	}
+
+	var keys []string
+	for key := range seen {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	routes := make([]cliRouteContract, 0, len(keys))
+	for _, key := range keys {
+		routes = append(routes, seen[key])
+	}
+	return routes
+}
+
+func normalizeDirectCLIJSONRequestPath(pathExpression string) string {
+	tokenPattern := regexp.MustCompile(`"([^"]*)"|url\.PathEscape\([^)]*\)`)
+	var builder strings.Builder
+	for _, match := range tokenPattern.FindAllStringSubmatch(pathExpression, -1) {
+		if match[1] != "" {
+			builder.WriteString(match[1])
+			continue
+		}
+		builder.WriteString("{}")
+	}
+
+	path := builder.String()
+	for _, replacement := range []struct {
+		old string
+		new string
+	}{
+		{old: "/workflows/experiments/results/{}", new: "/workflows/experiments/results/{result_id}"},
+		{old: "/workflows/experiments/runs/{}", new: "/workflows/experiments/runs/{run_id}"},
+		{old: "/workflows/tests/results/{}", new: "/workflows/tests/results/{result_id}"},
+		{old: "/workflows/tests/runs/{}", new: "/workflows/tests/runs/{run_id}"},
+		{old: "/workflows/runs/{}", new: "/workflows/runs/{run_id}"},
+	} {
+		path = strings.Replace(path, replacement.old, replacement.new, 1)
+	}
+	if strings.Contains(path, "{}") {
+		return ""
+	}
+	return path
 }
 
 func loadCLIOpenAPIContract(t *testing.T) cliOpenAPIContract {
