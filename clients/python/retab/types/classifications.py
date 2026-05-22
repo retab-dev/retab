@@ -46,7 +46,7 @@ class ClassificationConsensus(RetabBaseModel):
         default_factory=list,
         description="Alternative classification vote outputs used to build the consolidated result.",
     )
-    likelihood: float | None = Field(
+    likelihoods: float | None = Field(
         default=None,
         description="Consensus likelihood score (0.0-1.0) of the winning classification.",
     )

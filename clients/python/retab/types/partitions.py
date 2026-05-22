@@ -57,9 +57,12 @@ class Partition(RetabBaseModel):
     file: FileRef = Field(..., description="Information about the partitioned file")
     model: str = Field(..., description="Model used for the partition operation")
     key: str = Field(..., description="Partition key used for the run")
-    instructions: str = Field(
-        default="",
-        description="Instructions supplied with the partition request",
+    # Aligned with the rest of the data-artifact family
+    # (extraction / split / classification / parse / edit): instructions are
+    # optional on the wire so the artifact union has a single convention.
+    instructions: Optional[str] = Field(
+        default=None,
+        description="Free-form instructions supplied with the partition request",
     )
     n_consensus: int = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool = Field(

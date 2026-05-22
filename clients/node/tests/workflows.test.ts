@@ -629,7 +629,7 @@ describe('workflows client', () => {
       run_id: 'run_1',
       block_id: 'block_1',
       block_type: 'extract',
-      success: true,
+      lifecycle: { status: 'completed' },
       created_at: '2026-03-12T10:00:00Z',
     });
     const simulationsClient = new APIWorkflowSimulations(mockClient);
@@ -668,7 +668,7 @@ describe('workflows client', () => {
           run_id: 'run_1',
           block_id: 'block_1',
           block_type: 'extract',
-          success: true,
+          lifecycle: { status: 'completed' },
           created_at: '2026-03-12T10:00:00Z',
         },
       ],

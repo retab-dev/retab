@@ -265,7 +265,7 @@ export type Classification = z.infer<typeof ZClassification>;
 export const ZClassificationConsensus = z.lazy(() =>
   z.object({
     choices: z.array(ZClassificationDecision),
-    likelihood: z.number().nullable().optional(),
+    likelihoods: z.number().nullable().optional(),
   })
 );
 export type ClassificationConsensus = z.infer<typeof ZClassificationConsensus>;
@@ -563,11 +563,19 @@ export const ZEdit = z.lazy(() =>
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
-    instructions: z.string(),
+    // Aligned with the rest of the data-artifact family
+    // (extraction / split / classification / parse): ``instructions`` is
+    // optional on the wire so the artifact union has a single convention.
+    instructions: z.string().nullable().optional(),
     config: ZEditConfig,
     template_id: z.string().nullable().optional(),
-    data: ZEditResult,
-    usage: ZRetabUsage,
+    // Canonical name across every data-artifact type. Hard cutover — no
+    // ``data`` alias kept. The m_054_edits_data_to_output Mongo migration
+    // runs before this SDK version's wire shape lands.
+    output: ZEditResult,
+    // Aligned with the rest of the data-artifact family: ``usage`` is
+    // optional so the artifact union has a single convention.
+    usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
   })
 );

@@ -959,7 +959,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	steps, err := client.Workflows.Steps.List(context.Background(), "run_123")
+	steps, err := client.Workflows.Steps.List(context.Background(), "run_123", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

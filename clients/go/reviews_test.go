@@ -53,21 +53,20 @@ func reviewJSON(decided bool) map[string]any {
 	}
 }
 
-func reviewSummaryJSON() map[string]any {
+func reviewQueueRowJSON() map[string]any {
 	return map[string]any{
-		"id":              reviewID,
-		"workflow_id":     "wf_1",
-		"workflow_run_id": "run_1",
-		"block_id":        "blk_1",
-		"step_id":         "step_1",
-		"parent_step_id":  nil,
-		"iteration_key":   nil,
-		"block_type":      "extract",
-		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
-		"created_at":      "2026-05-18T09:00:00Z",
-		"seed_version_id": reviewVersionID,
-		"version_count":   1,
-		"decision":        nil,
+		"id":                  reviewID,
+		"workflow_id":         "wf_1",
+		"workflow_version_id": "wfv_1",
+		"workflow_run_id":     "run_1",
+		"block_id":            "blk_1",
+		"step_id":             "step_1",
+		"parent_step_id":      nil,
+		"iteration_key":       nil,
+		"block_type":          "extract",
+		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
+		"created_at":          "2026-05-18T09:00:00Z",
+		"decision":            nil,
 	}
 }
 
@@ -77,7 +76,7 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":          []any{reviewSummaryJSON()},
+			"data":          []any{reviewQueueRowJSON()},
 			"list_metadata": map[string]any{"before": nil, "after": reviewID},
 		})
 	}))
@@ -113,7 +112,7 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 	if strings.Contains(seenQuery, "decision=") {
 		t.Fatalf("query includes removed decision filter: %q", seenQuery)
 	}
-	if len(resp.Data) != 1 || resp.Data[0].SeedVersionID != reviewVersionID {
+	if len(resp.Data) != 1 || resp.Data[0].ID != reviewID {
 		t.Fatalf("resp = %#v", resp)
 	}
 	if resp.ListMetadata.After != reviewID {

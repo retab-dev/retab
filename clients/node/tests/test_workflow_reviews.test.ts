@@ -7,7 +7,6 @@ import {
   ZDecision,
   ZReview,
   ZWorkflowReviewQueue,
-  ZReviewSummary,
   ZReviewVersion,
   ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
@@ -82,11 +81,9 @@ const REVIEW_JSON = {
   decision: DECISION_JSON,
 };
 
-const REVIEW_SUMMARY_JSON = {
+const REVIEW_QUEUE_ROW_JSON = {
   ...REVIEW_JSON,
   decision: null,
-  seed_version_id: VERSION_ID,
-  version_count: 1,
 };
 
 const CHILD_REVIEW_VERSION_JSON = {
@@ -180,42 +177,15 @@ describe('review zod schemas', () => {
     expect(review.iteration_key).toBe('line-1');
   });
 
-  test('ZReviewSummary carries seed_version_id and version_count', () => {
-    const summary = ZReviewSummary.parse(REVIEW_SUMMARY_JSON);
-    expect(summary.id).toBe(REVIEW_ID);
-    expect(summary.seed_version_id).toBe(VERSION_ID);
-    expect(summary.version_count).toBe(1);
-    expect('versions' in (summary as Record<string, unknown>)).toBe(false);
-  });
-
-  test('ZReviewSummary rejects rows missing seed_version_id', () => {
-    const { seed_version_id: _seed, ...withoutSeed } = REVIEW_SUMMARY_JSON;
-    expect(() => ZReviewSummary.parse(withoutSeed)).toThrow();
-  });
-
-  test('ZReviewSummary rejects rows missing version_count', () => {
-    const { version_count: _count, ...withoutCount } = REVIEW_SUMMARY_JSON;
-    expect(() => ZReviewSummary.parse(withoutCount)).toThrow();
-  });
-
-  test('ZWorkflowReviewQueue wraps ReviewSummary rows with seed_version_id and version_count', () => {
+  test('ZWorkflowReviewQueue wraps Review rows', () => {
     const response = ZWorkflowReviewQueue.parse({
-      data: [REVIEW_SUMMARY_JSON],
+      data: [REVIEW_QUEUE_ROW_JSON],
       list_metadata: { before: null, after: REVIEW_ID },
     });
     expect(response.list_metadata.before).toBeNull();
     expect(response.list_metadata.after).toBe(REVIEW_ID);
-    expect(response.data[0]?.seed_version_id).toBe(VERSION_ID);
-    expect(response.data[0]?.version_count).toBe(1);
-  });
-
-  test('ZWorkflowReviewQueue rejects pre-cutover Review rows that omit summary fields', () => {
-    expect(() =>
-      ZWorkflowReviewQueue.parse({
-        data: [{ ...REVIEW_JSON, decision: null }],
-        list_metadata: { before: null, after: null },
-      })
-    ).toThrow();
+    expect(response.data[0]?.id).toBe(REVIEW_ID);
+    expect(response.data[0]?.decision).toBeNull();
   });
 
   test('ZReviewVersionListResponse wraps flat versions for one review', () => {
@@ -283,7 +253,7 @@ describe('review zod schemas', () => {
 describe('APIWorkflowReviews request shapes', () => {
   test('list() builds the queue GET with snake_case params', async () => {
     const mock = new MockClient({
-      data: [REVIEW_SUMMARY_JSON],
+      data: [REVIEW_QUEUE_ROW_JSON],
       list_metadata: { before: null, after: null },
     });
     const reviews = new APIWorkflowReviews(mock);
@@ -335,7 +305,7 @@ describe('APIWorkflowReviews request shapes', () => {
 
   test('list({ after, stepId, iterationKey }) forwards cursors and execution filters', async () => {
     const mock = new MockClient({
-      data: [REVIEW_SUMMARY_JSON],
+      data: [REVIEW_QUEUE_ROW_JSON],
       list_metadata: { before: null, after: REVIEW_ID },
     });
     const reviews = new APIWorkflowReviews(mock);
@@ -356,8 +326,7 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     expect(result.list_metadata.after).toBe(REVIEW_ID);
     expect(result.list_metadata.before).toBeNull();
-    expect(result.data[0]?.seed_version_id).toBe(VERSION_ID);
-    expect(result.data[0]?.version_count).toBe(1);
+    expect(result.data[0]?.id).toBe(REVIEW_ID);
   });
 
   test('get() builds the review GET route', async () => {

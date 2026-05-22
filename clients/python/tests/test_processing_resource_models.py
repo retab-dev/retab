@@ -153,7 +153,7 @@ def test_edit_model_excludes_updated_at_from_public_schema_and_output() -> None:
             "model": "retab-small",
             "instructions": "Fill the form.",
             "config": {"color": "#000080"},
-            "data": {
+            "output": {
                 "form_data": [],
                 "filled_document": {
                     "filename": "filled.pdf",

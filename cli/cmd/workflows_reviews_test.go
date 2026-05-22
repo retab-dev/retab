@@ -60,19 +60,18 @@ func reviewOverlayBody(decision map[string]any) map[string]any {
 
 func reviewQueueItemBody(reviewID string, runID string, blockID string, blockType string) map[string]any {
 	return map[string]any{
-		"id":              reviewID,
-		"workflow_id":     "wf_1",
-		"workflow_run_id": runID,
-		"block_id":        blockID,
-		"step_id":         "step_1",
-		"parent_step_id":  nil,
-		"iteration_key":   nil,
-		"block_type":      blockType,
-		"triggered_by":    map[string]any{"kind": "always"},
-		"created_at":      "2026-05-18T09:00:00Z",
-		"seed_version_id": reviewTestVersionID,
-		"version_count":   1,
-		"decision":        nil,
+		"id":                  reviewID,
+		"workflow_id":         "wf_1",
+		"workflow_version_id": "wfv_1",
+		"workflow_run_id":     runID,
+		"block_id":            blockID,
+		"step_id":             "step_1",
+		"parent_step_id":      nil,
+		"iteration_key":       nil,
+		"block_type":          blockType,
+		"triggered_by":        map[string]any{"kind": "always"},
+		"created_at":          "2026-05-18T09:00:00Z",
+		"decision":            nil,
 	}
 }
 

@@ -1091,11 +1091,46 @@ class BlockSimulationIteration(RetabBaseModel):
     label: Optional[str] = None
 
 
+class CompletedSimulationLifecycle(RetabBaseModel):
+    """Terminal: the simulated block executed successfully."""
+
+    model_config = ConfigDict(extra="ignore")
+    status: Literal["completed"] = "completed"
+
+
+class ErrorSimulationLifecycle(RetabBaseModel):
+    """Terminal: the simulated block raised. ``message`` is the executor's
+    error string."""
+
+    model_config = ConfigDict(extra="ignore")
+    status: Literal["error"] = "error"
+    message: str = Field(..., description="Human-readable error message")
+
+
+class SkippedSimulationLifecycle(RetabBaseModel):
+    """Terminal: the block declared its inputs unsatisfied via
+    ``should_skip_block`` and was skipped."""
+
+    model_config = ConfigDict(extra="ignore")
+    status: Literal["skipped"] = "skipped"
+    reason: str = Field(..., description="Reason the block was skipped")
+
+
+SimulationLifecycle = Annotated[
+    CompletedSimulationLifecycle | ErrorSimulationLifecycle | SkippedSimulationLifecycle,
+    Field(discriminator="status"),
+]
+
+
 class BlockSimulation(RetabBaseModel):
     """Result of replaying one block with the current draft config.
 
     Contains the inputs used, the produced outputs, and a canonical
     ``artifact`` ref when the block produces a persisted resource.
+
+    Terminal state is carried by the discriminated ``lifecycle`` union. The
+    legacy flat ``success`` / ``error`` / ``skipped`` fields were removed in
+    the hard cutover.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -1105,7 +1140,12 @@ class BlockSimulation(RetabBaseModel):
     run_id: str
     block_id: str
     block_type: str
-    success: bool
+    lifecycle: SimulationLifecycle = Field(
+        ...,
+        description=(
+            "Terminal lifecycle state for this simulation. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``."
+        ),
+    )
     handle_inputs: Optional[Dict[str, Any]] = None
     artifact: Optional[StepArtifactRef] = None
     handle_outputs: Optional[Dict[str, Any]] = None
@@ -1113,9 +1153,7 @@ class BlockSimulation(RetabBaseModel):
         default=None,
         description="Active output handles for routing decisions (conditional/classifier).",
     )
-    error: Optional[str] = None
     duration_ms: Optional[float] = None
-    skipped: bool = False
     created_at: Optional[datetime.datetime] = None
     block_config: Optional[Dict[str, Any]] = Field(
         default=None,

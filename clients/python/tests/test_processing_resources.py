@@ -47,16 +47,6 @@ def _split_subdocuments() -> list[Subdocument]:
     ]
 
 
-def test_split_subdocument_defaults_allow_overlap_to_true() -> None:
-    subdocument = Subdocument(
-        name="invoice",
-        description="Invoice pages",
-        partition_key="invoice_number",
-    )
-
-    assert subdocument.allow_overlap is True
-
-
 def _fidelity_form_path() -> str:
     return os.path.join(TEST_DIR, "data", "edit", "fidelity_original.pdf")
 
@@ -367,8 +357,8 @@ def test_edits_resource_crud(sync_client: Retab, created_edit: Edit) -> None:
     with sync_client as client:
         fetched = client.edits.get(created_edit.id)
         assert fetched.id == created_edit.id
-        assert fetched.data.filled_document.url.startswith("data:application/pdf;base64,")
-        assert len(fetched.data.form_data) > 0
+        assert fetched.output.filled_document.url.startswith("data:application/pdf;base64,")
+        assert len(fetched.output.form_data) > 0
 
         page = _wait_for_list_contains(
             lambda: client.edits.list(

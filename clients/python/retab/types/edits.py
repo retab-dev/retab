@@ -76,14 +76,25 @@ class Edit(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the edit.")
     file: FileRef = Field(..., description="Information about the source file (input document or template PDF).")
     model: str = Field(..., description="Model used for the edit operation.")
-    instructions: str = Field(..., description="Instructions supplied with the edit request.")
+    # Aligned with the rest of the data-artifact family (extraction / split /
+    # classification / parse): ``instructions`` is optional on the wire so the
+    # artifact union has a single convention.
+    instructions: Optional[str] = Field(
+        default=None,
+        description="Free-form instructions supplied with the edit request.",
+    )
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(
         default=None,
         description="Template id used when the edit was created from a template; null for direct-document edits.",
     )
-    data: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
-    usage: RetabUsage = Field(..., description="Usage information for the edit operation.")
+    # Canonical name across every data-artifact type. Hard cutover — no
+    # ``data`` alias kept. The m_054_edits_data_to_output Mongo migration
+    # runs before this SDK version's wire shape lands.
+    output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
+    # Aligned with the rest of the data-artifact family: ``usage`` is optional
+    # so the artifact union has a single convention.
+    usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the edit operation.")
     created_at: Optional[datetime.datetime] = None
 
 

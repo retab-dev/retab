@@ -478,6 +478,63 @@ func TestWorkflowsUpdateRejectsBlankEmailAllowlistValuesBeforeRequest(t *testing
 	}
 }
 
+// Regression: passing `--allowed-sender ""` (empty string) used to silently
+// wipe the persisted allowlist. pflag's StringArray drops empty values from
+// the resulting slice, so “validateWorkflowEmailAllowlistValues“ looped
+// zero times and the (cleared) slice flowed through to a full-replace
+// “EmailTrigger“ patch on the server. The CLI now refuses to send the
+// PATCH when the flag was set but resolved to an empty slice.
+func TestWorkflowsUpdateRejectsEmptyAllowlistValueBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "empty sender", flag: "allowed-sender", wantError: "--allowed-sender must not be blank"},
+		{name: "empty domain", flag: "allowed-domain", wantError: "--allowed-domain must not be blank"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for empty allowlist value, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "test-workflow-update", RunE: workflowsUpdateCmd.RunE}
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("description", "", "")
+			cmd.Flags().StringArray("allowed-sender", nil, "")
+			cmd.Flags().StringArray("allowed-domain", nil, "")
+
+			// Empty string is the bug case: pflag's StringArray will set the
+			// flag as Changed but drop the value from the returned slice.
+			if err := cmd.Flags().Set(tc.flag, ""); err != nil {
+				t.Fatal(err)
+			}
+
+			err := cmd.RunE(cmd, []string{"wf_123"})
+			if err == nil {
+				t.Fatalf("expected empty allowlist value error for --%s", tc.flag)
+			}
+			if unwrapped := errors.Unwrap(err); unwrapped != nil {
+				err = unwrapped
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
+			}
+		})
+	}
+}
+
 func TestWorkflowsRejectBlankNamesBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

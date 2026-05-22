@@ -751,3 +751,38 @@ func TestPrintResultTableFormatsTimeDotTimeAsRFC3339(t *testing.T) {
 		t.Fatalf("table leaked Go default time.Time format, got:\n%s", stdout)
 	}
 }
+
+// Regression for the 2026-05-22 CLI exploration: “workflows list --output
+// table“ against a workflow with a 350-char “name“ rendered the row at
+// 350+ characters wide because the auto-table renderer only truncated the
+// TRAILING column (CREATED_AT), and NAME is an interior column. The row
+// became unreadable; the rest of the table was forced to that width too.
+//
+// Cap interior cells at a generous width (high enough to fit normal names,
+// low enough that a runaway 350-char outlier doesn't blow out the row).
+func TestPrintResultTableTruncatesAbsurdInteriorCellWidth(t *testing.T) {
+	absurd := strings.Repeat("a", 400)
+	list := timeRowList{
+		Data: []timeRow{
+			{ID: "wrk_1", Name: absurd, CreatedAt: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC)},
+		},
+	}
+
+	stdout, _ := captureStd(t, func() {
+		if err := printResultTable(list); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+
+	lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
+	if len(lines) < 2 {
+		t.Fatalf("expected at least header + 1 row, got:\n%s", stdout)
+	}
+	rowLen := len(lines[1])
+	if rowLen >= 400 {
+		t.Fatalf("interior cell was not truncated; row width=%d, want <200:\n%s", rowLen, lines[1])
+	}
+	if !strings.Contains(lines[1], "…") {
+		t.Fatalf("expected ellipsis on truncated interior cell, got:\n%s", lines[1])
+	}
+}

@@ -364,7 +364,7 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 	}),
 }
 
-func printReviewQueueResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ReviewSummary]) error {
+func printReviewQueueResult(cmd *cobra.Command, result *retab.PaginatedList[retab.Review]) error {
 	format, err := ResolveOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
@@ -558,7 +558,6 @@ var reviewQueueColumns = []TableColumn{
 	{Header: "STEP_ID", Extract: func(row any) string { return reviewQueueCell(row, "step_id") }},
 	{Header: "ITERATION", Extract: func(row any) string { return reviewQueueCell(row, "iteration_key") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "VERSIONS", Extract: func(row any) string { return reviewQueueCell(row, "version_count") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return reviewQueueCell(row, "created_at") }},
 	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
 }

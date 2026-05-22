@@ -182,7 +182,7 @@ def test_workflow_simulations_create_uses_top_level_route() -> None:
         "run_id": "run_1",
         "block_id": "block_1",
         "block_type": "extract",
-        "success": True,
+        "lifecycle": {"status": "completed"},
         "created_at": "2026-03-12T10:00:00Z",
     }
 
@@ -217,7 +217,7 @@ def test_workflow_simulations_list_uses_top_level_route() -> None:
                 "run_id": "run_1",
                 "block_id": "block_1",
                 "block_type": "extract",
-                "success": True,
+                "lifecycle": {"status": "completed"},
                 "created_at": "2026-03-12T10:00:00Z",
             }
         ],

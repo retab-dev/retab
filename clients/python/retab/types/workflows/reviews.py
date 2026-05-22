@@ -107,26 +107,6 @@ class Review(RetabBaseModel):
     decision: ReviewDecision | None = Field(default=None, description="Terminal decision, if one has been made.")
 
 
-class ReviewSummary(RetabBaseModel):
-    """A lightweight review queue row."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    id: str = Field(..., description="Review id.")
-    workflow_id: str = Field(..., description="Workflow the run belongs to.")
-    workflow_run_id: str = Field(..., description="Workflow run id the gated block belongs to.")
-    block_id: str = Field(..., description="Gated block id.")
-    step_id: str = Field(..., description="Execution step id for the reviewed block.")
-    parent_step_id: str | None = Field(default=None, description="Parent step id for child/iteration review contexts.")
-    iteration_key: str | None = Field(default=None, description="for_each iteration key when available.")
-    block_type: ReviewBlockType = Field(..., description="Type of the gated block.")
-    triggered_by: dict[str, Any] = Field(..., description="Discriminated review predicate that opened the gate.")
-    created_at: datetime.datetime = Field(..., description="When the review was created.")
-    seed_version_id: VersionId = Field(..., description="Version id for the seed output.")
-    version_count: int = Field(..., description="Number of versions in the review.")
-    decision: ReviewDecision | None = Field(default=None, description="Terminal decision, if one has been made.")
-
-
 class WorkflowReviewQueue(RetabBaseModel):
     """Envelope returned by ``reviews.list(...)``.
 
@@ -137,7 +117,7 @@ class WorkflowReviewQueue(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    data: list[ReviewSummary] = Field(default_factory=list, description="Page of queue items.")
+    data: list[Review] = Field(default_factory=list, description="Page of reviews.")
     list_metadata: ListMetadata = Field(
         ...,
         description="Boundary resource IDs for page navigation (before/after).",
@@ -197,7 +177,6 @@ __all__ = [
     "ReviewVersion",
     "ReviewDecision",
     "Review",
-    "ReviewSummary",
     "WorkflowReviewQueue",
     "ReviewVersionListResponse",
     "SubmitDecisionResponse",

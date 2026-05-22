@@ -15,7 +15,7 @@ describe('processing resource schemas', () => {
       categories: [{ name: 'invoice', description: 'Invoice' }],
       n_consensus: 1,
       output: { reasoning: '', category: 'invoice' },
-      consensus: { choices: [], likelihood: null },
+      consensus: { choices: [], likelihoods: null },
       updated_at: '2026-05-20T10:00:00Z',
     });
 

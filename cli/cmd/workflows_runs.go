@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -484,7 +485,7 @@ func resolveWorkflowRunDocumentAliases(
 	if _, ok := documents["start"]; !ok {
 		return documents, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("resolve --document start alias: %w", err)
 	}
@@ -596,6 +597,14 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		// set and they disagree, error
 		// — silently picking one would mask real user mistakes.
 		flagID, _ := cmd.Flags().GetString("workflow-id")
+		// Reject an explicitly-empty flag (e.g. ``--workflow-id ""``). pflag
+		// happily returns ``""``, which would silently disable the filter
+		// and return runs from every workflow in the org — the opposite of
+		// what the user typed. Matches the SDK's guard on the positional
+		// form (``workflowID is required``).
+		if cmd.Flags().Changed("workflow-id") && strings.TrimSpace(flagID) == "" {
+			return fmt.Errorf("--workflow-id must not be blank")
+		}
 		var posID string
 		if len(args) == 1 {
 			posID = args[0]
@@ -999,6 +1008,15 @@ func validateFieldsAgainstAllowlist(fields []string, allowlist []string) error {
 func nonBlankCommaSeparatedFlag(cmd *cobra.Command, flagName string) ([]string, error) {
 	raw, _ := cmd.Flags().GetString(flagName)
 	if raw == "" {
+		// Distinguish between "flag omitted" (silent, no filter) and the
+		// user explicitly typing ``--<flag> ""`` (typo guard). The latter
+		// almost certainly means the caller built the string from a
+		// variable that turned out empty — ``--%s "" reads as "no filter"
+		// but feels like a mistake. Reject it the same way other CLIs
+		// reject ``--limit ""`` / ``--status ""``.
+		if cmd.Flags().Changed(flagName) {
+			return nil, fmt.Errorf("--%s must not be blank", flagName)
+		}
 		return nil, nil
 	}
 	if strings.TrimSpace(raw) == "" {
@@ -1038,9 +1056,20 @@ var workflowsStepsListCmd = &cobra.Command{
 	Short: "List run steps",
 	Long: `List every step in a run — one record per block execution.
 Includes status, timing, and a summary of input/output sizes. For the
-full input/output payload of one step use ` + "`steps get`" + `.`,
+full input/output payload of one step use ` + "`steps get`" + `.
+
+Paginate by passing the cursor from a previous response's
+` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
+` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
 	Example: `  # List steps
   retab workflows steps list run_xyz789
+
+  # First page of 100
+  retab workflows steps list run_xyz789 --limit 100
+
+  # Next page
+  retab workflows steps list run_xyz789 --limit 100 \
+    --after $(retab workflows steps list run_xyz789 --limit 100 --output json | jq -r '.list_metadata.after')
 
   # Find the first failed step
   retab workflows steps list run_xyz789 \
@@ -1051,14 +1080,36 @@ full input/output payload of one step use ` + "`steps get`" + `.`,
 		if err != nil {
 			return err
 		}
+		params, err := workflowStepsListParams(cmd)
+		if err != nil {
+			return err
+		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Steps.List(ctx, args[0])
+		result, err := client.Workflows.Steps.List(ctx, args[0], params)
 		if err != nil {
 			return err
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+func workflowStepsListParams(cmd *cobra.Command) (*retab.ListWorkflowStepsParams, error) {
+	before, _ := cmd.Flags().GetString("before")
+	after, _ := cmd.Flags().GetString("after")
+	limit := 0
+	if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
+		raw := f.Value.String()
+		parsed, err := strconv.Atoi(raw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid --limit %q", raw)
+		}
+		limit = parsed
+	}
+	if before == "" && after == "" && limit == 0 {
+		return nil, nil
+	}
+	return &retab.ListWorkflowStepsParams{Before: before, After: after, Limit: limit}, nil
 }
 
 var workflowsStepsGetCmd = &cobra.Command{
@@ -1154,6 +1205,11 @@ func init() {
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsRunsExportCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
+
+	workflowsStepsListCmd.Flags().String("before", "", "step id: return the page before this id (mutually exclusive with --after)")
+	workflowsStepsListCmd.Flags().String("after", "", "step id: return the page after this id (mutually exclusive with --before)")
+	workflowsStepsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	workflowsStepsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max items to return (1-1000)")
 
 	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd)
 	workflowsCmd.AddCommand(workflowsStepsCmd)

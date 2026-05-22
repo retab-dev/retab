@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -301,6 +302,12 @@ type ListWorkflowArtifactsParams struct {
 	RunID     string
 	Operation string
 	BlockID   string
+	// Cursor pagination by producing step_id. Mutually exclusive — the
+	// server returns 400 when both are set.
+	Before string
+	After  string
+	// Page size (1-200). 0 means "let the server pick the default" (100).
+	Limit int
 }
 
 func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParams) PreparedRequest {
@@ -308,6 +315,11 @@ func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParam
 	addQuery(query, "run_id", params.RunID)
 	addQuery(query, "operation", params.Operation)
 	addQuery(query, "block_id", params.BlockID)
+	addQuery(query, "before", params.Before)
+	addQuery(query, "after", params.After)
+	if params.Limit > 0 {
+		addQuery(query, "limit", strconv.Itoa(params.Limit))
+	}
 	return PreparedRequest{
 		URL:    "/workflows/artifacts",
 		Method: http.MethodGet,
@@ -481,22 +493,39 @@ type UpdateWorkflowBlockRequest struct {
 	ConfigMode string `json:"config_mode,omitempty"`
 }
 
+type ListWorkflowBlocksParams struct {
+	// Cursor pagination by block id. Mutually exclusive — the server
+	// returns 400 when both are set.
+	Before string
+	After  string
+	// Page size (1-200). 0 means "let the server pick the default" (100).
+	Limit int
+}
+
 // List returns the canonical paginated envelope
-// {"data": [...], "list_metadata": {"before": null, "after": null}} for
-// the blocks of a workflow's current draft. Cursor pagination is not yet
-// implemented for this endpoint; ListMetadata is always {nil, nil}.
-func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opts ...RequestOption) (*PaginatedList[WorkflowBlock], error) {
+// {"data": [...], "list_metadata": {...}} for the blocks of a workflow's
+// current draft. Pass “params“ to drive cursor pagination — “After“
+// for the next page, “Before“ for the previous; the two are mutually
+// exclusive.
+func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, params *ListWorkflowBlocksParams, opts ...RequestOption) (*PaginatedList[WorkflowBlock], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	// The /workflows/<id>/blocks endpoint currently returns a bare JSON
-	// array; every other list endpoint returns the canonical paginated
-	// envelope. Sniff the first non-whitespace byte and dispatch
-	// accordingly so callers always receive a wrapped *PaginatedList,
-	// matching the rest of the SDK. Drop the bare-array branch once the
-	// server is consistent.
+	query := url.Values{}
+	if params != nil {
+		addQuery(query, "before", params.Before)
+		addQuery(query, "after", params.After)
+		if params.Limit > 0 {
+			addQuery(query, "limit", strconv.Itoa(params.Limit))
+		}
+	}
+	// The /workflows/<id>/blocks endpoint historically returned a bare
+	// JSON array; canonical responses use the paginated envelope. Sniff
+	// the first non-whitespace byte and dispatch accordingly so callers
+	// always receive a wrapped *PaginatedList, matching the rest of the
+	// SDK. Drop the bare-array branch once the server is consistent.
 	var raw json.RawMessage
-	if err := s.client.do(ctx, http.MethodGet, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), nil, nil, &raw, opts...); err != nil {
+	if err := s.client.do(ctx, http.MethodGet, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), query, nil, &raw, opts...); err != nil {
 		return nil, err
 	}
 	trimmed := bytes.TrimLeft(raw, " \t\r\n")
@@ -566,12 +595,19 @@ type WorkflowEdgeCreateRequest struct {
 type ListWorkflowEdgesParams struct {
 	SourceBlock string
 	TargetBlock string
+	// Cursor pagination by edge id. Mutually exclusive — the server
+	// returns 400 when both are set.
+	Before string
+	After  string
+	// Page size (1-200). 0 means "let the server pick the default" (100).
+	Limit int
 }
 
 // List returns the canonical paginated envelope
-// {"data": [...], "list_metadata": {"before": null, "after": null}} for
-// edges of a workflow's current draft. Cursor pagination is not yet
-// implemented for this endpoint; ListMetadata is always {nil, nil}.
+// {"data": [...], "list_metadata": {...}} for edges of a workflow's
+// current draft. Pass “params“ to drive cursor pagination — “After“
+// for the next page, “Before“ for the previous; the two are mutually
+// exclusive.
 func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, params *ListWorkflowEdgesParams, opts ...RequestOption) (*PaginatedList[WorkflowEdgeDoc], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
@@ -580,6 +616,11 @@ func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, para
 	if params != nil {
 		addQuery(query, "source_block", params.SourceBlock)
 		addQuery(query, "target_block", params.TargetBlock)
+		addQuery(query, "before", params.Before)
+		addQuery(query, "after", params.After)
+		if params.Limit > 0 {
+			addQuery(query, "limit", strconv.Itoa(params.Limit))
+		}
 	}
 	var result PaginatedList[WorkflowEdgeDoc]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), query, nil, &result, opts...)
@@ -934,16 +975,34 @@ type WorkflowStepsService struct {
 	client *Client
 }
 
+type ListWorkflowStepsParams struct {
+	// Cursor pagination by step_id. Mutually exclusive — the server
+	// returns 400 when both are set.
+	Before string
+	After  string
+	// Page size (1-1000). 0 means "let the server pick the default" (200).
+	Limit int
+}
+
 // List returns the canonical paginated envelope
-// {"data": [...], "list_metadata": {"before": null, "after": null}} for
-// the persisted step documents of one workflow run. Cursor pagination is
-// not yet implemented for this endpoint; ListMetadata is always {nil, nil}.
-func (s *WorkflowStepsService) List(ctx context.Context, runID string, opts ...RequestOption) (*PaginatedList[WorkflowRunStep], error) {
+// {"data": [...], "list_metadata": {...}} for the persisted step documents
+// of one workflow run. Pass “params“ to drive cursor pagination —
+// “After“ for the next page, “Before“ for the previous; the two are
+// mutually exclusive.
+func (s *WorkflowStepsService) List(ctx context.Context, runID string, params *ListWorkflowStepsParams, opts ...RequestOption) (*PaginatedList[WorkflowRunStep], error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
+	query := url.Values{}
+	if params != nil {
+		addQuery(query, "before", params.Before)
+		addQuery(query, "after", params.After)
+		if params.Limit > 0 {
+			addQuery(query, "limit", strconv.Itoa(params.Limit))
+		}
+	}
 	var result PaginatedList[WorkflowRunStep]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/steps?run_id="+url.QueryEscape(runID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/steps?run_id="+url.QueryEscape(runID), query, nil, &result, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -995,7 +1054,7 @@ type ListReviewsParams struct {
 // oldest-created first. The response is the standard cursor envelope: inspect
 // result.ListMetadata.After to detect truncation and pass it back as the
 // After param on the next call to fetch the following page.
-func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[ReviewSummary], error) {
+func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[Review], error) {
 	query := url.Values{}
 	query.Set("decision_status", "pending")
 	if params != nil {
@@ -1014,7 +1073,7 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result PaginatedList[ReviewSummary]
+	var result PaginatedList[Review]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews", query, nil, &result, opts...)
 	if err != nil {
 		return nil, err

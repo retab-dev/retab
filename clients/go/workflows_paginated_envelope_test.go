@@ -73,7 +73,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	blocks, err := client.Workflows.Blocks.List(ctx, "wf_aaa")
+	blocks, err := client.Workflows.Blocks.List(ctx, "wf_aaa", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("artifacts = %#v", artifacts)
 	}
 
-	steps, err := client.Workflows.Steps.List(ctx, "run_aaa")
+	steps, err := client.Workflows.Steps.List(ctx, "run_aaa", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -453,7 +453,27 @@ result records.`,
 var workflowsTestsRunsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create a workflow-test run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Start a workflow-test run. The positional argument is the
+` + "`workflow-id`" + ` (NOT a test id) — by default the run executes
+every test attached to the workflow.
+
+To run a single test pass ` + "`--test-id`" + `; to override the inputs
+that target the workflow's start block pass ` + "`--target-file`" + ` (a
+JSON map of start-block handle id → handle payload).
+
+Poll progress with ` + "`workflows tests runs get`" + ` and fetch per-test
+results with ` + "`workflows tests runs results list`" + `.`,
+	Example: `  # Run every test in the workflow
+  retab workflows tests runs create wf_abc123
+
+  # Run a single test
+  retab workflows tests runs create wf_abc123 \
+    --test-id wfnodetest_jkl012
+
+  # Override the start-block inputs
+  retab workflows tests runs create wf_abc123 \
+    --target-file ./inputs.json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		body := map[string]any{}
 		if testID, _ := cmd.Flags().GetString("test-id"); testID != "" {

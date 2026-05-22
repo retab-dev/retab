@@ -25,8 +25,8 @@ import { ZWorkflowSnapshotRef } from '../../../generated_types.js';
 export const ZNConsensusValue = z.union([z.literal(3), z.literal(5), z.literal(7)]);
 export type NConsensusValue = z.infer<typeof ZNConsensusValue>;
 
-export const ZExperimentBlockKind = z.enum(['extract', 'classifier', 'split', 'for_each']);
-export type ExperimentBlockKind = z.infer<typeof ZExperimentBlockKind>;
+export const ZExperimentBlockType = z.enum(['extract', 'classifier', 'split', 'for_each']);
+export type ExperimentBlockType = z.infer<typeof ZExperimentBlockType>;
 
 export const ZExperimentRunStatus = z.enum([
   'pending',
@@ -87,7 +87,7 @@ export const ZWorkflowExperiment = z
     created_at: z.string(),
     updated_at: z.string(),
     status: ZExperimentPublicStatus.default('draft'),
-    block_kind: ZExperimentBlockKind,
+    block_type: ZExperimentBlockType,
     score: z.number().nullable().optional(),
     is_stale: z.boolean().default(false),
     schema_drift: ZSchemaDriftStatus.default('unknown'),
@@ -152,7 +152,7 @@ export const ZExperimentRun = z
     timing: ZExperimentRunTiming,
     experiment_id: z.string(),
     block_id: z.string(),
-    block_kind: ZExperimentBlockKind,
+    block_type: ZExperimentBlockType,
     n_consensus: ZNConsensusValue,
     definition_fingerprint: z.string(),
     documents_fingerprint: z.string(),
@@ -226,7 +226,7 @@ export const ZExperimentResult = z
     document_id: z.string(),
     lifecycle: ZExperimentResultLifecycle,
     timing: ZExperimentResultTiming,
-    block_kind: ZExperimentBlockKind,
+    block_type: ZExperimentBlockType,
     handle_inputs: z.record(z.any()).default({}),
     artifact: ZStepArtifactRefMini.nullable().optional(),
     error: z.string().nullable().optional(),
