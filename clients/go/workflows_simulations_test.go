@@ -110,7 +110,7 @@ func blockSimulationResponse(id string) map[string]any {
 		"run_id":         "run_123",
 		"block_id":       "blk_extract",
 		"block_type":     "extract",
-		"success":        true,
+		"lifecycle":      map[string]any{"status": "completed"},
 		"handle_inputs":  map[string]any{},
 		"handle_outputs": map[string]any{"output-json-0": map[string]any{"type": "json", "data": map[string]any{"vendor": "Acme"}}},
 		"created_at":     "2026-05-21T10:00:00Z",

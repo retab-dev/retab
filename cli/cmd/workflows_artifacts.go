@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -97,7 +98,12 @@ var workflowsArtifactsListCmd = &cobra.Command{
 The run id is positional, matching the other ` + "`workflows <X> list`" + `
 commands (` + "`workflows tests list <wf-id>`" + `,
 ` + "`workflows steps list <run-id>`" + `, …): the positional slot is
-always the parent id, and flags are reserved for filters.`,
+always the parent id, and flags are reserved for filters.
+
+Paginate by passing the cursor from a previous response's
+` + "`list_metadata`" + ` (the producing step's ` + "`step_id`" + `):
+` + "`--after`" + ` for the next page, ` + "`--before`" + ` for the previous
+one. The two are mutually exclusive.`,
 	Example: `  # All artifacts from a run
   retab workflows artifacts list run_xyz789
 
@@ -105,7 +111,14 @@ always the parent id, and flags are reserved for filters.`,
   retab workflows artifacts list run_xyz789 --block-id blk_extract_1
 
   # Just parse-block artifacts
-  retab workflows artifacts list run_xyz789 --operation parse`,
+  retab workflows artifacts list run_xyz789 --operation parse
+
+  # First page of 50
+  retab workflows artifacts list run_xyz789 --limit 50
+
+  # Next page
+  retab workflows artifacts list run_xyz789 --limit 50 \
+    --after $(retab workflows artifacts list run_xyz789 --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -121,6 +134,15 @@ always the parent id, and flags are reserved for filters.`,
 			return err
 		}
 		params.BlockID, _ = cmd.Flags().GetString("block-id")
+		params.Before, _ = cmd.Flags().GetString("before")
+		params.After, _ = cmd.Flags().GetString("after")
+		if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
+			parsed, err := strconv.Atoi(f.Value.String())
+			if err != nil {
+				return fmt.Errorf("invalid --limit %q", f.Value.String())
+			}
+			params.Limit = parsed
+		}
 		result, err := client.Workflows.Artifacts.List(ctx, params)
 		if err != nil {
 			return err
@@ -132,6 +154,10 @@ always the parent id, and flags are reserved for filters.`,
 func init() {
 	workflowsArtifactsListCmd.Flags().String("operation", "", "filter by operation")
 	workflowsArtifactsListCmd.Flags().String("block-id", "", "filter by block id")
+	workflowsArtifactsListCmd.Flags().String("before", "", "step id: return the page before this step (mutually exclusive with --after)")
+	workflowsArtifactsListCmd.Flags().String("after", "", "step id: return the page after this step (mutually exclusive with --before)")
+	workflowsArtifactsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	workflowsArtifactsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	workflowsArtifactsCmd.AddCommand(workflowsArtifactsGetCmd, workflowsArtifactsListCmd)
 	workflowsCmd.AddCommand(workflowsArtifactsCmd)

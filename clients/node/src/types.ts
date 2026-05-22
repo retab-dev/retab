@@ -196,7 +196,7 @@ export type ClassificationDecision = z.infer<typeof ZClassificationDecision>;
 
 export const ZClassificationConsensus = z.object({
   choices: z.array(ZClassificationDecision).default([]),
-  likelihood: z.number().nullable().optional(),
+  likelihoods: z.number().nullable().optional(),
 });
 export type ClassificationConsensus = z.infer<typeof ZClassificationConsensus>;
 
@@ -317,11 +317,19 @@ export const ZEdit = z
     id: z.string(),
     file: generated.ZFileRef,
     model: z.string(),
-    instructions: z.string(),
+    // Aligned with the rest of the data-artifact family
+    // (extraction / split / classification / parse): ``instructions`` is
+    // optional on the wire so the artifact union has a single convention.
+    instructions: z.string().nullable().optional(),
     config: generated.ZEditConfig,
     template_id: z.string().nullable().optional(),
-    data: ZEditResult,
-    usage: generated.ZRetabUsage,
+    // Canonical name across every data-artifact type. Hard cutover — no
+    // ``data`` alias kept. The m_054_edits_data_to_output Mongo migration
+    // runs before this SDK version's wire shape lands.
+    output: ZEditResult,
+    // Aligned with the rest of the data-artifact family: ``usage`` is
+    // optional so the artifact union has a single convention.
+    usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
   })
   .strip();
@@ -824,6 +832,41 @@ export type BlockSimulationCreateRequest = {
   nConsensus?: number;
 };
 
+// Simulation lifecycle is a discriminated terminal union — simulations are
+// synchronous one-shot executions, so by the time a client reads one it has
+// already reached ``completed`` / ``error`` / ``skipped``. There is no
+// pending / queued / running / awaiting_review variant.
+//
+// The discriminator key is ``status`` to mirror ``WorkflowStep`` lifecycles —
+// SDK consumers can switch on ``status`` once and handle either resource.
+export const ZCompletedSimulationLifecycle = z
+  .object({ status: z.literal('completed') })
+  .passthrough();
+export type CompletedSimulationLifecycle = z.infer<typeof ZCompletedSimulationLifecycle>;
+
+export const ZErrorSimulationLifecycle = z
+  .object({
+    status: z.literal('error'),
+    message: z.string(),
+  })
+  .passthrough();
+export type ErrorSimulationLifecycle = z.infer<typeof ZErrorSimulationLifecycle>;
+
+export const ZSkippedSimulationLifecycle = z
+  .object({
+    status: z.literal('skipped'),
+    reason: z.string(),
+  })
+  .passthrough();
+export type SkippedSimulationLifecycle = z.infer<typeof ZSkippedSimulationLifecycle>;
+
+export const ZSimulationLifecycle = z.discriminatedUnion('status', [
+  ZCompletedSimulationLifecycle,
+  ZErrorSimulationLifecycle,
+  ZSkippedSimulationLifecycle,
+]);
+export type SimulationLifecycle = z.infer<typeof ZSimulationLifecycle>;
+
 export const ZBlockSimulation = z
   .object({
     id: z.string(),
@@ -831,14 +874,12 @@ export const ZBlockSimulation = z
     run_id: z.string(),
     block_id: z.string(),
     block_type: z.string(),
-    success: z.boolean(),
+    lifecycle: ZSimulationLifecycle,
     handle_inputs: z.record(z.any()).nullable().optional(),
     artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.any()).nullable().optional(),
     routing_decision: z.array(z.string()).nullable().optional(),
-    error: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
-    skipped: z.boolean().default(false),
     created_at: z.string().nullable().optional(),
     block_config: z.record(z.any()).nullable().optional(),
     step_id: z.string().nullable().optional(),
@@ -917,30 +958,6 @@ export const ZReview = z
   .strict();
 export type Review = z.infer<typeof ZReview>;
 
-/** One review queue row — `Review` projection plus a `seed_version_id` /
- * `version_count` projection computed server-side against the versions
- * collection. Returned by `reviews.list(...)`.
- */
-export const ZReviewSummary = z
-  .object({
-    id: z.string(),
-    workflow_id: z.string(),
-    workflow_version_id: z.string(),
-    workflow_run_id: z.string(),
-    block_id: z.string(),
-    step_id: z.string(),
-    parent_step_id: z.string().nullable().default(null),
-    iteration_key: z.string().nullable().default(null),
-    block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
-    triggered_by: z.record(z.unknown()),
-    created_at: z.string(),
-    decision: ZDecision.nullable().default(null),
-    seed_version_id: z.string(),
-    version_count: z.number().int().nonnegative(),
-  })
-  .strict();
-export type ReviewSummary = z.infer<typeof ZReviewSummary>;
-
 /** One immutable content-addressed snapshot for a review. */
 export const ZReviewVersion = z
   .object({
@@ -971,7 +988,7 @@ export type ListMetadata = z.infer<typeof ZListMetadata>;
  */
 export const ZWorkflowReviewQueue = z
   .object({
-    data: z.array(ZReviewSummary).default([]),
+    data: z.array(ZReview).default([]),
     list_metadata: ZListMetadata,
   })
   .passthrough();

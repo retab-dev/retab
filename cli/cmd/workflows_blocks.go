@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -119,9 +120,20 @@ var workflowsBlocksListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List blocks in a workflow",
 	Long: `List every block in a workflow's draft graph, including id, type,
-label, position, and config.`,
+label, position, and config.
+
+Paginate by passing the cursor from a previous response's
+` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
+` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
 	Example: `  # List all blocks
   retab workflows blocks list wf_abc123
+
+  # First page of 50
+  retab workflows blocks list wf_abc123 --limit 50
+
+  # Next page, using the cursor from the previous response
+  retab workflows blocks list wf_abc123 --limit 50 \
+    --after $(retab workflows blocks list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')
 
   # Get the ids only
   retab workflows blocks list wf_abc123 | jq -r '.data[].id'`,
@@ -131,14 +143,36 @@ label, position, and config.`,
 		if err != nil {
 			return err
 		}
+		params, err := workflowBlocksListParams(cmd)
+		if err != nil {
+			return err
+		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.List(ctx, args[0])
+		result, err := client.Workflows.Blocks.List(ctx, args[0], params)
 		if err != nil {
 			return err
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+func workflowBlocksListParams(cmd *cobra.Command) (*retab.ListWorkflowBlocksParams, error) {
+	before, _ := cmd.Flags().GetString("before")
+	after, _ := cmd.Flags().GetString("after")
+	limit := 0
+	if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
+		raw := f.Value.String()
+		parsed, err := strconv.Atoi(raw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid --limit %q", raw)
+		}
+		limit = parsed
+	}
+	if before == "" && after == "" && limit == 0 {
+		return nil, nil
+	}
+	return &retab.ListWorkflowBlocksParams{Before: before, After: after, Limit: limit}, nil
 }
 
 var workflowsBlocksGetCmd = &cobra.Command{
@@ -462,6 +496,11 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config; nulls delete keys (RFC 7396) (or - for stdin)")
 
 	workflowsBlocksDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
+	workflowsBlocksListCmd.Flags().String("before", "", "block id: return the page before this id (mutually exclusive with --after)")
+	workflowsBlocksListCmd.Flags().String("after", "", "block id: return the page after this id (mutually exclusive with --before)")
+	workflowsBlocksListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	workflowsBlocksListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	// `--workflow-id` is an optional disambiguator for legacy duplicate
 	// block ids. New blocks use server-generated opaque ids and never

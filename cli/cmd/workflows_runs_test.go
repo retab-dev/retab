@@ -689,6 +689,47 @@ func keysOfAnyMap(values map[string]any) []string {
 	return keys
 }
 
+// Regression: “retab workflows runs list --workflow-id ""“ used to silently
+// return runs from every workflow in the org. pflag returns "" for an empty
+// string, the filter check “flagID != ""“ was false, and the listing
+// proceeded with no workflow filter. The positional form already errors
+// (the SDK guard rejects empty workflowIDs), so the two forms used to
+// disagree on what an empty arg means.
+func TestWorkflowsRunsListRejectsEmptyWorkflowIDFlag(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for empty --workflow-id, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsListCmd.Flags().Set("workflow-id", ""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "workflow-id") })
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected --workflow-id must not be blank error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--workflow-id must not be blank") {
+		t.Fatalf("error %q does not mention --workflow-id", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsListRejectsInvalidListFlagsLocally(t *testing.T) {
 	cases := []struct {
 		name      string

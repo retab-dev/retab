@@ -20,9 +20,9 @@ function validateEdit(e: Edit | null): void {
   expect(typeof e.instructions).toBe('string');
   expect(e.config).toBeDefined();
 
-  expect(e.data).toBeDefined();
-  expect(Array.isArray(e.data.form_data)).toBe(true);
-  expect(e.data.filled_document).toBeDefined();
+  expect(e.output).toBeDefined();
+  expect(Array.isArray(e.output.form_data)).toBe(true);
+  expect(e.output.filled_document).toBeDefined();
 }
 
 describe('Retab SDK Edits Resource Tests', () => {

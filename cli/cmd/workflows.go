@@ -23,7 +23,7 @@ import (
 // keep the user from publishing — the publish call itself will surface any
 // real auth/server failure with its own error.
 func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, workflowID string, w io.Writer) {
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
 	if err != nil {
 		return
 	}
@@ -377,6 +377,19 @@ and ` + "`workflows edges`" + `.`,
 		senderChanged := cmd.Flags().Changed("allowed-sender")
 		domainChanged := cmd.Flags().Changed("allowed-domain")
 		if senderChanged || domainChanged {
+			// pflag's ``StringArray.Set`` drops a single empty argument from
+			// the resulting slice but still records the flag as ``Changed``.
+			// Without this guard, ``--allowed-sender ""`` would skip the
+			// per-entry validator entirely (zero iterations) and flow through
+			// to a full-replace ``EmailTrigger`` patch with ``[]`` — silently
+			// wiping the persisted allowlist. Reject the shape here, matching
+			// how ``--allowed-sender "   "`` already errors out.
+			if senderChanged && len(senders) == 0 {
+				return fmt.Errorf("--allowed-sender must not be blank")
+			}
+			if domainChanged && len(domains) == 0 {
+				return fmt.Errorf("--allowed-domain must not be blank")
+			}
 			if err := validateWorkflowEmailAllowlistValues("--allowed-sender", senders); err != nil {
 				return err
 			}

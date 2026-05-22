@@ -12,7 +12,6 @@ from retab.types.workflows import (
     Review,
     ReviewDecision,
     WorkflowReviewQueue,
-    ReviewSummary,
     ReviewVersion,
     ReviewVersionListResponse,
     SubmitDecisionResponse,
@@ -68,9 +67,10 @@ _CHILD_OUTPUT_VERSION = {
     "snapshot": {"output": {"total": 150, "currency": "USD"}},
 }
 
-_SUMMARY = {
+_QUEUE_ROW = {
     "id": _REVIEW_ID,
     "workflow_id": "wf_1",
+    "workflow_version_id": "wv_1",
     "workflow_run_id": "run_1",
     "block_id": "extract-1",
     "step_id": "step_1",
@@ -79,8 +79,6 @@ _SUMMARY = {
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence"},
     "created_at": _NOW,
-    "seed_version_id": _VERSION_ID,
-    "version_count": 2,
     "decision": None,
 }
 
@@ -93,16 +91,15 @@ def test_review_round_trips() -> None:
     assert review.decision.version_id == _VERSION_ID
 
 
-def test_review_summary_round_trips_without_full_history() -> None:
-    item = ReviewSummary.model_validate(_SUMMARY)
+def test_review_queue_row_round_trips_without_full_history() -> None:
+    item = Review.model_validate(_QUEUE_ROW)
     assert item.id == _REVIEW_ID
-    assert item.seed_version_id == _VERSION_ID
     dumped = item.model_dump()
     assert "versions" not in dumped
 
 
 def test_review_queue_response_round_trips() -> None:
-    resp = WorkflowReviewQueue.model_validate({"data": [_SUMMARY], "list_metadata": {"before": None, "after": _REVIEW_ID}})
+    resp = WorkflowReviewQueue.model_validate({"data": [_QUEUE_ROW], "list_metadata": {"before": None, "after": _REVIEW_ID}})
     assert resp.has_more is True
     assert resp.data[0].step_id == "step_1"
 
@@ -223,7 +220,7 @@ def test_prepare_approve_and_reject_use_split_endpoints() -> None:
 def test_list_get_approve_parse_responses() -> None:
     client = MagicMock()
     client._prepared_request.side_effect = [
-        {"data": [_SUMMARY], "list_metadata": {"before": None, "after": None}},
+        {"data": [_QUEUE_ROW], "list_metadata": {"before": None, "after": None}},
         _REVIEW,
         {"submission_status": "accepted", "review": _REVIEW, "resume_status": "resumed"},
     ]
@@ -231,9 +228,7 @@ def test_list_get_approve_parse_responses() -> None:
 
     queue = reviews.list(workflow_id="wf_1")
     assert isinstance(queue, WorkflowReviewQueue)
-    # The list row projection carries seed_version_id + version_count.
-    assert queue.data[0].seed_version_id == _VERSION_ID
-    assert queue.data[0].version_count == 2
+    assert queue.data[0].id == _REVIEW_ID
     assert isinstance(reviews.get(_REVIEW_ID), Review)
     assert reviews.approve(_REVIEW_ID, version_id=_VERSION_ID).resume_status == "resumed"
 

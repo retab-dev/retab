@@ -29,7 +29,7 @@ func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
 			"run_id":      "run_123",
 			"block_id":    "blk_extract",
 			"block_type":  "extract",
-			"success":     true,
+			"lifecycle":   map[string]any{"status": "completed"},
 		})
 	}))
 	defer server.Close()
@@ -90,7 +90,7 @@ func TestWorkflowsSimulationsListUsesCanonicalEndpoint(t *testing.T) {
 				"run_id":      "run_123",
 				"block_id":    "blk_extract",
 				"block_type":  "extract",
-				"success":     true,
+				"lifecycle":   map[string]any{"status": "completed"},
 			}},
 			"list_metadata": map[string]any{"before": nil, "after": nil},
 		})

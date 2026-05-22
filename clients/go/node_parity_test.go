@@ -419,7 +419,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	if _, err := client.Workflows.Blocks.List(context.Background(), "wf_123"); err != nil {
+	if _, err := client.Workflows.Blocks.List(context.Background(), "wf_123", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := client.Workflows.Edges.List(context.Background(), "wf_123", nil); err != nil {

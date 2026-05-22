@@ -312,19 +312,18 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 // to hand-roll the same payload.
 func reviewQueueRowJSON(blockRunID string) map[string]any {
 	return map[string]any{
-		"id":              blockRunID,
-		"workflow_id":     "wf_1",
-		"workflow_run_id": "run_1",
-		"block_id":        "blk_1",
-		"step_id":         "step_1",
-		"parent_step_id":  nil,
-		"iteration_key":   nil,
-		"block_type":      "extract",
-		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
-		"created_at":      "2026-05-21T09:00:00Z",
-		"seed_version_id": reviewTestVersionID,
-		"version_count":   1,
-		"decision":        nil,
+		"id":                  blockRunID,
+		"workflow_id":         "wf_1",
+		"workflow_version_id": "wfv_1",
+		"workflow_run_id":     "run_1",
+		"block_id":            "blk_1",
+		"step_id":             "step_1",
+		"parent_step_id":      nil,
+		"iteration_key":       nil,
+		"block_type":          "extract",
+		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
+		"created_at":          "2026-05-21T09:00:00Z",
+		"decision":            nil,
 	}
 }
 

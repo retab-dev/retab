@@ -91,22 +91,37 @@ type StepArtifactRef struct {
 	ID        string `json:"id"`
 }
 
+// SimulationLifecycle is the discriminated terminal state of a simulation.
+// One of:
+//
+//   - {"status": "completed"}
+//   - {"status": "error",   "message": "..."}
+//   - {"status": "skipped", "reason":  "..."}
+//
+// Modelled as a map for the same reason “StepLifecycle“ is: discriminated
+// payloads evolve and a typed struct here would force a Go SDK release for
+// every additive field. Consumers should branch on “Status“ and read the
+// variant-specific keys (“Message“ / “Reason“) directly.
+type SimulationLifecycle map[string]any
+
 // BlockSimulation is the persisted result of replaying one workflow block
 // against a prior run's inputs through POST /workflows/simulations.
+//
+// Terminal state is carried by the discriminated “Lifecycle“ field. The
+// legacy flat “Success“ / “Error“ / “Skipped“ fields were removed in
+// the hard cutover; consumers must read “Lifecycle["status"]“.
 type BlockSimulation struct {
 	ID                  string                     `json:"id"`
 	WorkflowID          string                     `json:"workflow_id"`
 	RunID               string                     `json:"run_id"`
 	BlockID             string                     `json:"block_id"`
 	BlockType           string                     `json:"block_type"`
-	Success             bool                       `json:"success"`
+	Lifecycle           SimulationLifecycle        `json:"lifecycle"`
 	HandleInputs        map[string]any             `json:"handle_inputs,omitempty"`
 	Artifact            *StepArtifactRef           `json:"artifact,omitempty"`
 	HandleOutputs       map[string]any             `json:"handle_outputs,omitempty"`
 	RoutingDecision     []string                   `json:"routing_decision,omitempty"`
-	Error               string                     `json:"error,omitempty"`
 	DurationMS          *float64                   `json:"duration_ms,omitempty"`
-	Skipped             bool                       `json:"skipped,omitempty"`
 	CreatedAt           *time.Time                 `json:"created_at,omitempty"`
 	BlockConfig         map[string]any             `json:"block_config,omitempty"`
 	StepID              string                     `json:"step_id,omitempty"`
@@ -463,31 +478,14 @@ type Review struct {
 	Decision          *ReviewDecisionRecord `json:"decision"`
 }
 
-// ReviewSummary is the lightweight review-queue projection.
-type ReviewSummary struct {
-	ID            string                `json:"id"`
-	WorkflowID    string                `json:"workflow_id"`
-	WorkflowRunID string                `json:"workflow_run_id"`
-	BlockID       string                `json:"block_id"`
-	StepID        string                `json:"step_id"`
-	ParentStepID  *string               `json:"parent_step_id"`
-	IterationKey  *string               `json:"iteration_key"`
-	BlockType     string                `json:"block_type"`
-	TriggeredBy   map[string]any        `json:"triggered_by"`
-	CreatedAt     time.Time             `json:"created_at"`
-	SeedVersionID string                `json:"seed_version_id"`
-	VersionCount  int                   `json:"version_count"`
-	Decision      *ReviewDecisionRecord `json:"decision"`
-}
-
 // WorkflowReviewQueue is one page of the review queue.
 //
-// Deprecated: use PaginatedList[ReviewSummary] returned by
+// Deprecated: use PaginatedList[Review] returned by
 // WorkflowReviewsService.List. WorkflowReviewQueue is kept only as a type
 // alias for source compatibility — the live backend emits the canonical
 // {data, list_metadata} envelope (no has_more boolean), so paginating
 // requires the cursor fields in PaginationCursor (Before/After).
-type WorkflowReviewQueue = PaginatedList[ReviewSummary]
+type WorkflowReviewQueue = PaginatedList[Review]
 
 // SubmitWorkflowReviewDecisionResponse is the result of a verdict submission.
 //

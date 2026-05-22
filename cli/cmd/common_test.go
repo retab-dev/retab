@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +15,46 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// Regression: when the upstream server closes the connection mid-response
+// (e.g. an uvicorn worker crashing on a publish), the bare “net/http“ error
+// surface was “error: Post "...": EOF“ — actionless. “runE“ now translates
+// any connection-drop signal into a clearer message that names the symptom.
+func TestRenderConnectionDropForCLI(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "nil", err: nil, want: false},
+		{name: "bare io.EOF", err: io.EOF, want: true},
+		{name: "bare io.ErrUnexpectedEOF", err: io.ErrUnexpectedEOF, want: true},
+		{name: "wrapped EOF (errors.Is path)", err: fmt.Errorf("transport: %w", io.EOF), want: true},
+		{name: "net/http style suffix", err: errors.New(`Post "http://localhost:4000/v1/workflows/wf/publish": EOF`), want: true},
+		{name: "unexpected EOF substring", err: errors.New(`read body: unexpected EOF`), want: true},
+		{name: "unrelated error stays nil", err: errors.New("validation failed"), want: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := renderConnectionDropForCLI(tc.err)
+			if tc.want {
+				if got == "" {
+					t.Fatalf("expected a connection-drop message, got empty string")
+				}
+				if !strings.HasPrefix(got, "error: ") {
+					t.Fatalf("message should start with 'error: ', got %q", got)
+				}
+				if !strings.Contains(got, "upstream server closed the connection") {
+					t.Fatalf("message should name the symptom; got %q", got)
+				}
+				return
+			}
+			if got != "" {
+				t.Fatalf("expected empty string for non-connection-drop error %v, got %q", tc.err, got)
+			}
+		})
+	}
+}
 
 // TestValidateBaseURL pins the user-supplied base URL guard. Empty (use
 // default) is allowed; http/https URLs with a host are allowed; everything

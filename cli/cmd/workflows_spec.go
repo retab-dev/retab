@@ -35,7 +35,28 @@ metadata. The four verbs form a declarative workflow loop:
   export     dump a live workflow's spec back to YAML
 
 The three POST verbs read YAML from a file path, or from stdin when the
-path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.`,
+path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.
+
+Spec shape (minimum required keys):
+
+  apiVersion: workflows.retab.com/v1alpha2
+  kind: Workflow
+  metadata:
+    id: wrk_my-pipeline       # any unique identifier; reuse the existing id to update
+    name: My pipeline
+  spec:
+    blocks:                    # dict keyed by block id, not a list
+      start:
+        type: start_document
+        label: Start
+        position: {x: 0, y: 0}
+    edges: []
+
+` + "`apiVersion`" + ` is required and currently pinned at
+` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.
+` + "`metadata.id`" + ` is the durable identity used by ` + "`plan`" + ` / ` + "`apply`" + `
+to decide whether to create or update; the same id makes ` + "`apply`" + `
+idempotent.`,
 	Example: `  # Round-trip a workflow through git
   retab workflows spec export wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml

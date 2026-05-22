@@ -41,9 +41,38 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 			fmt.Fprintln(os.Stderr, renderAPIErrorForCLI(cmd, apiErr))
 			return errSilent
 		}
+		if msg := renderConnectionDropForCLI(err); msg != "" {
+			fmt.Fprintln(os.Stderr, msg)
+			return renderedError{err: err}
+		}
 		fmt.Fprintln(os.Stderr, "error: "+err.Error())
 		return renderedError{err: err}
 	}
+}
+
+// renderConnectionDropForCLI replaces bare “net/http“ errors of the
+// shape “Post "...": EOF“ / “unexpected EOF“ with an actionable
+// message. These appear when the upstream server closes the connection
+// mid-response (e.g. an uvicorn worker crashed handling the request),
+// and the raw Go error tells the user nothing about what happened or
+// what to do next.
+//
+// Returns an empty string when the error is not a connection drop —
+// the caller falls back to the default “error: <err>“ render.
+func renderConnectionDropForCLI(err error) string {
+	if err == nil {
+		return ""
+	}
+	if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+		// Some Go HTTP transports wrap EOF in a non-errors.Is-comparable
+		// wrapper. Fall back to a substring check on the rendered text so
+		// the heuristic still catches `Post "...": EOF` from net/http.
+		text := err.Error()
+		if !strings.HasSuffix(text, ": EOF") && !strings.Contains(text, ": unexpected EOF") {
+			return ""
+		}
+	}
+	return "error: upstream server closed the connection unexpectedly — the request likely crashed server-side. Retry, and if it persists check the server logs."
 }
 
 func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {

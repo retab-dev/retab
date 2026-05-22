@@ -26,7 +26,7 @@ from retab.types.workflows.model import HandleInput, WorkflowSnapshotRef
 # ---------------------------------------------------------------------------
 
 NConsensusValue = Literal[3, 5, 7]
-ExperimentBlockKind = Literal["extract", "classifier", "split", "for_each"]
+ExperimentBlockType = Literal["extract", "classifier", "split", "for_each"]
 ExperimentRunStatus = Literal["pending", "running", "completed", "error", "cancelled"]
 ExperimentPublicStatus = Literal["draft", "processing", "completed", "failed", "cancelled"]
 ExperimentTargetKind = Literal["field", "subdocument", "category", "key"]
@@ -127,7 +127,7 @@ class WorkflowExperiment(RetabBaseModel):
     created_at: datetime.datetime
     updated_at: datetime.datetime
     status: ExperimentPublicStatus = "draft"
-    block_kind: ExperimentBlockKind
+    block_type: ExperimentBlockType
     score: float | None = None
     is_stale: bool = False
     schema_drift: ExperimentSchemaDriftStatus = "unknown"
@@ -184,7 +184,7 @@ class ExperimentRun(RetabBaseModel):
     timing: "ExperimentRunTiming"
     experiment_id: str
     block_id: str
-    block_kind: ExperimentBlockKind
+    block_type: ExperimentBlockType
     n_consensus: NConsensusValue
     definition_fingerprint: str
     documents_fingerprint: str
@@ -238,7 +238,7 @@ class ExperimentResult(RetabBaseModel):
     document_id: str
     lifecycle: "ExperimentResultLifecycle"
     timing: "ExperimentResultTiming"
-    block_kind: ExperimentBlockKind
+    block_type: ExperimentBlockType
     handle_inputs: dict[str, HandleInput] = Field(default_factory=dict)
     artifact: StepArtifactRefMini | None = None
     error: str | None = None
@@ -296,7 +296,7 @@ class ExperimentSummaryMetricsResponse(RetabBaseModel):
     kind: Literal["summary"] = "summary"
     view: Literal["summary"] = "summary"
     definition_fingerprint: str | None = None
-    block_kind: ExperimentBlockKind
+    block_type: ExperimentBlockType
     score: float | None = None
     prior_score: float | None = None
     documents: list[ExperimentSummaryMetricDocument] = Field(default_factory=list)
@@ -383,6 +383,10 @@ class ExperimentVoteRow(RetabBaseModel):
 
     consensus: Any | None = None
     votes: list[Any] = Field(default_factory=list)
+    score: float | None = None
+    row_presence_score: float | None = None
+    present_voter_count: int | None = None
+    total_voter_count: int | None = None
 
 
 class ExperimentVotesMetricsResponse(RetabBaseModel):
@@ -474,7 +478,7 @@ class EligibleBlockListResponse(RetabBaseModel):
 
 __all__ = [
     "NConsensusValue",
-    "ExperimentBlockKind",
+    "ExperimentBlockType",
     "ExperimentRunStatus",
     "ExperimentPublicStatus",
     "ExperimentTargetKind",

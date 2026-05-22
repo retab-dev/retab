@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -77,7 +78,7 @@ func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workf
 	if !needsBlockLookup {
 		return nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
 	if err != nil {
 		return err
 	}
@@ -186,12 +187,23 @@ var workflowsEdgesListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List edges in a workflow",
 	Long: `List edges in a workflow's draft graph. Filter by either endpoint
-to focus on a single block's wiring.`,
+to focus on a single block's wiring.
+
+Paginate by passing the cursor from a previous response's
+` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
+` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
 	Example: `  # All edges
   retab workflows edges list wf_abc123
 
   # Just the edges that fan out of one block
-  retab workflows edges list wf_abc123 --source-block blk_def456`,
+  retab workflows edges list wf_abc123 --source-block blk_def456
+
+  # First page of 50
+  retab workflows edges list wf_abc123 --limit 50
+
+  # Next page
+  retab workflows edges list wf_abc123 --limit 50 \
+    --after $(retab workflows edges list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -203,6 +215,15 @@ to focus on a single block's wiring.`,
 		params := retab.ListWorkflowEdgesParams{}
 		params.SourceBlock, _ = cmd.Flags().GetString("source-block")
 		params.TargetBlock, _ = cmd.Flags().GetString("target-block")
+		params.Before, _ = cmd.Flags().GetString("before")
+		params.After, _ = cmd.Flags().GetString("after")
+		if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
+			parsed, err := strconv.Atoi(f.Value.String())
+			if err != nil {
+				return fmt.Errorf("invalid --limit %q", f.Value.String())
+			}
+			params.Limit = parsed
+		}
 		result, err := client.Workflows.Edges.List(ctx, args[0], &params)
 		if err != nil {
 			return err
@@ -409,6 +430,10 @@ is not a terminal.`,
 func init() {
 	workflowsEdgesListCmd.Flags().String("source-block", "", "filter by source block")
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
+	workflowsEdgesListCmd.Flags().String("before", "", "edge id: return the page before this id (mutually exclusive with --after)")
+	workflowsEdgesListCmd.Flags().String("after", "", "edge id: return the page after this id (mutually exclusive with --before)")
+	workflowsEdgesListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	workflowsEdgesListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	workflowsEdgesCreateCmd.Flags().String("id", "", "edge id (optional)")
 	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required) (use start for the single start_document block)")

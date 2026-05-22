@@ -51,7 +51,7 @@ map. This is a human-oriented view for terminal inspection.`,
 		if err != nil {
 			return err
 		}
-		blocks, err := client.Workflows.Blocks.List(ctx, args[0])
+		blocks, err := client.Workflows.Blocks.List(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}

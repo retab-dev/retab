@@ -7,7 +7,6 @@ import { describe, expect, test } from 'bun:test';
 import {
   ZReview,
   ZWorkflowReviewQueue,
-  ZReviewSummary,
   ZReviewVersion,
   ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
@@ -29,12 +28,6 @@ const REAL_REVIEW_FROM_BACKEND = {
   triggered_by: { kind: 'any_required_field_null' },
   created_at: '2026-05-21T09:00:00Z',
   decision: null,
-};
-
-const REAL_SUMMARY_FROM_BACKEND = {
-  ...REAL_REVIEW_FROM_BACKEND,
-  seed_version_id: VERSION_ID,
-  version_count: 1,
 };
 
 const REAL_VERSION_FROM_BACKEND = {
@@ -64,17 +57,9 @@ describe('backend wire-shape vs SDK Zod schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewSummary parses queue projection fields', () => {
-    const result = ZReviewSummary.safeParse(REAL_SUMMARY_FROM_BACKEND);
-    if (!result.success) {
-      console.error('ZReviewSummary failed:', JSON.stringify(result.error.issues, null, 2));
-    }
-    expect(result.success).toBe(true);
-  });
-
   test('ZWorkflowReviewQueue parses {data, list_metadata}', () => {
     const result = ZWorkflowReviewQueue.safeParse({
-      data: [REAL_SUMMARY_FROM_BACKEND],
+      data: [REAL_REVIEW_FROM_BACKEND],
       list_metadata: { before: null, after: null },
     });
     if (!result.success) {

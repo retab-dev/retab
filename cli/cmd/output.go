@@ -333,6 +333,14 @@ const maxAutoColumns = 5
 // blowing out terminal width on long URLs / filenames.
 const autoTableTruncate = 40
 
+// autoTableInteriorTruncate caps interior cells too — high enough that
+// normal names fit but low enough that an absurd outlier (e.g. a
+// 350-char “name“ from a test/probe workflow) doesn't push the whole
+// row off the screen. Set higher than autoTableTruncate so the look
+// stays "trailing column truncates first" for typical content while
+// still bounding pathological cells.
+const autoTableInteriorTruncate = 80
+
 // printResultTable renders v as a fixed-width text table to stdout when
 // the shape is tabulable, falling back to printJSON otherwise.
 //
@@ -578,6 +586,9 @@ func pickAutoColumns(rows []any) []TableColumn {
 						}
 						if isTrailing && len(s) > autoTableTruncate {
 							return s[:autoTableTruncate] + "…"
+						}
+						if !isTrailing && len(s) > autoTableInteriorTruncate {
+							return s[:autoTableInteriorTruncate] + "…"
 						}
 						return s
 					}
