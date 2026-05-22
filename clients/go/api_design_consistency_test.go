@@ -24,8 +24,7 @@ type apiRouteContract struct {
 var approvedSDKNonReferenceRoutes = map[string]bool{
 	// Existing SDK conveniences that are not part of the generated public API
 	// reference. Keep explicit so new non-reference routes cannot appear silently.
-	"/v1/edits/templates/fill": true,
-	"/v1/extractions/stream":   true,
+	"/v1/extractions/stream": true,
 }
 
 func TestWorkflowSDKDesignContractMatchesOpenAPI(t *testing.T) {

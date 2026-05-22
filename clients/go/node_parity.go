@@ -247,14 +247,6 @@ type EditTemplateUpdateRequest struct {
 	FormFields []FormField `json:"form_fields,omitempty"`
 }
 
-type EditTemplateFillRequest struct {
-	TemplateID   string `json:"template_id"`
-	Instructions string `json:"instructions"`
-	Model        string `json:"model,omitempty"`
-	Color        string `json:"-"`
-	BustCache    bool   `json:"bust_cache,omitempty"`
-}
-
 type ListEditTemplatesParams struct {
 	ListParams
 	Name string
@@ -308,22 +300,6 @@ func (s *EditTemplatesService) Delete(ctx context.Context, templateID string, op
 		return fmt.Errorf("retab: templateID is required")
 	}
 	return s.client.do(ctx, http.MethodDelete, "/edits/templates/"+url.PathEscape(templateID), nil, nil, nil, opts...)
-}
-
-func (s *EditTemplatesService) Fill(ctx context.Context, request EditTemplateFillRequest, opts ...RequestOption) (*Edit, error) {
-	if request.TemplateID == "" {
-		return nil, fmt.Errorf("retab: templateID is required")
-	}
-	if request.Instructions == "" {
-		return nil, fmt.Errorf("retab: instructions are required")
-	}
-	body := resourceFromJSON(request)
-	if request.Color != "" {
-		body["config"] = Resource{"color": request.Color}
-	}
-	var result Edit
-	err := s.client.do(ctx, http.MethodPost, "/edits/templates/fill", nil, body, &result, opts...)
-	return &result, err
 }
 
 func (s *ExtractionsService) CreateStream(ctx context.Context, request ExtractionCreateRequest, opts ...RequestOption) (*Stream[Resource], error) {

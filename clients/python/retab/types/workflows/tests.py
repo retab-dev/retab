@@ -288,7 +288,7 @@ class WorkflowTestResult(RetabBaseModel):
     skipped: bool | None = False
     assertion_result: AssertionResult | None = None
     verdict_summary: VerdictSummary | None = None
-    verdict: dict[str, Any] | None = None
+    verdict: Literal["passed", "failed", "blocked"] | None = None
 
 
 class WorkflowTestBatchExecutionCounts(RetabBaseModel):

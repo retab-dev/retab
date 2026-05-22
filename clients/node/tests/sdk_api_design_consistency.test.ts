@@ -50,7 +50,6 @@ const PATH_PARAMETER_NAMES: Record<string, string> = {
 const APPROVED_NON_REFERENCE_ROUTES = new Set([
   // Existing SDK conveniences that are not part of the generated public API
   // reference. Keep explicit so new non-reference routes cannot appear silently.
-  '/v1/edits/templates/fill',
   '/v1/extractions/stream',
 ]);
 

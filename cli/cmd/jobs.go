@@ -349,7 +349,6 @@ var allowedJobEndpoints = map[string]bool{
 	"/v1/schemas/generate":         true,
 	"/v1/edits":                    true,
 	"/v1/edits/templates/generate": true,
-	"/v1/edit/templates/fill":      true,
 	"/v1/edit/templates/generate":  true,
 	"/v1/evals/extract/process":    true,
 	"/v1/evals/extract/extract":    true,
