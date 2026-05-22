@@ -16,7 +16,7 @@
  */
 
 import * as z from 'zod';
-import { ZWorkflowSnapshotRef } from '../../../generated_types.js';
+import { ZErrorDetails, ZWorkflowSnapshotRef } from '../../../generated_types.js';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -126,11 +126,58 @@ export const ZExperimentRunTrigger = z
   .passthrough();
 export type ExperimentRunTrigger = z.infer<typeof ZExperimentRunTrigger>;
 
-export const ZExperimentRunLifecycle = z
+// --- ExperimentRun lifecycle discriminated union ---------------------------
+//
+// Mirror of the backend wire shape. Per the meta-pattern blueprint
+// principle #3 (invariants in shape, not prose), ``lifecycle`` is a
+// discriminated union so per-state fields can carry data
+// (``error.message`` / ``cancelled.reason``).
+
+export const ZPendingWorkflowExperimentRun = z
+  .object({ status: z.literal('pending').default('pending') })
+  .strip();
+export type PendingWorkflowExperimentRun = z.infer<typeof ZPendingWorkflowExperimentRun>;
+
+export const ZQueuedWorkflowExperimentRun = z
+  .object({ status: z.literal('queued').default('queued') })
+  .strip();
+export type QueuedWorkflowExperimentRun = z.infer<typeof ZQueuedWorkflowExperimentRun>;
+
+export const ZRunningWorkflowExperimentRun = z
+  .object({ status: z.literal('running').default('running') })
+  .strip();
+export type RunningWorkflowExperimentRun = z.infer<typeof ZRunningWorkflowExperimentRun>;
+
+export const ZCompletedWorkflowExperimentRun = z
+  .object({ status: z.literal('completed').default('completed') })
+  .strip();
+export type CompletedWorkflowExperimentRun = z.infer<typeof ZCompletedWorkflowExperimentRun>;
+
+export const ZErrorWorkflowExperimentRun = z
   .object({
-    status: ZExperimentRunStatus,
+    status: z.literal('error').default('error'),
+    message: z.string().default('(no message)'),
+    details: ZErrorDetails.nullable().optional(),
   })
   .strip();
+export type ErrorWorkflowExperimentRun = z.infer<typeof ZErrorWorkflowExperimentRun>;
+
+export const ZCancelledWorkflowExperimentRun = z
+  .object({
+    status: z.literal('cancelled').default('cancelled'),
+    reason: z.string().nullable().optional(),
+  })
+  .strip();
+export type CancelledWorkflowExperimentRun = z.infer<typeof ZCancelledWorkflowExperimentRun>;
+
+export const ZExperimentRunLifecycle = z.discriminatedUnion('status', [
+  ZPendingWorkflowExperimentRun,
+  ZQueuedWorkflowExperimentRun,
+  ZRunningWorkflowExperimentRun,
+  ZCompletedWorkflowExperimentRun,
+  ZErrorWorkflowExperimentRun,
+  ZCancelledWorkflowExperimentRun,
+]);
 export type ExperimentRunLifecycle = z.infer<typeof ZExperimentRunLifecycle>;
 
 export const ZExperimentRunTiming = z
@@ -193,11 +240,53 @@ export type ExperimentRunListResponse = z.infer<typeof ZExperimentRunListRespons
 export const ZExperimentResultStatus = z.enum(['pending', 'running', 'completed', 'error']);
 export type ExperimentResultStatus = z.infer<typeof ZExperimentResultStatus>;
 
-export const ZExperimentResultLifecycle = z
+// --- ExperimentResult lifecycle discriminated union ------------------------
+
+export const ZPendingWorkflowExperimentResult = z
+  .object({ status: z.literal('pending').default('pending') })
+  .strip();
+export type PendingWorkflowExperimentResult = z.infer<typeof ZPendingWorkflowExperimentResult>;
+
+export const ZQueuedWorkflowExperimentResult = z
+  .object({ status: z.literal('queued').default('queued') })
+  .strip();
+export type QueuedWorkflowExperimentResult = z.infer<typeof ZQueuedWorkflowExperimentResult>;
+
+export const ZRunningWorkflowExperimentResult = z
+  .object({ status: z.literal('running').default('running') })
+  .strip();
+export type RunningWorkflowExperimentResult = z.infer<typeof ZRunningWorkflowExperimentResult>;
+
+export const ZCompletedWorkflowExperimentResult = z
+  .object({ status: z.literal('completed').default('completed') })
+  .strip();
+export type CompletedWorkflowExperimentResult = z.infer<typeof ZCompletedWorkflowExperimentResult>;
+
+export const ZErrorWorkflowExperimentResult = z
   .object({
-    status: ZExperimentResultStatus,
+    status: z.literal('error').default('error'),
+    message: z.string().default('(no message)'),
+    details: ZErrorDetails.nullable().optional(),
   })
   .strip();
+export type ErrorWorkflowExperimentResult = z.infer<typeof ZErrorWorkflowExperimentResult>;
+
+export const ZCancelledWorkflowExperimentResult = z
+  .object({
+    status: z.literal('cancelled').default('cancelled'),
+    reason: z.string().nullable().optional(),
+  })
+  .strip();
+export type CancelledWorkflowExperimentResult = z.infer<typeof ZCancelledWorkflowExperimentResult>;
+
+export const ZExperimentResultLifecycle = z.discriminatedUnion('status', [
+  ZPendingWorkflowExperimentResult,
+  ZQueuedWorkflowExperimentResult,
+  ZRunningWorkflowExperimentResult,
+  ZCompletedWorkflowExperimentResult,
+  ZErrorWorkflowExperimentResult,
+  ZCancelledWorkflowExperimentResult,
+]);
 export type ExperimentResultLifecycle = z.infer<typeof ZExperimentResultLifecycle>;
 
 export const ZExperimentResultTiming = z
@@ -229,7 +318,6 @@ export const ZExperimentResult = z
     block_type: ZExperimentBlockType,
     handle_inputs: z.record(z.any()).default({}),
     artifact: ZStepArtifactRefMini.nullable().optional(),
-    error: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     created_at: z.string().nullable().optional(),
     started_at: z.string().nullable().optional(),

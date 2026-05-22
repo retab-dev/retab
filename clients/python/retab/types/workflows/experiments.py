@@ -18,7 +18,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
-from retab.types.workflows.model import HandleInput, WorkflowSnapshotRef
+from retab.types.workflows.model import ErrorDetails, HandleInput, WorkflowSnapshotRef
 
 
 # ---------------------------------------------------------------------------
@@ -152,10 +152,64 @@ class ExperimentRunTrigger(RetabBaseModel):
     type: str | None = None
 
 
-class ExperimentRunLifecycle(RetabBaseModel):
+# --- ExperimentRun lifecycle discriminated union -----------------------------
+#
+# Mirror of the backend wire shape. Per the meta-pattern blueprint principle #3
+# (invariants in shape, not prose): ``lifecycle`` references a discriminated
+# union of typed states so per-state fields can carry data
+# (``ErrorWorkflowExperimentRun.message`` / ``CancelledWorkflowExperimentRun.reason``).
+
+
+class PendingWorkflowExperimentRun(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    status: ExperimentRunStatus
+    status: Literal["pending"] = "pending"
+
+
+class QueuedWorkflowExperimentRun(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["queued"] = "queued"
+
+
+class RunningWorkflowExperimentRun(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["running"] = "running"
+
+
+class CompletedWorkflowExperimentRun(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["completed"] = "completed"
+
+
+class ErrorWorkflowExperimentRun(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["error"] = "error"
+    message: str = Field(default="(no message)")
+    details: ErrorDetails | None = None
+
+
+class CancelledWorkflowExperimentRun(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["cancelled"] = "cancelled"
+    reason: str | None = None
+
+
+ExperimentRunLifecycle = Annotated[
+    Union[
+        PendingWorkflowExperimentRun,
+        QueuedWorkflowExperimentRun,
+        RunningWorkflowExperimentRun,
+        CompletedWorkflowExperimentRun,
+        ErrorWorkflowExperimentRun,
+        CancelledWorkflowExperimentRun,
+    ],
+    Field(discriminator="status"),
+]
 
 
 class ExperimentRunTiming(RetabBaseModel):
@@ -206,10 +260,59 @@ class CancelWorkflowExperimentRunResponse(RetabBaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentResultLifecycle(RetabBaseModel):
+# --- ExperimentResult lifecycle discriminated union --------------------------
+
+
+class PendingWorkflowExperimentResult(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    status: Literal["pending", "running", "completed", "error"]
+    status: Literal["pending"] = "pending"
+
+
+class QueuedWorkflowExperimentResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["queued"] = "queued"
+
+
+class RunningWorkflowExperimentResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["running"] = "running"
+
+
+class CompletedWorkflowExperimentResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["completed"] = "completed"
+
+
+class ErrorWorkflowExperimentResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["error"] = "error"
+    message: str = Field(default="(no message)")
+    details: ErrorDetails | None = None
+
+
+class CancelledWorkflowExperimentResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["cancelled"] = "cancelled"
+    reason: str | None = None
+
+
+ExperimentResultLifecycle = Annotated[
+    Union[
+        PendingWorkflowExperimentResult,
+        QueuedWorkflowExperimentResult,
+        RunningWorkflowExperimentResult,
+        CompletedWorkflowExperimentResult,
+        ErrorWorkflowExperimentResult,
+        CancelledWorkflowExperimentResult,
+    ],
+    Field(discriminator="status"),
+]
 
 
 class ExperimentResultTiming(RetabBaseModel):
@@ -239,7 +342,6 @@ class ExperimentResult(RetabBaseModel):
     block_type: ExperimentBlockType
     handle_inputs: dict[str, HandleInput] = Field(default_factory=dict)
     artifact: StepArtifactRefMini | None = None
-    error: str | None = None
     duration_ms: int | None = None
     created_at: datetime.datetime | None = None
     started_at: datetime.datetime | None = None
@@ -490,10 +592,22 @@ __all__ = [
     "WorkflowExperiment",
     "ExperimentRunTrigger",
     "ExperimentRunLifecycle",
+    "PendingWorkflowExperimentRun",
+    "QueuedWorkflowExperimentRun",
+    "RunningWorkflowExperimentRun",
+    "CompletedWorkflowExperimentRun",
+    "ErrorWorkflowExperimentRun",
+    "CancelledWorkflowExperimentRun",
     "ExperimentRunTiming",
     "ExperimentRun",
     "CancelWorkflowExperimentRunResponse",
     "ExperimentResultLifecycle",
+    "PendingWorkflowExperimentResult",
+    "QueuedWorkflowExperimentResult",
+    "RunningWorkflowExperimentResult",
+    "CompletedWorkflowExperimentResult",
+    "ErrorWorkflowExperimentResult",
+    "CancelledWorkflowExperimentResult",
     "ExperimentResultTiming",
     "ExperimentResult",
     "ExperimentSummaryMetricDocument",

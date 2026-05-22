@@ -1628,7 +1628,6 @@ type ExperimentResult struct {
 	BlockKind     string                    `json:"block_kind"`
 	HandleInputs  map[string]any            `json:"handle_inputs"`
 	Artifact      *StepArtifactRef          `json:"artifact,omitempty"`
-	Error         string                    `json:"error,omitempty"`
 	DurationMs    *int                      `json:"duration_ms,omitempty"`
 	CreatedAt     *time.Time                `json:"created_at,omitempty"`
 	StartedAt     *time.Time                `json:"started_at,omitempty"`
