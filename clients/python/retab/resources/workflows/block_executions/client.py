@@ -3,11 +3,11 @@ from typing import Any, Dict
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
-from ....types.workflows import BlockSimulation
+from ....types.workflows import StoredBlockExecution
 
 
-class WorkflowSimulationsMixin:
-    """Shared prepare methods for workflow simulation operations."""
+class WorkflowBlockExecutionsMixin:
+    """Shared prepare methods for workflow block execution operations."""
 
     def prepare_create(
         self,
@@ -17,7 +17,7 @@ class WorkflowSimulationsMixin:
         step_id: str | None = None,
         n_consensus: int | None = None,
     ) -> PreparedRequest:
-        """Prepare a request to create and run a workflow block simulation."""
+        """Prepare a request to create and run a workflow block execution."""
         data: Dict[str, Any] = {
             "run_id": run_id,
             "block_id": block_id,
@@ -26,7 +26,7 @@ class WorkflowSimulationsMixin:
             data["step_id"] = step_id
         if n_consensus is not None:
             data["n_consensus"] = n_consensus
-        return PreparedRequest(method="POST", url="/workflows/simulations", data=data)
+        return PreparedRequest(method="POST", url="/workflows/blocks/executions", data=data)
 
     def prepare_list(
         self,
@@ -35,10 +35,10 @@ class WorkflowSimulationsMixin:
         block_id: str,
         limit: int = 20,
     ) -> PreparedRequest:
-        """Prepare a request to list simulations for a run/block pair."""
+        """Prepare a request to list block executions for a run/block pair."""
         return PreparedRequest(
             method="GET",
-            url="/workflows/simulations",
+            url="/workflows/blocks/executions",
             params={
                 "run_id": run_id,
                 "block_id": block_id,
@@ -47,8 +47,8 @@ class WorkflowSimulationsMixin:
         )
 
 
-class WorkflowSimulations(SyncAPIResource, WorkflowSimulationsMixin):
-    """Workflow Simulations API wrapper for synchronous operations."""
+class WorkflowBlockExecutions(SyncAPIResource, WorkflowBlockExecutionsMixin):
+    """Workflow Blocks Executions API wrapper for synchronous operations."""
 
     def create(
         self,
@@ -57,8 +57,8 @@ class WorkflowSimulations(SyncAPIResource, WorkflowSimulationsMixin):
         block_id: str,
         step_id: str | None = None,
         n_consensus: int | None = None,
-    ) -> BlockSimulation:
-        """Create and run a workflow block simulation."""
+    ) -> StoredBlockExecution:
+        """Create and run a workflow block execution."""
         request = self.prepare_create(
             run_id=run_id,
             block_id=block_id,
@@ -66,7 +66,7 @@ class WorkflowSimulations(SyncAPIResource, WorkflowSimulationsMixin):
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
-        return BlockSimulation.model_validate(response)
+        return StoredBlockExecution.model_validate(response)
 
     def list(
         self,
@@ -74,17 +74,17 @@ class WorkflowSimulations(SyncAPIResource, WorkflowSimulationsMixin):
         run_id: str,
         block_id: str,
         limit: int = 20,
-    ) -> PaginatedList[BlockSimulation]:
-        """List simulations for a run/block pair."""
+    ) -> PaginatedList[StoredBlockExecution]:
+        """List block executions for a run/block pair."""
         request = self.prepare_list(run_id=run_id, block_id=block_id, limit=limit)
         response = self._client._prepared_request(request)
-        result = PaginatedList[BlockSimulation](**response)
-        result.data = [BlockSimulation.model_validate(item) for item in result.data]
+        result = PaginatedList[StoredBlockExecution](**response)
+        result.data = [StoredBlockExecution.model_validate(item) for item in result.data]
         return result
 
 
-class AsyncWorkflowSimulations(AsyncAPIResource, WorkflowSimulationsMixin):
-    """Workflow Simulations API wrapper for asynchronous operations."""
+class AsyncWorkflowBlockExecutions(AsyncAPIResource, WorkflowBlockExecutionsMixin):
+    """Workflow Blocks Executions API wrapper for asynchronous operations."""
 
     async def create(
         self,
@@ -93,8 +93,8 @@ class AsyncWorkflowSimulations(AsyncAPIResource, WorkflowSimulationsMixin):
         block_id: str,
         step_id: str | None = None,
         n_consensus: int | None = None,
-    ) -> BlockSimulation:
-        """Create and run a workflow block simulation."""
+    ) -> StoredBlockExecution:
+        """Create and run a workflow block execution."""
         request = self.prepare_create(
             run_id=run_id,
             block_id=block_id,
@@ -102,7 +102,7 @@ class AsyncWorkflowSimulations(AsyncAPIResource, WorkflowSimulationsMixin):
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
-        return BlockSimulation.model_validate(response)
+        return StoredBlockExecution.model_validate(response)
 
     async def list(
         self,
@@ -110,10 +110,10 @@ class AsyncWorkflowSimulations(AsyncAPIResource, WorkflowSimulationsMixin):
         run_id: str,
         block_id: str,
         limit: int = 20,
-    ) -> PaginatedList[BlockSimulation]:
-        """List simulations for a run/block pair."""
+    ) -> PaginatedList[StoredBlockExecution]:
+        """List block executions for a run/block pair."""
         request = self.prepare_list(run_id=run_id, block_id=block_id, limit=limit)
         response = await self._client._prepared_request(request)
-        result = PaginatedList[BlockSimulation](**response)
-        result.data = [BlockSimulation.model_validate(item) for item in result.data]
+        result = PaginatedList[StoredBlockExecution](**response)
+        result.data = [StoredBlockExecution.model_validate(item) for item in result.data]
         return result

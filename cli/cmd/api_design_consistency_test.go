@@ -34,7 +34,7 @@ func TestWorkflowCLIDesignContractMatchesOpenAPI(t *testing.T) {
 	}
 }
 
-func TestWorkflowCLIUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T) {
+func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testing.T) {
 	commands := collectLeafCommandPaths(rootCmd)
 
 	for _, commandPath := range []string{
@@ -45,8 +45,8 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 		"workflows reviews versions list",
 		"workflows reviews versions get",
 		"workflows reviews versions create",
-		"workflows simulations create",
-		"workflows simulations list",
+		"workflows block-executions create",
+		"workflows block-executions list",
 		"workflows tests create",
 		"workflows tests list",
 		"workflows tests get",
@@ -68,7 +68,7 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 		"workflows reviews append",
 		"workflows reviews edit",
 		"workflows reviews versions append",
-		"workflows simulations get",
+		"workflows block-executions get",
 	} {
 		if commands[removedCommandPath] {
 			t.Fatalf("CLI still exposes removed command retab %s", removedCommandPath)
@@ -85,9 +85,9 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 		}
 	}
 
-	nestedWorkflowRoute := regexp.MustCompile(`"/workflows/"\s*\+\s*(?:url\.)?PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|simulations|tests)(?:/|")`)
+	nestedWorkflowRoute := regexp.MustCompile(`"/workflows/"\s*\+\s*(?:url\.)?PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|block executions|tests)(?:/|")`)
 	if match := nestedWorkflowRoute.FindString(source); match != "" {
-		t.Fatalf("CLI must use flat workflow routes for reviews/simulations/tests, found nested route expression: %s", match)
+		t.Fatalf("CLI must use flat workflow routes for reviews/blocks/executions/tests, found nested route expression: %s", match)
 	}
 
 	for _, removed := range []string{"append_version", "append-version", "appendVersion", "AppendVersion"} {
@@ -118,8 +118,8 @@ func workflowCLIRouteContract() []cliRouteContract {
 		{method: http.MethodGet, path: "/workflows/reviews/versions"},
 		{method: http.MethodPost, path: "/workflows/reviews/versions"},
 		{method: http.MethodGet, path: "/workflows/reviews/versions/{version_id}"},
-		{method: http.MethodPost, path: "/workflows/simulations"},
-		{method: http.MethodGet, path: "/workflows/simulations"},
+		{method: http.MethodPost, path: "/workflows/blocks/executions"},
+		{method: http.MethodGet, path: "/workflows/blocks/executions"},
 		{method: http.MethodPost, path: "/workflows/tests"},
 		{method: http.MethodGet, path: "/workflows/tests"},
 		{method: http.MethodGet, path: "/workflows/tests/{test_id}"},

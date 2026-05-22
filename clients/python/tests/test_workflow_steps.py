@@ -189,6 +189,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert step.step_id == "step_extract_1"
     assert step.run_id == "run_123"
     assert "output" not in step.model_dump()
+    assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json"
     assert payload.data == {"invoice_number": "INV-001"}
@@ -216,6 +217,7 @@ def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
 
     step = WorkflowSteps(client=client).get("step_function_1")
 
+    assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json_ref"
     assert payload.artifact_ref == {
@@ -362,6 +364,7 @@ def test_workflow_steps_get_accepts_non_json_handle_output() -> None:
     )
 
     step = WorkflowSteps(client=client).get("step_parse_1")
+    assert step.handle_outputs is not None
     assert step.handle_outputs["output-file-0"].type == "file"
 
 

@@ -65,7 +65,7 @@ class MaterializedDocument(RetabBaseModel):
     filename: str
     mime_type: str
     gcs_uri: str
-    size_bytes: int = 0
+    size_bytes: Optional[int] = 0
     content_fingerprint: str | None = None
 
 
@@ -75,7 +75,7 @@ class JsonHandleInput(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     type: Literal["json"] = "json"
-    data: Any = None
+    data: Any | None = None
 
 
 class FileHandleInput(RetabBaseModel):
@@ -159,7 +159,7 @@ class ContainerContextData(RetabBaseModel):
 
     container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
     iteration: int = Field(..., description="Iteration index (0-based)")
-    is_parallel: bool = Field(default=False, description="Whether this container represents a parallel item")
+    is_parallel: Optional[bool] = Field(default=False, description="Whether this container represents a parallel item")
     parallel_item_index: Optional[int] = Field(default=None, description="Parallel item index if is_parallel")
 
 
@@ -177,7 +177,7 @@ class ErrorDetails(RetabBaseModel):
     block_id: Optional[str] = Field(default=None, description="ID of the block that failed")
     block_name: Optional[str] = Field(default=None, description="Name/label of the block that failed")
     error_code: Optional[str] = Field(default=None, description="Error code if available")
-    context: Optional[dict] = Field(default=None, description="Additional context about the error")
+    context: dict[str, Any] | None = Field(default=None, description="Additional context about the error")
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +211,10 @@ class ErrorStepLifecycle(RetabBaseModel):
     # ``stage``/``category`` are typed enums on the canonical model
     # (``ExecutionStage`` / ``ErrorCategory``); kept as ``str`` here for
     # SDK-flexibility — the canonical backend is the source of truth.
-    stage: Optional[str] = Field(default=None, description="Which execution stage failed")
-    category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
+    stage: Optional[Literal["input_collection", "registry_lookup", "document_fetch", "execution", "output_storage", "routing", "history_payload"]] = Field(
+        default=None, description="Which execution stage failed"
+    )
+    category: Optional[Literal["transient", "permanent", "quota"]] = Field(default=None, description="Category of error for retry decisions")
     details: Optional[ErrorDetails] = Field(default=None, description="Structured error context")
 
 
@@ -243,26 +245,26 @@ class ConditionEvaluationPerItem(RetabBaseModel):
     """Per-item evaluation result for wildcard array conditions."""
 
     index: int = Field(
-        default=0,
+        ...,
         description="Flat index of the matching item (legacy single-dimension array shape).",
     )
-    indices: List[int] = Field(
+    indices: Optional[List[int]] = Field(
         default_factory=list,
         description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])",
     )
-    actual: Any = Field(default=None, description="Actual value at this index")
-    matched: bool = Field(default=False, description="Whether this item matched the condition")
+    actual: Any | None = Field(default=None, description="Actual value at this index")
+    matched: Optional[bool] = Field(default=False, description="Whether this item matched the condition")
 
 
 class ConditionEvaluationSubCondition(RetabBaseModel):
     """Evaluation result for a sub-condition in a compound condition."""
 
-    sub_condition_id: str = Field(default="", description="Identifier for this sub-condition")
-    path: str = Field(default="", description="JSON path that was evaluated")
-    operator: str = Field(default="", description="Comparison operator used")
-    expected: Any = Field(default=None, description="Expected value")
-    actual: Any = Field(default=None, description="Actual value found")
-    matched: bool = Field(default=False, description="Whether this sub-condition matched")
+    sub_condition_id: Optional[str] = Field(default="", description="Identifier for this sub-condition")
+    path: Optional[str] = Field(default="", description="JSON path that was evaluated")
+    operator: Optional[str] = Field(default="", description="Comparison operator used")
+    expected: Any | None = Field(default=None, description="Expected value")
+    actual: Any | None = Field(default=None, description="Actual value found")
+    matched: Optional[bool] = Field(default=False, description="Whether this sub-condition matched")
     per_item: Optional[List[ConditionEvaluationPerItem]] = Field(
         default=None,
         description="Per-item breakdown if this sub-condition used a wildcard path",
@@ -272,11 +274,11 @@ class ConditionEvaluationSubCondition(RetabBaseModel):
 class ConditionEvaluationDetails(RetabBaseModel):
     """Detailed evaluation information for frontend display."""
 
-    path: str = Field(default="", description="JSON path that was evaluated")
-    operator: str = Field(default="", description="Comparison operator used")
-    expected: Any = Field(default=None, description="Expected value")
-    actual: Any = Field(default=None, description="Actual value found")
-    matched: bool = Field(default=False, description="Whether the condition matched")
+    path: Optional[str] = Field(default="", description="JSON path that was evaluated")
+    operator: Optional[str] = Field(default="", description="Comparison operator used")
+    expected: Any | None = Field(default=None, description="Expected value")
+    actual: Any | None = Field(default=None, description="Actual value found")
+    matched: Optional[bool] = Field(default=False, description="Whether the condition matched")
     per_item: Optional[List[ConditionEvaluationPerItem]] = Field(
         default=None,
         description="Per-item breakdown for wildcard array conditions",
@@ -295,12 +297,12 @@ class ConditionEvaluationResult(RetabBaseModel):
     """Complete evaluation result for a routing/termination condition."""
 
     condition_id: str = Field(..., description="Unique identifier for this condition")
-    path: str = Field(default="", description="JSON path that was evaluated")
-    operator: str = Field(default="", description="Comparison operator used")
-    expected: Any = Field(default=None, description="Expected value")
-    actual: Any = Field(default=None, description="Actual value found")
-    matched: bool = Field(default=False, description="Whether the condition matched")
-    branch_name: str = Field(default="", description="Branch name selected by this condition")
+    path: Optional[str] = Field(default="", description="JSON path that was evaluated")
+    operator: Optional[str] = Field(default="", description="Comparison operator used")
+    expected: Any | None = Field(default=None, description="Expected value")
+    actual: Any | None = Field(default=None, description="Actual value found")
+    matched: Optional[bool] = Field(default=False, description="Whether the condition matched")
+    branch_name: Optional[str] = Field(default="exit", description="Branch name selected by this condition")
     logical_operator: Optional[Literal["and", "or"]] = Field(
         default=None,
         description="Logical operator for compound conditions",
@@ -338,13 +340,17 @@ class ConditionalEvaluation(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    operation: Literal["conditional_evaluation"] = Field(
+        default="conditional_evaluation",
+        description="Artifact operation that determines the backing record type",
+    )
     id: str = Field(..., description="Unique identifier")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
-    evaluations: List[ConditionEvaluationResult] = Field(default_factory=list)
-    selected_handles: List[str] = Field(default_factory=list)
+    evaluations: Optional[List[ConditionEvaluationResult]] = Field(default_factory=list)
+    selected_handles: Optional[List[str]] = Field(default_factory=list)
     matched_branch_id: Optional[str] = Field(default=None)
-    matched_condition_ids: List[str] = Field(default_factory=list)
+    matched_condition_ids: Optional[List[str]] = Field(default_factory=list)
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
@@ -358,17 +364,25 @@ class ReviewEvaluation(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    operation: Literal["review_trigger_evaluation"] = Field(
+        default="review_trigger_evaluation",
+        description="Artifact operation that determines the backing record type",
+    )
     id: str = Field(..., description="Unique identifier")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
-    evaluations: List[ConditionEvaluationResult] = Field(default_factory=list)
-    selected_handles: List[str] = Field(default_factory=list)
+    evaluations: Optional[List[ConditionEvaluationResult]] = Field(default_factory=list)
+    selected_handles: Optional[List[str]] = Field(default_factory=list)
     matched_branch_id: Optional[str] = Field(default=None)
-    matched_condition_ids: List[str] = Field(default_factory=list)
-    requires_human_review: bool = Field(default=False)
+    matched_condition_ids: Optional[List[str]] = Field(default_factory=list)
+    requires_human_review: Optional[bool] = Field(default=False)
     reviewer_id: Optional[str] = Field(default=None)
     review_decision: Optional[Literal["approved", "rejected", "needs_changes"]] = Field(default=None)
     review_notes: Optional[str] = Field(default=None)
+    requested_revision: Optional[bool] = Field(
+        default=False,
+        description="Whether the reviewer explicitly requested a revision back to the producing step",
+    )
     reviewed_at: Optional[datetime.datetime] = Field(default=None)
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
@@ -382,6 +396,10 @@ class WhileLoopTermination(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    operation: Literal["while_loop_termination"] = Field(
+        default="while_loop_termination",
+        description="Artifact operation that determines the backing record type",
+    )
     id: str = Field(..., description="Unique identifier")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
@@ -389,7 +407,7 @@ class WhileLoopTermination(RetabBaseModel):
         ...,
         description="Why the while_loop terminated",
     )
-    evaluations: List[ConditionEvaluationResult] = Field(
+    evaluations: Optional[List[ConditionEvaluationResult]] = Field(
         default_factory=list,
         description="Termination condition evaluations recorded for the final iteration",
     )
@@ -404,13 +422,13 @@ class ApiCallAttempt(RetabBaseModel):
     attempt_number: int = Field(..., description="0-based attempt index")
     request_method: str = Field(...)
     request_url: str = Field(...)
-    request_headers: Dict[str, str] = Field(default_factory=dict)
+    request_headers: Optional[Dict[str, str]] = Field(default_factory=dict)
     request_body: Optional[Any] = Field(default=None)
     response_status: Optional[int] = Field(default=None)
-    response_headers: Dict[str, str] = Field(default_factory=dict)
+    response_headers: Optional[Dict[str, str]] = Field(default_factory=dict)
     response_body: Optional[Any] = Field(default=None)
     duration_ms: Optional[int] = Field(default=None)
-    error: Optional[str] = Field(default=None)
+    error: Optional[ErrorDetails] = Field(default=None)
     started_at: Optional[datetime.datetime] = Field(default=None)
     completed_at: Optional[datetime.datetime] = Field(default=None)
 
@@ -424,14 +442,18 @@ class ApiCallInvocation(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    operation: Literal["api_call_invocation"] = Field(
+        default="api_call_invocation",
+        description="Artifact operation that determines the backing record type",
+    )
     id: str = Field(..., description="Unique identifier")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
-    attempts: List[ApiCallAttempt] = Field(
+    attempts: Optional[List[ApiCallAttempt]] = Field(
         default_factory=list,
         description="Full retry trace; final attempt holds the canonical request/response",
     )
-    error: Optional[str] = Field(default=None, description="Final error after exhausted retries, if any")
+    error: Optional[ErrorDetails] = Field(default=None, description="Final error after exhausted retries, if any")
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
@@ -444,13 +466,17 @@ class FunctionInvocation(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    operation: Literal["function_invocation"] = Field(
+        default="function_invocation",
+        description="Artifact operation that determines the backing record type",
+    )
     id: str = Field(..., description="Unique identifier")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
-    inputs: Dict[str, Any] = Field(default_factory=dict)
+    inputs: Optional[Dict[str, Any]] = Field(default_factory=dict)
     output: Optional[Any] = Field(default=None)
     duration_ms: Optional[int] = Field(default=None)
-    error: Optional[str] = Field(default=None)
+    error: Optional[ErrorDetails] = Field(default=None)
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
@@ -554,7 +580,7 @@ class WorkflowSnapshotRef(RetabBaseModel):
     workflow_id: str = Field(..., description="ID of the workflow that was run")
     version_id: str = Field(..., description="Content-addressed workflow version used for this run")
     name_at_run_time: str = Field(..., description="Workflow name at run-creation time")
-    requested_version: str = Field(default="production", description="Raw version selector requested for this run")
+    requested_version: Optional[str] = Field(default="production", description="Raw version selector requested for this run")
 
 
 class ManualTrigger(RetabBaseModel):
@@ -604,7 +630,7 @@ class RunningRun(RetabBaseModel):
 
 class AwaitingReviewRun(RetabBaseModel):
     status: Literal["awaiting_review"] = "awaiting_review"
-    waiting_for_block_ids: List[str] = Field(default_factory=list)
+    waiting_for_block_ids: Optional[List[str]] = Field(default_factory=list)
 
 
 class CompletedTerminal(RetabBaseModel):
@@ -614,8 +640,8 @@ class CompletedTerminal(RetabBaseModel):
 class ErrorTerminal(RetabBaseModel):
     status: Literal["error"] = "error"
     message: str = Field(...)
-    stage: Optional[str] = Field(default=None)
-    category: Optional[str] = Field(default=None)
+    stage: Optional[Literal["input_collection", "registry_lookup", "document_fetch", "execution", "output_storage", "routing", "history_payload"]] = Field(default=None)
+    category: Optional[Literal["transient", "permanent", "quota"]] = Field(default=None)
     details: Optional[ErrorDetails] = Field(default=None)
     failing_step_id: Optional[str] = Field(default=None)
 
@@ -634,7 +660,7 @@ RunLifecycle = Annotated[
 class RunTiming(RetabBaseModel):
     """Timing information for a workflow run."""
 
-    created_at: datetime.datetime = Field(...)
+    created_at: Optional[datetime.datetime] = Field(default=None)
     started_at: Optional[datetime.datetime] = Field(default=None)
     completed_at: Optional[datetime.datetime] = Field(default=None)
     duration_ms: Optional[int] = Field(
@@ -643,12 +669,12 @@ class RunTiming(RetabBaseModel):
         description="Total wall-clock execution duration in milliseconds, populated on terminal runs.",
     )
     review_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
-    accumulated_review_waiting_ms: int = Field(default=0, ge=0)
+    accumulated_review_waiting_ms: Optional[int] = Field(default=0, ge=0)
 
 
 class RunInputs(RetabBaseModel):
-    documents: Dict[str, FileRef] = Field(default_factory=dict)
-    json_data: Dict[str, Any] = Field(default_factory=dict)
+    documents: Optional[Dict[str, FileRef]] = Field(default_factory=dict)
+    json_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
 class WorkflowRun(RetabBaseModel):
@@ -663,9 +689,9 @@ class WorkflowRun(RetabBaseModel):
     id: str = Field(...)
     workflow: WorkflowSnapshotRef = Field(...)
     trigger: Trigger = Field(...)
-    lifecycle: RunLifecycle = Field(...)
-    timing: RunTiming = Field(...)
-    inputs: RunInputs = Field(default_factory=RunInputs)
+    lifecycle: Optional[RunLifecycle] = Field(default=None)
+    timing: Optional[RunTiming] = Field(default=None)
+    inputs: Optional[RunInputs] = Field(default_factory=RunInputs)
 
 
 class Workflow(RetabBaseModel):
@@ -689,10 +715,10 @@ class Workflow(RetabBaseModel):
         allowed_domains: List[str] = Field(default_factory=list, description="Allowed sender email domains")
 
     id: str = Field(..., description="Unique ID for this workflow")
-    name: str = Field(default="Untitled Workflow", description="Workflow name")
-    description: str = Field(default="", description="Workflow description")
+    name: Optional[str] = Field(default="Untitled Workflow", description="Workflow name")
+    description: Optional[str] = Field(default="", description="Workflow description")
     published: Optional[Published] = Field(default=None, description="Published workflow metadata")
-    email_trigger: EmailTriggerPolicy = Field(default_factory=EmailTriggerPolicy, description="Email trigger allowlist policy")
+    email_trigger: Optional[EmailTriggerPolicy] = Field(default_factory=EmailTriggerPolicy, description="Email trigger allowlist policy")
     created_at: datetime.datetime = Field(..., description="When the workflow was created")
     updated_at: datetime.datetime = Field(..., description="When the workflow was last updated")
 
@@ -769,15 +795,15 @@ class WorkflowRunStep(StepCore):
         default=None,
         description=("Canonical persisted resource produced by this step (operation + id ref); None for steps that produce no canonical result"),
     )
-    handle_outputs: Dict[str, HandlePayload] = Field(
+    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(
         default_factory=dict,
         description="Handle outputs keyed by handle ID",
     )
-    handle_inputs: Dict[str, HandlePayload] = Field(
+    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(
         default_factory=dict,
         description="Handle inputs keyed by handle ID",
     )
-    retry_count: int = Field(default=0, description="Retry count for this step")
+    retry_count: Optional[int] = Field(default=0, description="Retry count for this step")
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
 
     @field_validator("handle_inputs", "handle_outputs", mode="before")
@@ -805,11 +831,11 @@ class CancelWorkflowResponse(RetabBaseModel):
     """Response from cancelling a workflow run."""
 
     run: WorkflowRun
-    redis_available: bool = Field(
+    redis_available: Optional[bool] = Field(
         default=True,
         description="Whether Redis was available to deliver the cancellation signal.",
     )
-    cancellation_status: Literal["cancelled", "cancellation_requested", "cancellation_failed"] = Field(
+    cancellation_status: Optional[Literal["cancelled", "cancellation_requested", "cancellation_failed"]] = Field(
         default="cancellation_requested",
         description="Cancellation delivery state",
     )
@@ -858,16 +884,31 @@ class ExportResponse(RetabBaseModel):
 class WorkflowBlockCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow block."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
-    id: str
-    type: str
-    label: str = ""
-    position_x: float = 0
-    position_y: float = 0
+    id: Optional[str] = None
+    type: Literal[
+        "start_document",
+        "start_json",
+        "note",
+        "parse",
+        "edit",
+        "extract",
+        "split",
+        "classifier",
+        "conditional",
+        "api_call",
+        "function",
+        "while_loop",
+        "for_each",
+        "merge_dicts",
+    ]
+    label: Optional[str] = ""
+    position_x: Optional[float] = 0
+    position_y: Optional[float] = 0
     width: Optional[float] = None
     height: Optional[float] = None
-    config: Optional[dict] = None
+    config: dict[str, Any] | None = None
     parent_id: Optional[str] = None
 
 
@@ -879,14 +920,14 @@ class UpdateWorkflowBlockRequest(RetabBaseModel):
     being a field on the body.
     """
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
     label: Optional[str] = None
     position_x: Optional[float] = None
     position_y: Optional[float] = None
     width: Optional[float] = None
     height: Optional[float] = None
-    config: Optional[dict] = None
+    config: dict[str, Any] | None = None
     config_mode: Optional[Literal["merge", "replace"]] = Field(
         default=None,
         description="How to apply ``config``: ``merge`` shallow-merges the patch into the existing config; ``replace`` overwrites it.",
@@ -897,9 +938,9 @@ class UpdateWorkflowBlockRequest(RetabBaseModel):
 class WorkflowEdgeCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow edge."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
-    id: str
+    id: Optional[str] = None
     source_block: str
     target_block: str
     source_handle: Optional[str] = None
@@ -924,7 +965,7 @@ class ResolvedSchemas(RetabBaseModel):
         default_factory=dict,
         description="Output JSON schemas keyed by output handle.",
     )
-    field_ref_drift: Optional[dict] = Field(
+    field_ref_drift: dict[str, Any] | None = Field(
         default=None,
         description="Field reference drift metadata when present.",
     )
@@ -937,19 +978,39 @@ class WorkflowBlock(RetabBaseModel):
 
     id: str = Field(..., description="Block ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
-    type: str = Field(..., description="Block type (start, extract, parse, classifier, etc.)")
-    label: str = Field(default="", description="Display label")
-    position_x: float = Field(default=0, description="X position on canvas")
-    position_y: float = Field(default=0, description="Y position on canvas")
+    type: Literal[
+        "start_document",
+        "start_json",
+        "note",
+        "parse",
+        "edit",
+        "extract",
+        "split",
+        "classifier",
+        "conditional",
+        "api_call",
+        "review",
+        "function",
+        "while_loop",
+        "for_each",
+        "merge_dicts",
+        "while_loop_sentinel_start",
+        "while_loop_sentinel_end",
+        "for_each_sentinel_start",
+        "for_each_sentinel_end",
+    ] = Field(..., description="Block type (start, extract, parse, classifier, etc.)")
+    label: Optional[str] = Field(default="", description="Display label")
+    position_x: Optional[float] = Field(default=0, description="X position on canvas")
+    position_y: Optional[float] = Field(default=0, description="Y position on canvas")
     width: Optional[float] = Field(default=None, description="Block width")
     height: Optional[float] = Field(default=None, description="Block height")
-    config: Optional[dict] = Field(default=None, description="Block-specific configuration")
+    config: dict[str, Any] | None = Field(default=None, description="Block-specific configuration")
     resolved_schemas: Optional[ResolvedSchemas] = Field(
         default=None,
         description="Graph-derived input and output schemas for this block.",
     )
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
-    updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
+    updated_at: datetime.datetime = Field(..., description="Last updated timestamp")
 
 
 class WorkflowEdgeDoc(RetabBaseModel):
@@ -964,19 +1025,19 @@ class WorkflowEdgeDoc(RetabBaseModel):
     target_block: str = Field(..., description="Target block ID")
     source_handle: Optional[str] = Field(default=None, description="Output handle on source block")
     target_handle: Optional[str] = Field(default=None, description="Input handle on target block")
-    updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
+    updated_at: datetime.datetime = Field(..., description="Last updated timestamp")
 
 
 class DeclarativePlanSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    add: int = 0
-    change: int = 0
-    destroy: int = 0
-    replace: int = 0
-    noop: int = 0
-    total: int = 0
-    has_changes: bool = False
+    add: Optional[int] = 0
+    change: Optional[int] = 0
+    destroy: Optional[int] = 0
+    replace: Optional[int] = 0
+    noop: Optional[int] = 0
+    total: Optional[int] = 0
+    has_changes: Optional[bool] = False
 
 
 class DeclarativePlanFieldChange(RetabBaseModel):
@@ -984,11 +1045,11 @@ class DeclarativePlanFieldChange(RetabBaseModel):
 
     path: List[str | int]
     path_display: str
-    action: str
+    action: Literal["create", "update", "delete"]
     before: Any | None = None
     after: Any | None = None
-    before_sensitive: bool = False
-    after_sensitive: bool = False
+    before_sensitive: Optional[bool] = False
+    after_sensitive: Optional[bool] = False
     unified_diff: str | None = None
 
 
@@ -997,20 +1058,42 @@ class DeclarativePlanChange(RetabBaseModel):
 
     before: Any | None = None
     after: Any | None = None
-    before_sensitive: Any = Field(default_factory=dict)
-    after_sensitive: Any = Field(default_factory=dict)
-    field_changes: List[DeclarativePlanFieldChange] = Field(default_factory=list)
+    before_sensitive: Any | None = Field(default_factory=dict)
+    after_sensitive: Any | None = Field(default_factory=dict)
+    field_changes: Optional[List[DeclarativePlanFieldChange]] = Field(default_factory=list)
 
 
 class DeclarativePlanResourceChange(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     address: str
-    target: str
+    target: Literal["workflow", "block", "edge"]
     target_id: str
     name: str
-    type: str
-    actions: List[str]
+    type: Literal[
+        "workflow",
+        "edge",
+        "start_document",
+        "start_json",
+        "note",
+        "parse",
+        "edit",
+        "extract",
+        "split",
+        "classifier",
+        "conditional",
+        "api_call",
+        "review",
+        "function",
+        "while_loop",
+        "for_each",
+        "merge_dicts",
+        "while_loop_sentinel_start",
+        "while_loop_sentinel_end",
+        "for_each_sentinel_start",
+        "for_each_sentinel_end",
+    ]
+    actions: list[Literal["create", "update", "delete"]]
     summary: str
     change: DeclarativePlanChange
     path: str | None = None
@@ -1030,29 +1113,29 @@ class DeclarativePlanResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
-    action: str
+    action: Literal["create", "update", "noop"]
     block_count: int
     edge_count: int
     diagnostics: Dict[str, Any]
-    format_version: str = "workflows-plan/v1"
-    summary: DeclarativePlanSummary = Field(default_factory=DeclarativePlanSummary)
-    resource_changes: List[DeclarativePlanResourceChange] = Field(default_factory=list)
-    rendered_plan: str = "No changes. Infrastructure is up-to-date."
+    format_version: Optional[str] = "workflows-plan/v1"
+    summary: Optional[DeclarativePlanSummary] = Field(default_factory=DeclarativePlanSummary)
+    resource_changes: Optional[List[DeclarativePlanResourceChange]] = Field(default_factory=list)
+    rendered_plan: Optional[str] = "No changes. Workflow spec is up to date."
 
 
 class DeclarativeApplyResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
-    action: str
+    action: Literal["create", "update", "noop"]
     created: bool
     block_count: int
     edge_count: int
     diagnostics: Dict[str, Any]
-    format_version: str = "workflows-plan/v1"
-    summary: DeclarativePlanSummary = Field(default_factory=DeclarativePlanSummary)
-    resource_changes: List[DeclarativePlanResourceChange] = Field(default_factory=list)
-    rendered_plan: str = "No changes. Infrastructure is up-to-date."
+    format_version: Optional[str] = "workflows-plan/v1"
+    summary: Optional[DeclarativePlanSummary] = Field(default_factory=DeclarativePlanSummary)
+    resource_changes: Optional[List[DeclarativePlanResourceChange]] = Field(default_factory=list)
+    rendered_plan: Optional[str] = "No changes. Workflow spec is up to date."
 
 
 class DeclarativeExportResponse(RetabBaseModel):
@@ -1079,10 +1162,10 @@ class WorkflowDiagnosisIssue(RetabBaseModel):
 class WorkflowDiagnosisStats(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    total_blocks: int = 0
-    total_edges: int = 0
-    block_types: Dict[str, int] = Field(default_factory=dict)
-    start_document_blocks: int = 0
+    total_blocks: Optional[int] = 0
+    total_edges: Optional[int] = 0
+    block_types: Optional[Dict[str, int]] = Field(default_factory=dict)
+    start_document_blocks: Optional[int] = 0
 
 
 class WorkflowDiagnosisResponse(RetabBaseModel):
@@ -1091,18 +1174,18 @@ class WorkflowDiagnosisResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     is_valid: bool
-    issues: List[WorkflowDiagnosisIssue] = Field(default_factory=list)
-    suggestions: List[str] = Field(default_factory=list)
-    stats: WorkflowDiagnosisStats = Field(default_factory=WorkflowDiagnosisStats)
+    issues: Optional[List[WorkflowDiagnosisIssue]] = Field(default_factory=list)
+    suggestions: Optional[List[str]] = Field(default_factory=list)
+    stats: Optional[WorkflowDiagnosisStats] = Field(default_factory=WorkflowDiagnosisStats)
 
 
 # ---------------------------------------------------------------------------
-# Block simulation (POST /workflows/simulations, body { run_id, block_id, ... })
+# Block block execution (POST /workflows/blocks/executions, body { run_id, block_id, ... })
 # ---------------------------------------------------------------------------
 
 
-class BlockSimulationIteration(RetabBaseModel):
-    """One available iteration step exposed to simulate."""
+class BlockExecutionIteration(RetabBaseModel):
+    """One available iteration step exposed to execute."""
 
     model_config = ConfigDict(extra="ignore")
 
@@ -1111,15 +1194,15 @@ class BlockSimulationIteration(RetabBaseModel):
     label: Optional[str] = None
 
 
-class CompletedSimulationLifecycle(RetabBaseModel):
-    """Terminal: the simulated block executed successfully."""
+class CompletedBlockExecutionLifecycle(RetabBaseModel):
+    """Terminal: the executed block executed successfully."""
 
     model_config = ConfigDict(extra="ignore")
     status: Literal["completed"] = "completed"
 
 
-class ErrorSimulationLifecycle(RetabBaseModel):
-    """Terminal: the simulated block raised. ``message`` is the executor's
+class ErrorBlockExecutionLifecycle(RetabBaseModel):
+    """Terminal: the executed block raised. ``message`` is the executor's
     error string."""
 
     model_config = ConfigDict(extra="ignore")
@@ -1127,7 +1210,7 @@ class ErrorSimulationLifecycle(RetabBaseModel):
     message: str = Field(..., description="Human-readable error message")
 
 
-class SkippedSimulationLifecycle(RetabBaseModel):
+class SkippedBlockExecutionLifecycle(RetabBaseModel):
     """Terminal: the block declared its inputs unsatisfied via
     ``should_skip_block`` and was skipped."""
 
@@ -1136,13 +1219,13 @@ class SkippedSimulationLifecycle(RetabBaseModel):
     reason: str = Field(..., description="Reason the block was skipped")
 
 
-SimulationLifecycle = Annotated[
-    CompletedSimulationLifecycle | ErrorSimulationLifecycle | SkippedSimulationLifecycle,
+BlockExecutionLifecycle = Annotated[
+    CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle,
     Field(discriminator="status"),
 ]
 
 
-class BlockSimulation(RetabBaseModel):
+class StoredBlockExecution(RetabBaseModel):
     """Result of replaying one block with the current draft config.
 
     Contains the inputs used, the produced outputs, and a canonical
@@ -1155,15 +1238,15 @@ class BlockSimulation(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    id: str = Field(..., description="Unique simulation ID")
+    id: str = Field(..., description="Unique block execution ID")
     workflow_id: str
     run_id: str
     block_id: str
     block_type: str
-    lifecycle: SimulationLifecycle = Field(
+    lifecycle: BlockExecutionLifecycle = Field(
         ...,
         description=(
-            "Terminal lifecycle state for this simulation. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``."
+            "Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``."
         ),
     )
     handle_inputs: Optional[Dict[str, Any]] = None
@@ -1177,10 +1260,10 @@ class BlockSimulation(RetabBaseModel):
     created_at: Optional[datetime.datetime] = None
     block_config: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="The draft block config used for this simulation.",
+        description="The draft block config used for this block execution.",
     )
     step_id: Optional[str] = Field(
         default=None,
         description="Step ID whose inputs were used (carries iteration prefix when applicable).",
     )
-    available_iterations: Optional[List[BlockSimulationIteration]] = None
+    available_iterations: Optional[List[BlockExecutionIteration]] = None

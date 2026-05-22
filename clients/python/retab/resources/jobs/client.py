@@ -10,7 +10,8 @@ import time
 from typing import Any, Sequence
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.jobs import Job, JobListOrder, JobListResponse, JobListSource, JobStatus, SupportedEndpoint
+from ...types.jobs import Job, JobListOrder, JobListSource, JobStatus, SupportedEndpoint
+from ...types.pagination import PaginatedList
 from ...types.standards import PreparedRequest
 
 TERMINAL_JOB_STATUSES: tuple[JobStatus, ...] = ("completed", "failed", "cancelled", "expired")
@@ -61,7 +62,7 @@ class BaseJobsMixin:
         after: str | None = None,
         limit: int = 20,
         order: JobListOrder | None = "desc",
-        id: str | None = None,
+        job_id: str | None = None,
         status: JobStatus | None = None,
         endpoint: SupportedEndpoint | None = None,
         source: JobListSource | None = None,
@@ -85,8 +86,8 @@ class BaseJobsMixin:
             params["after"] = after
         if order is not None:
             params["order"] = order
-        if id is not None:
-            params["id"] = id
+        if job_id is not None:
+            params["job_id"] = job_id
         if status is not None:
             params["status"] = status
         if endpoint is not None:
@@ -265,7 +266,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         after: str | None = None,
         limit: int = 20,
         order: JobListOrder | None = "desc",
-        id: str | None = None,
+        job_id: str | None = None,
         status: JobStatus | None = None,
         endpoint: SupportedEndpoint | None = None,
         source: JobListSource | None = None,
@@ -281,7 +282,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         metadata: dict[str, str] | None = None,
         include_request: bool | None = None,
         include_response: bool | None = None,
-    ) -> JobListResponse:
+    ) -> PaginatedList[Job]:
         """
         List jobs with pagination and optional filtering.
 
@@ -315,7 +316,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             after=after,
             limit=limit,
             order=order,
-            id=id,
+            job_id=job_id,
             status=status,
             endpoint=endpoint,
             source=source,
@@ -333,7 +334,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             include_response=include_response,
         )
         response = self._client._prepared_request(prepared)
-        return JobListResponse.model_validate(response)
+        return PaginatedList[Job].model_validate(response)
 
 
 class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
@@ -481,7 +482,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         after: str | None = None,
         limit: int = 20,
         order: JobListOrder | None = "desc",
-        id: str | None = None,
+        job_id: str | None = None,
         status: JobStatus | None = None,
         endpoint: SupportedEndpoint | None = None,
         source: JobListSource | None = None,
@@ -497,7 +498,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         metadata: dict[str, str] | None = None,
         include_request: bool | None = None,
         include_response: bool | None = None,
-    ) -> JobListResponse:
+    ) -> PaginatedList[Job]:
         """
         List jobs with pagination and optional filtering.
 
@@ -531,7 +532,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             after=after,
             limit=limit,
             order=order,
-            id=id,
+            job_id=job_id,
             status=status,
             endpoint=endpoint,
             source=source,
@@ -549,4 +550,4 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             include_response=include_response,
         )
         response = await self._client._prepared_request(prepared)
-        return JobListResponse.model_validate(response)
+        return PaginatedList[Job].model_validate(response)

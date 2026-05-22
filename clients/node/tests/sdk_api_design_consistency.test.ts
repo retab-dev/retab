@@ -64,7 +64,7 @@ const FORBIDDEN_ROUTE_SUBSTRINGS = [
   '/workflows/reviews/versions/append',
   '/workflows/reviews/{review_id}/versions',
   '/workflows/reviews/${reviewId}/versions',
-  '/workflows/simulations/runs',
+  '/workflows/blocks/executions/runs',
 ];
 
 const FORBIDDEN_METHOD_NAMES = [
@@ -80,8 +80,8 @@ const FORBIDDEN_METHOD_NAMES = [
   'workflows_reviews_append_version',
   'workflowsReviewsVersionsCreate',
   'workflows_reviews_versions_create',
-  'workflowsSimulationsCreate',
-  'workflows_simulations_create',
+  'workflowsBlockExecutionsCreate',
+  'workflows_blocks_executions_create',
   'workflowsTestsCreate',
   'workflows_tests_create',
   'workflowsTestsRunsCreate',
@@ -96,8 +96,8 @@ const CANONICAL_WORKFLOW_REVIEW_SIMULATION_AND_TEST_ROUTES = [
   'GET /v1/workflows/reviews/versions',
   'POST /v1/workflows/reviews/versions',
   'GET /v1/workflows/reviews/versions/{version_id}',
-  'GET /v1/workflows/simulations',
-  'POST /v1/workflows/simulations',
+  'GET /v1/workflows/blocks/executions',
+  'POST /v1/workflows/blocks/executions',
   'GET /v1/workflows/tests',
   'POST /v1/workflows/tests',
   'GET /v1/workflows/tests/{test_id}',
@@ -261,7 +261,7 @@ describe('Node SDK workflow API design consistency', () => {
     expect(unknownRouteMethods).toEqual([]);
   });
 
-  test('canonical review, simulation, and test routes are the SDK routes in use', () => {
+  test('canonical review, block execution, and test routes are the SDK routes in use', () => {
     const sdkRouteMethods = new Set(sourceRouteMethods.map(({ normalizedKey }) => normalizedKey));
 
     for (const routeMethod of CANONICAL_WORKFLOW_REVIEW_SIMULATION_AND_TEST_ROUTES) {

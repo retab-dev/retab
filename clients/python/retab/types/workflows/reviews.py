@@ -79,7 +79,7 @@ class ReviewDecision(RetabBaseModel):
     verdict: ReviewVerdict = Field(..., description="approved / rejected.")
     version_id: VersionId = Field(..., description="Content-hash id of the version being decided.")
     author: Actor = Field(..., description="Who made the decision.")
-    decided_at: datetime.datetime = Field(..., description="When the decision was recorded.")
+    decided_at: datetime.datetime | None = Field(default=None, description="When the decision was recorded.")
     reason: str | None = Field(default=None, description="Free-text reason; required for rejections.")
 
 
@@ -154,9 +154,9 @@ class SubmitDecisionResponse(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    submission_status: SubmissionStatus = Field(..., description="Decision submission lifecycle status.")
+    submission_status: SubmissionStatus | None = Field(default="accepted", description="Decision submission lifecycle status.")
     review: Review = Field(..., description="The review after the decision was applied.")
-    resume_status: ResumeStatus = Field(
+    resume_status: ResumeStatus | None = Field(
         default="resumed",
         description="Whether the gated workflow run was signalled to resume. 'pending' means the decision was recorded and resume delivery is queued for retry.",
     )

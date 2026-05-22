@@ -4,9 +4,10 @@ Jobs API Types
 Pydantic models for the asynchronous Jobs API.
 """
 
+import datetime
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 from retab.types.pagination import ListMetadata
 
@@ -72,20 +73,20 @@ class Job(RetabBaseModel):
     split, classify, schema generation, and template operations.
     """
 
-    id: str
+    id: str | None = None
     object: Literal["job"] = "job"
-    status: JobStatus
+    status: JobStatus | None = "validating"
     endpoint: SupportedEndpoint
     request: dict[str, Any] | None = None
     response: JobResponse | None = None
     error: JobError | None = None
     warnings: list[JobWarning] | None = None
 
-    # Timestamps (Unix timestamps)
-    created_at: int
-    started_at: int | None = None
-    completed_at: int | None = None
-    expires_at: int
+    # Timestamps (ISO 8601 datetimes)
+    created_at: datetime.datetime | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    expires_at: datetime.datetime | None = None
 
     metadata: dict[str, str] | None = None
 
@@ -99,14 +100,16 @@ class Job(RetabBaseModel):
     #   - ``last_failure_code``: machine-readable code from the last failed
     #     attempt (matches ``error.code`` if the job's terminal state was
     #     error; remains set across retries to aid debugging).
-    cancelled: bool = False
-    attempt_count: int = 0
-    last_attempt_at: int | None = None
+    cancelled: bool | None = False
+    attempt_count: int | None = 0
+    last_attempt_at: datetime.datetime | None = None
     last_failure_code: str | None = None
 
 
 class CreateJobRequest(RetabBaseModel):
     """Request body for creating a new job."""
+
+    model_config = ConfigDict(extra="forbid")
 
     endpoint: SupportedEndpoint
     request: dict[str, Any]

@@ -13,17 +13,17 @@ import (
 )
 
 type WorkflowsService struct {
-	client      *Client
-	Runs        *WorkflowRunsService
-	Steps       *WorkflowStepsService
-	Reviews     *WorkflowReviewsService
-	Artifacts   *WorkflowArtifactsService
-	Simulations *WorkflowSimulationsService
-	Blocks      *WorkflowBlocksService
-	Edges       *WorkflowEdgesService
-	Specs       *WorkflowSpecsService
-	Tests       *WorkflowTestsService
-	Experiments *WorkflowExperimentsService
+	client          *Client
+	Runs            *WorkflowRunsService
+	Steps           *WorkflowStepsService
+	Reviews         *WorkflowReviewsService
+	Artifacts       *WorkflowArtifactsService
+	BlockExecutions *WorkflowBlockExecutionsService
+	Blocks          *WorkflowBlocksService
+	Edges           *WorkflowEdgesService
+	Specs           *WorkflowSpecsService
+	Tests           *WorkflowTestsService
+	Experiments     *WorkflowExperimentsService
 }
 
 func newWorkflowsService(client *Client) *WorkflowsService {
@@ -35,7 +35,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		Versions: &WorkflowReviewVersionsService{client: client},
 	}
 	service.Artifacts = &WorkflowArtifactsService{client: client}
-	service.Simulations = &WorkflowSimulationsService{client: client}
+	service.BlockExecutions = &WorkflowBlockExecutionsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
 	service.Specs = &WorkflowSpecsService{client: client}
@@ -408,11 +408,11 @@ type WorkflowBlocksService struct {
 	client *Client
 }
 
-type WorkflowSimulationsService struct {
+type WorkflowBlockExecutionsService struct {
 	client *Client
 }
 
-type CreateWorkflowSimulationRequest struct {
+type CreateWorkflowBlockExecutionRequest struct {
 	RunID            string `json:"run_id"`
 	BlockID          string `json:"block_id"`
 	StepID           string `json:"step_id,omitempty"`
@@ -420,25 +420,25 @@ type CreateWorkflowSimulationRequest struct {
 	CheckEligibility *bool  `json:"check_eligibility,omitempty"`
 }
 
-type ListWorkflowSimulationsParams struct {
+type ListWorkflowBlockExecutionsParams struct {
 	RunID   string
 	BlockID string
 	Limit   int
 }
 
-func (s *WorkflowSimulationsService) Create(ctx context.Context, request CreateWorkflowSimulationRequest, opts ...RequestOption) (*BlockSimulation, error) {
+func (s *WorkflowBlockExecutionsService) Create(ctx context.Context, request CreateWorkflowBlockExecutionRequest, opts ...RequestOption) (*StoredBlockExecution, error) {
 	if request.RunID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	if request.BlockID == "" {
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
-	var result BlockSimulation
-	err := s.client.do(ctx, http.MethodPost, "/workflows/simulations", nil, request, &result, opts...)
+	var result StoredBlockExecution
+	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks/executions", nil, request, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowSimulationsService) List(ctx context.Context, params ListWorkflowSimulationsParams, opts ...RequestOption) (*PaginatedList[BlockSimulation], error) {
+func (s *WorkflowBlockExecutionsService) List(ctx context.Context, params ListWorkflowBlockExecutionsParams, opts ...RequestOption) (*PaginatedList[StoredBlockExecution], error) {
 	if params.RunID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
@@ -451,8 +451,8 @@ func (s *WorkflowSimulationsService) List(ctx context.Context, params ListWorkfl
 	if params.Limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", params.Limit))
 	}
-	var result PaginatedList[BlockSimulation]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/simulations", query, nil, &result, opts...)
+	var result PaginatedList[StoredBlockExecution]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/executions", query, nil, &result, opts...)
 	return &result, err
 }
 

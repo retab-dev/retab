@@ -126,17 +126,19 @@ class WorkflowTestsMixin:
 
     def prepare_list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
         limit: int = 50,
     ) -> PreparedRequest:
         params: Dict[str, Any] = {"limit": limit}
+        if workflow_id is not None:
+            params["workflow_id"] = workflow_id
         if target_block_id is not None:
             params["target_block_id"] = target_block_id
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests?workflow_id={workflow_id}",
+            url="/workflows/tests",
             params=params,
         )
 
@@ -521,7 +523,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
 
     def list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
         limit: int = 50,
@@ -596,7 +598,7 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
 
     async def list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
         limit: int = 50,

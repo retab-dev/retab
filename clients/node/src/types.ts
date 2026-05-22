@@ -814,7 +814,7 @@ export const ZWorkflowDiagnosisResponse = z
 export type WorkflowDiagnosisResponse = z.infer<typeof ZWorkflowDiagnosisResponse>;
 
 // ---------------------------------------------------------------------------
-// Block simulation (POST /workflows/simulations, body { run_id, block_id, ... })
+// Block block execution (POST /workflows/blocks/executions, body { run_id, block_id, ... })
 // ---------------------------------------------------------------------------
 
 export const ZStepArtifactRef = z
@@ -825,56 +825,56 @@ export const ZStepArtifactRef = z
   .passthrough();
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
-export type BlockSimulationCreateRequest = {
+export type BlockExecutionCreateRequest = {
   runId: string;
   blockId: string;
   stepId?: string;
   nConsensus?: number;
 };
 
-// Simulation lifecycle is a discriminated terminal union — simulations are
+// Block execution lifecycle is a discriminated terminal union — block executions are
 // synchronous one-shot executions, so by the time a client reads one it has
 // already reached ``completed`` / ``error`` / ``skipped``. There is no
 // pending / queued / running / awaiting_review variant.
 //
 // The discriminator key is ``status`` to mirror ``WorkflowStep`` lifecycles —
 // SDK consumers can switch on ``status`` once and handle either resource.
-export const ZCompletedSimulationLifecycle = z
+export const ZCompletedBlockExecutionLifecycle = z
   .object({ status: z.literal('completed') })
   .passthrough();
-export type CompletedSimulationLifecycle = z.infer<typeof ZCompletedSimulationLifecycle>;
+export type CompletedBlockExecutionLifecycle = z.infer<typeof ZCompletedBlockExecutionLifecycle>;
 
-export const ZErrorSimulationLifecycle = z
+export const ZErrorBlockExecutionLifecycle = z
   .object({
     status: z.literal('error'),
     message: z.string(),
   })
   .passthrough();
-export type ErrorSimulationLifecycle = z.infer<typeof ZErrorSimulationLifecycle>;
+export type ErrorBlockExecutionLifecycle = z.infer<typeof ZErrorBlockExecutionLifecycle>;
 
-export const ZSkippedSimulationLifecycle = z
+export const ZSkippedBlockExecutionLifecycle = z
   .object({
     status: z.literal('skipped'),
     reason: z.string(),
   })
   .passthrough();
-export type SkippedSimulationLifecycle = z.infer<typeof ZSkippedSimulationLifecycle>;
+export type SkippedBlockExecutionLifecycle = z.infer<typeof ZSkippedBlockExecutionLifecycle>;
 
-export const ZSimulationLifecycle = z.discriminatedUnion('status', [
-  ZCompletedSimulationLifecycle,
-  ZErrorSimulationLifecycle,
-  ZSkippedSimulationLifecycle,
+export const ZBlockExecutionLifecycle = z.discriminatedUnion('status', [
+  ZCompletedBlockExecutionLifecycle,
+  ZErrorBlockExecutionLifecycle,
+  ZSkippedBlockExecutionLifecycle,
 ]);
-export type SimulationLifecycle = z.infer<typeof ZSimulationLifecycle>;
+export type BlockExecutionLifecycle = z.infer<typeof ZBlockExecutionLifecycle>;
 
-export const ZBlockSimulation = z
+export const ZStoredBlockExecution = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
     run_id: z.string(),
     block_id: z.string(),
     block_type: z.string(),
-    lifecycle: ZSimulationLifecycle,
+    lifecycle: ZBlockExecutionLifecycle,
     handle_inputs: z.record(z.any()).nullable().optional(),
     artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.any()).nullable().optional(),
@@ -886,7 +886,7 @@ export const ZBlockSimulation = z
     available_iterations: z.array(z.record(z.any())).nullable().optional(),
   })
   .passthrough();
-export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
+export type StoredBlockExecution = z.infer<typeof ZStoredBlockExecution>;
 
 // ---------------------------------------------------------------------------
 // Workflow reviews (served under /workflows/reviews)

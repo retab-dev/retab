@@ -46,8 +46,9 @@ POLL_INTERVAL = 2  # seconds
 # ---------------------------------------------------------------------------
 
 
-def _wait(client: Retab, job_id: str) -> Job:
+def _wait(client: Retab, job_id: str | None) -> Job:
     """Wait for a job to reach a terminal state and return it with full response."""
+    assert job_id is not None, "Job.id should be populated after create"
     return client.jobs.wait_for_completion(
         job_id,
         poll_interval_seconds=POLL_INTERVAL,
@@ -218,6 +219,7 @@ def test_job_retrieve_without_payload(sync_client: Retab) -> None:
         _wait(client, job.id)
 
         # Retrieve without payloads (default)
+        assert job.id is not None
         retrieved = client.jobs.retrieve(job.id)
         assert retrieved.id == job.id
         assert retrieved.status == "completed"
@@ -237,6 +239,7 @@ def test_job_retrieve_with_payload(sync_client: Retab) -> None:
         )
         _wait(client, job.id)
 
+        assert job.id is not None
         full = client.jobs.retrieve(job.id, include_request=True, include_response=True)
         assert full.id == job.id
         assert full.status == "completed"
@@ -291,6 +294,7 @@ def test_job_metadata_roundtrip(sync_client: Retab) -> None:
 
         # Also verify after completion
         completed = _wait(client, job.id)
+        assert completed.id is not None
         retrieved = client.jobs.retrieve(completed.id)
         assert retrieved.metadata == metadata
 
@@ -307,6 +311,7 @@ def test_job_cancel(sync_client: Retab) -> None:
         )
         # Try to cancel immediately (may already be in_progress)
         try:
+            assert job.id is not None
             cancelled = client.jobs.cancel(job.id)
             assert cancelled.status == "cancelled"
         except httpx.HTTPStatusError as e:

@@ -24,6 +24,7 @@ def test_classification_model_accepts_canonical_consensus_shape() -> None:
         }
     )
 
+    assert classification.consensus is not None
     assert classification.consensus.choices == []
     assert "updated_at" not in Classification.model_fields
     assert "updated_at" not in Classification.model_json_schema()["properties"]
@@ -50,6 +51,7 @@ def test_extraction_model_accepts_canonical_consensus_shape() -> None:
         }
     )
 
+    assert extraction.consensus is not None
     assert extraction.consensus.choices == []
     assert "updated_at" not in Extraction.model_fields
     assert "updated_at" not in Extraction.model_json_schema()["properties"]
@@ -115,6 +117,7 @@ def test_partition_model_accepts_canonical_consensus_shape() -> None:
         }
     )
 
+    assert partition.consensus is not None
     assert partition.consensus.choices == []
 
 

@@ -13,10 +13,10 @@ from .mime import FileRef, MIMEData
 class ExtractionRequest(RetabBaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    document: MIMEData = Field(..., description="The document to extract from")
+    document: MIMEData | FileRef = Field(..., description="The document to extract from")
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
-    model: str = Field(default="retab-small", description="The model to use for the extraction")
-    image_resolution_dpi: int = Field(
+    model: str | None = Field(default="retab-small", description="The model to use for the extraction")
+    image_resolution_dpi: int | None = Field(
         default=192,
         ge=96,
         le=300,
@@ -26,13 +26,13 @@ class ExtractionRequest(RetabBaseModel):
         default=None,
         description="Free-form instructions appended to the system prompt to steer the extraction.",
     )
-    n_consensus: int = Field(
+    n_consensus: int | None = Field(
         default=1,
         ge=1,
         le=16,
         description="Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.",
     )
-    metadata: dict[str, str] = Field(
+    metadata: dict[str, str] | None = Field(
         default_factory=dict,
         description="User-defined metadata to associate with this extraction",
     )
@@ -40,7 +40,11 @@ class ExtractionRequest(RetabBaseModel):
         default=None,
         description="Additional chat messages forwarded to the extraction model.",
     )
-    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    stream: bool | None = Field(
+        default=False,
+        description="If true, stream incremental extraction events; if false, return the final result only.",
+    )
 
 
 class ProcessingRequestOrigin(RetabBaseModel):
@@ -51,7 +55,7 @@ class ProcessingRequestOrigin(RetabBaseModel):
 
 
 class ExtractionConsensus(RetabBaseModel):
-    choices: list[dict[str, Any]] = Field(
+    choices: list[dict[str, Any]] | None = Field(
         default_factory=list,
         description="Alternative extraction vote outputs used to build the consolidated result.",
     )
@@ -73,8 +77,8 @@ class Extraction(RetabBaseModel):
 
     model: str = Field(..., description="Model used for the extraction")
     json_schema: dict[str, Any] = Field(..., description="JSON schema used for the extraction")
-    n_consensus: int = Field(default=1, description="Number of consensus votes used")
-    image_resolution_dpi: int = Field(default=192, description="DPI used to render document images")
+    n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
+    image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
     instructions: Optional[str] = Field(
         default=None,
         description="Free-form instructions supplied with the extraction request.",
@@ -82,12 +86,12 @@ class Extraction(RetabBaseModel):
 
     output: dict[str, Any] = Field(..., description="The extracted structured data")
 
-    consensus: ExtractionConsensus = Field(
+    consensus: ExtractionConsensus | None = Field(
         default_factory=ExtractionConsensus,
         description="Consensus metadata for multi-vote extraction runs",
     )
 
-    metadata: dict[str, str] = Field(default_factory=dict)
+    metadata: dict[str, str] | None = Field(default_factory=dict)
 
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the extraction")
     created_at: Optional[datetime.datetime] = None
@@ -100,7 +104,7 @@ class SourcesResponse(RetabBaseModel):
 
     object: Literal["extraction.sources"] = "extraction.sources"
     extraction_id: str
-    document_type: Optional[str] = None
-    file: Optional[FileRef] = None
+    document_type: Literal["pdf", "image", "csv", "xlsx", "docx", "txt"]
+    file: FileRef
     extraction: dict[str, Any] = Field(default_factory=dict)
     sources: dict[str, Any] = Field(default_factory=dict)

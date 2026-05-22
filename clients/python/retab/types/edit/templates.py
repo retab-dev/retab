@@ -1,7 +1,7 @@
 """Types for edit templates."""
 
 from typing import Optional
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 import datetime
 
@@ -15,14 +15,16 @@ class EditTemplate(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the template")
     name: str = Field(..., description="Name of the template")
     file: FileRef = Field(..., description="File information for the empty PDF template")
-    form_fields: list[FormField] = Field(default_factory=list, description="List of form fields in the template")
-    field_count: int = Field(default=0, description="Number of form fields in the template")
+    form_fields: list[FormField] | None = Field(default_factory=list, description="List of form fields in the template")
+    field_count: int | None = Field(default=0, description="Number of form fields in the template")
     created_at: datetime.datetime = Field(..., description="Timestamp of creation")
     updated_at: datetime.datetime = Field(..., description="Timestamp of last update")
 
 
 class CreateEditTemplateRequest(RetabBaseModel):
     """Request model for creating an edit template."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., description="Name of the template")
     document: MIMEData = Field(..., description="The PDF document to use as the template")
@@ -31,6 +33,8 @@ class CreateEditTemplateRequest(RetabBaseModel):
 
 class UpdateEditTemplateRequest(RetabBaseModel):
     """Request model for updating an edit template."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Optional[str] = Field(default=None, description="Name of the template")
     form_fields: Optional[list[FormField]] = Field(default=None, description="List of form fields")

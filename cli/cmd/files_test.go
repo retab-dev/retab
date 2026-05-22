@@ -14,7 +14,7 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 )
 
-// failingReader yields data once, then errors — simulating a transfer that
+// failingReader yields data once, then errors — executing a transfer that
 // drops mid-stream (network failure, Ctrl-C).
 type failingReader struct {
 	data []byte
@@ -23,7 +23,7 @@ type failingReader struct {
 
 func (r *failingReader) Read(p []byte) (int, error) {
 	if r.done {
-		return 0, errors.New("simulated transfer failure")
+		return 0, errors.New("executed transfer failure")
 	}
 	r.done = true
 	return copy(p, r.data), nil

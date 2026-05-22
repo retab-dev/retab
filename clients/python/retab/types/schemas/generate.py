@@ -6,14 +6,14 @@ from ..mime import MIMEData
 
 
 class GenerateSchemaRequest(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
     documents: list[MIMEData]
-    model: str = "retab-small"
-    reasoning_effort: ChatCompletionReasoningEffort = "minimal"
+    model: str | None = "retab-small"
+    reasoning_effort: ChatCompletionReasoningEffort | None = "minimal"
     instructions: str | None = None
     """The modality of the document to load."""
-    image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
+    image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
 
     """The image operations to apply to the document."""
-    stream: bool = False
+    stream: bool | None = False
     """Whether to stream the response."""

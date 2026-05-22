@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
+func TestWorkflowsBlockExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/simulations" || r.URL.RawQuery != "" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/blocks/executions" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -40,22 +40,22 @@ func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
 		"step-id":     "step_iter_0_blk_extract",
 		"n-consensus": "5",
 	} {
-		if err := workflowsSimulationsCreateCmd.Flags().Set(flag, value); err != nil {
+		if err := workflowsBlockExecutionsCreateCmd.Flags().Set(flag, value); err != nil {
 			t.Fatalf("set --%s: %v", flag, err)
 		}
-		t.Cleanup(func() { resetWorkflowSimulationsFlag(t, workflowsSimulationsCreateCmd, flag) })
+		t.Cleanup(func() { resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, flag) })
 	}
-	if err := workflowsSimulationsCreateCmd.Flags().Set("no-check-eligibility", "true"); err != nil {
+	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("no-check-eligibility", "true"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { resetWorkflowSimulationsFlag(t, workflowsSimulationsCreateCmd, "no-check-eligibility") })
+	t.Cleanup(func() { resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "no-check-eligibility") })
 
 	var err error
 	captureStd(t, func() {
-		err = workflowsSimulationsCreateCmd.RunE(workflowsSimulationsCreateCmd, []string{"run_123"})
+		err = workflowsBlockExecutionsCreateCmd.RunE(workflowsBlockExecutionsCreateCmd, []string{"run_123"})
 	})
 	if err != nil {
-		t.Fatalf("simulations create: %v", err)
+		t.Fatalf("block executions create: %v", err)
 	}
 	if body["run_id"] != "run_123" || body["block_id"] != "blk_extract" {
 		t.Fatalf("body = %#v", body)
@@ -68,13 +68,13 @@ func TestWorkflowsSimulationsCreateUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
-func TestWorkflowsSimulationsListUsesCanonicalEndpoint(t *testing.T) {
+func TestWorkflowsBlockExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/simulations" {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/executions" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		query := r.URL.Query()
@@ -98,30 +98,30 @@ func TestWorkflowsSimulationsListUsesCanonicalEndpoint(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	if err := workflowsSimulationsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+	if err := workflowsBlockExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
 		t.Fatal(err)
 	}
-	if err := workflowsSimulationsListCmd.Flags().Set("limit", "10"); err != nil {
+	if err := workflowsBlockExecutionsListCmd.Flags().Set("limit", "10"); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		resetWorkflowSimulationsFlag(t, workflowsSimulationsListCmd, "block-id")
-		resetWorkflowSimulationsFlag(t, workflowsSimulationsListCmd, "limit")
+		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsListCmd, "block-id")
+		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsListCmd, "limit")
 	})
 
 	var err error
 	captureStd(t, func() {
-		err = workflowsSimulationsListCmd.RunE(workflowsSimulationsListCmd, []string{"run_123"})
+		err = workflowsBlockExecutionsListCmd.RunE(workflowsBlockExecutionsListCmd, []string{"run_123"})
 	})
 	if err != nil {
-		t.Fatalf("simulations list: %v", err)
+		t.Fatalf("block executions list: %v", err)
 	}
 	if !sawRequest {
-		t.Fatal("expected simulations list request")
+		t.Fatal("expected block executions list request")
 	}
 }
 
-func TestWorkflowsSimulationsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
+func TestWorkflowsBlockExecutionsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -131,20 +131,20 @@ func TestWorkflowsSimulationsRejectsInvalidNConsensusBeforeRequest(t *testing.T)
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	if err := workflowsSimulationsCreateCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("block-id", "blk_extract"); err != nil {
 		t.Fatal(err)
 	}
-	if err := workflowsSimulationsCreateCmd.Flags().Set("n-consensus", "4"); err != nil {
+	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("n-consensus", "4"); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		resetWorkflowSimulationsFlag(t, workflowsSimulationsCreateCmd, "block-id")
-		resetWorkflowSimulationsFlag(t, workflowsSimulationsCreateCmd, "n-consensus")
+		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "block-id")
+		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "n-consensus")
 	})
 
 	var err error
 	_, stderr := captureStd(t, func() {
-		err = workflowsSimulationsCreateCmd.RunE(workflowsSimulationsCreateCmd, []string{"run_123"})
+		err = workflowsBlockExecutionsCreateCmd.RunE(workflowsBlockExecutionsCreateCmd, []string{"run_123"})
 	})
 	if err == nil {
 		t.Fatal("expected invalid n-consensus error")
@@ -154,7 +154,7 @@ func TestWorkflowsSimulationsRejectsInvalidNConsensusBeforeRequest(t *testing.T)
 	}
 }
 
-func resetWorkflowSimulationsFlag(t *testing.T, cmd *cobra.Command, name string) {
+func resetWorkflowBlockExecutionsFlag(t *testing.T, cmd *cobra.Command, name string) {
 	t.Helper()
 	flag := cmd.Flags().Lookup(name)
 	if flag == nil {

@@ -121,16 +121,16 @@ class WorkflowExperiment(RetabBaseModel):
     workflow_id: str
     block_id: str
     n_consensus: NConsensusValue
-    document_count: int = 0
+    document_count: int | None = 0
     name: str
     last_run_id: str | None = None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    status: ExperimentPublicStatus = "draft"
+    created_at: datetime.datetime | None = None
+    updated_at: datetime.datetime | None = None
+    status: ExperimentPublicStatus | None = "draft"
     block_type: ExperimentBlockType
     score: float | None = None
-    is_stale: bool = False
-    schema_drift: ExperimentSchemaDriftStatus = "unknown"
+    is_stale: bool | None = False
+    schema_drift: ExperimentSchemaDriftStatus | None = "unknown"
     schema_drift_detail: str | None = None
 
 
@@ -188,7 +188,7 @@ class ErrorWorkflowExperimentRun(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: Literal["error"] = "error"
-    message: str = Field(default="(no message)")
+    message: str | None = Field(default="(no message)")
     details: ErrorDetails | None = None
 
 
@@ -215,7 +215,7 @@ ExperimentRunLifecycle = Annotated[
 class ExperimentRunTiming(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    created_at: datetime.datetime
+    created_at: datetime.datetime | None = None
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
@@ -239,13 +239,17 @@ class ExperimentRun(RetabBaseModel):
     block_id: str
     block_type: ExperimentBlockType
     n_consensus: NConsensusValue
+    parent_run_id: str | None = Field(
+        default=None,
+        description="Parent experiment run ID when this run was created from a retry/rerun of another experiment run.",
+    )
     definition_fingerprint: str
     documents_fingerprint: str
     score: float | None = None
-    total_document_count: int = 0
-    completed_document_count: int = 0
-    document_count: int = 0
-    error_count: int = 0
+    total_document_count: int | None = 0
+    completed_document_count: int | None = 0
+    document_count: int | None = 0
+    error_count: int | None = 0
 
 
 class CancelWorkflowExperimentRunResponse(RetabBaseModel):
@@ -291,7 +295,7 @@ class ErrorWorkflowExperimentResult(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: Literal["error"] = "error"
-    message: str = Field(default="(no message)")
+    message: str | None = Field(default="(no message)")
     details: ErrorDetails | None = None
 
 
@@ -346,8 +350,8 @@ class ExperimentResult(RetabBaseModel):
     created_at: datetime.datetime | None = None
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
-    attempt: int = 0
-    is_placeholder: bool = False
+    attempt: int | None = 0
+    is_placeholder: bool | None = False
 
 
 # ---------------------------------------------------------------------------
@@ -375,14 +379,14 @@ class ExperimentConfusionFlowMetric(RetabBaseModel):
 class ExperimentExtractSummaryAggregate(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    likelihoods: dict[str, float] = Field(default_factory=dict)
+    likelihoods: dict[str, float] | None = Field(default_factory=dict)
 
 
 class ExperimentConfusionSummaryAggregate(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    diag: dict[str, float] = Field(default_factory=dict)
-    flows: list[ExperimentConfusionFlowMetric] = Field(default_factory=list)
+    diag: dict[str, float] | None = Field(default_factory=dict)
+    flows: list[ExperimentConfusionFlowMetric] | None = Field(default_factory=list)
 
 
 ExperimentSummaryAggregate = ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate
@@ -399,7 +403,7 @@ class ExperimentSummaryMetricsResponse(RetabBaseModel):
     block_type: ExperimentBlockType
     score: float | None = None
     prior_score: float | None = None
-    documents: list[ExperimentSummaryMetricDocument] = Field(default_factory=list)
+    documents: list[ExperimentSummaryMetricDocument] | None = Field(default_factory=list)
     aggregate: ExperimentSummaryAggregate | None = None
     prior_run_id: str | None = None
 
@@ -423,8 +427,8 @@ class ExperimentByDocumentTargetMetric(RetabBaseModel):
 class ExperimentDocumentConfusionMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    diag: dict[str, float] = Field(default_factory=dict)
-    flows: list[ExperimentConfusionFlowMetric] = Field(default_factory=list)
+    diag: dict[str, float] | None = Field(default_factory=dict)
+    flows: list[ExperimentConfusionFlowMetric] | None = Field(default_factory=list)
 
 
 class ExperimentByDocumentMetricsResponse(RetabBaseModel):
@@ -437,7 +441,7 @@ class ExperimentByDocumentMetricsResponse(RetabBaseModel):
     score: float | None = None
     prior_score: float | None = None
     confusion: ExperimentDocumentConfusionMetric | None = None
-    targets: list[ExperimentByDocumentTargetMetric] = Field(default_factory=list)
+    targets: list[ExperimentByDocumentTargetMetric] | None = Field(default_factory=list)
 
 
 class ExperimentByTargetDocumentMetric(RetabBaseModel):
@@ -454,8 +458,8 @@ class ExperimentTargetConfusionMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     self: float | None = None
-    flow_from: dict[str, float] = Field(default_factory=dict)
-    flow_to: dict[str, float] = Field(default_factory=dict)
+    flow_from: dict[str, float] | None = Field(default_factory=dict)
+    flow_to: dict[str, float] | None = Field(default_factory=dict)
 
 
 class ExperimentByTargetMetricsResponse(RetabBaseModel):
@@ -468,7 +472,7 @@ class ExperimentByTargetMetricsResponse(RetabBaseModel):
     score: float | None = None
     prior_score: float | None = None
     confusion: ExperimentTargetConfusionMetric | None = None
-    documents: list[ExperimentByTargetDocumentMetric] = Field(default_factory=list)
+    documents: list[ExperimentByTargetDocumentMetric] | None = Field(default_factory=list)
 
 
 class ExperimentVotesMetricDocument(RetabBaseModel):
@@ -482,7 +486,7 @@ class ExperimentVoteRow(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     consensus: Any | None = None
-    votes: list[Any] = Field(default_factory=list)
+    votes: list[Any] | None = Field(default_factory=list)
     score: float | None = None
     row_presence_score: float | None = None
     present_voter_count: int | None = None
@@ -499,7 +503,7 @@ class ExperimentVotesMetricsResponse(RetabBaseModel):
     target: str
     score: float | None = None
     prior_score: float | None = None
-    rows: list[ExperimentVoteRow] = Field(default_factory=list)
+    rows: list[ExperimentVoteRow] | None = Field(default_factory=list)
 
 
 class _MetricsStaleErrorLastRun(RetabBaseModel):
@@ -521,7 +525,7 @@ class ExperimentMetricsStaleError(RetabBaseModel):
     kind: Literal["stale_metrics"] = "stale_metrics"
     error: Literal["stale_metrics"] = "stale_metrics"
     experiment_id: str
-    stale_reasons: list[str] = Field(default_factory=list)
+    stale_reasons: list[str] | None = Field(default_factory=list)
     last_run: _MetricsStaleErrorLastRun
     current_config_fingerprint: str | None = None
     message: str

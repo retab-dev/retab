@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
+func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	var createBody map[string]any
 	var sawCreate bool
 	var sawList bool
@@ -16,20 +16,20 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/simulations" && r.URL.RawQuery == "":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/blocks/executions" && r.URL.RawQuery == "":
 			sawCreate = true
 			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
 				t.Fatalf("decode create body: %v", err)
 			}
-			_ = json.NewEncoder(w).Encode(blockSimulationResponse("sim_123"))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/simulations":
+			_ = json.NewEncoder(w).Encode(blockExecutionResponse("sim_123"))
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/executions":
 			sawList = true
 			query := r.URL.Query()
 			if query.Get("run_id") != "run_123" || query.Get("block_id") != "blk_extract" || query.Get("limit") != "10" {
 				t.Fatalf("unexpected list query: %s", r.URL.RawQuery)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"data":          []map[string]any{blockSimulationResponse("sim_123")},
+				"data":          []map[string]any{blockExecutionResponse("sim_123")},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
 			})
 		default:
@@ -44,7 +44,7 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	}
 
 	checkEligibility := false
-	created, err := client.Workflows.Simulations.Create(context.Background(), CreateWorkflowSimulationRequest{
+	created, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{
 		RunID:            "run_123",
 		BlockID:          "blk_extract",
 		StepID:           "step_iter_0_blk_extract",
@@ -67,7 +67,7 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 		t.Fatalf("create body = %#v", createBody)
 	}
 
-	list, err := client.Workflows.Simulations.List(context.Background(), ListWorkflowSimulationsParams{
+	list, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{
 		RunID:   "run_123",
 		BlockID: "blk_extract",
 		Limit:   10,
@@ -83,27 +83,27 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	}
 }
 
-func TestWorkflowSimulationsRequireRunAndBlockIDs(t *testing.T) {
+func TestWorkflowBlockExecutionsRequireRunAndBlockIDs(t *testing.T) {
 	client, err := NewClient("test-key")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.Simulations.Create(context.Background(), CreateWorkflowSimulationRequest{BlockID: "blk_1"}); err == nil {
+	if _, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{BlockID: "blk_1"}); err == nil {
 		t.Fatal("expected create without run id to fail")
 	}
-	if _, err := client.Workflows.Simulations.Create(context.Background(), CreateWorkflowSimulationRequest{RunID: "run_1"}); err == nil {
+	if _, err := client.Workflows.BlockExecutions.Create(context.Background(), CreateWorkflowBlockExecutionRequest{RunID: "run_1"}); err == nil {
 		t.Fatal("expected create without block id to fail")
 	}
-	if _, err := client.Workflows.Simulations.List(context.Background(), ListWorkflowSimulationsParams{BlockID: "blk_1"}); err == nil {
+	if _, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{BlockID: "blk_1"}); err == nil {
 		t.Fatal("expected list without run id to fail")
 	}
-	if _, err := client.Workflows.Simulations.List(context.Background(), ListWorkflowSimulationsParams{RunID: "run_1"}); err == nil {
+	if _, err := client.Workflows.BlockExecutions.List(context.Background(), ListWorkflowBlockExecutionsParams{RunID: "run_1"}); err == nil {
 		t.Fatal("expected list without block id to fail")
 	}
 }
 
-func blockSimulationResponse(id string) map[string]any {
+func blockExecutionResponse(id string) map[string]any {
 	return map[string]any{
 		"id":             id,
 		"workflow_id":    "wf_123",

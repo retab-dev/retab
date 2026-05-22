@@ -760,12 +760,12 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 		{
 			name:    "WorkflowBlocksService",
 			service: &WorkflowBlocksService{},
-			methods: []string{"ConfigHistory", "GetResolvedSchemas", "CreateBatch", "ListSimulations", "PrepareSimulate", "Simulate"},
+			methods: []string{"ConfigHistory", "GetResolvedSchemas", "CreateBatch", "ListBlock executions", "PrepareExecute", "Execute"},
 		},
 		{
 			name:    "WorkflowStepsService",
 			service: &WorkflowStepsService{},
-			methods: []string{"ListSimulations", "PrepareListSimulations", "PrepareSimulate", "Simulate"},
+			methods: []string{"ListBlock executions", "PrepareListBlock executions", "PrepareExecute", "Execute"},
 		},
 		{
 			name:    "WorkflowEdgesService",

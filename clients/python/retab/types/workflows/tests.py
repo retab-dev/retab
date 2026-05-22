@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
-from retab.types.workflows.model import HandleInput, Trigger, WorkflowSnapshotRef
+from retab.types.workflows.model import ErrorDetails, HandleInput, Trigger, WorkflowSnapshotRef
 
 # ---------------------------------------------------------------------------
 # Status enums
@@ -135,7 +135,7 @@ class AssertionFailure(RetabBaseModel):
 
     code: str
     message: str
-    details: dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] | None = Field(default_factory=dict)
 
 
 class AssertionResult(RetabBaseModel):
@@ -144,8 +144,8 @@ class AssertionResult(RetabBaseModel):
     assertion_id: str
     condition_kind: str
     outcome: AssertionOutcome
-    actual_value: Any = None
-    expected_value: Any = None
+    actual_value: Any | None = None
+    expected_value: Any | None = None
     score: float | None = None
     threshold: float | None = None
     metric_kind: str | None = None
@@ -157,10 +157,10 @@ class VerdictSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     result: bool
-    assertions_passed: int = 0
-    assertions_failed: int = 0
-    blocked_assertions: int = 0
-    failed_assertion_ids: list[str] = Field(default_factory=list)
+    assertions_passed: int | None = 0
+    assertions_failed: int | None = 0
+    blocked_assertions: int | None = 0
+    failed_assertion_ids: list[str] | None = Field(default_factory=list)
 
 
 class LatestWorkflowTestRunSummary(RetabBaseModel):
@@ -197,7 +197,7 @@ class AssertionSchemaDep(RetabBaseModel):
     output_handle_id: str | None = None
     schema_path: str
     subtree_hash: str
-    depends_on_root: bool = False
+    depends_on_root: bool | None = False
 
 
 AssertionDriftStatus = Literal["valid", "drifted", "broken"]
@@ -228,13 +228,13 @@ class WorkflowTest(RetabBaseModel):
     assertion_drift_status: AssertionDriftStatus | None = None
     schema_drift: SchemaDriftStatus = "unknown"
     schema_drift_detail: str | None = None
-    validation_status: str = "valid"
-    validation_issues: list[Any] = Field(default_factory=list)
+    validation_status: str | None = "valid"
+    validation_issues: list[Any] | None = Field(default_factory=list)
     latest_run_summary: LatestWorkflowTestRunSummary | None = None
     latest_passing_run_summary: LatestWorkflowTestRunSummary | None = None
     latest_failing_run_summary: LatestWorkflowTestRunSummary | None = None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime.datetime | None = None
+    updated_at: datetime.datetime | None = None
 
 
 class WorkflowTestRunLifecycle(RetabBaseModel):
@@ -276,16 +276,16 @@ class WorkflowTestResult(RetabBaseModel):
     lifecycle: WorkflowTestRunLifecycle | None = None
     timing: WorkflowTestRunTiming | None = None
     target: WorkflowTestBlockTarget
-    execution_fingerprint: str = ""
-    handle_inputs_fingerprint: str = ""
-    workflow_draft_fingerprint: str = ""
-    block_config_fingerprint: str = ""
+    execution_fingerprint: str | None = ""
+    handle_inputs_fingerprint: str | None = ""
+    workflow_draft_fingerprint: str | None = ""
+    block_config_fingerprint: str | None = ""
     source: WorkflowTestSource
     outputs: dict[str, Any] | None = None
     routing_decision: list[str] | None = None
-    warnings: list[str] = Field(default_factory=list)
-    error: str | None = None
-    skipped: bool = False
+    warnings: list[str] | None = Field(default_factory=list)
+    error: ErrorDetails | None = None
+    skipped: bool | None = False
     assertion_result: AssertionResult | None = None
     verdict_summary: VerdictSummary | None = None
     verdict: dict[str, Any] | None = None

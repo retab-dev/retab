@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
@@ -11,18 +11,20 @@ from .mime import FileRef, MIMEData
 
 
 class PartitionRequest(RetabBaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     document: MIMEData | FileRef = Field(..., description="The document to partition")
     key: str = Field(..., description="The key to partition the document by")
     instructions: str = Field(..., description="Instructions describing how the document should be partitioned")
-    model: str = Field(default="retab-small", description="The model to use for partitioning")
-    n_consensus: int = Field(
+    model: str | None = Field(default="retab-small", description="The model to use for partitioning")
+    n_consensus: int | None = Field(
         default=1,
         ge=1,
         le=8,
         description="Number of partitioning runs to use for consensus voting. Uses deterministic single-pass when set to 1.",
     )
-    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
-    allow_overlap: bool = Field(
+    bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    allow_overlap: bool | None = Field(
         default=True,
         description="When true, allow partition chunks to share pages.",
     )
@@ -30,19 +32,19 @@ class PartitionRequest(RetabBaseModel):
 
 class PartitionChunk(RetabBaseModel):
     key: str = Field(..., description="The partition key value for this chunk")
-    pages: list[int] = Field(default_factory=list, description="The pages assigned to this partition chunk (1-indexed)")
+    pages: list[int] | None = Field(default_factory=list, description="The pages assigned to this partition chunk (1-indexed)")
 
 
 class PartitionChunkLikelihood(RetabBaseModel):
     key: float | None = Field(default=None, description="Confidence that this partition key value is correct")
-    pages: list[float] = Field(
+    pages: list[float] | None = Field(
         default_factory=list,
         description="Confidence for each page in the corresponding partition chunk.pages array",
     )
 
 
 class PartitionConsensus(RetabBaseModel):
-    choices: list[list[PartitionChunk]] = Field(
+    choices: list[list[PartitionChunk]] | None = Field(
         default_factory=list,
         description="Alternative partition vote outputs used to build the consolidated result.",
     )
@@ -64,16 +66,16 @@ class Partition(RetabBaseModel):
         default=None,
         description="Free-form instructions supplied with the partition request",
     )
-    n_consensus: int = Field(default=1, description="Number of consensus votes used")
-    allow_overlap: bool = Field(
+    n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
+    allow_overlap: bool | None = Field(
         default=True,
         description="Whether partition chunks were allowed to share pages.",
     )
-    output: list[PartitionChunk] = Field(
+    output: list[PartitionChunk] | None = Field(
         default_factory=list,
         description="The list of partition chunks with their assigned pages",
     )
-    consensus: PartitionConsensus = Field(
+    consensus: PartitionConsensus | None = Field(
         default_factory=PartitionConsensus,
         description="Consensus metadata for multi-vote partition runs",
     )

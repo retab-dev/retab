@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
@@ -12,32 +12,34 @@ from .mime import FileRef, MIMEData
 
 class Subdocument(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
-    description: str = Field(default="", description="The description of the subdocument")
-    allow_multiple_instances: bool = Field(
+    description: str | None = Field(default="", description="The description of the subdocument")
+    allow_multiple_instances: bool | None = Field(
         default=False,
         description="When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass).",
     )
 
 
 class SplitRequest(RetabBaseModel):
-    document: MIMEData = Field(..., description="The document to split")
+    model_config = ConfigDict(extra="forbid")
+
+    document: MIMEData | FileRef = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(
         ...,
         min_length=1,
         description="The subdocuments to split the document into",
     )
-    model: str = Field(default="retab-small", description="The model to use to split the document")
+    model: str | None = Field(default="retab-small", description="The model to use to split the document")
     instructions: str | None = Field(
         default=None,
         description="Free-form instructions appended to the system prompt to steer the split.",
     )
-    n_consensus: int = Field(
+    n_consensus: int | None = Field(
         default=1,
         ge=1,
         le=8,
         description="Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.",
     )
-    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class SplitResult(RetabBaseModel):
@@ -47,7 +49,7 @@ class SplitResult(RetabBaseModel):
 
 class SplitSubdocumentLikelihood(RetabBaseModel):
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
-    pages: list[float] = Field(
+    pages: list[float] | None = Field(
         default_factory=list,
         description="Confidence for each page in the corresponding split.pages array",
     )
@@ -58,7 +60,7 @@ class SplitConsensus(RetabBaseModel):
         default=None,
         description="Consensus likelihood tree mirroring the split output",
     )
-    choices: list[list[SplitResult]] = Field(
+    choices: list[list[SplitResult]] | None = Field(
         default_factory=list,
         description="Alternative split vote outputs used to build the consolidated result",
     )
@@ -69,7 +71,7 @@ class Split(RetabBaseModel):
     file: FileRef = Field(..., description="Information about the split file")
     model: str = Field(..., description="Model used for the split operation")
     subdocuments: list[Subdocument] = Field(..., description="Subdocuments used for the split operation")
-    n_consensus: int = Field(default=1, description="Number of consensus votes used")
+    n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(
         default=None,
         description="Free-form instructions supplied with the split request.",
