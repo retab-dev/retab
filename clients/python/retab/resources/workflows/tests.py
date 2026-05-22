@@ -172,21 +172,6 @@ class WorkflowTestsMixin:
             url=f"/workflows/tests/{test_id}",
         )
 
-    def prepare_create_run(
-        self,
-        workflow_id: str,
-        *,
-        test_id: str | None = None,
-        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
-        n_consensus: int | None = None,
-    ) -> PreparedRequest:
-        return _prepare_create_run(
-            workflow_id,
-            test_id=test_id,
-            target=target,
-            n_consensus=n_consensus,
-        )
-
 
 class WorkflowTestRunsMixin:
     """Mixin for canonical workflow-test run lifecycle routes."""
@@ -318,7 +303,6 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.results = WorkflowTestRunResults(client=self._client)
 
     def create(
         self,
@@ -394,7 +378,6 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.results = AsyncWorkflowTestRunResults(client=self._client)
 
     async def create(
         self,
@@ -494,6 +477,9 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.runs = WorkflowTestRuns(client=self._client)
+        # Per URL hierarchy: /v1/workflows/tests/results is a sibling of
+        # /runs, not nested under it.
+        self.results = WorkflowTestRunResults(client=self._client)
 
     def create(
         self,
@@ -571,6 +557,9 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.runs = AsyncWorkflowTestRuns(client=self._client)
+        # Per URL hierarchy: /v1/workflows/tests/results is a sibling of
+        # /runs, not nested under it.
+        self.results = AsyncWorkflowTestRunResults(client=self._client)
 
     async def create(
         self,

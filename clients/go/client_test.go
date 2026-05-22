@@ -259,7 +259,7 @@ func TestWorkflowsDiagnosePostsDirectly(t *testing.T) {
 	}
 }
 
-func TestWorkflowSpecsRoutesMatchPythonAndNode(t *testing.T) {
+func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 	var requests []string
 	var validateBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -279,16 +279,16 @@ func TestWorkflowSpecsRoutesMatchPythonAndNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.Specs.Validate(context.Background(), "name: test"); err != nil {
+	if _, err := client.Workflows.Spec.Validate(context.Background(), "name: test"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Specs.Plan(context.Background(), "name: test"); err != nil {
+	if _, err := client.Workflows.Spec.Plan(context.Background(), "name: test"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Specs.Apply(context.Background(), "name: test"); err != nil {
+	if _, err := client.Workflows.Spec.Apply(context.Background(), "name: test"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Specs.Export(context.Background(), "wf_123"); err != nil {
+	if _, err := client.Workflows.Spec.Export(context.Background(), "wf_123"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -437,14 +437,14 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if result.ID != "exprun_123" {
 		t.Fatalf("result = %#v", result)
 	}
-	results, err := client.Workflows.Experiments.Runs.Results.List(context.Background(), "exprun_123", 25)
+	results, err := client.Workflows.Experiments.Results.List(context.Background(), "exprun_123", 25)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(results.Data) != 0 || rawQuery != "limit=25&run_id=exprun_123" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
-	runResult, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "expresult_123")
+	runResult, err := client.Workflows.Experiments.Results.Get(context.Background(), "expresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -465,7 +465,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if strings.Contains(string(cancelledJSON), "experiment_id") || strings.Contains(string(cancelledJSON), "workflow") {
 		t.Fatalf("cancel response should only model id/lifecycle, got %s", cancelledJSON)
 	}
-	metrics, err := client.Workflows.Experiments.Runs.Metrics.Get(context.Background(), "exprun_123", nil)
+	metrics, err := client.Workflows.Experiments.Metrics.Get(context.Background(), "exprun_123", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -507,7 +507,7 @@ func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.Workflows.Tests.Runs.Results.Get(context.Background(), "wfresult_123")
+	result, err := client.Workflows.Tests.Results.Get(context.Background(), "wfresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -622,7 +622,7 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"order": []string{"start-1", "extract-1"}})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/documents/extract-1":
 			_ = json.NewEncoder(w).Encode(map[string]any{"url": "https://example.com/doc"})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs/export-payload":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs/export":
 			if err := json.NewDecoder(r.Body).Decode(&exportBody); err != nil {
 				t.Fatal(err)
 			}
@@ -696,7 +696,7 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	var exportBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&exportBody); err != nil {

@@ -1289,7 +1289,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1889,7 +1889,7 @@ func TestWorkflowsRunsExportAcceptsPositionalWorkflowID(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1934,7 +1934,7 @@ func TestWorkflowsRunsExportFlagFormStillWorksWithDeprecationWarning(t *testing.
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

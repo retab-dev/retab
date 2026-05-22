@@ -48,22 +48,22 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 You can check our Github repository to see code examples: [python examples](https://github.com/retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/retab-dev/retab-nodejs/tree/main/notebooks).
 
-## Workflow Specs
+## Workflow Spec
 
-Use `client.workflows.specs` to validate, plan, apply, and export declarative workflow YAML.
+Use `client.workflows.spec` to validate, plan, apply, and export declarative workflow YAML.
 
 ```python
 from retab import Retab
 
 client = Retab()
 
-validation = client.workflows.specs.validate(yaml_definition)
-plan = client.workflows.specs.plan(yaml_definition)
-result = client.workflows.specs.apply(yaml_definition)
-exported = client.workflows.specs.export(result.workflow_id)
+validation = client.workflows.spec.validate(yaml_definition)
+plan = client.workflows.spec.plan(yaml_definition)
+result = client.workflows.spec.apply(yaml_definition)
+exported = client.workflows.spec.export(result.workflow_id)
 ```
 
-Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
+A declarative spec uses `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
 
 ```yaml
 edges:

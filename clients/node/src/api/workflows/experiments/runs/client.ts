@@ -36,13 +36,8 @@ function normalizeDateParam(value?: string | Date): string | undefined {
  * Experiment run lifecycle, child results, and metrics.
  */
 export default class APIWorkflowExperimentRuns extends CompositionClient {
-  public results: APIWorkflowExperimentRunResults;
-  public metrics: APIWorkflowExperimentRunMetrics;
-
   constructor(client: CompositionClient) {
     super(client);
-    this.results = new APIWorkflowExperimentRunResults(this);
-    this.metrics = new APIWorkflowExperimentRunMetrics(this);
   }
 
   prepare_create(

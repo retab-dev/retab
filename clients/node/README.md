@@ -85,18 +85,18 @@ console.log(artifact);
 console.log(runArtifacts);
 ```
 
-### Workflow Specs
+### Workflow Spec
 
-Use `client.workflows.specs` to validate, plan, apply, and export declarative workflow YAML.
+Use `client.workflows.spec` to validate, plan, apply, and export declarative workflow YAML.
 
 ```typescript
-const validation = await retab.workflows.specs.validate(yamlDefinition);
-const plan = await retab.workflows.specs.plan(yamlDefinition);
-const result = await retab.workflows.specs.apply(yamlDefinition);
-const exported = await retab.workflows.specs.export(result.workflow_id);
+const validation = await retab.workflows.spec.validate(yamlDefinition);
+const plan = await retab.workflows.spec.plan(yamlDefinition);
+const result = await retab.workflows.spec.apply(yamlDefinition);
+const exported = await retab.workflows.spec.export(result.workflow_id);
 ```
 
-Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
+A declarative spec uses `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
 
 ```yaml
 edges:

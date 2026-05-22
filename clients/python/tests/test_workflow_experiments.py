@@ -471,7 +471,7 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
         "list_metadata": {"before": None, "after": None},
     }
 
-    page = Workflows(client=client).experiments.runs.results.list("exprun_1")
+    page = Workflows(client=client).experiments.results.list("exprun_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -487,7 +487,7 @@ def test_experiments_runs_results_get_uses_flat_result_id_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _EXPERIMENT_RESULT
 
-    result = Workflows(client=client).experiments.runs.results.get("expresult_1")
+    result = Workflows(client=client).experiments.results.get("expresult_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -509,7 +509,7 @@ def test_experiments_runs_metrics_summary_view_default() -> None:
         "documents": [],
     }
 
-    Workflows(client=client).experiments.runs.metrics.get("exprun_1")
+    Workflows(client=client).experiments.metrics.get("exprun_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -532,7 +532,7 @@ def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
         "documents": [],
     }
 
-    Workflows(client=client).experiments.runs.metrics.get(
+    Workflows(client=client).experiments.metrics.get(
         "exprun_1",
         view="by_target",
         target_path="total",
@@ -562,7 +562,7 @@ def test_experiments_metrics_confusion_flow_uses_source_target_fields() -> None:
         "targets": [],
     }
 
-    result = Workflows(client=client).experiments.runs.metrics.get(
+    result = Workflows(client=client).experiments.metrics.get(
         "exprun_1",
         view="by_document",
         document_id="expdoc_1",
@@ -599,7 +599,7 @@ def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
         "message": "Metrics are stale; rerun the experiment.",
     }
 
-    result = Workflows(client=client).experiments.runs.metrics.get("exprun_1")
+    result = Workflows(client=client).experiments.metrics.get("exprun_1")
 
     # Discriminated union accepts the error envelope by ``kind``.
     assert getattr(result, "kind", None) == "stale_metrics"

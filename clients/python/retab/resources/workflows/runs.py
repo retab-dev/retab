@@ -464,7 +464,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             data["line_delimiter"] = line_delimiter
         if quote is not None:
             data["quote"] = quote
-        request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
+        request = PreparedRequest(method="POST", url="/workflows/runs/export", data=data)
         response = self._client._prepared_request(request)
         return ExportResponse.model_validate(response)
 
@@ -709,6 +709,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             data["line_delimiter"] = line_delimiter
         if quote is not None:
             data["quote"] = quote
-        request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
+        request = PreparedRequest(method="POST", url="/workflows/runs/export", data=data)
         response = await self._client._prepared_request(request)
         return ExportResponse.model_validate(response)

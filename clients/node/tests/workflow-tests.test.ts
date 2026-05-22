@@ -399,7 +399,7 @@ describe('workflows.tests.runs', () => {
     });
     const tests = new APIWorkflowTests(mockClient);
 
-    const result = await tests.runs.results.list({
+    const result = await tests.results.list({
       runId: 'wftestrun_q1z2',
     });
 
@@ -416,7 +416,7 @@ describe('workflows.tests.runs', () => {
     const mockClient = new MockClient(RESULT_RESPONSE);
     const tests = new APIWorkflowTests(mockClient);
 
-    const result = await tests.runs.results.get({
+    const result = await tests.results.get({
       resultId: 'wfresult_abc',
     });
 
@@ -433,8 +433,8 @@ describe('workflows.tests.runs', () => {
     expect('execute' in tests).toBe(false);
     expect('getExecution' in tests.runs).toBe(false);
     expect('get_execution' in tests.runs).toBe(false);
-    expect(typeof tests.runs.results).toBe('object');
-    expect(typeof tests.runs.results.get).toBe('function');
+    expect(typeof tests.results).toBe('object');
+    expect(typeof tests.results.get).toBe('function');
   });
 });
 
@@ -536,7 +536,6 @@ describe('workflows.tests parity bridge installation', () => {
       'prepare_list',
       'prepare_update',
       'prepare_delete',
-      'prepare_create_run',
     ]) {
       expect(typeof tests[name]).toBe('function');
     }

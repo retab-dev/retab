@@ -12,7 +12,7 @@ import APIWorkflowReviews from './reviews/client.js';
 import APIWorkflowBlocks from './blocks/client.js';
 import APIWorkflowEdges from './edges/client.js';
 import APIWorkflowArtifacts from './artifacts/client.js';
-import APIWorkflowSpecs from './specs/client.js';
+import APIWorkflowSpec from './spec/client.js';
 import APIWorkflowTests from './tests/client.js';
 import APIWorkflowExperiments from './experiments/client.js';
 import APIWorkflowSteps from './steps/client.js';
@@ -27,7 +27,7 @@ import APIWorkflowSteps from './steps/client.js';
  * - edges: Workflow edge CRUD
  * - artifacts: Workflow artifact dereference operations
  * - steps: Workflow run step operations (get, list)
- * - specs: Declarative workflow YAML validation, planning, apply, and export
+ * - spec: Declarative workflow YAML validation, planning, apply, and export
  * - tests: Workflow tests CRUD + execution + run history
  * - experiments: Consensus-experiments CRUD + per-run + metrics
  *
@@ -41,7 +41,7 @@ export default class APIWorkflows extends CompositionClient {
   public edges: APIWorkflowEdges;
   public artifacts: APIWorkflowArtifacts;
   public steps: APIWorkflowSteps;
-  public specs: APIWorkflowSpecs;
+  public spec: APIWorkflowSpec;
   public tests: APIWorkflowTests;
   public experiments: APIWorkflowExperiments;
 
@@ -53,7 +53,7 @@ export default class APIWorkflows extends CompositionClient {
     this.edges = new APIWorkflowEdges(this);
     this.artifacts = new APIWorkflowArtifacts(this);
     this.steps = new APIWorkflowSteps(this);
-    this.specs = new APIWorkflowSpecs(this);
+    this.spec = new APIWorkflowSpec(this);
     this.tests = new APIWorkflowTests(this);
     this.experiments = new APIWorkflowExperiments(this);
   }

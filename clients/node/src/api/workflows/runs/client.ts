@@ -316,7 +316,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     if (triggerTypes !== undefined) body.trigger_types = triggerTypes;
 
     return this._fetchJson(ZWorkflowRunExportResponse, {
-      url: '/workflows/runs/export-payload',
+      url: '/workflows/runs/export',
       method: 'POST',
       body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
       params: options?.params,
