@@ -4,7 +4,7 @@ import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
@@ -49,7 +49,7 @@ class FormSchema(RetabBaseModel):
 
 
 class EditConfig(RetabBaseModel):
-    color: str = Field(default="#000080", description="Hex code of the color to use for the filled text.")
+    color: str | None = Field(default="#000080", description="Hex code of the color to use for the filled text.")
 
 
 class EditRequest(RetabBaseModel):
@@ -105,6 +105,8 @@ class EditTemplateRequest(RetabBaseModel):
 
 
 class UpdateEditTemplateRequest(RetabBaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: Optional[str] = Field(default=None, description="New name for the template.")
     form_fields: Optional[list[FormField]] = Field(default=None, description="Replacement list of form fields.")
 
@@ -120,7 +122,7 @@ class EditTemplate(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the template.")
     name: str = Field(..., description="Name of the template.")
     file: FileRef = Field(..., description="File information for the empty PDF template.")
-    form_fields: list[FormField] = Field(default_factory=list, description="Form fields attached to the template.")
-    field_count: int = Field(default=0, description="Number of form fields in the template.")
+    form_fields: list[FormField] | None = Field(default_factory=list, description="Form fields attached to the template.")
+    field_count: int | None = Field(default=0, description="Number of form fields in the template.")
     created_at: datetime.datetime = Field(..., description="Timestamp of creation.")
     updated_at: datetime.datetime = Field(..., description="Timestamp of last update.")

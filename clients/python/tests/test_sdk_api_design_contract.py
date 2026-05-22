@@ -16,15 +16,15 @@ HTTP_METHODS = {"get", "post", "patch", "delete", "put"}
 REMOVED_METHOD_NAMES = {
     "append_version",
     "prepare_append_version",
-    "simulate",
-    "prepare_simulate",
+    "execute",
+    "prepare_execute",
 }
 REMOVED_ROUTE_FRAGMENTS = {
     "/workflows/reviews/{id}",
     "/workflows/runs/{run_id}/steps",
     "/workflows/runs/{run_id}/steps/{step_id}",
-    "/workflows/blocks/{block_id}/simulate",
-    "/workflows/blocks/simulate",
+    "/workflows/blocks/{block_id}/execute",
+    "/workflows/blocks/execute",
 }
 APPROVED_NON_REFERENCE_ROUTES = {
     # Existing SDK convenience route that is not part of the generated public

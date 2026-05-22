@@ -8,7 +8,7 @@ from retab.resources.workflows.blocks.client import WorkflowBlocks
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges.client import WorkflowEdges
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
-from retab.resources.workflows.simulations.client import AsyncWorkflowSimulations, WorkflowSimulations
+from retab.resources.workflows.block_executions.client import AsyncWorkflowBlockExecutions, WorkflowBlockExecutions
 from retab.resources.workflows.specs.client import AsyncWorkflowSpecs, WorkflowSpecs
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
@@ -24,7 +24,7 @@ from retab.types.workflows.model import (
     UpdateWorkflowBlockRequest,
     WorkflowEdgeCreateRequest,
     StepExecutionResponse,
-    BlockSimulation,
+    StoredBlockExecution,
 )
 
 
@@ -142,16 +142,16 @@ def test_async_workflows_exposes_specs_subresource() -> None:
     assert isinstance(workflows.specs, AsyncWorkflowSpecs)
 
 
-def test_workflows_exposes_simulations_subresource() -> None:
+def test_workflows_exposes_block_executions_subresource() -> None:
     workflows = Workflows(client=MagicMock())
 
-    assert isinstance(workflows.simulations, WorkflowSimulations)
+    assert isinstance(workflows.block_executions, WorkflowBlockExecutions)
 
 
-def test_async_workflows_exposes_simulations_subresource() -> None:
+def test_async_workflows_exposes_block_executions_subresource() -> None:
     workflows = AsyncWorkflows(client=MagicMock())
 
-    assert isinstance(workflows.simulations, AsyncWorkflowSimulations)
+    assert isinstance(workflows.block_executions, AsyncWorkflowBlockExecutions)
 
 
 def test_removed_workflow_methods_are_not_exposed() -> None:
@@ -164,9 +164,9 @@ def test_removed_workflow_methods_are_not_exposed() -> None:
     assert not hasattr(workflows.blocks, "config_history")
     assert not hasattr(workflows.blocks, "get_resolved_schemas")
     assert not hasattr(workflows.blocks, "create_batch")
-    assert not hasattr(workflows.blocks, "list_simulations")
-    assert not hasattr(workflows.blocks, "simulate")
-    assert not hasattr(workflows.simulations, "simulate")
+    assert not hasattr(workflows.blocks, "list_block_executions")
+    assert not hasattr(workflows.blocks, "execute")
+    assert not hasattr(workflows.block_executions, "execute")
     assert not hasattr(workflows.edges, "create_batch")
     assert not hasattr(workflows.edges, "delete_all")
     assert not hasattr(workflows.experiments, "duplicate")
@@ -174,7 +174,7 @@ def test_removed_workflow_methods_are_not_exposed() -> None:
     assert not hasattr(workflows.reviews, "wait_for")
 
 
-def test_workflow_simulations_create_uses_top_level_route() -> None:
+def test_workflow_block_executions_create_uses_top_level_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "id": "sim_1",
@@ -186,7 +186,7 @@ def test_workflow_simulations_create_uses_top_level_route() -> None:
         "created_at": "2026-03-12T10:00:00Z",
     }
 
-    simulation = Workflows(client=client).simulations.create(
+    block_execution = Workflows(client=client).block_executions.create(
         run_id="run_1",
         block_id="block_1",
         step_id="step_1",
@@ -195,7 +195,7 @@ def test_workflow_simulations_create_uses_top_level_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/simulations"
+    assert request.url == "/workflows/blocks/executions"
     assert request.data == {
         "run_id": "run_1",
         "block_id": "block_1",
@@ -203,11 +203,11 @@ def test_workflow_simulations_create_uses_top_level_route() -> None:
         "n_consensus": 5,
     }
     assert "workflow_id" not in request.data
-    assert isinstance(simulation, BlockSimulation)
-    assert simulation.id == "sim_1"
+    assert isinstance(block_execution, StoredBlockExecution)
+    assert block_execution.id == "sim_1"
 
 
-def test_workflow_simulations_list_uses_top_level_route() -> None:
+def test_workflow_block_executions_list_uses_top_level_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [
@@ -224,7 +224,7 @@ def test_workflow_simulations_list_uses_top_level_route() -> None:
         "list_metadata": {"before": None, "after": None},
     }
 
-    result = Workflows(client=client).simulations.list(
+    result = Workflows(client=client).block_executions.list(
         run_id="run_1",
         block_id="block_1",
         limit=10,
@@ -232,7 +232,7 @@ def test_workflow_simulations_list_uses_top_level_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/simulations"
+    assert request.url == "/workflows/blocks/executions"
     assert request.params == {
         "run_id": "run_1",
         "block_id": "block_1",
@@ -242,7 +242,7 @@ def test_workflow_simulations_list_uses_top_level_route() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_workflow_simulations_create_uses_top_level_route() -> None:
+async def test_async_workflow_block_executions_create_uses_top_level_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(
         return_value={
@@ -256,7 +256,7 @@ async def test_async_workflow_simulations_create_uses_top_level_route() -> None:
         }
     )
 
-    simulation = await AsyncWorkflows(client=client).simulations.create(
+    block_execution = await AsyncWorkflows(client=client).block_executions.create(
         run_id="run_1",
         block_id="block_1",
         step_id="step_1",
@@ -264,13 +264,13 @@ async def test_async_workflow_simulations_create_uses_top_level_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/simulations"
+    assert request.url == "/workflows/blocks/executions"
     assert request.data == {
         "run_id": "run_1",
         "block_id": "block_1",
         "step_id": "step_1",
     }
-    assert simulation.id == "sim_1"
+    assert block_execution.id == "sim_1"
 
 
 def test_workflow_specs_validate_uses_spec_validate_route() -> None:
@@ -339,8 +339,13 @@ def test_workflow_specs_plan_uses_spec_plan_route() -> None:
     assert request.url == "/workflows/spec/plan"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativePlanResponse)
+    assert response.summary is not None
     assert response.summary.change == 1
-    assert response.resource_changes[0].change.field_changes[0].path_display == "config.model"
+    assert response.resource_changes is not None
+    field_changes = response.resource_changes[0].change.field_changes
+    assert field_changes is not None
+    assert field_changes[0].path_display == "config.model"
+    assert response.rendered_plan is not None
     assert "1 to change" in response.rendered_plan
 
 
@@ -367,6 +372,7 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativeApplyResponse)
     assert response.action == "noop"
+    assert response.summary is not None
     assert response.summary.noop == 1
     assert response.resource_changes == []
 
@@ -470,12 +476,17 @@ def test_workflow_run_v2_typed_fields() -> None:
             "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
         }
     )
+    assert run.workflow is not None
     assert run.workflow.workflow_id == "wf_1"
     assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
     assert run.workflow.name_at_run_time == "Test"
+    assert run.trigger is not None
     assert run.trigger.type == "api"
+    assert run.lifecycle is not None
     assert run.lifecycle.status == "completed"
+    assert run.inputs is not None
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
+    assert run.timing is not None
     assert run.timing.accumulated_review_waiting_ms == 5000
     assert not hasattr(run.timing, "duration_ms")
     assert not hasattr(run.timing, "active_duration_ms")
@@ -497,8 +508,10 @@ def test_workflow_run_v2_typed_fields() -> None:
             "timing": {"created_at": "2026-01-01T00:00:00Z"},
         }
     )
+    assert run2.inputs is not None
     assert run2.inputs.documents == {}
     assert run2.inputs.json_data == {}
+    assert run2.timing is not None
     assert run2.timing.accumulated_review_waiting_ms == 0
 
 
@@ -560,6 +573,7 @@ def test_workflows_update_accepts_email_trigger_policy() -> None:
             "allowed_domains": ["example.com"],
         }
     }
+    assert workflow.email_trigger is not None
     assert workflow.email_trigger.allowed_senders == ["ops@example.com"]
 
 
@@ -987,6 +1001,7 @@ def test_workflow_run_step_extracted_data() -> None:
     # handle_outputs should be typed as HandlePayload
     from retab.types.workflows.model import HandlePayload
 
+    assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
     assert isinstance(payload, HandlePayload)
     assert payload.type == "json"
@@ -1023,6 +1038,7 @@ def test_workflow_run_step_accepts_json_ref_handle_payload() -> None:
         }
     )
 
+    assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json_ref"
     assert payload.artifact_ref == {

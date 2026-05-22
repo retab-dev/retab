@@ -11,17 +11,28 @@ class WorkflowEdgesMixin:
 
     def prepare_list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         source_block: str | None = None,
         target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = None,
     ) -> PreparedRequest:
         """Prepare a request to list all edges for a workflow."""
         params: Dict[str, Any] = {}
+        if workflow_id is not None:
+            params["workflow_id"] = workflow_id
         if source_block is not None:
             params["source_block"] = source_block
         if target_block is not None:
             params["target_block"] = target_block
-        return PreparedRequest(method="GET", url=f"/workflows/edges?workflow_id={workflow_id}", params=params or None)
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        if limit is not None:
+            params["limit"] = limit
+        return PreparedRequest(method="GET", url="/workflows/edges", params=params or None)
 
     def prepare_get(self, edge_id: str) -> PreparedRequest:
         """Prepare a request to get a single edge."""
@@ -30,9 +41,28 @@ class WorkflowEdgesMixin:
     def prepare_create(
         self,
         workflow_id: str,
-        request: WorkflowEdgeCreateRequest,
+        request: WorkflowEdgeCreateRequest | None = None,
+        source_block: str | None = None,
+        target_block: str | None = None,
+        id: str | None = None,
+        source_handle: str | None = None,
+        target_handle: str | None = None,
     ) -> PreparedRequest:
-        """Prepare a request to create a new edge."""
+        """Prepare a request to create a new edge.
+
+        Accepts either the envelope ``request=`` model or the fanned-out
+        per-field kwargs the spec lists.
+        """
+        if request is None:
+            if source_block is None or target_block is None:
+                raise TypeError("source_block and target_block are required when request is not provided")
+            request = WorkflowEdgeCreateRequest(
+                id=id,
+                source_block=source_block,
+                target_block=target_block,
+                source_handle=source_handle,
+                target_handle=target_handle,
+            )
         data = request.model_dump(exclude_none=True)
         data["workflow_id"] = workflow_id
         return PreparedRequest(method="POST", url="/workflows/edges", data=data)
@@ -71,9 +101,12 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
 
     def list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         source_block: str | None = None,
         target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = None,
     ) -> PaginatedList[WorkflowEdgeDoc]:
         """List all edges for a workflow.
 
@@ -81,13 +114,23 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             workflow_id: The workflow ID
             source_block: Filter by source block ID (optional)
             target_block: Filter by target block ID (optional)
+            before: ID-based pagination cursor (optional)
+            after: ID-based pagination cursor (optional)
+            limit: Items per page (optional)
 
         Returns:
             ``PaginatedList[WorkflowEdgeDoc]`` — the canonical list envelope
             ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
             ID pagination is not yet implemented for this endpoint.
         """
-        request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
+        request = self.prepare_list(
+            workflow_id,
+            source_block=source_block,
+            target_block=target_block,
+            before=before,
+            after=after,
+            limit=limit,
+        )
         response = self._client._prepared_request(request)
         result = PaginatedList[WorkflowEdgeDoc](**response)
         result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
@@ -149,9 +192,12 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
 
     async def list(
         self,
-        workflow_id: str,
+        workflow_id: str | None = None,
         source_block: str | None = None,
         target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = None,
     ) -> PaginatedList[WorkflowEdgeDoc]:
         """List all edges for a workflow.
 
@@ -159,7 +205,14 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
         pagination envelope.
         """
-        request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
+        request = self.prepare_list(
+            workflow_id,
+            source_block=source_block,
+            target_block=target_block,
+            before=before,
+            after=after,
+            limit=limit,
+        )
         response = await self._client._prepared_request(request)
         result = PaginatedList[WorkflowEdgeDoc](**response)
         result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]

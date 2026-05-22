@@ -56,13 +56,13 @@ func TestSDKRouteStringsAreOpenAPIOrExplicitException(t *testing.T) {
 	}
 }
 
-func TestWorkflowSDKUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T) {
+func TestWorkflowSDKUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testing.T) {
 	source := readSDKSource(t)
 
 	for _, required := range []string{
 		`"/workflows/reviews"`,
 		`"/workflows/reviews/versions"`,
-		`"/workflows/simulations"`,
+		`"/workflows/blocks/executions"`,
 		`"/workflows/tests"`,
 		`"/workflows/tests/runs"`,
 		`"/workflows/tests/results"`,
@@ -72,9 +72,9 @@ func TestWorkflowSDKUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 		}
 	}
 
-	nestedWorkflowRoute := regexp.MustCompile(`"/workflows/"\s*\+\s*url\.PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|simulations|tests)(?:/|")`)
+	nestedWorkflowRoute := regexp.MustCompile(`"/workflows/"\s*\+\s*url\.PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|block executions|tests)(?:/|")`)
 	if match := nestedWorkflowRoute.FindString(source); match != "" {
-		t.Fatalf("Go SDK must use flat workflow routes for reviews/simulations/tests, found nested route expression: %s", match)
+		t.Fatalf("Go SDK must use flat workflow routes for reviews/blocks/executions/tests, found nested route expression: %s", match)
 	}
 
 	for _, removed := range []string{"append_version", "append-version", "appendVersion", "AppendVersion"} {
@@ -86,7 +86,7 @@ func TestWorkflowSDKUsesOnlyCanonicalReviewSimulationAndTestSurface(t *testing.T
 	for _, serviceType := range []reflect.Type{
 		reflect.TypeOf(&WorkflowReviewsService{}),
 		reflect.TypeOf(&WorkflowReviewVersionsService{}),
-		reflect.TypeOf(&WorkflowSimulationsService{}),
+		reflect.TypeOf(&WorkflowBlockExecutionsService{}),
 		reflect.TypeOf(&WorkflowTestsService{}),
 		reflect.TypeOf(&WorkflowTestRunsService{}),
 		reflect.TypeOf(&WorkflowTestRunResultsService{}),
@@ -109,8 +109,8 @@ func workflowSDKRouteContract() []apiRouteContract {
 		{method: http.MethodGet, path: "/workflows/reviews/versions"},
 		{method: http.MethodPost, path: "/workflows/reviews/versions"},
 		{method: http.MethodGet, path: "/workflows/reviews/versions/{version_id}"},
-		{method: http.MethodPost, path: "/workflows/simulations"},
-		{method: http.MethodGet, path: "/workflows/simulations"},
+		{method: http.MethodPost, path: "/workflows/blocks/executions"},
+		{method: http.MethodGet, path: "/workflows/blocks/executions"},
 		{method: http.MethodPost, path: "/workflows/tests"},
 		{method: http.MethodGet, path: "/workflows/tests"},
 		{method: http.MethodGet, path: "/workflows/tests/{test_id}"},

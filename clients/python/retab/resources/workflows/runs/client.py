@@ -120,6 +120,8 @@ class WorkflowRunsMixin:
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
+        min_duration_ms: int | None = None,
+        max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
         fields: str | Sequence[str] | None = None,
@@ -154,10 +156,19 @@ class WorkflowRunsMixin:
             params["min_cost"] = min_cost
         if max_cost is not None:
             params["max_cost"] = max_cost
+        # Two spellings of the same backend filter: keep ``min_duration`` /
+        # ``max_duration`` for ergonomics (existing callers) and accept the
+        # spec-canonical ``min_duration_ms`` / ``max_duration_ms`` too. The
+        # ``_ms`` form wins when both are supplied since it matches the wire
+        # contract exactly.
         if min_duration is not None:
-            params["min_duration"] = min_duration
+            params["min_duration_ms"] = min_duration
         if max_duration is not None:
-            params["max_duration"] = max_duration
+            params["max_duration_ms"] = max_duration
+        if min_duration_ms is not None:
+            params["min_duration_ms"] = min_duration_ms
+        if max_duration_ms is not None:
+            params["max_duration_ms"] = max_duration_ms
         if search is not None:
             params["search"] = search
         normalized_fields = _normalize_csv_param(fields)
@@ -286,6 +297,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
+        min_duration_ms: int | None = None,
+        max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
         fields: str | Sequence[str] | None = None,
@@ -307,8 +320,10 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             to_date: Filter runs created on or before this date (YYYY-MM-DD)
             min_cost: Filter runs with cost >= this value
             max_cost: Filter runs with cost <= this value
-            min_duration: Filter runs with duration >= this value (milliseconds)
-            max_duration: Filter runs with duration <= this value (milliseconds)
+            min_duration: Ergonomic alias for ``min_duration_ms``
+            max_duration: Ergonomic alias for ``max_duration_ms``
+            min_duration_ms: Filter runs with duration >= this value (milliseconds)
+            max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "created_at")
             fields: Comma-separated list of fields to return
@@ -333,6 +348,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             max_cost=max_cost,
             min_duration=min_duration,
             max_duration=max_duration,
+            min_duration_ms=min_duration_ms,
+            max_duration_ms=max_duration_ms,
             search=search,
             sort_by=sort_by,
             fields=fields,
@@ -389,12 +406,16 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
         selected_run_ids: List[str] | None = None,
+        selected_doc_types: List[str] | None = None,
         status: str | None = None,
         exclude_status: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         trigger_types: List[str] | None = None,
         preferred_columns: List[str] | None = None,
+        delimiter: str | None = None,
+        line_delimiter: str | None = None,
+        quote: str | None = None,
     ) -> ExportResponse:
         """Export run results as structured CSV data.
 
@@ -403,12 +424,16 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             block_id: The block ID to export outputs from
             export_source: Whether to export "outputs" or "inputs" (default "outputs")
             selected_run_ids: Limit export to specific run IDs (optional)
+            selected_doc_types: Limit export to specific document types (optional)
             status: Filter by status (optional)
             exclude_status: Exclude specific status (optional)
             from_date: Filter from date (YYYY-MM-DD, optional)
             to_date: Filter to date (YYYY-MM-DD, optional)
             trigger_types: Filter by trigger types (optional)
             preferred_columns: Column ordering (optional)
+            delimiter: CSV field delimiter (optional, backend defaults to ";")
+            line_delimiter: CSV line delimiter (optional, backend defaults to "\\n")
+            quote: CSV quote character (optional, backend defaults to '"')
 
         Returns:
             Dict with csv_data (str), rows (int), columns (int)
@@ -421,6 +446,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         }
         if selected_run_ids is not None:
             data["selected_run_ids"] = selected_run_ids
+        if selected_doc_types is not None:
+            data["selected_doc_types"] = selected_doc_types
         if status is not None:
             data["status"] = status
         if exclude_status is not None:
@@ -431,6 +458,12 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             data["to_date"] = to_date
         if trigger_types is not None:
             data["trigger_types"] = trigger_types
+        if delimiter is not None:
+            data["delimiter"] = delimiter
+        if line_delimiter is not None:
+            data["line_delimiter"] = line_delimiter
+        if quote is not None:
+            data["quote"] = quote
         request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
         response = self._client._prepared_request(request)
         return ExportResponse.model_validate(response)
@@ -529,6 +562,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
+        min_duration_ms: int | None = None,
+        max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
         fields: str | Sequence[str] | None = None,
@@ -550,8 +585,10 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             to_date: Filter runs created on or before this date (YYYY-MM-DD)
             min_cost: Filter runs with cost >= this value
             max_cost: Filter runs with cost <= this value
-            min_duration: Filter runs with duration >= this value (milliseconds)
-            max_duration: Filter runs with duration <= this value (milliseconds)
+            min_duration: Ergonomic alias for ``min_duration_ms``
+            max_duration: Ergonomic alias for ``max_duration_ms``
+            min_duration_ms: Filter runs with duration >= this value (milliseconds)
+            max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "created_at")
             fields: Comma-separated list of fields to return
@@ -576,6 +613,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             max_cost=max_cost,
             min_duration=min_duration,
             max_duration=max_duration,
+            min_duration_ms=min_duration_ms,
+            max_duration_ms=max_duration_ms,
             search=search,
             sort_by=sort_by,
             fields=fields,
@@ -632,12 +671,16 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
         selected_run_ids: List[str] | None = None,
+        selected_doc_types: List[str] | None = None,
         status: str | None = None,
         exclude_status: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         trigger_types: List[str] | None = None,
         preferred_columns: List[str] | None = None,
+        delimiter: str | None = None,
+        line_delimiter: str | None = None,
+        quote: str | None = None,
     ) -> ExportResponse:
         """Export run results as structured CSV data."""
         data: Dict[str, Any] = {
@@ -648,6 +691,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         }
         if selected_run_ids is not None:
             data["selected_run_ids"] = selected_run_ids
+        if selected_doc_types is not None:
+            data["selected_doc_types"] = selected_doc_types
         if status is not None:
             data["status"] = status
         if exclude_status is not None:
@@ -658,6 +703,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             data["to_date"] = to_date
         if trigger_types is not None:
             data["trigger_types"] = trigger_types
+        if delimiter is not None:
+            data["delimiter"] = delimiter
+        if line_delimiter is not None:
+            data["line_delimiter"] = line_delimiter
+        if quote is not None:
+            data["quote"] = quote
         request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
         response = await self._client._prepared_request(request)
         return ExportResponse.model_validate(response)

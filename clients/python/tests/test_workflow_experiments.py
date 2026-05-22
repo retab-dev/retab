@@ -570,6 +570,7 @@ def test_experiments_metrics_confusion_flow_uses_source_target_fields() -> None:
 
     assert isinstance(result, ExperimentByDocumentMetricsResponse)
     assert result.confusion is not None
+    assert result.confusion.flows is not None
     flow = result.confusion.flows[0]
     assert flow.source == "receipt"
     assert flow.model_dump(mode="json") == {
@@ -650,6 +651,7 @@ def test_workflows_diagnose_posts_directly() -> None:
     result = Workflows(client=client).diagnose("wf_abc123")
 
     assert result.is_valid is True
+    assert result.issues is not None
     assert result.issues[0].severity == "warning"
     assert result.issues[0].code == "MISSING_REVIEW_PREDICATE"
     assert client._prepared_request.call_count == 1
@@ -674,5 +676,6 @@ async def test_async_workflows_diagnose_posts_directly() -> None:
     result = await AsyncWorkflows(client=client).diagnose("wf_abc123")
 
     assert result.is_valid is False
+    assert result.issues is not None
     assert result.issues[0].code == "NO_START_BLOCK"
     assert client._prepared_request.call_count == 1

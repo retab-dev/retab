@@ -2,10 +2,11 @@ import hashlib
 import mimetypes
 from io import IOBase
 from pathlib import Path
-from typing import Any, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.files import CreateUploadResponse, File, FileLink, UploadFileResponse
+from ...types.pagination import PaginatedList
 from ...types.standards import PreparedRequest
 
 FileUploadInput = Path | str | IOBase
@@ -159,10 +160,10 @@ class Files(SyncAPIResource, FilesMixin):
         filename: Optional[str] = None,
         mime_type: Optional[str] = None,
         sort_by: str = "created_at",
-    ) -> List[File]:
+    ) -> PaginatedList[File]:
         request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, sort_by=sort_by)
         response = self._client._prepared_request(request)
-        return [File(**item) for item in response.get("data", [])]
+        return PaginatedList[File].model_validate(response)
 
     def get(self, file_id: str) -> File:
         request = self.prepare_get(file_id)
@@ -228,10 +229,10 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         filename: Optional[str] = None,
         mime_type: Optional[str] = None,
         sort_by: str = "created_at",
-    ) -> List[File]:
+    ) -> PaginatedList[File]:
         request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, sort_by=sort_by)
         response = await self._client._prepared_request(request)
-        return [File(**item) for item in response.get("data", [])]
+        return PaginatedList[File].model_validate(response)
 
     async def get(self, file_id: str) -> File:
         request = self.prepare_get(file_id)

@@ -106,7 +106,7 @@ func TestBuildAuthorizeURL_AlwaysRequestsOfflineAccess(t *testing.T) {
 // Test 2 — saveConfig is atomic. An interrupted write doesn't leave a
 // truncated or empty file that a subsequent loadConfig would choke on.
 //
-// We simulate "interrupted" by inspecting the directory mid-save: there
+// We execute "interrupted" by inspecting the directory mid-save: there
 // should never be a config.json that contains anything but valid JSON
 // (since the rename is atomic, the file is either the prior contents or
 // the new contents, never half-formed bytes).
@@ -269,7 +269,7 @@ func TestMakeOAuthTokenProvider_RecoversFromConcurrentRefresh(t *testing.T) {
 		ClientID:      "c",
 	}
 
-	// Simulate "the other CLI process refreshed first and saved": put a
+	// Execute "the other CLI process refreshed first and saved": put a
 	// fresh refresh_token on disk that differs from the initial.
 	if err := saveConfig(retabConfig{
 		OAuth: &oauthTokens{

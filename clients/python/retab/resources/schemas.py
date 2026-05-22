@@ -9,6 +9,7 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.schemas.generate import GenerateSchemaRequest
+from ..types.schemas.model import PartialSchema
 from ..types.standards import PreparedRequest, UNSET, _Unset
 
 
@@ -51,7 +52,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         reasoning_effort: ChatCompletionReasoningEffort | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
-    ) -> dict[str, Any]:
+    ) -> PartialSchema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
@@ -76,7 +77,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
             **extra_body,
         )
         response = self._client._prepared_request(prepared_request)
-        return response
+        return PartialSchema.model_validate(response)
 
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
@@ -88,7 +89,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         reasoning_effort: ChatCompletionReasoningEffort | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
-    ) -> dict[str, Any]:
+    ) -> PartialSchema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
@@ -113,4 +114,4 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             **extra_body,
         )
         response = await self._client._prepared_request(prepared_request)
-        return response
+        return PartialSchema.model_validate(response)

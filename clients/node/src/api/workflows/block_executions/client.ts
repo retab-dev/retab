@@ -1,13 +1,13 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
-  BlockSimulation,
-  BlockSimulationCreateRequest,
+  StoredBlockExecution,
+  BlockExecutionCreateRequest,
   PaginatedList,
-  ZBlockSimulation,
+  ZStoredBlockExecution,
   ZPaginatedList,
 } from '../../../types.js';
 
-function serializeCreateRequest(request: BlockSimulationCreateRequest): Record<string, unknown> {
+function serializeCreateRequest(request: BlockExecutionCreateRequest): Record<string, unknown> {
   const body: Record<string, unknown> = {
     run_id: request.runId,
     block_id: request.blockId,
@@ -18,20 +18,20 @@ function serializeCreateRequest(request: BlockSimulationCreateRequest): Record<s
 }
 
 /**
- * Workflow Simulations API client for creating and listing block simulations.
+ * Workflow Blocks Executions API client for creating and listing block executions.
  */
-export default class APIWorkflowSimulations extends CompositionClient {
+export default class APIWorkflowBlockExecutions extends CompositionClient {
   constructor(client: CompositionClient) {
     super(client);
   }
 
-  prepare_create(request: BlockSimulationCreateRequest): {
+  prepare_create(request: BlockExecutionCreateRequest): {
     url: string;
     method: string;
     body: Record<string, unknown>;
   } {
     return {
-      url: '/workflows/simulations',
+      url: '/workflows/blocks/executions',
       method: 'POST',
       body: serializeCreateRequest(request),
     };
@@ -51,7 +51,7 @@ export default class APIWorkflowSimulations extends CompositionClient {
     params: Record<string, unknown>;
   } {
     return {
-      url: '/workflows/simulations',
+      url: '/workflows/blocks/executions',
       method: 'GET',
       params: {
         run_id: runId,
@@ -62,14 +62,14 @@ export default class APIWorkflowSimulations extends CompositionClient {
   }
 
   /**
-   * Create and run a workflow block simulation.
+   * Create and run a workflow block execution.
    */
   async create(
-    request: BlockSimulationCreateRequest,
+    request: BlockExecutionCreateRequest,
     options?: RequestOptions
-  ): Promise<BlockSimulation> {
+  ): Promise<StoredBlockExecution> {
     const preparedRequest = this.prepare_create(request);
-    return this._fetchJson(ZBlockSimulation, {
+    return this._fetchJson(ZStoredBlockExecution, {
       url: preparedRequest.url,
       method: preparedRequest.method,
       body: {
@@ -82,7 +82,7 @@ export default class APIWorkflowSimulations extends CompositionClient {
   }
 
   /**
-   * List simulations for a run/block pair.
+   * List block executions for a run/block pair.
    */
   async list(
     {

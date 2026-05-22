@@ -100,8 +100,8 @@ from .model import (
     WorkflowDiagnosisIssue,
     WorkflowDiagnosisStats,
     WorkflowDiagnosisResponse,
-    BlockSimulation,
-    BlockSimulationIteration,
+    StoredBlockExecution,
+    BlockExecutionIteration,
 )
 from .reviews import (
     ActorKind,
@@ -263,8 +263,8 @@ __all__ = [
     "WorkflowDiagnosisIssue",
     "WorkflowDiagnosisStats",
     "WorkflowDiagnosisResponse",
-    "BlockSimulation",
-    "BlockSimulationIteration",
+    "StoredBlockExecution",
+    "BlockExecutionIteration",
     "ActorKind",
     "ReviewBlockType",
     "ReviewVerdict",

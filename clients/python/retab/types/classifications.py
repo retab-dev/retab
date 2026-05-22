@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
@@ -16,13 +16,15 @@ class Category(RetabBaseModel):
         default=None,
         description="Optional stable handle key identifying the category in routing edges.",
     )
-    description: str = Field(default="", description="The description of the category")
+    description: str | None = Field(default="", description="The description of the category")
 
 
 class ClassificationRequest(RetabBaseModel):
-    document: MIMEData = Field(..., description="The document to classify")
+    model_config = ConfigDict(extra="forbid")
+
+    document: MIMEData | FileRef = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
-    model: str = Field(default="retab-small", description="The model to use for classification")
+    model: str | None = Field(default="retab-small", description="The model to use for classification")
     first_n_pages: int | None = Field(
         default=None,
         description="Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.",
@@ -31,13 +33,13 @@ class ClassificationRequest(RetabBaseModel):
         default=None,
         description="Free-form instructions appended to the system prompt to steer the classification.",
     )
-    n_consensus: int = Field(
+    n_consensus: int | None = Field(
         default=1,
         ge=1,
         le=16,
         description="Number of classification runs to use for consensus voting. Uses deterministic single-pass when set to 1.",
     )
-    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class ClassificationDecision(RetabBaseModel):
@@ -46,7 +48,7 @@ class ClassificationDecision(RetabBaseModel):
 
 
 class ClassificationConsensus(RetabBaseModel):
-    choices: list[ClassificationDecision] = Field(
+    choices: list[ClassificationDecision] | None = Field(
         default_factory=list,
         description="Alternative classification vote outputs used to build the consolidated result.",
     )
@@ -61,10 +63,10 @@ class Classification(RetabBaseModel):
     file: FileRef = Field(..., description="Information about the classified file")
     model: str = Field(..., description="Model used for classification")
     categories: list[Category] = Field(..., description="Categories the document was classified against")
-    n_consensus: int = Field(default=1, description="Number of consensus votes used")
+    n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
     output: ClassificationDecision = Field(..., description="The classification result with reasoning")
-    consensus: ClassificationConsensus = Field(
+    consensus: ClassificationConsensus | None = Field(
         default_factory=ClassificationConsensus,
         description="Consensus metadata for multi-vote classification runs",
     )

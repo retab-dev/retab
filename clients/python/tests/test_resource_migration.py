@@ -735,7 +735,9 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
 
     assert isinstance(result, Partition)
     assert result.id == "prtn_123"
+    assert result.output is not None
     assert result.output[0].key == "INV-001"
+    assert result.consensus is not None
     assert result.consensus.choices == []
     assert result.usage is not None
     assert result.usage.credits == 1.0

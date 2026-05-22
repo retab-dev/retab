@@ -15,13 +15,13 @@ TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 class ParseRequest(RetabBaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    document: MIMEData = Field(..., description="The document to parse")
-    model: str = Field(default="retab-small", description="The model to use for parsing")
-    table_parsing_format: TableParsingFormat = Field(
+    document: MIMEData | FileRef = Field(..., description="The document to parse")
+    model: str | None = Field(default="retab-small", description="The model to use for parsing")
+    table_parsing_format: TableParsingFormat | None = Field(
         default="html",
         description="Format used to render tables extracted from the document",
     )
-    image_resolution_dpi: int = Field(
+    image_resolution_dpi: int | None = Field(
         default=192,
         ge=96,
         le=300,
@@ -31,7 +31,7 @@ class ParseRequest(RetabBaseModel):
         default=None,
         description="Free-form instructions appended to the system prompt to steer the parse.",
     )
-    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class ParseOutput(RetabBaseModel):

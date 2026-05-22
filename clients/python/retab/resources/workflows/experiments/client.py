@@ -67,6 +67,7 @@ def _build_create_or_update_body(
     document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None,
     documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None,
     n_consensus: NConsensusValue | None,
+    source_experiment_id: str | None = None,
 ) -> Dict[str, Any]:
     body: Dict[str, Any] = {}
     if block_id is not None:
@@ -79,6 +80,8 @@ def _build_create_or_update_body(
         body["documents"] = [_dump_explicit_document(d) for d in documents]
     if n_consensus is not None:
         body["n_consensus"] = n_consensus
+    if source_experiment_id is not None:
+        body["source_experiment_id"] = source_experiment_id
     return body
 
 
@@ -94,11 +97,12 @@ class WorkflowExperimentsMixin:
         self,
         workflow_id: str,
         *,
-        block_id: str,
-        name: str,
+        block_id: str | None = None,
+        name: str | None = None,
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue = 5,
+        source_experiment_id: str | None = None,
     ) -> PreparedRequest:
         body = _build_create_or_update_body(
             block_id=block_id,
@@ -106,6 +110,7 @@ class WorkflowExperimentsMixin:
             document_captures=document_captures,
             documents=documents,
             n_consensus=n_consensus,
+            source_experiment_id=source_experiment_id,
         )
         body["workflow_id"] = workflow_id
         return PreparedRequest(
@@ -114,10 +119,14 @@ class WorkflowExperimentsMixin:
             data=body,
         )
 
-    def prepare_list(self, workflow_id: str) -> PreparedRequest:
+    def prepare_list(self, workflow_id: str | None = None) -> PreparedRequest:
+        params: Dict[str, Any] = {}
+        if workflow_id is not None:
+            params["workflow_id"] = workflow_id
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments?workflow_id={workflow_id}",
+            url="/workflows/experiments",
+            params=params or None,
         )
 
     def prepare_get(self, experiment_id: str) -> PreparedRequest:
@@ -450,11 +459,12 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         self,
         workflow_id: str,
         *,
-        block_id: str,
-        name: str,
+        block_id: str | None = None,
+        name: str | None = None,
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue = 5,
+        source_experiment_id: str | None = None,
     ) -> WorkflowExperiment:
         """Create a consensus experiment on a supported block.
 
@@ -464,6 +474,9 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         Provide documents via ``document_captures`` (provenance from a
         workflow run) and/or ``documents`` (explicit ``handle_inputs``).
         At least one document is required.
+
+        ``source_experiment_id`` clones an existing experiment's config
+        (document set, n_consensus, etc.).
 
         Returns:
             ``WorkflowExperiment``. Note: this does NOT trigger a run —
@@ -476,11 +489,12 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
             document_captures=document_captures,
             documents=documents,
             n_consensus=n_consensus,
+            source_experiment_id=source_experiment_id,
         )
         response = self._client._prepared_request(request)
         return WorkflowExperiment.model_validate(response)
 
-    def list(self, workflow_id: str) -> PaginatedList[WorkflowExperiment]:
+    def list(self, workflow_id: str | None = None) -> PaginatedList[WorkflowExperiment]:
         """List all experiments attached to a workflow."""
         request = self.prepare_list(workflow_id)
         response = self._client._prepared_request(request)
@@ -645,11 +659,12 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         self,
         workflow_id: str,
         *,
-        block_id: str,
-        name: str,
+        block_id: str | None = None,
+        name: str | None = None,
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue = 5,
+        source_experiment_id: str | None = None,
     ) -> WorkflowExperiment:
         request = self.prepare_create(
             workflow_id,
@@ -658,11 +673,12 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
             document_captures=document_captures,
             documents=documents,
             n_consensus=n_consensus,
+            source_experiment_id=source_experiment_id,
         )
         response = await self._client._prepared_request(request)
         return WorkflowExperiment.model_validate(response)
 
-    async def list(self, workflow_id: str) -> PaginatedList[WorkflowExperiment]:
+    async def list(self, workflow_id: str | None = None) -> PaginatedList[WorkflowExperiment]:
         request = self.prepare_list(workflow_id)
         response = await self._client._prepared_request(request)
         return PaginatedList[WorkflowExperiment].model_validate(response)

@@ -6,7 +6,7 @@ import APIWorkflowRuns from '../src/api/workflows/runs/client';
 import APIWorkflowBlocks from '../src/api/workflows/blocks/client';
 import APIWorkflowEdges from '../src/api/workflows/edges/client';
 import APIWorkflowSpecs from '../src/api/workflows/specs/client';
-import APIWorkflowSimulations from '../src/api/workflows/simulations/client';
+import APIWorkflowBlockExecutions from '../src/api/workflows/blocks/executions/client';
 import { ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from '../src/types';
 import { ZHandlePayload } from '../src/generated_types';
 import type { WorkflowRunExportResponse } from '../src/types';
@@ -609,20 +609,20 @@ describe('workflows client', () => {
     expect('prepare_get_resolved_schemas' in blocksClient).toBe(false);
     expect('createBatch' in blocksClient).toBe(false);
     expect('create_batch' in blocksClient).toBe(false);
-    expect('listSimulations' in blocksClient).toBe(false);
-    expect('list_simulations' in blocksClient).toBe(false);
-    expect('prepare_list_simulations' in blocksClient).toBe(false);
-    expect('simulate' in blocksClient).toBe(false);
-    expect('prepare_simulate' in blocksClient).toBe(false);
+    expect('listBlockExecutions' in blocksClient).toBe(false);
+    expect('list_block_executions' in blocksClient).toBe(false);
+    expect('prepare_list_block_executions' in blocksClient).toBe(false);
+    expect('execute' in blocksClient).toBe(false);
+    expect('prepare_execute' in blocksClient).toBe(false);
   });
 
-  test('workflows expose simulations subresource', () => {
+  test('workflows expose block executions subresource', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    expect(workflowsClient.simulations).toBeInstanceOf(APIWorkflowSimulations);
+    expect(workflowsClient.block_executions).toBeInstanceOf(APIWorkflowBlockExecutions);
   });
 
-  test('workflow simulations create uses top-level route', async () => {
+  test('workflow block executions create uses top-level route', async () => {
     const mockClient = new MockClient({
       id: 'sim_1',
       workflow_id: 'wf_1',
@@ -632,9 +632,9 @@ describe('workflows client', () => {
       lifecycle: { status: 'completed' },
       created_at: '2026-03-12T10:00:00Z',
     });
-    const simulationsClient = new APIWorkflowSimulations(mockClient);
+    const blockExecutionsClient = new APIWorkflowBlockExecutions(mockClient);
 
-    const simulation = await simulationsClient.create({
+    const block_execution = await blockExecutionsClient.create({
       runId: 'run_1',
       blockId: 'block_1',
       stepId: 'step_1',
@@ -642,7 +642,7 @@ describe('workflows client', () => {
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/simulations',
+      url: '/workflows/blocks/executions',
       method: 'POST',
       body: {
         run_id: 'run_1',
@@ -656,10 +656,10 @@ describe('workflows client', () => {
     expect('workflow_id' in (mockClient.lastFetchParams?.body as Record<string, unknown>)).toBe(
       false
     );
-    expect(simulation.id).toBe('sim_1');
+    expect(block_execution.id).toBe('sim_1');
   });
 
-  test('workflow simulations list uses top-level route', async () => {
+  test('workflow block executions list uses top-level route', async () => {
     const mockClient = new MockClient({
       data: [
         {
@@ -674,16 +674,16 @@ describe('workflows client', () => {
       ],
       list_metadata: { before: null, after: null },
     });
-    const simulationsClient = new APIWorkflowSimulations(mockClient);
+    const blockExecutionsClient = new APIWorkflowBlockExecutions(mockClient);
 
-    const result = await simulationsClient.list({
+    const result = await blockExecutionsClient.list({
       runId: 'run_1',
       blockId: 'block_1',
       limit: 10,
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/simulations',
+      url: '/workflows/blocks/executions',
       method: 'GET',
       params: {
         run_id: 'run_1',

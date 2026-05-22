@@ -44,8 +44,8 @@ class UploadFileResponse(MIMEData):
 class CreateUploadResponse(RetabBaseModel):
     file_id: str = Field(..., description="The ID of the upload session", alias="fileId")
     upload_url: str = Field(..., description="Short-lived signed upload URL", alias="uploadUrl")
-    upload_method: str = Field(default="PUT", description="HTTP method for upload", alias="uploadMethod")
-    upload_headers: dict[str, str] = Field(default_factory=dict, description="Headers required by the signed upload URL", alias="uploadHeaders")
+    upload_method: str | None = Field(default="PUT", description="HTTP method for upload", alias="uploadMethod")
+    upload_headers: dict[str, str] | None = Field(default_factory=dict, description="Headers required by the signed upload URL", alias="uploadHeaders")
     mime_data: MIMEData = Field(..., description="Durable Retab MIMEData reference", alias="mimeData")
     expires_at: datetime.datetime = Field(..., description="When the upload URL expires", alias="expiresAt")
 

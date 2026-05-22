@@ -91,7 +91,7 @@ type StepArtifactRef struct {
 	ID        string `json:"id"`
 }
 
-// SimulationLifecycle is the discriminated terminal state of a simulation.
+// BlockExecutionLifecycle is the discriminated terminal state of a block execution.
 // One of:
 //
 //   - {"status": "completed"}
@@ -102,35 +102,35 @@ type StepArtifactRef struct {
 // payloads evolve and a typed struct here would force a Go SDK release for
 // every additive field. Consumers should branch on “Status“ and read the
 // variant-specific keys (“Message“ / “Reason“) directly.
-type SimulationLifecycle map[string]any
+type BlockExecutionLifecycle map[string]any
 
-// BlockSimulation is the persisted result of replaying one workflow block
-// against a prior run's inputs through POST /workflows/simulations.
+// StoredBlockExecution is the persisted result of replaying one workflow block
+// against a prior run's inputs through POST /workflows/blocks/executions.
 //
 // Terminal state is carried by the discriminated “Lifecycle“ field. The
 // legacy flat “Success“ / “Error“ / “Skipped“ fields were removed in
 // the hard cutover; consumers must read “Lifecycle["status"]“.
-type BlockSimulation struct {
-	ID                  string                     `json:"id"`
-	WorkflowID          string                     `json:"workflow_id"`
-	RunID               string                     `json:"run_id"`
-	BlockID             string                     `json:"block_id"`
-	BlockType           string                     `json:"block_type"`
-	Lifecycle           SimulationLifecycle        `json:"lifecycle"`
-	HandleInputs        map[string]any             `json:"handle_inputs,omitempty"`
-	Artifact            *StepArtifactRef           `json:"artifact,omitempty"`
-	HandleOutputs       map[string]any             `json:"handle_outputs,omitempty"`
-	RoutingDecision     []string                   `json:"routing_decision,omitempty"`
-	DurationMS          *float64                   `json:"duration_ms,omitempty"`
-	CreatedAt           *time.Time                 `json:"created_at,omitempty"`
-	BlockConfig         map[string]any             `json:"block_config,omitempty"`
-	StepID              string                     `json:"step_id,omitempty"`
-	AvailableIterations []BlockSimulationIteration `json:"available_iterations,omitempty"`
-	Raw                 json.RawMessage            `json:"-"`
+type StoredBlockExecution struct {
+	ID                  string                    `json:"id"`
+	WorkflowID          string                    `json:"workflow_id"`
+	RunID               string                    `json:"run_id"`
+	BlockID             string                    `json:"block_id"`
+	BlockType           string                    `json:"block_type"`
+	Lifecycle           BlockExecutionLifecycle   `json:"lifecycle"`
+	HandleInputs        map[string]any            `json:"handle_inputs,omitempty"`
+	Artifact            *StepArtifactRef          `json:"artifact,omitempty"`
+	HandleOutputs       map[string]any            `json:"handle_outputs,omitempty"`
+	RoutingDecision     []string                  `json:"routing_decision,omitempty"`
+	DurationMS          *float64                  `json:"duration_ms,omitempty"`
+	CreatedAt           *time.Time                `json:"created_at,omitempty"`
+	BlockConfig         map[string]any            `json:"block_config,omitempty"`
+	StepID              string                    `json:"step_id,omitempty"`
+	AvailableIterations []BlockExecutionIteration `json:"available_iterations,omitempty"`
+	Raw                 json.RawMessage           `json:"-"`
 }
 
-func (s *BlockSimulation) UnmarshalJSON(data []byte) error {
-	type alias BlockSimulation
+func (s *StoredBlockExecution) UnmarshalJSON(data []byte) error {
+	type alias StoredBlockExecution
 	aux := (*alias)(s)
 	if err := json.Unmarshal(data, aux); err != nil {
 		return err
@@ -139,8 +139,8 @@ func (s *BlockSimulation) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// BlockSimulationIteration is one iteration step available for a simulation.
-type BlockSimulationIteration struct {
+// BlockExecutionIteration is one iteration step available for a block execution.
+type BlockExecutionIteration struct {
 	StepID         string `json:"step_id,omitempty"`
 	IterationIndex *int   `json:"iteration_index,omitempty"`
 	Label          string `json:"label,omitempty"`
