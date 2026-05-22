@@ -172,6 +172,7 @@ class ErrorDetails(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    message: Optional[str] = Field(default=None, description="Human-readable error message")
     stack_trace: Optional[str] = Field(default=None, description="Full Python stack trace")
     block_id: Optional[str] = Field(default=None, description="ID of the block that failed")
     block_name: Optional[str] = Field(default=None, description="Name/label of the block that failed")
@@ -241,6 +242,10 @@ StepLifecycle = Annotated[
 class ConditionEvaluationPerItem(RetabBaseModel):
     """Per-item evaluation result for wildcard array conditions."""
 
+    index: int = Field(
+        default=0,
+        description="Flat index of the matching item (legacy single-dimension array shape).",
+    )
     indices: List[int] = Field(
         default_factory=list,
         description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])",
@@ -632,6 +637,11 @@ class RunTiming(RetabBaseModel):
     created_at: datetime.datetime = Field(...)
     started_at: Optional[datetime.datetime] = Field(default=None)
     completed_at: Optional[datetime.datetime] = Field(default=None)
+    duration_ms: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="Total wall-clock execution duration in milliseconds, populated on terminal runs.",
+    )
     review_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
     accumulated_review_waiting_ms: int = Field(default=0, ge=0)
 
@@ -795,6 +805,10 @@ class CancelWorkflowResponse(RetabBaseModel):
     """Response from cancelling a workflow run."""
 
     run: WorkflowRun
+    redis_available: bool = Field(
+        default=True,
+        description="Whether Redis was available to deliver the cancellation signal.",
+    )
     cancellation_status: Literal["cancelled", "cancellation_requested", "cancellation_failed"] = Field(
         default="cancellation_requested",
         description="Cancellation delivery state",
@@ -858,17 +872,25 @@ class WorkflowBlockCreateRequest(RetabBaseModel):
 
 
 class UpdateWorkflowBlockRequest(RetabBaseModel):
-    """Typed request payload for updating a workflow block."""
+    """Typed request payload for updating a workflow block.
+
+    The block id lives in the URL path, not the request body, so it is
+    passed alongside this payload to ``WorkflowBlocks.update`` rather than
+    being a field on the body.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
-    block_id: str
     label: Optional[str] = None
     position_x: Optional[float] = None
     position_y: Optional[float] = None
     width: Optional[float] = None
     height: Optional[float] = None
     config: Optional[dict] = None
+    config_mode: Optional[Literal["merge", "replace"]] = Field(
+        default=None,
+        description="How to apply ``config``: ``merge`` shallow-merges the patch into the existing config; ``replace`` overwrites it.",
+    )
     parent_id: Optional[str] = None
 
 
@@ -915,7 +937,6 @@ class WorkflowBlock(RetabBaseModel):
 
     id: str = Field(..., description="Block ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
-    draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     type: str = Field(..., description="Block type (start, extract, parse, classifier, etc.)")
     label: str = Field(default="", description="Display label")
     position_x: float = Field(default=0, description="X position on canvas")
@@ -923,7 +944,6 @@ class WorkflowBlock(RetabBaseModel):
     width: Optional[float] = Field(default=None, description="Block width")
     height: Optional[float] = Field(default=None, description="Block height")
     config: Optional[dict] = Field(default=None, description="Block-specific configuration")
-    field_ref_snapshot: Optional[Dict[str, str]] = Field(default=None, description="Authored field reference snapshot metadata")
     resolved_schemas: Optional[ResolvedSchemas] = Field(
         default=None,
         description="Graph-derived input and output schemas for this block.",

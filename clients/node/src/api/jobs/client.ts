@@ -56,13 +56,18 @@ const ZJob = z.object({
 });
 type Job = z.infer<typeof ZJob>;
 
-// Job list response schema
+// Boundary resource IDs for cursor pagination (matches every other
+// paginated list envelope across the Retab API).
+const ZListMetadata = z.object({
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+});
+
+// Job list response schema using the canonical {data, list_metadata}
+// envelope shared by every other paginated list endpoint.
 const ZJobListResponse = z.object({
-  object: z.literal('list'),
   data: z.array(ZJob),
-  first_id: z.string().nullable().optional(),
-  last_id: z.string().nullable().optional(),
-  has_more: z.boolean(),
+  list_metadata: ZListMetadata,
 });
 type JobListResponse = z.infer<typeof ZJobListResponse>;
 

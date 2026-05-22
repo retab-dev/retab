@@ -18,7 +18,8 @@ from retab.types.workflows.model import HandleInput, Trigger, WorkflowSnapshotRe
 # ---------------------------------------------------------------------------
 
 #: Outcome of evaluating ONE assertion against a block's output.
-AssertionResultStatus = Literal["passed", "failed", "blocked", "error"]
+AssertionOutcome = Literal["passed", "failed", "blocked"]
+AssertionResultStatus = AssertionOutcome  # back-compat alias
 
 #: Status of a TEST RUN — aggregates the assertion result with execution-side
 #: state. 7 values total; transient (``queued``, ``running``) only appear on
@@ -142,7 +143,7 @@ class AssertionResult(RetabBaseModel):
 
     assertion_id: str
     condition_kind: str
-    status: AssertionResultStatus
+    outcome: AssertionOutcome
     actual_value: Any = None
     expected_value: Any = None
     score: float | None = None
@@ -193,6 +194,7 @@ class LatestWorkflowTestRunSummary(RetabBaseModel):
 class AssertionSchemaDep(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    output_handle_id: str | None = None
     schema_path: str
     subtree_hash: str
     depends_on_root: bool = False
@@ -257,6 +259,12 @@ class WorkflowTestResult(RetabBaseModel):
     Result rows are addressed by ``test_id`` inside their parent run. The
     ``id`` field is retained as an internal row identifier, but it is not the
     public lookup key.
+
+    Timestamps and duration live inside ``timing`` (see
+    :class:`WorkflowTestRunTiming`); ``started_at`` / ``completed_at`` /
+    ``duration_ms`` used to be top-level fields here but were moved nested
+    on the backend to match the workflow-run timing shape. The flat fields
+    were dropped to keep the SDK aligned with the published OpenAPI.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -272,9 +280,6 @@ class WorkflowTestResult(RetabBaseModel):
     handle_inputs_fingerprint: str = ""
     workflow_draft_fingerprint: str = ""
     block_config_fingerprint: str = ""
-    started_at: datetime.datetime | None = None
-    completed_at: datetime.datetime | None = None
-    duration_ms: int | None = None
     source: WorkflowTestSource
     outputs: dict[str, Any] | None = None
     routing_decision: list[str] | None = None
@@ -326,6 +331,7 @@ class WorkflowTestRun(RetabBaseModel):
 __all__ = [
     "AssertionDriftStatus",
     "AssertionFailure",
+    "AssertionOutcome",
     "AssertionResult",
     "AssertionResultStatus",
     "AssertionSchemaDep",

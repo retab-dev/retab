@@ -156,7 +156,6 @@ class ExperimentRunLifecycle(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: ExperimentRunStatus
-    message: str | None = None
 
 
 class ExperimentRunTiming(RetabBaseModel):
@@ -211,7 +210,6 @@ class ExperimentResultLifecycle(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: Literal["pending", "running", "completed", "error"]
-    message: str | None = None
 
 
 class ExperimentResultTiming(RetabBaseModel):

@@ -613,8 +613,8 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
     }
 
     block = WorkflowBlocks(client=client).update(
+        block_id="extract-1",
         request=UpdateWorkflowBlockRequest(
-            block_id="extract-1",
             label="Renamed",
             position_x=200,
         ),
@@ -639,7 +639,10 @@ def test_workflow_block_parses_live_editing_metadata() -> None:
         }
     )
 
-    assert block.draft_version == "draft_1"
+    # ``draft_version`` is server-internal metadata stripped from the public
+    # spec, so the SDK ignores it on parse without erroring.
+    assert block.id == "extract-1"
+    assert block.type == "extract"
 
 
 def test_workflow_block_exposes_resolved_schema_sidecar() -> None:
