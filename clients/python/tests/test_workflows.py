@@ -9,7 +9,7 @@ from retab.resources.workflows import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges import WorkflowEdges
 from retab.resources.workflows.runs import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.blocks.executions import AsyncWorkflowBlockExecutions, WorkflowBlockExecutions
-from retab.resources.workflows.specs import AsyncWorkflowSpecs, WorkflowSpecs
+from retab.resources.workflows.spec import AsyncWorkflowSpec, WorkflowSpec
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
     DeclarativeApplyResponse,
@@ -130,16 +130,16 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
     assert result.list_metadata.after == "workflow_after"
 
 
-def test_workflows_exposes_specs_subresource() -> None:
+def test_workflows_exposes_spec_subresource() -> None:
     workflows = Workflows(client=MagicMock())
 
-    assert isinstance(workflows.specs, WorkflowSpecs)
+    assert isinstance(workflows.spec, WorkflowSpec)
 
 
-def test_async_workflows_exposes_specs_subresource() -> None:
+def test_async_workflows_exposes_spec_subresource() -> None:
     workflows = AsyncWorkflows(client=MagicMock())
 
-    assert isinstance(workflows.specs, AsyncWorkflowSpecs)
+    assert isinstance(workflows.spec, AsyncWorkflowSpec)
 
 
 def test_workflows_blocks_exposes_executions_subresource() -> None:
@@ -283,7 +283,7 @@ def test_workflow_specs_validate_uses_spec_validate_route() -> None:
         "diagnostics": {"issues": []},
     }
 
-    response = WorkflowSpecs(client=client).validate("apiVersion: workflows.retab.com/v1alpha2\n")
+    response = WorkflowSpec(client=client).validate("apiVersion: workflows.retab.com/v1alpha2\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -332,7 +332,7 @@ def test_workflow_specs_plan_uses_spec_plan_route() -> None:
         "rendered_plan": "Plan: 0 to add, 1 to change, 0 to destroy.",
     }
 
-    response = WorkflowSpecs(client=client).plan("spec: {}\n")
+    response = WorkflowSpec(client=client).plan("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -364,7 +364,7 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
         "rendered_plan": "No changes. Infrastructure is up-to-date.",
     }
 
-    response = WorkflowSpecs(client=client).apply("spec: {}\n")
+    response = WorkflowSpec(client=client).apply("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -384,7 +384,7 @@ def test_workflow_specs_export_uses_spec_export_route() -> None:
         "yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n",
     }
 
-    response = WorkflowSpecs(client=client).export("wf_1")
+    response = WorkflowSpec(client=client).export("wf_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -406,7 +406,7 @@ async def test_async_workflow_specs_validate_uses_spec_validate_route() -> None:
         }
     )
 
-    response = await AsyncWorkflowSpecs(client=client).validate("spec: {}\n")
+    response = await AsyncWorkflowSpec(client=client).validate("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -958,7 +958,7 @@ def test_workflow_runs_export_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/export-payload"
+    assert request.url == "/workflows/runs/export"
     assert request.data == {
         "workflow_id": "wf_1",
         "block_id": "extract-1",

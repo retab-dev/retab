@@ -12,14 +12,11 @@ import {
 } from '../types.js';
 
 /**
- * Access to workflow-test run lifecycle and child results.
+ * Access to workflow-test run lifecycle.
  */
 export default class APIWorkflowTestRuns extends CompositionClient {
-  public results: APIWorkflowTestRunResults;
-
   constructor(client: CompositionClient) {
     super(client);
-    this.results = new APIWorkflowTestRunResults(this);
   }
 
   async create(

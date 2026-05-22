@@ -13,7 +13,7 @@ from .artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
 from .blocks import AsyncWorkflowBlocks, WorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
 from .experiments import AsyncWorkflowExperiments, WorkflowExperiments
-from .specs import AsyncWorkflowSpecs, WorkflowSpecs
+from .spec import AsyncWorkflowSpec, WorkflowSpec
 from .steps import AsyncWorkflowSteps, WorkflowSteps
 from .tests import AsyncWorkflowTests, WorkflowTests
 
@@ -107,7 +107,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         artifacts: Workflow artifact dereference operations
-        specs: Declarative workflow YAML validation, planning, apply, and export
+        spec: Declarative workflow YAML validation, planning, apply, and export
         block executions: Workflow block execution operations
     """
 
@@ -121,7 +121,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.edges = WorkflowEdges(client=client)
         self.tests = WorkflowTests(client=client)
         self.experiments = WorkflowExperiments(client=client)
-        self.specs = WorkflowSpecs(client=client)
+        self.spec = WorkflowSpec(client=client)
 
     def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -237,7 +237,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         reviews: review operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
-        specs: Declarative workflow YAML validation, planning, apply, and export
+        spec: Declarative workflow YAML validation, planning, apply, and export
         block executions: Workflow block execution operations
     """
 
@@ -251,7 +251,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.edges = AsyncWorkflowEdges(client=client)
         self.tests = AsyncWorkflowTests(client=client)
         self.experiments = AsyncWorkflowExperiments(client=client)
-        self.specs = AsyncWorkflowSpecs(client=client)
+        self.spec = AsyncWorkflowSpec(client=client)
 
     async def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -349,8 +349,8 @@ __all__ = [
     "AsyncWorkflowReviews",
     "WorkflowRuns",
     "AsyncWorkflowRuns",
-    "WorkflowSpecs",
-    "AsyncWorkflowSpecs",
+    "WorkflowSpec",
+    "AsyncWorkflowSpec",
     "WorkflowSteps",
     "AsyncWorkflowSteps",
     "WorkflowTests",

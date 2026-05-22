@@ -20,7 +20,7 @@ type WorkflowsService struct {
 	Artifacts   *WorkflowArtifactsService
 	Blocks      *WorkflowBlocksService
 	Edges       *WorkflowEdgesService
-	Specs       *WorkflowSpecsService
+	Spec        *WorkflowSpecService
 	Tests       *WorkflowTestsService
 	Experiments *WorkflowExperimentsService
 }
@@ -39,7 +39,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		Executions: &WorkflowBlockExecutionsService{client: client},
 	}
 	service.Edges = &WorkflowEdgesService{client: client}
-	service.Specs = &WorkflowSpecsService{client: client}
+	service.Spec = &WorkflowSpecService{client: client}
 	service.Tests = newWorkflowTestsService(client)
 	service.Experiments = newWorkflowExperimentsService(client)
 	return service
@@ -258,7 +258,7 @@ func (s *WorkflowsService) DiagnoseGraph(ctx context.Context, workflowID string,
 	return &result, err
 }
 
-type WorkflowSpecsService struct {
+type WorkflowSpecService struct {
 	client *Client
 }
 
@@ -266,25 +266,25 @@ type WorkflowSpecRequest struct {
 	YAMLDefinition string `json:"yaml_definition"`
 }
 
-func (s *WorkflowSpecsService) Validate(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+func (s *WorkflowSpecService) Validate(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
 	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/validate", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowSpecsService) Plan(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+func (s *WorkflowSpecService) Plan(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
 	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/plan", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowSpecsService) Apply(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+func (s *WorkflowSpecService) Apply(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
 	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/apply", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowSpecsService) Export(ctx context.Context, workflowID string, opts ...RequestOption) (*Resource, error) {
+func (s *WorkflowSpecService) Export(ctx context.Context, workflowID string, opts ...RequestOption) (*Resource, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -969,7 +969,7 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 		body["quote"] = request.Quote
 	}
 	var result WorkflowRunExportResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export-payload", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1234,8 +1234,9 @@ func reviewPath(reviewID string) string {
 }
 
 type WorkflowTestsService struct {
-	client *Client
-	Runs   *WorkflowTestRunsService
+	client  *Client
+	Runs    *WorkflowTestRunsService
+	Results *WorkflowTestRunResultsService
 }
 
 type WorkflowTestRunResultsService struct {
@@ -1245,7 +1246,7 @@ type WorkflowTestRunResultsService struct {
 func newWorkflowTestsService(client *Client) *WorkflowTestsService {
 	service := &WorkflowTestsService{client: client}
 	service.Runs = &WorkflowTestRunsService{client: client}
-	service.Runs.Results = &WorkflowTestRunResultsService{client: client}
+	service.Results = &WorkflowTestRunResultsService{client: client}
 	return service
 }
 
@@ -1408,8 +1409,7 @@ func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWork
 }
 
 type WorkflowTestRunsService struct {
-	client  *Client
-	Results *WorkflowTestRunResultsService
+	client *Client
 }
 
 type WorkflowTestRunListResponse = PaginatedList[WorkflowTestRun]
@@ -1499,15 +1499,15 @@ func addCSVQuery(values url.Values, key string, value []string) {
 
 // WorkflowExperimentsService gives access to experiments and per-experiment runs.
 type WorkflowExperimentsService struct {
-	client *Client
-	Runs   *WorkflowExperimentRunsService
-}
-
-// WorkflowExperimentRunsService manages experiment run lifecycle, results, and metrics.
-type WorkflowExperimentRunsService struct {
 	client  *Client
+	Runs    *WorkflowExperimentRunsService
 	Results *WorkflowExperimentRunResultsService
 	Metrics *WorkflowExperimentRunMetricsService
+}
+
+// WorkflowExperimentRunsService manages experiment run lifecycle.
+type WorkflowExperimentRunsService struct {
+	client *Client
 }
 
 type WorkflowExperimentRunResultsService struct {
@@ -1520,12 +1520,10 @@ type WorkflowExperimentRunMetricsService struct {
 
 func newWorkflowExperimentsService(client *Client) *WorkflowExperimentsService {
 	return &WorkflowExperimentsService{
-		client: client,
-		Runs: &WorkflowExperimentRunsService{
-			client:  client,
-			Results: &WorkflowExperimentRunResultsService{client: client},
-			Metrics: &WorkflowExperimentRunMetricsService{client: client},
-		},
+		client:  client,
+		Runs:    &WorkflowExperimentRunsService{client: client},
+		Results: &WorkflowExperimentRunResultsService{client: client},
+		Metrics: &WorkflowExperimentRunMetricsService{client: client},
 	}
 }
 

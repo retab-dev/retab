@@ -1,5 +1,8 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import APIWorkflowExperimentRuns from './runs/client.js';
+import APIWorkflowExperimentRuns, {
+  APIWorkflowExperimentRunResults,
+  APIWorkflowExperimentRunMetrics,
+} from './runs/client.js';
 import {
   ExperimentDocumentCaptureRequest,
   ExperimentList,
@@ -38,7 +41,7 @@ import {
  * });
  * console.log(run.id, run.lifecycle.status);
  *
- * const metrics = await client.workflows.experiments.runs.metrics.get({
+ * const metrics = await client.workflows.experiments.metrics.get({
  *     runId: run.id,
  *     view: "summary",
  * });
@@ -46,10 +49,14 @@ import {
  */
 export default class APIWorkflowExperiments extends CompositionClient {
   public runs: APIWorkflowExperimentRuns;
+  public results: APIWorkflowExperimentRunResults;
+  public metrics: APIWorkflowExperimentRunMetrics;
 
   constructor(client: CompositionClient) {
     super(client);
     this.runs = new APIWorkflowExperimentRuns(this);
+    this.results = new APIWorkflowExperimentRunResults(this);
+    this.metrics = new APIWorkflowExperimentRunMetrics(this);
   }
 
   prepare_create(

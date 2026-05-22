@@ -307,8 +307,6 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.results = ExperimentRunResults(client=self._client)
-        self.metrics = ExperimentRunMetrics(client=self._client)
 
     def create(
         self,
@@ -454,6 +452,10 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.runs = ExperimentRuns(client=self._client)
+        # Per URL hierarchy: /v1/workflows/experiments/results and /metrics are
+        # siblings of /runs, not nested under it.
+        self.results = ExperimentRunResults(client=self._client)
+        self.metrics = ExperimentRunMetrics(client=self._client)
 
     def create(
         self,
@@ -546,8 +548,6 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.results = AsyncExperimentRunResults(client=self._client)
-        self.metrics = AsyncExperimentRunMetrics(client=self._client)
 
     async def create(
         self,
@@ -654,6 +654,10 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.runs = AsyncExperimentRuns(client=self._client)
+        # Per URL hierarchy: /v1/workflows/experiments/results and /metrics are
+        # siblings of /runs, not nested under it.
+        self.results = AsyncExperimentRunResults(client=self._client)
+        self.metrics = AsyncExperimentRunMetrics(client=self._client)
 
     async def create(
         self,

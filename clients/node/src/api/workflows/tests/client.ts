@@ -1,5 +1,5 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import APIWorkflowTestRuns from './runs/client.js';
+import APIWorkflowTestRuns, { APIWorkflowTestRunResults } from './runs/client.js';
 import {
   AssertionSpec,
   WorkflowTestListResponse,
@@ -40,33 +40,12 @@ import {
  */
 export default class APIWorkflowTests extends CompositionClient {
   public runs: APIWorkflowTestRuns;
+  public results: APIWorkflowTestRunResults;
 
   constructor(client: CompositionClient) {
     super(client);
     this.runs = new APIWorkflowTestRuns(this);
-  }
-
-  prepare_create_run(
-    workflowId: string,
-    {
-      testId,
-      target,
-      nConsensus,
-    }: {
-      testId?: string;
-      target?: WorkflowTestBlockTarget;
-      nConsensus?: number;
-    } = {}
-  ): { url: string; method: string; body: Record<string, unknown> } {
-    const body: Record<string, unknown> = { workflow_id: workflowId };
-    if (testId !== undefined) body.test_id = testId;
-    if (target !== undefined) body.target = target;
-    if (nConsensus !== undefined) body.n_consensus = nConsensus;
-    return {
-      url: '/workflows/tests/runs',
-      method: 'POST',
-      body,
-    };
+    this.results = new APIWorkflowTestRunResults(this);
   }
 
   /**

@@ -13,7 +13,7 @@ import {
 /**
  * Declarative workflow spec operations.
  */
-export default class APIWorkflowSpecs extends CompositionClient {
+export default class APIWorkflowSpec extends CompositionClient {
   /**
    * Validate declarative workflow YAML without mutating workflow state.
    */

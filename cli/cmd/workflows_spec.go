@@ -16,7 +16,7 @@ import (
 
 // workflows spec — declarative (YAML) management for workflows.
 //
-// Mirrors the four methods on `WorkflowSpecsService` in the Go SDK:
+// Mirrors the four methods on `WorkflowSpecService` in the Go SDK:
 // validate, plan, apply (POST a YAML body), and export (GET an existing
 // workflow back to YAML by id). Aimed at the declarative workflow flow:
 // edit YAML in your repo, plan, apply, commit.
@@ -113,7 +113,7 @@ of main.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Specs.Validate(ctx, yaml)
+		result, err := client.Workflows.Spec.Validate(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -146,7 +146,7 @@ Plan is read-only — safe to run on production specs. Pair it with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Specs.Plan(ctx, yaml)
+		result, err := client.Workflows.Spec.Plan(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -197,7 +197,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		// shape, but only AFTER applying — by then the destroy already
 		// happened. The only safe place to inspect it is from a prior
 		// plan call.
-		plan, err := client.Workflows.Specs.Plan(ctx, yaml)
+		plan, err := client.Workflows.Spec.Plan(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -207,7 +207,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := confirmDestructiveApply(cmd, plan); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Specs.Apply(ctx, yaml)
+		result, err := client.Workflows.Spec.Apply(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -361,7 +361,7 @@ pull out other fields).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Specs.Export(ctx, args[0])
+		result, err := client.Workflows.Spec.Export(ctx, args[0])
 		if err != nil {
 			return err
 		}

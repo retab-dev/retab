@@ -17,7 +17,7 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APIWorkflows: ['get', 'list', 'create', 'update', 'delete', 'publish'],
   APIWorkflowBlocks: ['list', 'get', 'create', 'update', 'delete'],
   APIWorkflowEdges: ['list', 'get', 'create', 'delete'],
-  APIWorkflowSpecs: ['validate', 'plan', 'apply', 'export'],
+  APIWorkflowSpec: ['validate', 'plan', 'apply', 'export'],
   APIWorkflowRuns: ['create', 'get', 'list', 'delete', 'cancel', 'restart'],
   APIWorkflowSteps: ['get', 'list'],
   APIWorkflowTests: ['create', 'get', 'list', 'update', 'delete'],

@@ -10,7 +10,7 @@ from ...types.workflows import (
 )
 
 
-class WorkflowSpecsMixin:
+class WorkflowSpecMixin:
     """Shared request builders for declarative workflow specs."""
 
     def prepare_validate(self, yaml_definition: str) -> PreparedRequest:
@@ -29,7 +29,7 @@ class WorkflowSpecsMixin:
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/spec")
 
 
-class WorkflowSpecs(SyncAPIResource, WorkflowSpecsMixin):
+class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
     """Declarative workflow spec operations."""
 
     def validate(self, yaml_definition: str) -> DeclarativeValidationResponse:
@@ -53,7 +53,7 @@ class WorkflowSpecs(SyncAPIResource, WorkflowSpecsMixin):
         return DeclarativeExportResponse.model_validate(response)
 
 
-class AsyncWorkflowSpecs(AsyncAPIResource, WorkflowSpecsMixin):
+class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
     """Declarative workflow spec operations for async clients."""
 
     async def validate(self, yaml_definition: str) -> DeclarativeValidationResponse:

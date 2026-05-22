@@ -5,7 +5,7 @@ import APIWorkflows from '../src/api/workflows/client';
 import APIWorkflowRuns from '../src/api/workflows/runs/client';
 import APIWorkflowBlocks from '../src/api/workflows/blocks/client';
 import APIWorkflowEdges from '../src/api/workflows/edges/client';
-import APIWorkflowSpecs from '../src/api/workflows/specs/client';
+import APIWorkflowSpec from '../src/api/workflows/spec/client';
 import APIWorkflowBlockExecutions from '../src/api/workflows/blocks/executions/client';
 import { ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from '../src/types';
 import { ZHandlePayload } from '../src/generated_types';
@@ -153,13 +153,13 @@ describe('workflows client', () => {
     expect(workflow.email_trigger.allowed_senders).toEqual(['ops@example.com']);
   });
 
-  test('exposes specs subresource', () => {
+  test('exposes spec subresource', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    expect(workflowsClient.specs).toBeInstanceOf(APIWorkflowSpecs);
+    expect(workflowsClient.spec).toBeInstanceOf(APIWorkflowSpec);
   });
 
-  test('specs.validate() uses the spec validate route', async () => {
+  test('spec.validate() uses the spec validate route', async () => {
     const mockClient = new MockClient({
       workflow_id: 'wf_1',
       block_count: 2,
@@ -167,9 +167,9 @@ describe('workflows client', () => {
       is_valid: true,
       diagnostics: { issues: [] },
     });
-    const specsClient = new APIWorkflowSpecs(mockClient);
+    const specClient = new APIWorkflowSpec(mockClient);
 
-    const response = await specsClient.validate('spec: {}\n');
+    const response = await specClient.validate('spec: {}\n');
 
     expect(mockClient.lastFetchParams).toEqual({
       url: '/workflows/spec/validate',
@@ -181,7 +181,7 @@ describe('workflows client', () => {
     expect(response.is_valid).toBe(true);
   });
 
-  test('specs.plan() uses the spec plan route', async () => {
+  test('spec.plan() uses the spec plan route', async () => {
     const mockClient = new MockClient({
       workflow_id: 'wf_1',
       action: 'noop',
@@ -218,9 +218,9 @@ describe('workflows client', () => {
       ],
       rendered_plan: 'Plan: 0 to add, 1 to change, 0 to destroy.',
     });
-    const specsClient = new APIWorkflowSpecs(mockClient);
+    const specClient = new APIWorkflowSpec(mockClient);
 
-    const response = await specsClient.plan('spec: {}\n');
+    const response = await specClient.plan('spec: {}\n');
 
     expect(mockClient.lastFetchParams).toEqual({
       url: '/workflows/spec/plan',
@@ -234,7 +234,7 @@ describe('workflows client', () => {
     expect(response.rendered_plan).toContain('1 to change');
   });
 
-  test('specs.apply() uses the spec apply route', async () => {
+  test('spec.apply() uses the spec apply route', async () => {
     const mockClient = new MockClient({
       workflow_id: 'wf_1',
       created: false,
@@ -246,9 +246,9 @@ describe('workflows client', () => {
       resource_changes: [],
       rendered_plan: 'No changes. Infrastructure is up-to-date.',
     });
-    const specsClient = new APIWorkflowSpecs(mockClient);
+    const specClient = new APIWorkflowSpec(mockClient);
 
-    const response = await specsClient.apply('spec: {}\n');
+    const response = await specClient.apply('spec: {}\n');
 
     expect(mockClient.lastFetchParams).toEqual({
       url: '/workflows/spec/apply',
@@ -262,14 +262,14 @@ describe('workflows client', () => {
     expect(response.resource_changes).toEqual([]);
   });
 
-  test('specs.export() uses the spec export route', async () => {
+  test('spec.export() uses the spec export route', async () => {
     const mockClient = new MockClient({
       workflow_id: 'wf_1',
       yaml_definition: 'apiVersion: workflows.retab.com/v1alpha2\n',
     });
-    const specsClient = new APIWorkflowSpecs(mockClient);
+    const specClient = new APIWorkflowSpec(mockClient);
 
-    const response = await specsClient.export('wf_1');
+    const response = await specClient.export('wf_1');
 
     expect(mockClient.lastFetchParams).toEqual({
       url: '/workflows/wf_1/spec',
@@ -450,8 +450,8 @@ describe('workflows client', () => {
     expect('runBatch' in workflowsClient.experiments).toBe(false);
     expect(typeof workflowsClient.experiments.runs.get).toBe('function');
     expect(typeof workflowsClient.experiments.runs.cancel).toBe('function');
-    expect(typeof workflowsClient.experiments.runs.results.get).toBe('function');
-    expect(typeof workflowsClient.experiments.runs.metrics.get).toBe('function');
+    expect(typeof workflowsClient.experiments.results.get).toBe('function');
+    expect(typeof workflowsClient.experiments.metrics.get).toBe('function');
     expect('get_content' in workflowsClient.experiments.runs).toBe(false);
     expect('getContent' in workflowsClient.experiments.runs).toBe(false);
     expect('cancel_document' in workflowsClient.experiments.runs).toBe(false);
@@ -926,7 +926,7 @@ describe('workflows client', () => {
     expect(run.id).toBe('run_2');
   });
 
-  test('runs.export() sends POST to /export-payload', async () => {
+  test('runs.export() sends POST to /export', async () => {
     const mockClient = new MockClient({
       csv_data: 'a,b\n1,2\n',
       rows: 1,
@@ -946,7 +946,7 @@ describe('workflows client', () => {
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/runs/export-payload',
+      url: '/workflows/runs/export',
       method: 'POST',
       body: {
         workflow_id: 'wf_1',
