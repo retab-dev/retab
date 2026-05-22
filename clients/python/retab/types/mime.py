@@ -119,6 +119,11 @@ class MIMEData(RetabBaseModel):
 
     @property
     def mime_type(self) -> str:
+        # Inferred from the URL's data scheme or filename extension. The
+        # previous ``mime_type_override`` field was removed — it had
+        # ``exclude=True``, so callers who set it lost the value on every
+        # round trip. Extensionless filenames plus generic data URLs fall
+        # back to ``application/octet-stream``.
         if self.url.startswith("data:"):
             return self.url.split(";")[0].split(":")[1]
         return mimetypes.guess_type(self.filename)[0] or "application/octet-stream"

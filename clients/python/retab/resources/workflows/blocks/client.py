@@ -31,11 +31,12 @@ class WorkflowBlocksMixin:
 
     def prepare_update(
         self,
+        block_id: str,
         request: UpdateWorkflowBlockRequest,
     ) -> PreparedRequest:
         """Prepare a request to partially update a block."""
-        data = request.model_dump(exclude_none=True, exclude={"block_id"})
-        return PreparedRequest(method="PATCH", url=f"/workflows/blocks/{request.block_id}", data=data)
+        data = request.model_dump(exclude_none=True)
+        return PreparedRequest(method="PATCH", url=f"/workflows/blocks/{block_id}", data=data)
 
     def prepare_delete(self, block_id: str) -> PreparedRequest:
         """Prepare a request to delete a block."""
@@ -77,7 +78,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
     @staticmethod
     def _coerce_update_request(
         request: UpdateWorkflowBlockRequest | None,
-        block_id: str | None,
         label: str | None,
         position_x: float | None,
         position_y: float | None,
@@ -88,10 +88,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
     ) -> UpdateWorkflowBlockRequest:
         if request is not None:
             return request
-        if block_id is None:
-            raise TypeError("block_id is required when request is not provided")
         return UpdateWorkflowBlockRequest(
-            block_id=block_id,
             label=label,
             position_x=position_x,
             position_y=position_y,
@@ -148,7 +145,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
 
     def update(
         self,
-        block_id: str | None = None,
+        block_id: str,
         label: str | None = None,
         position_x: float | None = None,
         position_y: float | None = None,
@@ -161,7 +158,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         """Update a block with partial data."""
         update_request = self._coerce_update_request(
             request=request,
-            block_id=block_id,
             label=label,
             position_x=position_x,
             position_y=position_y,
@@ -170,7 +166,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             config=config,
             parent_id=parent_id,
         )
-        prepared_request = self.prepare_update(update_request)
+        prepared_request = self.prepare_update(block_id, update_request)
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
@@ -230,7 +226,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
 
     async def update(
         self,
-        block_id: str | None = None,
+        block_id: str,
         label: str | None = None,
         position_x: float | None = None,
         position_y: float | None = None,
@@ -243,7 +239,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         """Update a block with partial data."""
         update_request = self._coerce_update_request(
             request=request,
-            block_id=block_id,
             label=label,
             position_x=position_x,
             position_y=position_y,
@@ -252,7 +247,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             config=config,
             parent_id=parent_id,
         )
-        prepared_request = self.prepare_update(update_request)
+        prepared_request = self.prepare_update(block_id, update_request)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 

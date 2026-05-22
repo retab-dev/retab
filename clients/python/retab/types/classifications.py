@@ -12,6 +12,10 @@ from .mime import FileRef, MIMEData
 
 class Category(RetabBaseModel):
     name: str = Field(..., description="The name of the category")
+    handle_key: Optional[str] = Field(
+        default=None,
+        description="Optional stable handle key identifying the category in routing edges.",
+    )
     description: str = Field(default="", description="The description of the category")
 
 

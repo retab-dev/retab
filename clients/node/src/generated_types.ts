@@ -470,11 +470,8 @@ export type JobError = z.infer<typeof ZJobError>;
 
 export const ZJobListResponse = z.lazy(() =>
   z.object({
-    object: z.literal('list').default('list'),
     data: z.array(ZJob),
-    first_id: z.string().nullable().optional(),
-    last_id: z.string().nullable().optional(),
-    has_more: z.boolean().default(false),
+    list_metadata: ZListMetadata,
   })
 );
 export type JobListResponse = z.infer<typeof ZJobListResponse>;
