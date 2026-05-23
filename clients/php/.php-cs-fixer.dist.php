@@ -14,6 +14,5 @@ return (new Config())
     ->setRiskyAllowed(false)
     ->setRules([
         '@PER-CS' => true,
-        'declare_strict_types' => true,
     ])
     ->setFinder($finder);
