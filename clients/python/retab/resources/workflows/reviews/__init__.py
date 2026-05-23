@@ -182,7 +182,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         return SubmitDecisionResponse.model_validate(response)
 
 
-from retab.types.workflows.reviews import ReviewDecisionStatus  # noqa: F401  (hand-written flat-layout compat)
+from retab.types.workflows.reviews import ReviewDecisionStatus  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 
 from .versions import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 

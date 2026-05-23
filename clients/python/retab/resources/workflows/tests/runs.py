@@ -11,7 +11,6 @@ from retab.types.workflows.tests.runs import (
     CreateWorkflowTestRunAllRequest,
     CreateWorkflowTestRunForTargetRequest,
     CreateWorkflowTestRunForTestRequest,
-    CreateWorkflowTestRunRequest,
     WorkflowTestBlockTarget,
     WorkflowTestRun,
 )
