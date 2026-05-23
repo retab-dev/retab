@@ -243,3 +243,10 @@ pub enum WorkflowTestResultLifecycleOneOf {
     #[serde(rename = "cancelled")]
     CancelledWorkflowTestRun(Box<CancelledWorkflowTestRun>),
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CreateFreshWorkflowRunRequestDocumentsOneOf {
+    FileRef(Box<FileRef>),
+    MimeDataInput(Box<MimeDataInput>),
+}
