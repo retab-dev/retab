@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -85,9 +87,9 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Jobs.Create(ctx, retab.JobCreateRequest{
-			Endpoint: endpoint,
-			Request:  retab.Resource(body),
+		result, err := client.Jobs.Create(ctx, &retab.JobsCreateParams{
+			Endpoint: retab.CreateJobRequestEndpoint(endpoint),
+			Request:  body,
 			Metadata: md,
 		})
 		if err != nil {
@@ -98,8 +100,9 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 }
 
 var jobsRetrieveCmd = &cobra.Command{
-	Use:   "retrieve <job-id>",
-	Short: "Retrieve a job",
+	Use:     "get <job-id>",
+	Aliases: []string{"retrieve"},
+	Short:   "Retrieve a job",
 	Long: `Fetch a job's current state: status, timestamps, error info.
 By default the original request body and response body are omitted to
 keep payloads small — use ` + "`--include-request`" + ` /
@@ -124,9 +127,9 @@ keep payloads small — use ` + "`--include-request`" + ` /
 		defer cancel()
 		includeReq, _ := cmd.Flags().GetBool("include-request")
 		includeResp, _ := cmd.Flags().GetBool("include-response")
-		result, err := client.Jobs.Retrieve(ctx, args[0], &retab.JobRetrieveParams{
-			IncludeRequest:  includeReq,
-			IncludeResponse: includeResp,
+		result, err := client.Jobs.Get(ctx, args[0], &retab.JobsGetParams{
+			IncludeRequest:  ptr(includeReq),
+			IncludeResponse: ptr(includeResp),
 		})
 		if err != nil {
 			return err
@@ -166,17 +169,15 @@ handles backoff and timeout, and exits non-zero if the timeout elapses.`,
 		timeoutS, _ := cmd.Flags().GetInt("timeout-seconds")
 		includeReq, _ := cmd.Flags().GetBool("include-request")
 		includeResp, _ := cmd.Flags().GetBool("include-response")
-		params := &retab.JobWaitForCompletionParams{
-			IncludeRequest:  includeReq,
-			IncludeResponse: includeResp,
-		}
+		pollInterval := 2 * time.Second
 		if pollMS > 0 {
-			params.PollInterval = time.Duration(pollMS) * time.Millisecond
+			pollInterval = time.Duration(pollMS) * time.Millisecond
 		}
+		timeout := 10 * time.Minute
 		if timeoutS > 0 {
-			params.Timeout = time.Duration(timeoutS) * time.Second
+			timeout = time.Duration(timeoutS) * time.Second
 		}
-		result, err := client.Jobs.WaitForCompletion(ctx, args[0], params)
+		result, err := waitForJobCompletion(ctx, client, args[0], pollInterval, timeout, includeReq, includeResp)
 		if err != nil {
 			return err
 		}
@@ -269,41 +270,72 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListJobsParams{}
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if params.Before != "" && params.After != "" {
+		params := retab.JobsListParams{PaginationParams: collectListParams(cmd)}
+		if params.Before != nil && params.After != nil {
 			return fmt.Errorf("--before and --after are mutually exclusive")
 		}
-		params.Limit, _ = cmd.Flags().GetInt("limit")
-		params.Order, _ = cmd.Flags().GetString("order")
-		params.ID, _ = cmd.Flags().GetString("id")
-		params.Status, _ = cmd.Flags().GetString("status")
-		params.Endpoint, _ = cmd.Flags().GetString("endpoint")
-		params.Source, _ = cmd.Flags().GetString("source")
-		params.ProjectID, _ = cmd.Flags().GetString("project-id")
-		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
-		params.WorkflowBlockID, _ = cmd.Flags().GetString("workflow-block-id")
-		params.Model, _ = cmd.Flags().GetString("model")
-		params.FilenameRegex, _ = cmd.Flags().GetString("filename-regex")
-		params.FilenameContains, _ = cmd.Flags().GetString("filename-contains")
+		if v, _ := cmd.Flags().GetString("id"); v != "" {
+			params.JobID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("status"); v != "" {
+			status := retab.JobsStatus(v)
+			params.Status = &status
+		}
+		if v, _ := cmd.Flags().GetString("endpoint"); v != "" {
+			endpoint := retab.JobsEndpoint(v)
+			params.Endpoint = &endpoint
+		}
+		if v, _ := cmd.Flags().GetString("source"); v != "" {
+			source := retab.JobsSource(v)
+			params.Source = &source
+		}
+		if v, _ := cmd.Flags().GetString("project-id"); v != "" {
+			params.ProjectID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("workflow-id"); v != "" {
+			params.WorkflowID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("workflow-block-id"); v != "" {
+			params.WorkflowBlockID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("model"); v != "" {
+			params.Model = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("filename-regex"); v != "" {
+			params.FilenameRegex = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("filename-contains"); v != "" {
+			params.FilenameContains = ptr(v)
+		}
 		rawDocumentTypes, _ := cmd.Flags().GetStringArray("document-type")
 		documentTypes, err := normalizeJobDocumentTypes(rawDocumentTypes)
 		if err != nil {
 			return err
 		}
 		params.DocumentType = documentTypes
-		params.FromDate, _ = cmd.Flags().GetString("from-date")
-		params.ToDate, _ = cmd.Flags().GetString("to-date")
-		if err := validateDateRange("from-date", "to-date", params.FromDate, params.ToDate); err != nil {
+		fromDate, _ := cmd.Flags().GetString("from-date")
+		toDate, _ := cmd.Flags().GetString("to-date")
+		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
 			return err
+		}
+		if fromDate != "" {
+			params.FromDate = ptr(fromDate)
+		}
+		if toDate != "" {
+			params.ToDate = ptr(toDate)
 		}
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {
 			return err
 		}
-		params.Metadata = md
+		if len(md) > 0 {
+			raw, err := json.Marshal(md)
+			if err != nil {
+				return err
+			}
+			params.Metadata = ptr(string(raw))
+		}
 		if cmd.Flags().Changed("include-request") {
 			v, _ := cmd.Flags().GetBool("include-request")
 			params.IncludeRequest = &v
@@ -518,18 +550,77 @@ func jobWaitTerminalError(job *retab.Job) error {
 	if job == nil {
 		return nil
 	}
-	status, _ := (*job)["status"].(string)
+	status := ""
+	if job.Status != nil {
+		status = string(*job.Status)
+	}
 	switch status {
 	case "", string(retab.JobStatusCompleted):
 		return nil
 	case string(retab.JobStatusFailed), string(retab.JobStatusCancelled), string(retab.JobStatusExpired):
-		id, _ := (*job)["id"].(string)
+		id := ""
+		if job.ID != nil {
+			id = *job.ID
+		}
 		if id == "" {
 			return fmt.Errorf("job ended with status %s", status)
 		}
 		return fmt.Errorf("job %s ended with status %s", id, status)
 	default:
 		return nil
+	}
+}
+
+func waitForJobCompletion(
+	ctx context.Context,
+	client *retab.Client,
+	jobID string,
+	pollInterval time.Duration,
+	timeout time.Duration,
+	includeRequest bool,
+	includeResponse bool,
+) (*retab.Job, error) {
+	if pollInterval <= 0 {
+		pollInterval = 2 * time.Second
+	}
+	if timeout <= 0 {
+		timeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	params := &retab.JobsGetParams{
+		IncludeRequest:  ptr(includeRequest),
+		IncludeResponse: ptr(includeResponse),
+	}
+	for {
+		job, err := client.Jobs.Get(ctx, jobID, params)
+		if err != nil {
+			return nil, err
+		}
+		if isTerminalJob(job) {
+			return job, nil
+		}
+
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return job, fmt.Errorf("timed out waiting for job %s: %w", jobID, ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+func isTerminalJob(job *retab.Job) bool {
+	if job == nil || job.Status == nil {
+		return false
+	}
+	switch *job.Status {
+	case retab.JobStatusCompleted, retab.JobStatusFailed, retab.JobStatusCancelled, retab.JobStatusExpired:
+		return true
+	default:
+		return false
 	}
 }
 

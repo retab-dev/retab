@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """Smoke tests for ``client.workflows.reviews.*``."""
 
 from __future__ import annotations

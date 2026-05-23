@@ -137,8 +137,9 @@ def test_python_workflow_sdk_does_not_call_removed_routes() -> None:
 
 
 def test_python_workflow_review_versions_require_parent_id() -> None:
-    source = (SDK_ROOT / "retab" / "resources" / "workflows" / "reviews.py").read_text()
+    source = (SDK_ROOT / "retab" / "resources" / "workflows" / "reviews" / "versions.py").read_text()
 
-    assert "parent_id: str," in source
-    assert 'raise ValueError("parent_id is required' in source
+    assert "def prepare_create(self, review_id: str, parent_id: str, snapshot: dict[str, Any]" in source
+    assert "def create(self, review_id: str, parent_id: str, snapshot: dict[str, Any]" in source
+    assert "async def create(self, review_id: str, parent_id: str, snapshot: dict[str, Any]" in source
     assert "append_version" not in source

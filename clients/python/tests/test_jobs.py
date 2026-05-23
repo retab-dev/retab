@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
 """Integration tests for the Jobs API across all supported endpoints.
 
 Tests exercise the full job lifecycle: create → poll → verify result.

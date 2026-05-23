@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -42,10 +41,10 @@ dynamic ports.`,
     --source-block start --target-block blk_extract_1`,
 }
 
-func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
-	req := retab.WorkflowEdgeCreateRequest{}
-	if v, ok := obj["id"].(string); ok {
-		req.ID = v
+func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgesCreateParams {
+	req := retab.WorkflowEdgesCreateParams{}
+	if v, ok := obj["id"].(string); ok && v != "" {
+		req.ID = ptr(v)
 	}
 	if v, ok := obj["source_block"].(string); ok {
 		req.SourceBlock = v
@@ -53,17 +52,17 @@ func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
 	if v, ok := obj["target_block"].(string); ok {
 		req.TargetBlock = v
 	}
-	if v, ok := obj["source_handle"].(string); ok {
-		req.SourceHandle = v
+	if v, ok := obj["source_handle"].(string); ok && v != "" {
+		req.SourceHandle = ptr(v)
 	}
-	if v, ok := obj["target_handle"].(string); ok {
-		req.TargetHandle = v
+	if v, ok := obj["target_handle"].(string); ok && v != "" {
+		req.TargetHandle = ptr(v)
 	}
 	ensureWorkflowEdgeID(&req)
 	return req
 }
 
-func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
+func validateWorkflowEdgeCreate(req retab.WorkflowEdgesCreateParams) error {
 	if strings.TrimSpace(req.SourceBlock) == "" {
 		return fmt.Errorf("source_block is required")
 	}
@@ -73,12 +72,12 @@ func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
 	return nil
 }
 
-func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workflowID string, req *retab.WorkflowEdgeCreateRequest) error {
-	needsBlockLookup := req.SourceBlock == "start" || req.TargetBlock == "start" || req.TargetHandle != ""
+func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workflowID string, req *retab.WorkflowEdgesCreateParams) error {
+	needsBlockLookup := req.SourceBlock == "start" || req.TargetBlock == "start" || req.TargetHandle != nil
 	if !needsBlockLookup {
 		return nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
+	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return err
 	}
@@ -89,7 +88,7 @@ func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workf
 	return nil
 }
 
-func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgeCreateRequest) error {
+func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgesCreateParams) error {
 	if req.SourceBlock != "start" && req.TargetBlock != "start" {
 		return nil
 	}
@@ -121,16 +120,16 @@ func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req
 	return nil
 }
 
-func resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgeCreateRequest) {
-	if req.TargetHandle == "" || strings.HasPrefix(req.TargetHandle, "input-") {
+func resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgesCreateParams) {
+	if req.TargetHandle == nil || *req.TargetHandle == "" || strings.HasPrefix(*req.TargetHandle, "input-") {
 		return
 	}
 	for _, block := range blocks {
 		if block.ID != req.TargetBlock {
 			continue
 		}
-		if resolved := targetInputHandleAlias(block.Type, block.Config, req.TargetHandle); resolved != "" {
-			req.TargetHandle = resolved
+		if resolved := targetInputHandleAlias(string(block.Type), block.Config, *req.TargetHandle); resolved != "" {
+			req.TargetHandle = ptr(resolved)
 		}
 		return
 	}
@@ -169,18 +168,25 @@ func targetInputHandleAlias(blockType string, config map[string]any, inputName s
 	return ""
 }
 
-func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
-	if req.ID != "" {
+func ensureWorkflowEdgeID(req *retab.WorkflowEdgesCreateParams) {
+	if req.ID != nil && *req.ID != "" {
 		return
 	}
-	req.ID = defaultWorkflowEdgeID(*req)
+	req.ID = ptr(defaultWorkflowEdgeID(*req))
 }
 
-func defaultWorkflowEdgeID(req retab.WorkflowEdgeCreateRequest) string {
-	parts := []string{req.SourceBlock, req.SourceHandle, req.TargetBlock, req.TargetHandle}
+func defaultWorkflowEdgeID(req retab.WorkflowEdgesCreateParams) string {
+	parts := []string{req.SourceBlock, derefString(req.SourceHandle), req.TargetBlock, derefString(req.TargetHandle)}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	encoded := base64.RawURLEncoding.EncodeToString(sum[:])
 	return "edge_" + encoded[:22]
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 var workflowsEdgesListCmd = &cobra.Command{
@@ -212,19 +218,17 @@ Paginate by passing the cursor from a previous response's
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListWorkflowEdgesParams{}
-		params.SourceBlock, _ = cmd.Flags().GetString("source-block")
-		params.TargetBlock, _ = cmd.Flags().GetString("target-block")
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
-			parsed, err := strconv.Atoi(f.Value.String())
-			if err != nil {
-				return fmt.Errorf("invalid --limit %q", f.Value.String())
-			}
-			params.Limit = parsed
+		params := retab.WorkflowEdgesListParams{
+			PaginationParams: collectListParams(cmd),
+			WorkflowID:       args[0],
 		}
-		result, err := client.Workflows.Edges.List(ctx, args[0], &params)
+		if v, _ := cmd.Flags().GetString("source-block"); v != "" {
+			params.SourceBlock = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("target-block"); v != "" {
+			params.TargetBlock = ptr(v)
+		}
+		result, err := client.WorkflowEdges.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -272,7 +276,7 @@ var workflowsEdgesGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Edges.Get(ctx, args[0])
+		result, err := client.WorkflowEdges.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -327,12 +331,18 @@ you may pass the friendly input name from the block config, such as
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.WorkflowEdgeCreateRequest{}
+		req := retab.WorkflowEdgesCreateParams{WorkflowID: args[0]}
 		req.SourceBlock, _ = cmd.Flags().GetString("source-block")
 		req.TargetBlock, _ = cmd.Flags().GetString("target-block")
-		req.SourceHandle, _ = cmd.Flags().GetString("source-handle")
-		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
-		req.ID, _ = cmd.Flags().GetString("id")
+		if sourceHandle, _ := cmd.Flags().GetString("source-handle"); sourceHandle != "" {
+			req.SourceHandle = ptr(sourceHandle)
+		}
+		if targetHandle, _ := cmd.Flags().GetString("target-handle"); targetHandle != "" {
+			req.TargetHandle = ptr(targetHandle)
+		}
+		if id, _ := cmd.Flags().GetString("id"); id != "" {
+			req.ID = ptr(id)
+		}
 		// Trim whitespace on block ids so values like "start  " (e.g. from
 		// shell completion or copy/paste) don't hit the server verbatim and
 		// produce a confusing 404. The "is required" check still runs on
@@ -340,7 +350,7 @@ you may pass the friendly input name from the block config, such as
 		// message rather than slipping through as a valid id.
 		req.SourceBlock = strings.TrimSpace(req.SourceBlock)
 		req.TargetBlock = strings.TrimSpace(req.TargetBlock)
-		idWasExplicit := strings.TrimSpace(req.ID) != ""
+		idWasExplicit := req.ID != nil && strings.TrimSpace(*req.ID) != ""
 		if err := validateWorkflowEdgeCreate(req); err != nil {
 			return err
 		}
@@ -348,7 +358,7 @@ you may pass the friendly input name from the block config, such as
 			return err
 		}
 		ensureWorkflowEdgeID(&req)
-		result, err := client.Workflows.Edges.Create(ctx, args[0], req)
+		result, err := client.WorkflowEdges.Create(ctx, &req)
 		if err != nil {
 			return rewrapAutoEdgeIDConflict(err, req, idWasExplicit)
 		}
@@ -363,7 +373,7 @@ you may pass the friendly input name from the block config, such as
 // handles) tuple, not an id picked by the user, so the message should say
 // so. When --id was explicit, the server message is accurate; pass it
 // through unchanged.
-func rewrapAutoEdgeIDConflict(err error, req retab.WorkflowEdgeCreateRequest, idWasExplicit bool) error {
+func rewrapAutoEdgeIDConflict(err error, req retab.WorkflowEdgesCreateParams, idWasExplicit bool) error {
 	if idWasExplicit {
 		return err
 	}
@@ -380,12 +390,12 @@ func rewrapAutoEdgeIDConflict(err error, req retab.WorkflowEdgeCreateRequest, id
 		return err
 	}
 	src := req.SourceBlock
-	if req.SourceHandle != "" {
-		src = fmt.Sprintf("%s[:%s]", req.SourceBlock, req.SourceHandle)
+	if req.SourceHandle != nil && *req.SourceHandle != "" {
+		src = fmt.Sprintf("%s[:%s]", req.SourceBlock, *req.SourceHandle)
 	}
 	tgt := req.TargetBlock
-	if req.TargetHandle != "" {
-		tgt = fmt.Sprintf("%s[:%s]", req.TargetBlock, req.TargetHandle)
+	if req.TargetHandle != nil && *req.TargetHandle != "" {
+		tgt = fmt.Sprintf("%s[:%s]", req.TargetBlock, *req.TargetHandle)
 	}
 	apiErr.Message = fmt.Sprintf(
 		"an edge from %s to %s already exists (auto-generated edge id collided)",
@@ -419,7 +429,7 @@ is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Edges.Delete(ctx, args[0]); err != nil {
+		if err := client.WorkflowEdges.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("edge", args[0])

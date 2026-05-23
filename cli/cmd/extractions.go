@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
-	"io"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -24,15 +23,15 @@ Typical flow: ` + "`retab extractions create`" + ` to run a one-shot extraction,
 output, ` + "`retab extractions sources`" + ` to inspect where each field came from.`,
 }
 
-func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionCreateRequest, error) {
+func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, error) {
 	metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 	metadata, err := parseKVStringList(metaPairs)
 	if err != nil {
-		return retab.ExtractionCreateRequest{}, err
+		return retab.ExtractionsCreateParams{}, err
 	}
 	model, err := requireNonBlankFlag(cmd, "model")
 	if err != nil {
-		return retab.ExtractionCreateRequest{}, err
+		return retab.ExtractionsCreateParams{}, err
 	}
 	imageDPI, _ := cmd.Flags().GetInt("image-resolution-dpi")
 	nConsensus, _ := cmd.Flags().GetInt("n-consensus")
@@ -40,37 +39,41 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionCreateRequest, er
 	bustCache, _ := cmd.Flags().GetBool("bust-cache")
 	schema, err := resolveSchema(cmd)
 	if err != nil {
-		return retab.ExtractionCreateRequest{}, err
+		return retab.ExtractionsCreateParams{}, err
 	}
 	messagesFile, _ := cmd.Flags().GetString("messages-file")
-	var messages []retab.Resource
+	var messages []map[string]interface{}
 	if messagesFile != "" {
 		arr, err := readJSONArray(messagesFile)
 		if err != nil {
-			return retab.ExtractionCreateRequest{}, fmt.Errorf("--messages-file: %w", err)
+			return retab.ExtractionsCreateParams{}, fmt.Errorf("--messages-file: %w", err)
 		}
 		for _, m := range arr {
 			obj, ok := m.(map[string]any)
 			if !ok {
-				return retab.ExtractionCreateRequest{}, fmt.Errorf("--messages-file: each item must be a JSON object")
+				return retab.ExtractionsCreateParams{}, fmt.Errorf("--messages-file: each item must be a JSON object")
 			}
-			messages = append(messages, retab.Resource(obj))
+			messages = append(messages, obj)
 		}
 	}
 	doc, err := resolveDocument(cmd)
 	if err != nil {
-		return retab.ExtractionCreateRequest{}, err
+		return retab.ExtractionsCreateParams{}, err
 	}
-	return retab.ExtractionCreateRequest{
+	jsonSchema, ok := schema.(map[string]interface{})
+	if !ok {
+		return retab.ExtractionsCreateParams{}, fmt.Errorf("json schema must be a JSON object")
+	}
+	return retab.ExtractionsCreateParams{
 		Document:           doc,
-		JSONSchema:         schema,
-		Model:              model,
-		ImageResolutionDPI: imageDPI,
-		NConsensus:         nConsensus,
-		Instructions:       instructions,
+		JSONSchema:         jsonSchema,
+		Model:              ptr(model),
+		ImageResolutionDpi: ptr(imageDPI),
+		NConsensus:         ptr(nConsensus),
+		Instructions:       ptr(instructions),
 		Metadata:           metadata,
 		AdditionalMessages: messages,
-		BustCache:          bustCache,
+		BustCache:          ptr(bustCache),
 	}, nil
 }
 
@@ -117,7 +120,7 @@ For streaming output (one event per line, useful on slow extractions), see
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Extractions.Create(ctx, req)
+		result, err := client.Extractions.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -158,23 +161,11 @@ Flags and document/schema resolution are identical to
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		stream, err := client.Extractions.CreateStream(ctx, req)
+		result, err := client.Extractions.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
-		defer stream.Close()
-		for {
-			item, err := stream.Next()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					return nil
-				}
-				return err
-			}
-			if err := printNDJSON(item); err != nil {
-				return err
-			}
-		}
+		return printNDJSON(result)
 	}),
 }
 
@@ -202,13 +193,19 @@ to walk backwards. Filter by arbitrary tags set at create time with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListExtractionsParams{ListParams: collectListParams(cmd)}
+		params := retab.ExtractionsListParams{PaginationParams: collectListParams(cmd)}
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {
 			return err
 		}
-		params.Metadata = md
+		if len(md) > 0 {
+			raw, err := json.Marshal(md)
+			if err != nil {
+				return err
+			}
+			params.Metadata = ptr(string(raw))
+		}
 		result, err := client.Extractions.List(ctx, &params)
 		if err != nil {
 			return err

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
-	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -36,22 +34,22 @@ inside supported block configs instead of adding a separate review block.`,
     --config-file ./new-config.json`,
 }
 
-func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
-	req := retab.WorkflowBlockCreateRequest{}
-	if v, ok := obj["id"].(string); ok {
-		req.ID = v
+func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
+	req := retab.WorkflowBlocksCreateParams{}
+	if v, ok := obj["id"].(string); ok && v != "" {
+		req.ID = ptr(v)
 	}
 	if v, ok := obj["type"].(string); ok {
-		req.Type = v
+		req.Type = retab.WorkflowBlockCreateRequestType(v)
 	}
 	if v, ok := obj["label"].(string); ok {
-		req.Label = v
+		req.Label = ptr(v)
 	}
 	if v, ok := obj["position_x"].(float64); ok {
-		req.PositionX = v
+		req.PositionX = ptr(v)
 	}
 	if v, ok := obj["position_y"].(float64); ok {
-		req.PositionY = v
+		req.PositionY = ptr(v)
 	}
 	if v, ok := obj["width"].(float64); ok {
 		req.Width = &v
@@ -60,7 +58,7 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 		req.Height = &v
 	}
 	if v, ok := obj["parent_id"].(string); ok {
-		req.ParentID = v
+		req.ParentID = ptr(v)
 	}
 	if v, ok := obj["config"].(map[string]any); ok {
 		req.Config = v
@@ -82,9 +80,9 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 	return req, nil
 }
 
-func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
+func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
 	if bodyWorkflowID, ok := obj["workflow_id"].(string); ok && bodyWorkflowID != "" && bodyWorkflowID != workflowID {
-		return retab.WorkflowBlockCreateRequest{}, fmt.Errorf("block-file workflow_id %q does not match positional workflow id %q", bodyWorkflowID, workflowID)
+		return retab.WorkflowBlocksCreateParams{}, fmt.Errorf("block-file workflow_id %q does not match positional workflow id %q", bodyWorkflowID, workflowID)
 	}
 	return parseBlockCreate(obj)
 }
@@ -143,13 +141,10 @@ Paginate by passing the cursor from a previous response's
 		if err != nil {
 			return err
 		}
-		params, err := workflowBlocksListParams(cmd)
-		if err != nil {
-			return err
-		}
+		params := workflowBlocksListParams(cmd, args[0])
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.List(ctx, args[0], params)
+		result, err := client.WorkflowBlocks.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -157,22 +152,11 @@ Paginate by passing the cursor from a previous response's
 	}),
 }
 
-func workflowBlocksListParams(cmd *cobra.Command) (*retab.ListWorkflowBlocksParams, error) {
-	before, _ := cmd.Flags().GetString("before")
-	after, _ := cmd.Flags().GetString("after")
-	limit := 0
-	if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
-		raw := f.Value.String()
-		parsed, err := strconv.Atoi(raw)
-		if err != nil {
-			return nil, fmt.Errorf("invalid --limit %q", raw)
-		}
-		limit = parsed
+func workflowBlocksListParams(cmd *cobra.Command, workflowID string) *retab.WorkflowBlocksListParams {
+	return &retab.WorkflowBlocksListParams{
+		PaginationParams: collectListParams(cmd),
+		WorkflowID:       workflowID,
 	}
-	if before == "" && after == "" && limit == 0 {
-		return nil, nil
-	}
-	return &retab.ListWorkflowBlocksParams{Before: before, After: after, Limit: limit}, nil
 }
 
 var workflowsBlocksGetCmd = &cobra.Command{
@@ -203,8 +187,8 @@ lists the colliding workflow_ids so you know what to pass.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		opts := workflowBlockLookupOpts(cmd)
-		result, err := client.Workflows.Blocks.Get(ctx, args[0], opts...)
+		params := &retab.WorkflowBlocksGetParams{WorkflowID: workflowBlockLookupWorkflowID(cmd)}
+		result, err := client.WorkflowBlocks.Get(ctx, args[0], params)
 		if err != nil {
 			return err
 		}
@@ -212,18 +196,16 @@ lists the colliding workflow_ids so you know what to pass.`,
 	}),
 }
 
-// workflowBlockLookupOpts builds the optional “workflow_id“ query
-// parameter for blocks get/update/delete. Empty flag → no option, so
-// the URL stays identical to the original flat-resource shape.
-func workflowBlockLookupOpts(cmd *cobra.Command) []retab.RequestOption {
+// workflowBlockLookupWorkflowID returns the optional “workflow_id“ query
+// parameter for blocks get/update/delete. Empty flag → nil so the URL stays
+// identical to the original flat-resource shape.
+func workflowBlockLookupWorkflowID(cmd *cobra.Command) *string {
 	workflowID, _ := cmd.Flags().GetString("workflow-id")
 	workflowID = strings.TrimSpace(workflowID)
 	if workflowID == "" {
 		return nil
 	}
-	return []retab.RequestOption{
-		retab.WithRequestParams(url.Values{"workflow_id": []string{workflowID}}),
-	}
+	return ptr(workflowID)
 }
 
 var workflowsBlocksCreateCmd = &cobra.Command{
@@ -301,13 +283,14 @@ Review is not a standalone block type.`,
 		if err != nil {
 			return err
 		}
+		req.WorkflowID = args[0]
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.Create(ctx, args[0], req)
+		result, err := client.WorkflowBlocks.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -365,7 +348,7 @@ the visual editor.`,
 			!cmd.Flags().Changed("config-file") && !cmd.Flags().Changed("merge-config-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, --config-file, or --merge-config-file")
 		}
-		req := retab.UpdateWorkflowBlockRequest{}
+		req := retab.WorkflowBlocksUpdateParams{}
 		if cmd.Flags().Changed("label") {
 			v, _ := cmd.Flags().GetString("label")
 			req.Label = &v
@@ -403,7 +386,7 @@ the visual editor.`,
 			// Without this, the route keeps any existing keys that aren't
 			// in cfg (e.g. ``review``), which silently defeats
 			// ``--config-file``'s documented "replace" semantic.
-			req.ConfigMode = "replace"
+			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeReplace)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -437,10 +420,10 @@ the visual editor.`,
 			// double-merge against pre-config_mode servers in subtle ways
 			// — easier to make the server authoritative.
 			req.Config = patch
-			req.ConfigMode = "merge"
+			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
-		opts := workflowBlockLookupOpts(cmd)
-		result, err := client.Workflows.Blocks.Update(ctx, args[0], req, opts...)
+		req.WorkflowID = workflowBlockLookupWorkflowID(cmd)
+		result, err := client.WorkflowBlocks.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -474,8 +457,8 @@ is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		opts := workflowBlockLookupOpts(cmd)
-		if err := client.Workflows.Blocks.Delete(ctx, args[0], opts...); err != nil {
+		params := &retab.WorkflowBlocksDeleteParams{WorkflowID: workflowBlockLookupWorkflowID(cmd)}
+		if err := client.WorkflowBlocks.Delete(ctx, args[0], params); err != nil {
 			return err
 		}
 		confirmDeleted("block", args[0])

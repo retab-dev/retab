@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false
 """Smoke tests for `client.workflows.tests.*` — wires + URL/method/body shape.
 
 Mirrors the testing convention from `test_workflows.py`: mock the underlying

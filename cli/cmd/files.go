@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -77,18 +81,22 @@ need.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListFilesParams{ListParams: collectListParams(cmd)}
+		params := retab.FilesListParams{PaginationParams: collectListParams(cmd)}
 		if v, _ := cmd.Flags().GetString("mime-type"); v != "" {
-			params.MIMEType = v
+			params.MIMEType = ptr(v)
 		}
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
-			params.SortBy = v
+			params.SortBy = ptr(v)
 		}
 		result, err := client.Files.List(ctx, &params)
 		if err != nil {
 			return err
 		}
-		return printFilesListResult(cmd, result, params.SortBy)
+		sortBy := ""
+		if params.SortBy != nil {
+			sortBy = *params.SortBy
+		}
+		return printFilesListResult(cmd, result, sortBy)
 	}),
 }
 
@@ -115,7 +123,7 @@ func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.
 	})
 }
 
-func resourcesToRows(resources []retab.Resource) []any {
+func resourcesToRows[T any](resources []T) []any {
 	rows := make([]any, len(resources))
 	for i, resource := range resources {
 		rows[i] = resource
@@ -190,13 +198,7 @@ through ` + "`xargs`" + `.`,
 		if err := confirmDestructive(cmd, "file", args[0]); err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Files.Delete(ctx, args[0]); err != nil {
+		if _, err := cliJSONRequest(cmd, http.MethodDelete, "/files/"+url.PathEscape(args[0]), nil, nil); err != nil {
 			return err
 		}
 		return printJSON(map[string]any{"id": args[0], "deleted": true})
@@ -247,7 +249,7 @@ store and a hint for content-type inference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Files.Upload(ctx, uploadPath)
+		result, err := uploadFile(ctx, client, uploadPath)
 		if err != nil {
 			return err
 		}
@@ -257,6 +259,48 @@ store and a hint for content-type inference.`,
 		}
 		return printJSON(out)
 	}),
+}
+
+func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*retab.MIMEData, error) {
+	data, err := os.ReadFile(uploadPath)
+	if err != nil {
+		return nil, err
+	}
+	filename := filepath.Base(uploadPath)
+	contentType := http.DetectContentType(data)
+	sum := sha256.Sum256(data)
+	sha256Hash := hex.EncodeToString(sum[:])
+	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
+		Filename:    filename,
+		ContentType: &contentType,
+		SizeBytes:   len(data),
+		Sha256:      &sha256Hash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	method := prepared.UploadMethod
+	if method == "" {
+		method = http.MethodPut
+	}
+	req, err := http.NewRequestWithContext(ctx, method, prepared.UploadURL, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range prepared.UploadHeaders {
+		req.Header.Set(key, value)
+	}
+	req.Header.Set("Content-Type", contentType)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return nil, fmt.Errorf("direct upload failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
+	}
+	return client.Files.CompleteUpload(ctx, prepared.FileID, &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
 }
 
 // stageStdinUpload drains stdin into a temp file named per --filename so the
@@ -649,11 +693,11 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		defer cancel()
 		size, _ := cmd.Flags().GetInt64("size-bytes")
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CreateUpload(ctx, retab.PrepareUploadRequest{
+		result, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
 			Filename:    filename,
-			ContentType: contentType,
-			SizeBytes:   size,
-			SHA256:      sha256Hash,
+			ContentType: &contentType,
+			SizeBytes:   int(size),
+			Sha256:      &sha256Hash,
 		})
 		if err != nil {
 			return err
@@ -710,7 +754,7 @@ against the digest you computed locally.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CompleteUpload(ctx, args[0], sha256Hash)
+		result, err := client.Files.CompleteUpload(ctx, args[0], &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
 		if err != nil {
 			return err
 		}

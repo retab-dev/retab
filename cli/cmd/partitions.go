@@ -72,21 +72,15 @@ extraction.`,
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		allowOverlap, _ := cmd.Flags().GetBool("allow-overlap")
-		requestOptions := []retab.RequestOption{}
-		if cmd.Flags().Changed("allow-overlap") && !allowOverlap {
-			requestOptions = append(requestOptions, retab.WithRequestBody(map[string]any{
-				"allow_overlap": false,
-			}))
-		}
-		result, err := client.Partitions.Create(ctx, retab.PartitionCreateRequest{
+		result, err := client.Partitions.Create(ctx, &retab.PartitionsCreateParams{
 			Document:     doc,
 			Key:          key,
 			Instructions: instructions,
-			Model:        model,
-			NConsensus:   nConsensus,
-			BustCache:    bustCache,
-			AllowOverlap: allowOverlap,
-		}, requestOptions...)
+			Model:        ptr(model),
+			NConsensus:   ptr(nConsensus),
+			BustCache:    ptr(bustCache),
+			AllowOverlap: ptr(allowOverlap),
+		})
 		if err != nil {
 			return err
 		}
@@ -142,7 +136,7 @@ Page by partition id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page s
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := collectListParams(cmd)
+		params := retab.PartitionsListParams{PaginationParams: collectListParams(cmd)}
 		result, err := client.Partitions.List(ctx, &params)
 		if err != nil {
 			return err

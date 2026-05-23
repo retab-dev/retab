@@ -43,9 +43,9 @@ For deterministic regression testing of a single pinned assertion, see
   retab workflows experiments runs metrics get exprun_abc --view summary`,
 }
 
-func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureRequest, []retab.ExplicitExperimentDocumentRequest, error) {
-	var captures []retab.ExperimentDocumentCaptureRequest
-	var explicit []retab.ExplicitExperimentDocumentRequest
+func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCaptureRequest, []*retab.ExplicitExperimentDocumentRequest, error) {
+	var captures []*retab.ExperimentDocumentCaptureRequest
+	var explicit []*retab.ExplicitExperimentDocumentRequest
 	if path, _ := cmd.Flags().GetString("captures-file"); path != "" {
 		arr, err := readJSONArray(path)
 		if err != nil {
@@ -56,15 +56,16 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 			if !ok {
 				return nil, nil, fmt.Errorf("--captures-file[%d]: must be a JSON object", i)
 			}
-			cap := retab.ExperimentDocumentCaptureRequest{}
+			cap := &retab.ExperimentDocumentCaptureRequest{}
 			if v, ok := obj["workflow_run_id"].(string); ok {
 				cap.WorkflowRunID = v
 			}
 			if cap.WorkflowRunID == "" {
 				return nil, nil, fmt.Errorf("--captures-file[%d]: workflow_run_id is required", i)
 			}
-			if v, ok := obj["step_id"].(string); ok {
-				cap.StepID = v
+			if v, ok := obj["step_id"].(string); ok && v != "" {
+				stepID := v
+				cap.StepID = &stepID
 			}
 			captures = append(captures, cap)
 		}
@@ -79,20 +80,22 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 			if !ok {
 				return nil, nil, fmt.Errorf("--documents-file[%d]: must be a JSON object", i)
 			}
-			doc := retab.ExplicitExperimentDocumentRequest{}
+			doc := &retab.ExplicitExperimentDocumentRequest{}
 			if v, ok := obj["handle_inputs"].(map[string]any); ok {
-				doc.HandleInputs = v
+				doc.HandleInputs = experimentHandleInputsFromMap(v)
 			}
 			if doc.HandleInputs == nil {
 				return nil, nil, fmt.Errorf("--documents-file[%d]: handle_inputs is required", i)
 			}
 			if v, ok := obj["provenance"].(map[string]any); ok {
 				prov := &retab.ExperimentDocumentProvenance{}
-				if s, ok := v["workflow_run_id"].(string); ok {
-					prov.WorkflowRunID = s
+				if s, ok := v["workflow_run_id"].(string); ok && s != "" {
+					runID := s
+					prov.WorkflowRunID = &runID
 				}
-				if s, ok := v["step_id"].(string); ok {
-					prov.StepID = s
+				if s, ok := v["step_id"].(string); ok && s != "" {
+					stepID := s
+					prov.StepID = &stepID
 				}
 				doc.Provenance = prov
 			}
@@ -100,6 +103,37 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 		}
 	}
 	return captures, explicit, nil
+}
+
+// experimentHandleInputsFromMap turns a parsed JSON object
+// ({"handle_name": <any JSON value>}) into the typed shape the SDK expects.
+// The wire shape carries an optional `type` discriminator on each value, but
+// the CLI's JSON descriptors have historically used the raw value form; both
+// shapes are normalized here so legacy descriptor files keep working.
+func experimentHandleInputsFromMap(raw map[string]any) map[string]*retab.JSONHandleInput {
+	if raw == nil {
+		return nil
+	}
+	out := make(map[string]*retab.JSONHandleInput, len(raw))
+	for key, value := range raw {
+		input := &retab.JSONHandleInput{}
+		if obj, ok := value.(map[string]any); ok {
+			if t, ok := obj["type"].(string); ok && t != "" {
+				typeCopy := t
+				input.Type = &typeCopy
+				if data, ok := obj["data"]; ok {
+					dataCopy := data
+					input.Data = &dataCopy
+				}
+				out[key] = input
+				continue
+			}
+		}
+		dataCopy := value
+		input.Data = &dataCopy
+		out[key] = input
+	}
+	return out
 }
 
 func validateExperimentMetricsView(view string) error {
@@ -164,16 +198,20 @@ After creation, create a run with
 		if err := validateMutuallyExclusiveChangedFlags(cmd, "captures-file", "documents-file"); err != nil {
 			return err
 		}
-		req := retab.CreateExperimentRequest{}
+		req := retab.WorkflowExperimentsCreateParams{}
 		req.WorkflowID = workflowID
-		req.BlockID = blockID
-		req.Name, _ = cmd.Flags().GetString("name")
-		trimmedName, err := validateExperimentName(req.Name)
+		req.BlockID = &blockID
+		rawName, _ := cmd.Flags().GetString("name")
+		trimmedName, err := validateExperimentName(rawName)
 		if err != nil {
 			return err
 		}
-		req.Name = trimmedName
-		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
+		req.Name = &trimmedName
+		if cmd.Flags().Changed("n-consensus") {
+			v, _ := cmd.Flags().GetInt("n-consensus")
+			n := retab.CreateExperimentRequestNConsensus(v)
+			req.NConsensus = &n
+		}
 		captures, explicit, err := parseExperimentDocs(cmd)
 		if err != nil {
 			return err
@@ -189,7 +227,7 @@ After creation, create a run with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Create(ctx, req)
+		result, err := client.WorkflowExperiments.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -212,7 +250,7 @@ blocks.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.List(ctx, args[0])
+		result, err := client.WorkflowExperiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
@@ -273,7 +311,7 @@ consensus count, recent run status.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Get(ctx, args[0])
+		result, err := client.WorkflowExperiments.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -301,18 +339,19 @@ previously-captured results for that experiment.`,
 			!cmd.Flags().Changed("captures-file") && !cmd.Flags().Changed("documents-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --name, --n-consensus, --captures-file, or --documents-file")
 		}
-		req := retab.UpdateExperimentRequest{}
-		req.Name, _ = cmd.Flags().GetString("name")
+		req := retab.WorkflowExperimentsUpdateParams{}
 		if cmd.Flags().Changed("name") {
-			trimmed, err := validateExperimentName(req.Name)
+			rawName, _ := cmd.Flags().GetString("name")
+			trimmed, err := validateExperimentName(rawName)
 			if err != nil {
 				return err
 			}
-			req.Name = trimmed
+			req.Name = &trimmed
 		}
 		if cmd.Flags().Changed("n-consensus") {
 			v, _ := cmd.Flags().GetInt("n-consensus")
-			req.NConsensus = &v
+			n := retab.UpdateExperimentRequestNConsensus(v)
+			req.NConsensus = &n
 		}
 		captures, explicit, err := parseExperimentDocs(cmd)
 		if err != nil {
@@ -326,7 +365,7 @@ previously-captured results for that experiment.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Update(ctx, args[0], req)
+		result, err := client.WorkflowExperiments.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -360,7 +399,7 @@ definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Experiments.Delete(ctx, args[0]); err != nil {
+		if err := client.WorkflowExperiments.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("experiment", args[0])

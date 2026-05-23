@@ -280,7 +280,7 @@ removed in a future release.`,
     --version ver_xxx --document start=./invoice.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		req := retab.CreateWorkflowRunRequest{WorkflowID: args[0]}
+		req := workflowRunCreateParams{WorkflowID: args[0]}
 		req.Version, _ = cmd.Flags().GetString("version")
 		docsFile, _ := cmd.Flags().GetString("documents-file")
 		if docsFile != "" {
@@ -375,7 +375,16 @@ removed in a future release.`,
 	}),
 }
 
-func workflowRunCreateRequestBody(request retab.CreateWorkflowRunRequest) (map[string]any, error) {
+type workflowRunCreateParams struct {
+	WorkflowID   string
+	Documents    map[string]any
+	JSONInputs   map[string]any
+	Version      string
+	RestartOf    string
+	ConfigSource string
+}
+
+func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]any, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("workflow_id is required")
 	}
@@ -485,7 +494,7 @@ func resolveWorkflowRunDocumentAliases(
 	if _, ok := documents["start"]; !ok {
 		return documents, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
+	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return nil, fmt.Errorf("resolve --document start alias: %w", err)
 	}
@@ -538,7 +547,7 @@ duration, cost, error info, final outputs. For per-block detail use
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Runs.Get(ctx, args[0])
+		result, err := client.WorkflowRuns.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -624,28 +633,55 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListWorkflowRunsParams{}
-		params.WorkflowID = effectiveID
-		params.Status, _ = cmd.Flags().GetString("status")
+		params := retab.WorkflowRunsListParams{}
+		if effectiveID != "" {
+			params.WorkflowID = ptr(effectiveID)
+		}
+		if v, _ := cmd.Flags().GetString("status"); v != "" {
+			status := retab.WorkflowRunsStatus(v)
+			params.Status = &status
+		}
 		statuses, err := normalizeEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues)
 		if err != nil {
 			return err
 		}
-		params.Statuses = statuses
-		params.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")
-		params.TriggerType, _ = cmd.Flags().GetString("trigger-type")
+		if len(statuses) > 0 {
+			joined := strings.Join(statuses, ",")
+			params.Statuses = &joined
+		}
+		if v, _ := cmd.Flags().GetString("exclude-status"); v != "" {
+			excludeStatus := retab.WorkflowRunsExcludeStatus(v)
+			params.ExcludeStatus = &excludeStatus
+		}
+		if v, _ := cmd.Flags().GetString("trigger-type"); v != "" {
+			triggerType := retab.WorkflowRunsTriggerType(v)
+			params.TriggerType = &triggerType
+		}
 		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 		if err != nil {
 			return err
 		}
-		params.TriggerTypes = triggerTypes
-		params.FromDate, _ = cmd.Flags().GetString("from-date")
-		params.ToDate, _ = cmd.Flags().GetString("to-date")
-		if err := validateDateRange("from-date", "to-date", params.FromDate, params.ToDate); err != nil {
+		if len(triggerTypes) > 0 {
+			joined := strings.Join(triggerTypes, ",")
+			params.TriggerTypes = &joined
+		}
+		fromDate, _ := cmd.Flags().GetString("from-date")
+		if fromDate != "" {
+			params.FromDate = ptr(fromDate)
+		}
+		toDate, _ := cmd.Flags().GetString("to-date")
+		if toDate != "" {
+			params.ToDate = ptr(toDate)
+		}
+		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
 			return err
 		}
-		params.Search, _ = cmd.Flags().GetString("search")
-		params.SortBy, _ = cmd.Flags().GetString("sort-by")
+		if v, _ := cmd.Flags().GetString("search"); v != "" {
+			params.Search = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
+			params.SortBy = ptr(v)
+		}
 		// `--fields` sparse-field projection is currently unsupported via
 		// the typed ``WorkflowRuns.List`` path; the matching projection
 		// route landed on a sibling endpoint. Honour the allowlist for
@@ -658,40 +694,56 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 			return err
 		}
 		_ = fields
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if params.Before != "" && params.After != "" {
+		before, _ := cmd.Flags().GetString("before")
+		after, _ := cmd.Flags().GetString("after")
+		if before != "" && after != "" {
 			return fmt.Errorf("--before and --after are mutually exclusive")
 		}
-		params.Limit, _ = cmd.Flags().GetInt("limit")
-		params.Order, _ = cmd.Flags().GetString("order")
-		if cmd.Flags().Changed("min-cost") {
-			v, _ := cmd.Flags().GetFloat64("min-cost")
-			params.MinCost = &v
+		if before != "" {
+			params.Before = ptr(before)
 		}
-		if cmd.Flags().Changed("max-cost") {
-			v, _ := cmd.Flags().GetFloat64("max-cost")
-			params.MaxCost = &v
+		if after != "" {
+			params.After = ptr(after)
 		}
-		// Reject impossible ranges before issuing the request — a silent empty
-		// result set on min > max is the most confusing failure mode for
-		// someone debugging a filter, especially when the server-side filter
-		// has been observed to silently ignore swapped bounds.
-		if params.MinCost != nil && params.MaxCost != nil && *params.MinCost > *params.MaxCost {
-			return fmt.Errorf("--min-cost (%g) cannot be greater than --max-cost (%g)", *params.MinCost, *params.MaxCost)
+		if v, _ := cmd.Flags().GetInt("limit"); v > 0 {
+			params.Limit = ptr(v)
 		}
+		if v, _ := cmd.Flags().GetString("order"); v != "" {
+			params.Order = ptr(v)
+		}
+		// `--min-cost`, `--max-cost`, `--min-duration`, `--max-duration` were
+		// available on the legacy SDK list params but are no longer projected
+		// onto the regenerated `WorkflowRunsListParams`. Keep the flag wiring
+		// so existing scripts don't fail, but only honour the duration filters
+		// against the typed shape — the cost filters drop silently until the
+		// SDK exposes them again.
+		var minDuration, maxDuration *int
 		if cmd.Flags().Changed("min-duration") {
 			v, _ := cmd.Flags().GetInt("min-duration")
-			params.MinDuration = &v
+			minDuration = &v
+			params.MinDurationMs = &v
 		}
 		if cmd.Flags().Changed("max-duration") {
 			v, _ := cmd.Flags().GetInt("max-duration")
-			params.MaxDuration = &v
+			maxDuration = &v
+			params.MaxDurationMs = &v
 		}
-		if params.MinDuration != nil && params.MaxDuration != nil && *params.MinDuration > *params.MaxDuration {
-			return fmt.Errorf("--min-duration (%d) cannot be greater than --max-duration (%d)", *params.MinDuration, *params.MaxDuration)
+		if minDuration != nil && maxDuration != nil && *minDuration > *maxDuration {
+			return fmt.Errorf("--min-duration (%d) cannot be greater than --max-duration (%d)", *minDuration, *maxDuration)
 		}
-		result, err := client.Workflows.Runs.List(ctx, &params)
+		var minCost, maxCost *float64
+		if cmd.Flags().Changed("min-cost") {
+			v, _ := cmd.Flags().GetFloat64("min-cost")
+			minCost = &v
+		}
+		if cmd.Flags().Changed("max-cost") {
+			v, _ := cmd.Flags().GetFloat64("max-cost")
+			maxCost = &v
+		}
+		if minCost != nil && maxCost != nil && *minCost > *maxCost {
+			return fmt.Errorf("--min-cost (%g) cannot be greater than --max-cost (%g)", *minCost, *maxCost)
+		}
+		result, err := client.WorkflowRuns.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -749,7 +801,7 @@ is not a terminal. Mirrors the contract of ` + "`workflows delete`" + `,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Runs.Delete(ctx, args[0]); err != nil {
+		if err := client.WorkflowRuns.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("run", args[0])
@@ -777,7 +829,11 @@ make the cancel idempotent if you may retry the request.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		commandID, _ := cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Runs.Cancel(ctx, args[0], retab.WorkflowRunCommandRequest{CommandID: commandID})
+		cancelParams := &retab.WorkflowRunsCancelParams{}
+		if commandID != "" {
+			cancelParams.Body = retab.CancelWorkflowRequest{CommandID: &commandID}
+		}
+		result, err := client.WorkflowRuns.Cancel(ctx, args[0], cancelParams)
 		if err != nil {
 			return err
 		}
@@ -788,11 +844,11 @@ make the cancel idempotent if you may retry the request.`,
 		// into a script can spot it. The JSON on stdout still carries
 		// the full ``cancellation_status`` field for programmatic
 		// consumers.
-		if result != nil && result.CancellationStatus != "" && result.CancellationStatus != "cancelled" {
+		if result != nil && result.CancellationStatus != nil && *result.CancellationStatus != retab.CancelWorkflowResponseCancellationStatusCancelled {
 			fmt.Fprintf(
 				os.Stderr,
 				"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error.\n",
-				result.CancellationStatus,
+				string(*result.CancellationStatus),
 				args[0],
 			)
 		}
@@ -879,27 +935,48 @@ also configurable.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.ExportWorkflowRunsRequest{}
+		req := retab.WorkflowRunsExportParams{}
 		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
-		req.ExportSource, _ = cmd.Flags().GetString("export-source")
+		if v, _ := cmd.Flags().GetString("export-source"); v != "" {
+			source := retab.WorkflowExportPayloadRequestExportSource(v)
+			req.ExportSource = &source
+		}
 		selectedRunIDs, err := nonBlankStringArrayFlag(cmd, "run-id")
 		if err != nil {
 			return err
 		}
 		req.SelectedRunIDs = selectedRunIDs
-		req.Status, _ = cmd.Flags().GetString("status")
-		req.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")
-		req.FromDate, _ = cmd.Flags().GetString("from-date")
-		req.ToDate, _ = cmd.Flags().GetString("to-date")
-		if err := validateDateRange("from-date", "to-date", req.FromDate, req.ToDate); err != nil {
+		if v, _ := cmd.Flags().GetString("status"); v != "" {
+			status := retab.WorkflowExportPayloadRequestStatus(v)
+			req.Status = &status
+		}
+		if v, _ := cmd.Flags().GetString("exclude-status"); v != "" {
+			excludeStatus := retab.WorkflowExportPayloadRequestExcludeStatus(v)
+			req.ExcludeStatus = &excludeStatus
+		}
+		fromDate, _ := cmd.Flags().GetString("from-date")
+		toDate, _ := cmd.Flags().GetString("to-date")
+		if fromDate != "" {
+			req.FromDate = ptr(fromDate)
+		}
+		if toDate != "" {
+			req.ToDate = ptr(toDate)
+		}
+		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
 			return err
 		}
 		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 		if err != nil {
 			return err
 		}
-		req.TriggerTypes = triggerTypes
+		if len(triggerTypes) > 0 {
+			typed := make([]retab.WorkflowExportPayloadRequestTriggerTypes, 0, len(triggerTypes))
+			for _, t := range triggerTypes {
+				typed = append(typed, retab.WorkflowExportPayloadRequestTriggerTypes(t))
+			}
+			req.TriggerTypes = typed
+		}
 		preferredColumns, err := nonBlankStringArrayFlag(cmd, "preferred-column")
 		if err != nil {
 			return err
@@ -913,23 +990,23 @@ also configurable.`,
 			if len([]rune(d)) != 1 {
 				return fmt.Errorf("--delimiter must be a single character")
 			}
-			req.Delimiter = d
+			req.Delimiter = &d
 		}
 		if cmd.Flags().Changed("line-delimiter") {
 			ld, _ := cmd.Flags().GetString("line-delimiter")
 			if ld == "" {
 				return fmt.Errorf("--line-delimiter must not be empty")
 			}
-			req.LineDelimiter = ld
+			req.LineDelimiter = &ld
 		}
 		if cmd.Flags().Changed("quote") {
 			q, _ := cmd.Flags().GetString("quote")
 			if len([]rune(q)) != 1 {
 				return fmt.Errorf("--quote must be a single character")
 			}
-			req.Quote = q
+			req.Quote = &q
 		}
-		result, err := client.Workflows.Runs.Export(ctx, req)
+		result, err := client.WorkflowRuns.Export(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -946,8 +1023,8 @@ also configurable.`,
 		}
 		if raw || outFormat == "table" || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
 			if result != nil {
-				_, err := os.Stdout.WriteString(result.CSVData)
-				if err == nil && !strings.HasSuffix(result.CSVData, "\n") {
+				_, err := os.Stdout.WriteString(result.CsvData)
+				if err == nil && !strings.HasSuffix(result.CsvData, "\n") {
 					_, err = os.Stdout.WriteString("\n")
 				}
 				return err
@@ -1084,13 +1161,13 @@ Paginate by passing the cursor from a previous response's
 		if err != nil {
 			return err
 		}
-		params, err := workflowStepsListParams(cmd)
+		params, err := workflowStepsListParams(cmd, args[0])
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Steps.List(ctx, args[0], params)
+		result, err := client.WorkflowSteps.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -1098,22 +1175,30 @@ Paginate by passing the cursor from a previous response's
 	}),
 }
 
-func workflowStepsListParams(cmd *cobra.Command) (*retab.ListWorkflowStepsParams, error) {
+func workflowStepsListParams(cmd *cobra.Command, runID string) (*retab.WorkflowStepsListParams, error) {
+	params := &retab.WorkflowStepsListParams{}
+	if runID != "" {
+		params.RunID = ptr(runID)
+	}
 	before, _ := cmd.Flags().GetString("before")
 	after, _ := cmd.Flags().GetString("after")
-	limit := 0
+	if before != "" {
+		params.Before = ptr(before)
+	}
+	if after != "" {
+		params.After = ptr(after)
+	}
 	if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
 		raw := f.Value.String()
 		parsed, err := strconv.Atoi(raw)
 		if err != nil {
 			return nil, fmt.Errorf("invalid --limit %q", raw)
 		}
-		limit = parsed
+		if parsed > 0 {
+			params.Limit = ptr(parsed)
+		}
 	}
-	if before == "" && after == "" && limit == 0 {
-		return nil, nil
-	}
-	return &retab.ListWorkflowStepsParams{Before: before, After: after, Limit: limit}, nil
+	return params, nil
 }
 
 var workflowsStepsGetCmd = &cobra.Command{
@@ -1140,7 +1225,7 @@ correlate against the step's block config.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Steps.Get(ctx, args[0])
+		result, err := client.WorkflowSteps.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}

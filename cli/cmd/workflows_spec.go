@@ -17,14 +17,14 @@ import (
 // workflows spec — declarative (YAML) management for workflows.
 //
 // Mirrors the four methods on `WorkflowSpecService` in the Go SDK:
-// validate, plan, apply (POST a YAML body), and export (GET an existing
+// validate, plan, apply (POST a YAML body), and get (GET an existing
 // workflow back to YAML by id). Aimed at the declarative workflow flow:
 // edit YAML in your repo, plan, apply, commit.
 
 var workflowsSpecCmd = &cobra.Command{
 	Use:   "spec",
 	Short: "Manage workflows declaratively from YAML",
-	Long: `Validate, plan, apply, and export YAML workflow specs.
+	Long: `Validate, plan, apply, and get YAML workflow specs.
 
 A spec is a single YAML file describing a workflow's blocks, edges, and
 metadata. The four verbs form a declarative workflow loop:
@@ -32,7 +32,7 @@ metadata. The four verbs form a declarative workflow loop:
   validate   parse + type-check the spec, no server changes
   plan       diff the spec against the live workflow without applying
   apply      create or update the workflow from the spec
-  export     dump a live workflow's spec back to YAML
+  get        dump a live workflow's spec back to YAML
 
 The three POST verbs read YAML from a file path, or from stdin when the
 path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.
@@ -58,7 +58,7 @@ Spec shape (minimum required keys):
 to decide whether to create or update; the same id makes ` + "`apply`" + `
 idempotent.`,
 	Example: `  # Round-trip a workflow through git
-  retab workflows spec export wf_abc123 > workflow.yaml
+  retab workflows spec get wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml
   retab workflows spec validate workflow.yaml
   retab workflows spec plan     workflow.yaml
@@ -113,11 +113,11 @@ of main.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Spec.Validate(ctx, yaml)
+		result, err := client.WorkflowSpecs.Validate(ctx, &retab.WorkflowSpecsValidateParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
-		if err := failIfSpecValidationInvalid(result); err != nil {
+		if err := failIfSpecValidationInvalid(validationResponseAsResource(result)); err != nil {
 			return err
 		}
 		return printResult(cmd, result)
@@ -146,11 +146,11 @@ Plan is read-only — safe to run on production specs. Pair it with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Spec.Plan(ctx, yaml)
+		result, err := client.WorkflowSpecs.Plan(ctx, &retab.WorkflowSpecsPlanParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
-		if err := failIfSpecValidationInvalid(result); err != nil {
+		if err := failIfSpecValidationInvalid(planResponseAsResource(result)); err != nil {
 			return err
 		}
 		return printResult(cmd, result)
@@ -197,21 +197,22 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		// shape, but only AFTER applying — by then the destroy already
 		// happened. The only safe place to inspect it is from a prior
 		// plan call.
-		plan, err := client.Workflows.Spec.Plan(ctx, yaml)
+		plan, err := client.WorkflowSpecs.Plan(ctx, &retab.WorkflowSpecsPlanParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
-		if err := failIfSpecValidationInvalid(plan); err != nil {
+		planAsResource := planResponseAsResource(plan)
+		if err := failIfSpecValidationInvalid(planAsResource); err != nil {
 			return err
 		}
-		if err := confirmDestructiveApply(cmd, plan); err != nil {
+		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Spec.Apply(ctx, yaml)
+		result, err := client.WorkflowSpecs.Apply(ctx, &retab.WorkflowSpecsApplyParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
-		if err := failIfSpecValidationInvalid(result); err != nil {
+		if err := failIfSpecValidationInvalid(applyResponseAsResource(result)); err != nil {
 			return err
 		}
 		return printResult(cmd, result)
@@ -327,8 +328,9 @@ func planDestroyCountAndResources(plan *retab.Resource) (int, []string) {
 }
 
 var workflowsSpecExportCmd = &cobra.Command{
-	Use:   "export <workflow-id>",
-	Short: "Dump a live workflow's spec back to YAML",
+	Use:     "get <workflow-id>",
+	Aliases: []string{"export"},
+	Short:   "Dump a live workflow's spec back to YAML",
 	Long: `Fetch the YAML spec representing the workflow's current
 state. Useful for round-tripping a workflow created in the dashboard
 back into a git-managed YAML file, or for diffing two environments.
@@ -337,8 +339,8 @@ By default, the raw YAML body is written to stdout so the command can
 be redirected straight into a file. Pass ` + "`--format json`" + ` to see
 the full server response object (handy for piping into ` + "`jq`" + ` to
 pull out other fields).`,
-	Example: `  retab workflows spec export wf_abc123 > workflow.yaml
-  retab workflows spec export wf_abc123 --format json | jq .`,
+	Example: `  retab workflows spec get wf_abc123 > workflow.yaml
+  retab workflows spec get wf_abc123 --format json | jq .`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		format, err := cmd.Flags().GetString("format")
@@ -361,11 +363,11 @@ pull out other fields).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Spec.Export(ctx, args[0])
+		result, err := client.WorkflowSpecs.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
-		return writeSpecExport(os.Stdout, result, format)
+		return writeSpecExport(os.Stdout, exportResponseAsResource(result), format)
 	}),
 }
 
@@ -443,6 +445,43 @@ func specValidationIsInvalid(result *retab.Resource) bool {
 	}
 	isValid, ok := diagnostics["is_valid"].(bool)
 	return ok && !isValid
+}
+
+// validationResponseAsResource round-trips a typed validation response
+// through JSON to produce an untyped map shape. The validation and
+// destructive-confirmation helpers walk the response by string keys
+// (`is_valid`, `diagnostics`, `summary`, `resource_changes`) so they keep
+// working with whatever the server actually returns — including new
+// fields the typed struct doesn't know about yet.
+func validationResponseAsResource(r *retab.DeclarativeValidationResponse) *retab.Resource {
+	return typedResponseAsResource(r)
+}
+
+func planResponseAsResource(r *retab.DeclarativePlanResponse) *retab.Resource {
+	return typedResponseAsResource(r)
+}
+
+func applyResponseAsResource(r *retab.DeclarativeApplyResponse) *retab.Resource {
+	return typedResponseAsResource(r)
+}
+
+func exportResponseAsResource(r *retab.DeclarativeExportResponse) *retab.Resource {
+	return typedResponseAsResource(r)
+}
+
+func typedResponseAsResource(v any) *retab.Resource {
+	if v == nil {
+		return nil
+	}
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return nil
+	}
+	out := retab.Resource{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil
+	}
+	return &out
 }
 
 // translateSpecAPIError catches the most common failure mode of the spec

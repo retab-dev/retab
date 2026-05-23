@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -73,15 +74,15 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.EditCreateRequest{
+		req := retab.EditsCreateParams{
 			Instructions: instructions,
 			Document:     doc,
-			TemplateID:   templateID,
-			Model:        model,
-			Color:        color,
-			BustCache:    bustCache,
+			TemplateID:   ptr(templateID),
+			Model:        ptr(model),
+			Config:       &retab.EditConfig{Color: color},
+			BustCache:    ptr(bustCache),
 		}
-		result, err := client.Edits.Create(ctx, req)
+		result, err := client.Edits.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -137,8 +138,10 @@ from a specific template. Page by edit id with ` + "`--before`" + ` /
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListEditsParams{ListParams: collectListParams(cmd)}
-		params.TemplateID, _ = cmd.Flags().GetString("template-id")
+		params := retab.EditsListParams{PaginationParams: collectListParams(cmd)}
+		if templateID, _ := cmd.Flags().GetString("template-id"); templateID != "" {
+			params.TemplateID = ptr(templateID)
+		}
 		result, err := client.Edits.List(ctx, &params)
 		if err != nil {
 			return err
@@ -265,7 +268,7 @@ to ` + "`retab edits create`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Edits.Templates.Create(ctx, retab.EditTemplateCreateRequest{
+		result, err := client.EditTemplates.Create(ctx, &retab.EditTemplatesCreateParams{
 			Name:       name,
 			Document:   doc,
 			FormFields: fields,
@@ -294,7 +297,7 @@ anchor document.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Edits.Templates.Get(ctx, args[0])
+		result, err := client.EditTemplates.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -321,9 +324,11 @@ Filter by name substring with ` + "`--name`" + `. Page by template id with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListEditTemplatesParams{ListParams: collectListParams(cmd)}
-		params.Name, _ = cmd.Flags().GetString("name")
-		result, err := client.Edits.Templates.List(ctx, &params)
+		params := retab.EditTemplatesListParams{PaginationParams: collectListParams(cmd)}
+		if name, _ := cmd.Flags().GetString("name"); name != "" {
+			params.Name = ptr(name)
+		}
+		result, err := client.EditTemplates.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -356,7 +361,7 @@ template are not retroactively re-rendered.`,
 		if !cmd.Flags().Changed("name") && formFieldsPath == "" {
 			return fmt.Errorf("at least one of --name or --form-fields-file is required")
 		}
-		var req retab.EditTemplateUpdateRequest
+		var req retab.EditTemplatesUpdateParams
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
 			if err := validateEditTemplateName(v); err != nil {
@@ -381,7 +386,7 @@ template are not retroactively re-rendered.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Edits.Templates.Update(ctx, args[0], req)
+		result, err := client.EditTemplates.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -418,7 +423,7 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Edits.Templates.Delete(ctx, args[0]); err != nil {
+		if err := client.EditTemplates.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("edit template", args[0])
@@ -426,8 +431,8 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
-func formFieldsFromJSONArray(arr []any) ([]retab.FormField, error) {
-	fields := make([]retab.FormField, 0, len(arr))
+func formFieldsFromJSONArray(arr []any) ([]*retab.FormField, error) {
+	fields := make([]*retab.FormField, 0, len(arr))
 	for i, item := range arr {
 		obj, ok := item.(map[string]any)
 		if !ok {
@@ -436,7 +441,15 @@ func formFieldsFromJSONArray(arr []any) ([]retab.FormField, error) {
 		if err := validateFormFieldObject(i, obj); err != nil {
 			return nil, err
 		}
-		fields = append(fields, retab.FormField(obj))
+		raw, err := json.Marshal(obj)
+		if err != nil {
+			return nil, fmt.Errorf("form_fields[%d]: %w", i, err)
+		}
+		var field retab.FormField
+		if err := json.Unmarshal(raw, &field); err != nil {
+			return nil, fmt.Errorf("form_fields[%d]: %w", i, err)
+		}
+		fields = append(fields, &field)
 	}
 	return fields, nil
 }

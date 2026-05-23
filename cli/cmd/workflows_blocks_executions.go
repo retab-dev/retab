@@ -56,14 +56,17 @@ step.`,
 		if err := validateBlockExecutionNConsensus(nConsensus); err != nil {
 			return err
 		}
-		request := retab.CreateWorkflowBlockExecutionRequest{RunID: args[0]}
+		request := retab.WorkflowBlockExecutionsCreateParams{RunID: args[0]}
 		request.BlockID, _ = cmd.Flags().GetString("block-id")
-		request.StepID, _ = cmd.Flags().GetString("step-id")
-		request.NConsensus = nConsensus
+		if stepID, _ := cmd.Flags().GetString("step-id"); stepID != "" {
+			request.StepID = ptr(stepID)
+		}
+		if nConsensus != 0 {
+			request.NConsensus = ptr(nConsensus)
+		}
 		noCheckEligibility, _ := cmd.Flags().GetBool("no-check-eligibility")
 		if noCheckEligibility {
-			checkEligibility := false
-			request.CheckEligibility = &checkEligibility
+			request.CheckEligibility = ptr(false)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -71,7 +74,7 @@ step.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.Executions.Create(ctx, request)
+		result, err := client.WorkflowBlockExecutions.Create(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -99,10 +102,12 @@ block execution history should be returned.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListWorkflowBlockExecutionsParams{RunID: args[0]}
+		params := retab.WorkflowBlockExecutionsListParams{
+			PaginationParams: collectListParams(cmd),
+			RunID:            args[0],
+		}
 		params.BlockID, _ = cmd.Flags().GetString("block-id")
-		params.Limit, _ = cmd.Flags().GetInt("limit")
-		result, err := client.Workflows.Blocks.Executions.List(ctx, params)
+		result, err := client.WorkflowBlockExecutions.List(ctx, &params)
 		if err != nil {
 			return err
 		}

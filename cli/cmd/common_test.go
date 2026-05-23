@@ -683,11 +683,9 @@ func TestCollectListParams(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := collectListParams(cmd)
-	if got.Before != "b1" || got.After != "a1" || got.Limit != 42 || got.Order != "asc" || got.Filename != "doc.pdf" {
+	if got.Before == nil || *got.Before != "b1" || got.After == nil || *got.After != "a1" ||
+		got.Limit == nil || *got.Limit != 42 || got.Order == nil || *got.Order != "asc" {
 		t.Fatalf("got=%+v", got)
-	}
-	if got.FromDate == nil || got.FromDate.Year() != 2024 {
-		t.Fatalf("from_date=%v", got.FromDate)
 	}
 }
 

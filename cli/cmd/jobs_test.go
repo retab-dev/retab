@@ -553,8 +553,9 @@ func TestJobWaitTerminalErrorStatuses(t *testing.T) {
 		{status: "in_progress", wantErr: false},
 	} {
 		t.Run(tc.status, func(t *testing.T) {
-			job := map[string]any{"id": "job_123", "status": tc.status}
-			err := jobWaitTerminalError((*retab.Job)(&job))
+			status := retab.JobStatus(tc.status)
+			job := retab.Job{ID: ptr("job_123"), Status: &status}
+			err := jobWaitTerminalError(&job)
 			if tc.wantErr && err == nil {
 				t.Fatalf("expected error for status %q", tc.status)
 			}

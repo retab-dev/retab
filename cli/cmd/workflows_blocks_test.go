@@ -92,8 +92,8 @@ func TestParseBlockCreateAcceptsOmittedID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("omitted id should be accepted, got error: %v", err)
 	}
-	if req.ID != "" {
-		t.Fatalf("expected ID to remain empty so server's default_factory fires, got %q", req.ID)
+	if req.ID != nil {
+		t.Fatalf("expected ID to remain nil so server's default_factory fires, got %q", *req.ID)
 	}
 	if req.Type != "extract" {
 		t.Fatalf("expected type to round-trip, got %q", req.Type)

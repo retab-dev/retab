@@ -11,8 +11,6 @@ import (
 var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 	// SDK conveniences used by CLI commands but not part of the generated
 	// public API reference.
-	"DELETE /v1/files/{file_id}":  true,
-	"POST /v1/extractions/stream": true,
 }
 
 var approvedCLINonReferenceJobEndpoints = map[string]bool{
@@ -144,26 +142,23 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Edits.List": {
 			{method: http.MethodGet, path: "/edits"},
 		},
-		"Edits.Templates.Create": {
+		"EditTemplates.Create": {
 			{method: http.MethodPost, path: "/edits/templates"},
 		},
-		"Edits.Templates.Delete": {
+		"EditTemplates.Delete": {
 			{method: http.MethodDelete, path: "/edits/templates/{template_id}"},
 		},
-		"Edits.Templates.Get": {
+		"EditTemplates.Get": {
 			{method: http.MethodGet, path: "/edits/templates/{template_id}"},
 		},
-		"Edits.Templates.List": {
+		"EditTemplates.List": {
 			{method: http.MethodGet, path: "/edits/templates"},
 		},
-		"Edits.Templates.Update": {
+		"EditTemplates.Update": {
 			{method: http.MethodPatch, path: "/edits/templates/{template_id}"},
 		},
 		"Extractions.Create": {
 			{method: http.MethodPost, path: "/extractions"},
-		},
-		"Extractions.CreateStream": {
-			{method: http.MethodPost, path: "/extractions/stream"},
 		},
 		"Extractions.Delete": {
 			{method: http.MethodDelete, path: "/extractions/{extraction_id}"},
@@ -183,9 +178,6 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Files.CreateUpload": {
 			{method: http.MethodPost, path: "/files/upload"},
 		},
-		"Files.Delete": {
-			{method: http.MethodDelete, path: "/files/{file_id}"},
-		},
 		"Files.Get": {
 			{method: http.MethodGet, path: "/files/{file_id}"},
 		},
@@ -194,10 +186,6 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Files.List": {
 			{method: http.MethodGet, path: "/files"},
-		},
-		"Files.Upload": {
-			{method: http.MethodPost, path: "/files/upload"},
-			{method: http.MethodPost, path: "/files/upload/{file_id}/complete"},
 		},
 		"Jobs.Cancel": {
 			{method: http.MethodPost, path: "/jobs/{job_id}/cancel"},
@@ -208,13 +196,10 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Jobs.List": {
 			{method: http.MethodGet, path: "/jobs"},
 		},
-		"Jobs.Retrieve": {
-			{method: http.MethodGet, path: "/jobs/{job_id}"},
-		},
 		"Jobs.Retry": {
 			{method: http.MethodPost, path: "/jobs/{job_id}/retry"},
 		},
-		"Jobs.WaitForCompletion": {
+		"Jobs.Get": {
 			{method: http.MethodGet, path: "/jobs/{job_id}"},
 		},
 		"Parses.Create": {
@@ -260,7 +245,7 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 }
 
 func extractNonWorkflowCLIClientCalls(source string) []string {
-	callPattern := regexp.MustCompile(`client\.(Classifications|Edits|Extractions|Files|Jobs|Parses|Partitions|Schemas|Splits)((?:\.[A-Za-z]+)+)\(`)
+	callPattern := regexp.MustCompile(`client\.(Classifications|Edits|EditTemplates|Extractions|Files|Jobs|Parses|Partitions|Schemas|Splits)((?:\.[A-Za-z]+)+)\(`)
 	seen := map[string]bool{}
 	for _, match := range callPattern.FindAllStringSubmatch(source, -1) {
 		seen[match[1]+match[2]] = true
