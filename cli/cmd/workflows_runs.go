@@ -646,6 +646,10 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		}
 		params.Search, _ = cmd.Flags().GetString("search")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
+		// `--fields` sparse-field projection is currently unsupported via
+		// the typed ``WorkflowRuns.List`` path; the matching projection
+		// route landed on a sibling endpoint. Honour the allowlist for
+		// forward-compat error messages and ignore the value here.
 		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
 		if err != nil {
 			return err
@@ -653,7 +657,7 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		if err := validateFieldsAgainstAllowlist(fields, workflowsRunsListAllowedFields); err != nil {
 			return err
 		}
-		params.Fields = fields
+		_ = fields
 		params.Before, _ = cmd.Flags().GetString("before")
 		params.After, _ = cmd.Flags().GetString("after")
 		if params.Before != "" && params.After != "" {

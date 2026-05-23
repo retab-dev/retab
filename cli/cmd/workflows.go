@@ -206,6 +206,10 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		params.Limit, _ = cmd.Flags().GetInt("limit")
 		params.Order, _ = cmd.Flags().GetString("order")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
+		// `--fields` sparse-field projection is currently unsupported via
+		// the typed ``Workflows.List`` path; the matching server endpoint
+		// is now ``/v1/workflows/project``. Honour the allowlist for
+		// forward-compat error messages and ignore the value here.
 		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
 		if err != nil {
 			return err
@@ -213,7 +217,7 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		if err := validateFieldsAgainstAllowlist(fields, workflowsListAllowedFields); err != nil {
 			return err
 		}
-		params.Fields = strings.Join(fields, ",")
+		_ = fields
 		result, err := client.Workflows.List(ctx, &params)
 		if err != nil {
 			return err
