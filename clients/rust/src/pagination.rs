@@ -18,10 +18,8 @@ pub(crate) struct PageEnvelope<T> {
     pub list_metadata: ListMetadata,
 }
 
-type FetchNext<T> = Box<
-    dyn FnMut(String) -> Pin<Box<dyn Future<Output = Result<PageEnvelope<T>, Error>> + Send>>
-        + Send,
->;
+type PageFuture<T> = Pin<Box<dyn Future<Output = Result<PageEnvelope<T>, Error>> + Send>>;
+type FetchNext<T> = Box<dyn FnMut(String) -> PageFuture<T> + Send>;
 
 /// Cursor-paginated list returned by every generated `list` method.
 ///
@@ -32,7 +30,7 @@ pub struct PaginatedList<T> {
     pub data: Vec<T>,
     pub list_metadata: ListMetadata,
     fetch_next: Option<FetchNext<T>>,
-    pending: Option<Pin<Box<dyn Future<Output = Result<PageEnvelope<T>, Error>> + Send>>>,
+    pending: Option<PageFuture<T>>,
 }
 
 impl<T> std::fmt::Debug for PaginatedList<T>

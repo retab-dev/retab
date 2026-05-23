@@ -13,7 +13,7 @@ pub fn encode_query<T: Serialize + ?Sized>(value: &T) -> Result<String, Error> {
         .map_err(|e| Error::Builder(format!("query encode failed: {e}")))
 }
 
-pub fn serialize_comma_separated<S, T>(items: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_comma_separated<S, T>(items: &[T], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
     T: std::fmt::Display,

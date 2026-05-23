@@ -6,6 +6,7 @@
 
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::useless_conversion)]
+#![allow(clippy::doc_lazy_continuation)]
 
 pub mod client;
 pub mod enums;
