@@ -35,13 +35,15 @@ class WorkflowStepsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_run_step');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowSteps()->get('test_step_id');
+        $result = $client->workflowSteps()->get('test_step_id', runId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowRunStep::class, $result);
         $this->assertSame($fixture['block_id'], $result->blockId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/steps/test_step_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['run_id']);
     }
 
     public function testPaginationBoundary(): void

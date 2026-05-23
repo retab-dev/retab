@@ -13,11 +13,11 @@ class FilesTest extends TestCase
 {
     use TestHelper;
 
-    public function testUpload(): void
+    public function testCreateUpload(): void
     {
         $fixture = $this->loadFixture('create_upload_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->files()->upload(filename: 'test_value', sizeBytes: 1);
+        $result = $client->files()->createUpload(filename: 'test_value', sizeBytes: 1);
         $this->assertInstanceOf(\Retab\Resource\CreateUploadResponse::class, $result);
         $this->assertSame($fixture['fileId'], $result->fileId);
         $this->assertIsArray($result->toArray());

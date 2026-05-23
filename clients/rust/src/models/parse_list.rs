@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParseList {
-    pub data: Vec<Parse>,
-    pub list_metadata: ListMetadata,
-}
-impl ParseList {
-    /// Construct a new `ParseList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<Parse>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type ParseList = crate::pagination::PaginatedList<Parse>;

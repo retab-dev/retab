@@ -121,3 +121,76 @@ impl From<String> for MimeData {
         s.as_str().into()
     }
 }
+
+// ── MimeDataInput ergonomics ───────────────────────────────────────────────
+//
+// The spec's `MIMEDataInput` schema (used in workflow run documents and a
+// handful of upload routes) is a sibling of `MimeData` — same wire purpose
+// but a different shape: `{filename, content?: base64, url?, mime_type?}`
+// instead of `{filename, url: data-url}`. The generator emits it as a plain
+// struct under `crate::models::MimeDataInput`. To save callers from hand-
+// building the base64 / mime-guess / Url plumbing every time, we provide
+// the same `From<...>` ergonomic surface here as we do for `MimeData`.
+
+impl From<PathBuf> for crate::models::MimeDataInput {
+    fn from(path: PathBuf) -> Self {
+        let filename = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("document")
+            .to_string();
+        let bytes = std::fs::read(&path).unwrap_or_default();
+        let mime = mime_guess::from_path(&path)
+            .first_or_octet_stream()
+            .to_string();
+        crate::models::MimeDataInput {
+            filename,
+            content: Some(base64::engine::general_purpose::STANDARD.encode(&bytes)),
+            url: None,
+            mime_type: Some(mime),
+        }
+    }
+}
+
+impl From<&Path> for crate::models::MimeDataInput {
+    fn from(p: &Path) -> Self {
+        PathBuf::from(p).into()
+    }
+}
+
+impl From<Vec<u8>> for crate::models::MimeDataInput {
+    fn from(bytes: Vec<u8>) -> Self {
+        let mime = infer::get(&bytes)
+            .map(|t| t.mime_type().to_string())
+            .unwrap_or_else(|| "application/octet-stream".to_string());
+        crate::models::MimeDataInput {
+            filename: "document".to_string(),
+            content: Some(base64::engine::general_purpose::STANDARD.encode(&bytes)),
+            url: None,
+            mime_type: Some(mime),
+        }
+    }
+}
+
+impl From<&[u8]> for crate::models::MimeDataInput {
+    fn from(bytes: &[u8]) -> Self {
+        bytes.to_vec().into()
+    }
+}
+
+impl From<url::Url> for crate::models::MimeDataInput {
+    fn from(u: url::Url) -> Self {
+        let filename = u
+            .path_segments()
+            .and_then(|s| s.last())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("document")
+            .to_string();
+        crate::models::MimeDataInput {
+            filename,
+            content: None,
+            url: Some(u.to_string()),
+            mime_type: None,
+        }
+    }
+}

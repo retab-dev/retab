@@ -16,7 +16,7 @@ module Retab
         after: T.nilable(String),
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::ReviewVersion])
+      ).returns(Retab::PaginatedList[Retab::ReviewVersion])
     end
     def list(review_id:, before:, after:, limit:, request_options:); end
 

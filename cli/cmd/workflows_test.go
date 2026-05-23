@@ -18,7 +18,7 @@ import (
 
 // isEffectivelyEmptyDraft is the pure shape predicate that decides whether
 // a draft warrants the empty-workflow warning. Pin every interesting
-// shape — fully empty, single start, single non-start, multi-block —
+// shape — fully empty, single start_document, single non-start, multi-block —
 // so a future refactor can't silently change behaviour.
 func TestIsEffectivelyEmptyDraft(t *testing.T) {
 	cases := []struct {
@@ -28,9 +28,9 @@ func TestIsEffectivelyEmptyDraft(t *testing.T) {
 	}{
 		{name: "no blocks", blocks: nil, want: true},
 		{name: "empty slice", blocks: []retab.WorkflowBlock{}, want: true},
-		{name: "single start_document block — freshly-created shape", blocks: []retab.WorkflowBlock{{Type: "start"}}, want: true},
+		{name: "single start_document block — freshly-created shape", blocks: []retab.WorkflowBlock{{Type: "start_document"}}, want: true},
 		{name: "single non-start_document block", blocks: []retab.WorkflowBlock{{Type: "extract"}}, want: false},
-		{name: "two blocks", blocks: []retab.WorkflowBlock{{Type: "start"}, {Type: "extract"}}, want: false},
+		{name: "two blocks", blocks: []retab.WorkflowBlock{{Type: "start_document"}, {Type: "extract"}}, want: false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

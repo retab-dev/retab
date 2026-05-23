@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-23T11:42:56.880Z",
+  "generatedAt": "2026-05-23T14:58:06.864Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -83,6 +83,7 @@
     "lib/retab/jobs/job_response.rb",
     "lib/retab/jobs/job_warning.rb",
     "lib/retab/mime.rb",
+    "lib/retab/paginated_list.rb",
     "lib/retab/parses.rb",
     "lib/retab/parses/parse.rb",
     "lib/retab/parses/parse_output.rb",
@@ -135,6 +136,7 @@
     "lib/retab/types/experiment_run_block_type.rb",
     "lib/retab/types/experiment_run_metrics_view.rb",
     "lib/retab/types/experiment_run_n_consensus.rb",
+    "lib/retab/types/experiment_run_results_order.rb",
     "lib/retab/types/experiment_runs_order.rb",
     "lib/retab/types/experiment_schema_drift_status.rb",
     "lib/retab/types/experiment_summary_metrics_response_block_type.rb",
@@ -194,6 +196,7 @@
     "lib/retab/types/workflow_runs_status.rb",
     "lib/retab/types/workflow_runs_trigger_type.rb",
     "lib/retab/types/workflow_test_result_verdict.rb",
+    "lib/retab/types/workflow_test_run_results_order.rb",
     "lib/retab/types/workflow_test_runs_order.rb",
     "lib/retab/types/workflow_test_schema_drift.rb",
     "lib/retab/types/workflow_tests_order.rb",
@@ -775,7 +778,7 @@
       "service": "splits"
     },
     "POST /v1/files/upload": {
-      "sdkMethod": "upload",
+      "sdkMethod": "create_upload",
       "service": "files"
     },
     "POST /v1/files/upload/{file_id}/complete": {

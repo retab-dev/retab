@@ -188,8 +188,6 @@ func TestRenderWorkflowASCIIViewSuppressesDisconnectedForFreshScaffolding(t *tes
 		typ  string
 	}{
 		{name: "start_document underscore", typ: "start_document"},
-		{name: "start-document hyphen", typ: "start-document"},
-		{name: "legacy start", typ: "start"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

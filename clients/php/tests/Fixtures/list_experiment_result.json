@@ -1,0 +1,36 @@
+{
+  "data": [
+    {
+      "id": "01234",
+      "run_id": "run_id_01234",
+      "experiment_id": "experiment_id_01234",
+      "document_id": "document_id_01234",
+      "lifecycle": {
+        "status": "pending"
+      },
+      "timing": {
+        "created_at": "2023-01-01T00:00:00.000Z",
+        "started_at": "2023-01-01T00:00:00.000Z",
+        "completed_at": "2023-01-01T00:00:00.000Z",
+        "duration_ms": 1
+      },
+      "block_type": "extract",
+      "handle_inputs": {
+        "key": {
+          "type": "json",
+          "data": {}
+        }
+      },
+      "artifact": {
+        "operation": "extraction",
+        "id": "01234"
+      },
+      "attempt": 1,
+      "is_placeholder": true
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}

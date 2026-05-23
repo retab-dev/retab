@@ -21,7 +21,7 @@ module Retab
         after: T.nilable(String),
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::Review])
+      ).returns(Retab::PaginatedList[Retab::Review])
     end
     def list(workflow_id:, run_id:, block_id:, step_id:, iteration_key:, decision_status:, before:, after:, limit:, request_options:); end
 

@@ -12,10 +12,14 @@ module Retab
     sig do
       params(
         run_id: String,
+        before: T.nilable(String),
+        after: T.nilable(String),
+        limit: T.nilable(Integer),
+        order: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::WorkflowTestResult])
+      ).returns(Retab::PaginatedList[Retab::WorkflowTestResult])
     end
-    def list(run_id:, request_options:); end
+    def list(run_id:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

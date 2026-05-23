@@ -77,7 +77,35 @@ namespace Retab
                 RequestOptions = requestOptions,
             }, cancellationToken);
 
-        // ── Auto-paging ─────────────────────────────────────────────────
+        // ── Pagination ─────────────────────────────────────────────────
+
+        protected async Task<PaginatedList<T>> FetchPageAsync<T>(
+            string path,
+            ListOptions? options,
+            string? httpBearer,
+            RequestOptions? requestOptions,
+            CancellationToken cancellationToken)
+        {
+            var request = new RetabRequest
+            {
+                Method = HttpMethod.Get,
+                Path = path,
+                Options = options,
+                AccessToken = httpBearer,
+                RequestOptions = requestOptions,
+            };
+
+            var page = await this.Client.MakeAPIRequest<PaginatedList<T>>(request, cancellationToken).ConfigureAwait(false)
+                ?? new PaginatedList<T>();
+
+            page.FetchNextPage = (after, ct) =>
+            {
+                var nextOptions = CloneOptionsForNextPage(options, after);
+                return this.FetchPageAsync<T>(path, nextOptions, httpBearer, requestOptions, ct);
+            };
+
+            return page;
+        }
 
         protected async IAsyncEnumerable<T> ListAutoPagingAsync<T>(
             string path,
@@ -85,22 +113,29 @@ namespace Retab
             RequestOptions? requestOptions,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var current = await this.GetAsync<RetabList<T>>(path, options, requestOptions, cancellationToken).ConfigureAwait(false);
-            while (current != null)
+            var page = await this.FetchPageAsync<T>(path, options, null, requestOptions, cancellationToken).ConfigureAwait(false);
+            await foreach (var item in page.AutoPagingIterAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (current.Data != null)
-                {
-                    foreach (var item in current.Data) yield return item;
-                }
-                var after = current.ListMetadata?.After;
-                if (string.IsNullOrEmpty(after)) yield break;
-                var nextOptions = options ?? new RetabListOptions();
-                nextOptions.After = after;
-                current = await this.GetAsync<RetabList<T>>(path, nextOptions, requestOptions, cancellationToken).ConfigureAwait(false);
+                yield return item;
             }
         }
 
-        /// <summary>Concrete <see cref="ListOptions"/> the auto-paging helper instantiates when callers pass null.</summary>
+        private static ListOptions CloneOptionsForNextPage(ListOptions? source, string after)
+        {
+            if (source == null)
+            {
+                return new RetabListOptions { After = after };
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(source, source.GetType(), Retab.JsonOptions);
+            var clone = (ListOptions?)System.Text.Json.JsonSerializer.Deserialize(json, source.GetType(), Retab.JsonOptions)
+                ?? new RetabListOptions();
+            clone.After = after;
+            clone.Before = null;
+            return clone;
+        }
+
+        /// <summary>Concrete <see cref="ListOptions"/> the pagination helper instantiates when callers pass null.</summary>
         private sealed class RetabListOptions : ListOptions { }
     }
 }

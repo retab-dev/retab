@@ -19,7 +19,7 @@ module Retab
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::Parse])
+      ).returns(Retab::PaginatedList[Retab::Parse])
     end
     def list(before:, after:, limit:, order:, filename:, from_date:, to_date:, request_options:); end
 

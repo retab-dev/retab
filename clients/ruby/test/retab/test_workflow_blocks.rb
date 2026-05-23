@@ -15,7 +15,13 @@ class WorkflowBlocksTest < Minitest::Test
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/blocks(\?|\z)})
       .to_return(body: '{"data": [], "list_metadata": {}}', status: 200)
     result = @client.workflow_blocks.list(workflow_id: "stub")
-    assert_kind_of Retab::Types::ListStruct, result
+    assert_kind_of Retab::PaginatedList, result
+  end
+
+  def test_list_requires_required_query_params
+    assert_raises(ArgumentError) do
+      @client.workflow_blocks.list()
+    end
   end
 
   def test_create_returns_expected_result

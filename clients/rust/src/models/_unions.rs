@@ -9,19 +9,23 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AllItemsMatchConditionConditionOneOf {
+    #[serde(rename = "exists")]
     ExistCondition(Box<ExistCondition>),
     #[serde(rename = "not_exists")]
     NotExistsCondition(Box<NotExistsCondition>),
+    #[serde(rename = "equals")]
     EqualCondition(Box<EqualCondition>),
     #[serde(rename = "not_equals")]
     NotEqualsCondition(Box<NotEqualsCondition>),
     #[serde(rename = "number_compare")]
     NumberCompareCondition(Box<NumberCompareCondition>),
+    #[serde(rename = "contains")]
     ContainCondition(Box<ContainCondition>),
     #[serde(rename = "object_contains")]
     ObjectContainsCondition(Box<ObjectContainsCondition>),
     #[serde(rename = "array_contains")]
     ArrayContainsCondition(Box<ArrayContainsCondition>),
+    #[serde(rename = "matches_regex")]
     MatcheRegexCondition(Box<MatcheRegexCondition>),
     #[serde(rename = "json_schema_valid")]
     JsonSchemaValidCondition(Box<JsonSchemaValidCondition>),
@@ -37,6 +41,7 @@ pub enum AllItemsMatchConditionConditionOneOf {
     LengthCompareCondition(Box<LengthCompareCondition>),
     #[serde(rename = "between")]
     BetweenCondition(Box<BetweenCondition>),
+    #[serde(rename = "starts_with")]
     StartWithCondition(Box<StartWithCondition>),
     #[serde(rename = "ends_with")]
     EndsWithCondition(Box<EndsWithCondition>),
@@ -46,6 +51,132 @@ pub enum AllItemsMatchConditionConditionOneOf {
     AnyItemMatchesCondition(Box<AnyItemMatchesCondition>),
     #[serde(rename = "split_iou_gte")]
     SplitIouCondition(Box<SplitIouCondition>),
+}
+
+impl From<ExistCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: ExistCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::ExistCondition(Box::new(v))
+    }
+}
+
+impl From<NotExistsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: NotExistsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::NotExistsCondition(Box::new(v))
+    }
+}
+
+impl From<EqualCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: EqualCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::EqualCondition(Box::new(v))
+    }
+}
+
+impl From<NotEqualsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: NotEqualsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::NotEqualsCondition(Box::new(v))
+    }
+}
+
+impl From<NumberCompareCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: NumberCompareCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::NumberCompareCondition(Box::new(v))
+    }
+}
+
+impl From<ContainCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: ContainCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::ContainCondition(Box::new(v))
+    }
+}
+
+impl From<ObjectContainsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: ObjectContainsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::ObjectContainsCondition(Box::new(v))
+    }
+}
+
+impl From<ArrayContainsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: ArrayContainsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::ArrayContainsCondition(Box::new(v))
+    }
+}
+
+impl From<MatcheRegexCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: MatcheRegexCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::MatcheRegexCondition(Box::new(v))
+    }
+}
+
+impl From<JsonSchemaValidCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: JsonSchemaValidCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::JsonSchemaValidCondition(Box::new(v))
+    }
+}
+
+impl From<SimilarityGteCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: SimilarityGteCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::SimilarityGteCondition(Box::new(v))
+    }
+}
+
+impl From<LlmJudgedAsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: LlmJudgedAsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::LlmJudgedAsCondition(Box::new(v))
+    }
+}
+
+impl From<LlmNotJudgedAsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: LlmNotJudgedAsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::LlmNotJudgedAsCondition(Box::new(v))
+    }
+}
+
+impl From<NotContainsCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: NotContainsCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::NotContainsCondition(Box::new(v))
+    }
+}
+
+impl From<LengthCompareCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: LengthCompareCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::LengthCompareCondition(Box::new(v))
+    }
+}
+
+impl From<BetweenCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: BetweenCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::BetweenCondition(Box::new(v))
+    }
+}
+
+impl From<StartWithCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: StartWithCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::StartWithCondition(Box::new(v))
+    }
+}
+
+impl From<EndsWithCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: EndsWithCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::EndsWithCondition(Box::new(v))
+    }
+}
+
+impl From<AllItemsMatchCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: AllItemsMatchCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::AllItemsMatchCondition(Box::new(v))
+    }
+}
+
+impl From<AnyItemMatchesCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: AnyItemMatchesCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::AnyItemMatchesCondition(Box::new(v))
+    }
+}
+
+impl From<SplitIouCondition> for AllItemsMatchConditionConditionOneOf {
+    fn from(v: SplitIouCondition) -> Self {
+        AllItemsMatchConditionConditionOneOf::SplitIouCondition(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,6 +197,24 @@ pub enum StoredBlockExecutionLifecycleOneOf {
     SkippedBlockExecutionLifecycle(Box<SkippedBlockExecutionLifecycle>),
 }
 
+impl From<CompletedBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: CompletedBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::CompletedBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
+impl From<ErrorBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: ErrorBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::ErrorBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
+impl From<SkippedBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: SkippedBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::SkippedBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum CancelWorkflowExperimentRunResponseLifecycleOneOf {
@@ -83,11 +232,63 @@ pub enum CancelWorkflowExperimentRunResponseLifecycleOneOf {
     CancelledWorkflowExperimentRun(Box<CancelledWorkflowExperimentRun>),
 }
 
+impl From<PendingWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: PendingWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::PendingWorkflowExperimentRun(Box::new(v))
+    }
+}
+
+impl From<QueuedWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: QueuedWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::QueuedWorkflowExperimentRun(Box::new(v))
+    }
+}
+
+impl From<RunningWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: RunningWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::RunningWorkflowExperimentRun(Box::new(v))
+    }
+}
+
+impl From<CompletedWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: CompletedWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::CompletedWorkflowExperimentRun(Box::new(
+            v,
+        ))
+    }
+}
+
+impl From<ErrorWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: ErrorWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::ErrorWorkflowExperimentRun(Box::new(v))
+    }
+}
+
+impl From<CancelledWorkflowExperimentRun> for CancelWorkflowExperimentRunResponseLifecycleOneOf {
+    fn from(v: CancelledWorkflowExperimentRun) -> Self {
+        CancelWorkflowExperimentRunResponseLifecycleOneOf::CancelledWorkflowExperimentRun(Box::new(
+            v,
+        ))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ClassificationRequestDocumentOneOf {
     MimeData(Box<MimeData>),
     FileRef(Box<FileRef>),
+}
+
+impl From<MimeData> for ClassificationRequestDocumentOneOf {
+    fn from(v: MimeData) -> Self {
+        ClassificationRequestDocumentOneOf::MimeData(Box::new(v))
+    }
+}
+
+impl From<FileRef> for ClassificationRequestDocumentOneOf {
+    fn from(v: FileRef) -> Self {
+        ClassificationRequestDocumentOneOf::FileRef(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,6 +298,18 @@ pub enum CreateWorkflowTestRequestSourceOneOf {
     ManualWorkflowTestSource(Box<ManualWorkflowTestSource>),
     #[serde(rename = "run_step")]
     RunStepWorkflowTestSource(Box<RunStepWorkflowTestSource>),
+}
+
+impl From<ManualWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
+    fn from(v: ManualWorkflowTestSource) -> Self {
+        CreateWorkflowTestRequestSourceOneOf::ManualWorkflowTestSource(Box::new(v))
+    }
+}
+
+impl From<RunStepWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
+    fn from(v: RunStepWorkflowTestSource) -> Self {
+        CreateWorkflowTestRequestSourceOneOf::RunStepWorkflowTestSource(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,6 +326,22 @@ pub enum ExperimentSummaryMetricsResponseAggregateOneOf {
     ExperimentConfusionSummaryAggregate(Box<ExperimentConfusionSummaryAggregate>),
 }
 
+impl From<ExperimentExtractSummaryAggregate> for ExperimentSummaryMetricsResponseAggregateOneOf {
+    fn from(v: ExperimentExtractSummaryAggregate) -> Self {
+        ExperimentSummaryMetricsResponseAggregateOneOf::ExperimentExtractSummaryAggregate(Box::new(
+            v,
+        ))
+    }
+}
+
+impl From<ExperimentConfusionSummaryAggregate> for ExperimentSummaryMetricsResponseAggregateOneOf {
+    fn from(v: ExperimentConfusionSummaryAggregate) -> Self {
+        ExperimentSummaryMetricsResponseAggregateOneOf::ExperimentConfusionSummaryAggregate(
+            Box::new(v),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ExplicitExperimentDocumentRequestHandleInputsOneOf {
@@ -120,6 +349,18 @@ pub enum ExplicitExperimentDocumentRequestHandleInputsOneOf {
     JsonHandleInput(Box<JsonHandleInput>),
     #[serde(rename = "file")]
     FileHandleInput(Box<FileHandleInput>),
+}
+
+impl From<JsonHandleInput> for ExplicitExperimentDocumentRequestHandleInputsOneOf {
+    fn from(v: JsonHandleInput) -> Self {
+        ExplicitExperimentDocumentRequestHandleInputsOneOf::JsonHandleInput(Box::new(v))
+    }
+}
+
+impl From<FileHandleInput> for ExplicitExperimentDocumentRequestHandleInputsOneOf {
+    fn from(v: FileHandleInput) -> Self {
+        ExplicitExperimentDocumentRequestHandleInputsOneOf::FileHandleInput(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -155,6 +396,90 @@ pub enum ReviewAllOfPredicatesOneOf {
     ReviewAllOf(Box<ReviewAllOf>),
 }
 
+impl From<ReviewAlways> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAlways) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAlways(Box::new(v))
+    }
+}
+
+impl From<ReviewValidationFailed> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewValidationFailed) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewValidationFailed(Box::new(v))
+    }
+}
+
+impl From<ReviewConfidenceLt> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewConfidenceLt) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewConfidenceLt(Box::new(v))
+    }
+}
+
+impl From<ReviewCategoryIn> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewCategoryIn) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewCategoryIn(Box::new(v))
+    }
+}
+
+impl From<ReviewTopMarginLt> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewTopMarginLt) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewTopMarginLt(Box::new(v))
+    }
+}
+
+impl From<ReviewSplitCountNeq> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewSplitCountNeq) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewSplitCountNeq(Box::new(v))
+    }
+}
+
+impl From<ReviewAnySplitPagesLt> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAnySplitPagesLt) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAnySplitPagesLt(Box::new(v))
+    }
+}
+
+impl From<ReviewBoundaryConfidenceLt> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewBoundaryConfidenceLt) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewBoundaryConfidenceLt(Box::new(v))
+    }
+}
+
+impl From<ReviewAnyRequiredFieldNull> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAnyRequiredFieldNull) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAnyRequiredFieldNull(Box::new(v))
+    }
+}
+
+impl From<ReviewFieldConfidenceLt> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewFieldConfidenceLt) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewFieldConfidenceLt(Box::new(v))
+    }
+}
+
+impl From<ReviewJsonCondition> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewJsonCondition) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewJsonCondition(Box::new(v))
+    }
+}
+
+impl From<ReviewBranchIn> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewBranchIn) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewBranchIn(Box::new(v))
+    }
+}
+
+impl From<ReviewAnyOf> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAnyOf) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAnyOf(Box::new(v))
+    }
+}
+
+impl From<ReviewAllOf> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAllOf) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAllOf(Box::new(v))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum ExperimentResultLifecycleOneOf {
@@ -170,6 +495,42 @@ pub enum ExperimentResultLifecycleOneOf {
     ErrorWorkflowExperimentResult(Box<ErrorWorkflowExperimentResult>),
     #[serde(rename = "cancelled")]
     CancelledWorkflowExperimentResult(Box<CancelledWorkflowExperimentResult>),
+}
+
+impl From<PendingWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: PendingWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::PendingWorkflowExperimentResult(Box::new(v))
+    }
+}
+
+impl From<QueuedWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: QueuedWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::QueuedWorkflowExperimentResult(Box::new(v))
+    }
+}
+
+impl From<RunningWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: RunningWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::RunningWorkflowExperimentResult(Box::new(v))
+    }
+}
+
+impl From<CompletedWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: CompletedWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::CompletedWorkflowExperimentResult(Box::new(v))
+    }
+}
+
+impl From<ErrorWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: ErrorWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::ErrorWorkflowExperimentResult(Box::new(v))
+    }
+}
+
+impl From<CancelledWorkflowExperimentResult> for ExperimentResultLifecycleOneOf {
+    fn from(v: CancelledWorkflowExperimentResult) -> Self {
+        ExperimentResultLifecycleOneOf::CancelledWorkflowExperimentResult(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -189,6 +550,42 @@ pub enum WorkflowRunTriggerOneOf {
     RestartTrigger(Box<RestartTrigger>),
 }
 
+impl From<ManualTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: ManualTrigger) -> Self {
+        WorkflowRunTriggerOneOf::ManualTrigger(Box::new(v))
+    }
+}
+
+impl From<ApiTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: ApiTrigger) -> Self {
+        WorkflowRunTriggerOneOf::ApiTrigger(Box::new(v))
+    }
+}
+
+impl From<ScheduleTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: ScheduleTrigger) -> Self {
+        WorkflowRunTriggerOneOf::ScheduleTrigger(Box::new(v))
+    }
+}
+
+impl From<WebhookTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: WebhookTrigger) -> Self {
+        WorkflowRunTriggerOneOf::WebhookTrigger(Box::new(v))
+    }
+}
+
+impl From<EmailTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: EmailTrigger) -> Self {
+        WorkflowRunTriggerOneOf::EmailTrigger(Box::new(v))
+    }
+}
+
+impl From<RestartTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: RestartTrigger) -> Self {
+        WorkflowRunTriggerOneOf::RestartTrigger(Box::new(v))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum WorkflowRunLifecycleOneOf {
@@ -204,6 +601,42 @@ pub enum WorkflowRunLifecycleOneOf {
     ErrorTerminal(Box<ErrorTerminal>),
     #[serde(rename = "cancelled")]
     CancelledTerminal(Box<CancelledTerminal>),
+}
+
+impl From<PendingRun> for WorkflowRunLifecycleOneOf {
+    fn from(v: PendingRun) -> Self {
+        WorkflowRunLifecycleOneOf::PendingRun(Box::new(v))
+    }
+}
+
+impl From<RunningRun> for WorkflowRunLifecycleOneOf {
+    fn from(v: RunningRun) -> Self {
+        WorkflowRunLifecycleOneOf::RunningRun(Box::new(v))
+    }
+}
+
+impl From<AwaitingReviewRun> for WorkflowRunLifecycleOneOf {
+    fn from(v: AwaitingReviewRun) -> Self {
+        WorkflowRunLifecycleOneOf::AwaitingReviewRun(Box::new(v))
+    }
+}
+
+impl From<CompletedTerminal> for WorkflowRunLifecycleOneOf {
+    fn from(v: CompletedTerminal) -> Self {
+        WorkflowRunLifecycleOneOf::CompletedTerminal(Box::new(v))
+    }
+}
+
+impl From<ErrorTerminal> for WorkflowRunLifecycleOneOf {
+    fn from(v: ErrorTerminal) -> Self {
+        WorkflowRunLifecycleOneOf::ErrorTerminal(Box::new(v))
+    }
+}
+
+impl From<CancelledTerminal> for WorkflowRunLifecycleOneOf {
+    fn from(v: CancelledTerminal) -> Self {
+        WorkflowRunLifecycleOneOf::CancelledTerminal(Box::new(v))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -227,6 +660,54 @@ pub enum WorkflowRunStepLifecycleOneOf {
     CancelledStepLifecycle(Box<CancelledStepLifecycle>),
 }
 
+impl From<PendingStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: PendingStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::PendingStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<QueuedStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: QueuedStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::QueuedStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<RunningStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: RunningStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::RunningStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<CompletedStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: CompletedStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::CompletedStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<AwaitingReviewStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: AwaitingReviewStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::AwaitingReviewStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<ErrorStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: ErrorStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::ErrorStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<SkippedStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: SkippedStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::SkippedStepLifecycle(Box::new(v))
+    }
+}
+
+impl From<CancelledStepLifecycle> for WorkflowRunStepLifecycleOneOf {
+    fn from(v: CancelledStepLifecycle) -> Self {
+        WorkflowRunStepLifecycleOneOf::CancelledStepLifecycle(Box::new(v))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum WorkflowTestResultLifecycleOneOf {
@@ -244,9 +725,57 @@ pub enum WorkflowTestResultLifecycleOneOf {
     CancelledWorkflowTestRun(Box<CancelledWorkflowTestRun>),
 }
 
+impl From<PendingWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: PendingWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::PendingWorkflowTestRun(Box::new(v))
+    }
+}
+
+impl From<QueuedWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: QueuedWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::QueuedWorkflowTestRun(Box::new(v))
+    }
+}
+
+impl From<RunningWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: RunningWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::RunningWorkflowTestRun(Box::new(v))
+    }
+}
+
+impl From<CompletedWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: CompletedWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::CompletedWorkflowTestRun(Box::new(v))
+    }
+}
+
+impl From<ErrorWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: ErrorWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::ErrorWorkflowTestRun(Box::new(v))
+    }
+}
+
+impl From<CancelledWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
+    fn from(v: CancelledWorkflowTestRun) -> Self {
+        WorkflowTestResultLifecycleOneOf::CancelledWorkflowTestRun(Box::new(v))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CreateFreshWorkflowRunRequestDocumentsOneOf {
     FileRef(Box<FileRef>),
     MimeDataInput(Box<MimeDataInput>),
+}
+
+impl From<FileRef> for CreateFreshWorkflowRunRequestDocumentsOneOf {
+    fn from(v: FileRef) -> Self {
+        CreateFreshWorkflowRunRequestDocumentsOneOf::FileRef(Box::new(v))
+    }
+}
+
+impl From<MimeDataInput> for CreateFreshWorkflowRunRequestDocumentsOneOf {
+    fn from(v: MimeDataInput) -> Self {
+        CreateFreshWorkflowRunRequestDocumentsOneOf::MimeDataInput(Box::new(v))
+    }
 }

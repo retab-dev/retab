@@ -202,7 +202,9 @@ def test_experiments_list_uses_get() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/experiments"
-    assert request.params == {"workflow_id": "wf_abc123"}
+    # `limit` + `order` carry their defaults onto the wire so the closure
+    # auto-paginates predictably; matches the generated emitter signature.
+    assert request.params == {"workflow_id": "wf_abc123", "limit": 50, "order": "desc"}
     assert len(page.data) == 1
     assert page.data[0].id == "exp_abc"
     assert page.list_metadata.before is None

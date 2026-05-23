@@ -19,7 +19,7 @@ from typing import Any, Dict, Mapping, Sequence, Union
 from pydantic import TypeAdapter
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import AsyncPaginatedList, PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
 from ...types.workflows.tests import (
     AssertionSpec,
@@ -129,13 +129,22 @@ class WorkflowTestsMixin:
         workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 50,
+        order: PaginationOrder | None = None,
     ) -> PreparedRequest:
         params: Dict[str, Any] = {"limit": limit}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
         if target_block_id is not None:
             params["target_block_id"] = target_block_id
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        if order is not None:
+            params["order"] = order
         return PreparedRequest(
             method="GET",
             url="/v1/workflows/tests",
@@ -502,13 +511,19 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 50,
+        order: PaginationOrder | None = None,
     ) -> PaginatedList[WorkflowTest]:
         """List all workflow tests for a workflow."""
         request = self.prepare_list(
             workflow_id,
             target_block_id=target_block_id,
+            before=before,
+            after=after,
             limit=limit,
+            order=order,
         )
         return self.request_page(request, model=WorkflowTest)
 
@@ -579,12 +594,19 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         workflow_id: str | None = None,
         *,
         target_block_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 50,
+        order: PaginationOrder | None = None,
     ) -> AsyncPaginatedList[WorkflowTest]:
+        """Async variant of ``WorkflowTests.list``."""
         request = self.prepare_list(
             workflow_id,
             target_block_id=target_block_id,
+            before=before,
+            after=after,
             limit=limit,
+            order=order,
         )
         return await self.request_page(request, model=WorkflowTest)
 

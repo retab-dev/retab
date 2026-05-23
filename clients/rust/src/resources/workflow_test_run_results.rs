@@ -16,6 +16,16 @@ pub struct WorkflowTestRunResultsApi<'a> {
 pub struct ListParams {
     /// Required.
     pub run_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// Defaults to `20`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// Defaults to `desc`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<WorkflowTestRunResultsOrder>,
 }
 
 impl ListParams {
@@ -24,12 +34,28 @@ impl ListParams {
     pub fn new(run_id: impl Into<String>) -> Self {
         Self {
             run_id: run_id.into(),
+            before: Default::default(),
+            after: Default::default(),
+            limit: Some(20),
+            order: Some(WorkflowTestRunResultsOrder::Desc),
         }
     }
 }
 
 impl<'a> WorkflowTestRunResultsApi<'a> {
     /// List Test Execution Results
+    ///
+    /// List workflow test results for a single run, page by page.
+    ///
+    /// Pagination strategy: the parent
+    /// ``workflow_test_runs.result_run_record_ids`` document already holds the
+    /// ordered list of child record IDs. ``workflow_block_test_runs`` rows do
+    /// not carry a ``run_id`` field (the relationship lives only on the
+    /// parent), so a direct keyset query on the child collection is not
+    /// possible without a schema change. We slice the parent's ordered list to
+    /// resolve cursors and then ``$in``-query the child collection for only
+    /// the requested page — preserving the run-time ordering encoded in the
+    /// parent doc and avoiding a fan-out collection scan.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowTestResultList, Error> {
         self.list_with_options(params, None).await
     }
@@ -43,7 +69,7 @@ impl<'a> WorkflowTestRunResultsApi<'a> {
         let path = "/v1/workflows/tests/results".to_string();
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &params, options)
+            .request_page(method, &path, &params, "after", options)
             .await
     }
 

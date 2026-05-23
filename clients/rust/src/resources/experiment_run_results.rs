@@ -16,9 +16,16 @@ pub struct ExperimentRunResultsApi<'a> {
 pub struct ListParams {
     /// Required.
     pub run_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
     /// Defaults to `100`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    /// Defaults to `desc`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<ExperimentRunResultsOrder>,
 }
 
 impl ListParams {
@@ -27,7 +34,10 @@ impl ListParams {
     pub fn new(run_id: impl Into<String>) -> Self {
         Self {
             run_id: run_id.into(),
+            before: Default::default(),
+            after: Default::default(),
             limit: Some(100),
+            order: Some(ExperimentRunResultsOrder::Desc),
         }
     }
 }
@@ -47,7 +57,7 @@ impl<'a> ExperimentRunResultsApi<'a> {
         let path = "/v1/workflows/experiments/results".to_string();
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &params, options)
+            .request_page(method, &path, &params, "after", options)
             .await
     }
 

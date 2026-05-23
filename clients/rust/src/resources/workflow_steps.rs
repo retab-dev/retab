@@ -92,32 +92,8 @@ impl<'a> WorkflowStepsApi<'a> {
         let path = "/v1/workflows/steps".to_string();
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &params, options)
+            .request_page(method, &path, &params, "after", options)
             .await
-    }
-
-    /// Returns an async [`futures_util::Stream`] that yields every `WorkflowRunStep`
-    /// across all pages, advancing the `after` cursor under the hood.
-    ///
-    /// ```ignore
-    /// use futures_util::TryStreamExt;
-    /// let all: Vec<WorkflowRunStep> = self
-    ///     .list_auto_paging(params)
-    ///     .try_collect()
-    ///     .await?;
-    /// ```
-    pub fn list_auto_paging(
-        &self,
-        params: ListParams,
-    ) -> impl futures_util::Stream<Item = Result<WorkflowRunStep, Error>> + '_ {
-        crate::pagination::auto_paginate_pages(move |after| {
-            let mut params = params.clone();
-            params.after = after;
-            async move {
-                let page = self.list(params).await?;
-                Ok((page.data, page.list_metadata.after))
-            }
-        })
     }
 
     /// Get Workflow Step

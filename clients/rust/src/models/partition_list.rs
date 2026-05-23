@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PartitionList {
-    pub data: Vec<Partition>,
-    pub list_metadata: ListMetadata,
-}
-impl PartitionList {
-    /// Construct a new `PartitionList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<Partition>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type PartitionList = crate::pagination::PaginatedList<Partition>;

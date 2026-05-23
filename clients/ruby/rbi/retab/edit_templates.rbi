@@ -18,7 +18,7 @@ module Retab
         name: T.nilable(String),
         sort_by: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::EditTemplate])
+      ).returns(Retab::PaginatedList[Retab::EditTemplate])
     end
     def list(before:, after:, limit:, order:, name:, sort_by:, request_options:); end
 

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-23T04:17:04.042Z",
+  "generatedAt": "2026-05-23T15:14:52.847Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -9,6 +9,7 @@
     "src/Common/BaseOptions.cs",
     "src/Common/ListMetadata.cs",
     "src/Common/ListOptions.cs",
+    "src/Common/PaginatedList.cs",
     "src/Common/RequestOptions.cs",
     "src/Common/RetabException.cs",
     "src/Common/RetabList.cs",
@@ -134,7 +135,6 @@
     "src/Entities/MatcheRegexCondition.cs",
     "src/Entities/MaterializedDocument.cs",
     "src/Entities/MetricsStaleErrorLastRun.cs",
-    "src/Entities/MimeData.cs",
     "src/Entities/NotContainsCondition.cs",
     "src/Entities/NotEqualsCondition.cs",
     "src/Entities/NotExistsCondition.cs",
@@ -409,7 +409,7 @@
       "service": "splits"
     },
     "POST /v1/files/upload": {
-      "sdkMethod": "UploadAsync",
+      "sdkMethod": "CreateUploadAsync",
       "service": "files"
     },
     "POST /v1/files/upload/{file_id}/complete": {

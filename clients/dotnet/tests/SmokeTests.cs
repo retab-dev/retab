@@ -15,7 +15,7 @@ public class SmokeTests
     [Fact]
     public void ClientConstructs()
     {
-        var client = new Retab("test-api-key");
+        var client = new global::Retab.Retab("test-api-key");
         Assert.NotNull(client);
     }
 
@@ -24,7 +24,6 @@ public class SmokeTests
     {
         // Implicit conversion compiles. Don't actually read the file.
         var info = new FileInfo("/tmp/nonexistent.pdf");
-        Assert.NotNull((MimeData?)null); // placeholder so the compiler can't trivially constant-fold
         // The line below is the actual compile-time interop check:
         Action verify = () => { MimeData m = info; _ = m; };
         Assert.NotNull(verify);

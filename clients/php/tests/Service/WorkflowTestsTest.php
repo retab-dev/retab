@@ -35,7 +35,7 @@ class WorkflowTestsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->create(workflowId: 'test_value', target: \Retab\Resource\WorkflowTestBlockTarget::fromArray($this->loadFixture('workflow_test_block_target')), source: 'test_value', assertion: \Retab\Resource\AssertionSpec::fromArray($this->loadFixture('assertion_spec')));
+        $result = $client->workflowTests()->create(workflowId: 'test_value', target: \Retab\Resource\WorkflowTestBlockTarget::fromArray($this->loadFixture('workflow_test_block_target')), source: \Retab\Resource\ManualWorkflowTestSource::fromArray($this->loadFixture('manual_workflow_test_source')), assertion: \Retab\Resource\AssertionSpec::fromArray($this->loadFixture('assertion_spec')));
         $this->assertInstanceOf(\Retab\Resource\WorkflowTest::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);

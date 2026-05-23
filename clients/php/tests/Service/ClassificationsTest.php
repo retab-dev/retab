@@ -36,7 +36,7 @@ class ClassificationsTest extends TestCase
     {
         $fixture = $this->loadFixture('classification');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->classifications()->create(document: 'test_value', categories: []);
+        $result = $client->classifications()->create(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), categories: []);
         $this->assertInstanceOf(\Retab\Resource\Classification::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);

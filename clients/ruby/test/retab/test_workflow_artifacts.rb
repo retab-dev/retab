@@ -22,7 +22,7 @@ class WorkflowArtifactsTest < Minitest::Test
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts(\?|\z)})
       .to_return(body: '{"data": [], "list_metadata": {}}', status: 200)
     result = @client.workflow_artifacts.list()
-    assert_kind_of Retab::Types::ListStruct, result
+    assert_kind_of Retab::PaginatedList, result
   end
 
   # Parameterized authentication error tests (one per endpoint).

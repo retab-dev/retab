@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FileList {
-    pub data: Vec<File>,
-    pub list_metadata: ListMetadata,
-}
-impl FileList {
-    /// Construct a new `FileList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<File>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type FileList = crate::pagination::PaginatedList<File>;
