@@ -2,6 +2,23 @@
 
 import { z } from 'zod';
 
-export type WorkflowExportPayloadRequestExcludeStatus = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'failed' | 'awaiting_review' | 'cancelled';
+export type WorkflowExportPayloadRequestExcludeStatus =
+  | 'pending'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'error'
+  | 'failed'
+  | 'awaiting_review'
+  | 'cancelled';
 
-export const ZWorkflowExportPayloadRequestExcludeStatus = z.enum(['pending', 'queued', 'running', 'completed', 'error', 'failed', 'awaiting_review', 'cancelled'] as const);
+export const ZWorkflowExportPayloadRequestExcludeStatus = z.enum([
+  'pending',
+  'queued',
+  'running',
+  'completed',
+  'error',
+  'failed',
+  'awaiting_review',
+  'cancelled',
+] as const);

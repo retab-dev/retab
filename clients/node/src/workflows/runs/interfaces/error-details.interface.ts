@@ -27,21 +27,21 @@ export interface ErrorDetailsResponse {
 }
 
 export const ZErrorDetails = z.object({
-  "message": z.string().nullable().optional(),
-  "stackTrace": z.string().nullable().optional(),
-  "blockId": z.string().nullable().optional(),
-  "blockName": z.string().nullable().optional(),
-  "errorCode": z.string().nullable().optional(),
-  "context": z.record(z.string(), z.unknown()).nullable().optional(),
+  message: z.string().nullable().optional(),
+  stackTrace: z.string().nullable().optional(),
+  blockId: z.string().nullable().optional(),
+  blockName: z.string().nullable().optional(),
+  errorCode: z.string().nullable().optional(),
+  context: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<ErrorDetails>;
 
 export function deserializeErrorDetails(wire: ErrorDetailsResponse): ErrorDetails {
   return {
-    message: wire["message"],
-    stackTrace: wire["stack_trace"],
-    blockId: wire["block_id"],
-    blockName: wire["block_name"],
-    errorCode: wire["error_code"],
-    context: wire["context"],
+    message: wire['message'],
+    stackTrace: wire['stack_trace'],
+    blockId: wire['block_id'],
+    blockName: wire['block_name'],
+    errorCode: wire['error_code'],
+    context: wire['context'],
   };
 }

@@ -20,13 +20,15 @@ export interface CreateWorkflowRequestResponse {
 }
 
 export const ZCreateWorkflowRequest = z.object({
-  "name": z.string().optional(),
-  "description": z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
 }) as z.ZodType<CreateWorkflowRequest>;
 
-export function deserializeCreateWorkflowRequest(wire: CreateWorkflowRequestResponse): CreateWorkflowRequest {
+export function deserializeCreateWorkflowRequest(
+  wire: CreateWorkflowRequestResponse
+): CreateWorkflowRequest {
   return {
-    name: wire["name"],
-    description: wire["description"],
+    name: wire['name'],
+    description: wire['description'],
   };
 }

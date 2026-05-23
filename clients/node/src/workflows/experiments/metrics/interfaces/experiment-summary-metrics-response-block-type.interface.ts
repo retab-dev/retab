@@ -2,6 +2,15 @@
 
 import { z } from 'zod';
 
-export type ExperimentSummaryMetricsResponseBlockType = 'extract' | 'classifier' | 'split' | 'for_each';
+export type ExperimentSummaryMetricsResponseBlockType =
+  | 'extract'
+  | 'classifier'
+  | 'split'
+  | 'for_each';
 
-export const ZExperimentSummaryMetricsResponseBlockType = z.enum(['extract', 'classifier', 'split', 'for_each'] as const);
+export const ZExperimentSummaryMetricsResponseBlockType = z.enum([
+  'extract',
+  'classifier',
+  'split',
+  'for_each',
+] as const);

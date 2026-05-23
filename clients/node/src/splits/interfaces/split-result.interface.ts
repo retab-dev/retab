@@ -14,13 +14,13 @@ export interface SplitResultResponse {
 }
 
 export const ZSplitResult = z.object({
-  "name": z.string(),
-  "pages": z.number().int().array(),
+  name: z.string(),
+  pages: z.number().int().array(),
 }) as z.ZodType<SplitResult>;
 
 export function deserializeSplitResult(wire: SplitResultResponse): SplitResult {
   return {
-    name: wire["name"],
-    pages: wire["pages"],
+    name: wire['name'],
+    pages: wire['pages'],
   };
 }

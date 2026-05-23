@@ -12,11 +12,13 @@ export interface CompletedStepLifecycleResponse {
 }
 
 export const ZCompletedStepLifecycle = z.object({
-  "status": z.literal('completed'),
+  status: z.literal('completed'),
 }) as z.ZodType<CompletedStepLifecycle>;
 
-export function deserializeCompletedStepLifecycle(wire: CompletedStepLifecycleResponse): CompletedStepLifecycle {
+export function deserializeCompletedStepLifecycle(
+  wire: CompletedStepLifecycleResponse
+): CompletedStepLifecycle {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

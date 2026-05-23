@@ -15,13 +15,15 @@ export interface SkippedBlockExecutionLifecycleResponse {
 }
 
 export const ZSkippedBlockExecutionLifecycle = z.object({
-  "status": z.literal('skipped'),
-  "reason": z.string(),
+  status: z.literal('skipped'),
+  reason: z.string(),
 }) as z.ZodType<SkippedBlockExecutionLifecycle>;
 
-export function deserializeSkippedBlockExecutionLifecycle(wire: SkippedBlockExecutionLifecycleResponse): SkippedBlockExecutionLifecycle {
+export function deserializeSkippedBlockExecutionLifecycle(
+  wire: SkippedBlockExecutionLifecycleResponse
+): SkippedBlockExecutionLifecycle {
   return {
-    status: wire["status"],
-    reason: wire["reason"],
+    status: wire['status'],
+    reason: wire['reason'],
   };
 }

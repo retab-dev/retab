@@ -13,13 +13,15 @@ export interface ExperimentVotesMetricDocumentResponse {
 }
 
 export const ZExperimentVotesMetricDocument = z.object({
-  "id": z.string(),
-  "filename": z.string(),
+  id: z.string(),
+  filename: z.string(),
 }) as z.ZodType<ExperimentVotesMetricDocument>;
 
-export function deserializeExperimentVotesMetricDocument(wire: ExperimentVotesMetricDocumentResponse): ExperimentVotesMetricDocument {
+export function deserializeExperimentVotesMetricDocument(
+  wire: ExperimentVotesMetricDocumentResponse
+): ExperimentVotesMetricDocument {
   return {
-    id: wire["id"],
-    filename: wire["filename"],
+    id: wire['id'],
+    filename: wire['filename'],
   };
 }

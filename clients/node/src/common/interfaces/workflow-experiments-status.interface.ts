@@ -2,6 +2,19 @@
 
 import { z } from 'zod';
 
-export type WorkflowExperimentsStatus = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'cancelled';
+export type WorkflowExperimentsStatus =
+  | 'pending'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
 
-export const ZWorkflowExperimentsStatus = z.enum(['pending', 'queued', 'running', 'completed', 'error', 'cancelled'] as const);
+export const ZWorkflowExperimentsStatus = z.enum([
+  'pending',
+  'queued',
+  'running',
+  'completed',
+  'error',
+  'cancelled',
+] as const);

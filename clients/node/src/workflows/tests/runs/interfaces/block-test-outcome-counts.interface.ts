@@ -18,15 +18,17 @@ export interface BlockTestOutcomeCountsResponse {
 }
 
 export const ZBlockTestOutcomeCounts = z.object({
-  "passed": z.number().int().optional(),
-  "failed": z.number().int().optional(),
-  "blocked": z.number().int().optional(),
+  passed: z.number().int().optional(),
+  failed: z.number().int().optional(),
+  blocked: z.number().int().optional(),
 }) as z.ZodType<BlockTestOutcomeCounts>;
 
-export function deserializeBlockTestOutcomeCounts(wire: BlockTestOutcomeCountsResponse): BlockTestOutcomeCounts {
+export function deserializeBlockTestOutcomeCounts(
+  wire: BlockTestOutcomeCountsResponse
+): BlockTestOutcomeCounts {
   return {
-    passed: wire["passed"],
-    failed: wire["failed"],
-    blocked: wire["blocked"],
+    passed: wire['passed'],
+    failed: wire['failed'],
+    blocked: wire['blocked'],
   };
 }

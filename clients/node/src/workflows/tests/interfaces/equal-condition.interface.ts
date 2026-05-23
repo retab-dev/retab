@@ -13,13 +13,13 @@ export interface EqualConditionResponse {
 }
 
 export const ZEqualCondition = z.object({
-  "kind": z.literal('equals'),
-  "expected": z.unknown(),
+  kind: z.literal('equals'),
+  expected: z.unknown(),
 }) as z.ZodType<EqualCondition>;
 
 export function deserializeEqualCondition(wire: EqualConditionResponse): EqualCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

@@ -23,19 +23,19 @@ export interface BBoxResponse {
 }
 
 export const ZBBox = z.object({
-  "left": z.number(),
-  "top": z.number(),
-  "width": z.number(),
-  "height": z.number(),
-  "page": z.number().int(),
+  left: z.number(),
+  top: z.number(),
+  width: z.number(),
+  height: z.number(),
+  page: z.number().int(),
 }) as z.ZodType<BBox>;
 
 export function deserializeBBox(wire: BBoxResponse): BBox {
   return {
-    left: wire["left"],
-    top: wire["top"],
-    width: wire["width"],
-    height: wire["height"],
-    page: wire["page"],
+    left: wire['left'],
+    top: wire['top'],
+    width: wire['width'],
+    height: wire['height'],
+    page: wire['page'],
   };
 }

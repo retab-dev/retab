@@ -15,13 +15,13 @@ export interface RestartTriggerResponse {
 }
 
 export const ZRestartTrigger = z.object({
-  "type": z.literal('restart'),
-  "parentRunId": z.string(),
+  type: z.literal('restart'),
+  parentRunId: z.string(),
 }) as z.ZodType<RestartTrigger>;
 
 export function deserializeRestartTrigger(wire: RestartTriggerResponse): RestartTrigger {
   return {
-    type: wire["type"],
-    parentRunId: wire["parent_run_id"],
+    type: wire['type'],
+    parentRunId: wire['parent_run_id'],
   };
 }

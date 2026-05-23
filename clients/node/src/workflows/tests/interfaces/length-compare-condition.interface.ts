@@ -18,15 +18,17 @@ export interface LengthCompareConditionResponse {
 }
 
 export const ZLengthCompareCondition = z.object({
-  "kind": z.literal('length_compare'),
-  "op": ZLengthCompareConditionOp,
-  "expected": z.number().int(),
+  kind: z.literal('length_compare'),
+  op: ZLengthCompareConditionOp,
+  expected: z.number().int(),
 }) as z.ZodType<LengthCompareCondition>;
 
-export function deserializeLengthCompareCondition(wire: LengthCompareConditionResponse): LengthCompareCondition {
+export function deserializeLengthCompareCondition(
+  wire: LengthCompareConditionResponse
+): LengthCompareCondition {
   return {
-    kind: wire["kind"],
-    op: wire["op"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    op: wire['op'],
+    expected: wire['expected'],
   };
 }

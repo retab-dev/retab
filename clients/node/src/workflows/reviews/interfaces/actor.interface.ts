@@ -18,15 +18,15 @@ export interface ActorResponse {
 }
 
 export const ZActor = z.object({
-  "kind": ZActorKind,
-  "id": z.string(),
-  "displayName": z.string(),
+  kind: ZActorKind,
+  id: z.string(),
+  displayName: z.string(),
 }) as z.ZodType<Actor>;
 
 export function deserializeActor(wire: ActorResponse): Actor {
   return {
-    kind: wire["kind"],
-    id: wire["id"],
-    displayName: wire["display_name"],
+    kind: wire['kind'],
+    id: wire['id'],
+    displayName: wire['display_name'],
   };
 }

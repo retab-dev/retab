@@ -15,15 +15,17 @@ export interface RunStepWorkflowTestSourceResponse {
 }
 
 export const ZRunStepWorkflowTestSource = z.object({
-  "type": z.literal('run_step'),
-  "runId": z.string(),
-  "stepId": z.string().nullable().optional(),
+  type: z.literal('run_step'),
+  runId: z.string(),
+  stepId: z.string().nullable().optional(),
 }) as z.ZodType<RunStepWorkflowTestSource>;
 
-export function deserializeRunStepWorkflowTestSource(wire: RunStepWorkflowTestSourceResponse): RunStepWorkflowTestSource {
+export function deserializeRunStepWorkflowTestSource(
+  wire: RunStepWorkflowTestSourceResponse
+): RunStepWorkflowTestSource {
   return {
-    type: wire["type"],
-    runId: wire["run_id"],
-    stepId: wire["step_id"],
+    type: wire['type'],
+    runId: wire['run_id'],
+    stepId: wire['step_id'],
   };
 }

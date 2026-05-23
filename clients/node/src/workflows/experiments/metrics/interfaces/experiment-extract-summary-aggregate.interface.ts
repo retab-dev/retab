@@ -11,11 +11,13 @@ export interface ExperimentExtractSummaryAggregateResponse {
 }
 
 export const ZExperimentExtractSummaryAggregate = z.object({
-  "likelihoods": z.record(z.string(), z.number()).optional(),
+  likelihoods: z.record(z.string(), z.number()).optional(),
 }) as z.ZodType<ExperimentExtractSummaryAggregate>;
 
-export function deserializeExperimentExtractSummaryAggregate(wire: ExperimentExtractSummaryAggregateResponse): ExperimentExtractSummaryAggregate {
+export function deserializeExperimentExtractSummaryAggregate(
+  wire: ExperimentExtractSummaryAggregateResponse
+): ExperimentExtractSummaryAggregate {
   return {
-    likelihoods: wire["likelihoods"],
+    likelihoods: wire['likelihoods'],
   };
 }

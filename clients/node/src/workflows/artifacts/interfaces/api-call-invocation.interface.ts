@@ -3,8 +3,14 @@
 import { z } from 'zod';
 import type { ApiCallAttempt, ApiCallAttemptResponse } from './api-call-attempt.interface.js';
 import { ZApiCallAttempt, deserializeApiCallAttempt } from './api-call-attempt.interface.js';
-import type { ErrorDetails, ErrorDetailsResponse } from '../../../workflows/runs/interfaces/error-details.interface.js';
-import { ZErrorDetails, deserializeErrorDetails } from '../../../workflows/runs/interfaces/error-details.interface.js';
+import type {
+  ErrorDetails,
+  ErrorDetailsResponse,
+} from '../../../workflows/runs/interfaces/error-details.interface.js';
+import {
+  ZErrorDetails,
+  deserializeErrorDetails,
+} from '../../../workflows/runs/interfaces/error-details.interface.js';
 
 export interface ApiCallInvocation {
   /**
@@ -32,23 +38,31 @@ export interface ApiCallInvocationResponse {
 }
 
 export const ZApiCallInvocation = z.object({
-  "operation": z.literal('api_call_invocation'),
-  "id": z.string(),
-  "workflowRunId": z.string(),
-  "stepId": z.string(),
-  "attempts": ZApiCallAttempt.array().optional(),
-  "error": ZErrorDetails.nullable().optional(),
-  "createdAt": z.coerce.date(),
+  operation: z.literal('api_call_invocation'),
+  id: z.string(),
+  workflowRunId: z.string(),
+  stepId: z.string(),
+  attempts: ZApiCallAttempt.array().optional(),
+  error: ZErrorDetails.nullable().optional(),
+  createdAt: z.coerce.date(),
 }) as z.ZodType<ApiCallInvocation>;
 
 export function deserializeApiCallInvocation(wire: ApiCallInvocationResponse): ApiCallInvocation {
   return {
-    operation: wire["operation"],
-    id: wire["id"],
-    workflowRunId: wire["workflow_run_id"],
-    stepId: wire["step_id"],
-    attempts: wire["attempts"] == null ? (wire["attempts"] as undefined) : wire["attempts"].map((__i) => deserializeApiCallAttempt(__i)),
-    error: wire["error"] == null ? (wire["error"] as undefined) : (wire["error"] == null ? wire["error"] : deserializeErrorDetails(wire["error"])),
-    createdAt: new Date(wire["created_at"]),
+    operation: wire['operation'],
+    id: wire['id'],
+    workflowRunId: wire['workflow_run_id'],
+    stepId: wire['step_id'],
+    attempts:
+      wire['attempts'] == null
+        ? (wire['attempts'] as undefined)
+        : wire['attempts'].map((__i) => deserializeApiCallAttempt(__i)),
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializeErrorDetails(wire['error']),
+    createdAt: new Date(wire['created_at']),
   };
 }

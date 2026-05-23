@@ -15,13 +15,13 @@ export interface ApiTriggerResponse {
 }
 
 export const ZApiTrigger = z.object({
-  "type": z.literal('api'),
-  "apiKeyId": z.string().nullable().optional(),
+  type: z.literal('api'),
+  apiKeyId: z.string().nullable().optional(),
 }) as z.ZodType<ApiTrigger>;
 
 export function deserializeApiTrigger(wire: ApiTriggerResponse): ApiTrigger {
   return {
-    type: wire["type"],
-    apiKeyId: wire["api_key_id"],
+    type: wire['type'],
+    apiKeyId: wire['api_key_id'],
   };
 }

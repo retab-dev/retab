@@ -54,29 +54,29 @@ export interface ExtractionRequestResponse {
 }
 
 export const ZExtractionRequest = z.object({
-  "document": z.union([ZMIMEData, ZFileRef]),
-  "jsonSchema": z.record(z.string(), z.unknown()),
-  "model": z.string().optional(),
-  "imageResolutionDpi": z.number().int().optional(),
-  "instructions": z.string().nullable().optional(),
-  "nConsensus": z.number().int().optional(),
-  "metadata": z.record(z.string(), z.string()).optional(),
-  "additionalMessages": z.record(z.string(), z.unknown()).array().nullable().optional(),
-  "bustCache": z.boolean().optional(),
-  "stream": z.boolean().optional(),
+  document: z.union([ZMIMEData, ZFileRef]),
+  jsonSchema: z.record(z.string(), z.unknown()),
+  model: z.string().optional(),
+  imageResolutionDpi: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  nConsensus: z.number().int().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  additionalMessages: z.record(z.string(), z.unknown()).array().nullable().optional(),
+  bustCache: z.boolean().optional(),
+  stream: z.boolean().optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
   return {
-    document: (wire["document"] as unknown as MIMEData | FileRef),
-    jsonSchema: wire["json_schema"],
-    model: wire["model"],
-    imageResolutionDpi: wire["image_resolution_dpi"],
-    instructions: wire["instructions"],
-    nConsensus: wire["n_consensus"],
-    metadata: wire["metadata"],
-    additionalMessages: wire["additional_messages"],
-    bustCache: wire["bust_cache"],
-    stream: wire["stream"],
+    document: wire['document'] as unknown as MIMEData | FileRef,
+    jsonSchema: wire['json_schema'],
+    model: wire['model'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
+    instructions: wire['instructions'],
+    nConsensus: wire['n_consensus'],
+    metadata: wire['metadata'],
+    additionalMessages: wire['additional_messages'],
+    bustCache: wire['bust_cache'],
+    stream: wire['stream'],
   };
 }

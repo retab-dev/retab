@@ -12,11 +12,11 @@ export interface PendingRunResponse {
 }
 
 export const ZPendingRun = z.object({
-  "status": z.literal('pending'),
+  status: z.literal('pending'),
 }) as z.ZodType<PendingRun>;
 
 export function deserializePendingRun(wire: PendingRunResponse): PendingRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

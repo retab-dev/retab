@@ -2,6 +2,13 @@
 
 import { z } from 'zod';
 
-export type WhileLoopTerminationTerminationReason = 'max_iterations_reached' | 'condition_matched' | 'error';
+export type WhileLoopTerminationTerminationReason =
+  | 'max_iterations_reached'
+  | 'condition_matched'
+  | 'error';
 
-export const ZWhileLoopTerminationTerminationReason = z.enum(['max_iterations_reached', 'condition_matched', 'error'] as const);
+export const ZWhileLoopTerminationTerminationReason = z.enum([
+  'max_iterations_reached',
+  'condition_matched',
+  'error',
+] as const);

@@ -4,4 +4,11 @@ import { z } from 'zod';
 
 export type SourcesResponseDocumentType = 'pdf' | 'image' | 'csv' | 'xlsx' | 'docx' | 'txt';
 
-export const ZSourcesResponseDocumentType = z.enum(['pdf', 'image', 'csv', 'xlsx', 'docx', 'txt'] as const);
+export const ZSourcesResponseDocumentType = z.enum([
+  'pdf',
+  'image',
+  'csv',
+  'xlsx',
+  'docx',
+  'txt',
+] as const);

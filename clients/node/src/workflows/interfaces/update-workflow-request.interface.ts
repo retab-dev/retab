@@ -14,13 +14,15 @@ export interface UpdateWorkflowRequestResponse {
 }
 
 export const ZUpdateWorkflowRequest = z.object({
-  "name": z.string().nullable().optional(),
-  "description": z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
 }) as z.ZodType<UpdateWorkflowRequest>;
 
-export function deserializeUpdateWorkflowRequest(wire: UpdateWorkflowRequestResponse): UpdateWorkflowRequest {
+export function deserializeUpdateWorkflowRequest(
+  wire: UpdateWorkflowRequestResponse
+): UpdateWorkflowRequest {
   return {
-    name: wire["name"],
-    description: wire["description"],
+    name: wire['name'],
+    description: wire['description'],
   };
 }

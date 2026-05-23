@@ -15,15 +15,15 @@ export interface JobErrorResponse {
 }
 
 export const ZJobError = z.object({
-  "code": z.string(),
-  "message": z.string(),
-  "details": z.record(z.string(), z.unknown()).nullable().optional(),
+  code: z.string(),
+  message: z.string(),
+  details: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<JobError>;
 
 export function deserializeJobError(wire: JobErrorResponse): JobError {
   return {
-    code: wire["code"],
-    message: wire["message"],
-    details: wire["details"],
+    code: wire['code'],
+    message: wire['message'],
+    details: wire['details'],
   };
 }

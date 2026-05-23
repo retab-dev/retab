@@ -1,0 +1,456 @@
+{
+  "version": 2,
+  "language": "go",
+  "generatedAt": "2026-05-23T21:09:18.550Z",
+  "files": [
+    "classifications.go",
+    "edit_templates.go",
+    "edits.go",
+    "enums.go",
+    "errors.go",
+    "experiment_run_metrics.go",
+    "experiment_run_results.go",
+    "experiment_runs.go",
+    "extractions.go",
+    "files.go",
+    "go.mod",
+    "jobs.go",
+    "mime.go",
+    "models.go",
+    "pagination.go",
+    "parses.go",
+    "partitions.go",
+    "request.go",
+    "retab.go",
+    "schemas.go",
+    "splits.go",
+    "workflow_artifacts.go",
+    "workflow_block_executions.go",
+    "workflow_blocks.go",
+    "workflow_edges.go",
+    "workflow_experiments.go",
+    "workflow_review_versions.go",
+    "workflow_reviews.go",
+    "workflow_runs.go",
+    "workflow_specs.go",
+    "workflow_steps.go",
+    "workflow_test_run_results.go",
+    "workflow_test_runs.go",
+    "workflow_tests.go",
+    "workflows.go"
+  ],
+  "operations": {
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "Generate",
+      "service": "schemas"
+    },
+    "GET /v1/extractions": {
+      "sdkMethod": "List",
+      "service": "extractions"
+    },
+    "POST /v1/extractions": {
+      "sdkMethod": "Create",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}": {
+      "sdkMethod": "Get",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "Delete",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "Sources",
+      "service": "extractions"
+    },
+    "GET /v1/classifications": {
+      "sdkMethod": "List",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "Create",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "Get",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "Delete",
+      "service": "classifications"
+    },
+    "GET /v1/parses": {
+      "sdkMethod": "List",
+      "service": "parses"
+    },
+    "POST /v1/parses": {
+      "sdkMethod": "Create",
+      "service": "parses"
+    },
+    "GET /v1/parses/{parse_id}": {
+      "sdkMethod": "Get",
+      "service": "parses"
+    },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "Delete",
+      "service": "parses"
+    },
+    "GET /v1/partitions": {
+      "sdkMethod": "List",
+      "service": "partitions"
+    },
+    "POST /v1/partitions": {
+      "sdkMethod": "Create",
+      "service": "partitions"
+    },
+    "GET /v1/partitions/{partition_id}": {
+      "sdkMethod": "Get",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "Delete",
+      "service": "partitions"
+    },
+    "GET /v1/splits": {
+      "sdkMethod": "List",
+      "service": "splits"
+    },
+    "POST /v1/splits": {
+      "sdkMethod": "Create",
+      "service": "splits"
+    },
+    "GET /v1/splits/{split_id}": {
+      "sdkMethod": "Get",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "Delete",
+      "service": "splits"
+    },
+    "POST /v1/files/upload": {
+      "sdkMethod": "CreateUpload",
+      "service": "files"
+    },
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "CompleteUpload",
+      "service": "files"
+    },
+    "GET /v1/files": {
+      "sdkMethod": "List",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
+      "sdkMethod": "Get",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "GetDownloadLink",
+      "service": "files"
+    },
+    "GET /v1/workflows/runs": {
+      "sdkMethod": "List",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs": {
+      "sdkMethod": "Create",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "Export",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_runs"
+    },
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
+      "sdkMethod": "Cancel",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/steps": {
+      "sdkMethod": "List",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/steps/{step_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/reviews": {
+      "sdkMethod": "List",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/{review_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/approve": {
+      "sdkMethod": "Approve",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/reject": {
+      "sdkMethod": "Reject",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/versions": {
+      "sdkMethod": "List",
+      "service": "workflow_review_versions"
+    },
+    "POST /v1/workflows/reviews/versions": {
+      "sdkMethod": "Create",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/reviews/versions/{version_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/artifacts/{artifact_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/artifacts": {
+      "sdkMethod": "List",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "List",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "Create",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+      "sdkMethod": "Cancel",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/results": {
+      "sdkMethod": "List",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/tests/results/{result_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "List",
+      "service": "workflow_blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "Create",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "Update",
+      "service": "workflow_blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "List",
+      "service": "workflow_edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "Create",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/tests": {
+      "sdkMethod": "List",
+      "service": "workflow_tests"
+    },
+    "POST /v1/workflows/tests": {
+      "sdkMethod": "Create",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_tests"
+    },
+    "PATCH /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "Update",
+      "service": "workflow_tests"
+    },
+    "DELETE /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "List",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "Create",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "Get",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "Cancel",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "List",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "Get",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "Get",
+      "service": "experiment_run_metrics"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "List",
+      "service": "workflow_experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "Create",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "Get",
+      "service": "workflow_experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "Update",
+      "service": "workflow_experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "List",
+      "service": "workflow_block_executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "Create",
+      "service": "workflow_block_executions"
+    },
+    "GET /v1/workflows": {
+      "sdkMethod": "List",
+      "service": "workflows"
+    },
+    "POST /v1/workflows": {
+      "sdkMethod": "Create",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/{workflow_id}": {
+      "sdkMethod": "Get",
+      "service": "workflows"
+    },
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "Update",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
+      "sdkMethod": "Diagnose",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "Publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "Validate",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "Plan",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "Apply",
+      "service": "workflow_specs"
+    },
+    "GET /v1/workflows/{workflow_id}/spec": {
+      "sdkMethod": "Get",
+      "service": "workflow_specs"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "List",
+      "service": "edit_templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "Create",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "Get",
+      "service": "edit_templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "Update",
+      "service": "edit_templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "Delete",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "List",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "Create",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "Get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "Delete",
+      "service": "edits"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "List",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "Create",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "Get",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "Cancel",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "Retry",
+      "service": "jobs"
+    }
+  }
+}

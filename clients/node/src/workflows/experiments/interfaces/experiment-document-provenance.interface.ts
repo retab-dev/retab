@@ -13,13 +13,15 @@ export interface ExperimentDocumentProvenanceResponse {
 }
 
 export const ZExperimentDocumentProvenance = z.object({
-  "workflowRunId": z.string().nullable().optional(),
-  "stepId": z.string().nullable().optional(),
+  workflowRunId: z.string().nullable().optional(),
+  stepId: z.string().nullable().optional(),
 }) as z.ZodType<ExperimentDocumentProvenance>;
 
-export function deserializeExperimentDocumentProvenance(wire: ExperimentDocumentProvenanceResponse): ExperimentDocumentProvenance {
+export function deserializeExperimentDocumentProvenance(
+  wire: ExperimentDocumentProvenanceResponse
+): ExperimentDocumentProvenance {
   return {
-    workflowRunId: wire["workflow_run_id"],
-    stepId: wire["step_id"],
+    workflowRunId: wire['workflow_run_id'],
+    stepId: wire['step_id'],
   };
 }

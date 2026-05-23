@@ -720,7 +720,7 @@ dependencies = [
 
 [[package]]
 name = "retab"
-version = "0.0.6"
+version = "0.0.5"
 dependencies = [
  "base64",
  "futures-util",

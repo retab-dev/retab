@@ -18,15 +18,15 @@ export interface EmailTriggerResponse {
 }
 
 export const ZEmailTrigger = z.object({
-  "type": z.literal('email'),
-  "sender": z.string(),
-  "subject": z.string().nullable().optional(),
+  type: z.literal('email'),
+  sender: z.string(),
+  subject: z.string().nullable().optional(),
 }) as z.ZodType<EmailTrigger>;
 
 export function deserializeEmailTrigger(wire: EmailTriggerResponse): EmailTrigger {
   return {
-    type: wire["type"],
-    sender: wire["sender"],
-    subject: wire["subject"],
+    type: wire['type'],
+    sender: wire['sender'],
+    subject: wire['subject'],
   };
 }

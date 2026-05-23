@@ -23,17 +23,22 @@ export interface FileLinkResponse {
 }
 
 export const ZFileLink = z.object({
-  "downloadUrl": z.string(),
-  "expiresIn": z.string(),
-  "filename": z.string(),
-  "mimeData": ZMIMEData.nullable().optional(),
+  downloadUrl: z.string(),
+  expiresIn: z.string(),
+  filename: z.string(),
+  mimeData: ZMIMEData.nullable().optional(),
 }) as z.ZodType<FileLink>;
 
 export function deserializeFileLink(wire: FileLinkResponse): FileLink {
   return {
-    downloadUrl: wire["download_url"],
-    expiresIn: wire["expires_in"],
-    filename: wire["filename"],
-    mimeData: wire["mime_data"] == null ? (wire["mime_data"] as undefined) : (wire["mime_data"] == null ? wire["mime_data"] : deserializeMIMEData(wire["mime_data"])),
+    downloadUrl: wire['download_url'],
+    expiresIn: wire['expires_in'],
+    filename: wire['filename'],
+    mimeData:
+      wire['mime_data'] == null
+        ? (wire['mime_data'] as undefined)
+        : wire['mime_data'] == null
+          ? wire['mime_data']
+          : deserializeMIMEData(wire['mime_data']),
   };
 }

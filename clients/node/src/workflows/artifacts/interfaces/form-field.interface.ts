@@ -28,19 +28,19 @@ export interface FormFieldResponse {
 }
 
 export const ZFormField = z.object({
-  "bbox": ZBBox,
-  "description": z.string(),
-  "type": ZFieldType,
-  "key": z.string(),
-  "value": z.string().nullable().optional(),
+  bbox: ZBBox,
+  description: z.string(),
+  type: ZFieldType,
+  key: z.string(),
+  value: z.string().nullable().optional(),
 }) as z.ZodType<FormField>;
 
 export function deserializeFormField(wire: FormFieldResponse): FormField {
   return {
-    bbox: deserializeBBox(wire["bbox"]),
-    description: wire["description"],
-    type: wire["type"],
-    key: wire["key"],
-    value: wire["value"],
+    bbox: deserializeBBox(wire['bbox']),
+    description: wire['description'],
+    type: wire['type'],
+    key: wire['key'],
+    value: wire['value'],
   };
 }

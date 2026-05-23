@@ -15,15 +15,15 @@ export interface JobWarningResponse {
 }
 
 export const ZJobWarning = z.object({
-  "code": z.string(),
-  "message": z.string(),
-  "details": z.record(z.string(), z.unknown()).nullable().optional(),
+  code: z.string(),
+  message: z.string(),
+  details: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<JobWarning>;
 
 export function deserializeJobWarning(wire: JobWarningResponse): JobWarning {
   return {
-    code: wire["code"],
-    message: wire["message"],
-    details: wire["details"],
+    code: wire['code'],
+    message: wire['message'],
+    details: wire['details'],
   };
 }

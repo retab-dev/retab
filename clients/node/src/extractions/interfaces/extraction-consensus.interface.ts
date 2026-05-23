@@ -14,13 +14,15 @@ export interface ExtractionConsensusResponse {
 }
 
 export const ZExtractionConsensus = z.object({
-  "choices": z.record(z.string(), z.unknown()).array().optional(),
-  "likelihoods": z.record(z.string(), z.unknown()).nullable().optional(),
+  choices: z.record(z.string(), z.unknown()).array().optional(),
+  likelihoods: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<ExtractionConsensus>;
 
-export function deserializeExtractionConsensus(wire: ExtractionConsensusResponse): ExtractionConsensus {
+export function deserializeExtractionConsensus(
+  wire: ExtractionConsensusResponse
+): ExtractionConsensus {
   return {
-    choices: wire["choices"],
-    likelihoods: wire["likelihoods"],
+    choices: wire['choices'],
+    likelihoods: wire['likelihoods'],
   };
 }

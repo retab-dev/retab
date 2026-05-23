@@ -4,4 +4,9 @@ import { z } from 'zod';
 
 export type ParseRequestTableParsingFormat = 'markdown' | 'yaml' | 'html' | 'json';
 
-export const ZParseRequestTableParsingFormat = z.enum(['markdown', 'yaml', 'html', 'json'] as const);
+export const ZParseRequestTableParsingFormat = z.enum([
+  'markdown',
+  'yaml',
+  'html',
+  'json',
+] as const);

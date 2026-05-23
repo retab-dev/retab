@@ -14,13 +14,15 @@ export interface ReviewAnySplitPagesLtResponse {
 }
 
 export const ZReviewAnySplitPagesLt = z.object({
-  "kind": z.literal('any_split_pages_lt'),
-  "minPages": z.number().int(),
+  kind: z.literal('any_split_pages_lt'),
+  minPages: z.number().int(),
 }) as z.ZodType<ReviewAnySplitPagesLt>;
 
-export function deserializeReviewAnySplitPagesLt(wire: ReviewAnySplitPagesLtResponse): ReviewAnySplitPagesLt {
+export function deserializeReviewAnySplitPagesLt(
+  wire: ReviewAnySplitPagesLtResponse
+): ReviewAnySplitPagesLt {
   return {
-    kind: wire["kind"],
-    minPages: wire["min_pages"],
+    kind: wire['kind'],
+    minPages: wire['min_pages'],
   };
 }

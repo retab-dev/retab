@@ -14,15 +14,15 @@ export interface AssertionFailureResponse {
 }
 
 export const ZAssertionFailure = z.object({
-  "code": z.string(),
-  "message": z.string(),
-  "details": z.record(z.string(), z.unknown()).optional(),
+  code: z.string(),
+  message: z.string(),
+  details: z.record(z.string(), z.unknown()).optional(),
 }) as z.ZodType<AssertionFailure>;
 
 export function deserializeAssertionFailure(wire: AssertionFailureResponse): AssertionFailure {
   return {
-    code: wire["code"],
-    message: wire["message"],
-    details: wire["details"],
+    code: wire['code'],
+    message: wire['message'],
+    details: wire['details'],
   };
 }

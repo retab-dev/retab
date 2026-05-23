@@ -51,29 +51,31 @@ export interface WorkflowBlockCreateRequestResponse {
 }
 
 export const ZWorkflowBlockCreateRequest = z.object({
-  "workflowId": z.string(),
-  "id": z.string().optional(),
-  "type": ZWorkflowBlockCreateRequestType,
-  "label": z.string().optional(),
-  "positionX": z.number().optional(),
-  "positionY": z.number().optional(),
-  "width": z.number().nullable().optional(),
-  "height": z.number().nullable().optional(),
-  "config": z.record(z.string(), z.unknown()).nullable().optional(),
-  "parentId": z.string().nullable().optional(),
+  workflowId: z.string(),
+  id: z.string().optional(),
+  type: ZWorkflowBlockCreateRequestType,
+  label: z.string().optional(),
+  positionX: z.number().optional(),
+  positionY: z.number().optional(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  config: z.record(z.string(), z.unknown()).nullable().optional(),
+  parentId: z.string().nullable().optional(),
 }) as z.ZodType<WorkflowBlockCreateRequest>;
 
-export function deserializeWorkflowBlockCreateRequest(wire: WorkflowBlockCreateRequestResponse): WorkflowBlockCreateRequest {
+export function deserializeWorkflowBlockCreateRequest(
+  wire: WorkflowBlockCreateRequestResponse
+): WorkflowBlockCreateRequest {
   return {
-    workflowId: wire["workflow_id"],
-    id: wire["id"],
-    type: wire["type"],
-    label: wire["label"],
-    positionX: wire["position_x"],
-    positionY: wire["position_y"],
-    width: wire["width"],
-    height: wire["height"],
-    config: wire["config"],
-    parentId: wire["parent_id"],
+    workflowId: wire['workflow_id'],
+    id: wire['id'],
+    type: wire['type'],
+    label: wire['label'],
+    positionX: wire['position_x'],
+    positionY: wire['position_y'],
+    width: wire['width'],
+    height: wire['height'],
+    config: wire['config'],
+    parentId: wire['parent_id'],
   };
 }

@@ -13,13 +13,13 @@ export interface ContainConditionResponse {
 }
 
 export const ZContainCondition = z.object({
-  "kind": z.literal('contains'),
-  "expected": z.unknown(),
+  kind: z.literal('contains'),
+  expected: z.unknown(),
 }) as z.ZodType<ContainCondition>;
 
 export function deserializeContainCondition(wire: ContainConditionResponse): ContainCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

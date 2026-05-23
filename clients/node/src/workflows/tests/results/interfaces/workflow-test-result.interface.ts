@@ -3,30 +3,96 @@
 import { z } from 'zod';
 import type { AssertionResult, AssertionResultResponse } from './assertion-result.interface.js';
 import { ZAssertionResult, deserializeAssertionResult } from './assertion-result.interface.js';
-import type { CancelledWorkflowTestRun, CancelledWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
-import { ZCancelledWorkflowTestRun, deserializeCancelledWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
-import type { CompletedWorkflowTestRun, CompletedWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
-import { ZCompletedWorkflowTestRun, deserializeCompletedWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
-import type { ErrorDetails, ErrorDetailsResponse } from '../../../../workflows/runs/interfaces/error-details.interface.js';
-import { ZErrorDetails, deserializeErrorDetails } from '../../../../workflows/runs/interfaces/error-details.interface.js';
-import type { ErrorWorkflowTestRun, ErrorWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
-import { ZErrorWorkflowTestRun, deserializeErrorWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
-import type { ManualWorkflowTestSource, ManualWorkflowTestSourceResponse } from './manual-workflow-test-source.interface.js';
-import { ZManualWorkflowTestSource, deserializeManualWorkflowTestSource } from './manual-workflow-test-source.interface.js';
-import type { PendingWorkflowTestRun, PendingWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
-import { ZPendingWorkflowTestRun, deserializePendingWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
-import type { QueuedWorkflowTestRun, QueuedWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
-import { ZQueuedWorkflowTestRun, deserializeQueuedWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
-import type { RunningWorkflowTestRun, RunningWorkflowTestRunResponse } from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
-import { ZRunningWorkflowTestRun, deserializeRunningWorkflowTestRun } from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
-import type { RunStepWorkflowTestSource, RunStepWorkflowTestSourceResponse } from './run-step-workflow-test-source.interface.js';
-import { ZRunStepWorkflowTestSource, deserializeRunStepWorkflowTestSource } from './run-step-workflow-test-source.interface.js';
+import type {
+  CancelledWorkflowTestRun,
+  CancelledWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
+import {
+  ZCancelledWorkflowTestRun,
+  deserializeCancelledWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
+import type {
+  CompletedWorkflowTestRun,
+  CompletedWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
+import {
+  ZCompletedWorkflowTestRun,
+  deserializeCompletedWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
+import type {
+  ErrorDetails,
+  ErrorDetailsResponse,
+} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+import {
+  ZErrorDetails,
+  deserializeErrorDetails,
+} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+import type {
+  ErrorWorkflowTestRun,
+  ErrorWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
+import {
+  ZErrorWorkflowTestRun,
+  deserializeErrorWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
+import type {
+  ManualWorkflowTestSource,
+  ManualWorkflowTestSourceResponse,
+} from './manual-workflow-test-source.interface.js';
+import {
+  ZManualWorkflowTestSource,
+  deserializeManualWorkflowTestSource,
+} from './manual-workflow-test-source.interface.js';
+import type {
+  PendingWorkflowTestRun,
+  PendingWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
+import {
+  ZPendingWorkflowTestRun,
+  deserializePendingWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
+import type {
+  QueuedWorkflowTestRun,
+  QueuedWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
+import {
+  ZQueuedWorkflowTestRun,
+  deserializeQueuedWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
+import type {
+  RunningWorkflowTestRun,
+  RunningWorkflowTestRunResponse,
+} from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
+import {
+  ZRunningWorkflowTestRun,
+  deserializeRunningWorkflowTestRun,
+} from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
+import type {
+  RunStepWorkflowTestSource,
+  RunStepWorkflowTestSourceResponse,
+} from './run-step-workflow-test-source.interface.js';
+import {
+  ZRunStepWorkflowTestSource,
+  deserializeRunStepWorkflowTestSource,
+} from './run-step-workflow-test-source.interface.js';
 import type { VerdictSummary, VerdictSummaryResponse } from './verdict-summary.interface.js';
 import { ZVerdictSummary, deserializeVerdictSummary } from './verdict-summary.interface.js';
-import type { WorkflowTestBlockTarget, WorkflowTestBlockTargetResponse } from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
-import { ZWorkflowTestBlockTarget, deserializeWorkflowTestBlockTarget } from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
-import type { WorkflowTestRunTiming, WorkflowTestRunTimingResponse } from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
-import { ZWorkflowTestRunTiming, deserializeWorkflowTestRunTiming } from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
+import type {
+  WorkflowTestBlockTarget,
+  WorkflowTestBlockTargetResponse,
+} from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+import {
+  ZWorkflowTestBlockTarget,
+  deserializeWorkflowTestBlockTarget,
+} from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+import type {
+  WorkflowTestRunTiming,
+  WorkflowTestRunTimingResponse,
+} from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
+import {
+  ZWorkflowTestRunTiming,
+  deserializeWorkflowTestRunTiming,
+} from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
 import type { WorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 import { ZWorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 
@@ -34,7 +100,16 @@ export interface WorkflowTestResult {
   id: string;
   runId?: string | null;
   testId: string;
-  lifecycle?: (PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun) | null;
+  lifecycle?:
+    | (
+        | PendingWorkflowTestRun
+        | QueuedWorkflowTestRun
+        | RunningWorkflowTestRun
+        | CompletedWorkflowTestRun
+        | ErrorWorkflowTestRun
+        | CancelledWorkflowTestRun
+      )
+    | null;
   timing?: WorkflowTestRunTiming | null;
   /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum. */
   verdict?: WorkflowTestResultVerdict | null;
@@ -63,7 +138,16 @@ export interface WorkflowTestResultResponse {
   id: string;
   run_id?: string | null;
   test_id: string;
-  lifecycle?: (PendingWorkflowTestRunResponse | QueuedWorkflowTestRunResponse | RunningWorkflowTestRunResponse | CompletedWorkflowTestRunResponse | ErrorWorkflowTestRunResponse | CancelledWorkflowTestRunResponse) | null;
+  lifecycle?:
+    | (
+        | PendingWorkflowTestRunResponse
+        | QueuedWorkflowTestRunResponse
+        | RunningWorkflowTestRunResponse
+        | CompletedWorkflowTestRunResponse
+        | ErrorWorkflowTestRunResponse
+        | CancelledWorkflowTestRunResponse
+      )
+    | null;
   timing?: WorkflowTestRunTimingResponse | null;
   verdict?: WorkflowTestResultVerdict | null;
   workflow_id: string;
@@ -83,49 +167,140 @@ export interface WorkflowTestResultResponse {
 }
 
 export const ZWorkflowTestResult = z.object({
-  "id": z.string(),
-  "runId": z.string().nullable().optional(),
-  "testId": z.string(),
-  "lifecycle": z.union([ZPendingWorkflowTestRun, ZQueuedWorkflowTestRun, ZRunningWorkflowTestRun, ZCompletedWorkflowTestRun, ZErrorWorkflowTestRun, ZCancelledWorkflowTestRun]).nullable().optional(),
-  "timing": ZWorkflowTestRunTiming.nullable().optional(),
-  "verdict": ZWorkflowTestResultVerdict.nullable().optional(),
-  "workflowId": z.string(),
-  "target": ZWorkflowTestBlockTarget,
-  "executionFingerprint": z.string().optional(),
-  "handleInputsFingerprint": z.string().optional(),
-  "workflowDraftFingerprint": z.string().optional(),
-  "blockConfigFingerprint": z.string().optional(),
-  "source": z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
-  "outputs": z.record(z.string(), z.unknown()).nullable().optional(),
-  "routingDecision": z.string().array().nullable().optional(),
-  "warnings": z.string().array().optional(),
-  "error": ZErrorDetails.nullable().optional(),
-  "skipped": z.boolean().optional(),
-  "assertionResult": ZAssertionResult.nullable().optional(),
-  "verdictSummary": ZVerdictSummary.nullable().optional(),
+  id: z.string(),
+  runId: z.string().nullable().optional(),
+  testId: z.string(),
+  lifecycle: z
+    .union([
+      ZPendingWorkflowTestRun,
+      ZQueuedWorkflowTestRun,
+      ZRunningWorkflowTestRun,
+      ZCompletedWorkflowTestRun,
+      ZErrorWorkflowTestRun,
+      ZCancelledWorkflowTestRun,
+    ])
+    .nullable()
+    .optional(),
+  timing: ZWorkflowTestRunTiming.nullable().optional(),
+  verdict: ZWorkflowTestResultVerdict.nullable().optional(),
+  workflowId: z.string(),
+  target: ZWorkflowTestBlockTarget,
+  executionFingerprint: z.string().optional(),
+  handleInputsFingerprint: z.string().optional(),
+  workflowDraftFingerprint: z.string().optional(),
+  blockConfigFingerprint: z.string().optional(),
+  source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
+  outputs: z.record(z.string(), z.unknown()).nullable().optional(),
+  routingDecision: z.string().array().nullable().optional(),
+  warnings: z.string().array().optional(),
+  error: ZErrorDetails.nullable().optional(),
+  skipped: z.boolean().optional(),
+  assertionResult: ZAssertionResult.nullable().optional(),
+  verdictSummary: ZVerdictSummary.nullable().optional(),
 }) as z.ZodType<WorkflowTestResult>;
 
-export function deserializeWorkflowTestResult(wire: WorkflowTestResultResponse): WorkflowTestResult {
+export function deserializeWorkflowTestResult(
+  wire: WorkflowTestResultResponse
+): WorkflowTestResult {
   return {
-    id: wire["id"],
-    runId: wire["run_id"],
-    testId: wire["test_id"],
-    lifecycle: wire["lifecycle"] == null ? (wire["lifecycle"] as undefined) : (wire["lifecycle"] == null ? wire["lifecycle"] : (({ "cancelled": () => deserializeCancelledWorkflowTestRun(wire["lifecycle"] as CancelledWorkflowTestRunResponse), "completed": () => deserializeCompletedWorkflowTestRun(wire["lifecycle"] as CompletedWorkflowTestRunResponse), "error": () => deserializeErrorWorkflowTestRun(wire["lifecycle"] as ErrorWorkflowTestRunResponse), "pending": () => deserializePendingWorkflowTestRun(wire["lifecycle"] as PendingWorkflowTestRunResponse), "queued": () => deserializeQueuedWorkflowTestRun(wire["lifecycle"] as QueuedWorkflowTestRunResponse), "running": () => deserializeRunningWorkflowTestRun(wire["lifecycle"] as RunningWorkflowTestRunResponse) } as Record<string, () => PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun>)[(wire["lifecycle"] as unknown as Record<string, string>)["status"]]?.() ?? (wire["lifecycle"] as unknown as PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun))),
-    timing: wire["timing"] == null ? (wire["timing"] as undefined) : (wire["timing"] == null ? wire["timing"] : deserializeWorkflowTestRunTiming(wire["timing"])),
-    verdict: wire["verdict"],
-    workflowId: wire["workflow_id"],
-    target: deserializeWorkflowTestBlockTarget(wire["target"]),
-    executionFingerprint: wire["execution_fingerprint"],
-    handleInputsFingerprint: wire["handle_inputs_fingerprint"],
-    workflowDraftFingerprint: wire["workflow_draft_fingerprint"],
-    blockConfigFingerprint: wire["block_config_fingerprint"],
-    source: (({ "manual": () => deserializeManualWorkflowTestSource(wire["source"] as ManualWorkflowTestSourceResponse), "run_step": () => deserializeRunStepWorkflowTestSource(wire["source"] as RunStepWorkflowTestSourceResponse) } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>)[(wire["source"] as unknown as Record<string, string>)["type"]]?.() ?? (wire["source"] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource)),
-    outputs: wire["outputs"],
-    routingDecision: wire["routing_decision"],
-    warnings: wire["warnings"],
-    error: wire["error"] == null ? (wire["error"] as undefined) : (wire["error"] == null ? wire["error"] : deserializeErrorDetails(wire["error"])),
-    skipped: wire["skipped"],
-    assertionResult: wire["assertion_result"] == null ? (wire["assertion_result"] as undefined) : (wire["assertion_result"] == null ? wire["assertion_result"] : deserializeAssertionResult(wire["assertion_result"])),
-    verdictSummary: wire["verdict_summary"] == null ? (wire["verdict_summary"] as undefined) : (wire["verdict_summary"] == null ? wire["verdict_summary"] : deserializeVerdictSummary(wire["verdict_summary"])),
+    id: wire['id'],
+    runId: wire['run_id'],
+    testId: wire['test_id'],
+    lifecycle:
+      wire['lifecycle'] == null
+        ? (wire['lifecycle'] as undefined)
+        : wire['lifecycle'] == null
+          ? wire['lifecycle']
+          : ((
+              {
+                cancelled: () =>
+                  deserializeCancelledWorkflowTestRun(
+                    wire['lifecycle'] as CancelledWorkflowTestRunResponse
+                  ),
+                completed: () =>
+                  deserializeCompletedWorkflowTestRun(
+                    wire['lifecycle'] as CompletedWorkflowTestRunResponse
+                  ),
+                error: () =>
+                  deserializeErrorWorkflowTestRun(
+                    wire['lifecycle'] as ErrorWorkflowTestRunResponse
+                  ),
+                pending: () =>
+                  deserializePendingWorkflowTestRun(
+                    wire['lifecycle'] as PendingWorkflowTestRunResponse
+                  ),
+                queued: () =>
+                  deserializeQueuedWorkflowTestRun(
+                    wire['lifecycle'] as QueuedWorkflowTestRunResponse
+                  ),
+                running: () =>
+                  deserializeRunningWorkflowTestRun(
+                    wire['lifecycle'] as RunningWorkflowTestRunResponse
+                  ),
+              } as Record<
+                string,
+                () =>
+                  | PendingWorkflowTestRun
+                  | QueuedWorkflowTestRun
+                  | RunningWorkflowTestRun
+                  | CompletedWorkflowTestRun
+                  | ErrorWorkflowTestRun
+                  | CancelledWorkflowTestRun
+              >
+            )[(wire['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+            (wire['lifecycle'] as unknown as
+              | PendingWorkflowTestRun
+              | QueuedWorkflowTestRun
+              | RunningWorkflowTestRun
+              | CompletedWorkflowTestRun
+              | ErrorWorkflowTestRun
+              | CancelledWorkflowTestRun)),
+    timing:
+      wire['timing'] == null
+        ? (wire['timing'] as undefined)
+        : wire['timing'] == null
+          ? wire['timing']
+          : deserializeWorkflowTestRunTiming(wire['timing']),
+    verdict: wire['verdict'],
+    workflowId: wire['workflow_id'],
+    target: deserializeWorkflowTestBlockTarget(wire['target']),
+    executionFingerprint: wire['execution_fingerprint'],
+    handleInputsFingerprint: wire['handle_inputs_fingerprint'],
+    workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
+    blockConfigFingerprint: wire['block_config_fingerprint'],
+    source:
+      (
+        {
+          manual: () =>
+            deserializeManualWorkflowTestSource(wire['source'] as ManualWorkflowTestSourceResponse),
+          run_step: () =>
+            deserializeRunStepWorkflowTestSource(
+              wire['source'] as RunStepWorkflowTestSourceResponse
+            ),
+        } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>
+      )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
+      (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource),
+    outputs: wire['outputs'],
+    routingDecision: wire['routing_decision'],
+    warnings: wire['warnings'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializeErrorDetails(wire['error']),
+    skipped: wire['skipped'],
+    assertionResult:
+      wire['assertion_result'] == null
+        ? (wire['assertion_result'] as undefined)
+        : wire['assertion_result'] == null
+          ? wire['assertion_result']
+          : deserializeAssertionResult(wire['assertion_result']),
+    verdictSummary:
+      wire['verdict_summary'] == null
+        ? (wire['verdict_summary'] as undefined)
+        : wire['verdict_summary'] == null
+          ? wire['verdict_summary']
+          : deserializeVerdictSummary(wire['verdict_summary']),
   };
 }

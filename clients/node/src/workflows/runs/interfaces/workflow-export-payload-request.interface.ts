@@ -71,37 +71,39 @@ export interface WorkflowExportPayloadRequestResponse {
 }
 
 export const ZWorkflowExportPayloadRequest = z.object({
-  "workflowId": z.string(),
-  "blockId": z.string(),
-  "exportSource": ZWorkflowExportPayloadRequestExportSource.optional(),
-  "selectedRunIds": z.string().array().nullable().optional(),
-  "selectedDocTypes": z.string().array().nullable().optional(),
-  "status": ZWorkflowExportPayloadRequestStatus.nullable().optional(),
-  "excludeStatus": ZWorkflowExportPayloadRequestExcludeStatus.nullable().optional(),
-  "fromDate": z.string().nullable().optional(),
-  "toDate": z.string().nullable().optional(),
-  "triggerTypes": ZWorkflowExportPayloadRequestTriggerTypes.array().nullable().optional(),
-  "preferredColumns": z.string().array().optional(),
-  "delimiter": z.string().optional(),
-  "lineDelimiter": z.string().optional(),
-  "quote": z.string().optional(),
+  workflowId: z.string(),
+  blockId: z.string(),
+  exportSource: ZWorkflowExportPayloadRequestExportSource.optional(),
+  selectedRunIds: z.string().array().nullable().optional(),
+  selectedDocTypes: z.string().array().nullable().optional(),
+  status: ZWorkflowExportPayloadRequestStatus.nullable().optional(),
+  excludeStatus: ZWorkflowExportPayloadRequestExcludeStatus.nullable().optional(),
+  fromDate: z.string().nullable().optional(),
+  toDate: z.string().nullable().optional(),
+  triggerTypes: ZWorkflowExportPayloadRequestTriggerTypes.array().nullable().optional(),
+  preferredColumns: z.string().array().optional(),
+  delimiter: z.string().optional(),
+  lineDelimiter: z.string().optional(),
+  quote: z.string().optional(),
 }) as z.ZodType<WorkflowExportPayloadRequest>;
 
-export function deserializeWorkflowExportPayloadRequest(wire: WorkflowExportPayloadRequestResponse): WorkflowExportPayloadRequest {
+export function deserializeWorkflowExportPayloadRequest(
+  wire: WorkflowExportPayloadRequestResponse
+): WorkflowExportPayloadRequest {
   return {
-    workflowId: wire["workflow_id"],
-    blockId: wire["block_id"],
-    exportSource: wire["export_source"],
-    selectedRunIds: wire["selected_run_ids"],
-    selectedDocTypes: wire["selected_doc_types"],
-    status: wire["status"],
-    excludeStatus: wire["exclude_status"],
-    fromDate: wire["from_date"],
-    toDate: wire["to_date"],
-    triggerTypes: wire["trigger_types"],
-    preferredColumns: wire["preferred_columns"],
-    delimiter: wire["delimiter"],
-    lineDelimiter: wire["line_delimiter"],
-    quote: wire["quote"],
+    workflowId: wire['workflow_id'],
+    blockId: wire['block_id'],
+    exportSource: wire['export_source'],
+    selectedRunIds: wire['selected_run_ids'],
+    selectedDocTypes: wire['selected_doc_types'],
+    status: wire['status'],
+    excludeStatus: wire['exclude_status'],
+    fromDate: wire['from_date'],
+    toDate: wire['to_date'],
+    triggerTypes: wire['trigger_types'],
+    preferredColumns: wire['preferred_columns'],
+    delimiter: wire['delimiter'],
+    lineDelimiter: wire['line_delimiter'],
+    quote: wire['quote'],
   };
 }

@@ -7,39 +7,81 @@ import type { Partition, PartitionResponse } from '../partitions/interfaces/inde
 import { deserializePartition } from '../partitions/interfaces/index.js';
 
 export class Partitions {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Partitions */
-  async list(options?: { filename?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Partition>> {
-    return this.client._fetchPage(deserializePartition, { method: 'GET', path: "/v1/partitions", query: { "filename": options?.filename, "from_date": options?.fromDate, "to_date": options?.toDate, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    filename?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Partition>> {
+    return this.client._fetchPage(deserializePartition, {
+      method: 'GET',
+      path: '/v1/partitions',
+      query: {
+        filename: options?.filename,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Partitions */
-  async create(document: MIMEDataInput, key: string, instructions: string, model?: string, nConsensus?: number, allowOverlap?: boolean, bustCache?: boolean): Promise<Partition> {
+  async create(
+    document: MIMEDataInput,
+    key: string,
+    instructions: string,
+    model?: string,
+    nConsensus?: number,
+    allowOverlap?: boolean,
+    bustCache?: boolean
+  ): Promise<Partition> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
-      "document": documentCoerced,
-      "key": key,
-      "instructions": instructions,
-      "model": model,
-      "n_consensus": nConsensus,
-      "allow_overlap": allowOverlap,
-      "bust_cache": bustCache,
+      document: documentCoerced,
+      key: key,
+      instructions: instructions,
+      model: model,
+      n_consensus: nConsensus,
+      allow_overlap: allowOverlap,
+      bust_cache: bustCache,
     };
-    const __wire = await this.client.request<PartitionResponse>({ method: 'POST', path: "/v1/partitions", query: undefined, body: body });
+    const __wire = await this.client.request<PartitionResponse>({
+      method: 'POST',
+      path: '/v1/partitions',
+      query: undefined,
+      body: body,
+    });
     return deserializePartition(__wire);
   }
 
   /** Get Partition */
   async get(partitionId: string): Promise<Partition> {
-    const __wire = await this.client.request<PartitionResponse>({ method: 'GET', path: `/v1/partitions/${partitionId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<PartitionResponse>({
+      method: 'GET',
+      path: `/v1/partitions/${partitionId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializePartition(__wire);
   }
 
   /** Delete Partition */
   async delete(partitionId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/partitions/${partitionId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/partitions/${partitionId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

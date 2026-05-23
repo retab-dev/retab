@@ -2,6 +2,29 @@
 
 import { z } from 'zod';
 
-export type CreateJobRequestEndpoint = '/v1/extractions' | '/v1/parses' | '/v1/splits' | '/v1/partitions' | '/v1/classifications' | '/v1/schemas/generate' | '/v1/edits' | '/v1/edits/templates/generate' | '/v1/evals/extract/process' | '/v1/evals/extract/extract' | '/v1/evals/extract/split';
+export type CreateJobRequestEndpoint =
+  | '/v1/extractions'
+  | '/v1/parses'
+  | '/v1/splits'
+  | '/v1/partitions'
+  | '/v1/classifications'
+  | '/v1/schemas/generate'
+  | '/v1/edits'
+  | '/v1/edits/templates/generate'
+  | '/v1/evals/extract/process'
+  | '/v1/evals/extract/extract'
+  | '/v1/evals/extract/split';
 
-export const ZCreateJobRequestEndpoint = z.enum(['/v1/extractions', '/v1/parses', '/v1/splits', '/v1/partitions', '/v1/classifications', '/v1/schemas/generate', '/v1/edits', '/v1/edits/templates/generate', '/v1/evals/extract/process', '/v1/evals/extract/extract', '/v1/evals/extract/split'] as const);
+export const ZCreateJobRequestEndpoint = z.enum([
+  '/v1/extractions',
+  '/v1/parses',
+  '/v1/splits',
+  '/v1/partitions',
+  '/v1/classifications',
+  '/v1/schemas/generate',
+  '/v1/edits',
+  '/v1/edits/templates/generate',
+  '/v1/evals/extract/process',
+  '/v1/evals/extract/extract',
+  '/v1/evals/extract/split',
+] as const);

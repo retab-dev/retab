@@ -12,11 +12,11 @@ export interface RunningRunResponse {
 }
 
 export const ZRunningRun = z.object({
-  "status": z.literal('running'),
+  status: z.literal('running'),
 }) as z.ZodType<RunningRun>;
 
 export function deserializeRunningRun(wire: RunningRunResponse): RunningRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

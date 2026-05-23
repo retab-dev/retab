@@ -8,45 +8,90 @@ import type { FormField } from '../../workflows/artifacts/interfaces/index.js';
 import { deserializeEditTemplate } from '../../edits/templates/interfaces/index.js';
 
 export class EditTemplates {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Templates */
-  async list(options?: { name?: string | null | undefined; sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<EditTemplate>> {
-    return this.client._fetchPage(deserializeEditTemplate, { method: 'GET', path: "/v1/edits/templates", query: { "name": options?.name, "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    name?: string | null | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<EditTemplate>> {
+    return this.client._fetchPage(deserializeEditTemplate, {
+      method: 'GET',
+      path: '/v1/edits/templates',
+      query: {
+        name: options?.name,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Template */
-  async create(name: string, document: MIMEDataInput, formFields: FormField[]): Promise<EditTemplate> {
+  async create(
+    name: string,
+    document: MIMEDataInput,
+    formFields: FormField[]
+  ): Promise<EditTemplate> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
-      "name": name,
-      "document": documentCoerced,
-      "form_fields": formFields,
+      name: name,
+      document: documentCoerced,
+      form_fields: formFields,
     };
-    const __wire = await this.client.request<EditTemplateResponse>({ method: 'POST', path: "/v1/edits/templates", query: undefined, body: body });
+    const __wire = await this.client.request<EditTemplateResponse>({
+      method: 'POST',
+      path: '/v1/edits/templates',
+      query: undefined,
+      body: body,
+    });
     return deserializeEditTemplate(__wire);
   }
 
   /** Get Template */
   async get(templateId: string): Promise<EditTemplate> {
-    const __wire = await this.client.request<EditTemplateResponse>({ method: 'GET', path: `/v1/edits/templates/${templateId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<EditTemplateResponse>({
+      method: 'GET',
+      path: `/v1/edits/templates/${templateId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeEditTemplate(__wire);
   }
 
   /** Update Template */
-  async update(templateId: string, name?: string | null, formFields?: FormField[] | null): Promise<EditTemplate> {
+  async update(
+    templateId: string,
+    name?: string | null,
+    formFields?: FormField[] | null
+  ): Promise<EditTemplate> {
     const body = {
-      "name": name,
-      "form_fields": formFields,
+      name: name,
+      form_fields: formFields,
     };
-    const __wire = await this.client.request<EditTemplateResponse>({ method: 'PATCH', path: `/v1/edits/templates/${templateId}`, query: undefined, body: body });
+    const __wire = await this.client.request<EditTemplateResponse>({
+      method: 'PATCH',
+      path: `/v1/edits/templates/${templateId}`,
+      query: undefined,
+      body: body,
+    });
     return deserializeEditTemplate(__wire);
   }
 
   /** Delete Template */
   async delete(templateId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/edits/templates/${templateId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/edits/templates/${templateId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

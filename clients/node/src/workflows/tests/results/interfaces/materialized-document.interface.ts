@@ -21,21 +21,23 @@ export interface MaterializedDocumentResponse {
 }
 
 export const ZMaterializedDocument = z.object({
-  "originalId": z.string(),
-  "filename": z.string(),
-  "mimeType": z.string(),
-  "gcsUri": z.string(),
-  "sizeBytes": z.number().int().optional(),
-  "contentFingerprint": z.string().nullable().optional(),
+  originalId: z.string(),
+  filename: z.string(),
+  mimeType: z.string(),
+  gcsUri: z.string(),
+  sizeBytes: z.number().int().optional(),
+  contentFingerprint: z.string().nullable().optional(),
 }) as z.ZodType<MaterializedDocument>;
 
-export function deserializeMaterializedDocument(wire: MaterializedDocumentResponse): MaterializedDocument {
+export function deserializeMaterializedDocument(
+  wire: MaterializedDocumentResponse
+): MaterializedDocument {
   return {
-    originalId: wire["original_id"],
-    filename: wire["filename"],
-    mimeType: wire["mime_type"],
-    gcsUri: wire["gcs_uri"],
-    sizeBytes: wire["size_bytes"],
-    contentFingerprint: wire["content_fingerprint"],
+    originalId: wire['original_id'],
+    filename: wire['filename'],
+    mimeType: wire['mime_type'],
+    gcsUri: wire['gcs_uri'],
+    sizeBytes: wire['size_bytes'],
+    contentFingerprint: wire['content_fingerprint'],
   };
 }

@@ -12,11 +12,11 @@ export interface RetabUsageResponse {
 }
 
 export const ZRetabUsage = z.object({
-  "credits": z.number(),
+  credits: z.number(),
 }) as z.ZodType<RetabUsage>;
 
 export function deserializeRetabUsage(wire: RetabUsageResponse): RetabUsage {
   return {
-    credits: wire["credits"],
+    credits: wire['credits'],
   };
 }

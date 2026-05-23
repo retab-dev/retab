@@ -15,13 +15,15 @@ export interface ErrorBlockExecutionLifecycleResponse {
 }
 
 export const ZErrorBlockExecutionLifecycle = z.object({
-  "status": z.literal('error'),
-  "message": z.string(),
+  status: z.literal('error'),
+  message: z.string(),
 }) as z.ZodType<ErrorBlockExecutionLifecycle>;
 
-export function deserializeErrorBlockExecutionLifecycle(wire: ErrorBlockExecutionLifecycleResponse): ErrorBlockExecutionLifecycle {
+export function deserializeErrorBlockExecutionLifecycle(
+  wire: ErrorBlockExecutionLifecycleResponse
+): ErrorBlockExecutionLifecycle {
   return {
-    status: wire["status"],
-    message: wire["message"],
+    status: wire['status'],
+    message: wire['message'],
   };
 }

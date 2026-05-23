@@ -14,13 +14,13 @@ export interface MIMEDataResponse {
 }
 
 export const ZMIMEData = z.object({
-  "filename": z.string(),
-  "url": z.string(),
+  filename: z.string(),
+  url: z.string(),
 }) as z.ZodType<MIMEData>;
 
 export function deserializeMIMEData(wire: MIMEDataResponse): MIMEData {
   return {
-    filename: wire["filename"],
-    url: wire["url"],
+    filename: wire['filename'],
+    url: wire['url'],
   };
 }

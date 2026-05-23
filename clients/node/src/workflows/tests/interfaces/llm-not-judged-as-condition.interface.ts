@@ -15,15 +15,17 @@ export interface LlmNotJudgedAsConditionResponse {
 }
 
 export const ZLlmNotJudgedAsCondition = z.object({
-  "kind": z.literal('llm_not_judged_as'),
-  "rubric": z.string(),
-  "expectedLabel": z.string().nullable().optional(),
+  kind: z.literal('llm_not_judged_as'),
+  rubric: z.string(),
+  expectedLabel: z.string().nullable().optional(),
 }) as z.ZodType<LlmNotJudgedAsCondition>;
 
-export function deserializeLlmNotJudgedAsCondition(wire: LlmNotJudgedAsConditionResponse): LlmNotJudgedAsCondition {
+export function deserializeLlmNotJudgedAsCondition(
+  wire: LlmNotJudgedAsConditionResponse
+): LlmNotJudgedAsCondition {
   return {
-    kind: wire["kind"],
-    rubric: wire["rubric"],
-    expectedLabel: wire["expected_label"],
+    kind: wire['kind'],
+    rubric: wire['rubric'],
+    expectedLabel: wire['expected_label'],
   };
 }

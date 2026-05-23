@@ -19,19 +19,21 @@ export interface ExperimentByTargetDocumentMetricResponse {
 }
 
 export const ZExperimentByTargetDocumentMetric = z.object({
-  "id": z.string(),
-  "filename": z.string(),
-  "score": z.number().nullable().optional(),
-  "priorScore": z.number().nullable().optional(),
-  "value": z.unknown().nullable().optional(),
+  id: z.string(),
+  filename: z.string(),
+  score: z.number().nullable().optional(),
+  priorScore: z.number().nullable().optional(),
+  value: z.unknown().nullable().optional(),
 }) as z.ZodType<ExperimentByTargetDocumentMetric>;
 
-export function deserializeExperimentByTargetDocumentMetric(wire: ExperimentByTargetDocumentMetricResponse): ExperimentByTargetDocumentMetric {
+export function deserializeExperimentByTargetDocumentMetric(
+  wire: ExperimentByTargetDocumentMetricResponse
+): ExperimentByTargetDocumentMetric {
   return {
-    id: wire["id"],
-    filename: wire["filename"],
-    score: wire["score"],
-    priorScore: wire["prior_score"],
-    value: wire["value"],
+    id: wire['id'],
+    filename: wire['filename'],
+    score: wire['score'],
+    priorScore: wire['prior_score'],
+    value: wire['value'],
   };
 }

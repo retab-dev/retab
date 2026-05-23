@@ -14,13 +14,15 @@ export interface ReviewBoundaryConfidenceLtResponse {
 }
 
 export const ZReviewBoundaryConfidenceLt = z.object({
-  "kind": z.literal('boundary_confidence_lt'),
-  "threshold": z.number(),
+  kind: z.literal('boundary_confidence_lt'),
+  threshold: z.number(),
 }) as z.ZodType<ReviewBoundaryConfidenceLt>;
 
-export function deserializeReviewBoundaryConfidenceLt(wire: ReviewBoundaryConfidenceLtResponse): ReviewBoundaryConfidenceLt {
+export function deserializeReviewBoundaryConfidenceLt(
+  wire: ReviewBoundaryConfidenceLtResponse
+): ReviewBoundaryConfidenceLt {
   return {
-    kind: wire["kind"],
-    threshold: wire["threshold"],
+    kind: wire['kind'],
+    threshold: wire['threshold'],
   };
 }

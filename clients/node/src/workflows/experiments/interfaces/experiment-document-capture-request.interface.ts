@@ -13,13 +13,15 @@ export interface ExperimentDocumentCaptureRequestResponse {
 }
 
 export const ZExperimentDocumentCaptureRequest = z.object({
-  "workflowRunId": z.string(),
-  "stepId": z.string().nullable().optional(),
+  workflowRunId: z.string(),
+  stepId: z.string().nullable().optional(),
 }) as z.ZodType<ExperimentDocumentCaptureRequest>;
 
-export function deserializeExperimentDocumentCaptureRequest(wire: ExperimentDocumentCaptureRequestResponse): ExperimentDocumentCaptureRequest {
+export function deserializeExperimentDocumentCaptureRequest(
+  wire: ExperimentDocumentCaptureRequestResponse
+): ExperimentDocumentCaptureRequest {
   return {
-    workflowRunId: wire["workflow_run_id"],
-    stepId: wire["step_id"],
+    workflowRunId: wire['workflow_run_id'],
+    stepId: wire['step_id'],
   };
 }

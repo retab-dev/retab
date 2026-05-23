@@ -31,21 +31,21 @@ export interface SourcesResponseResponse {
 }
 
 export const ZSourcesResponse = z.object({
-  "object": z.literal('extraction.sources'),
-  "extractionId": z.string(),
-  "documentType": ZSourcesResponseDocumentType,
-  "file": ZFileRef,
-  "extraction": z.record(z.string(), z.unknown()),
-  "sources": z.record(z.string(), z.unknown()),
+  object: z.literal('extraction.sources'),
+  extractionId: z.string(),
+  documentType: ZSourcesResponseDocumentType,
+  file: ZFileRef,
+  extraction: z.record(z.string(), z.unknown()),
+  sources: z.record(z.string(), z.unknown()),
 }) as z.ZodType<SourcesResponse>;
 
 export function deserializeSourcesResponse(wire: SourcesResponseResponse): SourcesResponse {
   return {
-    object: wire["object"],
-    extractionId: wire["extraction_id"],
-    documentType: wire["document_type"],
-    file: deserializeFileRef(wire["file"]),
-    extraction: wire["extraction"],
-    sources: wire["sources"],
+    object: wire['object'],
+    extractionId: wire['extraction_id'],
+    documentType: wire['document_type'],
+    file: deserializeFileRef(wire['file']),
+    extraction: wire['extraction'],
+    sources: wire['sources'],
   };
 }

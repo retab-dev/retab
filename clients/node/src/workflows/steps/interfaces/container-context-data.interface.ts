@@ -24,17 +24,19 @@ export interface ContainerContextDataResponse {
 }
 
 export const ZContainerContextData = z.object({
-  "containerId": z.string(),
-  "iteration": z.number().int(),
-  "isParallel": z.boolean().optional(),
-  "parallelItemIndex": z.number().int().nullable().optional(),
+  containerId: z.string(),
+  iteration: z.number().int(),
+  isParallel: z.boolean().optional(),
+  parallelItemIndex: z.number().int().nullable().optional(),
 }) as z.ZodType<ContainerContextData>;
 
-export function deserializeContainerContextData(wire: ContainerContextDataResponse): ContainerContextData {
+export function deserializeContainerContextData(
+  wire: ContainerContextDataResponse
+): ContainerContextData {
   return {
-    containerId: wire["container_id"],
-    iteration: wire["iteration"],
-    isParallel: wire["is_parallel"],
-    parallelItemIndex: wire["parallel_item_index"],
+    containerId: wire['container_id'],
+    iteration: wire['iteration'],
+    isParallel: wire['is_parallel'],
+    parallelItemIndex: wire['parallel_item_index'],
   };
 }

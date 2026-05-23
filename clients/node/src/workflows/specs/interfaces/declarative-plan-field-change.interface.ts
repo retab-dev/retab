@@ -29,25 +29,27 @@ export interface DeclarativePlanFieldChangeResponse {
 }
 
 export const ZDeclarativePlanFieldChange = z.object({
-  "path": z.union([z.string(), z.number().int()]).array(),
-  "pathDisplay": z.string(),
-  "action": ZDeclarativePlanFieldChangeAction,
-  "before": z.unknown().nullable().optional(),
-  "after": z.unknown().nullable().optional(),
-  "beforeSensitive": z.boolean().optional(),
-  "afterSensitive": z.boolean().optional(),
-  "unifiedDiff": z.string().nullable().optional(),
+  path: z.union([z.string(), z.number().int()]).array(),
+  pathDisplay: z.string(),
+  action: ZDeclarativePlanFieldChangeAction,
+  before: z.unknown().nullable().optional(),
+  after: z.unknown().nullable().optional(),
+  beforeSensitive: z.boolean().optional(),
+  afterSensitive: z.boolean().optional(),
+  unifiedDiff: z.string().nullable().optional(),
 }) as z.ZodType<DeclarativePlanFieldChange>;
 
-export function deserializeDeclarativePlanFieldChange(wire: DeclarativePlanFieldChangeResponse): DeclarativePlanFieldChange {
+export function deserializeDeclarativePlanFieldChange(
+  wire: DeclarativePlanFieldChangeResponse
+): DeclarativePlanFieldChange {
   return {
-    path: wire["path"],
-    pathDisplay: wire["path_display"],
-    action: wire["action"],
-    before: wire["before"],
-    after: wire["after"],
-    beforeSensitive: wire["before_sensitive"],
-    afterSensitive: wire["after_sensitive"],
-    unifiedDiff: wire["unified_diff"],
+    path: wire['path'],
+    pathDisplay: wire['path_display'],
+    action: wire['action'],
+    before: wire['before'],
+    after: wire['after'],
+    beforeSensitive: wire['before_sensitive'],
+    afterSensitive: wire['after_sensitive'],
+    unifiedDiff: wire['unified_diff'],
   };
 }

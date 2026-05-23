@@ -4,4 +4,9 @@ import { z } from 'zod';
 
 export type ExperimentRunMetricsView = 'summary' | 'by_document' | 'by_target' | 'votes';
 
-export const ZExperimentRunMetricsView = z.enum(['summary', 'by_document', 'by_target', 'votes'] as const);
+export const ZExperimentRunMetricsView = z.enum([
+  'summary',
+  'by_document',
+  'by_target',
+  'votes',
+] as const);

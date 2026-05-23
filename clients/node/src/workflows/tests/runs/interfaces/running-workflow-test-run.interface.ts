@@ -12,11 +12,13 @@ export interface RunningWorkflowTestRunResponse {
 }
 
 export const ZRunningWorkflowTestRun = z.object({
-  "status": z.literal('running'),
+  status: z.literal('running'),
 }) as z.ZodType<RunningWorkflowTestRun>;
 
-export function deserializeRunningWorkflowTestRun(wire: RunningWorkflowTestRunResponse): RunningWorkflowTestRun {
+export function deserializeRunningWorkflowTestRun(
+  wire: RunningWorkflowTestRunResponse
+): RunningWorkflowTestRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

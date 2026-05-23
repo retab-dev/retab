@@ -19,17 +19,19 @@ export interface ExperimentMetricsMissingErrorResponse {
 }
 
 export const ZExperimentMetricsMissingError = z.object({
-  "kind": z.literal('no_metrics'),
-  "error": z.literal('no_metrics'),
-  "experimentId": z.string(),
-  "message": z.string(),
+  kind: z.literal('no_metrics'),
+  error: z.literal('no_metrics'),
+  experimentId: z.string(),
+  message: z.string(),
 }) as z.ZodType<ExperimentMetricsMissingError>;
 
-export function deserializeExperimentMetricsMissingError(wire: ExperimentMetricsMissingErrorResponse): ExperimentMetricsMissingError {
+export function deserializeExperimentMetricsMissingError(
+  wire: ExperimentMetricsMissingErrorResponse
+): ExperimentMetricsMissingError {
   return {
-    kind: wire["kind"],
-    error: wire["error"],
-    experimentId: wire["experiment_id"],
-    message: wire["message"],
+    kind: wire['kind'],
+    error: wire['error'],
+    experimentId: wire['experiment_id'],
+    message: wire['message'],
   };
 }

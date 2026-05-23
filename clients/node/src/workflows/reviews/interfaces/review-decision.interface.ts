@@ -24,19 +24,20 @@ export interface ReviewDecisionResponse {
 }
 
 export const ZReviewDecision = z.object({
-  "verdict": ZReviewVerdict,
-  "versionId": z.string(),
-  "author": ZActor,
-  "decidedAt": z.coerce.date().optional(),
-  "reason": z.string().nullable().optional(),
+  verdict: ZReviewVerdict,
+  versionId: z.string(),
+  author: ZActor,
+  decidedAt: z.coerce.date().optional(),
+  reason: z.string().nullable().optional(),
 }) as z.ZodType<ReviewDecision>;
 
 export function deserializeReviewDecision(wire: ReviewDecisionResponse): ReviewDecision {
   return {
-    verdict: wire["verdict"],
-    versionId: wire["version_id"],
-    author: deserializeActor(wire["author"]),
-    decidedAt: wire["decided_at"] == null ? (wire["decided_at"] as undefined) : new Date(wire["decided_at"]),
-    reason: wire["reason"],
+    verdict: wire['verdict'],
+    versionId: wire['version_id'],
+    author: deserializeActor(wire['author']),
+    decidedAt:
+      wire['decided_at'] == null ? (wire['decided_at'] as undefined) : new Date(wire['decided_at']),
+    reason: wire['reason'],
   };
 }

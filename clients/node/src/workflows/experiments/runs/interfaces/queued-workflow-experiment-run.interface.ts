@@ -12,11 +12,13 @@ export interface QueuedWorkflowExperimentRunResponse {
 }
 
 export const ZQueuedWorkflowExperimentRun = z.object({
-  "status": z.literal('queued'),
+  status: z.literal('queued'),
 }) as z.ZodType<QueuedWorkflowExperimentRun>;
 
-export function deserializeQueuedWorkflowExperimentRun(wire: QueuedWorkflowExperimentRunResponse): QueuedWorkflowExperimentRun {
+export function deserializeQueuedWorkflowExperimentRun(
+  wire: QueuedWorkflowExperimentRunResponse
+): QueuedWorkflowExperimentRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

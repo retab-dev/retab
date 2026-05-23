@@ -8,4 +8,8 @@ export type CreateWorkflowRunRequestResponse = object;
 
 export const ZCreateWorkflowRunRequest = z.object({}) as z.ZodType<CreateWorkflowRunRequest>;
 
-export function deserializeCreateWorkflowRunRequest(wire: CreateWorkflowRunRequestResponse): CreateWorkflowRunRequest { return wire as CreateWorkflowRunRequest; }
+export function deserializeCreateWorkflowRunRequest(
+  wire: CreateWorkflowRunRequestResponse
+): CreateWorkflowRunRequest {
+  return wire as CreateWorkflowRunRequest;
+}

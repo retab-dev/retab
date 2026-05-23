@@ -46,23 +46,25 @@ export interface ClassificationRequestResponse {
 }
 
 export const ZClassificationRequest = z.object({
-  "document": z.union([ZMIMEData, ZFileRef]),
-  "categories": ZCategory.array(),
-  "model": z.string().optional(),
-  "firstNPages": z.number().int().nullable().optional(),
-  "instructions": z.string().nullable().optional(),
-  "nConsensus": z.number().int().optional(),
-  "bustCache": z.boolean().optional(),
+  document: z.union([ZMIMEData, ZFileRef]),
+  categories: ZCategory.array(),
+  model: z.string().optional(),
+  firstNPages: z.number().int().nullable().optional(),
+  instructions: z.string().nullable().optional(),
+  nConsensus: z.number().int().optional(),
+  bustCache: z.boolean().optional(),
 }) as z.ZodType<ClassificationRequest>;
 
-export function deserializeClassificationRequest(wire: ClassificationRequestResponse): ClassificationRequest {
+export function deserializeClassificationRequest(
+  wire: ClassificationRequestResponse
+): ClassificationRequest {
   return {
-    document: (wire["document"] as unknown as MIMEData | FileRef),
-    categories: wire["categories"].map((__i) => deserializeCategory(__i)),
-    model: wire["model"],
-    firstNPages: wire["first_n_pages"],
-    instructions: wire["instructions"],
-    nConsensus: wire["n_consensus"],
-    bustCache: wire["bust_cache"],
+    document: wire['document'] as unknown as MIMEData | FileRef,
+    categories: wire['categories'].map((__i) => deserializeCategory(__i)),
+    model: wire['model'],
+    firstNPages: wire['first_n_pages'],
+    instructions: wire['instructions'],
+    nConsensus: wire['n_consensus'],
+    bustCache: wire['bust_cache'],
   };
 }

@@ -24,17 +24,19 @@ export interface ConditionEvaluationPerItemResponse {
 }
 
 export const ZConditionEvaluationPerItem = z.object({
-  "index": z.number().int(),
-  "indices": z.number().int().array().optional(),
-  "actual": z.unknown().optional(),
-  "matched": z.boolean().optional(),
+  index: z.number().int(),
+  indices: z.number().int().array().optional(),
+  actual: z.unknown().optional(),
+  matched: z.boolean().optional(),
 }) as z.ZodType<ConditionEvaluationPerItem>;
 
-export function deserializeConditionEvaluationPerItem(wire: ConditionEvaluationPerItemResponse): ConditionEvaluationPerItem {
+export function deserializeConditionEvaluationPerItem(
+  wire: ConditionEvaluationPerItemResponse
+): ConditionEvaluationPerItem {
   return {
-    index: wire["index"],
-    indices: wire["indices"],
-    actual: wire["actual"],
-    matched: wire["matched"],
+    index: wire['index'],
+    indices: wire['indices'],
+    actual: wire['actual'],
+    matched: wire['matched'],
   };
 }

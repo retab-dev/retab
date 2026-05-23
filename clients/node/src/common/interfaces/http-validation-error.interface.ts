@@ -13,11 +13,16 @@ export interface HttpValidationErrorResponse {
 }
 
 export const ZHttpValidationError = z.object({
-  "detail": ZValidationError.array().optional(),
+  detail: ZValidationError.array().optional(),
 }) as z.ZodType<HttpValidationError>;
 
-export function deserializeHttpValidationError(wire: HttpValidationErrorResponse): HttpValidationError {
+export function deserializeHttpValidationError(
+  wire: HttpValidationErrorResponse
+): HttpValidationError {
   return {
-    detail: wire["detail"] == null ? (wire["detail"] as undefined) : wire["detail"].map((__i) => deserializeValidationError(__i)),
+    detail:
+      wire['detail'] == null
+        ? (wire['detail'] as undefined)
+        : wire['detail'].map((__i) => deserializeValidationError(__i)),
   };
 }

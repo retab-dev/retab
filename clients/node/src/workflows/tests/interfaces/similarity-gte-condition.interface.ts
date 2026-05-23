@@ -21,17 +21,19 @@ export interface SimilarityGteConditionResponse {
 }
 
 export const ZSimilarityGteCondition = z.object({
-  "kind": z.literal('similarity_gte'),
-  "reference": z.unknown(),
-  "threshold": z.number(),
-  "method": ZSimilarityGteConditionMethod.optional(),
+  kind: z.literal('similarity_gte'),
+  reference: z.unknown(),
+  threshold: z.number(),
+  method: ZSimilarityGteConditionMethod.optional(),
 }) as z.ZodType<SimilarityGteCondition>;
 
-export function deserializeSimilarityGteCondition(wire: SimilarityGteConditionResponse): SimilarityGteCondition {
+export function deserializeSimilarityGteCondition(
+  wire: SimilarityGteConditionResponse
+): SimilarityGteCondition {
   return {
-    kind: wire["kind"],
-    reference: wire["reference"],
-    threshold: wire["threshold"],
-    method: wire["method"],
+    kind: wire['kind'],
+    reference: wire['reference'],
+    threshold: wire['threshold'],
+    method: wire['method'],
   };
 }

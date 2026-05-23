@@ -4,4 +4,9 @@ import { z } from 'zod';
 
 export type ParseWorkflowArtifactTableParsingFormat = 'markdown' | 'yaml' | 'html' | 'json';
 
-export const ZParseWorkflowArtifactTableParsingFormat = z.enum(['markdown', 'yaml', 'html', 'json'] as const);
+export const ZParseWorkflowArtifactTableParsingFormat = z.enum([
+  'markdown',
+  'yaml',
+  'html',
+  'json',
+] as const);

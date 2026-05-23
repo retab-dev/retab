@@ -18,19 +18,19 @@ export interface ValidationErrorResponse {
 }
 
 export const ZValidationError = z.object({
-  "loc": z.union([z.string(), z.number().int()]).array(),
-  "msg": z.string(),
-  "type": z.string(),
-  "input": z.unknown().optional(),
-  "ctx": z.record(z.string(), z.unknown()).optional(),
+  loc: z.union([z.string(), z.number().int()]).array(),
+  msg: z.string(),
+  type: z.string(),
+  input: z.unknown().optional(),
+  ctx: z.record(z.string(), z.unknown()).optional(),
 }) as z.ZodType<ValidationError>;
 
 export function deserializeValidationError(wire: ValidationErrorResponse): ValidationError {
   return {
-    loc: wire["loc"],
-    msg: wire["msg"],
-    type: wire["type"],
-    input: wire["input"],
-    ctx: wire["ctx"],
+    loc: wire['loc'],
+    msg: wire['msg'],
+    type: wire['type'],
+    input: wire['input'],
+    ctx: wire['ctx'],
   };
 }

@@ -16,17 +16,30 @@ export interface ExperimentRunTimingResponse {
 }
 
 export const ZExperimentRunTiming = z.object({
-  "createdAt": z.coerce.date().optional(),
-  "startedAt": z.coerce.date().nullable().optional(),
-  "completedAt": z.coerce.date().nullable().optional(),
-  "durationMs": z.number().int().nullable().optional(),
+  createdAt: z.coerce.date().optional(),
+  startedAt: z.coerce.date().nullable().optional(),
+  completedAt: z.coerce.date().nullable().optional(),
+  durationMs: z.number().int().nullable().optional(),
 }) as z.ZodType<ExperimentRunTiming>;
 
-export function deserializeExperimentRunTiming(wire: ExperimentRunTimingResponse): ExperimentRunTiming {
+export function deserializeExperimentRunTiming(
+  wire: ExperimentRunTimingResponse
+): ExperimentRunTiming {
   return {
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : new Date(wire["created_at"]),
-    startedAt: wire["started_at"] == null ? (wire["started_at"] as undefined) : (wire["started_at"] == null ? wire["started_at"] : new Date(wire["started_at"])),
-    completedAt: wire["completed_at"] == null ? (wire["completed_at"] as undefined) : (wire["completed_at"] == null ? wire["completed_at"] : new Date(wire["completed_at"])),
-    durationMs: wire["duration_ms"],
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    startedAt:
+      wire['started_at'] == null
+        ? (wire['started_at'] as undefined)
+        : wire['started_at'] == null
+          ? wire['started_at']
+          : new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : wire['completed_at'] == null
+          ? wire['completed_at']
+          : new Date(wire['completed_at']),
+    durationMs: wire['duration_ms'],
   };
 }

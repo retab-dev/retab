@@ -2,6 +2,19 @@
 
 import { z } from 'zod';
 
-export type LatestBlockTestRunSummaryStatus = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'cancelled';
+export type LatestBlockTestRunSummaryStatus =
+  | 'pending'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
 
-export const ZLatestBlockTestRunSummaryStatus = z.enum(['pending', 'queued', 'running', 'completed', 'error', 'cancelled'] as const);
+export const ZLatestBlockTestRunSummaryStatus = z.enum([
+  'pending',
+  'queued',
+  'running',
+  'completed',
+  'error',
+  'cancelled',
+] as const);

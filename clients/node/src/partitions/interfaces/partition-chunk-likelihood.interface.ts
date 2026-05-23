@@ -14,13 +14,15 @@ export interface PartitionChunkLikelihoodResponse {
 }
 
 export const ZPartitionChunkLikelihood = z.object({
-  "key": z.number().nullable().optional(),
-  "pages": z.number().array().optional(),
+  key: z.number().nullable().optional(),
+  pages: z.number().array().optional(),
 }) as z.ZodType<PartitionChunkLikelihood>;
 
-export function deserializePartitionChunkLikelihood(wire: PartitionChunkLikelihoodResponse): PartitionChunkLikelihood {
+export function deserializePartitionChunkLikelihood(
+  wire: PartitionChunkLikelihoodResponse
+): PartitionChunkLikelihood {
   return {
-    key: wire["key"],
-    pages: wire["pages"],
+    key: wire['key'],
+    pages: wire['pages'],
   };
 }

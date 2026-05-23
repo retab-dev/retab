@@ -3,42 +3,87 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type MIMEDataInput } from '../runtime/mime.js';
-import type { Parse, ParseRequestTableParsingFormat, ParseResponse } from '../parses/interfaces/index.js';
+import type {
+  Parse,
+  ParseRequestTableParsingFormat,
+  ParseResponse,
+} from '../parses/interfaces/index.js';
 import { deserializeParse } from '../parses/interfaces/index.js';
 
 export class Parses {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Parses */
-  async list(options?: { filename?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Parse>> {
-    return this.client._fetchPage(deserializeParse, { method: 'GET', path: "/v1/parses", query: { "filename": options?.filename, "from_date": options?.fromDate, "to_date": options?.toDate, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    filename?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Parse>> {
+    return this.client._fetchPage(deserializeParse, {
+      method: 'GET',
+      path: '/v1/parses',
+      query: {
+        filename: options?.filename,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Parse */
-  async create(document: MIMEDataInput, model?: string, tableParsingFormat?: ParseRequestTableParsingFormat, imageResolutionDpi?: number, instructions?: string | null, bustCache?: boolean): Promise<Parse> {
+  async create(
+    document: MIMEDataInput,
+    model?: string,
+    tableParsingFormat?: ParseRequestTableParsingFormat,
+    imageResolutionDpi?: number,
+    instructions?: string | null,
+    bustCache?: boolean
+  ): Promise<Parse> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
-      "document": documentCoerced,
-      "model": model,
-      "table_parsing_format": tableParsingFormat,
-      "image_resolution_dpi": imageResolutionDpi,
-      "instructions": instructions,
-      "bust_cache": bustCache,
+      document: documentCoerced,
+      model: model,
+      table_parsing_format: tableParsingFormat,
+      image_resolution_dpi: imageResolutionDpi,
+      instructions: instructions,
+      bust_cache: bustCache,
     };
-    const __wire = await this.client.request<ParseResponse>({ method: 'POST', path: "/v1/parses", query: undefined, body: body });
+    const __wire = await this.client.request<ParseResponse>({
+      method: 'POST',
+      path: '/v1/parses',
+      query: undefined,
+      body: body,
+    });
     return deserializeParse(__wire);
   }
 
   /** Get Parse */
   async get(parseId: string): Promise<Parse> {
-    const __wire = await this.client.request<ParseResponse>({ method: 'GET', path: `/v1/parses/${parseId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<ParseResponse>({
+      method: 'GET',
+      path: `/v1/parses/${parseId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeParse(__wire);
   }
 
   /** Delete Parse */
   async delete(parseId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/parses/${parseId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/parses/${parseId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

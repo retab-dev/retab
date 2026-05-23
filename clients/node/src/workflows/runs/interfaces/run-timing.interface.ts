@@ -30,21 +30,37 @@ export interface RunTimingResponse {
 }
 
 export const ZRunTiming = z.object({
-  "createdAt": z.coerce.date().optional(),
-  "startedAt": z.coerce.date().nullable().optional(),
-  "completedAt": z.coerce.date().nullable().optional(),
-  "reviewWaitingStartedAt": z.coerce.date().nullable().optional(),
-  "accumulatedReviewWaitingMs": z.number().int().optional(),
-  "durationMs": z.number().int().nullable().optional(),
+  createdAt: z.coerce.date().optional(),
+  startedAt: z.coerce.date().nullable().optional(),
+  completedAt: z.coerce.date().nullable().optional(),
+  reviewWaitingStartedAt: z.coerce.date().nullable().optional(),
+  accumulatedReviewWaitingMs: z.number().int().optional(),
+  durationMs: z.number().int().nullable().optional(),
 }) as z.ZodType<RunTiming>;
 
 export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
   return {
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : new Date(wire["created_at"]),
-    startedAt: wire["started_at"] == null ? (wire["started_at"] as undefined) : (wire["started_at"] == null ? wire["started_at"] : new Date(wire["started_at"])),
-    completedAt: wire["completed_at"] == null ? (wire["completed_at"] as undefined) : (wire["completed_at"] == null ? wire["completed_at"] : new Date(wire["completed_at"])),
-    reviewWaitingStartedAt: wire["review_waiting_started_at"] == null ? (wire["review_waiting_started_at"] as undefined) : (wire["review_waiting_started_at"] == null ? wire["review_waiting_started_at"] : new Date(wire["review_waiting_started_at"])),
-    accumulatedReviewWaitingMs: wire["accumulated_review_waiting_ms"],
-    durationMs: wire["duration_ms"],
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    startedAt:
+      wire['started_at'] == null
+        ? (wire['started_at'] as undefined)
+        : wire['started_at'] == null
+          ? wire['started_at']
+          : new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : wire['completed_at'] == null
+          ? wire['completed_at']
+          : new Date(wire['completed_at']),
+    reviewWaitingStartedAt:
+      wire['review_waiting_started_at'] == null
+        ? (wire['review_waiting_started_at'] as undefined)
+        : wire['review_waiting_started_at'] == null
+          ? wire['review_waiting_started_at']
+          : new Date(wire['review_waiting_started_at']),
+    accumulatedReviewWaitingMs: wire['accumulated_review_waiting_ms'],
+    durationMs: wire['duration_ms'],
   };
 }

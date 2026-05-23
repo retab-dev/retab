@@ -2,6 +2,45 @@
 
 import { z } from 'zod';
 
-export type WorkflowRunStepBlockType = 'start_document' | 'start_json' | 'note' | 'parse' | 'edit' | 'extract' | 'split' | 'classifier' | 'conditional' | 'api_call' | 'review' | 'function' | 'while_loop' | 'for_each' | 'merge_dicts' | 'while_loop_sentinel_start' | 'while_loop_sentinel_end' | 'for_each_sentinel_start' | 'for_each_sentinel_end';
+export type WorkflowRunStepBlockType =
+  | 'start_document'
+  | 'start_json'
+  | 'note'
+  | 'parse'
+  | 'edit'
+  | 'extract'
+  | 'split'
+  | 'classifier'
+  | 'conditional'
+  | 'api_call'
+  | 'review'
+  | 'function'
+  | 'while_loop'
+  | 'for_each'
+  | 'merge_dicts'
+  | 'while_loop_sentinel_start'
+  | 'while_loop_sentinel_end'
+  | 'for_each_sentinel_start'
+  | 'for_each_sentinel_end';
 
-export const ZWorkflowRunStepBlockType = z.enum(['start_document', 'start_json', 'note', 'parse', 'edit', 'extract', 'split', 'classifier', 'conditional', 'api_call', 'review', 'function', 'while_loop', 'for_each', 'merge_dicts', 'while_loop_sentinel_start', 'while_loop_sentinel_end', 'for_each_sentinel_start', 'for_each_sentinel_end'] as const);
+export const ZWorkflowRunStepBlockType = z.enum([
+  'start_document',
+  'start_json',
+  'note',
+  'parse',
+  'edit',
+  'extract',
+  'split',
+  'classifier',
+  'conditional',
+  'api_call',
+  'review',
+  'function',
+  'while_loop',
+  'for_each',
+  'merge_dicts',
+  'while_loop_sentinel_start',
+  'while_loop_sentinel_end',
+  'for_each_sentinel_start',
+  'for_each_sentinel_end',
+] as const);

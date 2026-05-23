@@ -41,31 +41,38 @@ export interface LatestBlockTestRunSummaryResponse {
 }
 
 export const ZLatestBlockTestRunSummary = z.object({
-  "runRecordId": z.string(),
-  "status": ZLatestBlockTestRunSummaryStatus,
-  "outcome": ZLatestBlockTestRunSummaryOutcome.nullable().optional(),
-  "startedAt": z.coerce.date(),
-  "completedAt": z.coerce.date().nullable().optional(),
-  "durationMs": z.number().int().nullable().optional(),
-  "workflowDraftFingerprint": z.string().optional(),
-  "blockConfigFingerprint": z.string().optional(),
-  "assertionsPassed": z.number().int().optional(),
-  "assertionsFailed": z.number().int().optional(),
-  "blockedAssertions": z.number().int().optional(),
+  runRecordId: z.string(),
+  status: ZLatestBlockTestRunSummaryStatus,
+  outcome: ZLatestBlockTestRunSummaryOutcome.nullable().optional(),
+  startedAt: z.coerce.date(),
+  completedAt: z.coerce.date().nullable().optional(),
+  durationMs: z.number().int().nullable().optional(),
+  workflowDraftFingerprint: z.string().optional(),
+  blockConfigFingerprint: z.string().optional(),
+  assertionsPassed: z.number().int().optional(),
+  assertionsFailed: z.number().int().optional(),
+  blockedAssertions: z.number().int().optional(),
 }) as z.ZodType<LatestBlockTestRunSummary>;
 
-export function deserializeLatestBlockTestRunSummary(wire: LatestBlockTestRunSummaryResponse): LatestBlockTestRunSummary {
+export function deserializeLatestBlockTestRunSummary(
+  wire: LatestBlockTestRunSummaryResponse
+): LatestBlockTestRunSummary {
   return {
-    runRecordId: wire["run_record_id"],
-    status: wire["status"],
-    outcome: wire["outcome"],
-    startedAt: new Date(wire["started_at"]),
-    completedAt: wire["completed_at"] == null ? (wire["completed_at"] as undefined) : (wire["completed_at"] == null ? wire["completed_at"] : new Date(wire["completed_at"])),
-    durationMs: wire["duration_ms"],
-    workflowDraftFingerprint: wire["workflow_draft_fingerprint"],
-    blockConfigFingerprint: wire["block_config_fingerprint"],
-    assertionsPassed: wire["assertions_passed"],
-    assertionsFailed: wire["assertions_failed"],
-    blockedAssertions: wire["blocked_assertions"],
+    runRecordId: wire['run_record_id'],
+    status: wire['status'],
+    outcome: wire['outcome'],
+    startedAt: new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : wire['completed_at'] == null
+          ? wire['completed_at']
+          : new Date(wire['completed_at']),
+    durationMs: wire['duration_ms'],
+    workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
+    blockConfigFingerprint: wire['block_config_fingerprint'],
+    assertionsPassed: wire['assertions_passed'],
+    assertionsFailed: wire['assertions_failed'],
+    blockedAssertions: wire['blocked_assertions'],
   };
 }

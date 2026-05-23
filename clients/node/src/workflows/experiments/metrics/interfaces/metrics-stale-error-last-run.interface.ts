@@ -16,17 +16,24 @@ export interface _MetricsStaleErrorLastRunResponse {
 }
 
 export const Z_MetricsStaleErrorLastRun = z.object({
-  "runId": z.string(),
-  "definitionFingerprint": z.string().nullable().optional(),
-  "score": z.number().nullable().optional(),
-  "createdAt": z.coerce.date().nullable().optional(),
+  runId: z.string(),
+  definitionFingerprint: z.string().nullable().optional(),
+  score: z.number().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<_MetricsStaleErrorLastRun>;
 
-export function deserialize_MetricsStaleErrorLastRun(wire: _MetricsStaleErrorLastRunResponse): _MetricsStaleErrorLastRun {
+export function deserialize_MetricsStaleErrorLastRun(
+  wire: _MetricsStaleErrorLastRunResponse
+): _MetricsStaleErrorLastRun {
   return {
-    runId: wire["run_id"],
-    definitionFingerprint: wire["definition_fingerprint"],
-    score: wire["score"],
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : (wire["created_at"] == null ? wire["created_at"] : new Date(wire["created_at"])),
+    runId: wire['run_id'],
+    definitionFingerprint: wire['definition_fingerprint'],
+    score: wire['score'],
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
   };
 }

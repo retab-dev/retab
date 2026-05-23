@@ -13,13 +13,13 @@ export interface EndsWithConditionResponse {
 }
 
 export const ZEndsWithCondition = z.object({
-  "kind": z.literal('ends_with'),
-  "expected": z.string(),
+  kind: z.literal('ends_with'),
+  expected: z.string(),
 }) as z.ZodType<EndsWithCondition>;
 
 export function deserializeEndsWithCondition(wire: EndsWithConditionResponse): EndsWithCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

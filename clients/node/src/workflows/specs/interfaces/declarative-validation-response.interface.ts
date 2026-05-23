@@ -18,19 +18,21 @@ export interface DeclarativeValidationResponseResponse {
 }
 
 export const ZDeclarativeValidationResponse = z.object({
-  "workflowId": z.string(),
-  "blockCount": z.number().int(),
-  "edgeCount": z.number().int(),
-  "isValid": z.boolean(),
-  "diagnostics": z.record(z.string(), z.unknown()),
+  workflowId: z.string(),
+  blockCount: z.number().int(),
+  edgeCount: z.number().int(),
+  isValid: z.boolean(),
+  diagnostics: z.record(z.string(), z.unknown()),
 }) as z.ZodType<DeclarativeValidationResponse>;
 
-export function deserializeDeclarativeValidationResponse(wire: DeclarativeValidationResponseResponse): DeclarativeValidationResponse {
+export function deserializeDeclarativeValidationResponse(
+  wire: DeclarativeValidationResponseResponse
+): DeclarativeValidationResponse {
   return {
-    workflowId: wire["workflow_id"],
-    blockCount: wire["block_count"],
-    edgeCount: wire["edge_count"],
-    isValid: wire["is_valid"],
-    diagnostics: wire["diagnostics"],
+    workflowId: wire['workflow_id'],
+    blockCount: wire['block_count'],
+    edgeCount: wire['edge_count'],
+    isValid: wire['is_valid'],
+    diagnostics: wire['diagnostics'],
   };
 }

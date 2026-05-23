@@ -2,6 +2,19 @@
 
 import { z } from 'zod';
 
-export type GenerateSchemaRequestReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+export type GenerateSchemaRequestReasoningEffort =
+  | 'none'
+  | 'minimal'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'xhigh';
 
-export const ZGenerateSchemaRequestReasoningEffort = z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const);
+export const ZGenerateSchemaRequestReasoningEffort = z.enum([
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+] as const);

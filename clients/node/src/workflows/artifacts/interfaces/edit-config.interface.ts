@@ -14,11 +14,11 @@ export interface EditConfigResponse {
 }
 
 export const ZEditConfig = z.object({
-  "color": z.string().optional(),
+  color: z.string().optional(),
 }) as z.ZodType<EditConfig>;
 
 export function deserializeEditConfig(wire: EditConfigResponse): EditConfig {
   return {
-    color: wire["color"],
+    color: wire['color'],
   };
 }

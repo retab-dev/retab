@@ -15,11 +15,13 @@ export interface PublishWorkflowRequestResponse {
 }
 
 export const ZPublishWorkflowRequest = z.object({
-  "description": z.string().optional(),
+  description: z.string().optional(),
 }) as z.ZodType<PublishWorkflowRequest>;
 
-export function deserializePublishWorkflowRequest(wire: PublishWorkflowRequestResponse): PublishWorkflowRequest {
+export function deserializePublishWorkflowRequest(
+  wire: PublishWorkflowRequestResponse
+): PublishWorkflowRequest {
   return {
-    description: wire["description"],
+    description: wire['description'],
   };
 }

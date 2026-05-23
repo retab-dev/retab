@@ -2,22 +2,58 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
-import type { WorkflowRunStep, WorkflowRunStepResponse } from '../../workflows/steps/interfaces/index.js';
+import type {
+  WorkflowRunStep,
+  WorkflowRunStepResponse,
+} from '../../workflows/steps/interfaces/index.js';
 import { deserializeWorkflowRunStep } from '../../workflows/steps/interfaces/index.js';
 
 export class WorkflowSteps {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Workflow Run Steps */
-  async list(options?: { runId?: string | null | undefined; blockId?: string | null | undefined; blockIds?: string[] | null | undefined; stepId?: string | null | undefined; blockType?: string[] | null | undefined; status?: string[] | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowRunStep>> {
-    return this.client._fetchPage(deserializeWorkflowRunStep, { method: 'GET', path: "/v1/workflows/steps", query: { "run_id": options?.runId, "block_id": options?.blockId, "block_ids": options?.blockIds, "step_id": options?.stepId, "block_type": options?.blockType, "status": options?.status, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    runId?: string | null | undefined;
+    blockId?: string | null | undefined;
+    blockIds?: string[] | null | undefined;
+    stepId?: string | null | undefined;
+    blockType?: string[] | null | undefined;
+    status?: string[] | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowRunStep>> {
+    return this.client._fetchPage(deserializeWorkflowRunStep, {
+      method: 'GET',
+      path: '/v1/workflows/steps',
+      query: {
+        run_id: options?.runId,
+        block_id: options?.blockId,
+        block_ids: options?.blockIds,
+        step_id: options?.stepId,
+        block_type: options?.blockType,
+        status: options?.status,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Get Workflow Step */
-  async get(stepId: string, options?: { runId?: string | null | undefined }): Promise<WorkflowRunStep> {
-    const __wire = await this.client.request<WorkflowRunStepResponse>({ method: 'GET', path: `/v1/workflows/steps/${stepId}`, query: { "run_id": options?.runId }, body: undefined });
+  async get(
+    stepId: string,
+    options?: { runId?: string | null | undefined }
+  ): Promise<WorkflowRunStep> {
+    const __wire = await this.client.request<WorkflowRunStepResponse>({
+      method: 'GET',
+      path: `/v1/workflows/steps/${stepId}`,
+      query: { run_id: options?.runId },
+      body: undefined,
+    });
     return deserializeWorkflowRunStep(__wire);
   }
 }

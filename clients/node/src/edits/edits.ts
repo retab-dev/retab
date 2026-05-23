@@ -16,33 +16,78 @@ export class Edits {
   }
 
   /** List Edits */
-  async list(options?: { filename?: string | null | undefined; templateId?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Edit>> {
-    return this.client._fetchPage(deserializeEdit, { method: 'GET', path: "/v1/edits", query: { "filename": options?.filename, "template_id": options?.templateId, "from_date": options?.fromDate, "to_date": options?.toDate, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    filename?: string | null | undefined;
+    templateId?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Edit>> {
+    return this.client._fetchPage(deserializeEdit, {
+      method: 'GET',
+      path: '/v1/edits',
+      query: {
+        filename: options?.filename,
+        template_id: options?.templateId,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Edit */
-  async create(instructions: string, document?: MIMEDataInput, templateId?: string | null, model?: string, config?: EditConfig, bustCache?: boolean): Promise<Edit> {
+  async create(
+    instructions: string,
+    document?: MIMEDataInput,
+    templateId?: string | null,
+    model?: string,
+    config?: EditConfig,
+    bustCache?: boolean
+  ): Promise<Edit> {
     const documentCoerced = document === undefined ? undefined : await coerceMimeData(document);
     const body = {
-      "instructions": instructions,
-      "document": documentCoerced,
-      "template_id": templateId,
-      "model": model,
-      "config": config,
-      "bust_cache": bustCache,
+      instructions: instructions,
+      document: documentCoerced,
+      template_id: templateId,
+      model: model,
+      config: config,
+      bust_cache: bustCache,
     };
-    const __wire = await this.client.request<EditResponse>({ method: 'POST', path: "/v1/edits", query: undefined, body: body });
+    const __wire = await this.client.request<EditResponse>({
+      method: 'POST',
+      path: '/v1/edits',
+      query: undefined,
+      body: body,
+    });
     return deserializeEdit(__wire);
   }
 
   /** Get Edit */
   async get(editId: string): Promise<Edit> {
-    const __wire = await this.client.request<EditResponse>({ method: 'GET', path: `/v1/edits/${editId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<EditResponse>({
+      method: 'GET',
+      path: `/v1/edits/${editId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeEdit(__wire);
   }
 
   /** Delete Edit */
   async delete(editId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/edits/${editId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/edits/${editId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

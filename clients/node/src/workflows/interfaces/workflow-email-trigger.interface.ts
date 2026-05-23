@@ -14,13 +14,15 @@ export interface WorkflowEmailTriggerResponse {
 }
 
 export const ZWorkflowEmailTrigger = z.object({
-  "allowedSenders": z.string().array().optional(),
-  "allowedDomains": z.string().array().optional(),
+  allowedSenders: z.string().array().optional(),
+  allowedDomains: z.string().array().optional(),
 }) as z.ZodType<WorkflowEmailTrigger>;
 
-export function deserializeWorkflowEmailTrigger(wire: WorkflowEmailTriggerResponse): WorkflowEmailTrigger {
+export function deserializeWorkflowEmailTrigger(
+  wire: WorkflowEmailTriggerResponse
+): WorkflowEmailTrigger {
   return {
-    allowedSenders: wire["allowed_senders"],
-    allowedDomains: wire["allowed_domains"],
+    allowedSenders: wire['allowed_senders'],
+    allowedDomains: wire['allowed_domains'],
   };
 }

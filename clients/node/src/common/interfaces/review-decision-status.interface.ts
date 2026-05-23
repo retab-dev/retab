@@ -4,4 +4,10 @@ import { z } from 'zod';
 
 export type ReviewDecisionStatus = 'pending' | 'approved' | 'rejected' | 'decided' | 'all';
 
-export const ZReviewDecisionStatus = z.enum(['pending', 'approved', 'rejected', 'decided', 'all'] as const);
+export const ZReviewDecisionStatus = z.enum([
+  'pending',
+  'approved',
+  'rejected',
+  'decided',
+  'all',
+] as const);

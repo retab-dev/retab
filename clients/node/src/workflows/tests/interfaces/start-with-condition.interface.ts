@@ -13,13 +13,15 @@ export interface StartWithConditionResponse {
 }
 
 export const ZStartWithCondition = z.object({
-  "kind": z.literal('starts_with'),
-  "expected": z.string(),
+  kind: z.literal('starts_with'),
+  expected: z.string(),
 }) as z.ZodType<StartWithCondition>;
 
-export function deserializeStartWithCondition(wire: StartWithConditionResponse): StartWithCondition {
+export function deserializeStartWithCondition(
+  wire: StartWithConditionResponse
+): StartWithCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

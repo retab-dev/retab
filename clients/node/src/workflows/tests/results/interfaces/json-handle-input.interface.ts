@@ -14,13 +14,13 @@ export interface JsonHandleInputResponse {
 }
 
 export const ZJsonHandleInput = z.object({
-  "type": z.literal('json'),
-  "data": z.unknown().optional(),
+  type: z.literal('json'),
+  data: z.unknown().optional(),
 }) as z.ZodType<JsonHandleInput>;
 
 export function deserializeJsonHandleInput(wire: JsonHandleInputResponse): JsonHandleInput {
   return {
-    type: wire["type"],
-    data: wire["data"],
+    type: wire['type'],
+    data: wire['data'],
   };
 }

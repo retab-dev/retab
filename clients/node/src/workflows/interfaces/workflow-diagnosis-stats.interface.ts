@@ -29,17 +29,19 @@ export interface WorkflowDiagnosisStatsResponse {
 }
 
 export const ZWorkflowDiagnosisStats = z.object({
-  "totalBlocks": z.number().int().optional(),
-  "totalEdges": z.number().int().optional(),
-  "blockTypes": z.record(z.string(), z.number().int()).optional(),
-  "startDocumentBlocks": z.number().int().optional(),
+  totalBlocks: z.number().int().optional(),
+  totalEdges: z.number().int().optional(),
+  blockTypes: z.record(z.string(), z.number().int()).optional(),
+  startDocumentBlocks: z.number().int().optional(),
 }) as z.ZodType<WorkflowDiagnosisStats>;
 
-export function deserializeWorkflowDiagnosisStats(wire: WorkflowDiagnosisStatsResponse): WorkflowDiagnosisStats {
+export function deserializeWorkflowDiagnosisStats(
+  wire: WorkflowDiagnosisStatsResponse
+): WorkflowDiagnosisStats {
   return {
-    totalBlocks: wire["total_blocks"],
-    totalEdges: wire["total_edges"],
-    blockTypes: wire["block_types"],
-    startDocumentBlocks: wire["start_document_blocks"],
+    totalBlocks: wire['total_blocks'],
+    totalEdges: wire['total_edges'],
+    blockTypes: wire['block_types'],
+    startDocumentBlocks: wire['start_document_blocks'],
   };
 }

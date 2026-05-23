@@ -26,21 +26,21 @@ export interface FileResponse {
 }
 
 export const ZFile = z.object({
-  "object": z.literal('file'),
-  "id": z.string(),
-  "filename": z.string(),
-  "createdAt": z.coerce.date(),
-  "updatedAt": z.coerce.date(),
-  "pageCount": z.number().int().nullable().optional(),
+  object: z.literal('file'),
+  id: z.string(),
+  filename: z.string(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+  pageCount: z.number().int().nullable().optional(),
 }) as z.ZodType<File>;
 
 export function deserializeFile(wire: FileResponse): File {
   return {
-    object: wire["object"],
-    id: wire["id"],
-    filename: wire["filename"],
-    createdAt: new Date(wire["created_at"]),
-    updatedAt: new Date(wire["updated_at"]),
-    pageCount: wire["page_count"],
+    object: wire['object'],
+    id: wire['id'],
+    filename: wire['filename'],
+    createdAt: new Date(wire['created_at']),
+    updatedAt: new Date(wire['updated_at']),
+    pageCount: wire['page_count'],
   };
 }

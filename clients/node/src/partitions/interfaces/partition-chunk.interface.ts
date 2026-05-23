@@ -14,13 +14,13 @@ export interface PartitionChunkResponse {
 }
 
 export const ZPartitionChunk = z.object({
-  "key": z.string(),
-  "pages": z.number().int().array().optional(),
+  key: z.string(),
+  pages: z.number().int().array().optional(),
 }) as z.ZodType<PartitionChunk>;
 
 export function deserializePartitionChunk(wire: PartitionChunkResponse): PartitionChunk {
   return {
-    key: wire["key"],
-    pages: wire["pages"],
+    key: wire['key'],
+    pages: wire['pages'],
   };
 }

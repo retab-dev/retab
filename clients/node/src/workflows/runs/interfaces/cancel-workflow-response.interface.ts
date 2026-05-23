@@ -28,15 +28,17 @@ export interface CancelWorkflowResponseResponse {
 }
 
 export const ZCancelWorkflowResponse = z.object({
-  "run": ZWorkflowRun,
-  "redisAvailable": z.boolean().optional(),
-  "cancellationStatus": ZCancelWorkflowResponseCancellationStatus.optional(),
+  run: ZWorkflowRun,
+  redisAvailable: z.boolean().optional(),
+  cancellationStatus: ZCancelWorkflowResponseCancellationStatus.optional(),
 }) as z.ZodType<CancelWorkflowResponse>;
 
-export function deserializeCancelWorkflowResponse(wire: CancelWorkflowResponseResponse): CancelWorkflowResponse {
+export function deserializeCancelWorkflowResponse(
+  wire: CancelWorkflowResponseResponse
+): CancelWorkflowResponse {
   return {
-    run: deserializeWorkflowRun(wire["run"]),
-    redisAvailable: wire["redis_available"],
-    cancellationStatus: wire["cancellation_status"],
+    run: deserializeWorkflowRun(wire['run']),
+    redisAvailable: wire['redis_available'],
+    cancellationStatus: wire['cancellation_status'],
   };
 }

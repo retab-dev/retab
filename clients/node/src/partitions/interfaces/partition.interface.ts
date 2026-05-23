@@ -5,10 +5,22 @@ import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file
 import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
 import type { PartitionChunk, PartitionChunkResponse } from './partition-chunk.interface.js';
 import { ZPartitionChunk, deserializePartitionChunk } from './partition-chunk.interface.js';
-import type { PartitionConsensus, PartitionConsensusResponse } from './partition-consensus.interface.js';
-import { ZPartitionConsensus, deserializePartitionConsensus } from './partition-consensus.interface.js';
-import type { RetabUsage, RetabUsageResponse } from '../../extractions/interfaces/retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from '../../extractions/interfaces/retab-usage.interface.js';
+import type {
+  PartitionConsensus,
+  PartitionConsensusResponse,
+} from './partition-consensus.interface.js';
+import {
+  ZPartitionConsensus,
+  deserializePartitionConsensus,
+} from './partition-consensus.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../extractions/interfaces/retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+} from '../../extractions/interfaces/retab-usage.interface.js';
 
 export interface Partition {
   /** Unique identifier of the partition */
@@ -55,31 +67,47 @@ export interface PartitionResponse {
 }
 
 export const ZPartition = z.object({
-  "id": z.string(),
-  "file": ZFileRef,
-  "model": z.string(),
-  "key": z.string(),
-  "instructions": z.string().nullable().optional(),
-  "nConsensus": z.number().int().optional(),
-  "allowOverlap": z.boolean().optional(),
-  "output": ZPartitionChunk.array().optional(),
-  "consensus": ZPartitionConsensus.optional(),
-  "usage": ZRetabUsage.nullable().optional(),
-  "createdAt": z.coerce.date().nullable().optional(),
+  id: z.string(),
+  file: ZFileRef,
+  model: z.string(),
+  key: z.string(),
+  instructions: z.string().nullable().optional(),
+  nConsensus: z.number().int().optional(),
+  allowOverlap: z.boolean().optional(),
+  output: ZPartitionChunk.array().optional(),
+  consensus: ZPartitionConsensus.optional(),
+  usage: ZRetabUsage.nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Partition>;
 
 export function deserializePartition(wire: PartitionResponse): Partition {
   return {
-    id: wire["id"],
-    file: deserializeFileRef(wire["file"]),
-    model: wire["model"],
-    key: wire["key"],
-    instructions: wire["instructions"],
-    nConsensus: wire["n_consensus"],
-    allowOverlap: wire["allow_overlap"],
-    output: wire["output"] == null ? (wire["output"] as undefined) : wire["output"].map((__i) => deserializePartitionChunk(__i)),
-    consensus: wire["consensus"] == null ? (wire["consensus"] as undefined) : deserializePartitionConsensus(wire["consensus"]),
-    usage: wire["usage"] == null ? (wire["usage"] as undefined) : (wire["usage"] == null ? wire["usage"] : deserializeRetabUsage(wire["usage"])),
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : (wire["created_at"] == null ? wire["created_at"] : new Date(wire["created_at"])),
+    id: wire['id'],
+    file: deserializeFileRef(wire['file']),
+    model: wire['model'],
+    key: wire['key'],
+    instructions: wire['instructions'],
+    nConsensus: wire['n_consensus'],
+    allowOverlap: wire['allow_overlap'],
+    output:
+      wire['output'] == null
+        ? (wire['output'] as undefined)
+        : wire['output'].map((__i) => deserializePartitionChunk(__i)),
+    consensus:
+      wire['consensus'] == null
+        ? (wire['consensus'] as undefined)
+        : deserializePartitionConsensus(wire['consensus']),
+    usage:
+      wire['usage'] == null
+        ? (wire['usage'] as undefined)
+        : wire['usage'] == null
+          ? wire['usage']
+          : deserializeRetabUsage(wire['usage']),
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
   };
 }

@@ -5,8 +5,14 @@ import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file
 import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
 import type { ParseOutput, ParseOutputResponse } from './parse-output.interface.js';
 import { ZParseOutput, deserializeParseOutput } from './parse-output.interface.js';
-import type { RetabUsage, RetabUsageResponse } from '../../extractions/interfaces/retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from '../../extractions/interfaces/retab-usage.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../extractions/interfaces/retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+} from '../../extractions/interfaces/retab-usage.interface.js';
 import type { TableParsingFormat } from './table-parsing-format.interface.js';
 import { ZTableParsingFormat } from './table-parsing-format.interface.js';
 
@@ -43,27 +49,37 @@ export interface ParseResponse {
 }
 
 export const ZParse = z.object({
-  "id": z.string(),
-  "file": ZFileRef,
-  "model": z.string(),
-  "tableParsingFormat": ZTableParsingFormat,
-  "imageResolutionDpi": z.number().int(),
-  "instructions": z.string().nullable().optional(),
-  "output": ZParseOutput,
-  "usage": ZRetabUsage.nullable().optional(),
-  "createdAt": z.coerce.date().nullable().optional(),
+  id: z.string(),
+  file: ZFileRef,
+  model: z.string(),
+  tableParsingFormat: ZTableParsingFormat,
+  imageResolutionDpi: z.number().int(),
+  instructions: z.string().nullable().optional(),
+  output: ZParseOutput,
+  usage: ZRetabUsage.nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Parse>;
 
 export function deserializeParse(wire: ParseResponse): Parse {
   return {
-    id: wire["id"],
-    file: deserializeFileRef(wire["file"]),
-    model: wire["model"],
-    tableParsingFormat: wire["table_parsing_format"],
-    imageResolutionDpi: wire["image_resolution_dpi"],
-    instructions: wire["instructions"],
-    output: deserializeParseOutput(wire["output"]),
-    usage: wire["usage"] == null ? (wire["usage"] as undefined) : (wire["usage"] == null ? wire["usage"] : deserializeRetabUsage(wire["usage"])),
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : (wire["created_at"] == null ? wire["created_at"] : new Date(wire["created_at"])),
+    id: wire['id'],
+    file: deserializeFileRef(wire['file']),
+    model: wire['model'],
+    tableParsingFormat: wire['table_parsing_format'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
+    instructions: wire['instructions'],
+    output: deserializeParseOutput(wire['output']),
+    usage:
+      wire['usage'] == null
+        ? (wire['usage'] as undefined)
+        : wire['usage'] == null
+          ? wire['usage']
+          : deserializeRetabUsage(wire['usage']),
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
   };
 }

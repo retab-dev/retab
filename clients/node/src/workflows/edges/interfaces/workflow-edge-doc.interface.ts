@@ -28,23 +28,23 @@ export interface WorkflowEdgeDocResponse {
 }
 
 export const ZWorkflowEdgeDoc = z.object({
-  "id": z.string(),
-  "workflowId": z.string(),
-  "sourceBlock": z.string(),
-  "targetBlock": z.string(),
-  "sourceHandle": z.string().nullable().optional(),
-  "targetHandle": z.string().nullable().optional(),
-  "updatedAt": z.coerce.date(),
+  id: z.string(),
+  workflowId: z.string(),
+  sourceBlock: z.string(),
+  targetBlock: z.string(),
+  sourceHandle: z.string().nullable().optional(),
+  targetHandle: z.string().nullable().optional(),
+  updatedAt: z.coerce.date(),
 }) as z.ZodType<WorkflowEdgeDoc>;
 
 export function deserializeWorkflowEdgeDoc(wire: WorkflowEdgeDocResponse): WorkflowEdgeDoc {
   return {
-    id: wire["id"],
-    workflowId: wire["workflow_id"],
-    sourceBlock: wire["source_block"],
-    targetBlock: wire["target_block"],
-    sourceHandle: wire["source_handle"],
-    targetHandle: wire["target_handle"],
-    updatedAt: new Date(wire["updated_at"]),
+    id: wire['id'],
+    workflowId: wire['workflow_id'],
+    sourceBlock: wire['source_block'],
+    targetBlock: wire['target_block'],
+    sourceHandle: wire['source_handle'],
+    targetHandle: wire['target_handle'],
+    updatedAt: new Date(wire['updated_at']),
   };
 }

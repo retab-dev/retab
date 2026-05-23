@@ -15,13 +15,15 @@ export interface CreateExperimentRunRequestResponse {
 }
 
 export const ZCreateExperimentRunRequest = z.object({
-  "experimentId": z.string(),
-  "workflowId": z.string().nullable().optional(),
+  experimentId: z.string(),
+  workflowId: z.string().nullable().optional(),
 }) as z.ZodType<CreateExperimentRunRequest>;
 
-export function deserializeCreateExperimentRunRequest(wire: CreateExperimentRunRequestResponse): CreateExperimentRunRequest {
+export function deserializeCreateExperimentRunRequest(
+  wire: CreateExperimentRunRequestResponse
+): CreateExperimentRunRequest {
   return {
-    experimentId: wire["experiment_id"],
-    workflowId: wire["workflow_id"],
+    experimentId: wire['experiment_id'],
+    workflowId: wire['workflow_id'],
   };
 }

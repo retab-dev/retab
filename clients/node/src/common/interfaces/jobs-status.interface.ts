@@ -2,6 +2,21 @@
 
 import { z } from 'zod';
 
-export type JobsStatus = 'validating' | 'queued' | 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'expired';
+export type JobsStatus =
+  | 'validating'
+  | 'queued'
+  | 'in_progress'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'expired';
 
-export const ZJobsStatus = z.enum(['validating', 'queued', 'in_progress', 'completed', 'failed', 'cancelled', 'expired'] as const);
+export const ZJobsStatus = z.enum([
+  'validating',
+  'queued',
+  'in_progress',
+  'completed',
+  'failed',
+  'cancelled',
+  'expired',
+] as const);

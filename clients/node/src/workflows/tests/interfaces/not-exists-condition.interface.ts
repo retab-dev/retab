@@ -11,11 +11,13 @@ export interface NotExistsConditionResponse {
 }
 
 export const ZNotExistsCondition = z.object({
-  "kind": z.literal('not_exists'),
+  kind: z.literal('not_exists'),
 }) as z.ZodType<NotExistsCondition>;
 
-export function deserializeNotExistsCondition(wire: NotExistsConditionResponse): NotExistsCondition {
+export function deserializeNotExistsCondition(
+  wire: NotExistsConditionResponse
+): NotExistsCondition {
   return {
-    kind: wire["kind"],
+    kind: wire['kind'],
   };
 }

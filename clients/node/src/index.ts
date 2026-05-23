@@ -2,7 +2,12 @@
 
 export { Retab, type RetabOptions } from './retab.js';
 export { PaginatedList, type ListMetadata } from './_pagination.js';
-export { coerceMimeData, type MIMEDataInput, mimeToBlob, retabStorageFileIdFromUrl } from './runtime/mime.js';
+export {
+  coerceMimeData,
+  type MIMEDataInput,
+  mimeToBlob,
+  retabStorageFileIdFromUrl,
+} from './runtime/mime.js';
 
 export * from './schemas/interfaces/index.js';
 export * from './extractions/interfaces/index.js';

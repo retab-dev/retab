@@ -15,13 +15,15 @@ export interface CancelledStepLifecycleResponse {
 }
 
 export const ZCancelledStepLifecycle = z.object({
-  "status": z.literal('cancelled'),
-  "reason": z.string(),
+  status: z.literal('cancelled'),
+  reason: z.string(),
 }) as z.ZodType<CancelledStepLifecycle>;
 
-export function deserializeCancelledStepLifecycle(wire: CancelledStepLifecycleResponse): CancelledStepLifecycle {
+export function deserializeCancelledStepLifecycle(
+  wire: CancelledStepLifecycleResponse
+): CancelledStepLifecycle {
   return {
-    status: wire["status"],
-    reason: wire["reason"],
+    status: wire['status'],
+    reason: wire['reason'],
   };
 }

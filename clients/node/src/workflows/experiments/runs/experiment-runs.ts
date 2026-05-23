@@ -2,39 +2,100 @@
 
 import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
-import type { WorkflowExperimentsExcludeStatus, WorkflowExperimentsStatus } from '../../../common/interfaces/index.js';
-import type { CancelWorkflowExperimentRunResponse, CancelWorkflowExperimentRunResponseResponse, ExperimentRun, ExperimentRunResponse } from '../../../workflows/experiments/runs/interfaces/index.js';
-import { deserializeCancelWorkflowExperimentRunResponse, deserializeExperimentRun } from '../../../workflows/experiments/runs/interfaces/index.js';
+import type {
+  WorkflowExperimentsExcludeStatus,
+  WorkflowExperimentsStatus,
+} from '../../../common/interfaces/index.js';
+import type {
+  CancelWorkflowExperimentRunResponse,
+  CancelWorkflowExperimentRunResponseResponse,
+  ExperimentRun,
+  ExperimentRunResponse,
+} from '../../../workflows/experiments/runs/interfaces/index.js';
+import {
+  deserializeCancelWorkflowExperimentRunResponse,
+  deserializeExperimentRun,
+} from '../../../workflows/experiments/runs/interfaces/index.js';
 
 export class ExperimentRuns {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Experiment Runs */
-  async list(options?: { workflowId?: string | null | undefined; experimentId?: string | null | undefined; blockId?: string | null | undefined; status?: WorkflowExperimentsStatus | null | undefined; statuses?: string | null | undefined; excludeStatus?: WorkflowExperimentsExcludeStatus | null | undefined; triggerType?: string | null | undefined; triggerTypes?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<ExperimentRun>> {
-    return this.client._fetchPage(deserializeExperimentRun, { method: 'GET', path: "/v1/workflows/experiments/runs", query: { "workflow_id": options?.workflowId, "experiment_id": options?.experimentId, "block_id": options?.blockId, "status": options?.status, "statuses": options?.statuses, "exclude_status": options?.excludeStatus, "trigger_type": options?.triggerType, "trigger_types": options?.triggerTypes, "from_date": options?.fromDate, "to_date": options?.toDate, "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    workflowId?: string | null | undefined;
+    experimentId?: string | null | undefined;
+    blockId?: string | null | undefined;
+    status?: WorkflowExperimentsStatus | null | undefined;
+    statuses?: string | null | undefined;
+    excludeStatus?: WorkflowExperimentsExcludeStatus | null | undefined;
+    triggerType?: string | null | undefined;
+    triggerTypes?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<ExperimentRun>> {
+    return this.client._fetchPage(deserializeExperimentRun, {
+      method: 'GET',
+      path: '/v1/workflows/experiments/runs',
+      query: {
+        workflow_id: options?.workflowId,
+        experiment_id: options?.experimentId,
+        block_id: options?.blockId,
+        status: options?.status,
+        statuses: options?.statuses,
+        exclude_status: options?.excludeStatus,
+        trigger_type: options?.triggerType,
+        trigger_types: options?.triggerTypes,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Experiment Run Flat */
   async create(experimentId: string, workflowId?: string | null): Promise<ExperimentRun> {
     const body = {
-      "experiment_id": experimentId,
-      "workflow_id": workflowId,
+      experiment_id: experimentId,
+      workflow_id: workflowId,
     };
-    const __wire = await this.client.request<ExperimentRunResponse>({ method: 'POST', path: "/v1/workflows/experiments/runs", query: undefined, body: body });
+    const __wire = await this.client.request<ExperimentRunResponse>({
+      method: 'POST',
+      path: '/v1/workflows/experiments/runs',
+      query: undefined,
+      body: body,
+    });
     return deserializeExperimentRun(__wire);
   }
 
   /** Get Experiment Run */
   async get(runId: string): Promise<ExperimentRun> {
-    const __wire = await this.client.request<ExperimentRunResponse>({ method: 'GET', path: `/v1/workflows/experiments/runs/${runId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<ExperimentRunResponse>({
+      method: 'GET',
+      path: `/v1/workflows/experiments/runs/${runId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeExperimentRun(__wire);
   }
 
   /** Cancel Experiment Run */
   async cancel(runId: string): Promise<CancelWorkflowExperimentRunResponse> {
-    const __wire = await this.client.request<CancelWorkflowExperimentRunResponseResponse>({ method: 'POST', path: `/v1/workflows/experiments/runs/${runId}/cancel`, query: undefined, body: undefined });
+    const __wire = await this.client.request<CancelWorkflowExperimentRunResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/experiments/runs/${runId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeCancelWorkflowExperimentRunResponse(__wire);
   }
 }

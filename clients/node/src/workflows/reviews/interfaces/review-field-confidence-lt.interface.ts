@@ -17,15 +17,17 @@ export interface ReviewFieldConfidenceLtResponse {
 }
 
 export const ZReviewFieldConfidenceLt = z.object({
-  "kind": z.literal('field_confidence_lt'),
-  "path": z.string(),
-  "threshold": z.number(),
+  kind: z.literal('field_confidence_lt'),
+  path: z.string(),
+  threshold: z.number(),
 }) as z.ZodType<ReviewFieldConfidenceLt>;
 
-export function deserializeReviewFieldConfidenceLt(wire: ReviewFieldConfidenceLtResponse): ReviewFieldConfidenceLt {
+export function deserializeReviewFieldConfidenceLt(
+  wire: ReviewFieldConfidenceLtResponse
+): ReviewFieldConfidenceLt {
   return {
-    kind: wire["kind"],
-    path: wire["path"],
-    threshold: wire["threshold"],
+    kind: wire['kind'],
+    path: wire['path'],
+    threshold: wire['threshold'],
   };
 }

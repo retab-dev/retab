@@ -26,17 +26,19 @@ export interface SubmitDecisionResponseResponse {
 }
 
 export const ZSubmitDecisionResponse = z.object({
-  "submissionStatus": ZSubmissionStatus.optional(),
-  "review": ZReview,
-  "resumeStatus": ZResumeStatus.optional(),
-  "resumeError": z.string().nullable().optional(),
+  submissionStatus: ZSubmissionStatus.optional(),
+  review: ZReview,
+  resumeStatus: ZResumeStatus.optional(),
+  resumeError: z.string().nullable().optional(),
 }) as z.ZodType<SubmitDecisionResponse>;
 
-export function deserializeSubmitDecisionResponse(wire: SubmitDecisionResponseResponse): SubmitDecisionResponse {
+export function deserializeSubmitDecisionResponse(
+  wire: SubmitDecisionResponseResponse
+): SubmitDecisionResponse {
   return {
-    submissionStatus: wire["submission_status"],
-    review: deserializeReview(wire["review"]),
-    resumeStatus: wire["resume_status"],
-    resumeError: wire["resume_error"],
+    submissionStatus: wire['submission_status'],
+    review: deserializeReview(wire['review']),
+    resumeStatus: wire['resume_status'],
+    resumeError: wire['resume_error'],
   };
 }
