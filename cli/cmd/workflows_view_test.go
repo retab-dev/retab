@@ -11,6 +11,64 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 )
 
+// blockSpec / edgeSpec mirror the SDK structs with the same optional
+// pointer fields. The SDK now exposes `PositionX`, `PositionY`, `Width`,
+// `Height`, `Label`, and the edge `SourceHandle` / `TargetHandle` fields
+// as optional pointers; the ASCII renderer treats nil-or-zero as "unset",
+// so each test case wraps real values with `ptr(...)` and leaves
+// untouched fields nil.
+type blockSpec struct {
+	ID        string
+	Type      retab.WorkflowBlockType
+	Label     *string
+	PositionX *float64
+	PositionY *float64
+}
+
+func makeBlock(spec blockSpec) retab.WorkflowBlock {
+	return retab.WorkflowBlock{
+		ID:        spec.ID,
+		Type:      spec.Type,
+		Label:     spec.Label,
+		PositionX: spec.PositionX,
+		PositionY: spec.PositionY,
+	}
+}
+
+func makeBlocks(specs ...blockSpec) []retab.WorkflowBlock {
+	out := make([]retab.WorkflowBlock, len(specs))
+	for i, s := range specs {
+		out[i] = makeBlock(s)
+	}
+	return out
+}
+
+type edgeSpec struct {
+	ID           string
+	SourceBlock  string
+	TargetBlock  string
+	SourceHandle *string
+	TargetHandle *string
+}
+
+func makeEdge(spec edgeSpec) retab.WorkflowEdgeDoc {
+	return retab.WorkflowEdgeDoc{
+		ID:           spec.ID,
+		SourceBlock:  spec.SourceBlock,
+		TargetBlock:  spec.TargetBlock,
+		SourceHandle: spec.SourceHandle,
+		TargetHandle: spec.TargetHandle,
+	}
+}
+
+func makeEdges(specs ...edgeSpec) []retab.WorkflowEdgeDoc {
+	out := make([]retab.WorkflowEdgeDoc, len(specs))
+	for i, s := range specs {
+		out[i] = makeEdge(s)
+	}
+	return out
+}
+
 func renderWorkflowASCIIViewString(t *testing.T, workflow *workflowGraph) string {
 	t.Helper()
 	var buf bytes.Buffer
@@ -34,13 +92,13 @@ func lineAndColumn(t *testing.T, out string, needle string) (int, int) {
 func TestRenderWorkflowASCIIViewLinearPositionedWorkflow(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_linear", Name: "Linear invoice flow"},
-		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
-			{ID: "extract", Type: "extract", Label: "Extract totals", PositionX: 300, PositionY: 0},
-		},
-		Edges: []retab.WorkflowEdgeDoc{
-			{ID: "edge_start_extract", SourceBlock: "start", TargetBlock: "extract"},
-		},
+		Blocks: makeBlocks(
+			blockSpec{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(0.0), PositionY: ptr(0.0)},
+			blockSpec{ID: "extract", Type: "extract", Label: ptr("Extract totals"), PositionX: ptr(300.0), PositionY: ptr(0.0)},
+		),
+		Edges: makeEdges(
+			edgeSpec{ID: "edge_start_extract", SourceBlock: "start", TargetBlock: "extract"},
+		),
 	}
 
 	out := renderWorkflowASCIIViewString(t, workflow)
@@ -69,15 +127,15 @@ func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testi
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_branch", Name: "Branching review flow"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 220},
-			{ID: "route", Type: "conditional", Label: "Route invoice", PositionX: 400, PositionY: 220},
-			{ID: "review", Type: "review", Label: "Manual review", PositionX: 900, PositionY: 0},
-			{ID: "archive", Type: "api_call", Label: "Archive clean invoice", PositionX: 900, PositionY: 440},
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(220))},
+			{ID: "route", Type: "conditional", Label: ptr("Route invoice"), PositionX: ptr(float64(400)), PositionY: ptr(float64(220))},
+			{ID: "review", Type: "review", Label: ptr("Manual review"), PositionX: ptr(float64(900)), PositionY: ptr(float64(0))},
+			{ID: "archive", Type: "api_call", Label: ptr("Archive clean invoice"), PositionX: ptr(float64(900)), PositionY: ptr(float64(440))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_start_route", SourceBlock: "start", TargetBlock: "route"},
-			{ID: "edge_route_review", SourceBlock: "route", TargetBlock: "review", SourceHandle: "needs_review"},
-			{ID: "edge_route_archive", SourceBlock: "route", TargetBlock: "archive", SourceHandle: "clean"},
+			{ID: "edge_route_review", SourceBlock: "route", TargetBlock: "review", SourceHandle: ptr("needs_review")},
+			{ID: "edge_route_archive", SourceBlock: "route", TargetBlock: "archive", SourceHandle: ptr("clean")},
 		},
 	}
 
@@ -102,22 +160,22 @@ func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_merge", Name: "Reconciliation flow"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 220},
-			{ID: "split", Type: "split", Label: "Split packet", PositionX: 350, PositionY: 220},
-			{ID: "invoice", Type: "extract", Label: "Invoice fields", PositionX: 740, PositionY: 0},
-			{ID: "po", Type: "extract", Label: "PO fields", PositionX: 740, PositionY: 440},
-			{ID: "match", Type: "function", Label: "Match records", PositionX: 1120, PositionY: 220},
-			{ID: "approve", Type: "review", Label: "Approve exception", PositionX: 1500, PositionY: 0},
-			{ID: "export", Type: "api_call", Label: "Export result", PositionX: 1500, PositionY: 440},
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(220))},
+			{ID: "split", Type: "split", Label: ptr("Split packet"), PositionX: ptr(float64(350)), PositionY: ptr(float64(220))},
+			{ID: "invoice", Type: "extract", Label: ptr("Invoice fields"), PositionX: ptr(float64(740)), PositionY: ptr(float64(0))},
+			{ID: "po", Type: "extract", Label: ptr("PO fields"), PositionX: ptr(float64(740)), PositionY: ptr(float64(440))},
+			{ID: "match", Type: "function", Label: ptr("Match records"), PositionX: ptr(float64(1120)), PositionY: ptr(float64(220))},
+			{ID: "approve", Type: "review", Label: ptr("Approve exception"), PositionX: ptr(float64(1500)), PositionY: ptr(float64(0))},
+			{ID: "export", Type: "api_call", Label: ptr("Export result"), PositionX: ptr(float64(1500)), PositionY: ptr(float64(440))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_start_split", SourceBlock: "start", TargetBlock: "split"},
-			{ID: "edge_split_invoice", SourceBlock: "split", TargetBlock: "invoice", SourceHandle: "invoice"},
-			{ID: "edge_split_po", SourceBlock: "split", TargetBlock: "po", SourceHandle: "purchase_order"},
+			{ID: "edge_split_invoice", SourceBlock: "split", TargetBlock: "invoice", SourceHandle: ptr("invoice")},
+			{ID: "edge_split_po", SourceBlock: "split", TargetBlock: "po", SourceHandle: ptr("purchase_order")},
 			{ID: "edge_invoice_match", SourceBlock: "invoice", TargetBlock: "match"},
 			{ID: "edge_po_match", SourceBlock: "po", TargetBlock: "match"},
-			{ID: "edge_match_approve", SourceBlock: "match", TargetBlock: "approve", SourceHandle: "mismatch"},
-			{ID: "edge_match_export", SourceBlock: "match", TargetBlock: "export", SourceHandle: "matched"},
+			{ID: "edge_match_approve", SourceBlock: "match", TargetBlock: "approve", SourceHandle: ptr("mismatch")},
+			{ID: "edge_match_export", SourceBlock: "match", TargetBlock: "export", SourceHandle: ptr("matched")},
 		},
 	}
 
@@ -153,9 +211,9 @@ func TestRenderWorkflowASCIIViewDisconnectedSubgraphRendersOnce(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_detached"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
-			{ID: "parent", Type: "extract", Label: "Parent", PositionX: 0, PositionY: 440},
-			{ID: "child", Type: "edit", Label: "Child", PositionX: 300, PositionY: 440},
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "parent", Type: "extract", Label: ptr("Parent"), PositionX: ptr(float64(0)), PositionY: ptr(float64(440))},
+			{ID: "child", Type: "edit", Label: ptr("Child"), PositionX: ptr(float64(300)), PositionY: ptr(float64(440))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_detached", SourceBlock: "parent", TargetBlock: "child"},
@@ -194,7 +252,7 @@ func TestRenderWorkflowASCIIViewSuppressesDisconnectedForFreshScaffolding(t *tes
 			workflow := &workflowGraph{
 				Workflow: retab.Workflow{ID: "wf_fresh"},
 				Blocks: []retab.WorkflowBlock{
-					{ID: "start", Type: tc.typ, Label: "Document", PositionX: 100, PositionY: 200},
+					{ID: "start", Type: retab.WorkflowBlockType(tc.typ), Label: ptr("Document"), PositionX: ptr(float64(100)), PositionY: ptr(float64(200))},
 				},
 				Edges: nil,
 			}
@@ -211,9 +269,9 @@ func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_isolated"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
-			{ID: "extract", Type: "extract", Label: "Extract", PositionX: 300, PositionY: 0},
-			{ID: "review", Type: "review", Label: "Human Review", PositionX: 600, PositionY: 0},
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "extract", Type: "extract", Label: ptr("Extract"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+			{ID: "review", Type: "review", Label: ptr("Human Review"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_start_extract", SourceBlock: "start", TargetBlock: "extract"},
@@ -239,14 +297,14 @@ func TestRenderWorkflowASCIIViewDoesNotLeakFloatingLabelTailOntoBoxBorder(t *tes
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_long_handles", Name: "Long handle bleed"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start_document", Label: "Document", PositionX: 0, PositionY: 0},
-			{ID: "split", Type: "split", Label: "Split", PositionX: 300, PositionY: 0},
-			{ID: "extract", Type: "extract", Label: "Extract booking", PositionX: 600, PositionY: 0},
-			{ID: "fn", Type: "function", Label: "Check booking", PositionX: 900, PositionY: 0},
+			{ID: "start", Type: "start_document", Label: ptr("Document"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "split", Type: "split", Label: ptr("Split"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+			{ID: "extract", Type: "extract", Label: ptr("Extract booking"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
+			{ID: "fn", Type: "function", Label: ptr("Check booking"), PositionX: ptr(float64(900)), PositionY: ptr(float64(0))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "e1", SourceBlock: "start", TargetBlock: "split"},
-			{ID: "e2", SourceBlock: "split", TargetBlock: "extract", SourceHandle: "output-file-booking-confirmation"},
+			{ID: "e2", SourceBlock: "split", TargetBlock: "extract", SourceHandle: ptr("output-file-booking-confirmation")},
 			{ID: "e3", SourceBlock: "extract", TargetBlock: "fn"},
 		},
 	}
@@ -292,8 +350,8 @@ func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_longid", Name: "Long-id workflow"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "block_gOKWG4abcdefgh1a2KYG", Type: "start_document", Label: "Document", PositionX: 0, PositionY: 0},
-			{ID: "block_BKcQijCUKCisbTQzrLDwd", Type: "extract", Label: "Extract", PositionX: 300, PositionY: 0},
+			{ID: "block_gOKWG4abcdefgh1a2KYG", Type: "start_document", Label: ptr("Document"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "block_BKcQijCUKCisbTQzrLDwd", Type: "extract", Label: ptr("Extract"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_doc_extract", SourceBlock: "block_gOKWG4abcdefgh1a2KYG", TargetBlock: "block_BKcQijCUKCisbTQzrLDwd"},
@@ -311,18 +369,18 @@ func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 
 func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 	blocks := []retab.WorkflowBlock{
-		{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
-		{ID: "hub", Type: "merge_dicts", Label: "Hub", PositionX: 300, PositionY: 0},
-		{ID: "end", Type: "function", Label: "End", PositionX: 600, PositionY: 0},
+		{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+		{ID: "hub", Type: "merge_dicts", Label: ptr("Hub"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+		{ID: "end", Type: "function", Label: ptr("End"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
 	}
 	var edges []retab.WorkflowEdgeDoc
 	for i := 0; i < 25; i++ {
 		edges = append(edges, retab.WorkflowEdgeDoc{
 			ID:           "edge",
 			SourceBlock:  "start",
-			SourceHandle: "output-json-0",
+			SourceHandle: ptr("output-json-0"),
 			TargetBlock:  "hub",
-			TargetHandle: "input-json-noisy-label",
+			TargetHandle: ptr("input-json-noisy-label"),
 		})
 	}
 	edges = append(edges, retab.WorkflowEdgeDoc{ID: "edge_end", SourceBlock: "hub", TargetBlock: "end"})

@@ -20,27 +20,34 @@ type SourceRouteMethod = SourceRoute & {
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const SDK_ROOT = resolve(TEST_DIR, '..');
-const API_SOURCE_ROOT = join(SDK_ROOT, 'src', 'api');
+const API_SOURCE_ROOT = join(SDK_ROOT, 'src');
 const WORKFLOW_SOURCE_ROOT = join(API_SOURCE_ROOT, 'workflows');
 const OPENAPI_PATH = resolve(SDK_ROOT, '..', '..', '..', 'docs', 'api-reference', 'openapi.json');
 
 const PATH_PARAMETER_NAMES: Record<string, string> = {
   artifactId: 'artifact_id',
   blockId: 'block_id',
+  classificationId: 'classification_id',
   classification_id: 'classification_id',
   edgeId: 'edge_id',
+  editId: 'edit_id',
   edit_id: 'edit_id',
   experimentId: 'experiment_id',
+  extractionId: 'extraction_id',
   extraction_id: 'extraction_id',
   fileId: 'file_id',
+  jobId: 'job_id',
   job_id: 'job_id',
+  parseId: 'parse_id',
   parse_id: 'parse_id',
   partitionId: 'partition_id',
   resultId: 'result_id',
   reviewId: 'review_id',
   runId: 'run_id',
+  splitId: 'split_id',
   split_id: 'split_id',
   stepId: 'step_id',
+  templateId: 'template_id',
   template_id: 'template_id',
   testId: 'test_id',
   versionId: 'version_id',
@@ -116,7 +123,9 @@ function listClientFiles(root: string): string[] {
     if (entry.isDirectory()) {
       return listClientFiles(path);
     }
-    return entry.isFile() && entry.name === 'client.ts' ? [path] : [];
+    return entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')
+      ? [path]
+      : [];
   });
 }
 
@@ -148,6 +157,9 @@ function normalizeSdkRoute(route: string): string {
   const normalizedDynamicSegments = pathWithoutQuery.replace(/\$\{([^}]+)\}/g, (_, expression) =>
     routePathParameterForExpression(expression)
   );
+  if (normalizedDynamicSegments.startsWith('/v1/')) {
+    return normalizedDynamicSegments;
+  }
   return `/v1${normalizedDynamicSegments}`;
 }
 
@@ -157,7 +169,7 @@ function normalizeRouteShape(route: string): string {
 
 function extractSourceRoutes(sources: Array<{ path: string; text: string }>): SourceRoute[] {
   return sources.flatMap(({ path, text }) =>
-    Array.from(text.matchAll(/url:\s*(['"`])([^'"`]+)\1/g)).map((match) => {
+    Array.from(text.matchAll(/path:\s*(['"`])([^'"`]+)\1/g)).map((match) => {
       const route = match[2] as string;
       return {
         sourcePath: path,
@@ -171,22 +183,25 @@ function extractSourceRoutes(sources: Array<{ path: string; text: string }>): So
 function extractSourceRouteMethods(
   sources: Array<{ path: string; text: string }>
 ): SourceRouteMethod[] {
-  return sources.flatMap(({ path, text }) =>
-    Array.from(text.matchAll(/url:\s*(['"`])([^'"`]+)\1,\s*method:\s*(['"`])([A-Z]+)\3/g)).map(
-      (match) => {
-        const route = match[2] as string;
-        const method = match[4] as string;
-        const normalizedRoute = normalizeSdkRoute(route);
-        return {
-          sourcePath: path,
-          route,
-          normalizedRoute,
-          method,
-          normalizedKey: `${method} ${normalizedRoute}`,
-        };
-      }
-    )
-  );
+  return sources.flatMap(({ path, text }) => {
+    const pathThenMethod = Array.from(
+      text.matchAll(/path:\s*(['"`])([^'"`]+)\1,\s*method:\s*(['"`])([A-Z]+)\3/g)
+    ).map((match) => ({ route: match[2] as string, method: match[4] as string }));
+    const methodThenPath = Array.from(
+      text.matchAll(/method:\s*(['"`])([A-Z]+)\1,\s*path:\s*(['"`])([^'"`]+)\3/g)
+    ).map((match) => ({ route: match[4] as string, method: match[2] as string }));
+
+    return [...pathThenMethod, ...methodThenPath].map(({ route, method }) => {
+      const normalizedRoute = normalizeSdkRoute(route);
+      return {
+        sourcePath: path,
+        route,
+        normalizedRoute,
+        method,
+        normalizedKey: `${method} ${normalizedRoute}`,
+      };
+    });
+  });
 }
 
 function extractMethodNames(sources: Array<{ path: string; text: string }>): string[] {

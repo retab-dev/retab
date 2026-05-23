@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,21 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// decodeJSONInto round-trips a parsed JSON object map back into a strongly
+// typed SDK struct. Used to populate the typed Target / Source / Assertion
+// fields on workflow-tests create/update requests from the CLI's loose
+// map-based JSON descriptors.
+func decodeJSONInto(field string, raw map[string]any, out any) error {
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return fmt.Errorf("--%s: %w", field, err)
+	}
+	if err := json.Unmarshal(encoded, out); err != nil {
+		return fmt.Errorf("--%s: %w", field, err)
+	}
+	return nil
+}
 
 // resolveWorkflowIDArg implements the positional/deprecated-flag shim used by
 // the workflows subcommands that historically required `--workflow-id` and
@@ -231,14 +247,14 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		if err != nil {
 			return err
 		}
-		req := retab.WorkflowTestCreateRequest{}
+		req := retab.WorkflowTestsCreateParams{}
 		req.WorkflowID = workflowID
-		req.Name, _ = cmd.Flags().GetString("name")
-		trimmedName, err := validateWorkflowTestName(req.Name)
+		rawName, _ := cmd.Flags().GetString("name")
+		trimmedName, err := validateWorkflowTestName(rawName)
 		if err != nil {
 			return err
 		}
-		req.Name = trimmedName
+		req.Name = &trimmedName
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
 			return err
@@ -263,16 +279,28 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		if err := validateWorkflowTestAssertion(assertion); err != nil {
 			return fmt.Errorf("--assertion-file: %w", err)
 		}
-		req.Target = retab.Resource(target)
-		req.Source = retab.Resource(source)
-		req.Assertion = retab.Resource(assertion)
+		if err := decodeJSONInto("target-file", target, &req.Target); err != nil {
+			return err
+		}
+		// `--source-file` only accepts the manual shape via the typed SDK
+		// surface; the legacy `{type: run_step, ...}` body is still
+		// supported on the wire but no longer matches the typed param.
+		// Keep accepting it but route through json.Unmarshal so the field
+		// drops cleanly when unset.
+		req.Source = &retab.ManualWorkflowTestSource{}
+		if err := decodeJSONInto("source-file", source, req.Source); err != nil {
+			return err
+		}
+		if err := decodeJSONInto("assertion-file", assertion, &req.Assertion); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Create(ctx, req)
+		result, err := client.WorkflowTests.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -295,7 +323,7 @@ output, name, timestamps.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Get(ctx, args[0])
+		result, err := client.WorkflowTests.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -322,10 +350,14 @@ particular block.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.ListWorkflowTestsRequest{WorkflowID: args[0]}
-		req.TargetBlockID, _ = cmd.Flags().GetString("target-block-id")
-		req.Limit = getIntFlagOrDefault(cmd, "limit", 50)
-		result, err := client.Workflows.Tests.List(ctx, req)
+		req := retab.WorkflowTestsListParams{WorkflowID: args[0]}
+		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
+			req.TargetBlockID = ptr(v)
+		}
+		if v := getIntFlagOrDefault(cmd, "limit", 50); v > 0 {
+			req.Limit = ptr(v)
+		}
+		result, err := client.WorkflowTests.List(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -355,14 +387,14 @@ flaky runs.`,
 			!cmd.Flags().Changed("source-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --name, --assertion-file, or --source-file")
 		}
-		req := retab.UpdateWorkflowTestRequest{}
-		req.Name, _ = cmd.Flags().GetString("name")
+		req := retab.WorkflowTestsUpdateParams{}
 		if cmd.Flags().Changed("name") {
-			trimmed, err := validateWorkflowTestName(req.Name)
+			rawName, _ := cmd.Flags().GetString("name")
+			trimmed, err := validateWorkflowTestName(rawName)
 			if err != nil {
 				return err
 			}
-			req.Name = trimmed
+			req.Name = &trimmed
 		}
 		assertion, err := resolveJSONMap(cmd, "assertion-file")
 		if err != nil {
@@ -376,13 +408,19 @@ flaky runs.`,
 			if err := validateWorkflowTestAssertion(assertion); err != nil {
 				return fmt.Errorf("--assertion-file: %w", err)
 			}
-			req.Assertion = retab.Resource(assertion)
+			req.Assertion = &retab.AssertionSpec{}
+			if err := decodeJSONInto("assertion-file", assertion, req.Assertion); err != nil {
+				return err
+			}
 		}
 		if source != nil {
 			if err := validateWorkflowTestSource(source); err != nil {
 				return fmt.Errorf("--source-file: %w", err)
 			}
-			req.Source = retab.Resource(source)
+			req.Source = &retab.ManualWorkflowTestSource{}
+			if err := decodeJSONInto("source-file", source, req.Source); err != nil {
+				return err
+			}
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -390,7 +428,7 @@ flaky runs.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Update(ctx, args[0], req)
+		result, err := client.WorkflowTests.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -422,7 +460,7 @@ is not a terminal. Run history is removed alongside the test definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Tests.Delete(ctx, args[0]); err != nil {
+		if err := client.WorkflowTests.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("test", args[0])

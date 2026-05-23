@@ -28,6 +28,24 @@ type workflowASCIIBox struct {
 	h     int
 }
 
+// workflowBlockX/workflowBlockY return the canvas position from a
+// WorkflowBlock, dereferencing the optional *float64 fields exposed by
+// the SDK. A nil pointer falls back to zero, matching the prior
+// "unset position" behaviour the layout code expects.
+func workflowBlockX(b retab.WorkflowBlock) float64 {
+	if b.PositionX == nil {
+		return 0
+	}
+	return *b.PositionX
+}
+
+func workflowBlockY(b retab.WorkflowBlock) float64 {
+	if b.PositionY == nil {
+		return 0
+	}
+	return *b.PositionY
+}
+
 type workflowASCIICanvas struct {
 	cells [][]rune
 }
@@ -51,11 +69,11 @@ map. This is a human-oriented view for terminal inspection.`,
 		if err != nil {
 			return err
 		}
-		blocks, err := client.Workflows.Blocks.List(ctx, args[0], nil)
+		blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
-		edges, err := client.Workflows.Edges.List(ctx, args[0], nil)
+		edges, err := client.WorkflowEdges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
@@ -245,7 +263,7 @@ func workflowASCIIPositions(blocks []retab.WorkflowBlock, edges []retab.Workflow
 	out := make(map[string]workflowASCIIPosition, len(blocks))
 	if workflowASCIIHasRealPositions(blocks) {
 		for _, block := range blocks {
-			out[block.ID] = workflowASCIIPosition{x: block.PositionX, y: block.PositionY}
+			out[block.ID] = workflowASCIIPosition{x: workflowBlockX(block), y: workflowBlockY(block)}
 		}
 		return out
 	}
@@ -266,7 +284,7 @@ func workflowASCIIPositions(blocks []retab.WorkflowBlock, edges []retab.Workflow
 
 func workflowASCIIHasRealPositions(blocks []retab.WorkflowBlock) bool {
 	for _, block := range blocks {
-		if block.PositionX != 0 || block.PositionY != 0 {
+		if workflowBlockX(block) != 0 || workflowBlockY(block) != 0 {
 			return true
 		}
 	}
@@ -750,11 +768,13 @@ func workflowASCIISortedEdges(edges []retab.WorkflowEdgeDoc) []retab.WorkflowEdg
 
 func sortWorkflowASCIIBlocks(blocks []retab.WorkflowBlock) {
 	sort.SliceStable(blocks, func(i, j int) bool {
-		if blocks[i].PositionY != blocks[j].PositionY {
-			return blocks[i].PositionY < blocks[j].PositionY
+		yi, yj := workflowBlockY(blocks[i]), workflowBlockY(blocks[j])
+		if yi != yj {
+			return yi < yj
 		}
-		if blocks[i].PositionX != blocks[j].PositionX {
-			return blocks[i].PositionX < blocks[j].PositionX
+		xi, xj := workflowBlockX(blocks[i]), workflowBlockX(blocks[j])
+		if xi != xj {
+			return xi < xj
 		}
 		return blocks[i].ID < blocks[j].ID
 	})
@@ -774,15 +794,15 @@ func sortWorkflowASCIIEdges(edges []retab.WorkflowEdgeDoc) {
 func workflowASCIIEdgeSortKey(edge retab.WorkflowEdgeDoc) string {
 	return strings.Join([]string{
 		edge.SourceBlock,
-		edge.SourceHandle,
-		edge.TargetHandle,
+		derefString(edge.SourceHandle),
+		derefString(edge.TargetHandle),
 		edge.TargetBlock,
 	}, "\x00")
 }
 
 func workflowASCIIEdgeLabel(edge retab.WorkflowEdgeDoc) string {
-	source := workflowASCIIHandleLabel(edge.SourceHandle)
-	target := workflowASCIIHandleLabel(edge.TargetHandle)
+	source := workflowASCIIHandleLabel(derefString(edge.SourceHandle))
+	target := workflowASCIIHandleLabel(derefString(edge.TargetHandle))
 	if workflowASCIIIsDefaultHandle(source) {
 		source = ""
 	}
@@ -833,7 +853,7 @@ func workflowASCIIIsDefaultHandle(handle string) bool {
 }
 
 func workflowASCIIBlockLabel(block retab.WorkflowBlock) string {
-	label := strings.TrimSpace(block.Label)
+	label := strings.TrimSpace(derefString(block.Label))
 	if label == "" {
 		label = block.ID
 	}
@@ -844,7 +864,7 @@ func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
 	if block.Type == "" {
 		return workflowASCIIShortID(block.ID)
 	}
-	typeTag := " [" + block.Type + "]"
+	typeTag := " [" + string(block.Type) + "]"
 	short := workflowASCIIShortID(block.ID)
 	// Box content is capped at workflowASCIIMaxBoxWidth-4. When id+tag would
 	// overflow, shorten the id further so the type tag survives — the type

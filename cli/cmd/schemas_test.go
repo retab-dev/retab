@@ -14,9 +14,9 @@ import (
 )
 
 func TestWriteGeneratedSchemaDefaultEmitsReusableSchema(t *testing.T) {
-	response := retab.Resource{
-		"object": "schema",
-		"json_schema": map[string]any{
+	response := retab.PartialSchema{
+		Object: "schema",
+		JSONSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
 				"invoice_number": map[string]any{"type": "string"},
@@ -42,10 +42,11 @@ func TestWriteGeneratedSchemaDefaultEmitsReusableSchema(t *testing.T) {
 }
 
 func TestWriteGeneratedSchemaJSONFormatPreservesEnvelope(t *testing.T) {
-	response := retab.Resource{
-		"object":      "schema",
-		"created_at":  "2026-05-15T11:42:06Z",
-		"json_schema": map[string]any{"type": "object"},
+	createdAt := "2026-05-15T11:42:06Z"
+	response := retab.PartialSchema{
+		Object:     "schema",
+		CreatedAt:  &createdAt,
+		JSONSchema: map[string]any{"type": "object"},
 	}
 
 	var buf bytes.Buffer

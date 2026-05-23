@@ -139,11 +139,13 @@ alongside your code.
 			return fmt.Errorf("at least one document is required (--file, --url, --file-id, or --documents-file)")
 		}
 
-		model, _ := cmd.Flags().GetString("model")
-		result, err := client.Schemas.Generate(ctx, retab.GenerateSchemaRequest{
+		params := &retab.SchemasGenerateParams{
 			Documents: documents,
-			Model:     model,
-		})
+		}
+		if model, _ := cmd.Flags().GetString("model"); model != "" {
+			params.Model = ptr(model)
+		}
+		result, err := client.Schemas.Generate(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -151,20 +153,16 @@ alongside your code.
 	}),
 }
 
-func writeGeneratedSchema(w io.Writer, result *retab.Resource, format string) error {
+func writeGeneratedSchema(w io.Writer, result *retab.PartialSchema, format string) error {
 	switch format {
 	case "", "schema":
-		if result == nil {
-			return fmt.Errorf("server response missing json_schema field")
-		}
-		schema, ok := (*result)["json_schema"]
-		if !ok || schema == nil {
+		if result == nil || result.JSONSchema == nil {
 			return fmt.Errorf("server response missing json_schema field")
 		}
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		enc.SetEscapeHTML(false)
-		return enc.Encode(schema)
+		return enc.Encode(result.JSONSchema)
 	case "json":
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")

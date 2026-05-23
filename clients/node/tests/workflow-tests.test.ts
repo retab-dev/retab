@@ -527,8 +527,7 @@ describe('workflows.tests parity bridge installation', () => {
     // from `PYTHON_PUBLIC_PREPARE_METHODS` in `src/client.ts`. A typo in
     // either the registry key or the method name would silently disable
     // the bridge — pin the actual installed methods so a regression
-    // breaks here, not in the python_parity test (which fails fast on
-    // the FIRST violation and is harder to debug).
+    // breaks in this focused test.
     const tests = new APIWorkflowTests(new MockClient({})) as unknown as Record<string, unknown>;
     for (const name of [
       'prepare_create',

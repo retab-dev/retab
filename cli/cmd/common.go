@@ -962,38 +962,23 @@ func (v *sha256FlagValue) Set(raw string) error {
 	return nil
 }
 
-func collectListParams(cmd *cobra.Command) retab.ListParams {
-	params := retab.ListParams{}
+func ptr[T any](value T) *T {
+	return &value
+}
+
+func collectListParams(cmd *cobra.Command) retab.PaginationParams {
+	params := retab.PaginationParams{}
 	if v, _ := cmd.Flags().GetString("before"); v != "" {
-		params.Before = v
+		params.Before = ptr(v)
 	}
 	if v, _ := cmd.Flags().GetString("after"); v != "" {
-		params.After = v
+		params.After = ptr(v)
 	}
 	if v, _ := cmd.Flags().GetInt("limit"); v > 0 {
-		params.Limit = v
+		params.Limit = ptr(v)
 	}
 	if v, _ := cmd.Flags().GetString("order"); v != "" {
-		params.Order = v
-	}
-	if cmd.Flags().Lookup("filename") != nil {
-		if v, _ := cmd.Flags().GetString("filename"); v != "" {
-			params.Filename = v
-		}
-	}
-	if cmd.Flags().Lookup("from-date") != nil {
-		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
-			if t, err := time.Parse(time.RFC3339, v); err == nil {
-				params.FromDate = &t
-			}
-		}
-	}
-	if cmd.Flags().Lookup("to-date") != nil {
-		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
-			if t, err := time.Parse(time.RFC3339, v); err == nil {
-				params.ToDate = &t
-			}
-		}
+		params.Order = ptr(v)
 	}
 	return params
 }

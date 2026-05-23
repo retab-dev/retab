@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -23,7 +24,7 @@ import (
 // keep the user from publishing — the publish call itself will surface any
 // real auth/server failure with its own error.
 func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, workflowID string, w io.Writer) {
-	blocks, err := client.Workflows.Blocks.List(ctx, workflowID, nil)
+	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return
 	}
@@ -188,25 +189,11 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
   # Project just the fields you need
   retab workflows list --fields id,name,updated_at`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		params := retab.ListWorkflowsParams{}
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if params.Before != "" && params.After != "" {
-			return fmt.Errorf("--before and --after are mutually exclusive")
-		}
-		params.Limit, _ = cmd.Flags().GetInt("limit")
-		params.Order, _ = cmd.Flags().GetString("order")
-		params.SortBy, _ = cmd.Flags().GetString("sort-by")
-		// `--fields` sparse-field projection is currently unsupported via
-		// the typed ``Workflows.List`` path; the matching server endpoint
-		// is now ``/v1/workflows/project``. Honour the allowlist for
-		// forward-compat error messages and ignore the value here.
+		// `--fields` sparse-field projection requires the server's
+		// on-the-wire shape to reach stdout untouched. Re-marshaling the
+		// typed Workflow struct would re-inflate zero-valued fields
+		// (`name`, `description`, `email_trigger`) and defeat the flag.
+		// Drop to the raw JSON helper so the trimmed payload survives.
 		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
 		if err != nil {
 			return err
@@ -214,8 +201,35 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		if err := validateFieldsAgainstAllowlist(fields, workflowsListAllowedFields); err != nil {
 			return err
 		}
-		_ = fields
-		result, err := client.Workflows.List(ctx, &params)
+		before, _ := cmd.Flags().GetString("before")
+		after, _ := cmd.Flags().GetString("after")
+		if before != "" && after != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
+		limit, _ := cmd.Flags().GetInt("limit")
+		order, _ := cmd.Flags().GetString("order")
+		sortBy, _ := cmd.Flags().GetString("sort-by")
+
+		query := url.Values{}
+		if before != "" {
+			query.Set("before", before)
+		}
+		if after != "" {
+			query.Set("after", after)
+		}
+		if limit > 0 {
+			query.Set("limit", fmt.Sprintf("%d", limit))
+		}
+		if order != "" {
+			query.Set("order", order)
+		}
+		if sortBy != "" {
+			query.Set("sort_by", sortBy)
+		}
+		if len(fields) > 0 {
+			query.Set("fields", strings.Join(fields, ","))
+		}
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows", query, nil)
 		if err != nil {
 			return err
 		}
@@ -223,42 +237,11 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 	}),
 }
 
-// printWorkflowList renders a workflow list response. For JSON output it
-// rebuilds the envelope from each Workflow's Raw bytes (the exact server
-// payload) so server-side `--fields` trimming survives to stdout —
-// re-marshaling the typed struct would re-inflate zero-valued fields
-// (name, description, email_trigger) and defeat the flag's whole purpose.
-// Table output keeps the shared renderer: it only surfaces id/name/
-// created_at, so struct re-inflation is harmless there.
-func printWorkflowList(cmd *cobra.Command, result *retab.PaginatedList[retab.Workflow]) error {
+func printWorkflowList(cmd *cobra.Command, result any) error {
 	if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
 		return printResultTable(result)
 	}
-	rows := make([]json.RawMessage, len(result.Data))
-	for i, wf := range result.Data {
-		if len(wf.Raw) > 0 {
-			rows[i] = wf.Raw
-			continue
-		}
-		// Defensive: an element with no captured Raw (shouldn't happen for
-		// a decoded list response) falls back to the typed marshal.
-		encoded, err := json.Marshal(wf)
-		if err != nil {
-			return err
-		}
-		rows[i] = encoded
-	}
-	return printJSON(struct {
-		Data         []json.RawMessage      `json:"data"`
-		ListMetadata retab.PaginationCursor `json:"list_metadata"`
-		HasMore      bool                   `json:"has_more,omitempty"`
-		Total        int                    `json:"total,omitempty"`
-	}{
-		Data:         rows,
-		ListMetadata: result.ListMetadata,
-		HasMore:      result.HasMore,
-		Total:        result.Total,
-	})
+	return printJSON(result)
 }
 
 var workflowsGetCmd = &cobra.Command{
@@ -319,10 +302,14 @@ functional.`,
 			name = trimmed
 		}
 		description, _ := cmd.Flags().GetString("description")
-		result, err := client.Workflows.Create(ctx, retab.CreateWorkflowRequest{
-			Name:        name,
-			Description: description,
-		})
+		params := retab.WorkflowsCreateParams{}
+		if name != "" || cmd.Flags().Changed("name") {
+			params.Name = ptr(name)
+		}
+		if description != "" || cmd.Flags().Changed("description") {
+			params.Description = ptr(description)
+		}
+		result, err := client.Workflows.Create(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -360,7 +347,8 @@ and ` + "`workflows edges`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		var req retab.UpdateWorkflowRequest
+		body := map[string]any{}
+		var req retab.WorkflowsUpdateParams
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
 			trimmed, err := validateWorkflowName(v)
@@ -368,10 +356,12 @@ and ` + "`workflows edges`" + `.`,
 				return err
 			}
 			req.Name = &trimmed
+			body["name"] = trimmed
 		}
 		if cmd.Flags().Changed("description") {
 			v, _ := cmd.Flags().GetString("description")
 			req.Description = &v
+			body["description"] = v
 		}
 		senders, _ := cmd.Flags().GetStringArray("allowed-sender")
 		domains, _ := cmd.Flags().GetStringArray("allowed-domain")
@@ -409,19 +399,24 @@ and ` + "`workflows edges`" + `.`,
 				if err != nil {
 					return err
 				}
-				if !senderChanged {
+				if !senderChanged && current.EmailTrigger != nil {
 					senders = current.EmailTrigger.AllowedSenders
 				}
-				if !domainChanged {
+				if !domainChanged && current.EmailTrigger != nil {
 					domains = current.EmailTrigger.AllowedDomains
 				}
 			}
-			req.EmailTrigger = &retab.WorkflowEmailTrigger{
-				AllowedSenders: senders,
-				AllowedDomains: domains,
+			body["email_trigger"] = map[string]any{
+				"allowed_senders": senders,
+				"allowed_domains": domains,
 			}
 		}
-		result, err := client.Workflows.Update(ctx, args[0], req)
+		var result any
+		if senderChanged || domainChanged {
+			result, err = cliJSONRequest(cmd, http.MethodPatch, "/workflows/"+url.PathEscape(args[0]), nil, body)
+		} else {
+			result, err = client.Workflows.Update(ctx, args[0], &req)
+		}
 		if err != nil {
 			return err
 		}
@@ -591,7 +586,9 @@ The empty-workflow check still runs (a draft with only the auto-added
 				return err
 			}
 		}
-		result, err := client.Workflows.Publish(ctx, args[0], retab.PublishWorkflowRequest{Description: description})
+		result, err := client.Workflows.Publish(ctx, args[0], &retab.WorkflowsPublishParams{
+			Body: retab.PublishWorkflowRequest{Description: ptr(description)},
+		})
 		if err != nil {
 			return err
 		}
@@ -610,7 +607,7 @@ The empty-workflow check still runs (a draft with only the auto-added
 // from shipping. The publish call will still surface real auth/server
 // failures with its own error.
 func abortPublishOnDiagnoseErrors(ctx context.Context, client *retab.Client, workflowID string, warnTo io.Writer) error {
-	diagnosis, err := client.Workflows.Diagnose(ctx, workflowID)
+	diagnosis, err := client.Workflows.Diagnose(ctx, workflowID, nil)
 	if err != nil {
 		// Diagnose failure is non-fatal — see function doc.
 		fmt.Fprintf(warnTo, "note: skipping pre-publish diagnose (%v)\n", err)
@@ -619,10 +616,10 @@ func abortPublishOnDiagnoseErrors(ctx context.Context, client *retab.Client, wor
 	if diagnosis == nil {
 		return nil
 	}
-	var errs []retab.WorkflowDiagnosisIssue
-	var warns []retab.WorkflowDiagnosisIssue
+	var errs []*retab.WorkflowDiagnosisIssue
+	var warns []*retab.WorkflowDiagnosisIssue
 	for _, issue := range diagnosis.Issues {
-		switch strings.ToLower(issue.Severity) {
+		switch strings.ToLower(string(issue.Severity)) {
 		case "error":
 			errs = append(errs, issue)
 		case "warning":
@@ -660,27 +657,27 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		graphFile, _ := cmd.Flags().GetString("graph-file")
-		var graphReq *retab.DiagnoseWorkflowGraphRequest
+		var graphReq map[string]any
 		if graphFile != "" {
 			body, err := readJSONMap(graphFile)
 			if err != nil {
 				return err
 			}
-			req := retab.DiagnoseWorkflowGraphRequest{RePropagate: true}
+			req := map[string]any{"re_propagate": true}
 			blocks, err := workflowGraphObjects(body, "blocks")
 			if err != nil {
 				return err
 			}
-			req.Blocks = blocks
+			req["blocks"] = blocks
 			edges, err := workflowGraphObjects(body, "edges")
 			if err != nil {
 				return err
 			}
-			req.Edges = edges
+			req["edges"] = edges
 			if v, ok := body["re_propagate"].(bool); ok {
-				req.RePropagate = v
+				req["re_propagate"] = v
 			}
-			graphReq = &req
+			graphReq = req
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -689,13 +686,13 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		if graphReq != nil {
-			result, err := client.Workflows.DiagnoseGraph(ctx, args[0], *graphReq)
+			result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/"+url.PathEscape(args[0])+"/diagnose-graph", nil, graphReq)
 			if err != nil {
 				return err
 			}
 			return printResult(cmd, result)
 		}
-		result, err := client.Workflows.Diagnose(ctx, args[0])
+		result, err := client.Workflows.Diagnose(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}

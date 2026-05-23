@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -80,7 +79,7 @@ derives the backing collection from the id prefix.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Artifacts.Get(ctx, artifactID)
+		result, err := client.WorkflowArtifacts.Get(ctx, artifactID)
 		if err != nil {
 			return err
 		}
@@ -127,23 +126,20 @@ one. The two are mutually exclusive.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.ListWorkflowArtifactsParams{}
-		params.RunID = args[0]
-		params.Operation, _ = cmd.Flags().GetString("operation")
-		if err := validateWorkflowArtifactOperation(params.Operation); err != nil {
+		params := retab.WorkflowArtifactsListParams{PaginationParams: collectListParams(cmd)}
+		params.RunID = ptr(args[0])
+		operation, _ := cmd.Flags().GetString("operation")
+		if err := validateWorkflowArtifactOperation(operation); err != nil {
 			return err
 		}
-		params.BlockID, _ = cmd.Flags().GetString("block-id")
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
-			parsed, err := strconv.Atoi(f.Value.String())
-			if err != nil {
-				return fmt.Errorf("invalid --limit %q", f.Value.String())
-			}
-			params.Limit = parsed
+		if operation != "" {
+			op := retab.WorkflowArtifactsOperation(operation)
+			params.Operation = &op
 		}
-		result, err := client.Workflows.Artifacts.List(ctx, params)
+		if blockID, _ := cmd.Flags().GetString("block-id"); blockID != "" {
+			params.BlockID = ptr(blockID)
+		}
+		result, err := client.WorkflowArtifacts.List(ctx, &params)
 		if err != nil {
 			return err
 		}

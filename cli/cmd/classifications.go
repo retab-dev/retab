@@ -59,7 +59,7 @@ when the type is obvious from the cover.`,
 		}
 		categoriesFile, _ := cmd.Flags().GetString("categories-file")
 		categoryFlags, _ := cmd.Flags().GetStringArray("category")
-		var categories []retab.ClassificationCategory
+		var categories []*retab.Category
 		if categoriesFile != "" {
 			arr, err := readJSONArray(categoriesFile)
 			if err != nil {
@@ -70,7 +70,7 @@ when the type is obvious from the cover.`,
 				if !ok {
 					return fmt.Errorf("--categories-file[%d] must be a JSON object", i)
 				}
-				cat := retab.ClassificationCategory{}
+				cat := &retab.Category{}
 				nameValue, ok := obj["name"]
 				if !ok {
 					return fmt.Errorf("--categories-file[%d].name is required", i)
@@ -85,7 +85,7 @@ when the type is obvious from the cover.`,
 					if !ok {
 						return fmt.Errorf("--categories-file[%d].description must be a string", i)
 					}
-					cat.Description = description
+					cat.Description = ptr(description)
 				}
 				if err := validateClassificationCategory(i, cat, "--categories-file"); err != nil {
 					return err
@@ -95,7 +95,7 @@ when the type is obvious from the cover.`,
 		}
 		for i, raw := range categoryFlags {
 			name, desc, _ := splitKV(raw)
-			cat := retab.ClassificationCategory{Name: name, Description: desc}
+			cat := &retab.Category{Name: name, Description: ptr(desc)}
 			if err := validateClassificationCategory(i, cat, "--category"); err != nil {
 				return err
 			}
@@ -119,14 +119,14 @@ when the type is obvious from the cover.`,
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		firstN, _ := cmd.Flags().GetInt("first-n-pages")
 		instructions, _ := cmd.Flags().GetString("instructions")
-		result, err := client.Classifications.Create(ctx, retab.ClassificationCreateRequest{
+		result, err := client.Classifications.Create(ctx, &retab.ClassificationsCreateParams{
 			Document:     doc,
 			Categories:   categories,
-			Model:        model,
-			NConsensus:   nConsensus,
-			BustCache:    bustCache,
-			FirstNPages:  firstN,
-			Instructions: instructions,
+			Model:        ptr(model),
+			NConsensus:   ptr(nConsensus),
+			BustCache:    ptr(bustCache),
+			FirstNPages:  ptr(firstN),
+			Instructions: ptr(instructions),
 		})
 		if err != nil {
 			return err
@@ -135,7 +135,7 @@ when the type is obvious from the cover.`,
 	}),
 }
 
-func validateClassificationCategory(index int, category retab.ClassificationCategory, source string) error {
+func validateClassificationCategory(index int, category *retab.Category, source string) error {
 	if strings.TrimSpace(category.Name) == "" {
 		return fmt.Errorf("%s[%d].name is required", source, index)
 	}
@@ -190,7 +190,7 @@ ascending and descending.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := collectListParams(cmd)
+		params := retab.ClassificationsListParams{PaginationParams: collectListParams(cmd)}
 		result, err := client.Classifications.List(ctx, &params)
 		if err != nil {
 			return err

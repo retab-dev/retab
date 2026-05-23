@@ -27,11 +27,29 @@ var sdkMethodCommandAliases = map[string]string{
 }
 
 var sdkResourceCommandAliases = map[string]string{
-	"Specs": "spec",
+	"EditTemplates":           "edits templates",
+	"ExperimentRunMetrics":    "workflows experiments metrics",
+	"ExperimentRunResults":    "workflows experiments results",
+	"ExperimentRuns":          "workflows experiments runs",
+	"Specs":                   "spec",
+	"WorkflowArtifacts":       "workflows artifacts",
+	"WorkflowBlockExecutions": "workflows blocks executions",
+	"WorkflowBlocks":          "workflows blocks",
+	"WorkflowEdges":           "workflows edges",
+	"WorkflowExperiments":     "workflows experiments",
+	"WorkflowReviewVersions":  "workflows reviews versions",
+	"WorkflowReviews":         "workflows reviews",
+	"WorkflowRuns":            "workflows runs",
+	"WorkflowSpecs":           "workflows spec",
+	"WorkflowSteps":           "workflows steps",
+	"WorkflowTestRunResults":  "workflows tests results",
+	"WorkflowTestRuns":        "workflows tests runs",
+	"WorkflowTests":           "workflows tests",
 }
 
 var workflowCLIOnlyCommands = map[string]string{
 	"workflows reviews schema": "local schema helper composed from reviews get",
+	"workflows runs restart":   "local restart alias composed from runs create",
 	"workflows view":           "terminal graph renderer composed from workflow graph reads",
 }
 

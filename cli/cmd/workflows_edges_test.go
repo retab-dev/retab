@@ -17,7 +17,7 @@ func TestParseEdgeCreateGeneratesIDWhenMissing(t *testing.T) {
 		"target_block": "extract_1",
 	})
 
-	if req.ID == "" {
+	if req.ID == nil || *req.ID == "" {
 		t.Fatal("expected parseEdgeCreate to generate an id when none is provided")
 	}
 }
@@ -29,8 +29,12 @@ func TestParseEdgeCreatePreservesExplicitID(t *testing.T) {
 		"target_block": "extract_1",
 	})
 
-	if req.ID != "edge_custom" {
-		t.Fatalf("id = %q, want edge_custom", req.ID)
+	if req.ID == nil || *req.ID != "edge_custom" {
+		got := ""
+		if req.ID != nil {
+			got = *req.ID
+		}
+		t.Fatalf("id = %q, want edge_custom", got)
 	}
 }
 
@@ -240,11 +244,11 @@ func TestWorkflowsEdgesCreateResolvesFriendlyTargetInputHandle(t *testing.T) {
 	if got := posted["target_handle"]; got != "input-file-document" {
 		t.Fatalf("target_handle = %v, want input-file-document", got)
 	}
-	wantID := defaultWorkflowEdgeID(retab.WorkflowEdgeCreateRequest{
+	wantID := defaultWorkflowEdgeID(retab.WorkflowEdgesCreateParams{
 		SourceBlock:  "blk_generated_start",
-		SourceHandle: "output-file-0",
+		SourceHandle: ptr("output-file-0"),
 		TargetBlock:  "extract_1",
-		TargetHandle: "input-file-document",
+		TargetHandle: ptr("input-file-document"),
 	})
 	if got := posted["id"]; got != wantID {
 		t.Fatalf("id = %v, want %s", got, wantID)
@@ -774,8 +778,8 @@ func resetWorkflowEdgesCreateFlags(t *testing.T) {
 	})
 }
 
-func retabWorkflowEdgeCreateRequestForTest(sourceBlock string, targetBlock string) retab.WorkflowEdgeCreateRequest {
-	return retab.WorkflowEdgeCreateRequest{
+func retabWorkflowEdgeCreateRequestForTest(sourceBlock string, targetBlock string) retab.WorkflowEdgesCreateParams {
+	return retab.WorkflowEdgesCreateParams{
 		SourceBlock: sourceBlock,
 		TargetBlock: targetBlock,
 	}

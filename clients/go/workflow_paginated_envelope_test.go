@@ -103,22 +103,22 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	cancelledStatus := WorkflowExperimentsExcludeStatus(LatestBlockTestRunSummaryStatusCancelled)
 	limit := 10
 	page, err := client.ExperimentRuns.List(context.Background(), &ExperimentRunsListParams{
-		WorkflowID:    ptrString("wf_1"),
-		ExperimentID:  ptrString("exp_1"),
-		BlockID:       ptrString("block_1"),
+		WorkflowID:    ptrTo("wf_1"),
+		ExperimentID:  ptrTo("exp_1"),
+		BlockID:       ptrTo("block_1"),
 		Status:        &completedStatus,
-		Statuses:      ptrString("completed,error"),
+		Statuses:      ptrTo("completed,error"),
 		ExcludeStatus: &cancelledStatus,
-		TriggerType:   ptrString("api"),
-		TriggerTypes:  ptrString("api,manual_run"),
-		FromDate:      ptrString("2026-05-01"),
-		ToDate:        ptrString("2026-05-18"),
-		SortBy:        ptrString("created_at"),
+		TriggerType:   ptrTo("api"),
+		TriggerTypes:  ptrTo("api,manual_run"),
+		FromDate:      ptrTo("2026-05-01"),
+		ToDate:        ptrTo("2026-05-18"),
+		SortBy:        ptrTo("created_at"),
 		PaginationParams: PaginationParams{
-			Before: ptrString("exprun_before"),
-			After:  ptrString("exprun_after"),
+			Before: ptrTo("exprun_before"),
+			After:  ptrTo("exprun_after"),
 			Limit:  &limit,
-			Order:  ptrString("asc"),
+			Order:  ptrTo("asc"),
 		},
 	})
 	if err != nil {
@@ -203,20 +203,20 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 
 	limit := 10
 	page, err := client.WorkflowTestRuns.List(context.Background(), &WorkflowTestRunsListParams{
-		WorkflowID:    ptrString("wf_1"),
-		TestID:        ptrString("wfnodetest_1"),
-		TargetBlockID: ptrString("block_1"),
-		Status:        ptrString("passed"),
+		WorkflowID:    ptrTo("wf_1"),
+		TestID:        ptrTo("wfnodetest_1"),
+		TargetBlockID: ptrTo("block_1"),
+		Status:        ptrTo("passed"),
 		Statuses:      []string{"passed", "failed"},
-		ExcludeStatus: ptrString("cancelled"),
-		TriggerType:   ptrString("api"),
+		ExcludeStatus: ptrTo("cancelled"),
+		TriggerType:   ptrTo("api"),
 		TriggerTypes:  []string{"api", "manual_run"},
-		SortBy:        ptrString("created_at"),
+		SortBy:        ptrTo("created_at"),
 		PaginationParams: PaginationParams{
-			Before: ptrString("wftestrun_before"),
-			After:  ptrString("wftestrun_after"),
+			Before: ptrTo("wftestrun_before"),
+			After:  ptrTo("wftestrun_after"),
 			Limit:  &limit,
-			Order:  ptrString("asc"),
+			Order:  ptrTo("asc"),
 		},
 	})
 	if err != nil {

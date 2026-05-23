@@ -64,13 +64,13 @@ returned subdocument references can be fed back into per-section
 		if len(arr) == 0 {
 			return fmt.Errorf("--subdocuments-file: at least one subdocument is required")
 		}
-		var subs []retab.SplitSubdocument
+		var subs []*retab.Subdocument
 		for i, item := range arr {
 			obj, ok := item.(map[string]any)
 			if !ok {
 				return fmt.Errorf("--subdocuments-file[%d] must be a JSON object", i)
 			}
-			sub := retab.SplitSubdocument{}
+			sub := &retab.Subdocument{}
 			nameValue, ok := obj["name"]
 			if !ok {
 				return fmt.Errorf("--subdocuments-file[%d].name is required", i)
@@ -85,14 +85,14 @@ returned subdocument references can be fed back into per-section
 				if !ok {
 					return fmt.Errorf("--subdocuments-file[%d].description must be a string", i)
 				}
-				sub.Description = description
+				sub.Description = ptr(description)
 			}
 			if v, ok := obj["allow_multiple_instances"]; ok {
 				allowMultipleInstances, ok := v.(bool)
 				if !ok {
 					return fmt.Errorf("--subdocuments-file[%d].allow_multiple_instances must be a boolean", i)
 				}
-				sub.AllowMultipleInstances = allowMultipleInstances
+				sub.AllowMultipleInstances = ptr(allowMultipleInstances)
 			}
 			if err := validateSplitSubdocument(i, sub); err != nil {
 				return err
@@ -112,13 +112,13 @@ returned subdocument references can be fed back into per-section
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		instructions, _ := cmd.Flags().GetString("instructions")
-		result, err := client.Splits.Create(ctx, retab.SplitCreateRequest{
+		result, err := client.Splits.Create(ctx, &retab.SplitsCreateParams{
 			Document:     doc,
 			Subdocuments: subs,
-			Model:        model,
-			NConsensus:   nConsensus,
-			BustCache:    bustCache,
-			Instructions: instructions,
+			Model:        ptr(model),
+			NConsensus:   ptr(nConsensus),
+			BustCache:    ptr(bustCache),
+			Instructions: ptr(instructions),
 		})
 		if err != nil {
 			return err
@@ -127,7 +127,7 @@ returned subdocument references can be fed back into per-section
 	}),
 }
 
-func validateSplitSubdocument(index int, subdocument retab.SplitSubdocument) error {
+func validateSplitSubdocument(index int, subdocument *retab.Subdocument) error {
 	if strings.TrimSpace(subdocument.Name) == "" {
 		return fmt.Errorf("--subdocuments-file[%d].name is required", index)
 	}
@@ -181,7 +181,7 @@ Page by split id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size 
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := collectListParams(cmd)
+		params := retab.SplitsListParams{PaginationParams: collectListParams(cmd)}
 		result, err := client.Splits.List(ctx, &params)
 		if err != nil {
 			return err

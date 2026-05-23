@@ -75,20 +75,28 @@ exclusive.`,
   retab workflows reviews list --after $(retab workflows reviews list --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		params := &retab.ListReviewsParams{}
-		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
-		params.RunID, _ = cmd.Flags().GetString("run-id")
-		params.BlockID, _ = cmd.Flags().GetString("block-id")
-		params.StepID, _ = cmd.Flags().GetString("step-id")
-		params.IterationKey, _ = cmd.Flags().GetString("iteration-key")
-		params.DecisionStatus, _ = cmd.Flags().GetString("decision-status")
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if params.Before != "" && params.After != "" {
-			return fmt.Errorf("--before and --after are mutually exclusive")
+		params := &retab.WorkflowReviewsListParams{PaginationParams: collectListParams(cmd)}
+		if workflowID, _ := cmd.Flags().GetString("workflow-id"); workflowID != "" {
+			params.WorkflowID = ptr(workflowID)
 		}
-		if cmd.Flags().Changed("limit") {
-			params.Limit, _ = cmd.Flags().GetInt("limit")
+		if runID, _ := cmd.Flags().GetString("run-id"); runID != "" {
+			params.RunID = ptr(runID)
+		}
+		if blockID, _ := cmd.Flags().GetString("block-id"); blockID != "" {
+			params.BlockID = ptr(blockID)
+		}
+		if stepID, _ := cmd.Flags().GetString("step-id"); stepID != "" {
+			params.StepID = ptr(stepID)
+		}
+		if iterationKey, _ := cmd.Flags().GetString("iteration-key"); iterationKey != "" {
+			params.IterationKey = ptr(iterationKey)
+		}
+		if decisionStatus, _ := cmd.Flags().GetString("decision-status"); decisionStatus != "" {
+			status := retab.ReviewDecisionStatus(decisionStatus)
+			params.DecisionStatus = &status
+		}
+		if params.Before != nil && params.After != nil {
+			return fmt.Errorf("--before and --after are mutually exclusive")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -96,7 +104,7 @@ exclusive.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Reviews.List(ctx, params)
+		result, err := client.WorkflowReviews.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -125,7 +133,7 @@ Use ` + "`reviews schema`" + ` when you need the snapshot shape for a correction
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Reviews.Get(ctx, args[0])
+		result, err := client.WorkflowReviews.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -163,11 +171,11 @@ to the review and it does not change the stored review object.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		review, err := client.Workflows.Reviews.Get(ctx, args[0])
+		review, err := client.WorkflowReviews.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
-		schema, err := reviewSchemaForBlockType(review.BlockType)
+		schema, err := reviewSchemaForBlockType(string(review.BlockType))
 		if err != nil {
 			return err
 		}
@@ -199,8 +207,8 @@ Any version returned by ` + "`reviews versions list`" + ` is a valid approval ta
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.ApproveReviewRequest{VersionID: versionID}
-		result, err := client.Workflows.Reviews.Approve(ctx, args[0], req)
+		req := retab.WorkflowReviewsApproveParams{VersionID: versionID}
+		result, err := client.WorkflowReviews.Approve(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -232,8 +240,8 @@ auditable.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.RejectReviewRequest{VersionID: versionID, Reason: reason}
-		result, err := client.Workflows.Reviews.Reject(ctx, args[0], req)
+		req := retab.WorkflowReviewsRejectParams{VersionID: versionID, Reason: reason}
+		result, err := client.WorkflowReviews.Reject(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -259,14 +267,12 @@ because versions are queried per review.`,
   retab workflows reviews versions list rev_123 --after rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		params := &retab.ListReviewVersionsParams{ReviewID: args[0]}
-		params.Before, _ = cmd.Flags().GetString("before")
-		params.After, _ = cmd.Flags().GetString("after")
-		if params.Before != "" && params.After != "" {
-			return fmt.Errorf("--before and --after are mutually exclusive")
+		params := &retab.WorkflowReviewVersionsListParams{
+			PaginationParams: collectListParams(cmd),
+			ReviewID:         args[0],
 		}
-		if cmd.Flags().Changed("limit") {
-			params.Limit, _ = cmd.Flags().GetInt("limit")
+		if params.Before != nil && params.After != nil {
+			return fmt.Errorf("--before and --after are mutually exclusive")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -274,7 +280,7 @@ because versions are queried per review.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Reviews.Versions.List(ctx, params)
+		result, err := client.WorkflowReviewVersions.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -297,7 +303,7 @@ var workflowsReviewsVersionsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Reviews.Versions.Get(ctx, args[0])
+		result, err := client.WorkflowReviewVersions.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -350,13 +356,15 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.CreateReviewVersionRequest{
+		req := retab.WorkflowReviewVersionsCreateParams{
 			ReviewID: args[0],
 			ParentID: parentID,
 			Snapshot: snapshot,
 		}
-		req.Note, _ = cmd.Flags().GetString("note")
-		result, err := client.Workflows.Reviews.Versions.Create(ctx, req)
+		if note, _ := cmd.Flags().GetString("note"); note != "" {
+			req.Note = ptr(note)
+		}
+		result, err := client.WorkflowReviewVersions.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -422,7 +430,7 @@ func printReviewVersionResult(cmd *cobra.Command, result *retab.ReviewVersion) e
 	return printJSON(result)
 }
 
-func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitWorkflowReviewDecisionResponse) error {
+func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionResponse) error {
 	// Conflict means the submission did NOT take effect — the review
 	// already had a different decision. Surface this as a non-zero exit
 	// so scripts gating on exit code don't mistake "I tried to reject"
@@ -434,7 +442,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitWorkflowR
 	// SubmissionStatusAccepted and SubmissionStatusAlreadyApplied are
 	// both treated as success (already-applied is idempotent: the user
 	// asked for X, X is what's recorded).
-	conflict := result != nil && result.SubmissionStatus == retab.SubmissionStatusConflict
+	conflict := result != nil && result.SubmissionStatus != nil && *result.SubmissionStatus == retab.SubmissionStatusConflict
 	format, err := resolveReviewOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
@@ -446,26 +454,26 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitWorkflowR
 	// ("skipped" — e.g. run already terminal). The JSON on stdout still
 	// carries the full payload for programmatic consumers; the stderr
 	// note is a one-line nudge that a poll on `runs get` is needed.
-	if format != OutputTable && result != nil && result.ResumeStatus != "" && result.ResumeStatus != retab.ResumeStatusResumed {
-		switch result.ResumeStatus {
+	if format != OutputTable && result != nil && result.ResumeStatus != nil && *result.ResumeStatus != retab.ResumeStatusResumed {
+		switch *result.ResumeStatus {
 		case retab.ResumeStatusPending:
 			fmt.Fprintf(
 				os.Stderr,
 				"note: resume_status=%q — decision was accepted but the workflow has not resumed yet. Poll `retab workflows runs get %s` until lifecycle.status changes from awaiting_review.\n",
-				result.ResumeStatus,
+				*result.ResumeStatus,
 				result.Review.WorkflowRunID,
 			)
 		case retab.ResumeStatusSkipped:
 			fmt.Fprintf(
 				os.Stderr,
 				"note: resume_status=%q — decision was recorded but no resume signal was sent (the run is likely already terminal).\n",
-				result.ResumeStatus,
+				*result.ResumeStatus,
 			)
 		default:
 			fmt.Fprintf(
 				os.Stderr,
 				"note: resume_status=%q — see the JSON response for details.\n",
-				result.ResumeStatus,
+				*result.ResumeStatus,
 			)
 		}
 		if result.ResumeError != nil && *result.ResumeError != "" {
@@ -505,7 +513,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitWorkflowR
 		fmt.Fprintf(
 			os.Stderr,
 			"error: submission_status=%q — the review already has a different decision; this call did NOT change it. Inspect the current decision with `retab workflows reviews get %s`.\n",
-			result.SubmissionStatus,
+			*result.SubmissionStatus,
 			result.Review.ID,
 		)
 		return fmt.Errorf("review decision conflict: %s already has a different decision", result.Review.ID)

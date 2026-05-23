@@ -77,14 +77,20 @@ where the default is too coarse.`,
 		dpi, _ := cmd.Flags().GetInt("image-resolution-dpi")
 		instructions, _ := cmd.Flags().GetString("instructions")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
-		result, err := client.Parses.Create(ctx, retab.ParseCreateRequest{
-			Document:           doc,
-			Model:              model,
-			TableParsingFormat: tableFormat,
-			ImageResolutionDPI: dpi,
-			Instructions:       instructions,
-			BustCache:          bustCache,
-		})
+		params := &retab.ParsesCreateParams{
+			Document:     doc,
+			Model:        ptr(model),
+			Instructions: ptr(instructions),
+			BustCache:    ptr(bustCache),
+		}
+		if tableFormat != "" {
+			tpf := retab.ParseRequestTableParsingFormat(tableFormat)
+			params.TableParsingFormat = &tpf
+		}
+		if cmd.Flags().Changed("image-resolution-dpi") {
+			params.ImageResolutionDpi = ptr(dpi)
+		}
+		result, err := client.Parses.Create(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -139,7 +145,7 @@ Page by parse id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size 
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := collectListParams(cmd)
+		params := retab.ParsesListParams{PaginationParams: collectListParams(cmd)}
 		result, err := client.Parses.List(ctx, &params)
 		if err != nil {
 			return err

@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportCallIssue=false
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock
 

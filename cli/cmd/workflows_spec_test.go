@@ -112,7 +112,7 @@ func TestWorkflowsSpec_RouterAndChildrenRegistered(t *testing.T) {
 		"validate": false,
 		"plan":     false,
 		"apply":    false,
-		"export":   false,
+		"get":      false,
 	}
 	for _, c := range spec.Commands() {
 		if _, want := wantChildren[c.Name()]; want {
@@ -781,7 +781,7 @@ func TestWorkflowsSpecApply_YesFlag(t *testing.T) {
 	if f.Shorthand != "y" {
 		t.Errorf("--yes shorthand should be -y, got %q", f.Shorthand)
 	}
-	for _, name := range []string{"validate", "plan", "export"} {
+	for _, name := range []string{"validate", "plan", "get"} {
 		sibling, _, err := rootCmd.Find([]string{"workflows", "spec", name})
 		if err != nil {
 			t.Fatalf("workflows spec %s not registered: %v", name, err)
@@ -792,18 +792,18 @@ func TestWorkflowsSpecApply_YesFlag(t *testing.T) {
 	}
 }
 
-// The --format flag must be registered on the export command (and only
-// on the export command — other spec verbs print JSON unconditionally
+// The --format flag must be registered on the get command (and only
+// on the get command — other spec verbs print JSON unconditionally
 // and a stray flag would be confusing). Default value is "yaml" so the
 // out-of-the-box behaviour matches the bug-fix contract.
 func TestWorkflowsSpecExport_FormatFlag(t *testing.T) {
-	exp, _, err := rootCmd.Find([]string{"workflows", "spec", "export"})
+	exp, _, err := rootCmd.Find([]string{"workflows", "spec", "get"})
 	if err != nil {
-		t.Fatalf("workflows spec export not registered: %v", err)
+		t.Fatalf("workflows spec get not registered: %v", err)
 	}
 	f := exp.Flags().Lookup("format")
 	if f == nil {
-		t.Fatalf("export command should expose a --format flag")
+		t.Fatalf("get command should expose a --format flag")
 	}
 	if f.DefValue != "yaml" {
 		t.Errorf("--format default should be yaml, got %q", f.DefValue)
@@ -818,7 +818,15 @@ func TestWorkflowsSpecExport_FormatFlag(t *testing.T) {
 			t.Fatalf("workflows spec %s not registered: %v", name, err)
 		}
 		if sibling.Flags().Lookup("format") != nil {
-			t.Errorf("workflows spec %s should not expose --format (export-only)", name)
+			t.Errorf("workflows spec %s should not expose --format (get-only)", name)
 		}
+	}
+
+	alias, _, err := rootCmd.Find([]string{"workflows", "spec", "export"})
+	if err != nil {
+		t.Fatalf("workflows spec export alias not registered: %v", err)
+	}
+	if alias != exp {
+		t.Fatalf("workflows spec export should resolve to the get command")
 	}
 }
