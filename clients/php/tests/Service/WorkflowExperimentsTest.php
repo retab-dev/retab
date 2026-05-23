@@ -15,14 +15,19 @@ class WorkflowExperimentsTest extends TestCase
 
     public function testList(): void
     {
-        $fixture = $this->loadFixture('workflow_experiment_list');
+        $fixture = $this->loadFixture('list_workflow_experiment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowExperiments()->list(workflowId: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\WorkflowExperimentList::class, $result);
-        $this->assertIsArray($result->toArray());
+        $result = $client->workflowExperiments()->list(workflowId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/experiments', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+        $this->assertSame('test_value', $query['before']);
+        $this->assertSame('test_value', $query['after']);
+        $this->assertArrayHasKey('limit', $query);
+        $this->assertSame('asc', $query['order']);
     }
 
     public function testCreate(): void
@@ -76,5 +81,24 @@ class WorkflowExperimentsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/experiments/test_experiment_id', $request->getUri()->getPath());
+    }
+
+    public function testPaginationBoundary(): void
+    {
+        $fixture = $this->loadFixture('list_workflow_experiment');
+        // Ensure cursors are null (first/last page boundary)
+        $fixture['list_metadata']['before'] = null;
+        $fixture['list_metadata']['after'] = null;
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflowExperiments()->list(workflowId: 'test_value');
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
+        // Verify cursors are null on boundary page
+        $this->assertNull($result->listMetadata['before']);
+        $this->assertNull($result->listMetadata['after']);
+        // Iterating should not throw on null cursors
+        foreach ($result as $item) {
+            $this->assertNotNull($item);
+            break;
+        }
     }
 }

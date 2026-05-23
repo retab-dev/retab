@@ -19,3 +19,15 @@ pub struct UploadFileRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sha_256: Option<String>,
 }
+impl UploadFileRequest {
+    /// Construct a new `UploadFileRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(filename: impl Into<String>, size_bytes: i64) -> Self {
+        Self {
+            filename: filename.into(),
+            content_type: Default::default(),
+            size_bytes,
+            sha_256: Default::default(),
+        }
+    }
+}

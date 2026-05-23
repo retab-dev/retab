@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// Carries the same structured ``details`` envelope as workflow runs so
 /// consumers can branch on ``error_code`` / ``stage`` rather than parsing
 /// a free-text message.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorWorkflowTestRun {
     /// Defaults to `error`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

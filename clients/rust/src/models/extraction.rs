@@ -42,3 +42,29 @@ pub struct Extraction {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }
+impl Extraction {
+    /// Construct a new `Extraction` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        json_schema: std::collections::HashMap<String, serde_json::Value>,
+        output: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            json_schema,
+            n_consensus: Default::default(),
+            image_resolution_dpi: Default::default(),
+            instructions: Default::default(),
+            output,
+            consensus: Default::default(),
+            metadata: Default::default(),
+            usage: Default::default(),
+            created_at: Default::default(),
+        }
+    }
+}

@@ -56,3 +56,25 @@ pub struct WorkflowExportPayloadRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub quote: Option<String>,
 }
+impl WorkflowExportPayloadRequest {
+    /// Construct a new `WorkflowExportPayloadRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>, block_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            block_id: block_id.into(),
+            export_source: Default::default(),
+            selected_run_ids: Default::default(),
+            selected_doc_types: Default::default(),
+            status: Default::default(),
+            exclude_status: Default::default(),
+            from_date: Default::default(),
+            to_date: Default::default(),
+            trigger_types: Default::default(),
+            preferred_columns: Default::default(),
+            delimiter: Default::default(),
+            line_delimiter: Default::default(),
+            quote: Default::default(),
+        }
+    }
+}

@@ -16,3 +16,15 @@ pub struct SimilarityGteCondition {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub method: Option<SimilarityGteConditionMethod>,
 }
+impl SimilarityGteCondition {
+    /// Construct a new `SimilarityGteCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(reference: serde_json::Value, threshold: f64) -> Self {
+        Self {
+            kind: Default::default(),
+            reference,
+            threshold,
+            method: Default::default(),
+        }
+    }
+}

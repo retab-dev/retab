@@ -9,7 +9,7 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class FileTest extends TestCase
+class FilesTest extends TestCase
 {
     use TestHelper;
 
@@ -46,7 +46,7 @@ class FileTest extends TestCase
     {
         $fixture = $this->loadFixture('list_file');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->files()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, filename: 'test_value', mimeType: 'test_value', fromDate: 'test_value', toDate: 'test_value', includeEmbeddings: true, sortBy: 'test_value');
+        $result = $client->files()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', mimeType: 'test_value', fromDate: 'test_value', toDate: 'test_value', includeEmbeddings: true, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

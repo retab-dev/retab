@@ -24,3 +24,23 @@ pub struct ExperimentVotesMetricsResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub rows: Option<Vec<ExperimentVoteRow>>,
 }
+impl ExperimentVotesMetricsResponse {
+    /// Construct a new `ExperimentVotesMetricsResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        run_id: impl Into<String>,
+        document: ExperimentVotesMetricDocument,
+        target: impl Into<String>,
+    ) -> Self {
+        Self {
+            run_id: run_id.into(),
+            kind: Default::default(),
+            view: Default::default(),
+            document,
+            target: target.into(),
+            score: Default::default(),
+            prior_score: Default::default(),
+            rows: Default::default(),
+        }
+    }
+}

@@ -20,3 +20,14 @@ pub struct CancelWorkflowResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub cancellation_status: Option<CancelWorkflowResponseCancellationStatus>,
 }
+impl CancelWorkflowResponse {
+    /// Construct a new `CancelWorkflowResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(run: WorkflowRun) -> Self {
+        Self {
+            run,
+            redis_available: Default::default(),
+            cancellation_status: Default::default(),
+        }
+    }
+}

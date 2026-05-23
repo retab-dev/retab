@@ -52,3 +52,33 @@ pub struct StoredBlockExecution {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub available_iterations: Option<Vec<std::collections::HashMap<String, serde_json::Value>>>,
 }
+impl StoredBlockExecution {
+    /// Construct a new `StoredBlockExecution` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        run_id: impl Into<String>,
+        block_id: impl Into<String>,
+        block_type: impl Into<String>,
+        lifecycle: StoredBlockExecutionLifecycleOneOf,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            run_id: run_id.into(),
+            block_id: block_id.into(),
+            block_type: block_type.into(),
+            lifecycle,
+            handle_inputs: Default::default(),
+            artifact: Default::default(),
+            handle_outputs: Default::default(),
+            routing_decision: Default::default(),
+            duration_ms: Default::default(),
+            created_at: Default::default(),
+            block_config: Default::default(),
+            step_id: Default::default(),
+            available_iterations: Default::default(),
+        }
+    }
+}

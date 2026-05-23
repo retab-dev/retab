@@ -10,3 +10,13 @@ pub struct WorkflowEdgeList {
     pub data: Vec<WorkflowEdgeDoc>,
     pub list_metadata: ListMetadata,
 }
+impl WorkflowEdgeList {
+    /// Construct a new `WorkflowEdgeList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<WorkflowEdgeDoc>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

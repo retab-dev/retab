@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Consensus and flat voter values for one selected target row.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentVoteRow {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<serde_json::Value>,

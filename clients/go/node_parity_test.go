@@ -316,34 +316,6 @@ func TestListDefaultsMatchNode(t *testing.T) {
 	}
 }
 
-// TestWorkflowsListPropagatesFieldsParam pins the SDK serialisation of
-// ListWorkflowsParams.Fields into the `?fields=` query parameter. A
-// dogfood session against the production API surfaced that the response
-// still includes every field — this test confirms the SDK side is fine,
-// so the failure is server-side (the API ignores the query param).
-func TestWorkflowsListPropagatesFieldsParam(t *testing.T) {
-	var rawQuery string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rawQuery = r.URL.RawQuery
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{}})
-	}))
-	defer server.Close()
-	client := newTestClient(t, server)
-
-	params := &ListWorkflowsParams{Fields: "id,name,updated_at"}
-	if _, err := client.Workflows.List(context.Background(), params); err != nil {
-		t.Fatal(err)
-	}
-	values, err := url.ParseQuery(rawQuery)
-	if err != nil {
-		t.Fatalf("parse query %q: %v", rawQuery, err)
-	}
-	if got := values.Get("fields"); got != "id,name,updated_at" {
-		t.Fatalf("fields query param = %q, want %q (raw=%q)", got, "id,name,updated_at", rawQuery)
-	}
-}
-
 // TestWorkflowsListRejectsBeforeAndAfterTogether mirrors the mutual-exclusion
 // guard that sibling List methods (e.g. WorkflowReviewsService.List,
 // WorkflowReviewVersionsService.List) already enforce: a single request cannot

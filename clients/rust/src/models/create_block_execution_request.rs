@@ -28,3 +28,16 @@ pub struct CreateBlockExecutionRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub check_eligibility: Option<bool>,
 }
+impl CreateBlockExecutionRequest {
+    /// Construct a new `CreateBlockExecutionRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(run_id: impl Into<String>, block_id: impl Into<String>) -> Self {
+        Self {
+            run_id: run_id.into(),
+            block_id: block_id.into(),
+            step_id: Default::default(),
+            n_consensus: Default::default(),
+            check_eligibility: Default::default(),
+        }
+    }
+}

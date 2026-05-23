@@ -14,3 +14,14 @@ pub struct LlmNotJudgedAsCondition {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub expected_label: Option<String>,
 }
+impl LlmNotJudgedAsCondition {
+    /// Construct a new `LlmNotJudgedAsCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(rubric: impl Into<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            rubric: rubric.into(),
+            expected_label: Default::default(),
+        }
+    }
+}

@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Input payloads supplied at run creation time.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunInputs {
     /// start_document block ID -> input document reference
     #[serde(skip_serializing_if = "Option::is_none", default)]

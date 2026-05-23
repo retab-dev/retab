@@ -49,3 +49,37 @@ pub struct WorkflowTestResult {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub verdict_summary: Option<VerdictSummary>,
 }
+impl WorkflowTestResult {
+    /// Construct a new `WorkflowTestResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        test_id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        target: WorkflowTestBlockTarget,
+        source: CreateWorkflowTestRequestSourceOneOf,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            run_id: Default::default(),
+            test_id: test_id.into(),
+            lifecycle: Default::default(),
+            timing: Default::default(),
+            verdict: Default::default(),
+            workflow_id: workflow_id.into(),
+            target,
+            execution_fingerprint: Default::default(),
+            handle_inputs_fingerprint: Default::default(),
+            workflow_draft_fingerprint: Default::default(),
+            block_config_fingerprint: Default::default(),
+            source,
+            outputs: Default::default(),
+            routing_decision: Default::default(),
+            warnings: Default::default(),
+            error: Default::default(),
+            skipped: Default::default(),
+            assertion_result: Default::default(),
+            verdict_summary: Default::default(),
+        }
+    }
+}

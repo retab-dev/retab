@@ -13,3 +13,14 @@ pub struct LengthCompareCondition {
     pub op: LengthCompareConditionOp,
     pub expected: i64,
 }
+impl LengthCompareCondition {
+    /// Construct a new `LengthCompareCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(op: LengthCompareConditionOp, expected: i64) -> Self {
+        Self {
+            kind: Default::default(),
+            op,
+            expected,
+        }
+    }
+}

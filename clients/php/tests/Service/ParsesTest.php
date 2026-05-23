@@ -9,7 +9,7 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class ParsTest extends TestCase
+class ParsesTest extends TestCase
 {
     use TestHelper;
 
@@ -17,7 +17,7 @@ class ParsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_parse');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->parses()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->parses()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

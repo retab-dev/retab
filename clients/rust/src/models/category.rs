@@ -18,3 +18,14 @@ pub struct Category {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
 }
+impl Category {
+    /// Construct a new `Category` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            handle_key: Default::default(),
+            description: Default::default(),
+        }
+    }
+}

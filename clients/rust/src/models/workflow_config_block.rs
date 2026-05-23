@@ -29,3 +29,24 @@ pub struct WorkflowConfigBlock {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_id: Option<String>,
 }
+impl WorkflowConfigBlock {
+    /// Construct a new `WorkflowConfigBlock` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        type_: WorkflowConfigBlockType,
+        position: WorkflowBlockPosition,
+        label: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: Default::default(),
+            type_,
+            position,
+            label: label.into(),
+            config: Default::default(),
+            resolved_schemas: Default::default(),
+            width: Default::default(),
+            height: Default::default(),
+            parent_id: Default::default(),
+        }
+    }
+}

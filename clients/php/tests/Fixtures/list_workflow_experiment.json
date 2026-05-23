@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": "01234",
+      "workflow_id": "workflow_id_01234",
+      "block_id": "block_id_01234",
+      "n_consensus": 3,
+      "document_count": 1,
+      "name": "Test",
+      "last_run_id": "last_run_id_01234",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-01T00:00:00.000Z",
+      "status": "draft",
+      "block_type": "extract",
+      "score": 1,
+      "is_stale": true,
+      "schema_drift": "none",
+      "schema_drift_detail": "test_schema_drift_detail"
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}

@@ -17,3 +17,22 @@ pub struct MaterializedDocument {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub content_fingerprint: Option<String>,
 }
+impl MaterializedDocument {
+    /// Construct a new `MaterializedDocument` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        original_id: impl Into<String>,
+        filename: impl Into<String>,
+        mime_type: impl Into<String>,
+        gcs_uri: impl Into<String>,
+    ) -> Self {
+        Self {
+            original_id: original_id.into(),
+            filename: filename.into(),
+            mime_type: mime_type.into(),
+            gcs_uri: gcs_uri.into(),
+            size_bytes: Default::default(),
+            content_fingerprint: Default::default(),
+        }
+    }
+}

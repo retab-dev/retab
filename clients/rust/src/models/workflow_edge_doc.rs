@@ -23,3 +23,24 @@ pub struct WorkflowEdgeDoc {
     pub target_handle: Option<String>,
     pub updated_at: String,
 }
+impl WorkflowEdgeDoc {
+    /// Construct a new `WorkflowEdgeDoc` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        source_block: impl Into<String>,
+        target_block: impl Into<String>,
+        updated_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            source_block: source_block.into(),
+            target_block: target_block.into(),
+            source_handle: Default::default(),
+            target_handle: Default::default(),
+            updated_at: updated_at.into(),
+        }
+    }
+}

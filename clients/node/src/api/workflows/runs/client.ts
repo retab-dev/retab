@@ -152,7 +152,6 @@ export default class APIWorkflowRuns extends CompositionClient {
       maxDuration,
       search,
       sortBy,
-      fields,
       before,
       after,
       limit = 20,
@@ -172,7 +171,6 @@ export default class APIWorkflowRuns extends CompositionClient {
       maxDuration?: number;
       search?: string;
       sortBy?: string;
-      fields?: string[] | string;
       before?: string;
       after?: string;
       limit?: number;
@@ -196,7 +194,6 @@ export default class APIWorkflowRuns extends CompositionClient {
       max_duration: maxDuration,
       search,
       sort_by: sortBy,
-      fields: normalizeCsvParam(fields),
       before,
       after,
       limit,

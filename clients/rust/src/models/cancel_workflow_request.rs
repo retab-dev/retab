@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Optional request payload for cancel workflow command idempotency.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CancelWorkflowRequest {
     /// Optional idempotency key for deduplicating cancel commands
     #[serde(skip_serializing_if = "Option::is_none", default)]

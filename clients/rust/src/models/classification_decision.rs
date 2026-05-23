@@ -12,3 +12,13 @@ pub struct ClassificationDecision {
     /// The category name that the document belongs to
     pub category: String,
 }
+impl ClassificationDecision {
+    /// Construct a new `ClassificationDecision` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(reasoning: impl Into<String>, category: impl Into<String>) -> Self {
+        Self {
+            reasoning: reasoning.into(),
+            category: category.into(),
+        }
+    }
+}

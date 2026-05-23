@@ -13,3 +13,13 @@ pub struct WorkflowArtifact {
     /// Persisted resource identifier
     pub id: String,
 }
+impl WorkflowArtifact {
+    /// Construct a new `WorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(operation: WorkflowArtifactOperation, id: impl Into<String>) -> Self {
+        Self {
+            operation,
+            id: id.into(),
+        }
+    }
+}

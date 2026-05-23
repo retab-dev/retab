@@ -34,3 +34,17 @@ pub struct ParseRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
 }
+impl ParseRequest {
+    /// Construct a new `ParseRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(document: ClassificationRequestDocumentOneOf) -> Self {
+        Self {
+            document,
+            model: Default::default(),
+            table_parsing_format: Default::default(),
+            image_resolution_dpi: Default::default(),
+            instructions: Default::default(),
+            bust_cache: Default::default(),
+        }
+    }
+}

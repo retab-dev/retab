@@ -642,7 +642,6 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 		WorkflowID:   "wf_123",
 		Statuses:     []string{"running", "awaiting_review"},
 		TriggerTypes: []string{"api", "email"},
-		Fields:       []string{"id", "lifecycle"},
 		Limit:        5,
 		Order:        "asc",
 	})

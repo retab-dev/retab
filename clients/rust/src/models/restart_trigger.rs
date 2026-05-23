@@ -15,3 +15,13 @@ pub struct RestartTrigger {
     /// ID of the parent run that was restarted
     pub parent_run_id: String,
 }
+impl RestartTrigger {
+    /// Construct a new `RestartTrigger` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(parent_run_id: impl Into<String>) -> Self {
+        Self {
+            type_: Default::default(),
+            parent_run_id: parent_run_id.into(),
+        }
+    }
+}

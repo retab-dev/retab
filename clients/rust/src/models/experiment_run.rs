@@ -38,3 +38,40 @@ pub struct ExperimentRun {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub error_count: Option<i64>,
 }
+impl ExperimentRun {
+    /// Construct a new `ExperimentRun` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow: WorkflowSnapshotRef,
+        trigger: ExperimentRunTrigger,
+        experiment_id: impl Into<String>,
+        block_id: impl Into<String>,
+        block_type: ExperimentRunBlockType,
+        n_consensus: ExperimentRunNConsensus,
+        lifecycle: CancelWorkflowExperimentRunResponseLifecycleOneOf,
+        timing: ExperimentRunTiming,
+        definition_fingerprint: impl Into<String>,
+        documents_fingerprint: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow,
+            trigger,
+            experiment_id: experiment_id.into(),
+            block_id: block_id.into(),
+            block_type,
+            n_consensus,
+            lifecycle,
+            timing,
+            parent_run_id: Default::default(),
+            definition_fingerprint: definition_fingerprint.into(),
+            documents_fingerprint: documents_fingerprint.into(),
+            score: Default::default(),
+            total_document_count: Default::default(),
+            completed_document_count: Default::default(),
+            document_count: Default::default(),
+            error_count: Default::default(),
+        }
+    }
+}

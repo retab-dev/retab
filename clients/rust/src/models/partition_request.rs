@@ -35,3 +35,22 @@ pub struct PartitionRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
 }
+impl PartitionRequest {
+    /// Construct a new `PartitionRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        document: ClassificationRequestDocumentOneOf,
+        key: impl Into<String>,
+        instructions: impl Into<String>,
+    ) -> Self {
+        Self {
+            document,
+            key: key.into(),
+            instructions: instructions.into(),
+            model: Default::default(),
+            n_consensus: Default::default(),
+            allow_overlap: Default::default(),
+            bust_cache: Default::default(),
+        }
+    }
+}

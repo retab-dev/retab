@@ -38,8 +38,6 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fields: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
@@ -66,7 +64,6 @@ impl Default for ListParams {
             from_date: Default::default(),
             to_date: Default::default(),
             sort_by: Some("created_at".to_string()),
-            fields: Default::default(),
             before: Default::default(),
             after: Default::default(),
             limit: Some(50),

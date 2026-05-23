@@ -59,7 +59,6 @@ def test_workflows_list_uses_paginated_route() -> None:
         limit=5,
         order="asc",
         sort_by="updated_at",
-        fields="id,name",
         after="workflow_before",
     )
 
@@ -70,7 +69,6 @@ def test_workflows_list_uses_paginated_route() -> None:
         "limit": 5,
         "order": "asc",
         "sort_by": "updated_at",
-        "fields": "id,name",
         "after": "workflow_before",
     }
     assert result.list_metadata.after == "workflow_after"
@@ -113,7 +111,6 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         limit=5,
         order="asc",
         sort_by="updated_at",
-        fields="id,name",
         after="workflow_before",
     )
 
@@ -124,7 +121,6 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         "limit": 5,
         "order": "asc",
         "sort_by": "updated_at",
-        "fields": "id,name",
         "after": "workflow_before",
     }
     assert result.list_metadata.after == "workflow_after"
@@ -814,7 +810,6 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
         trigger_types=["api", "email"],
         from_date=date(2026, 1, 1),
         to_date=date(2026, 1, 31),
-        fields=["id", "status"],
         after="run_after",
     )
 
@@ -826,7 +821,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.params["trigger_types"] == "api,email"
     assert request.params["from_date"] == "2026-01-01"
     assert request.params["to_date"] == "2026-01-31"
-    assert request.params["fields"] == "id,status"
+    assert "fields" not in request.params
     assert request.params["after"] == "run_after"
 
 

@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The result row finished successfully.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CompletedWorkflowExperimentResult {
     /// Defaults to `completed`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Gate when any required field in the extract schema is null/missing.
 /// First-class predicate because this is the most common real-world driver
 /// for structured-extraction review.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReviewAnyRequiredFieldNull {
     /// Defaults to `any_required_field_null`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

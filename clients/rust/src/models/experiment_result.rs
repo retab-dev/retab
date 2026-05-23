@@ -30,3 +30,30 @@ pub struct ExperimentResult {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub is_placeholder: Option<bool>,
 }
+impl ExperimentResult {
+    /// Construct a new `ExperimentResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        run_id: impl Into<String>,
+        experiment_id: impl Into<String>,
+        document_id: impl Into<String>,
+        lifecycle: ExperimentResultLifecycleOneOf,
+        timing: ExperimentResultTiming,
+        block_type: ExperimentResultBlockType,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            run_id: run_id.into(),
+            experiment_id: experiment_id.into(),
+            document_id: document_id.into(),
+            lifecycle,
+            timing,
+            block_type,
+            handle_inputs: Default::default(),
+            artifact: Default::default(),
+            attempt: Default::default(),
+            is_placeholder: Default::default(),
+        }
+    }
+}

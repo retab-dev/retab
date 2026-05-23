@@ -11,3 +11,10 @@ pub struct RetabUsage {
     /// Credits consumed for processing
     pub credits: f64,
 }
+impl RetabUsage {
+    /// Construct a new `RetabUsage` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(credits: f64) -> Self {
+        Self { credits }
+    }
+}

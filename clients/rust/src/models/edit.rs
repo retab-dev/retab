@@ -29,3 +29,26 @@ pub struct Edit {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }
+impl Edit {
+    /// Construct a new `Edit` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        config: EditConfig,
+        output: EditResult,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            instructions: Default::default(),
+            config,
+            template_id: Default::default(),
+            output,
+            usage: Default::default(),
+            created_at: Default::default(),
+        }
+    }
+}

@@ -16,3 +16,15 @@ pub struct ExperimentByDocumentTargetMetric {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub value: Option<serde_json::Value>,
 }
+impl ExperimentByDocumentTargetMetric {
+    /// Construct a new `ExperimentByDocumentTargetMetric` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            score: Default::default(),
+            prior_score: Default::default(),
+            value: Default::default(),
+        }
+    }
+}

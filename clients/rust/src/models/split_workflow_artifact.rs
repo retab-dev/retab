@@ -39,3 +39,29 @@ pub struct SplitWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl SplitWorkflowArtifact {
+    /// Construct a new `SplitWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        subdocuments: Vec<Subdocument>,
+        output: Vec<SplitResult>,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            subdocuments,
+            n_consensus: Default::default(),
+            instructions: Default::default(),
+            output,
+            consensus: Default::default(),
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

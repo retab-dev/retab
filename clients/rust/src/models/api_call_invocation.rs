@@ -22,3 +22,23 @@ pub struct ApiCallInvocation {
     /// When this artifact was written by the orchestrator.
     pub created_at: String,
 }
+impl ApiCallInvocation {
+    /// Construct a new `ApiCallInvocation` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_run_id: impl Into<String>,
+        step_id: impl Into<String>,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            operation: Default::default(),
+            id: id.into(),
+            workflow_run_id: workflow_run_id.into(),
+            step_id: step_id.into(),
+            attempts: Default::default(),
+            error: Default::default(),
+            created_at: created_at.into(),
+        }
+    }
+}

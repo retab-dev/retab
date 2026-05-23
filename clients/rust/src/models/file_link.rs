@@ -17,3 +17,19 @@ pub struct FileLink {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub mime_data: Option<MimeData>,
 }
+impl FileLink {
+    /// Construct a new `FileLink` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        download_url: impl Into<String>,
+        expires_in: impl Into<String>,
+        filename: impl Into<String>,
+    ) -> Self {
+        Self {
+            download_url: download_url.into(),
+            expires_in: expires_in.into(),
+            filename: filename.into(),
+            mime_data: Default::default(),
+        }
+    }
+}

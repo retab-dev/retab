@@ -12,3 +12,13 @@ pub struct ObjectContainsCondition {
     pub kind: Option<String>,
     pub expected: std::collections::HashMap<String, serde_json::Value>,
 }
+impl ObjectContainsCondition {
+    /// Construct a new `ObjectContainsCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: std::collections::HashMap<String, serde_json::Value>) -> Self {
+        Self {
+            kind: Default::default(),
+            expected,
+        }
+    }
+}

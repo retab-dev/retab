@@ -13,6 +13,7 @@ module Retab
       params(
         run_id: T.nilable(String),
         block_id: T.nilable(String),
+        block_ids: T.nilable(T::Array[String]),
         step_id: T.nilable(String),
         block_type: T.nilable(T::Array[String]),
         status: T.nilable(T::Array[String]),
@@ -22,7 +23,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Types::ListStruct)
     end
-    def list(run_id:, block_id:, step_id:, block_type:, status:, before:, after:, limit:, request_options:); end
+    def list(run_id:, block_id:, block_ids:, step_id:, block_type:, status:, before:, after:, limit:, request_options:); end
 
     sig do
       params(

@@ -78,7 +78,7 @@ def _apply_transform(items: list[Any], transform: PageTransform | None) -> list[
 def _new_sync_page(
     *,
     response: Any,
-    model: Type[T] | None,
+    model: Type[T],
     client: "Retab",
     request: PreparedRequest,
     transform: PageTransform | None = None,
@@ -116,7 +116,7 @@ def _new_sync_page(
 async def _new_async_page(
     *,
     response: Any,
-    model: Type[T] | None,
+    model: Type[T],
     client: "AsyncRetab",
     request: PreparedRequest,
     transform: PageTransform | None = None,
@@ -158,7 +158,7 @@ class SyncAPIResource:
         self,
         request: PreparedRequest,
         *,
-        model: Type[T] | None = None,
+        model: Type[T],
         transform: PageTransform | None = None,
     ) -> PaginatedList[T]:
         """Run a list-style `PreparedRequest` and return a wired-up page.
@@ -198,7 +198,7 @@ class AsyncAPIResource:
         self,
         request: PreparedRequest,
         *,
-        model: Type[T] | None = None,
+        model: Type[T],
         transform: PageTransform | None = None,
     ) -> AsyncPaginatedList[T]:
         """Async variant of ``SyncAPIResource.request_page``.

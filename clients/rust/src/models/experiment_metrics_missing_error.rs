@@ -17,3 +17,15 @@ pub struct ExperimentMetricsMissingError {
     pub experiment_id: String,
     pub message: String,
 }
+impl ExperimentMetricsMissingError {
+    /// Construct a new `ExperimentMetricsMissingError` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(experiment_id: impl Into<String>, message: impl Into<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            error: Default::default(),
+            experiment_id: experiment_id.into(),
+            message: message.into(),
+        }
+    }
+}

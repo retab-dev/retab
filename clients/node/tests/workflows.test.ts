@@ -97,7 +97,6 @@ describe('workflows client', () => {
       limit: 5,
       order: 'asc',
       sortBy: 'updated_at',
-      fields: 'id,name',
       after: 'workflow_before',
     });
 
@@ -108,7 +107,6 @@ describe('workflows client', () => {
         limit: 5,
         order: 'asc',
         sort_by: 'updated_at',
-        fields: 'id,name',
         after: 'workflow_before',
       },
       headers: undefined,
@@ -576,7 +574,6 @@ describe('workflows client', () => {
       triggerTypes: ['api', 'email'],
       fromDate: new Date('2026-01-01T00:00:00.000Z'),
       toDate: new Date('2026-01-31T00:00:00.000Z'),
-      fields: ['id', 'status'],
       after: 'run_after',
     });
 
@@ -589,7 +586,6 @@ describe('workflows client', () => {
         trigger_types: 'api,email',
         from_date: '2026-01-01',
         to_date: '2026-01-31',
-        fields: 'id,status',
         after: 'run_after',
         limit: 20,
         order: 'desc',

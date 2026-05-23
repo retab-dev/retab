@@ -132,8 +132,8 @@ class AsyncPaginatedList(RetabBaseModel, Generic[T]):
 PaginationOrder = Literal["asc", "desc"]
 
 
-def _validate_page_items(raw_items: Any, model: type[Any] | None) -> list[Any]:
-    """Re-validate raw items into ``model`` instances when possible.
+def _validate_page_items(raw_items: Any, model: type[Any]) -> list[Any]:
+    """Re-validate raw items into ``model`` instances.
 
     Keeps the centralized item-coercion logic in one place, so the
     per-resource list methods don't repeat the ``[Cls.model_validate(...)
@@ -141,12 +141,10 @@ def _validate_page_items(raw_items: Any, model: type[Any] | None) -> list[Any]:
 
     ``model`` is typed as ``type[Any]`` so callers can pass any pydantic
     model class without re-binding their own TypeVars; the runtime check
-    below asserts it actually exposes ``model_validate``. Passing
-    ``None`` leaves items as-is. Items that are not dicts
-    (already-validated models, or other shapes) pass through untouched.
+    below asserts it actually exposes ``model_validate``. Items that are
+    not dicts (already-validated models, or other shapes) pass through
+    untouched.
     """
-    if model is None:
-        return list(raw_items)
     validator = getattr(model, "model_validate", None)
     if validator is None:
         return list(raw_items)

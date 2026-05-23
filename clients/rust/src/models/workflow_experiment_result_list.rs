@@ -10,3 +10,13 @@ pub struct WorkflowExperimentResultList {
     pub data: Vec<ExperimentResult>,
     pub list_metadata: ListMetadata,
 }
+impl WorkflowExperimentResultList {
+    /// Construct a new `WorkflowExperimentResultList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<ExperimentResult>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

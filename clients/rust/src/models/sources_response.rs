@@ -21,3 +21,23 @@ pub struct SourcesResponse {
     /// Same shape as extraction but leaves are {value, source} objects
     pub sources: std::collections::HashMap<String, serde_json::Value>,
 }
+impl SourcesResponse {
+    /// Construct a new `SourcesResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        extraction_id: impl Into<String>,
+        document_type: SourcesResponseDocumentType,
+        file: FileRef,
+        extraction: std::collections::HashMap<String, serde_json::Value>,
+        sources: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            object: Default::default(),
+            extraction_id: extraction_id.into(),
+            document_type,
+            file,
+            extraction,
+            sources,
+        }
+    }
+}

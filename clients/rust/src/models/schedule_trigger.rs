@@ -15,3 +15,13 @@ pub struct ScheduleTrigger {
     /// ID of the schedule that fired this run
     pub schedule_id: String,
 }
+impl ScheduleTrigger {
+    /// Construct a new `ScheduleTrigger` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(schedule_id: impl Into<String>) -> Self {
+        Self {
+            type_: Default::default(),
+            schedule_id: schedule_id.into(),
+        }
+    }
+}

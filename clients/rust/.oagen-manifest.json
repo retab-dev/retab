@@ -1,9 +1,10 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-23T10:57:42.373Z",
+  "generatedAt": "2026-05-23T11:34:33.190Z",
   "files": [
     "Cargo.toml",
+    "LICENSE-MIT",
     "README.md",
     "src/client.rs",
     "src/enums/actor_kind.rs",

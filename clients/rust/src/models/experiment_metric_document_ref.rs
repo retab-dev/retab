@@ -11,3 +11,13 @@ pub struct ExperimentMetricDocumentRef {
     pub id: String,
     pub filename: String,
 }
+impl ExperimentMetricDocumentRef {
+    /// Construct a new `ExperimentMetricDocumentRef` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(id: impl Into<String>, filename: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            filename: filename.into(),
+        }
+    }
+}

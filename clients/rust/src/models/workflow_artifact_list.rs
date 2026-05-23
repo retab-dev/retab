@@ -10,3 +10,13 @@ pub struct WorkflowArtifactList {
     pub data: Vec<WorkflowArtifact>,
     pub list_metadata: ListMetadata,
 }
+impl WorkflowArtifactList {
+    /// Construct a new `WorkflowArtifactList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<WorkflowArtifact>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

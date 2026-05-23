@@ -13,3 +13,13 @@ pub struct ReviewSplitCountNeq {
     pub kind: Option<String>,
     pub expected: i64,
 }
+impl ReviewSplitCountNeq {
+    /// Construct a new `ReviewSplitCountNeq` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: i64) -> Self {
+        Self {
+            kind: Default::default(),
+            expected,
+        }
+    }
+}

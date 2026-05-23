@@ -14,3 +14,13 @@ pub struct CancelledStepLifecycle {
     /// Reason the step was cancelled
     pub reason: String,
 }
+impl CancelledStepLifecycle {
+    /// Construct a new `CancelledStepLifecycle` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(reason: impl Into<String>) -> Self {
+        Self {
+            status: Default::default(),
+            reason: reason.into(),
+        }
+    }
+}

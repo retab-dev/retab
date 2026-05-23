@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EditConfig {
     /// Hex code of the color to use for the filled text.
     ///

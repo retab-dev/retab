@@ -30,3 +30,22 @@ pub struct CreateUploadResponse {
     #[serde(rename = "expiresAt")]
     pub expires_at: String,
 }
+impl CreateUploadResponse {
+    /// Construct a new `CreateUploadResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new<D: Into<crate::MimeData>>(
+        file_id: impl Into<String>,
+        upload_url: impl Into<String>,
+        mime_data: D,
+        expires_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            file_id: file_id.into(),
+            upload_url: upload_url.into(),
+            upload_method: Default::default(),
+            upload_headers: Default::default(),
+            mime_data: mime_data.into(),
+            expires_at: expires_at.into(),
+        }
+    }
+}

@@ -20,3 +20,29 @@ pub struct DeclarativePlanResourceChange {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub path: Option<String>,
 }
+impl DeclarativePlanResourceChange {
+    /// Construct a new `DeclarativePlanResourceChange` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        address: impl Into<String>,
+        target: DeclarativePlanResourceChangeTarget,
+        target_id: impl Into<String>,
+        name: impl Into<String>,
+        type_: DeclarativePlanResourceChangeType,
+        actions: Vec<DeclarativePlanResourceChangeActions>,
+        summary: impl Into<String>,
+        change: DeclarativePlanChange,
+    ) -> Self {
+        Self {
+            address: address.into(),
+            target,
+            target_id: target_id.into(),
+            name: name.into(),
+            type_,
+            actions,
+            summary: summary.into(),
+            change,
+            path: Default::default(),
+        }
+    }
+}

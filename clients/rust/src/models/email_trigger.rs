@@ -18,3 +18,14 @@ pub struct EmailTrigger {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub subject: Option<String>,
 }
+impl EmailTrigger {
+    /// Construct a new `EmailTrigger` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(sender: impl Into<String>) -> Self {
+        Self {
+            type_: Default::default(),
+            sender: sender.into(),
+            subject: Default::default(),
+        }
+    }
+}

@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Run started by an inbound webhook.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WebhookTrigger {
     /// Defaults to `webhook`.
     #[serde(rename = "type")]

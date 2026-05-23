@@ -9,90 +9,77 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class ExtractionTest extends TestCase
+class PartitionsTest extends TestCase
 {
     use TestHelper;
 
     public function testList(): void
     {
-        $fixture = $this->loadFixture('list_extraction');
+        $fixture = $this->loadFixture('list_partition');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, filename: 'test_value', filenameRegex: 'test_value', filenameContains: 'test_value', documentType: [], fromDate: 'test_value', toDate: 'test_value', metadata: 'test_value');
+        $result = $client->partitions()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/partitions', $request->getUri()->getPath());
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
         $this->assertSame('asc', $query['order']);
         $this->assertSame('test_value', $query['filename']);
-        $this->assertSame('test_value', $query['filename_regex']);
-        $this->assertSame('test_value', $query['filename_contains']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
-        $this->assertSame('test_value', $query['metadata']);
     }
 
     public function testCreate(): void
     {
-        $fixture = $this->loadFixture('extraction');
+        $fixture = $this->loadFixture('partition');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->create(document: 'test_value', jsonSchema: []);
-        $this->assertInstanceOf(\Retab\Resource\Extraction::class, $result);
+        $result = $client->partitions()->create(document: 'test_value', key: 'test_value', instructions: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\Partition::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/partitions', $request->getUri()->getPath());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('test_value', $body['key']);
+        $this->assertSame('test_value', $body['instructions']);
     }
 
     public function testGet(): void
     {
-        $fixture = $this->loadFixture('extraction');
+        $fixture = $this->loadFixture('partition');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->get('test_extraction_id');
-        $this->assertInstanceOf(\Retab\Resource\Extraction::class, $result);
+        $result = $client->partitions()->get('test_partition_id');
+        $this->assertInstanceOf(\Retab\Resource\Partition::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/partitions/test_partition_id', $request->getUri()->getPath());
     }
 
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->extractions()->delete('test_extraction_id');
+        $client->partitions()->delete('test_partition_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id', $request->getUri()->getPath());
-    }
-
-    public function testSources(): void
-    {
-        $fixture = $this->loadFixture('sources_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->sources('test_extraction_id');
-        $this->assertInstanceOf(\Retab\Resource\SourceResponse::class, $result);
-        $this->assertSame($fixture['extraction_id'], $result->extractionId);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id/sources', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/partitions/test_partition_id', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void
     {
-        $fixture = $this->loadFixture('list_extraction');
+        $fixture = $this->loadFixture('list_partition');
         // Ensure cursors are null (first/last page boundary)
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->list();
+        $result = $client->partitions()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

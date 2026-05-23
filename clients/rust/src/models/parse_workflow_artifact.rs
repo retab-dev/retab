@@ -33,3 +33,29 @@ pub struct ParseWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl ParseWorkflowArtifact {
+    /// Construct a new `ParseWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        table_parsing_format: ParseWorkflowArtifactTableParsingFormat,
+        image_resolution_dpi: i64,
+        output: ParseOutput,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            table_parsing_format,
+            image_resolution_dpi,
+            instructions: Default::default(),
+            output,
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

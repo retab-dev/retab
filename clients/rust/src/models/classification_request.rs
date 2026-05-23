@@ -34,3 +34,18 @@ pub struct ClassificationRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
 }
+impl ClassificationRequest {
+    /// Construct a new `ClassificationRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(document: ClassificationRequestDocumentOneOf, categories: Vec<Category>) -> Self {
+        Self {
+            document,
+            categories,
+            model: Default::default(),
+            first_n_pages: Default::default(),
+            instructions: Default::default(),
+            n_consensus: Default::default(),
+            bust_cache: Default::default(),
+        }
+    }
+}

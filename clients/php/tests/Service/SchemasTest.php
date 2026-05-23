@@ -9,7 +9,7 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class SchemaTest extends TestCase
+class SchemasTest extends TestCase
 {
     use TestHelper;
 

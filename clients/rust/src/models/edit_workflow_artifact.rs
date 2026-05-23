@@ -34,3 +34,28 @@ pub struct EditWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl EditWorkflowArtifact {
+    /// Construct a new `EditWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        config: EditConfig,
+        output: EditResult,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            instructions: Default::default(),
+            config,
+            template_id: Default::default(),
+            output,
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

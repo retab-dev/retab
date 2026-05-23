@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// ``run_duration.py``). Records that already store ``duration_ms`` are left
 /// untouched (idempotent), so backfill cannot drift from the canonical value
 /// written by the projection.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunTiming {
     /// When the run record was created
     #[serde(skip_serializing_if = "Option::is_none", default)]

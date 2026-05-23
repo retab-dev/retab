@@ -11,3 +11,13 @@ pub struct JobList {
     pub data: Vec<Job>,
     pub list_metadata: ListMetadata,
 }
+impl JobList {
+    /// Construct a new `JobList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<Job>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

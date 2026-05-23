@@ -79,14 +79,12 @@ export default class APIWorkflows extends CompositionClient {
       limit = 10,
       order = 'desc',
       sortBy,
-      fields,
     }: {
       before?: string;
       after?: string;
       limit?: number;
       order?: 'asc' | 'desc';
       sortBy?: string;
-      fields?: string;
     } = {},
     options?: RequestOptions
   ): Promise<PaginatedList<Workflow>> {
@@ -97,7 +95,6 @@ export default class APIWorkflows extends CompositionClient {
         limit,
         order,
         sort_by: sortBy,
-        fields,
         ...(options?.params || {}),
       }).filter(([_, value]) => value !== undefined)
     );

@@ -52,3 +52,22 @@ pub struct ConditionEvaluationResult {
     /// Nested details object for frontend compatibility
     pub details: ConditionEvaluationDetails,
 }
+impl ConditionEvaluationResult {
+    /// Construct a new `ConditionEvaluationResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(condition_id: impl Into<String>, details: ConditionEvaluationDetails) -> Self {
+        Self {
+            condition_id: condition_id.into(),
+            path: Default::default(),
+            operator: Default::default(),
+            expected: Default::default(),
+            actual: Default::default(),
+            matched: Default::default(),
+            branch_name: Default::default(),
+            logical_operator: Default::default(),
+            per_item: Default::default(),
+            sub_evaluations: Default::default(),
+            details,
+        }
+    }
+}

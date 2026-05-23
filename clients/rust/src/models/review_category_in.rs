@@ -13,3 +13,13 @@ pub struct ReviewCategoryIn {
     pub kind: Option<String>,
     pub categories: Vec<String>,
 }
+impl ReviewCategoryIn {
+    /// Construct a new `ReviewCategoryIn` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(categories: Vec<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            categories,
+        }
+    }
+}

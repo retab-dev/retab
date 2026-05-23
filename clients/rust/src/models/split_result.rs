@@ -12,3 +12,13 @@ pub struct SplitResult {
     /// The pages of the subdocument (1-indexed)
     pub pages: Vec<i64>,
 }
+impl SplitResult {
+    /// Construct a new `SplitResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(name: impl Into<String>, pages: Vec<i64>) -> Self {
+        Self {
+            name: name.into(),
+            pages,
+        }
+    }
+}

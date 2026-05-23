@@ -46,3 +46,28 @@ pub struct WorkflowBlock {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resolved_schemas: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
+impl WorkflowBlock {
+    /// Construct a new `WorkflowBlock` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        type_: WorkflowBlockType,
+        updated_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            type_,
+            label: Default::default(),
+            position_x: Default::default(),
+            position_y: Default::default(),
+            width: Default::default(),
+            height: Default::default(),
+            config: Default::default(),
+            parent_id: Default::default(),
+            updated_at: updated_at.into(),
+            resolved_schemas: Default::default(),
+        }
+    }
+}

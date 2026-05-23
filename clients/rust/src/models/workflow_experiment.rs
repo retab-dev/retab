@@ -36,3 +36,33 @@ pub struct WorkflowExperiment {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift_detail: Option<String>,
 }
+impl WorkflowExperiment {
+    /// Construct a new `WorkflowExperiment` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        block_id: impl Into<String>,
+        n_consensus: NConsensusValue,
+        name: impl Into<String>,
+        block_type: ExperimentBlockType,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            block_id: block_id.into(),
+            n_consensus,
+            document_count: Default::default(),
+            name: name.into(),
+            last_run_id: Default::default(),
+            created_at: Default::default(),
+            updated_at: Default::default(),
+            status: Default::default(),
+            block_type,
+            score: Default::default(),
+            is_stale: Default::default(),
+            schema_drift: Default::default(),
+            schema_drift_detail: Default::default(),
+        }
+    }
+}

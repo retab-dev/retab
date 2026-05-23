@@ -22,3 +22,24 @@ pub struct WhileLoopTermination {
     /// When this artifact was written by the orchestrator.
     pub created_at: String,
 }
+impl WhileLoopTermination {
+    /// Construct a new `WhileLoopTermination` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_run_id: impl Into<String>,
+        step_id: impl Into<String>,
+        termination_reason: WhileLoopTerminationTerminationReason,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            operation: Default::default(),
+            id: id.into(),
+            workflow_run_id: workflow_run_id.into(),
+            step_id: step_id.into(),
+            termination_reason,
+            evaluations: Default::default(),
+            created_at: created_at.into(),
+        }
+    }
+}

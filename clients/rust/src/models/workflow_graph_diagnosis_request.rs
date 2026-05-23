@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 /// Sending only one side (e.g. ``blocks=[]`` without ``edges``) is treated as
 /// explicit-empty for the missing side too; the persisted-draft fallback only
 /// kicks in when both are omitted.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WorkflowGraphDiagnosisRequest {
     /// Blocks to diagnose; if omitted, the persisted draft is loaded server-side
     #[serde(skip_serializing_if = "Option::is_none", default)]

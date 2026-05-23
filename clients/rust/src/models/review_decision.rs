@@ -16,3 +16,16 @@ pub struct ReviewDecision {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reason: Option<String>,
 }
+impl ReviewDecision {
+    /// Construct a new `ReviewDecision` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(verdict: ReviewVerdict, version_id: impl Into<String>, author: Actor) -> Self {
+        Self {
+            verdict,
+            version_id: version_id.into(),
+            author,
+            decided_at: Default::default(),
+            reason: Default::default(),
+        }
+    }
+}

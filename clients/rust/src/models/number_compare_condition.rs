@@ -13,3 +13,14 @@ pub struct NumberCompareCondition {
     pub op: NumberCompareConditionOp,
     pub expected: BetweenConditionLowerOneOf,
 }
+impl NumberCompareCondition {
+    /// Construct a new `NumberCompareCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(op: NumberCompareConditionOp, expected: BetweenConditionLowerOneOf) -> Self {
+        Self {
+            kind: Default::default(),
+            op,
+            expected,
+        }
+    }
+}

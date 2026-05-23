@@ -13,11 +13,14 @@ module Retab
       params(
         run_id: String,
         block_id: String,
+        before: T.nilable(String),
+        after: T.nilable(String),
         limit: T.nilable(Integer),
+        order: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Types::ListStruct)
     end
-    def list(run_id:, block_id:, limit:, request_options:); end
+    def list(run_id:, block_id:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

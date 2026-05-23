@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Gate if the block output fails its declared schema validation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReviewValidationFailed {
     /// Defaults to `validation_failed`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

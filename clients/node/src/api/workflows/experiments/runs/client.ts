@@ -63,7 +63,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
     fromDate,
     toDate,
     sortBy,
-    fields,
     before,
     after,
     limit = 20,
@@ -80,7 +79,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
     fromDate?: string | Date;
     toDate?: string | Date;
     sortBy?: string;
-    fields?: string[] | string;
     before?: string;
     after?: string;
     limit?: number;
@@ -99,7 +97,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
         from_date: normalizeDateParam(fromDate),
         to_date: normalizeDateParam(toDate),
         sort_by: sortBy,
-        fields: normalizeCsvParam(fields),
         before,
         after,
         limit,
@@ -180,7 +177,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
       fromDate,
       toDate,
       sortBy,
-      fields,
       before,
       after,
       limit = 20,
@@ -197,7 +193,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
       fromDate?: string | Date;
       toDate?: string | Date;
       sortBy?: string;
-      fields?: string[] | string;
       before?: string;
       after?: string;
       limit?: number;
@@ -217,7 +212,6 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
       fromDate,
       toDate,
       sortBy,
-      fields,
       before,
       after,
       limit,

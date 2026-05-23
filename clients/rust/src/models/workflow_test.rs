@@ -40,3 +40,33 @@ pub struct WorkflowTest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub updated_at: Option<String>,
 }
+impl WorkflowTest {
+    /// Construct a new `WorkflowTest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        target: WorkflowTestBlockTarget,
+        source: CreateWorkflowTestRequestSourceOneOf,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            target,
+            source,
+            name: Default::default(),
+            assertion: Default::default(),
+            assertion_schema_dep: Default::default(),
+            assertion_drift_status: Default::default(),
+            schema_drift: Default::default(),
+            schema_drift_detail: Default::default(),
+            validation_status: Default::default(),
+            validation_issues: Default::default(),
+            latest_run_summary: Default::default(),
+            latest_passing_run_summary: Default::default(),
+            latest_failing_run_summary: Default::default(),
+            created_at: Default::default(),
+            updated_at: Default::default(),
+        }
+    }
+}

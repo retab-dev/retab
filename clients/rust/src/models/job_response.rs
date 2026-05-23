@@ -11,3 +11,13 @@ pub struct JobResponse {
     pub status_code: i64,
     pub body: std::collections::HashMap<String, serde_json::Value>,
 }
+impl JobResponse {
+    /// Construct a new `JobResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        status_code: i64,
+        body: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self { status_code, body }
+    }
+}

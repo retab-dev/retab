@@ -9,77 +9,74 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class EditTest extends TestCase
+class SplitsTest extends TestCase
 {
     use TestHelper;
 
     public function testList(): void
     {
-        $fixture = $this->loadFixture('list_edit');
+        $fixture = $this->loadFixture('list_split');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, filename: 'test_value', templateId: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->splits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/edits', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/splits', $request->getUri()->getPath());
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
         $this->assertSame('asc', $query['order']);
         $this->assertSame('test_value', $query['filename']);
-        $this->assertSame('test_value', $query['template_id']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
     }
 
     public function testCreate(): void
     {
-        $fixture = $this->loadFixture('edit');
+        $fixture = $this->loadFixture('split');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->create(instructions: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\Edit::class, $result);
+        $result = $client->splits()->create(document: 'test_value', subdocuments: []);
+        $this->assertInstanceOf(\Retab\Resource\Split::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/edits', $request->getUri()->getPath());
-        $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('test_value', $body['instructions']);
+        $this->assertStringEndsWith('v1/splits', $request->getUri()->getPath());
     }
 
     public function testGet(): void
     {
-        $fixture = $this->loadFixture('edit');
+        $fixture = $this->loadFixture('split');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->get('test_edit_id');
-        $this->assertInstanceOf(\Retab\Resource\Edit::class, $result);
+        $result = $client->splits()->get('test_split_id');
+        $this->assertInstanceOf(\Retab\Resource\Split::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/edits/test_edit_id', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/splits/test_split_id', $request->getUri()->getPath());
     }
 
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->edits()->delete('test_edit_id');
+        $client->splits()->delete('test_split_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
-        $this->assertStringEndsWith('v1/edits/test_edit_id', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/splits/test_split_id', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void
     {
-        $fixture = $this->loadFixture('list_edit');
+        $fixture = $this->loadFixture('list_split');
         // Ensure cursors are null (first/last page boundary)
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->list();
+        $result = $client->splits()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

@@ -15,3 +15,15 @@ pub struct MetricsStaleErrorLastRun {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }
+impl MetricsStaleErrorLastRun {
+    /// Construct a new `MetricsStaleErrorLastRun` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(run_id: impl Into<String>) -> Self {
+        Self {
+            run_id: run_id.into(),
+            definition_fingerprint: Default::default(),
+            score: Default::default(),
+            created_at: Default::default(),
+        }
+    }
+}

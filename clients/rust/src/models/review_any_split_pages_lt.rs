@@ -13,3 +13,13 @@ pub struct ReviewAnySplitPagesLt {
     pub kind: Option<String>,
     pub min_pages: i64,
 }
+impl ReviewAnySplitPagesLt {
+    /// Construct a new `ReviewAnySplitPagesLt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(min_pages: i64) -> Self {
+        Self {
+            kind: Default::default(),
+            min_pages,
+        }
+    }
+}

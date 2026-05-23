@@ -18,3 +18,13 @@ pub struct CreateExperimentRunRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_id: Option<String>,
 }
+impl CreateExperimentRunRequest {
+    /// Construct a new `CreateExperimentRunRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(experiment_id: impl Into<String>) -> Self {
+        Self {
+            experiment_id: experiment_id.into(),
+            workflow_id: Default::default(),
+        }
+    }
+}

@@ -12,3 +12,14 @@ pub struct ExperimentConfusionFlowMetric {
     pub target: String,
     pub score: f64,
 }
+impl ExperimentConfusionFlowMetric {
+    /// Construct a new `ExperimentConfusionFlowMetric` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(source: impl Into<String>, target: impl Into<String>, score: f64) -> Self {
+        Self {
+            source: source.into(),
+            target: target.into(),
+            score,
+        }
+    }
+}

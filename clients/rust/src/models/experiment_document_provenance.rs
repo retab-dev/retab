@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Workflow execution metadata attached to a captured document.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentDocumentProvenance {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_run_id: Option<String>,

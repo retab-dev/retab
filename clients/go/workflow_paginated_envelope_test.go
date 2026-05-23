@@ -73,7 +73,7 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 			query.Get("from_date") != "2026-05-01" ||
 			query.Get("to_date") != "2026-05-18" ||
 			query.Get("sort_by") != "created_at" ||
-			query.Get("fields") != "id,lifecycle" ||
+			query.Has("fields") ||
 			query.Get("before") != "exprun_before" ||
 			query.Get("after") != "exprun_after" ||
 			query.Get("limit") != "10" ||
@@ -110,7 +110,6 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 		FromDate:      "2026-05-01",
 		ToDate:        "2026-05-18",
 		SortBy:        "created_at",
-		Fields:        []string{"id", "lifecycle"},
 		Before:        "exprun_before",
 		After:         "exprun_after",
 		Limit:         10,
@@ -173,7 +172,7 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 			query.Get("from_date") != "2026-05-01" ||
 			query.Get("to_date") != "2026-05-18" ||
 			query.Get("sort_by") != "created_at" ||
-			query.Get("fields") != "id,lifecycle" ||
+			query.Has("fields") ||
 			query.Get("before") != "wftestrun_before" ||
 			query.Get("after") != "wftestrun_after" ||
 			query.Get("limit") != "10" ||
@@ -210,7 +209,6 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 		FromDate:      "2026-05-01",
 		ToDate:        "2026-05-18",
 		SortBy:        "created_at",
-		Fields:        []string{"id", "lifecycle"},
 		Before:        "wftestrun_before",
 		After:         "wftestrun_after",
 		Limit:         10,

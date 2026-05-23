@@ -31,3 +31,20 @@ pub struct SplitRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
 }
+impl SplitRequest {
+    /// Construct a new `SplitRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        document: ClassificationRequestDocumentOneOf,
+        subdocuments: Vec<Subdocument>,
+    ) -> Self {
+        Self {
+            document,
+            subdocuments,
+            model: Default::default(),
+            instructions: Default::default(),
+            n_consensus: Default::default(),
+            bust_cache: Default::default(),
+        }
+    }
+}

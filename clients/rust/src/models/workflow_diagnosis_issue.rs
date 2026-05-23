@@ -17,3 +17,19 @@ pub struct WorkflowDiagnosisIssue {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_id: Option<String>,
 }
+impl WorkflowDiagnosisIssue {
+    /// Construct a new `WorkflowDiagnosisIssue` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        severity: WorkflowDiagnosisIssueSeverity,
+        code: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            severity,
+            code: code.into(),
+            message: message.into(),
+            block_id: Default::default(),
+        }
+    }
+}

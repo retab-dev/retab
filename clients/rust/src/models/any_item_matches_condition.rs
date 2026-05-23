@@ -12,3 +12,13 @@ pub struct AnyItemMatchesCondition {
     pub kind: Option<String>,
     pub condition: AllItemsMatchConditionConditionOneOf,
 }
+impl AnyItemMatchesCondition {
+    /// Construct a new `AnyItemMatchesCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(condition: AllItemsMatchConditionConditionOneOf) -> Self {
+        Self {
+            kind: Default::default(),
+            condition,
+        }
+    }
+}

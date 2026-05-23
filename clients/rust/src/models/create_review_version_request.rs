@@ -18,3 +18,19 @@ pub struct CreateReviewVersionRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub note: Option<String>,
 }
+impl CreateReviewVersionRequest {
+    /// Construct a new `CreateReviewVersionRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        review_id: impl Into<String>,
+        parent_id: impl Into<String>,
+        snapshot: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            review_id: review_id.into(),
+            parent_id: parent_id.into(),
+            snapshot,
+            note: Default::default(),
+        }
+    }
+}

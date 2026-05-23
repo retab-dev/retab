@@ -16,3 +16,15 @@ pub struct WorkflowTestRunTiming {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
 }
+impl WorkflowTestRunTiming {
+    /// Construct a new `WorkflowTestRunTiming` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(created_at: impl Into<String>) -> Self {
+        Self {
+            created_at: created_at.into(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            duration_ms: Default::default(),
+        }
+    }
+}

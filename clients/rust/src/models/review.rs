@@ -25,3 +25,33 @@ pub struct Review {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub decision: Option<ReviewDecision>,
 }
+impl Review {
+    /// Construct a new `Review` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow_id: impl Into<String>,
+        workflow_version_id: impl Into<String>,
+        workflow_run_id: impl Into<String>,
+        block_id: impl Into<String>,
+        step_id: impl Into<String>,
+        block_type: ReviewBlockType,
+        triggered_by: ReviewAllOfPredicatesOneOf,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow_id: workflow_id.into(),
+            workflow_version_id: workflow_version_id.into(),
+            workflow_run_id: workflow_run_id.into(),
+            block_id: block_id.into(),
+            step_id: step_id.into(),
+            parent_step_id: Default::default(),
+            iteration_key: Default::default(),
+            block_type,
+            triggered_by,
+            created_at: created_at.into(),
+            decision: Default::default(),
+        }
+    }
+}

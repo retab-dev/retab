@@ -13,3 +13,13 @@ pub struct ReviewTopMarginLt {
     pub kind: Option<String>,
     pub margin: f64,
 }
+impl ReviewTopMarginLt {
+    /// Construct a new `ReviewTopMarginLt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(margin: f64) -> Self {
+        Self {
+            kind: Default::default(),
+            margin,
+        }
+    }
+}

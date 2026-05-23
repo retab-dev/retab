@@ -14,3 +14,13 @@ pub struct FileHandleInput {
     pub type_: Option<String>,
     pub document: MaterializedDocument,
 }
+impl FileHandleInput {
+    /// Construct a new `FileHandleInput` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(document: MaterializedDocument) -> Self {
+        Self {
+            type_: Default::default(),
+            document,
+        }
+    }
+}

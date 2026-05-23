@@ -14,3 +14,13 @@ pub struct SkippedStepLifecycle {
     /// Reason the step was skipped
     pub reason: String,
 }
+impl SkippedStepLifecycle {
+    /// Construct a new `SkippedStepLifecycle` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(reason: impl Into<String>) -> Self {
+        Self {
+            status: Default::default(),
+            reason: reason.into(),
+        }
+    }
+}

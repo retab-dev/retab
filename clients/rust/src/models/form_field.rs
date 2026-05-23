@@ -20,3 +20,21 @@ pub struct FormField {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub value: Option<String>,
 }
+impl FormField {
+    /// Construct a new `FormField` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        bbox: BBox,
+        description: impl Into<String>,
+        type_: FieldType,
+        key: impl Into<String>,
+    ) -> Self {
+        Self {
+            bbox,
+            description: description.into(),
+            type_,
+            key: key.into(),
+            value: Default::default(),
+        }
+    }
+}

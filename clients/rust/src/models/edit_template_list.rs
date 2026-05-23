@@ -10,3 +10,13 @@ pub struct EditTemplateList {
     pub data: Vec<EditTemplate>,
     pub list_metadata: ListMetadata,
 }
+impl EditTemplateList {
+    /// Construct a new `EditTemplateList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<EditTemplate>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

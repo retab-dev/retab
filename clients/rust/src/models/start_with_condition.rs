@@ -12,3 +12,13 @@ pub struct StartWithCondition {
     pub kind: Option<String>,
     pub expected: String,
 }
+impl StartWithCondition {
+    /// Construct a new `StartWithCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: impl Into<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            expected: expected.into(),
+        }
+    }
+}

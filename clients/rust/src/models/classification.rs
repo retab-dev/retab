@@ -34,3 +34,27 @@ pub struct Classification {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }
+impl Classification {
+    /// Construct a new `Classification` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        categories: Vec<Category>,
+        output: ClassificationDecision,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            categories,
+            n_consensus: Default::default(),
+            instructions: Default::default(),
+            output,
+            consensus: Default::default(),
+            usage: Default::default(),
+            created_at: Default::default(),
+        }
+    }
+}

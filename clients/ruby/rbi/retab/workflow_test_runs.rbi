@@ -22,7 +22,6 @@ module Retab
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         sort_by: T.nilable(String),
-        fields: T.nilable(String),
         before: T.nilable(String),
         after: T.nilable(String),
         limit: T.nilable(Integer),
@@ -30,7 +29,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Types::ListStruct)
     end
-    def list(workflow_id:, test_id:, target_block_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, sort_by:, fields:, before:, after:, limit:, order:, request_options:); end
+    def list(workflow_id:, test_id:, target_block_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, sort_by:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

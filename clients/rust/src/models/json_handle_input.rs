@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// JSON payload for a handle input. ``data`` is the raw JSON value.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct JsonHandleInput {
     /// Defaults to `json`.
     #[serde(rename = "type")]

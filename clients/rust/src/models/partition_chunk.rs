@@ -13,3 +13,13 @@ pub struct PartitionChunk {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub pages: Option<Vec<i64>>,
 }
+impl PartitionChunk {
+    /// Construct a new `PartitionChunk` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(key: impl Into<String>) -> Self {
+        Self {
+            key: key.into(),
+            pages: Default::default(),
+        }
+    }
+}

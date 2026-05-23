@@ -25,3 +25,19 @@ pub struct ExperimentByDocumentMetricsResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub targets: Option<Vec<ExperimentByDocumentTargetMetric>>,
 }
+impl ExperimentByDocumentMetricsResponse {
+    /// Construct a new `ExperimentByDocumentMetricsResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(run_id: impl Into<String>, document: ExperimentMetricDocumentRef) -> Self {
+        Self {
+            run_id: run_id.into(),
+            kind: Default::default(),
+            view: Default::default(),
+            document,
+            score: Default::default(),
+            prior_score: Default::default(),
+            confusion: Default::default(),
+            targets: Default::default(),
+        }
+    }
+}

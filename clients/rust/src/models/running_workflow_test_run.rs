@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The test run is executing assertions.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunningWorkflowTestRun {
     /// Defaults to `running`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

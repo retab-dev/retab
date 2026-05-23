@@ -14,3 +14,21 @@ pub struct CreateWorkflowTestRequest {
     pub name: Option<String>,
     pub assertion: AssertionSpec,
 }
+impl CreateWorkflowTestRequest {
+    /// Construct a new `CreateWorkflowTestRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        target: WorkflowTestBlockTarget,
+        source: CreateWorkflowTestRequestSourceOneOf,
+        assertion: AssertionSpec,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            target,
+            source,
+            name: Default::default(),
+            assertion,
+        }
+    }
+}

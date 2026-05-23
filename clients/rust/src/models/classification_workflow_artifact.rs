@@ -39,3 +39,29 @@ pub struct ClassificationWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl ClassificationWorkflowArtifact {
+    /// Construct a new `ClassificationWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        categories: Vec<Category>,
+        output: ClassificationDecision,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            categories,
+            n_consensus: Default::default(),
+            instructions: Default::default(),
+            output,
+            consensus: Default::default(),
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

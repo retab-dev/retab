@@ -7,7 +7,7 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Evaluation result for a sub-condition in a compound condition.
 /// Used when multiple conditions are combined with AND/OR operators.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ConditionEvaluationSubCondition {
     /// Identifier for this sub-condition
     ///

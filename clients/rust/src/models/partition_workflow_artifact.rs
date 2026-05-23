@@ -45,3 +45,29 @@ pub struct PartitionWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl PartitionWorkflowArtifact {
+    /// Construct a new `PartitionWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        key: impl Into<String>,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            key: key.into(),
+            instructions: Default::default(),
+            n_consensus: Default::default(),
+            allow_overlap: Default::default(),
+            output: Default::default(),
+            consensus: Default::default(),
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

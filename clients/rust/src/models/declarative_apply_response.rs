@@ -24,3 +24,28 @@ pub struct DeclarativeApplyResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub rendered_plan: Option<String>,
 }
+impl DeclarativeApplyResponse {
+    /// Construct a new `DeclarativeApplyResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        action: DeclarativeApplyResponseAction,
+        created: bool,
+        block_count: i64,
+        edge_count: i64,
+        diagnostics: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            action,
+            created,
+            block_count,
+            edge_count,
+            diagnostics,
+            format_version: Default::default(),
+            summary: Default::default(),
+            resource_changes: Default::default(),
+            rendered_plan: Default::default(),
+        }
+    }
+}

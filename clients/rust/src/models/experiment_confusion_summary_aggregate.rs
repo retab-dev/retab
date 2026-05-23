@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Split/classifier diagnostics attached to the summary response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentConfusionSummaryAggregate {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub diag: Option<std::collections::HashMap<String, f64>>,

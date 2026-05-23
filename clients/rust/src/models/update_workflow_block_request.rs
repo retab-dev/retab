@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 /// Pre-config_mode callers (legacy SDKs, the canvas, any code that doesn't
 /// send the field) keep the merge behavior; they were already sending
 /// full configs on every save, which is idempotent under merge.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateWorkflowBlockRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub label: Option<String>,

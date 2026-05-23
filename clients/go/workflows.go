@@ -51,7 +51,6 @@ type ListWorkflowsParams struct {
 	Limit  int
 	Order  string
 	SortBy string
-	Fields string
 }
 
 type CreateWorkflowRequest struct {
@@ -90,7 +89,6 @@ func (s *WorkflowsService) List(ctx context.Context, params *ListWorkflowsParams
 		addQuery(query, "after", params.After)
 		addQuery(query, "order", params.Order)
 		addQuery(query, "sort_by", params.SortBy)
-		addQuery(query, "fields", params.Fields)
 		if params.Limit > 0 {
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
@@ -794,7 +792,6 @@ type ListWorkflowRunsParams struct {
 	MaxDuration   *int
 	Search        string
 	SortBy        string
-	Fields        []string
 	Before        string
 	After         string
 	Limit         int
@@ -816,7 +813,6 @@ func (s *WorkflowRunsService) List(ctx context.Context, params *ListWorkflowRuns
 		addQuery(query, "to_date", params.ToDate)
 		addQuery(query, "search", params.Search)
 		addQuery(query, "sort_by", params.SortBy)
-		addCSVQuery(query, "fields", params.Fields)
 		addQuery(query, "before", params.Before)
 		addQuery(query, "after", params.After)
 		addQuery(query, "order", params.Order)
@@ -1259,7 +1255,6 @@ type ListWorkflowTestRunsParams struct {
 	FromDate      string
 	ToDate        string
 	SortBy        string
-	Fields        []string
 	Before        string
 	After         string
 	Limit         int
@@ -1404,7 +1399,6 @@ func (s *WorkflowTestRunsService) List(ctx context.Context, request ListWorkflow
 	addQuery(query, "from_date", request.FromDate)
 	addQuery(query, "to_date", request.ToDate)
 	addQuery(query, "sort_by", request.SortBy)
-	addCSVQuery(query, "fields", request.Fields)
 	addQuery(query, "before", request.Before)
 	addQuery(query, "after", request.After)
 	addQuery(query, "order", request.Order)
@@ -1645,7 +1639,6 @@ type ListExperimentRunsParams struct {
 	FromDate      string
 	ToDate        string
 	SortBy        string
-	Fields        []string
 	Before        string
 	After         string
 	Limit         int
@@ -1792,7 +1785,6 @@ func (s *WorkflowExperimentRunsService) List(ctx context.Context, params *ListEx
 		addQuery(query, "from_date", params.FromDate)
 		addQuery(query, "to_date", params.ToDate)
 		addQuery(query, "sort_by", params.SortBy)
-		addCSVQuery(query, "fields", params.Fields)
 		addQuery(query, "before", params.Before)
 		addQuery(query, "after", params.After)
 		addQuery(query, "order", params.Order)

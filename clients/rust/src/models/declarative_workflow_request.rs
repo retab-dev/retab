@@ -10,3 +10,12 @@ pub struct DeclarativeWorkflowRequest {
     /// Workflow YAML definition
     pub yaml_definition: String,
 }
+impl DeclarativeWorkflowRequest {
+    /// Construct a new `DeclarativeWorkflowRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(yaml_definition: impl Into<String>) -> Self {
+        Self {
+            yaml_definition: yaml_definition.into(),
+        }
+    }
+}

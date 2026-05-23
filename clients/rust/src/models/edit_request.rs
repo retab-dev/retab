@@ -30,3 +30,17 @@ pub struct EditRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
 }
+impl EditRequest {
+    /// Construct a new `EditRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(instructions: impl Into<String>) -> Self {
+        Self {
+            instructions: instructions.into(),
+            document: Default::default(),
+            template_id: Default::default(),
+            model: Default::default(),
+            config: Default::default(),
+            bust_cache: Default::default(),
+        }
+    }
+}

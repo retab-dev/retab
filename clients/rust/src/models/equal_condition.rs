@@ -12,3 +12,13 @@ pub struct EqualCondition {
     pub kind: Option<String>,
     pub expected: serde_json::Value,
 }
+impl EqualCondition {
+    /// Construct a new `EqualCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: serde_json::Value) -> Self {
+        Self {
+            kind: Default::default(),
+            expected,
+        }
+    }
+}

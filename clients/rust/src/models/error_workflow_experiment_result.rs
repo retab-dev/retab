@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The result row failed. Per-job error message is bundled into lifecycle.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorWorkflowExperimentResult {
     /// Defaults to `error`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

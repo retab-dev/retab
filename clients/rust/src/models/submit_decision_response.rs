@@ -21,3 +21,15 @@ pub struct SubmitDecisionResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resume_error: Option<String>,
 }
+impl SubmitDecisionResponse {
+    /// Construct a new `SubmitDecisionResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(review: Review) -> Self {
+        Self {
+            submission_status: Default::default(),
+            review,
+            resume_status: Default::default(),
+            resume_error: Default::default(),
+        }
+    }
+}

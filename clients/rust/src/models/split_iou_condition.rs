@@ -18,3 +18,14 @@ pub struct SplitIouCondition {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub threshold: Option<f64>,
 }
+impl SplitIouCondition {
+    /// Construct a new `SplitIouCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: std::collections::HashMap<String, serde_json::Value>) -> Self {
+        Self {
+            kind: Default::default(),
+            expected,
+            threshold: Default::default(),
+        }
+    }
+}

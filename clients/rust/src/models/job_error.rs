@@ -13,3 +13,14 @@ pub struct JobError {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
+impl JobError {
+    /// Construct a new `JobError` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+            details: Default::default(),
+        }
+    }
+}

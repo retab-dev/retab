@@ -43,3 +43,24 @@ pub struct ExtractionRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stream: Option<bool>,
 }
+impl ExtractionRequest {
+    /// Construct a new `ExtractionRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        document: ClassificationRequestDocumentOneOf,
+        json_schema: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            document,
+            json_schema,
+            model: Default::default(),
+            image_resolution_dpi: Default::default(),
+            instructions: Default::default(),
+            n_consensus: Default::default(),
+            metadata: Default::default(),
+            additional_messages: Default::default(),
+            bust_cache: Default::default(),
+            stream: Default::default(),
+        }
+    }
+}

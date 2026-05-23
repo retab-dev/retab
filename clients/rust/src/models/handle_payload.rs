@@ -24,3 +24,16 @@ pub struct HandlePayload {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub preview: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
+impl HandlePayload {
+    /// Construct a new `HandlePayload` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(type_: HandlePayloadType) -> Self {
+        Self {
+            type_,
+            document: Default::default(),
+            data: Default::default(),
+            artifact_ref: Default::default(),
+            preview: Default::default(),
+        }
+    }
+}

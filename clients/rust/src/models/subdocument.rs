@@ -20,3 +20,14 @@ pub struct Subdocument {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub allow_multiple_instances: Option<bool>,
 }
+impl Subdocument {
+    /// Construct a new `Subdocument` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: Default::default(),
+            allow_multiple_instances: Default::default(),
+        }
+    }
+}

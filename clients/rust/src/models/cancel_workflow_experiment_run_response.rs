@@ -10,3 +10,16 @@ pub struct CancelWorkflowExperimentRunResponse {
     pub id: String,
     pub lifecycle: CancelWorkflowExperimentRunResponseLifecycleOneOf,
 }
+impl CancelWorkflowExperimentRunResponse {
+    /// Construct a new `CancelWorkflowExperimentRunResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        lifecycle: CancelWorkflowExperimentRunResponseLifecycleOneOf,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            lifecycle,
+        }
+    }
+}
