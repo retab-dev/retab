@@ -1,8 +1,0 @@
-{
-  "id": "01234",
-  "source": "test_source",
-  "target": "test_target",
-  "source_handle": "test_source_handle",
-  "target_handle": "test_target_handle",
-  "animated": true
-}

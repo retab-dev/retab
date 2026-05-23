@@ -1,8 +1,0 @@
-{
-  "kind": "any_of",
-  "predicates": [
-    {
-      "kind": "always"
-    }
-  ]
-}

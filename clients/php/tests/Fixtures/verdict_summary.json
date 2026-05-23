@@ -1,9 +1,0 @@
-{
-  "result": true,
-  "assertions_passed": 1,
-  "assertions_failed": 1,
-  "blocked_assertions": 1,
-  "failed_assertion_ids": [
-    "failed_assertion_ids_01234"
-  ]
-}
