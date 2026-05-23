@@ -7,20 +7,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Bug 6: --before / --after were only enforced as mutually exclusive on
-// `workflows reviews list` and `workflows reviews versions list`. Every
-// other list command silently accepted both — the server would pick one
-// (whichever query string the SDK serialized last) and quietly drop the
-// other. Cobra's `MarkFlagsMutuallyExclusive` is the canonical way to
-// surface this at the CLI layer; pair it with an explicit RunE-time
-// fallback so tests invoking RunE directly still see the error.
+// Bug 6 (original): --before / --after were silently accepted together on
+// most list commands — the server would pick whichever query string the
+// SDK serialized last and drop the other.
 //
-// This test pins both surfaces for every list command that exposes
-// --before and --after:
-//   - the flag pair is declared mutually exclusive at the cobra level
-//   - the RunE body returns an explicit "mutually exclusive" error when
-//     both are passed (covers direct-RunE invocations that bypass
-//     cobra.Execute()'s validateFlagGroups stage).
+// Bug 5 (follow-up): the original fix layered cobra's
+// `MarkFlagsMutuallyExclusive` on top of the handwritten RunE check. Cobra's
+// validateFlagGroups stage fires first, so the user always saw the noisy
+// default message ("if any flags in the group [before after] are set
+// none of the others can be ...") and never the concise handwritten one.
+// We now rely solely on the RunE-time check via `validateBeforeAfterMutex`
+// so the user gets `--before and --after are mutually exclusive`.
+//
+// This test pins the surfaces that survive:
+//   - the flag pair is NOT registered with cobra's mutex helper (otherwise
+//     the noisy message would shadow the handwritten one again)
+//   - the help text still tells the user the two are mutually exclusive
+//   - the RunE-level check is exercised by
+//     TestListCommandsRunERejectsBeforeAndAfterTogether in
+//     list_fields_shape_test.go.
 func TestListCommandsDeclareBeforeAfterMutuallyExclusive(t *testing.T) {
 	cases := []struct {
 		name string
@@ -52,15 +57,17 @@ func TestListCommandsDeclareBeforeAfterMutuallyExclusive(t *testing.T) {
 				t.Fatalf("%s: --after usage %q does not mention mutually exclusive constraint",
 					tc.name, afterFlag.Usage)
 			}
-			// Cobra-level mutex registration: the annotation
-			// `cobra_annotation_mutually_exclusive` is set on each member
-			// of the group by MarkFlagsMutuallyExclusive.
-			if _, ok := beforeFlag.Annotations["cobra_annotation_mutually_exclusive"]; !ok {
-				t.Fatalf("%s: --before is not registered as mutually exclusive at the cobra level",
+			// Cobra-level mutex registration must NOT be present. Cobra's
+			// validateFlagGroups stage runs before RunE and emits a noisy
+			// "if any flags in the group ..." message that hides our
+			// handwritten one. The RunE-time `validateBeforeAfterMutex`
+			// helper is the single source of the user-facing error.
+			if _, ok := beforeFlag.Annotations["cobra_annotation_mutually_exclusive"]; ok {
+				t.Fatalf("%s: --before should not have cobra mutex annotation; the handwritten RunE check is the single source of the error message",
 					tc.name)
 			}
-			if _, ok := afterFlag.Annotations["cobra_annotation_mutually_exclusive"]; !ok {
-				t.Fatalf("%s: --after is not registered as mutually exclusive at the cobra level",
+			if _, ok := afterFlag.Annotations["cobra_annotation_mutually_exclusive"]; ok {
+				t.Fatalf("%s: --after should not have cobra mutex annotation; the handwritten RunE check is the single source of the error message",
 					tc.name)
 			}
 		})

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -884,6 +885,109 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 	}
 	if !strings.Contains(stdout, `"is_valid": true`) {
 		t.Fatalf("expected diagnosis response, got:\n%s", stdout)
+	}
+}
+
+// Bug 4: `workflows diagnose --graph-file <file>` with a JSON file that
+// omits `blocks` and/or `edges` (the canonical case: `{}`) used to send
+// `{"blocks": null, "edges": null}` to the server. The server treats nil
+// arrays as "no override provided" and falls back to the persisted draft
+// graph — so passing `{}` silently diagnosed the persisted draft instead
+// of the user-provided empty graph (giving total_blocks: 1 for the
+// default start_document instead of total_blocks: 0).
+//
+// The fix coerces nil to []map[string]any{} before sending, so the
+// presence of `--graph-file` always means "diagnose THIS graph". This
+// test pins both the wire shape (non-null arrays) and the user-facing
+// semantics (the persisted draft is NOT consulted).
+func TestWorkflowsDiagnoseGraphFileEmptyObjectSendsEmptyArrays(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var bodyBytes []byte
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/wf_empty/diagnose-graph" {
+			t.Fatalf("path = %s, want diagnose-graph", r.URL.Path)
+		}
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		bodyBytes = b
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"is_valid":    true,
+			"issues":      []any{},
+			"suggestions": []any{},
+			"stats": map[string]any{
+				"total_blocks":          0,
+				"total_edges":           0,
+				"block_types":           map[string]any{},
+				"start_document_blocks": 0,
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	graphPath := t.TempDir() + "/empty.json"
+	if err := os.WriteFile(graphPath, []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	workflowsDiagnoseCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsDiagnoseCmd.SetContext(nil) })
+	if err := workflowsDiagnoseCmd.Flags().Set("graph-file", graphPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsDiagnoseCmd.Flags().Set("graph-file", "") })
+
+	if _, stderr := captureStd(t, func() {
+		if err := workflowsDiagnoseCmd.RunE(workflowsDiagnoseCmd, []string{"wf_empty"}); err != nil {
+			t.Fatalf("diagnose empty graph-file: %v", err)
+		}
+	}); stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+
+	// Pin the wire shape: the request body must be a JSON object with
+	// `blocks` and `edges` set to non-null empty arrays (not absent and
+	// not null). The server keys off nil arrays to mean "fall back to
+	// persisted draft", which is the bug we just fixed.
+	var posted map[string]any
+	if err := json.Unmarshal(bodyBytes, &posted); err != nil {
+		t.Fatalf("unmarshal request body: %v\nbody: %s", err, string(bodyBytes))
+	}
+	blocksRaw, hasBlocks := posted["blocks"]
+	if !hasBlocks {
+		t.Fatalf("blocks key missing from request body: %s", string(bodyBytes))
+	}
+	if blocksRaw == nil {
+		t.Fatalf("blocks is null in request body: %s", string(bodyBytes))
+	}
+	blocks, ok := blocksRaw.([]any)
+	if !ok {
+		t.Fatalf("blocks is not an array: %T (%v)", blocksRaw, blocksRaw)
+	}
+	if len(blocks) != 0 {
+		t.Fatalf("blocks should be empty, got %d: %v", len(blocks), blocks)
+	}
+	edgesRaw, hasEdges := posted["edges"]
+	if !hasEdges {
+		t.Fatalf("edges key missing from request body: %s", string(bodyBytes))
+	}
+	if edgesRaw == nil {
+		t.Fatalf("edges is null in request body: %s", string(bodyBytes))
+	}
+	edges, ok := edgesRaw.([]any)
+	if !ok {
+		t.Fatalf("edges is not an array: %T (%v)", edgesRaw, edgesRaw)
+	}
+	if len(edges) != 0 {
+		t.Fatalf("edges should be empty, got %d: %v", len(edges), edges)
 	}
 }
 
