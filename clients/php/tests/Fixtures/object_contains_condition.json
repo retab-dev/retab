@@ -1,0 +1,6 @@
+{
+  "kind": "object_contains",
+  "expected": {
+    "key": {}
+  }
+}

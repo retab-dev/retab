@@ -1,0 +1,36 @@
+{
+  "id": "01234",
+  "workflow": {
+    "workflow_id": "workflow_id_01234",
+    "version_id": "version_id_01234",
+    "name_at_run_time": "Test",
+    "requested_version": "test_requested_version"
+  },
+  "trigger": {
+    "type": "manual",
+    "user_id": "user_id_01234"
+  },
+  "lifecycle": {
+    "status": "pending"
+  },
+  "timing": {
+    "created_at": "2023-01-01T00:00:00.000Z",
+    "started_at": "2023-01-01T00:00:00.000Z",
+    "completed_at": "2023-01-01T00:00:00.000Z",
+    "review_waiting_started_at": "2023-01-01T00:00:00.000Z",
+    "accumulated_review_waiting_ms": 1,
+    "duration_ms": 1
+  },
+  "inputs": {
+    "documents": {
+      "key": {
+        "id": "01234",
+        "filename": "Test",
+        "mime_type": "test_mime_type"
+      }
+    },
+    "json_data": {
+      "key": {}
+    }
+  }
+}

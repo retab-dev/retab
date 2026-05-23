@@ -1,0 +1,13 @@
+{
+  "run_record_id": "run_record_id_01234",
+  "status": "pending",
+  "outcome": "passed",
+  "started_at": "2023-01-01T00:00:00.000Z",
+  "completed_at": "2023-01-01T00:00:00.000Z",
+  "duration_ms": 1,
+  "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
+  "block_config_fingerprint": "test_block_config_fingerprint",
+  "assertions_passed": 1,
+  "assertions_failed": 1,
+  "blocked_assertions": 1
+}

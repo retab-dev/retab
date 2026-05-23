@@ -1,0 +1,31 @@
+{
+  "submission_status": "accepted",
+  "review": {
+    "id": "01234",
+    "workflow_id": "workflow_id_01234",
+    "workflow_version_id": "workflow_version_id_01234",
+    "workflow_run_id": "workflow_run_id_01234",
+    "block_id": "block_id_01234",
+    "step_id": "step_id_01234",
+    "parent_step_id": "parent_step_id_01234",
+    "iteration_key": "test_iteration_key",
+    "block_type": "extract",
+    "triggered_by": {
+      "kind": "always"
+    },
+    "created_at": "2023-01-01T00:00:00.000Z",
+    "decision": {
+      "verdict": "approved",
+      "version_id": "version_id_01234",
+      "author": {
+        "kind": "model",
+        "id": "01234",
+        "display_name": "Test"
+      },
+      "decided_at": "2023-01-01T00:00:00.000Z",
+      "reason": "test_reason"
+    }
+  },
+  "resume_status": "resumed",
+  "resume_error": "test_resume_error"
+}

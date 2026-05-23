@@ -1,0 +1,21 @@
+{
+  "form_data": [
+    {
+      "bbox": {
+        "left": 1,
+        "top": 1,
+        "width": 1,
+        "height": 1,
+        "page": 1
+      },
+      "description": "test_description",
+      "type": "text",
+      "key": "test_key",
+      "value": "test_value"
+    }
+  ],
+  "filled_document": {
+    "filename": "Test",
+    "url": "https://example.com"
+  }
+}

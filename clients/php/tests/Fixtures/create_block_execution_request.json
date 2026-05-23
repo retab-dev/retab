@@ -1,0 +1,7 @@
+{
+  "run_id": "run_id_01234",
+  "block_id": "block_id_01234",
+  "step_id": "step_id_01234",
+  "n_consensus": 1,
+  "check_eligibility": true
+}

@@ -1,0 +1,88 @@
+{
+  "data": [
+    {
+      "id": "01234",
+      "run_id": "run_id_01234",
+      "test_id": "test_id_01234",
+      "lifecycle": {
+        "status": "pending"
+      },
+      "timing": {
+        "created_at": "2023-01-01T00:00:00.000Z",
+        "started_at": "2023-01-01T00:00:00.000Z",
+        "completed_at": "2023-01-01T00:00:00.000Z",
+        "duration_ms": 1
+      },
+      "verdict": "passed",
+      "workflow_id": "workflow_id_01234",
+      "target": {
+        "type": "block",
+        "block_id": "block_id_01234"
+      },
+      "execution_fingerprint": "test_execution_fingerprint",
+      "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
+      "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
+      "block_config_fingerprint": "test_block_config_fingerprint",
+      "source": {
+        "type": "manual",
+        "handle_inputs": {
+          "key": {
+            "type": "json",
+            "data": {}
+          }
+        }
+      },
+      "outputs": {
+        "key": {}
+      },
+      "routing_decision": [
+        "test_routing_decision"
+      ],
+      "warnings": [
+        "test_warnings"
+      ],
+      "error": {
+        "message": "test_message",
+        "stack_trace": "test_stack_trace",
+        "block_id": "block_id_01234",
+        "block_name": "Test",
+        "error_code": "test_error_code",
+        "context": {
+          "key": {}
+        }
+      },
+      "skipped": true,
+      "assertion_result": {
+        "assertion_id": "assertion_id_01234",
+        "condition_kind": "test_condition_kind",
+        "outcome": "passed",
+        "actual_value": {},
+        "expected_value": {},
+        "score": 1,
+        "threshold": 1,
+        "metric_kind": "test_metric_kind",
+        "assertion_label": "test_assertion_label",
+        "failure": {
+          "code": "test_code",
+          "message": "test_message",
+          "details": {
+            "key": {}
+          }
+        }
+      },
+      "verdict_summary": {
+        "result": true,
+        "assertions_passed": 1,
+        "assertions_failed": 1,
+        "blocked_assertions": 1,
+        "failed_assertion_ids": [
+          "failed_assertion_ids_01234"
+        ]
+      }
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}

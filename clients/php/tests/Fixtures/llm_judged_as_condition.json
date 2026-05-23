@@ -1,0 +1,5 @@
+{
+  "kind": "llm_judged_as",
+  "rubric": "test_rubric",
+  "expected_label": "test_expected_label"
+}

@@ -1,0 +1,24 @@
+{
+  "experiment_id": "experiment_id_01234",
+  "run_id": "run_id_01234",
+  "kind": "summary",
+  "view": "summary",
+  "definition_fingerprint": "test_definition_fingerprint",
+  "block_type": "extract",
+  "score": 1,
+  "prior_score": 1,
+  "documents": [
+    {
+      "id": "01234",
+      "filename": "Test",
+      "score": 1,
+      "prior_score": 1
+    }
+  ],
+  "aggregate": {
+    "likelihoods": {
+      "key": 1
+    }
+  },
+  "prior_run_id": "prior_run_id_01234"
+}

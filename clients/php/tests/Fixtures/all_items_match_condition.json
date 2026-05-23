@@ -1,0 +1,6 @@
+{
+  "kind": "all_items_match",
+  "condition": {
+    "kind": "exists"
+  }
+}

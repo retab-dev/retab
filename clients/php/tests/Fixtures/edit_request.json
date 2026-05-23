@@ -1,0 +1,13 @@
+{
+  "instructions": "test_instructions",
+  "document": {
+    "filename": "Test",
+    "url": "https://example.com"
+  },
+  "template_id": "template_id_01234",
+  "model": "test_model",
+  "config": {
+    "color": "test_color"
+  },
+  "bust_cache": true
+}
