@@ -44,7 +44,7 @@ func TestFilesUploadFromStdinSendsFilenameToCreateUpload(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/files/upload":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload":
 			sawCreate.Add(1)
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69,7 +69,7 @@ func TestFilesUploadFromStdinSendsFilenameToCreateUpload(t *testing.T) {
 				},
 				"expiresAt": "2030-01-01T00:00:00Z",
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/files/upload/file_stdin/complete":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload/file_stdin/complete":
 			sawComplete.Add(1)
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{

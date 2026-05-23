@@ -45,8 +45,8 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 		"workflows reviews versions list",
 		"workflows reviews versions get",
 		"workflows reviews versions create",
-		"workflows block-executions create",
-		"workflows block-executions list",
+		"workflows blocks executions create",
+		"workflows blocks executions list",
 		"workflows tests create",
 		"workflows tests list",
 		"workflows tests get",
@@ -56,8 +56,8 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 		"workflows tests runs list",
 		"workflows tests runs get",
 		"workflows tests runs cancel",
-		"workflows tests runs results list",
-		"workflows tests runs results get",
+		"workflows tests results list",
+		"workflows tests results get",
 	} {
 		if !commands[commandPath] {
 			t.Fatalf("CLI is missing canonical command retab %s", commandPath)
@@ -68,7 +68,7 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 		"workflows reviews append",
 		"workflows reviews edit",
 		"workflows reviews versions append",
-		"workflows block-executions get",
+		"workflows blocks executions get",
 	} {
 		if commands[removedCommandPath] {
 			t.Fatalf("CLI still exposes removed command retab %s", removedCommandPath)

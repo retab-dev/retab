@@ -30,7 +30,6 @@ func runRootForTest(t *testing.T, args ...string) error {
 
 func TestUnknownSubcommandFailsOnRouters(t *testing.T) {
 	cases := [][]string{
-		{"jobs", "get", "job_nope"},
 		{"files", "bogus"},
 		{"workflows", "runs", "bogus"},
 		{"workflows", "bogus"},

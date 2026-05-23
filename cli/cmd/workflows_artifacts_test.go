@@ -9,7 +9,7 @@ import (
 )
 
 // TestWorkflowsArtifactsGet exercises the restored `workflows artifacts get`
-// command. The HTTP route is `GET /workflows/artifacts/{artifact_id}` — the
+// command. The HTTP route is `GET /v1/workflows/artifacts/{artifact_id}` — the
 // server infers the operation from the id prefix, so the CLI only needs the id.
 func TestWorkflowsArtifactsGet(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
@@ -21,8 +21,8 @@ func TestWorkflowsArtifactsGet(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/artifacts/extr_lz1_abc" {
-			t.Fatalf("path = %s, want /workflows/artifacts/extr_lz1_abc", r.URL.Path)
+		if r.URL.Path != "/v1/workflows/artifacts/extr_lz1_abc" {
+			t.Fatalf("path = %s, want /v1/workflows/artifacts/extr_lz1_abc", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -40,8 +40,8 @@ func TestWorkflowsArtifactsGet(t *testing.T) {
 		}
 	})
 
-	if len(requests) != 1 || requests[0] != "GET /workflows/artifacts/extr_lz1_abc" {
-		t.Fatalf("requests = %v, want one GET /workflows/artifacts/extr_lz1_abc", requests)
+	if len(requests) != 1 || requests[0] != "GET /v1/workflows/artifacts/extr_lz1_abc" {
+		t.Fatalf("requests = %v, want one GET /v1/workflows/artifacts/extr_lz1_abc", requests)
 	}
 	if !strings.Contains(stdout, `"id": "extr_lz1_abc"`) {
 		t.Fatalf("expected stdout to contain the artifact id, got:\n%s", stdout)

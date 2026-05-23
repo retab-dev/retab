@@ -489,7 +489,7 @@ func TestResolveDocumentFileIDUsesDurableMIMEData(t *testing.T) {
 	if !ok {
 		t.Fatalf("got %T", doc)
 	}
-	if seenPath != "/files/file_123/download-link" {
+	if seenPath != "/v1/files/file_123/download-link" {
 		t.Fatalf("path = %q", seenPath)
 	}
 	if mime.Filename != "invoice.pdf" {

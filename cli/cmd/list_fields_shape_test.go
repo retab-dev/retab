@@ -33,11 +33,11 @@ func TestWorkflowRunsListFieldsFlagIsCommaSeparatedString(t *testing.T) {
 	}
 }
 
-// Pin that the comma-separated --fields value reaches the outbound HTTP
-// query string verbatim. The CLI must split locally into a []string only
-// to satisfy the SDK's Fields type, then the SDK joins them back with
-// commas — the round-trip is invisible on the wire.
-func TestWorkflowRunsListFieldsCommaSeparatedReachesQueryString(t *testing.T) {
+// Pin that the comma-separated --fields value is accepted by the CLI but
+// not sent through the regenerated typed runs-list endpoint, which no
+// longer exposes a fields query parameter. Local allowlist validation
+// still catches typos before the request.
+func TestWorkflowRunsListFieldsCommaSeparatedIsValidatedLocallyOnly(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -67,9 +67,8 @@ func TestWorkflowRunsListFieldsCommaSeparatedReachesQueryString(t *testing.T) {
 	if got := hits.Load(); got != 1 {
 		t.Fatalf("expected exactly 1 HTTP call, got %d", got)
 	}
-	if !strings.Contains(seenQuery, "fields=id%2Cworkflow.workflow_id") &&
-		!strings.Contains(seenQuery, "fields=id,workflow.workflow_id") {
-		t.Fatalf("expected fields= to carry the comma-separated value through, got %q", seenQuery)
+	if strings.Contains(seenQuery, "fields=") {
+		t.Fatalf("did not expect fields= on regenerated typed list request, got %q", seenQuery)
 	}
 }
 

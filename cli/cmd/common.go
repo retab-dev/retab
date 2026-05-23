@@ -653,10 +653,13 @@ func addListFlags(cmd *cobra.Command, baseOnly bool) {
 }
 
 // validateBeforeAfterMutex returns the canonical mutual-exclusion error
-// when both --before and --after were passed. Cobra's
-// `MarkFlagsMutuallyExclusive` covers the real CLI path (via
-// cmd.Execute), but RunE-invoking tests must still fail fast — so list
-// commands call this helper at the top of their RunE body.
+// when both --before and --after were passed. Most workflow-family list
+// commands call this from RunE instead of registering cobra's
+// `MarkFlagsMutuallyExclusive`: the cobra default message is noisy
+// ("if any flags in the group [before after] are set none of the others
+// can be ..."), and we prefer the concise "--before and --after are
+// mutually exclusive" string. Tests that invoke RunE directly also see
+// the error through this path.
 func validateBeforeAfterMutex(cmd *cobra.Command) error {
 	before, _ := cmd.Flags().GetString("before")
 	after, _ := cmd.Flags().GetString("after")

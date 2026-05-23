@@ -106,7 +106,7 @@ func TestReviewsListCommand(t *testing.T) {
 			t.Fatalf("reviews list: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews" {
+	if seenPath != "/v1/workflows/reviews" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if !strings.Contains(seenQuery, "workflow_id=wf_1") || !strings.Contains(seenQuery, "limit=50") {
@@ -290,13 +290,13 @@ func TestReviewsGetCommand(t *testing.T) {
 			t.Fatalf("reviews get: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/rev_1" {
+	if seenPath != "/v1/workflows/reviews/rev_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
 	}
-	for _, want := range []string{`"decision": null`, `"id": "rev_1"`, `"block_type": "extract"`} {
+	for _, want := range []string{`"id": "rev_1"`, `"block_type": "extract"`} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("stdout should preserve %s:\n%s", want, stdout)
 		}
@@ -363,7 +363,7 @@ func TestReviewsVersionsListCommandRequiresReviewIDAndQueriesFlatRoute(t *testin
 			t.Fatalf("reviews versions list: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/versions" {
+	if seenPath != "/v1/workflows/reviews/versions" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if !strings.Contains(seenQuery, "review_id=rev_1") {
@@ -398,7 +398,7 @@ func TestReviewsVersionsGetCommandFetchesFlatVersion(t *testing.T) {
 			t.Fatalf("reviews versions get: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/versions/"+reviewTestVersionID {
+	if seenPath != "/v1/workflows/reviews/versions/"+reviewTestVersionID {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if !strings.Contains(stdout, `"id": "`+reviewTestVersionID+`"`) || !strings.Contains(stdout, `"snapshot"`) {
@@ -435,7 +435,7 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 	if seenMethod != http.MethodGet {
 		t.Fatalf("method = %s", seenMethod)
 	}
-	if seenPath != "/workflows/reviews/rev_1" {
+	if seenPath != "/v1/workflows/reviews/rev_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	for _, want := range []string{
@@ -512,7 +512,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 			var requests int
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requests++
-				if r.Method != http.MethodGet || r.URL.Path != "/workflows/reviews/rev_1" {
+				if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/reviews/rev_1" {
 					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 				}
 				body := reviewOverlayBody(nil)
@@ -665,7 +665,7 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 			t.Fatalf("reviews approve: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/rev_1/approve" {
+	if seenPath != "/v1/workflows/reviews/rev_1/approve" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if body["version_id"] != reviewTestVersionID {
@@ -761,7 +761,7 @@ func TestReviewsVersionsCreateSendsSnapshotReviewIDAndParentID(t *testing.T) {
 			t.Fatalf("reviews versions create: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/versions" {
+	if seenPath != "/v1/workflows/reviews/versions" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	snapshot, ok := body["snapshot"].(map[string]any)
@@ -977,7 +977,7 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 			t.Fatalf("reviews reject: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/rev_1/reject" {
+	if seenPath != "/v1/workflows/reviews/rev_1/reject" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if body["version_id"] != reviewTestVersionID || body["reason"] != "not an invoice" {

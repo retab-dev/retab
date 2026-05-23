@@ -14,7 +14,7 @@ func TestEditsDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
 
 	var sawDelete atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && r.URL.Path == "/edits/edit_to_delete" {
+		if r.Method == http.MethodDelete && r.URL.Path == "/v1/edits/edit_to_delete" {
 			sawDelete.Add(1)
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -71,7 +71,7 @@ func TestEditsTemplatesDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
 
 	var sawDelete atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && r.URL.Path == "/edits/templates/tmpl_to_delete" {
+		if r.Method == http.MethodDelete && r.URL.Path == "/v1/edits/templates/tmpl_to_delete" {
 			sawDelete.Add(1)
 			w.WriteHeader(http.StatusNoContent)
 			return

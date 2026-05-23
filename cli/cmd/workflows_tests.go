@@ -551,10 +551,8 @@ status, trigger, date, or cursor.`,
 		if err := validateWorkflowTestsRunsListFilters(cmd); err != nil {
 			return err
 		}
-		if before, _ := cmd.Flags().GetString("before"); before != "" {
-			if after, _ := cmd.Flags().GetString("after"); after != "" {
-				return fmt.Errorf("--before and --after are mutually exclusive")
-			}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
 		}
 		query := url.Values{}
 		for _, name := range []string{"workflow-id", "test-id", "target-block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
@@ -698,7 +696,8 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsTestsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
-	workflowsTestsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")

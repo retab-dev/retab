@@ -165,8 +165,8 @@ func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
-		if r.URL.Path != "/workflows/spec/validate" {
-			t.Fatalf("path = %s, want /workflows/spec/validate", r.URL.Path)
+		if r.URL.Path != "/v1/workflows/spec/validate" {
+			t.Fatalf("path = %s, want /v1/workflows/spec/validate", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -217,8 +217,8 @@ func TestWorkflowsSpecValidateHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
-		if r.URL.Path != "/workflows/spec/validate" {
-			t.Fatalf("path = %s, want /workflows/spec/validate", r.URL.Path)
+		if r.URL.Path != "/v1/workflows/spec/validate" {
+			t.Fatalf("path = %s, want /v1/workflows/spec/validate", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -264,7 +264,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/spec/plan":
+		case "/v1/workflows/spec/plan":
 			// Plan must return a valid (and non-destructive) shape so
 			// the destructive-confirmation guard becomes a no-op and the
 			// flow reaches the apply call this test is actually
@@ -275,7 +275,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 				"diagnostics": map[string]any{"is_valid": true},
 				"summary":     map[string]any{"add": 0, "change": 0, "destroy": 0},
 			})
-		case "/workflows/spec/apply":
+		case "/v1/workflows/spec/apply":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_invalid",
 				"is_valid":    false,
@@ -291,7 +291,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 				},
 			})
 		default:
-			t.Fatalf("path = %s, want /workflows/spec/plan or /workflows/spec/apply", r.URL.Path)
+			t.Fatalf("path = %s, want /v1/workflows/spec/plan or /v1/workflows/spec/apply", r.URL.Path)
 		}
 	}))
 	defer server.Close()
@@ -325,8 +325,8 @@ func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
-		if r.URL.Path != "/workflows/spec/plan" {
-			t.Fatalf("path = %s, want /workflows/spec/plan", r.URL.Path)
+		if r.URL.Path != "/v1/workflows/spec/plan" {
+			t.Fatalf("path = %s, want /v1/workflows/spec/plan", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -566,7 +566,7 @@ func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/spec/plan":
+		case "/v1/workflows/spec/plan":
 			planHits.Add(1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_test",
@@ -583,7 +583,7 @@ func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.
 					{"address": "edge.e1", "target": "edge", "name": "e1", "actions": []string{"delete"}},
 				},
 			})
-		case "/workflows/spec/apply":
+		case "/v1/workflows/spec/apply":
 			applyHits.Add(1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_test",
@@ -640,7 +640,7 @@ func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/spec/plan":
+		case "/v1/workflows/spec/plan":
 			planHits.Add(1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_test",
@@ -655,7 +655,7 @@ func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T
 					{"address": "block.extract_invoice", "target": "block", "name": "extract_invoice", "actions": []string{"delete"}},
 				},
 			})
-		case "/workflows/spec/apply":
+		case "/v1/workflows/spec/apply":
 			applyHits.Add(1)
 			t.Fatalf("apply must NOT be called when destroy > 0 and no --yes")
 		default:
@@ -707,7 +707,7 @@ func TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/spec/plan":
+		case "/v1/workflows/spec/plan":
 			planHits.Add(1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_test",
@@ -722,7 +722,7 @@ func TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally(t *testing.T) {
 					{"address": "block.new", "target": "block", "name": "new", "actions": []string{"create"}},
 				},
 			})
-		case "/workflows/spec/apply":
+		case "/v1/workflows/spec/apply":
 			applyHits.Add(1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"workflow_id": "wf_test",

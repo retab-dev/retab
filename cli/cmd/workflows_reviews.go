@@ -95,8 +95,8 @@ exclusive.`,
 			status := retab.ReviewDecisionStatus(decisionStatus)
 			params.DecisionStatus = &status
 		}
-		if params.Before != nil && params.After != nil {
-			return fmt.Errorf("--before and --after are mutually exclusive")
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -271,8 +271,8 @@ because versions are queried per review.`,
 			PaginationParams: collectListParams(cmd),
 			ReviewID:         args[0],
 		}
-		if params.Before != nil && params.After != nil {
-			return fmt.Errorf("--before and --after are mutually exclusive")
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -799,7 +799,8 @@ func init() {
 	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision-status", "review slice to list: pending | approved | rejected | decided | all")
 	workflowsReviewsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
 	workflowsReviewsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
-	workflowsReviewsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 
 	workflowsReviewsApproveCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to approve (required)")
 	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")

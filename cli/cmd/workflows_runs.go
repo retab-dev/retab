@@ -694,11 +694,11 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 			return err
 		}
 		_ = fields
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		before, _ := cmd.Flags().GetString("before")
 		after, _ := cmd.Flags().GetString("after")
-		if before != "" && after != "" {
-			return fmt.Errorf("--before and --after are mutually exclusive")
-		}
 		if before != "" {
 			params.Before = ptr(before)
 		}
@@ -1157,6 +1157,9 @@ Paginate by passing the cursor from a previous response's
     | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -1259,7 +1262,9 @@ func init() {
 	workflowsRunsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
-	workflowsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex so the
+	// CLI surfaces the concise handwritten message instead of cobra's
+	// default mutual-exclusion line.
 	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")
@@ -1297,7 +1302,8 @@ func init() {
 
 	workflowsStepsListCmd.Flags().String("before", "", "step id: return the page before this id (mutually exclusive with --after)")
 	workflowsStepsListCmd.Flags().String("after", "", "step id: return the page after this id (mutually exclusive with --before)")
-	workflowsStepsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 	workflowsStepsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max items to return (1-1000)")
 
 	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd)

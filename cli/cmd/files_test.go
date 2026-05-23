@@ -304,8 +304,8 @@ func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
-		if r.URL.Path != "/files/upload" {
-			t.Fatalf("path = %s, want /files/upload", r.URL.Path)
+		if r.URL.Path != "/v1/files/upload" {
+			t.Fatalf("path = %s, want /v1/files/upload", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -370,8 +370,8 @@ func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/files" {
-			t.Fatalf("path = %s, want /files", r.URL.Path)
+		if r.URL.Path != "/v1/files" {
+			t.Fatalf("path = %s, want /v1/files", r.URL.Path)
 		}
 		if got := r.URL.Query().Get("sort_by"); got != "updated_at" {
 			t.Fatalf("sort_by = %q, want updated_at", got)
