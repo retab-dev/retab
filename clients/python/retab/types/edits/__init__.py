@@ -42,8 +42,8 @@ from .templates import *  # noqa: E402,F401,F403  (re-export sub-resource symbol
 
 __all__ = ["CreateEditTemplateRequest", "Edit", "EditRequest", "EditTemplate", "UpdateEditTemplateRequest"]
 
-from ..workflows.artifacts import BBox, EditConfig, EditResult, FieldType, FormField  # noqa: F401  (hand-written flat-layout compat)
-from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: F401  (hand-written flat-layout compat)
+from ..workflows.artifacts import BBox, EditConfig, EditResult, FieldType, FormField  # noqa: E402,F401,F811  (hand-written flat-layout compat)
+from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
