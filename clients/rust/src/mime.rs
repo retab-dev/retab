@@ -88,7 +88,7 @@ impl From<url::Url> for MimeData {
     fn from(u: url::Url) -> Self {
         let filename = u
             .path_segments()
-            .and_then(|s| s.last())
+            .and_then(|mut s| s.next_back())
             .filter(|seg| !seg.is_empty())
             .unwrap_or("document")
             .to_string();
@@ -182,7 +182,7 @@ impl From<url::Url> for crate::models::MimeDataInput {
     fn from(u: url::Url) -> Self {
         let filename = u
             .path_segments()
-            .and_then(|s| s.last())
+            .and_then(|mut s| s.next_back())
             .filter(|s| !s.is_empty())
             .unwrap_or("document")
             .to_string();
