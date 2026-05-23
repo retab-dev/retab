@@ -1,9 +1,0 @@
-{
-  "add": 1,
-  "change": 1,
-  "destroy": 1,
-  "replace": 1,
-  "noop": 1,
-  "total": 1,
-  "has_changes": true
-}

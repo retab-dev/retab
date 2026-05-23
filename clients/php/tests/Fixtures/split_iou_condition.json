@@ -1,7 +1,0 @@
-{
-  "kind": "split_iou_gte",
-  "expected": {
-    "key": {}
-  },
-  "threshold": 1
-}

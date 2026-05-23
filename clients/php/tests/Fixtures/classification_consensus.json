@@ -1,9 +1,0 @@
-{
-  "choices": [
-    {
-      "reasoning": "test_reasoning",
-      "category": "test_category"
-    }
-  ],
-  "likelihoods": 1
-}

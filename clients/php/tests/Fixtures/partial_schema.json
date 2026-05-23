@@ -1,8 +1,0 @@
-{
-  "object": "test_object",
-  "created_at": "test_created_at",
-  "json_schema": {
-    "key": {}
-  },
-  "strict": true
-}

@@ -1,5 +1,0 @@
-{
-  "kind": "field_confidence_lt",
-  "path": "test_path",
-  "threshold": 1
-}
