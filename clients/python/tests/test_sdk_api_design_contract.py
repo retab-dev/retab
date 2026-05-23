@@ -20,11 +20,11 @@ REMOVED_METHOD_NAMES = {
     "prepare_execute",
 }
 REMOVED_ROUTE_FRAGMENTS = {
-    "/workflows/reviews/{id}",
-    "/workflows/runs/{run_id}/steps",
-    "/workflows/runs/{run_id}/steps/{step_id}",
-    "/workflows/blocks/{block_id}/execute",
-    "/workflows/blocks/execute",
+    "/v1/workflows/reviews/{id}",
+    "/v1/workflows/runs/{run_id}/steps",
+    "/v1/workflows/runs/{run_id}/steps/{step_id}",
+    "/v1/workflows/blocks/{block_id}/execute",
+    "/v1/workflows/blocks/execute",
 }
 APPROVED_NON_REFERENCE_ROUTES: set[tuple[str, str]] = set()
 

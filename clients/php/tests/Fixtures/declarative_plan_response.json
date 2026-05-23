@@ -1,0 +1,56 @@
+{
+  "workflow_id": "workflow_id_01234",
+  "action": "create",
+  "block_count": 1,
+  "edge_count": 1,
+  "diagnostics": {
+    "key": {}
+  },
+  "format_version": "test_format_version",
+  "summary": {
+    "add": 1,
+    "change": 1,
+    "destroy": 1,
+    "replace": 1,
+    "noop": 1,
+    "total": 1,
+    "has_changes": true
+  },
+  "resource_changes": [
+    {
+      "address": "test_address",
+      "target": "workflow",
+      "target_id": "target_id_01234",
+      "name": "Test",
+      "type": "workflow",
+      "actions": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "summary": "test_summary",
+      "change": {
+        "before": {},
+        "after": {},
+        "before_sensitive": {},
+        "after_sensitive": {},
+        "field_changes": [
+          {
+            "path": [
+              "test_path"
+            ],
+            "path_display": "test_path_display",
+            "action": "create",
+            "before": {},
+            "after": {},
+            "before_sensitive": true,
+            "after_sensitive": true,
+            "unified_diff": "test_unified_diff"
+          }
+        ]
+      },
+      "path": "test_path"
+    }
+  ],
+  "rendered_plan": "test_rendered_plan"
+}

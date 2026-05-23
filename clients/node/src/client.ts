@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+import { PaginatedList, ListMetadata } from './api/_pagination.js';
+
 type FetchParams = {
   url: string;
   method: string;
@@ -9,6 +11,15 @@ type FetchParams = {
   body?: Record<string, any> | unknown[];
   auth?: string[];
 };
+
+// Boundary cursor pair returned on every Retab list envelope. Keeping the
+// schema local to the base client (rather than re-using `ZListMetadata` from
+// generated_types) means `_fetchPage` doesn't accidentally pull a type-erased
+// `z.array(z.any())` in transitively.
+const ZPageListMetadata = z.object({
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+});
 
 const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APISchemas: ['generate'],
@@ -108,6 +119,54 @@ export class AbstractClient {
       throw new APIError(response.status, 'Response is not stream JSON');
     return streamResponse(schema, response);
   }
+
+  /**
+   * Fetch one page of a `{data, list_metadata}` list endpoint and return a
+   * typed `PaginatedList<T>` with a wired-up `_fetchPage` closure so callers
+   * can iterate every page transparently with `for await`.
+   *
+   * The envelope schema is rebuilt on the fly from `itemSchema` rather than
+   * reusing the legacy `ZPaginatedList` (which erases the item type with
+   * `z.array(z.any())`) — that's the parallel typing bug this helper fixes.
+   *
+   * The next-page closure preserves the original `params` and `headers`
+   * verbatim, only overwriting `after` with the cursor returned by the
+   * backend. `before`, if originally set, is dropped from the next request
+   * since the caller asked for forward pagination.
+   */
+  protected async _fetchPage<ZodSchema extends z.ZodType<any, any, any>>(
+    itemSchema: ZodSchema,
+    params: FetchParams
+  ): Promise<PaginatedList<z.output<ZodSchema>>> {
+    const envelopeSchema = z.object({
+      data: z.array(itemSchema),
+      list_metadata: ZPageListMetadata,
+    });
+
+    const envelope = (await this._fetchJson(envelopeSchema, params)) as {
+      data: z.output<ZodSchema>[];
+      list_metadata: ListMetadata;
+    };
+
+    // Snapshot the params so the next-page closure can layer on the new
+    // `after` cursor without mutating what the caller passed in.
+    const originalParams = { ...(params.params || {}) };
+    const fetchNextPage = async (after: string): Promise<PaginatedList<z.output<ZodSchema>>> => {
+      const nextParams: Record<string, any> = { ...originalParams, after };
+      // Forward-paging through `after` makes `before` stale.
+      delete nextParams.before;
+      return this._fetchPage(itemSchema, {
+        ...params,
+        params: nextParams,
+      });
+    };
+
+    return new PaginatedList<z.output<ZodSchema>>({
+      data: envelope.data,
+      list_metadata: envelope.list_metadata,
+      fetchNextPage,
+    });
+  }
 }
 
 export class CompositionClient extends AbstractClient {
@@ -152,6 +211,7 @@ export class CompositionClient extends AbstractClient {
     const originalFetch = self._fetch;
     const originalFetchJson = self._fetchJson;
     const originalFetchStream = self._fetchStream;
+    const originalFetchPage = self._fetchPage;
 
     self._fetch = async (params: FetchParams) => {
       capturedRequest = params;
@@ -173,12 +233,25 @@ export class CompositionClient extends AbstractClient {
       return (async function* emptyStream() {})();
     };
 
+    // `_fetchPage` lives one layer above `_fetchJson` and returns a real
+    // `PaginatedList<T>` instance. Capture the FetchParams here too so
+    // `prepare_list` callers don't have to round-trip through Zod parsing
+    // of a fake `{data, list_metadata}` envelope.
+    self._fetchPage = async (...fetchArgs: unknown[]) => {
+      capturedRequest = fetchArgs[1] as FetchParams;
+      return new PaginatedList<unknown>({
+        data: [],
+        list_metadata: { before: null, after: null },
+      });
+    };
+
     try {
       await self[methodName](...args);
     } finally {
       self._fetch = originalFetch;
       self._fetchJson = originalFetchJson;
       self._fetchStream = originalFetchStream;
+      self._fetchPage = originalFetchPage;
     }
 
     if (!capturedRequest) {

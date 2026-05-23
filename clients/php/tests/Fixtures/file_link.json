@@ -1,0 +1,9 @@
+{
+  "download_url": "https://example.com",
+  "expires_in": "test_expires_in",
+  "filename": "Test",
+  "mime_data": {
+    "filename": "Test",
+    "url": "https://example.com"
+  }
+}

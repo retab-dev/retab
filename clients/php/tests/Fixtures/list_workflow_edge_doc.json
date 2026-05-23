@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "id": "01234",
+      "workflow_id": "workflow_id_01234",
+      "source_block": "test_source_block",
+      "target_block": "test_target_block",
+      "source_handle": "test_source_handle",
+      "target_handle": "test_target_handle",
+      "updated_at": "2023-01-01T00:00:00.000Z"
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}

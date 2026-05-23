@@ -1,0 +1,823 @@
+{
+  "version": 2,
+  "language": "rust",
+  "generatedAt": "2026-05-23T10:57:42.373Z",
+  "files": [
+    "Cargo.toml",
+    "README.md",
+    "src/client.rs",
+    "src/enums/actor_kind.rs",
+    "src/enums/assertion_drift_status.rs",
+    "src/enums/assertion_outcome.rs",
+    "src/enums/cancel_workflow_response_cancellation_status.rs",
+    "src/enums/classifications_order.rs",
+    "src/enums/condition_evaluation_details_logical_operator.rs",
+    "src/enums/condition_evaluation_result_logical_operator.rs",
+    "src/enums/create_experiment_request_n_consensus.rs",
+    "src/enums/create_job_request_endpoint.rs",
+    "src/enums/declarative_apply_response_action.rs",
+    "src/enums/declarative_plan_field_change_action.rs",
+    "src/enums/declarative_plan_resource_change_actions.rs",
+    "src/enums/declarative_plan_resource_change_target.rs",
+    "src/enums/declarative_plan_resource_change_type.rs",
+    "src/enums/declarative_plan_response_action.rs",
+    "src/enums/edit_templates_order.rs",
+    "src/enums/edits_order.rs",
+    "src/enums/error_step_lifecycle_category.rs",
+    "src/enums/error_step_lifecycle_stage.rs",
+    "src/enums/error_terminal_category.rs",
+    "src/enums/error_terminal_stage.rs",
+    "src/enums/experiment_block_type.rs",
+    "src/enums/experiment_public_status.rs",
+    "src/enums/experiment_result_block_type.rs",
+    "src/enums/experiment_run_block_type.rs",
+    "src/enums/experiment_run_metrics_view.rs",
+    "src/enums/experiment_run_n_consensus.rs",
+    "src/enums/experiment_runs_order.rs",
+    "src/enums/experiment_schema_drift_status.rs",
+    "src/enums/experiment_summary_metrics_response_block_type.rs",
+    "src/enums/extractions_order.rs",
+    "src/enums/field_type.rs",
+    "src/enums/files_order.rs",
+    "src/enums/generate_schema_request_reasoning_effort.rs",
+    "src/enums/handle_payload_type.rs",
+    "src/enums/job_status.rs",
+    "src/enums/jobs_endpoint.rs",
+    "src/enums/jobs_order.rs",
+    "src/enums/jobs_source.rs",
+    "src/enums/jobs_status.rs",
+    "src/enums/latest_block_test_run_summary_outcome.rs",
+    "src/enums/latest_block_test_run_summary_status.rs",
+    "src/enums/length_compare_condition_op.rs",
+    "src/enums/mod.rs",
+    "src/enums/n_consensus_value.rs",
+    "src/enums/number_compare_condition_op.rs",
+    "src/enums/parse_request_table_parsing_format.rs",
+    "src/enums/parse_workflow_artifact_table_parsing_format.rs",
+    "src/enums/parses_order.rs",
+    "src/enums/partitions_order.rs",
+    "src/enums/resume_status.rs",
+    "src/enums/review_block_type.rs",
+    "src/enums/review_decision_status.rs",
+    "src/enums/review_evaluation_review_decision.rs",
+    "src/enums/review_verdict.rs",
+    "src/enums/similarity_gte_condition_method.rs",
+    "src/enums/sources_response_document_type.rs",
+    "src/enums/splits_order.rs",
+    "src/enums/step_artifact_ref_operation.rs",
+    "src/enums/submission_status.rs",
+    "src/enums/supported_endpoint.rs",
+    "src/enums/table_parsing_format.rs",
+    "src/enums/update_experiment_request_n_consensus.rs",
+    "src/enums/update_workflow_block_request_config_mode.rs",
+    "src/enums/while_loop_termination_termination_reason.rs",
+    "src/enums/workflow_artifact_operation.rs",
+    "src/enums/workflow_artifacts_operation.rs",
+    "src/enums/workflow_block_create_request_type.rs",
+    "src/enums/workflow_block_executions_order.rs",
+    "src/enums/workflow_block_type.rs",
+    "src/enums/workflow_config_block_type.rs",
+    "src/enums/workflow_diagnosis_issue_severity.rs",
+    "src/enums/workflow_experiments_exclude_status.rs",
+    "src/enums/workflow_experiments_order.rs",
+    "src/enums/workflow_experiments_status.rs",
+    "src/enums/workflow_export_payload_request_exclude_status.rs",
+    "src/enums/workflow_export_payload_request_export_source.rs",
+    "src/enums/workflow_export_payload_request_status.rs",
+    "src/enums/workflow_export_payload_request_trigger_types.rs",
+    "src/enums/workflow_run_step_block_type.rs",
+    "src/enums/workflow_runs_exclude_status.rs",
+    "src/enums/workflow_runs_order.rs",
+    "src/enums/workflow_runs_status.rs",
+    "src/enums/workflow_runs_trigger_type.rs",
+    "src/enums/workflow_test_result_verdict.rs",
+    "src/enums/workflow_test_runs_order.rs",
+    "src/enums/workflow_test_schema_drift.rs",
+    "src/enums/workflow_tests_order.rs",
+    "src/enums/workflows_order.rs",
+    "src/error.rs",
+    "src/lib.rs",
+    "src/mime.rs",
+    "src/models/_unions.rs",
+    "src/models/actor.rs",
+    "src/models/all_items_match_condition.rs",
+    "src/models/any_item_matches_condition.rs",
+    "src/models/api_call_attempt.rs",
+    "src/models/api_call_invocation.rs",
+    "src/models/api_trigger.rs",
+    "src/models/approve_review_request.rs",
+    "src/models/array_contains_condition.rs",
+    "src/models/assertion_failure.rs",
+    "src/models/assertion_result.rs",
+    "src/models/assertion_schema_dep.rs",
+    "src/models/assertion_spec.rs",
+    "src/models/awaiting_review_run.rs",
+    "src/models/awaiting_review_step_lifecycle.rs",
+    "src/models/b_box.rs",
+    "src/models/between_condition.rs",
+    "src/models/block_execution_list.rs",
+    "src/models/block_test_batch_execution_counts.rs",
+    "src/models/block_test_lifecycle_counts.rs",
+    "src/models/block_test_outcome_counts.rs",
+    "src/models/cancel_workflow_experiment_run_response.rs",
+    "src/models/cancel_workflow_request.rs",
+    "src/models/cancel_workflow_response.rs",
+    "src/models/cancelled_step_lifecycle.rs",
+    "src/models/cancelled_terminal.rs",
+    "src/models/cancelled_workflow_experiment_result.rs",
+    "src/models/cancelled_workflow_experiment_run.rs",
+    "src/models/cancelled_workflow_test_run.rs",
+    "src/models/category.rs",
+    "src/models/classification.rs",
+    "src/models/classification_consensus.rs",
+    "src/models/classification_decision.rs",
+    "src/models/classification_list.rs",
+    "src/models/classification_request.rs",
+    "src/models/classification_workflow_artifact.rs",
+    "src/models/complete_file_upload_request.rs",
+    "src/models/completed_block_execution_lifecycle.rs",
+    "src/models/completed_step_lifecycle.rs",
+    "src/models/completed_terminal.rs",
+    "src/models/completed_workflow_experiment_result.rs",
+    "src/models/completed_workflow_experiment_run.rs",
+    "src/models/completed_workflow_test_run.rs",
+    "src/models/condition_evaluation_details.rs",
+    "src/models/condition_evaluation_per_item.rs",
+    "src/models/condition_evaluation_result.rs",
+    "src/models/condition_evaluation_sub_condition.rs",
+    "src/models/conditional_evaluation.rs",
+    "src/models/contain_condition.rs",
+    "src/models/container_context_data.rs",
+    "src/models/create_block_execution_request.rs",
+    "src/models/create_edit_template_request.rs",
+    "src/models/create_experiment_request.rs",
+    "src/models/create_experiment_run_request.rs",
+    "src/models/create_job_request.rs",
+    "src/models/create_review_version_request.rs",
+    "src/models/create_upload_response.rs",
+    "src/models/create_workflow_request.rs",
+    "src/models/create_workflow_run_request.rs",
+    "src/models/create_workflow_test_request.rs",
+    "src/models/create_workflow_test_run_request.rs",
+    "src/models/declarative_apply_response.rs",
+    "src/models/declarative_export_response.rs",
+    "src/models/declarative_plan_change.rs",
+    "src/models/declarative_plan_field_change.rs",
+    "src/models/declarative_plan_resource_change.rs",
+    "src/models/declarative_plan_response.rs",
+    "src/models/declarative_plan_summary.rs",
+    "src/models/declarative_validation_response.rs",
+    "src/models/declarative_workflow_request.rs",
+    "src/models/edit.rs",
+    "src/models/edit_config.rs",
+    "src/models/edit_list.rs",
+    "src/models/edit_request.rs",
+    "src/models/edit_result.rs",
+    "src/models/edit_template.rs",
+    "src/models/edit_template_list.rs",
+    "src/models/edit_workflow_artifact.rs",
+    "src/models/email_trigger.rs",
+    "src/models/ends_with_condition.rs",
+    "src/models/equal_condition.rs",
+    "src/models/error_block_execution_lifecycle.rs",
+    "src/models/error_details.rs",
+    "src/models/error_step_lifecycle.rs",
+    "src/models/error_terminal.rs",
+    "src/models/error_workflow_experiment_result.rs",
+    "src/models/error_workflow_experiment_run.rs",
+    "src/models/error_workflow_test_run.rs",
+    "src/models/exist_condition.rs",
+    "src/models/experiment_by_document_metrics_response.rs",
+    "src/models/experiment_by_document_target_metric.rs",
+    "src/models/experiment_by_target_document_metric.rs",
+    "src/models/experiment_by_target_metrics_response.rs",
+    "src/models/experiment_confusion_flow_metric.rs",
+    "src/models/experiment_confusion_summary_aggregate.rs",
+    "src/models/experiment_document_capture_request.rs",
+    "src/models/experiment_document_confusion_metric.rs",
+    "src/models/experiment_document_provenance.rs",
+    "src/models/experiment_extract_summary_aggregate.rs",
+    "src/models/experiment_metric_document_ref.rs",
+    "src/models/experiment_metrics_missing_error.rs",
+    "src/models/experiment_metrics_stale_error.rs",
+    "src/models/experiment_result.rs",
+    "src/models/experiment_result_timing.rs",
+    "src/models/experiment_run.rs",
+    "src/models/experiment_run_timing.rs",
+    "src/models/experiment_run_trigger.rs",
+    "src/models/experiment_summary_metric_document.rs",
+    "src/models/experiment_summary_metrics_response.rs",
+    "src/models/experiment_target_confusion_metric.rs",
+    "src/models/experiment_vote_row.rs",
+    "src/models/experiment_votes_metric_document.rs",
+    "src/models/experiment_votes_metrics_response.rs",
+    "src/models/explicit_experiment_document_request.rs",
+    "src/models/extraction.rs",
+    "src/models/extraction_consensus.rs",
+    "src/models/extraction_list.rs",
+    "src/models/extraction_request.rs",
+    "src/models/extraction_workflow_artifact.rs",
+    "src/models/file.rs",
+    "src/models/file_handle_input.rs",
+    "src/models/file_link.rs",
+    "src/models/file_list.rs",
+    "src/models/file_ref.rs",
+    "src/models/form_field.rs",
+    "src/models/function_invocation.rs",
+    "src/models/generate_schema_request.rs",
+    "src/models/handle_payload.rs",
+    "src/models/http_validation_error.rs",
+    "src/models/job.rs",
+    "src/models/job_error.rs",
+    "src/models/job_list.rs",
+    "src/models/job_response.rs",
+    "src/models/job_warning.rs",
+    "src/models/json_handle_input.rs",
+    "src/models/json_schema_valid_condition.rs",
+    "src/models/latest_block_test_run_summary.rs",
+    "src/models/length_compare_condition.rs",
+    "src/models/list_metadata.rs",
+    "src/models/llm_judged_as_condition.rs",
+    "src/models/llm_not_judged_as_condition.rs",
+    "src/models/manual_trigger.rs",
+    "src/models/manual_workflow_test_source.rs",
+    "src/models/matche_regex_condition.rs",
+    "src/models/materialized_document.rs",
+    "src/models/metrics_stale_error_last_run.rs",
+    "src/models/mime_data.rs",
+    "src/models/mod.rs",
+    "src/models/not_contains_condition.rs",
+    "src/models/not_equals_condition.rs",
+    "src/models/not_exists_condition.rs",
+    "src/models/number_compare_condition.rs",
+    "src/models/object_contains_condition.rs",
+    "src/models/output_target.rs",
+    "src/models/parse.rs",
+    "src/models/parse_list.rs",
+    "src/models/parse_output.rs",
+    "src/models/parse_request.rs",
+    "src/models/parse_workflow_artifact.rs",
+    "src/models/partial_schema.rs",
+    "src/models/partition.rs",
+    "src/models/partition_chunk.rs",
+    "src/models/partition_chunk_likelihood.rs",
+    "src/models/partition_consensus.rs",
+    "src/models/partition_list.rs",
+    "src/models/partition_request.rs",
+    "src/models/partition_workflow_artifact.rs",
+    "src/models/pending_run.rs",
+    "src/models/pending_step_lifecycle.rs",
+    "src/models/pending_workflow_experiment_result.rs",
+    "src/models/pending_workflow_experiment_run.rs",
+    "src/models/pending_workflow_test_run.rs",
+    "src/models/publish_workflow_request.rs",
+    "src/models/queued_step_lifecycle.rs",
+    "src/models/queued_workflow_experiment_result.rs",
+    "src/models/queued_workflow_experiment_run.rs",
+    "src/models/queued_workflow_test_run.rs",
+    "src/models/reject_review_request.rs",
+    "src/models/restart_trigger.rs",
+    "src/models/retab_usage.rs",
+    "src/models/review.rs",
+    "src/models/review_all_of.rs",
+    "src/models/review_always.rs",
+    "src/models/review_any_of.rs",
+    "src/models/review_any_required_field_null.rs",
+    "src/models/review_any_split_pages_lt.rs",
+    "src/models/review_boundary_confidence_lt.rs",
+    "src/models/review_branch_in.rs",
+    "src/models/review_category_in.rs",
+    "src/models/review_confidence_lt.rs",
+    "src/models/review_decision.rs",
+    "src/models/review_evaluation.rs",
+    "src/models/review_field_confidence_lt.rs",
+    "src/models/review_json_condition.rs",
+    "src/models/review_split_count_neq.rs",
+    "src/models/review_top_margin_lt.rs",
+    "src/models/review_validation_failed.rs",
+    "src/models/review_version.rs",
+    "src/models/run_inputs.rs",
+    "src/models/run_step_workflow_test_source.rs",
+    "src/models/run_timing.rs",
+    "src/models/running_run.rs",
+    "src/models/running_step_lifecycle.rs",
+    "src/models/running_workflow_experiment_result.rs",
+    "src/models/running_workflow_experiment_run.rs",
+    "src/models/running_workflow_test_run.rs",
+    "src/models/schedule_trigger.rs",
+    "src/models/similarity_gte_condition.rs",
+    "src/models/skipped_block_execution_lifecycle.rs",
+    "src/models/skipped_step_lifecycle.rs",
+    "src/models/sources_response.rs",
+    "src/models/split.rs",
+    "src/models/split_consensus.rs",
+    "src/models/split_iou_condition.rs",
+    "src/models/split_list.rs",
+    "src/models/split_request.rs",
+    "src/models/split_result.rs",
+    "src/models/split_subdocument_likelihood.rs",
+    "src/models/split_workflow_artifact.rs",
+    "src/models/start_with_condition.rs",
+    "src/models/step_artifact_ref.rs",
+    "src/models/stored_block_execution.rs",
+    "src/models/subdocument.rs",
+    "src/models/submit_decision_response.rs",
+    "src/models/update_edit_template_request.rs",
+    "src/models/update_experiment_request.rs",
+    "src/models/update_workflow_block_request.rs",
+    "src/models/update_workflow_request.rs",
+    "src/models/update_workflow_test_request.rs",
+    "src/models/upload_file_request.rs",
+    "src/models/validation_error.rs",
+    "src/models/verdict_summary.rs",
+    "src/models/webhook_trigger.rs",
+    "src/models/while_loop_termination.rs",
+    "src/models/workflow.rs",
+    "src/models/workflow_artifact.rs",
+    "src/models/workflow_artifact_list.rs",
+    "src/models/workflow_block.rs",
+    "src/models/workflow_block_create_request.rs",
+    "src/models/workflow_block_list.rs",
+    "src/models/workflow_block_position.rs",
+    "src/models/workflow_config_block.rs",
+    "src/models/workflow_config_edge.rs",
+    "src/models/workflow_diagnosis_issue.rs",
+    "src/models/workflow_diagnosis_response.rs",
+    "src/models/workflow_diagnosis_stats.rs",
+    "src/models/workflow_edge_create_request.rs",
+    "src/models/workflow_edge_doc.rs",
+    "src/models/workflow_edge_list.rs",
+    "src/models/workflow_email_trigger.rs",
+    "src/models/workflow_experiment.rs",
+    "src/models/workflow_experiment_list.rs",
+    "src/models/workflow_experiment_result_list.rs",
+    "src/models/workflow_experiment_run_list.rs",
+    "src/models/workflow_export_payload_request.rs",
+    "src/models/workflow_export_payload_response.rs",
+    "src/models/workflow_graph_diagnosis_request.rs",
+    "src/models/workflow_list.rs",
+    "src/models/workflow_published.rs",
+    "src/models/workflow_review_list.rs",
+    "src/models/workflow_review_version_list.rs",
+    "src/models/workflow_run.rs",
+    "src/models/workflow_run_list.rs",
+    "src/models/workflow_run_step.rs",
+    "src/models/workflow_snapshot_ref.rs",
+    "src/models/workflow_step_list.rs",
+    "src/models/workflow_test.rs",
+    "src/models/workflow_test_block_target.rs",
+    "src/models/workflow_test_list.rs",
+    "src/models/workflow_test_result.rs",
+    "src/models/workflow_test_result_list.rs",
+    "src/models/workflow_test_run.rs",
+    "src/models/workflow_test_run_list.rs",
+    "src/models/workflow_test_run_timing.rs",
+    "src/pagination.rs",
+    "src/query.rs",
+    "src/resources/classifications.rs",
+    "src/resources/edit_templates.rs",
+    "src/resources/edits.rs",
+    "src/resources/experiment_run_metrics.rs",
+    "src/resources/experiment_run_results.rs",
+    "src/resources/experiment_runs.rs",
+    "src/resources/extractions.rs",
+    "src/resources/files.rs",
+    "src/resources/jobs.rs",
+    "src/resources/mod.rs",
+    "src/resources/parses.rs",
+    "src/resources/partitions.rs",
+    "src/resources/schemas.rs",
+    "src/resources/splits.rs",
+    "src/resources/workflow_artifacts.rs",
+    "src/resources/workflow_block_executions.rs",
+    "src/resources/workflow_blocks.rs",
+    "src/resources/workflow_edges.rs",
+    "src/resources/workflow_experiments.rs",
+    "src/resources/workflow_review_versions.rs",
+    "src/resources/workflow_reviews.rs",
+    "src/resources/workflow_runs.rs",
+    "src/resources/workflow_specs.rs",
+    "src/resources/workflow_steps.rs",
+    "src/resources/workflow_test_run_results.rs",
+    "src/resources/workflow_test_runs.rs",
+    "src/resources/workflow_tests.rs",
+    "src/resources/workflows.rs",
+    "src/resources_api.rs",
+    "src/secret.rs",
+    "tests/mime_smoke.rs"
+  ],
+  "operations": {
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "generate",
+      "service": "schemas"
+    },
+    "GET /v1/extractions": {
+      "sdkMethod": "list",
+      "service": "extractions"
+    },
+    "POST /v1/extractions": {
+      "sdkMethod": "create",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}": {
+      "sdkMethod": "get",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "sources",
+      "service": "extractions"
+    },
+    "GET /v1/classifications": {
+      "sdkMethod": "list",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "create",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "get",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "delete",
+      "service": "classifications"
+    },
+    "GET /v1/parses": {
+      "sdkMethod": "list",
+      "service": "parses"
+    },
+    "POST /v1/parses": {
+      "sdkMethod": "create",
+      "service": "parses"
+    },
+    "GET /v1/parses/{parse_id}": {
+      "sdkMethod": "get",
+      "service": "parses"
+    },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "GET /v1/partitions": {
+      "sdkMethod": "list",
+      "service": "partitions"
+    },
+    "POST /v1/partitions": {
+      "sdkMethod": "create",
+      "service": "partitions"
+    },
+    "GET /v1/partitions/{partition_id}": {
+      "sdkMethod": "get",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "delete",
+      "service": "partitions"
+    },
+    "GET /v1/splits": {
+      "sdkMethod": "list",
+      "service": "splits"
+    },
+    "POST /v1/splits": {
+      "sdkMethod": "create",
+      "service": "splits"
+    },
+    "GET /v1/splits/{split_id}": {
+      "sdkMethod": "get",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/files/upload": {
+      "sdkMethod": "upload",
+      "service": "files"
+    },
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "complete_upload",
+      "service": "files"
+    },
+    "GET /v1/files": {
+      "sdkMethod": "list",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
+      "sdkMethod": "get",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "get_download_link",
+      "service": "files"
+    },
+    "GET /v1/workflows/runs": {
+      "sdkMethod": "list",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs": {
+      "sdkMethod": "create",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "export",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_runs"
+    },
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "delete",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/steps": {
+      "sdkMethod": "list",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/steps/{step_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/reviews": {
+      "sdkMethod": "list",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/{review_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/approve": {
+      "sdkMethod": "approve",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/reject": {
+      "sdkMethod": "reject",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/versions": {
+      "sdkMethod": "list",
+      "service": "workflow_review_versions"
+    },
+    "POST /v1/workflows/reviews/versions": {
+      "sdkMethod": "create",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/reviews/versions/{version_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/artifacts/{artifact_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/artifacts": {
+      "sdkMethod": "list",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "list",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "create",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/results": {
+      "sdkMethod": "list",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/tests/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "list",
+      "service": "workflow_blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "create",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "update",
+      "service": "workflow_blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "delete",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "list",
+      "service": "workflow_edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "create",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "delete",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/tests": {
+      "sdkMethod": "list",
+      "service": "workflow_tests"
+    },
+    "POST /v1/workflows/tests": {
+      "sdkMethod": "create",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_tests"
+    },
+    "PATCH /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "update",
+      "service": "workflow_tests"
+    },
+    "DELETE /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "delete",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "list",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "create",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "list",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "get",
+      "service": "experiment_run_metrics"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "list",
+      "service": "workflow_experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "create",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "get",
+      "service": "workflow_experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "update",
+      "service": "workflow_experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "delete",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "list",
+      "service": "workflow_block_executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "create",
+      "service": "workflow_block_executions"
+    },
+    "GET /v1/workflows": {
+      "sdkMethod": "list",
+      "service": "workflows"
+    },
+    "POST /v1/workflows": {
+      "sdkMethod": "create",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/{workflow_id}": {
+      "sdkMethod": "get",
+      "service": "workflows"
+    },
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "update",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
+      "sdkMethod": "diagnose",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "validate",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflow_specs"
+    },
+    "GET /v1/workflows/{workflow_id}/spec": {
+      "sdkMethod": "get",
+      "service": "workflow_specs"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "list",
+      "service": "edit_templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "create",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "get",
+      "service": "edit_templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "update",
+      "service": "edit_templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "delete",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "list",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "create",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "list",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "create",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "get",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "retry",
+      "service": "jobs"
+    }
+  }
+}

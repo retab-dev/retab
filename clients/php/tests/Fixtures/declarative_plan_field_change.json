@@ -1,0 +1,12 @@
+{
+  "path": [
+    "test_path"
+  ],
+  "path_display": "test_path_display",
+  "action": "create",
+  "before": {},
+  "after": {},
+  "before_sensitive": true,
+  "after_sensitive": true,
+  "unified_diff": "test_unified_diff"
+}

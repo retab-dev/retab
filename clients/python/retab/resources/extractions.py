@@ -12,7 +12,7 @@ from pydantic import HttpUrl
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from ..types.mime import MIMEData
-from ..types.pagination import PaginatedList, PaginationOrder
+from ..types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ..types.standards import PreparedRequest
 from ..utils.mime import prepare_mime_document
 
@@ -48,7 +48,7 @@ class ExtractionsMixin:
                 additional_messages=additional_messages,
                 bust_cache=bust_cache,
             )
-        return PreparedRequest(method="POST", url="/extractions", data=payload.model_dump(mode="json", exclude_none=True))
+        return PreparedRequest(method="POST", url="/v1/extractions", data=payload.model_dump(mode="json", exclude_none=True))
 
     def prepare_list(
         self,
@@ -77,18 +77,18 @@ class ExtractionsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/extractions", params=params)
+        return PreparedRequest(method="GET", url="/v1/extractions", params=params)
 
     def prepare_get(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to get an extraction by ID."""
-        return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}")
+        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}")
 
     def prepare_sources(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to get sourced extraction with per-leaf provenance."""
-        return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}/sources")
+        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}/sources")
 
     def prepare_delete(self, extraction_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/extractions/{extraction_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/extractions/{extraction_id}")
 
 
 class Extractions(SyncAPIResource, ExtractionsMixin):
@@ -108,7 +108,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         filename: str | None = None,
         metadata: Dict[str, str] | None = None,
         **extra_params: Any,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Extraction]:
         """List extractions with pagination and filtering."""
         request = self.prepare_list(
             before=before,
@@ -121,25 +121,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             metadata=metadata,
             **extra_params,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        # Enable auto-pagination
-        def fetch_next(after: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after,
-                limit=limit,
-                order=order,
-                from_date=from_date,
-                to_date=to_date,
-                filename=filename,
-                metadata=metadata,
-                **extra_params,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Extraction)
 
     def get(self, extraction_id: str) -> Extraction:
         """Get an extraction by ID."""
@@ -210,7 +192,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         filename: str | None = None,
         metadata: Dict[str, str] | None = None,
         **extra_params: Any,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Extraction]:
         """List extractions with pagination and filtering."""
         request = self.prepare_list(
             before=before,
@@ -223,8 +205,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             metadata=metadata,
             **extra_params,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Extraction)
 
     async def get(self, extraction_id: str) -> Extraction:
         """Get an extraction by ID."""

@@ -10,7 +10,7 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.mime import MIMEData
-from ..types.pagination import PaginatedList, PaginationOrder
+from ..types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ..types.partitions import Partition, PartitionRequest
 from ..types.standards import PreparedRequest
 from ..utils.mime import prepare_mime_document
@@ -41,12 +41,12 @@ class PartitionsMixin:
         partition_request = PartitionRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/partitions",
+            url="/v1/partitions",
             data=partition_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, partition_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/partitions/{partition_id}")
+        return PreparedRequest(method="GET", url=f"/v1/partitions/{partition_id}")
 
     def _prepare_list(
         self,
@@ -68,10 +68,10 @@ class PartitionsMixin:
             "to_date": to_date.isoformat() if to_date else None,
         }
         params = {key: value for key, value in params.items() if value is not None}
-        return PreparedRequest(method="GET", url="/partitions", params=params)
+        return PreparedRequest(method="GET", url="/v1/partitions", params=params)
 
     def _prepare_delete(self, partition_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/partitions/{partition_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/partitions/{partition_id}")
 
 
 class Partitions(SyncAPIResource, PartitionsMixin):
@@ -114,7 +114,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Partition]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -124,22 +124,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after_cursor: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after_cursor,
-                limit=limit,
-                order=order,
-                filename=filename,
-                from_date=from_date,
-                to_date=to_date,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Partition)
 
     def delete(self, partition_id: str) -> None:
         request = self._prepare_delete(partition_id)
@@ -182,7 +167,7 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Partition]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -192,8 +177,7 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Partition)
 
     async def delete(self, partition_id: str) -> None:
         request = self._prepare_delete(partition_id)

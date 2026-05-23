@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList
 from ...types.standards import PreparedRequest
 from ...types.workflows import WorkflowEdgeDoc, WorkflowEdgeCreateRequest
 
@@ -32,11 +32,11 @@ class WorkflowEdgesMixin:
             params["after"] = after
         if limit is not None:
             params["limit"] = limit
-        return PreparedRequest(method="GET", url="/workflows/edges", params=params or None)
+        return PreparedRequest(method="GET", url="/v1/workflows/edges", params=params or None)
 
     def prepare_get(self, edge_id: str) -> PreparedRequest:
         """Prepare a request to get a single edge."""
-        return PreparedRequest(method="GET", url=f"/workflows/edges/{edge_id}")
+        return PreparedRequest(method="GET", url=f"/v1/workflows/edges/{edge_id}")
 
     def prepare_create(
         self,
@@ -65,11 +65,11 @@ class WorkflowEdgesMixin:
             )
         data = request.model_dump(exclude_none=True)
         data["workflow_id"] = workflow_id
-        return PreparedRequest(method="POST", url="/workflows/edges", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/edges", data=data)
 
     def prepare_delete(self, edge_id: str) -> PreparedRequest:
         """Prepare a request to delete an edge."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/edges/{edge_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/workflows/edges/{edge_id}")
 
 
 class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
@@ -131,10 +131,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             after=after,
             limit=limit,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList[WorkflowEdgeDoc](**response)
-        result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
-        return result
+        return self.request_page(request, model=WorkflowEdgeDoc)
 
     def get(self, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
@@ -198,7 +195,7 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = None,
-    ) -> PaginatedList[WorkflowEdgeDoc]:
+    ) -> AsyncPaginatedList[WorkflowEdgeDoc]:
         """List all edges for a workflow.
 
         Returns the canonical
@@ -213,10 +210,7 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
             after=after,
             limit=limit,
         )
-        response = await self._client._prepared_request(request)
-        result = PaginatedList[WorkflowEdgeDoc](**response)
-        result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
-        return result
+        return await self.request_page(request, model=WorkflowEdgeDoc)
 
     async def get(self, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""

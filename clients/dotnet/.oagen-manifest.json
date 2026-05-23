@@ -1,0 +1,736 @@
+{
+  "version": 2,
+  "language": "dotnet",
+  "generatedAt": "2026-05-23T04:17:04.042Z",
+  "files": [
+    "README.md",
+    "Retab.csproj",
+    "Retab.sln",
+    "src/Common/BaseOptions.cs",
+    "src/Common/ListMetadata.cs",
+    "src/Common/ListOptions.cs",
+    "src/Common/RequestOptions.cs",
+    "src/Common/RetabException.cs",
+    "src/Common/RetabList.cs",
+    "src/Common/RetabNewtonsoftStringEnumConverter.cs",
+    "src/Common/RetabRequest.cs",
+    "src/Common/RetabStringEnumConverterFactory.cs",
+    "src/Common/Service.cs",
+    "src/Converters/CompletedBlockExecutionLifecycleDiscriminatorConverter.cs",
+    "src/Converters/ExistConditionDiscriminatorConverter.cs",
+    "src/Converters/JsonHandleInputDiscriminatorConverter.cs",
+    "src/Converters/ManualTriggerDiscriminatorConverter.cs",
+    "src/Converters/ManualWorkflowTestSourceDiscriminatorConverter.cs",
+    "src/Converters/PendingRunDiscriminatorConverter.cs",
+    "src/Converters/PendingStepLifecycleDiscriminatorConverter.cs",
+    "src/Converters/PendingWorkflowExperimentResultDiscriminatorConverter.cs",
+    "src/Converters/PendingWorkflowExperimentRunDiscriminatorConverter.cs",
+    "src/Converters/PendingWorkflowTestRunDiscriminatorConverter.cs",
+    "src/Converters/ReviewAlwaysDiscriminatorConverter.cs",
+    "src/Entities/Actor.cs",
+    "src/Entities/AllItemsMatchCondition.cs",
+    "src/Entities/AnyItemMatchesCondition.cs",
+    "src/Entities/ApiCallAttempt.cs",
+    "src/Entities/ApiCallInvocation.cs",
+    "src/Entities/ApiTrigger.cs",
+    "src/Entities/ArrayContainsCondition.cs",
+    "src/Entities/AssertionFailure.cs",
+    "src/Entities/AssertionResult.cs",
+    "src/Entities/AssertionSchemaDep.cs",
+    "src/Entities/AssertionSpec.cs",
+    "src/Entities/AwaitingReviewRun.cs",
+    "src/Entities/AwaitingReviewStepLifecycle.cs",
+    "src/Entities/BBox.cs",
+    "src/Entities/BetweenCondition.cs",
+    "src/Entities/BlockTestBatchExecutionCounts.cs",
+    "src/Entities/BlockTestLifecycleCounts.cs",
+    "src/Entities/BlockTestOutcomeCounts.cs",
+    "src/Entities/CancelWorkflowExperimentRunResponse.cs",
+    "src/Entities/CancelWorkflowRequest.cs",
+    "src/Entities/CancelWorkflowResponse.cs",
+    "src/Entities/CancelledStepLifecycle.cs",
+    "src/Entities/CancelledTerminal.cs",
+    "src/Entities/Category.cs",
+    "src/Entities/Classification.cs",
+    "src/Entities/ClassificationConsensus.cs",
+    "src/Entities/ClassificationDecision.cs",
+    "src/Entities/ClassificationWorkflowArtifact.cs",
+    "src/Entities/CompletedBlockExecutionLifecycle.cs",
+    "src/Entities/ConditionEvaluationDetails.cs",
+    "src/Entities/ConditionEvaluationPerItem.cs",
+    "src/Entities/ConditionEvaluationResult.cs",
+    "src/Entities/ConditionEvaluationSubCondition.cs",
+    "src/Entities/ConditionalEvaluation.cs",
+    "src/Entities/ContainCondition.cs",
+    "src/Entities/ContainerContextData.cs",
+    "src/Entities/CreateUploadResponse.cs",
+    "src/Entities/DeclarativeApplyResponse.cs",
+    "src/Entities/DeclarativeExportResponse.cs",
+    "src/Entities/DeclarativePlanChange.cs",
+    "src/Entities/DeclarativePlanFieldChange.cs",
+    "src/Entities/DeclarativePlanResourceChange.cs",
+    "src/Entities/DeclarativePlanResponse.cs",
+    "src/Entities/DeclarativePlanSummary.cs",
+    "src/Entities/DeclarativeValidationResponse.cs",
+    "src/Entities/Edit.cs",
+    "src/Entities/EditConfig.cs",
+    "src/Entities/EditResult.cs",
+    "src/Entities/EditTemplate.cs",
+    "src/Entities/EditWorkflowArtifact.cs",
+    "src/Entities/EmailTrigger.cs",
+    "src/Entities/EndsWithCondition.cs",
+    "src/Entities/EqualCondition.cs",
+    "src/Entities/ErrorBlockExecutionLifecycle.cs",
+    "src/Entities/ErrorDetails.cs",
+    "src/Entities/ErrorStepLifecycle.cs",
+    "src/Entities/ErrorTerminal.cs",
+    "src/Entities/ErrorWorkflowExperimentResult.cs",
+    "src/Entities/ExistCondition.cs",
+    "src/Entities/ExperimentByDocumentMetricsResponse.cs",
+    "src/Entities/ExperimentByDocumentTargetMetric.cs",
+    "src/Entities/ExperimentByTargetDocumentMetric.cs",
+    "src/Entities/ExperimentByTargetMetricsResponse.cs",
+    "src/Entities/ExperimentConfusionFlowMetric.cs",
+    "src/Entities/ExperimentConfusionSummaryAggregate.cs",
+    "src/Entities/ExperimentDocumentCaptureRequest.cs",
+    "src/Entities/ExperimentDocumentProvenance.cs",
+    "src/Entities/ExperimentExtractSummaryAggregate.cs",
+    "src/Entities/ExperimentMetricDocumentRef.cs",
+    "src/Entities/ExperimentMetricsMissingError.cs",
+    "src/Entities/ExperimentMetricsStaleError.cs",
+    "src/Entities/ExperimentResult.cs",
+    "src/Entities/ExperimentResultTiming.cs",
+    "src/Entities/ExperimentRun.cs",
+    "src/Entities/ExperimentRunTiming.cs",
+    "src/Entities/ExperimentRunTrigger.cs",
+    "src/Entities/ExperimentSummaryMetricDocument.cs",
+    "src/Entities/ExperimentSummaryMetricsResponse.cs",
+    "src/Entities/ExperimentTargetConfusionMetric.cs",
+    "src/Entities/ExperimentVoteRow.cs",
+    "src/Entities/ExperimentVotesMetricsResponse.cs",
+    "src/Entities/ExplicitExperimentDocumentRequest.cs",
+    "src/Entities/Extraction.cs",
+    "src/Entities/ExtractionConsensus.cs",
+    "src/Entities/ExtractionWorkflowArtifact.cs",
+    "src/Entities/File.cs",
+    "src/Entities/FileHandleInput.cs",
+    "src/Entities/FileLink.cs",
+    "src/Entities/FileRef.cs",
+    "src/Entities/FormField.cs",
+    "src/Entities/FunctionInvocation.cs",
+    "src/Entities/HandlePayload.cs",
+    "src/Entities/HttpValidationError.cs",
+    "src/Entities/Job.cs",
+    "src/Entities/JobError.cs",
+    "src/Entities/JobResponse.cs",
+    "src/Entities/JsonHandleInput.cs",
+    "src/Entities/JsonSchemaValidCondition.cs",
+    "src/Entities/LatestBlockTestRunSummary.cs",
+    "src/Entities/LengthCompareCondition.cs",
+    "src/Entities/LlmJudgedAsCondition.cs",
+    "src/Entities/LlmNotJudgedAsCondition.cs",
+    "src/Entities/ManualTrigger.cs",
+    "src/Entities/ManualWorkflowTestSource.cs",
+    "src/Entities/MatcheRegexCondition.cs",
+    "src/Entities/MaterializedDocument.cs",
+    "src/Entities/MetricsStaleErrorLastRun.cs",
+    "src/Entities/MimeData.cs",
+    "src/Entities/NotContainsCondition.cs",
+    "src/Entities/NotEqualsCondition.cs",
+    "src/Entities/NotExistsCondition.cs",
+    "src/Entities/NumberCompareCondition.cs",
+    "src/Entities/ObjectContainsCondition.cs",
+    "src/Entities/OutputTarget.cs",
+    "src/Entities/Parse.cs",
+    "src/Entities/ParseOutput.cs",
+    "src/Entities/ParseWorkflowArtifact.cs",
+    "src/Entities/PartialSchema.cs",
+    "src/Entities/Partition.cs",
+    "src/Entities/PartitionChunk.cs",
+    "src/Entities/PartitionChunkLikelihood.cs",
+    "src/Entities/PartitionConsensus.cs",
+    "src/Entities/PartitionWorkflowArtifact.cs",
+    "src/Entities/PendingRun.cs",
+    "src/Entities/PublishWorkflowRequest.cs",
+    "src/Entities/QueuedStepLifecycle.cs",
+    "src/Entities/RestartTrigger.cs",
+    "src/Entities/RetabUsage.cs",
+    "src/Entities/Review.cs",
+    "src/Entities/ReviewAllOf.cs",
+    "src/Entities/ReviewAlways.cs",
+    "src/Entities/ReviewAnyOf.cs",
+    "src/Entities/ReviewAnyRequiredFieldNull.cs",
+    "src/Entities/ReviewAnySplitPagesLt.cs",
+    "src/Entities/ReviewBoundaryConfidenceLt.cs",
+    "src/Entities/ReviewBranchIn.cs",
+    "src/Entities/ReviewCategoryIn.cs",
+    "src/Entities/ReviewConfidenceLt.cs",
+    "src/Entities/ReviewDecision.cs",
+    "src/Entities/ReviewEvaluation.cs",
+    "src/Entities/ReviewFieldConfidenceLt.cs",
+    "src/Entities/ReviewJsonCondition.cs",
+    "src/Entities/ReviewSplitCountNeq.cs",
+    "src/Entities/ReviewTopMarginLt.cs",
+    "src/Entities/ReviewValidationFailed.cs",
+    "src/Entities/ReviewVersion.cs",
+    "src/Entities/RunInputs.cs",
+    "src/Entities/RunStepWorkflowTestSource.cs",
+    "src/Entities/RunTiming.cs",
+    "src/Entities/RunningRun.cs",
+    "src/Entities/ScheduleTrigger.cs",
+    "src/Entities/SimilarityGteCondition.cs",
+    "src/Entities/SkippedBlockExecutionLifecycle.cs",
+    "src/Entities/SourcesResponse.cs",
+    "src/Entities/Split.cs",
+    "src/Entities/SplitConsensus.cs",
+    "src/Entities/SplitIouCondition.cs",
+    "src/Entities/SplitResult.cs",
+    "src/Entities/SplitSubdocumentLikelihood.cs",
+    "src/Entities/SplitWorkflowArtifact.cs",
+    "src/Entities/StartWithCondition.cs",
+    "src/Entities/StepArtifactRef.cs",
+    "src/Entities/StoredBlockExecution.cs",
+    "src/Entities/Subdocument.cs",
+    "src/Entities/SubmitDecisionResponse.cs",
+    "src/Entities/ValidationError.cs",
+    "src/Entities/VerdictSummary.cs",
+    "src/Entities/WebhookTrigger.cs",
+    "src/Entities/WhileLoopTermination.cs",
+    "src/Entities/Workflow.cs",
+    "src/Entities/WorkflowBlock.cs",
+    "src/Entities/WorkflowBlockPosition.cs",
+    "src/Entities/WorkflowConfigBlock.cs",
+    "src/Entities/WorkflowConfigEdge.cs",
+    "src/Entities/WorkflowDiagnosisIssue.cs",
+    "src/Entities/WorkflowDiagnosisResponse.cs",
+    "src/Entities/WorkflowDiagnosisStats.cs",
+    "src/Entities/WorkflowEdgeDoc.cs",
+    "src/Entities/WorkflowEmailTrigger.cs",
+    "src/Entities/WorkflowExperiment.cs",
+    "src/Entities/WorkflowExportPayloadResponse.cs",
+    "src/Entities/WorkflowPublished.cs",
+    "src/Entities/WorkflowRun.cs",
+    "src/Entities/WorkflowRunStep.cs",
+    "src/Entities/WorkflowSnapshotRef.cs",
+    "src/Entities/WorkflowTest.cs",
+    "src/Entities/WorkflowTestBlockTarget.cs",
+    "src/Entities/WorkflowTestResult.cs",
+    "src/Entities/WorkflowTestRun.cs",
+    "src/Entities/WorkflowTestRunTiming.cs",
+    "src/Enums/ActorKind.cs",
+    "src/Enums/AssertionDriftStatus.cs",
+    "src/Enums/AssertionOutcome.cs",
+    "src/Enums/CancelWorkflowResponseCancellationStatus.cs",
+    "src/Enums/ClassificationsOrder.cs",
+    "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
+    "src/Enums/CreateExperimentRequestNConsensus.cs",
+    "src/Enums/CreateJobRequestEndpoint.cs",
+    "src/Enums/DeclarativeApplyResponseAction.cs",
+    "src/Enums/DeclarativePlanFieldChangeAction.cs",
+    "src/Enums/DeclarativePlanResourceChangeTarget.cs",
+    "src/Enums/DeclarativePlanResourceChangeType.cs",
+    "src/Enums/ErrorStepLifecycleCategory.cs",
+    "src/Enums/ErrorStepLifecycleStage.cs",
+    "src/Enums/ExperimentBlockType.cs",
+    "src/Enums/ExperimentPublicStatus.cs",
+    "src/Enums/ExperimentRunMetricsView.cs",
+    "src/Enums/ExperimentSchemaDriftStatus.cs",
+    "src/Enums/FieldType.cs",
+    "src/Enums/GenerateSchemaRequestReasoningEffort.cs",
+    "src/Enums/HandlePayloadType.cs",
+    "src/Enums/JobStatus.cs",
+    "src/Enums/JobsSource.cs",
+    "src/Enums/LatestBlockTestRunSummaryStatus.cs",
+    "src/Enums/LengthCompareConditionOp.cs",
+    "src/Enums/ParseRequestTableParsingFormat.cs",
+    "src/Enums/ResumeStatus.cs",
+    "src/Enums/ReviewDecisionStatus.cs",
+    "src/Enums/ReviewEvaluationReviewDecision.cs",
+    "src/Enums/SimilarityGteConditionMethod.cs",
+    "src/Enums/SourcesResponseDocumentType.cs",
+    "src/Enums/StepArtifactRefOperation.cs",
+    "src/Enums/SubmissionStatus.cs",
+    "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
+    "src/Enums/WhileLoopTerminationTerminationReason.cs",
+    "src/Enums/WorkflowBlockCreateRequestType.cs",
+    "src/Enums/WorkflowBlockType.cs",
+    "src/Enums/WorkflowDiagnosisIssueSeverity.cs",
+    "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
+    "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
+    "src/Enums/WorkflowExportPayloadRequestTriggerTypes.cs",
+    "src/MimeData.cs",
+    "src/Retab.Generated.cs",
+    "src/Retab.cs",
+    "src/RetabOptions.cs",
+    "src/Services/Classifications/ClassificationsService.cs",
+    "src/Services/Classifications/_interfaces/ClassificationsOptions.cs",
+    "src/Services/EditTemplates/EditTemplatesService.cs",
+    "src/Services/EditTemplates/_interfaces/EditTemplatesOptions.cs",
+    "src/Services/Edits/EditsService.cs",
+    "src/Services/Edits/_interfaces/EditsOptions.cs",
+    "src/Services/ExperimentRunMetrics/ExperimentRunMetricsService.cs",
+    "src/Services/ExperimentRunMetrics/_interfaces/ExperimentRunMetricsOptions.cs",
+    "src/Services/ExperimentRunResults/ExperimentRunResultsService.cs",
+    "src/Services/ExperimentRunResults/_interfaces/ExperimentRunResultsOptions.cs",
+    "src/Services/ExperimentRuns/ExperimentRunsService.cs",
+    "src/Services/ExperimentRuns/_interfaces/ExperimentRunsOptions.cs",
+    "src/Services/Extractions/ExtractionsService.cs",
+    "src/Services/Extractions/_interfaces/ExtractionsOptions.cs",
+    "src/Services/Files/FilesService.cs",
+    "src/Services/Files/_interfaces/FilesOptions.cs",
+    "src/Services/Jobs/JobsService.cs",
+    "src/Services/Jobs/_interfaces/JobsOptions.cs",
+    "src/Services/Parses/ParsesService.cs",
+    "src/Services/Parses/_interfaces/ParsesOptions.cs",
+    "src/Services/Partitions/PartitionsService.cs",
+    "src/Services/Partitions/_interfaces/PartitionsOptions.cs",
+    "src/Services/Schemas/SchemasService.cs",
+    "src/Services/Schemas/_interfaces/SchemasOptions.cs",
+    "src/Services/Splits/SplitsService.cs",
+    "src/Services/Splits/_interfaces/SplitsOptions.cs",
+    "src/Services/WorkflowArtifacts/WorkflowArtifactsService.cs",
+    "src/Services/WorkflowArtifacts/_interfaces/WorkflowArtifactsOptions.cs",
+    "src/Services/WorkflowBlockExecutions/WorkflowBlockExecutionsService.cs",
+    "src/Services/WorkflowBlockExecutions/_interfaces/WorkflowBlockExecutionsOptions.cs",
+    "src/Services/WorkflowBlocks/WorkflowBlocksService.cs",
+    "src/Services/WorkflowBlocks/_interfaces/WorkflowBlocksOptions.cs",
+    "src/Services/WorkflowEdges/WorkflowEdgesService.cs",
+    "src/Services/WorkflowEdges/_interfaces/WorkflowEdgesOptions.cs",
+    "src/Services/WorkflowExperiments/WorkflowExperimentsService.cs",
+    "src/Services/WorkflowExperiments/_interfaces/WorkflowExperimentsOptions.cs",
+    "src/Services/WorkflowReviewVersions/WorkflowReviewVersionsService.cs",
+    "src/Services/WorkflowReviewVersions/_interfaces/WorkflowReviewVersionsOptions.cs",
+    "src/Services/WorkflowReviews/WorkflowReviewsService.cs",
+    "src/Services/WorkflowReviews/_interfaces/WorkflowReviewsOptions.cs",
+    "src/Services/WorkflowRuns/WorkflowRunsService.cs",
+    "src/Services/WorkflowRuns/_interfaces/WorkflowRunsOptions.cs",
+    "src/Services/WorkflowSpecs/WorkflowSpecsService.cs",
+    "src/Services/WorkflowSpecs/_interfaces/WorkflowSpecsOptions.cs",
+    "src/Services/WorkflowSteps/WorkflowStepsService.cs",
+    "src/Services/WorkflowSteps/_interfaces/WorkflowStepsOptions.cs",
+    "src/Services/WorkflowTestRunResults/WorkflowTestRunResultsService.cs",
+    "src/Services/WorkflowTestRunResults/_interfaces/WorkflowTestRunResultsOptions.cs",
+    "src/Services/WorkflowTestRuns/WorkflowTestRunsService.cs",
+    "src/Services/WorkflowTestRuns/_interfaces/WorkflowTestRunsOptions.cs",
+    "src/Services/WorkflowTests/WorkflowTestsService.cs",
+    "src/Services/WorkflowTests/_interfaces/WorkflowTestsOptions.cs",
+    "src/Services/Workflows/WorkflowsService.cs",
+    "src/Services/Workflows/_interfaces/WorkflowsOptions.cs",
+    "tests/Retab.Tests.csproj",
+    "tests/SmokeTests.cs"
+  ],
+  "operations": {
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "GenerateAsync",
+      "service": "schemas"
+    },
+    "GET /v1/extractions": {
+      "sdkMethod": "ListAsync",
+      "service": "extractions"
+    },
+    "POST /v1/extractions": {
+      "sdkMethod": "CreateAsync",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "SourcesAsync",
+      "service": "extractions"
+    },
+    "GET /v1/classifications": {
+      "sdkMethod": "ListAsync",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "CreateAsync",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "classifications"
+    },
+    "GET /v1/parses": {
+      "sdkMethod": "ListAsync",
+      "service": "parses"
+    },
+    "POST /v1/parses": {
+      "sdkMethod": "CreateAsync",
+      "service": "parses"
+    },
+    "GET /v1/parses/{parse_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "parses"
+    },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "parses"
+    },
+    "GET /v1/partitions": {
+      "sdkMethod": "ListAsync",
+      "service": "partitions"
+    },
+    "POST /v1/partitions": {
+      "sdkMethod": "CreateAsync",
+      "service": "partitions"
+    },
+    "GET /v1/partitions/{partition_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "partitions"
+    },
+    "GET /v1/splits": {
+      "sdkMethod": "ListAsync",
+      "service": "splits"
+    },
+    "POST /v1/splits": {
+      "sdkMethod": "CreateAsync",
+      "service": "splits"
+    },
+    "GET /v1/splits/{split_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "splits"
+    },
+    "POST /v1/files/upload": {
+      "sdkMethod": "UploadAsync",
+      "service": "files"
+    },
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "CompleteUploadAsync",
+      "service": "files"
+    },
+    "GET /v1/files": {
+      "sdkMethod": "ListAsync",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "GetDownloadLinkAsync",
+      "service": "files"
+    },
+    "GET /v1/workflows/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "ExportAsync",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_runs"
+    },
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflow_runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "workflow_runs"
+    },
+    "GET /v1/workflows/steps": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/steps/{step_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_steps"
+    },
+    "GET /v1/workflows/reviews": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/{review_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/approve": {
+      "sdkMethod": "ApproveAsync",
+      "service": "workflow_reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/reject": {
+      "sdkMethod": "RejectAsync",
+      "service": "workflow_reviews"
+    },
+    "GET /v1/workflows/reviews/versions": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_review_versions"
+    },
+    "POST /v1/workflows/reviews/versions": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/reviews/versions/{version_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_review_versions"
+    },
+    "GET /v1/workflows/artifacts/{artifact_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/artifacts": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_artifacts"
+    },
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_test_runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "workflow_test_runs"
+    },
+    "GET /v1/workflows/tests/results": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/tests/results/{result_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_test_run_results"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflow_blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflow_blocks"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflow_edges"
+    },
+    "GET /v1/workflows/tests": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_tests"
+    },
+    "POST /v1/workflows/tests": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_tests"
+    },
+    "PATCH /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflow_tests"
+    },
+    "DELETE /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflow_tests"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "experiment_runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "experiment_runs"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "ListAsync",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "experiment_run_results"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "GetAsync",
+      "service": "experiment_run_metrics"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflow_experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflow_experiments"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "ListAsync",
+      "service": "workflow_block_executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflow_block_executions"
+    },
+    "GET /v1/workflows": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/{workflow_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows"
+    },
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
+      "sdkMethod": "DiagnoseAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "PublishAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "ValidateAsync",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "PlanAsync",
+      "service": "workflow_specs"
+    },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "ApplyAsync",
+      "service": "workflow_specs"
+    },
+    "GET /v1/workflows/{workflow_id}/spec": {
+      "sdkMethod": "GetAsync",
+      "service": "workflow_specs"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "ListAsync",
+      "service": "edit_templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "CreateAsync",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "edit_templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "edit_templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "edit_templates"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "ListAsync",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "CreateAsync",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "edits"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "ListAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "CreateAsync",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "RetryAsync",
+      "service": "jobs"
+    }
+  }
+}

@@ -10,7 +10,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import MIMEData, prepare_mime_document
 from ...types.mime import FileRef
 from ...types.standards import PreparedRequest
-from ...types.pagination import PaginatedList, PaginationOrder
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.workflows import (
     WorkflowRun,
     CancelWorkflowResponse,
@@ -100,11 +100,11 @@ class WorkflowRunsMixin:
         if json_inputs:
             data["json_inputs"] = json_inputs
         data["version"] = version
-        return PreparedRequest(method="POST", url="/workflows/runs", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/runs", data=data)
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
         """Prepare a request to get a workflow run by ID."""
-        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}")
+        return PreparedRequest(method="GET", url=f"/v1/workflows/runs/{run_id}")
 
     def prepare_list(
         self,
@@ -123,7 +123,7 @@ class WorkflowRunsMixin:
         min_duration_ms: int | None = None,
         max_duration_ms: int | None = None,
         search: str | None = None,
-        sort_by: str = "created_at",
+        sort_by: str = "timing.created_at",
         fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
@@ -178,25 +178,25 @@ class WorkflowRunsMixin:
             params["before"] = before
         if after is not None:
             params["after"] = after
-        return PreparedRequest(method="GET", url="/workflows/runs", params=params)
+        return PreparedRequest(method="GET", url="/v1/workflows/runs", params=params)
 
     def prepare_delete(self, run_id: str) -> PreparedRequest:
         """Prepare a request to delete a workflow run."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/runs/{run_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/workflows/runs/{run_id}")
 
     def prepare_cancel(self, run_id: str, command_id: str | None = None) -> PreparedRequest:
         """Prepare a request to cancel a workflow run."""
         data = None
         if command_id is not None:
             data = {"command_id": command_id}
-        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/cancel", data=data)
+        return PreparedRequest(method="POST", url=f"/v1/workflows/runs/{run_id}/cancel", data=data)
 
     def prepare_restart(self, run_id: str, command_id: str | None = None) -> PreparedRequest:
         """Prepare a request to restart a workflow run."""
         data: Dict[str, Any] = {"restart_of": run_id}
         if command_id is not None:
             data["command_id"] = command_id
-        return PreparedRequest(method="POST", url="/workflows/runs", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/runs", data=data)
 
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
@@ -300,13 +300,13 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         min_duration_ms: int | None = None,
         max_duration_ms: int | None = None,
         search: str | None = None,
-        sort_by: str = "created_at",
+        sort_by: str = "timing.created_at",
         fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
         order: PaginationOrder = "desc",
-    ) -> PaginatedList:
+    ) -> PaginatedList[WorkflowRun]:
         """List workflow runs with pagination and filtering.
 
         Args:
@@ -325,7 +325,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             min_duration_ms: Filter runs with duration >= this value (milliseconds)
             max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
-            sort_by: Field to sort by (default: "created_at")
+            sort_by: Field to sort by (default: "timing.created_at"; backend accepts "timing.created_at" or "timing.started_at")
             fields: Comma-separated list of fields to return
             before: First run ID from the current page, used to fetch the previous page
             after: Last run ID from the previous page, used to fetch the next page
@@ -358,10 +358,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             limit=limit,
             order=order,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-        result.data = [WorkflowRun.model_validate(item) if isinstance(item, dict) else item for item in result.data]
-        return result
+        return self.request_page(request, model=WorkflowRun if fields is None else None)
 
     def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.
@@ -464,7 +461,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             data["line_delimiter"] = line_delimiter
         if quote is not None:
             data["quote"] = quote
-        request = PreparedRequest(method="POST", url="/workflows/runs/export", data=data)
+        request = PreparedRequest(method="POST", url="/v1/workflows/runs/export", data=data)
         response = self._client._prepared_request(request)
         return ExportResponse.model_validate(response)
 
@@ -565,13 +562,13 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         min_duration_ms: int | None = None,
         max_duration_ms: int | None = None,
         search: str | None = None,
-        sort_by: str = "created_at",
+        sort_by: str = "timing.created_at",
         fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
         order: PaginationOrder = "desc",
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[WorkflowRun]:
         """List workflow runs with pagination and filtering.
 
         Args:
@@ -590,7 +587,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             min_duration_ms: Filter runs with duration >= this value (milliseconds)
             max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
-            sort_by: Field to sort by (default: "created_at")
+            sort_by: Field to sort by (default: "timing.created_at"; backend accepts "timing.created_at" or "timing.started_at")
             fields: Comma-separated list of fields to return
             before: First run ID from the current page, used to fetch the previous page
             after: Last run ID from the previous page, used to fetch the next page
@@ -623,10 +620,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             limit=limit,
             order=order,
         )
-        response = await self._client._prepared_request(request)
-        result = PaginatedList(**response)
-        result.data = [WorkflowRun.model_validate(item) if isinstance(item, dict) else item for item in result.data]
-        return result
+        return await self.request_page(request, model=WorkflowRun if fields is None else None)
 
     async def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.
@@ -709,6 +703,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             data["line_delimiter"] = line_delimiter
         if quote is not None:
             data["quote"] = quote
-        request = PreparedRequest(method="POST", url="/workflows/runs/export", data=data)
+        request = PreparedRequest(method="POST", url="/v1/workflows/runs/export", data=data)
         response = await self._client._prepared_request(request)
         return ExportResponse.model_validate(response)

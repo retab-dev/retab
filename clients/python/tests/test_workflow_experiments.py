@@ -108,7 +108,7 @@ def test_experiments_create_posts_to_workflow_experiments_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments"
+    assert request.url == "/v1/workflows/experiments"
     assert request.data["workflow_id"] == "wf_abc123"
     assert request.data["block_id"] == "block_extract"
     assert request.data["name"] == "Q1 invoices"
@@ -141,7 +141,7 @@ def test_experiments_create_with_explicit_documents_serializes_handle_inputs() -
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/experiments"
+    assert request.url == "/v1/workflows/experiments"
     assert request.data["workflow_id"] == "wf_abc123"
     assert request.data["documents"] == [
         {
@@ -168,7 +168,7 @@ def test_experiments_update_sends_only_provided_fields() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/experiments/exp_abc"
+    assert request.url == "/v1/workflows/experiments/exp_abc"
     assert request.data == {"name": "Renamed"}
 
 
@@ -201,7 +201,8 @@ def test_experiments_list_uses_get() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
+    assert request.url == "/v1/workflows/experiments"
+    assert request.params == {"workflow_id": "wf_abc123"}
     assert len(page.data) == 1
     assert page.data[0].id == "exp_abc"
     assert page.list_metadata.before is None
@@ -216,7 +217,7 @@ def test_experiments_get_uses_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/exp_abc"
+    assert request.url == "/v1/workflows/experiments/exp_abc"
 
 
 def test_experiment_schema_drift_accepts_partial_and_rejects_stale_values() -> None:
@@ -239,7 +240,7 @@ def test_experiments_delete_uses_delete_method() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/experiments/exp_abc"
+    assert request.url == "/v1/workflows/experiments/exp_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +295,7 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments/runs"
+    assert request.url == "/v1/workflows/experiments/runs"
     assert request.data == {
         "experiment_id": "exp_abc",
         "workflow_id": "wf_abc123",
@@ -327,7 +328,7 @@ def test_experiments_runs_create_allows_omitting_workflow_id() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments/runs"
+    assert request.url == "/v1/workflows/experiments/runs"
     assert request.data == {"experiment_id": "exp_abc"}
 
 
@@ -362,7 +363,7 @@ def test_experiments_runs_list_uses_canonical_runs_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/runs"
+    assert request.url == "/v1/workflows/experiments/runs"
     assert request.params == {
         "limit": 20,
         "workflow_id": "wf_abc123",
@@ -400,7 +401,7 @@ def test_experiments_runs_list_exposes_workflow_run_style_filters() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/experiments/runs"
+    assert request.url == "/v1/workflows/experiments/runs"
     assert request.params == {
         "workflow_id": "wf_abc123",
         "experiment_id": "exp_abc",
@@ -442,7 +443,7 @@ def test_experiments_runs_get_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/runs/exprun_1"
+    assert request.url == "/v1/workflows/experiments/runs/exprun_1"
     assert run.lifecycle.status == "completed"
     assert run.timing.started_at is not None
 
@@ -458,7 +459,7 @@ def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments/runs/exprun_1/cancel"
+    assert request.url == "/v1/workflows/experiments/runs/exprun_1/cancel"
     assert request.data == {}
     assert not hasattr(run, "workflow")
     assert run.lifecycle.status == "cancelled"
@@ -475,7 +476,7 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/results"
+    assert request.url == "/v1/workflows/experiments/results"
     assert request.params == {"run_id": "exprun_1", "limit": 20}
     assert page.data[0].document_id == "expdoc_1"
     handle_input = page.data[0].handle_inputs["input-file-0"]
@@ -491,7 +492,7 @@ def test_experiments_runs_results_get_uses_flat_result_id_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/results/expresult_1"
+    assert request.url == "/v1/workflows/experiments/results/expresult_1"
     assert result.id == "expresult_1"
     assert result.document_id == "expdoc_1"
 
@@ -513,7 +514,7 @@ def test_experiments_runs_metrics_summary_view_default() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/metrics"
+    assert request.url == "/v1/workflows/experiments/metrics"
     assert request.params == {
         "run_id": "exprun_1",
         "view": "summary",
@@ -657,7 +658,7 @@ def test_workflows_diagnose_posts_directly() -> None:
     assert client._prepared_request.call_count == 1
     diagnose_call = client._prepared_request.call_args.args[0]
     assert diagnose_call.method == "POST"
-    assert diagnose_call.url == "/workflows/wf_abc123/diagnose-graph"
+    assert diagnose_call.url == "/v1/workflows/wf_abc123/diagnose-graph"
     assert diagnose_call.data == {"re_propagate": True}
 
 

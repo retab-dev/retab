@@ -1,0 +1,5 @@
+{
+  "kind": "length_compare",
+  "op": "gt",
+  "expected": 1
+}

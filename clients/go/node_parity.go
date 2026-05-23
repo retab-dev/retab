@@ -202,7 +202,7 @@ func (s *PartitionsService) Create(ctx context.Context, request PartitionCreateR
 		request.NConsensus = 1
 	}
 	var result Partition
-	err := s.client.do(ctx, http.MethodPost, "/partitions", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/partitions", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -211,22 +211,20 @@ func (s *PartitionsService) Get(ctx context.Context, partitionID string, opts ..
 		return nil, fmt.Errorf("retab: partitionID is required")
 	}
 	var result Partition
-	err := s.client.do(ctx, http.MethodGet, "/partitions/"+url.PathEscape(partitionID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/partitions/"+url.PathEscape(partitionID), nil, nil, &result, opts...)
 	return &result, err
 }
 
 func (s *PartitionsService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Partition], error) {
 	query := listQuery(params)
-	var result PaginatedList[Partition]
-	err := s.client.do(ctx, http.MethodGet, "/partitions", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Partition](ctx, s.client, http.MethodGet, "/v1/partitions", query, nil, opts...)
 }
 
 func (s *PartitionsService) Delete(ctx context.Context, partitionID string, opts ...RequestOption) error {
 	if partitionID == "" {
 		return fmt.Errorf("retab: partitionID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/partitions/"+url.PathEscape(partitionID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/partitions/"+url.PathEscape(partitionID), nil, nil, nil, opts...)
 }
 
 type EditTemplate = Resource
@@ -261,7 +259,7 @@ func (s *EditTemplatesService) Create(ctx context.Context, request EditTemplateC
 	}
 	body := resourceFromJSON(request)
 	var result EditTemplate
-	err := s.client.do(ctx, http.MethodPost, "/edits/templates", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/edits/templates", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -270,7 +268,7 @@ func (s *EditTemplatesService) Get(ctx context.Context, templateID string, opts 
 		return nil, fmt.Errorf("retab: templateID is required")
 	}
 	var result EditTemplate
-	err := s.client.do(ctx, http.MethodGet, "/edits/templates/"+url.PathEscape(templateID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/edits/templates/"+url.PathEscape(templateID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -280,9 +278,7 @@ func (s *EditTemplatesService) List(ctx context.Context, params *ListEditTemplat
 		applyListParams(query, &params.ListParams)
 		addQuery(query, "name", params.Name)
 	}
-	var result PaginatedList[EditTemplate]
-	err := s.client.do(ctx, http.MethodGet, "/edits/templates", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[EditTemplate](ctx, s.client, http.MethodGet, "/v1/edits/templates", query, nil, opts...)
 }
 
 func (s *EditTemplatesService) Update(ctx context.Context, templateID string, request EditTemplateUpdateRequest, opts ...RequestOption) (*EditTemplate, error) {
@@ -291,7 +287,7 @@ func (s *EditTemplatesService) Update(ctx context.Context, templateID string, re
 	}
 	body := resourceFromJSON(request)
 	var result EditTemplate
-	err := s.client.do(ctx, http.MethodPatch, "/edits/templates/"+url.PathEscape(templateID), nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/v1/edits/templates/"+url.PathEscape(templateID), nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -299,7 +295,7 @@ func (s *EditTemplatesService) Delete(ctx context.Context, templateID string, op
 	if templateID == "" {
 		return fmt.Errorf("retab: templateID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/edits/templates/"+url.PathEscape(templateID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/edits/templates/"+url.PathEscape(templateID), nil, nil, nil, opts...)
 }
 
 func (s *ExtractionsService) CreateStream(ctx context.Context, request ExtractionCreateRequest, opts ...RequestOption) (*Stream[Resource], error) {
@@ -314,5 +310,5 @@ func (s *ExtractionsService) CreateStream(ctx context.Context, request Extractio
 	}
 	body := resourceFromJSON(request)
 	body["stream"] = true
-	return s.client.doStream(ctx, http.MethodPost, "/extractions/stream", nil, body, opts...)
+	return s.client.doStream(ctx, http.MethodPost, "/v1/extractions/stream", nil, body, opts...)
 }

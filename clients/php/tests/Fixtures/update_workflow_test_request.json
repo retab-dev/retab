@@ -1,0 +1,23 @@
+{
+  "name": "Test",
+  "assertion": {
+    "id": "01234",
+    "target": {
+      "output_handle_id": "output_handle_id_01234",
+      "path": "test_path"
+    },
+    "condition": {
+      "kind": "exists"
+    },
+    "label": "test_label"
+  },
+  "source": {
+    "type": "manual",
+    "handle_inputs": {
+      "key": {
+        "type": "json",
+        "data": {}
+      }
+    }
+  }
+}

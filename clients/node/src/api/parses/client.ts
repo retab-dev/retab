@@ -1,12 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZPaginatedList,
-  PaginatedList,
-  ZParse,
-  Parse,
-} from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
+import { ZMIMEData, MIMEDataInput, ZParse, Parse } from '../../types.js';
 
 type TableParsingFormat = 'markdown' | 'yaml' | 'html' | 'json';
 
@@ -93,7 +87,7 @@ export default class APIParses extends CompositionClient {
       to_date,
     }: ParseListParams = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Parse>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -108,7 +102,7 @@ export default class APIParses extends CompositionClient {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZParse, {
       url: '/parses',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

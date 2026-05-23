@@ -44,7 +44,7 @@ def test_workflows_get_uses_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/workflow_123"
+    assert request.url == "/v1/workflows/workflow_123"
     assert workflow.id == "workflow_123"
 
 
@@ -65,7 +65,7 @@ def test_workflows_list_uses_paginated_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows"
+    assert request.url == "/v1/workflows"
     assert request.params == {
         "limit": 5,
         "order": "asc",
@@ -95,7 +95,7 @@ async def test_async_workflows_get_uses_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/workflow_123"
+    assert request.url == "/v1/workflows/workflow_123"
     assert workflow.id == "workflow_123"
 
 
@@ -119,7 +119,7 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows"
+    assert request.url == "/v1/workflows"
     assert request.params == {
         "limit": 5,
         "order": "asc",
@@ -195,7 +195,7 @@ def test_workflow_block_executions_create_uses_top_level_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/blocks/executions"
+    assert request.url == "/v1/workflows/blocks/executions"
     assert request.data == {
         "run_id": "run_1",
         "block_id": "block_1",
@@ -232,7 +232,7 @@ def test_workflow_block_executions_list_uses_top_level_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/blocks/executions"
+    assert request.url == "/v1/workflows/blocks/executions"
     assert request.params == {
         "run_id": "run_1",
         "block_id": "block_1",
@@ -264,7 +264,7 @@ async def test_async_workflow_block_executions_create_uses_top_level_route() -> 
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/blocks/executions"
+    assert request.url == "/v1/workflows/blocks/executions"
     assert request.data == {
         "run_id": "run_1",
         "block_id": "block_1",
@@ -287,7 +287,7 @@ def test_workflow_specs_validate_uses_spec_validate_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/spec/validate"
+    assert request.url == "/v1/workflows/spec/validate"
     assert request.data == {"yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n"}
     assert isinstance(response, DeclarativeValidationResponse)
     assert response.is_valid is True
@@ -336,7 +336,7 @@ def test_workflow_specs_plan_uses_spec_plan_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/spec/plan"
+    assert request.url == "/v1/workflows/spec/plan"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativePlanResponse)
     assert response.summary is not None
@@ -368,7 +368,7 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/spec/apply"
+    assert request.url == "/v1/workflows/spec/apply"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativeApplyResponse)
     assert response.action == "noop"
@@ -388,7 +388,7 @@ def test_workflow_specs_export_uses_spec_export_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_1/spec"
+    assert request.url == "/v1/workflows/wf_1/spec"
     assert isinstance(response, DeclarativeExportResponse)
     assert response.yaml_definition.startswith("apiVersion:")
 
@@ -410,7 +410,7 @@ async def test_async_workflow_specs_validate_uses_spec_validate_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/spec/validate"
+    assert request.url == "/v1/workflows/spec/validate"
     assert response.workflow_id == "wf_1"
 
 
@@ -536,7 +536,7 @@ def test_workflows_create_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows"
+    assert request.url == "/v1/workflows"
     assert request.data == {"name": "My Workflow", "description": "A test"}
     assert wf.id == "wf_new"
 
@@ -566,7 +566,7 @@ def test_workflows_update_accepts_email_trigger_policy() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/workflow_123"
+    assert request.url == "/v1/workflows/workflow_123"
     assert request.data == {
         "email_trigger": {
             "allowed_senders": ["ops@example.com"],
@@ -602,7 +602,7 @@ def test_workflow_blocks_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/blocks"
+    assert request.url == "/v1/workflows/blocks"
     assert request.data == {
         "workflow_id": "wf_1",
         "id": "extract-1",
@@ -636,7 +636,7 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/blocks/extract-1"
+    assert request.url == "/v1/workflows/blocks/extract-1"
     assert request.data == {"label": "Renamed", "position_x": 200.0}
     assert block.label == "Renamed"
 
@@ -742,7 +742,7 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/edges"
+    assert request.url == "/v1/workflows/edges"
     assert request.data == {
         "workflow_id": "wf_1",
         "id": "edge-1",
@@ -772,7 +772,7 @@ def test_workflows_publish_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/publish"
+    assert request.url == "/v1/workflows/wf_1/publish"
     assert wf.published_version_id == "ver_0123456789abcdef0123456789abcdef"
 
 
@@ -820,7 +820,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/runs"
+    assert request.url == "/v1/workflows/runs"
     assert request.params["workflow_id"] == "wf_1"
     assert request.params["statuses"] == "completed,error"
     assert request.params["trigger_types"] == "api,email"
@@ -834,7 +834,7 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
     request = WorkflowRuns(client=MagicMock()).prepare_create(workflow_id="wf_1")
 
     assert request.method == "POST"
-    assert request.url == "/workflows/runs"
+    assert request.url == "/v1/workflows/runs"
     assert request.data == {
         "workflow_id": "wf_1",
         "documents": {},
@@ -920,7 +920,7 @@ def test_workflow_runs_cancel_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/run_1/cancel"
+    assert request.url == "/v1/workflows/runs/run_1/cancel"
     assert request.data == {"command_id": "cmd_1"}
     assert result.cancellation_status == "cancelled"
     assert result.run.id == "run_1"
@@ -934,7 +934,7 @@ def test_workflow_runs_restart_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs"
+    assert request.url == "/v1/workflows/runs"
     assert request.data == {"restart_of": "run_1", "command_id": "cmd_2"}
     assert run.id == "run_2"
 
@@ -958,7 +958,7 @@ def test_workflow_runs_export_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/export"
+    assert request.url == "/v1/workflows/runs/export"
     assert request.data == {
         "workflow_id": "wf_1",
         "block_id": "extract-1",

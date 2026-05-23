@@ -1,10 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import {
-  PaginatedList,
-  WorkflowArtifact,
-  ZPaginatedList,
-  ZWorkflowArtifact,
-} from '../../../types.js';
+import { PaginatedList } from '../../_pagination.js';
+import { WorkflowArtifact, ZWorkflowArtifact } from '../../../types.js';
 
 /**
  * Workflow Artifacts API client for listing persisted run artifacts.
@@ -64,14 +60,14 @@ export default class APIWorkflowArtifacts extends CompositionClient {
       blockId?: string;
     },
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<WorkflowArtifact>> {
     const request = this.prepare_list(runId, operation, blockId);
     const params = {
       ...request.params,
       ...(options?.params || {}),
     };
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZWorkflowArtifact, {
       url: request.url,
       method: request.method,
       params,

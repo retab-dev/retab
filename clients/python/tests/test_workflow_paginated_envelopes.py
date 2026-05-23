@@ -21,7 +21,7 @@ from retab.resources.workflows.blocks import (
     WorkflowBlocks,
 )
 from retab.resources.workflows.edges import WorkflowEdges
-from retab.types.pagination import PaginatedList
+from retab.types.pagination import AsyncPaginatedList, PaginatedList
 
 
 def _envelope(*items: dict) -> dict:
@@ -38,6 +38,7 @@ def test_workflow_blocks_list_returns_paginated_envelope() -> None:
             "label": "Extract",
             "position_x": 0,
             "position_y": 0,
+            "updated_at": "2026-01-01T00:00:00Z",
         }
     )
 
@@ -45,7 +46,8 @@ def test_workflow_blocks_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/blocks?workflow_id=wf_aaa"
+    assert request.url == "/v1/workflows/blocks"
+    assert request.params == {"workflow_id": "wf_aaa"}
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "extract-1"
@@ -64,6 +66,7 @@ def test_workflow_edges_list_returns_paginated_envelope() -> None:
             "target_block": "extract-1",
             "source_handle": "output-file-0",
             "target_handle": "input-file-0",
+            "updated_at": "2026-01-01T00:00:00Z",
         }
     )
 
@@ -71,7 +74,8 @@ def test_workflow_edges_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/edges?workflow_id=wf_aaa"
+    assert request.url == "/v1/workflows/edges"
+    assert request.params == {"workflow_id": "wf_aaa"}
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "edge-1"
@@ -90,7 +94,7 @@ def test_workflow_artifacts_list_returns_paginated_envelope() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/artifacts"
+    assert request.url == "/v1/workflows/artifacts"
     assert isinstance(result, PaginatedList)
     assert len(result) == 2
     assert result[0].operation == "extraction"
@@ -110,12 +114,13 @@ async def test_async_workflow_blocks_list_returns_paginated_envelope() -> None:
                 "label": "Extract",
                 "position_x": 0,
                 "position_y": 0,
+                "updated_at": "2026-01-01T00:00:00Z",
             }
         )
     )
 
     result = await AsyncWorkflowBlocks(client=client).list("wf_aaa")
 
-    assert isinstance(result, PaginatedList)
+    assert isinstance(result, AsyncPaginatedList)
     assert len(result) == 1
     assert result[0].id == "extract-1"

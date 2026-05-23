@@ -1,5 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import { MIMEDataInput, ZPaginatedList, PaginatedList } from '../../types.js';
+import { MIMEDataInput } from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
 import * as z from 'zod';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -192,7 +193,7 @@ export default class APIFiles extends CompositionClient {
       sort_by?: string;
     } = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<File>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -207,7 +208,7 @@ export default class APIFiles extends CompositionClient {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZFile, {
       url: '/files',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

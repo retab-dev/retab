@@ -1,9 +1,8 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
+import { PaginatedList } from '../_pagination.js';
 import {
-  PaginatedList,
   Workflow,
   WorkflowDiagnosisResponse,
-  ZPaginatedList,
   ZWorkflow,
   ZWorkflowDiagnosisResponse,
 } from '../../types.js';
@@ -90,7 +89,7 @@ export default class APIWorkflows extends CompositionClient {
       fields?: string;
     } = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Workflow>> {
     const params = Object.fromEntries(
       Object.entries({
         before,
@@ -103,7 +102,7 @@ export default class APIWorkflows extends CompositionClient {
       }).filter(([_, value]) => value !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZWorkflow, {
       url: '/workflows',
       method: 'GET',
       params,

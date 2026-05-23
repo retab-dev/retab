@@ -47,7 +47,8 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/steps?run_id=run_123"
+    assert request.url == "/v1/workflows/steps"
+    assert request.params == {"run_id": "run_123"}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -93,7 +94,7 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/artifacts"
+    assert request.url == "/v1/workflows/artifacts"
     assert request.params == {
         "run_id": "run_123",
         "operation": "conditional_evaluation",
@@ -116,7 +117,7 @@ def test_workflow_artifacts_get_uses_flat_artifact_id_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/artifacts/ext_123"
+    assert request.url == "/v1/workflows/artifacts/ext_123"
     assert artifact.id == "ext_123"
     assert artifact.operation == "extraction"
 
@@ -145,7 +146,8 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/steps?run_id=run_123"
+    assert request.url == "/v1/workflows/steps"
+    assert request.params == {"run_id": "run_123"}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -166,7 +168,7 @@ async def test_async_workflow_artifacts_get_uses_flat_artifact_id_route() -> Non
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/artifacts/clss_123"
+    assert request.url == "/v1/workflows/artifacts/clss_123"
     assert artifact.id == "clss_123"
 
 
@@ -185,7 +187,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/steps/step_extract_1"
+    assert request.url == "/v1/workflows/steps/step_extract_1"
     assert step.step_id == "step_extract_1"
     assert step.run_id == "run_123"
     assert "output" not in step.model_dump()
@@ -288,8 +290,13 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     assert payload.data == {"payload": {"ok": True}}
 
 
-def test_workflow_steps_list_with_block_ids() -> None:
-    """list() with block_ids filters the persisted step list and still returns WorkflowRunStep items."""
+def test_workflow_steps_list_with_block_ids_pushes_to_server() -> None:
+    """list(block_ids=[...]) now filters server-side via the `block_ids` query param.
+
+    The server returns only matching rows — the SDK no longer applies a
+    client-side filter, so auto-pagination preserves the filter on every
+    subsequent page (the closure re-sends the same params).
+    """
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [
@@ -303,15 +310,6 @@ def test_workflow_steps_list_with_block_ids() -> None:
                 "lifecycle": {"status": "completed"},
                 "artifact": {"operation": "extraction", "id": "ext_123"},
             },
-            {
-                "run_id": "run_123",
-                "organization_id": "org_123",
-                "block_id": "parse-1",
-                "step_id": "parse-1",
-                "block_type": "parse",
-                "block_label": "Parse",
-                "lifecycle": {"status": "completed"},
-            },
         ],
         "list_metadata": {"before": None, "after": None},
     }
@@ -320,11 +318,84 @@ def test_workflow_steps_list_with_block_ids() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/steps?run_id=run_123"
+    assert request.url == "/v1/workflows/steps"
+    assert request.params == {"run_id": "run_123", "block_ids": ["extract-1"]}
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
     assert result[0].artifact is not None
     assert result[0].artifact.operation == "extraction"
+
+
+def test_workflow_steps_list_without_block_ids_omits_param() -> None:
+    """When `block_ids` is None, it must not appear in the request params."""
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
+
+    WorkflowSteps(client=client).list("run_123")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.params == {"run_id": "run_123"}
+
+
+def test_workflow_steps_list_block_ids_auto_paging_carries_filter() -> None:
+    """Regression: pages 2+ must still carry `block_ids` (the old client-side filter dropped it).
+
+    The original implementation applied `block_ids` via a `transform=`
+    callback after `_prepared_request` returned. The closure that fetches
+    page 2 never re-sent `block_ids` in the wire request, so the server
+    returned every row for the run on subsequent pages. Pushing the filter
+    server-side means every page closure carries the param.
+    """
+    client = MagicMock()
+    client._prepared_request.side_effect = [
+        {
+            "data": [
+                {
+                    "run_id": "run_123",
+                    "organization_id": "org_123",
+                    "block_id": "extract-1",
+                    "step_id": "step_p1",
+                    "block_type": "extract",
+                    "block_label": "Extract",
+                    "lifecycle": {"status": "completed"},
+                },
+            ],
+            "list_metadata": {"before": None, "after": "cursor_p2"},
+        },
+        {
+            "data": [
+                {
+                    "run_id": "run_123",
+                    "organization_id": "org_123",
+                    "block_id": "extract-1",
+                    "step_id": "step_p2",
+                    "block_type": "extract",
+                    "block_label": "Extract",
+                    "lifecycle": {"status": "completed"},
+                },
+            ],
+            "list_metadata": {"before": None, "after": None},
+        },
+    ]
+
+    page = WorkflowSteps(client=client).list("run_123", block_ids=["extract-1"])
+    walked = [step.step_id for step in page.auto_paging_iter()]
+
+    assert walked == ["step_p1", "step_p2"]
+    assert client._prepared_request.call_count == 2
+    # Page 1 carries the filter alongside run_id.
+    page1_request = client._prepared_request.call_args_list[0].args[0]
+    assert page1_request.params == {"run_id": "run_123", "block_ids": ["extract-1"]}
+    # Page 2 must still carry the filter, plus the next-page cursor (after).
+    page2_request = client._prepared_request.call_args_list[1].args[0]
+    assert page2_request.params == {
+        "run_id": "run_123",
+        "block_ids": ["extract-1"],
+        "after": "cursor_p2",
+    }
 
 
 def test_workflow_steps_get_requires_step_id() -> None:

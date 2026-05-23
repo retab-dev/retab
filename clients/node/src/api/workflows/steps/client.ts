@@ -1,10 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import {
-  PaginatedList,
-  WorkflowRunStep,
-  ZPaginatedList,
-  ZWorkflowRunStep,
-} from '../../../types.js';
+import { PaginatedList } from '../../_pagination.js';
+import { WorkflowRunStep, ZWorkflowRunStep } from '../../../types.js';
 
 /**
  * Workflow Steps API client for accessing step-level execution artifacts.
@@ -56,8 +52,8 @@ export default class APIWorkflowSteps extends CompositionClient {
    * }
    * ```
    */
-  async list(runId: string, options?: RequestOptions): Promise<PaginatedList> {
-    return this._fetchJson(ZPaginatedList, {
+  async list(runId: string, options?: RequestOptions): Promise<PaginatedList<WorkflowRunStep>> {
+    return this._fetchPage(ZWorkflowRunStep, {
       url: `/workflows/steps?run_id=${runId}`,
       method: 'GET',
       params: options?.params,

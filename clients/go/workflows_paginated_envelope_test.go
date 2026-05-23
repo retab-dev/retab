@@ -27,7 +27,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_aaa":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":          "extract-1",
 				"workflow_id": "wf_aaa",
@@ -36,7 +36,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"position_x":  0,
 				"position_y":  0,
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_aaa":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":              "edge-1",
 				"workflow_id":     "wf_aaa",
@@ -46,12 +46,12 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"source_handle":   "output-file-0",
 				"target_handle":   "input-file-0",
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/artifacts":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"operation": "extraction",
 				"id":        "ext_123",
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/steps" && r.URL.Query().Get("run_id") == "run_aaa":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/steps" && r.URL.Query().Get("run_id") == "run_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"run_id":          "run_aaa",
 				"organization_id": "org_1",

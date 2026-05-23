@@ -1,10 +1,9 @@
 import { CompositionClient, RequestOptions } from '../../../../client.js';
+import { PaginatedList } from '../../../_pagination.js';
 import {
   StoredBlockExecution,
   BlockExecutionCreateRequest,
-  PaginatedList,
   ZStoredBlockExecution,
-  ZPaginatedList,
 } from '../../../../types.js';
 
 function serializeCreateRequest(request: BlockExecutionCreateRequest): Record<string, unknown> {
@@ -95,9 +94,9 @@ export default class APIWorkflowBlockExecutions extends CompositionClient {
       limit?: number;
     },
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<StoredBlockExecution>> {
     const preparedRequest = this.prepare_list({ runId, blockId, limit });
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZStoredBlockExecution, {
       url: preparedRequest.url,
       method: preparedRequest.method,
       params: {

@@ -1,0 +1,100 @@
+{
+  "operation": "review_trigger_evaluation",
+  "id": "01234",
+  "workflow_run_id": "workflow_run_id_01234",
+  "step_id": "step_id_01234",
+  "evaluations": [
+    {
+      "condition_id": "condition_id_01234",
+      "path": "test_path",
+      "operator": "test_operator",
+      "expected": {},
+      "actual": {},
+      "matched": true,
+      "branch_name": "Test",
+      "logical_operator": "and",
+      "per_item": [
+        {
+          "index": 1,
+          "indices": [
+            1
+          ],
+          "actual": {},
+          "matched": true
+        }
+      ],
+      "sub_evaluations": [
+        {
+          "sub_condition_id": "sub_condition_id_01234",
+          "path": "test_path",
+          "operator": "test_operator",
+          "expected": {},
+          "actual": {},
+          "matched": true,
+          "per_item": [
+            {
+              "index": 1,
+              "indices": [
+                1
+              ],
+              "actual": {},
+              "matched": true
+            }
+          ]
+        }
+      ],
+      "details": {
+        "path": "test_path",
+        "operator": "test_operator",
+        "expected": {},
+        "actual": {},
+        "matched": true,
+        "per_item": [
+          {
+            "index": 1,
+            "indices": [
+              1
+            ],
+            "actual": {},
+            "matched": true
+          }
+        ],
+        "sub_conditions": [
+          {
+            "sub_condition_id": "sub_condition_id_01234",
+            "path": "test_path",
+            "operator": "test_operator",
+            "expected": {},
+            "actual": {},
+            "matched": true,
+            "per_item": [
+              {
+                "index": 1,
+                "indices": [
+                  1
+                ],
+                "actual": {},
+                "matched": true
+              }
+            ]
+          }
+        ],
+        "logical_operator": "and"
+      }
+    }
+  ],
+  "selected_handles": [
+    "test_selected_handles"
+  ],
+  "matched_branch_id": "matched_branch_id_01234",
+  "matched_condition_ids": [
+    "matched_condition_ids_01234"
+  ],
+  "requires_human_review": true,
+  "reviewer_id": "reviewer_id_01234",
+  "review_decision": "approved",
+  "review_notes": "test_review_notes",
+  "requested_revision": true,
+  "reviewed_at": "2023-01-01T00:00:00.000Z",
+  "created_at": "2023-01-01T00:00:00.000Z"
+}

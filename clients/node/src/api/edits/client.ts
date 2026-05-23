@@ -1,12 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZPaginatedList,
-  PaginatedList,
-  ZEdit,
-  Edit,
-} from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
+import { ZMIMEData, MIMEDataInput, ZEdit, Edit } from '../../types.js';
 import APIEditsTemplates from './templates/client.js';
 
 export type EditCreateParams = {
@@ -103,7 +97,7 @@ export default class APIEdits extends CompositionClient {
       to_date,
     }: EditListParams = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Edit>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -117,7 +111,7 @@ export default class APIEdits extends CompositionClient {
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZEdit, {
       url: '/edits',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

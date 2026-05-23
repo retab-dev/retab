@@ -1,14 +1,11 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
+import { PaginatedList } from '../../_pagination.js';
 import {
   Review,
-  WorkflowReviewQueue,
   ReviewVersion,
-  ReviewVersionListResponse,
   SubmitDecisionResponse,
   ZReview,
-  ZWorkflowReviewQueue,
   ZReviewVersion,
-  ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
 } from '../../../types.js';
 
@@ -133,9 +130,9 @@ export class APIWorkflowReviewVersions extends CompositionClient {
       after?: string;
     },
     options?: RequestOptions
-  ): Promise<ReviewVersionListResponse> {
+  ): Promise<PaginatedList<ReviewVersion>> {
     const prepared = this.prepare_list(request);
-    return this._fetchJson(ZReviewVersionListResponse, {
+    return this._fetchPage(ZReviewVersion, {
       url: prepared.url,
       method: prepared.method,
       params: { ...prepared.params, ...(options?.params || {}) },
@@ -247,7 +244,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after?: string;
     } = {},
     options?: RequestOptions
-  ): Promise<WorkflowReviewQueue> {
+  ): Promise<PaginatedList<Review>> {
     const request = this.prepare_list({
       workflowId,
       runId,
@@ -260,7 +257,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after,
     });
 
-    return this._fetchJson(ZWorkflowReviewQueue, {
+    return this._fetchPage(ZReview, {
       url: request.url,
       method: request.method,
       params: { ...request.params, ...(options?.params || {}) },

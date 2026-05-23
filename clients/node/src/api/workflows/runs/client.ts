@@ -1,11 +1,10 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
+import { PaginatedList } from '../../_pagination.js';
 import {
   MIMEDataInput,
   ZMIMEData,
   WorkflowRun,
   ZWorkflowRun,
-  PaginatedList,
-  ZPaginatedList,
   CancelWorkflowResponse,
   ZCancelWorkflowResponse,
   WorkflowRunExportResponse,
@@ -180,7 +179,7 @@ export default class APIWorkflowRuns extends CompositionClient {
       order?: 'asc' | 'desc';
     } = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<WorkflowRun>> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: Record<string, any> = {
       workflow_id: workflowId,
@@ -208,7 +207,7 @@ export default class APIWorkflowRuns extends CompositionClient {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZWorkflowRun, {
       url: '/workflows/runs',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

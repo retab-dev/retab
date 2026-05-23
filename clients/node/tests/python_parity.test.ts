@@ -594,6 +594,15 @@ function collectGoWorkflowRouteKeys(): string[] {
     recordRoute(match[1].toLowerCase(), match[2].trim());
   }
 
+  // List endpoints delegate to the doPaginated[T] base-client helper —
+  // doPaginated[Workflow](ctx, s.client, http.MethodGet, "/v1/workflows", ...).
+  // Captured separately from the s.client.do(...) regex above.
+  for (const match of source.matchAll(
+    /doPaginated\[[A-Za-z0-9_]+\]\(\s*ctx\s*,\s*s\.client\s*,\s*http\.Method([A-Za-z]+)\s*,\s*([^,\n]+)/g
+  )) {
+    recordRoute(match[1].toLowerCase(), match[2].trim());
+  }
+
   for (const match of source.matchAll(/PreparedRequest\s*\{([\s\S]*?)\n\s*\}/g)) {
     const block = match[1];
     const methodMatch = /\bMethod:\s*http\.Method([A-Za-z]+)/.exec(block);

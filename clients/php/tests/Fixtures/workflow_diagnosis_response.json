@@ -1,0 +1,22 @@
+{
+  "is_valid": true,
+  "issues": [
+    {
+      "severity": "error",
+      "code": "test_code",
+      "message": "test_message",
+      "block_id": "block_id_01234"
+    }
+  ],
+  "suggestions": [
+    "test_suggestions"
+  ],
+  "stats": {
+    "total_blocks": 1,
+    "total_edges": 1,
+    "block_types": {
+      "key": 1
+    },
+    "start_document_blocks": 1
+  }
+}

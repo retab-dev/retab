@@ -41,10 +41,6 @@ class ExtractionRequest(RetabBaseModel):
         description="Additional chat messages forwarded to the extraction model.",
     )
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
-    stream: bool | None = Field(
-        default=False,
-        description="If true, stream incremental extraction events; if false, return the final result only.",
-    )
 
 
 class ProcessingRequestOrigin(RetabBaseModel):

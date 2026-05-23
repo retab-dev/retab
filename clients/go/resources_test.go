@@ -73,7 +73,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/extractions",
+			wantPath:   "/v1/extractions",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "model", "retab-small")
 				assertBodyNumber(t, body, "image_resolution_dpi", 192)
@@ -103,7 +103,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/splits",
+			wantPath:   "/v1/splits",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "model", "retab-small")
 				assertBodyNumber(t, body, "n_consensus", 3)
@@ -140,7 +140,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/classifications",
+			wantPath:   "/v1/classifications",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "model", "retab-small")
 				assertBodyNumber(t, body, "first_n_pages", 4)
@@ -161,7 +161,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/parses",
+			wantPath:   "/v1/parses",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "table_parsing_format", "markdown")
 				assertBodyBool(t, body, "bust_cache", true)
@@ -180,7 +180,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/edits",
+			wantPath:   "/v1/edits",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "instructions", "fill the form")
 				assertNestedString(t, body, "config", "color", "#000080")
@@ -196,7 +196,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/schemas/generate",
+			wantPath:   "/v1/schemas/generate",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "model", "retab-small")
 				documents, ok := body["documents"].([]any)
@@ -216,7 +216,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				return err
 			},
 			wantMethod: http.MethodPost,
-			wantPath:   "/jobs",
+			wantPath:   "/v1/jobs",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "endpoint", "/v1/extractions")
 				assertNestedString(t, body, "request", "model", "retab-small")
@@ -254,11 +254,11 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 		{"files get", func(ctx context.Context, client *Client) error {
 			_, err := client.Files.Get(ctx, "file_123")
 			return err
-		}, http.MethodGet, "/files/file_123"},
+		}, http.MethodGet, "/v1/files/file_123"},
 		{"files download link", func(ctx context.Context, client *Client) error {
 			_, err := client.Files.GetDownloadLink(ctx, "file_123")
 			return err
-		}, http.MethodGet, "/files/file_123/download-link"},
+		}, http.MethodGet, "/v1/files/file_123/download-link"},
 		{"files create upload", func(ctx context.Context, client *Client) error {
 			_, err := client.Files.CreateUpload(ctx, PrepareUploadRequest{
 				Filename:    "invoice.pdf",
@@ -267,41 +267,41 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 				SHA256:      "abc",
 			})
 			return err
-		}, http.MethodPost, "/files/upload"},
+		}, http.MethodPost, "/v1/files/upload"},
 		{"files complete upload", func(ctx context.Context, client *Client) error {
 			_, err := client.Files.CompleteUpload(ctx, "file_123", "abc")
 			return err
-		}, http.MethodPost, "/files/upload/file_123/complete"},
+		}, http.MethodPost, "/v1/files/upload/file_123/complete"},
 		{"extractions get", func(ctx context.Context, client *Client) error {
 			_, err := client.Extractions.Get(ctx, "ext_123")
 			return err
-		}, http.MethodGet, "/extractions/ext_123"},
+		}, http.MethodGet, "/v1/extractions/ext_123"},
 		{"extractions sources", func(ctx context.Context, client *Client) error {
 			_, err := client.Extractions.Sources(ctx, "ext_123")
 			return err
-		}, http.MethodGet, "/extractions/ext_123/sources"},
+		}, http.MethodGet, "/v1/extractions/ext_123/sources"},
 		{"splits delete", func(ctx context.Context, client *Client) error {
 			return client.Splits.Delete(ctx, "split_123")
-		}, http.MethodDelete, "/splits/split_123"},
+		}, http.MethodDelete, "/v1/splits/split_123"},
 		{"classifications get", func(ctx context.Context, client *Client) error {
 			_, err := client.Classifications.Get(ctx, "cls_123")
 			return err
-		}, http.MethodGet, "/classifications/cls_123"},
+		}, http.MethodGet, "/v1/classifications/cls_123"},
 		{"parses delete", func(ctx context.Context, client *Client) error {
 			return client.Parses.Delete(ctx, "parse_123")
-		}, http.MethodDelete, "/parses/parse_123"},
+		}, http.MethodDelete, "/v1/parses/parse_123"},
 		{"edits get", func(ctx context.Context, client *Client) error {
 			_, err := client.Edits.Get(ctx, "edit_123")
 			return err
-		}, http.MethodGet, "/edits/edit_123"},
+		}, http.MethodGet, "/v1/edits/edit_123"},
 		{"jobs cancel", func(ctx context.Context, client *Client) error {
 			_, err := client.Jobs.Cancel(ctx, "job_123")
 			return err
-		}, http.MethodPost, "/jobs/job_123/cancel"},
+		}, http.MethodPost, "/v1/jobs/job_123/cancel"},
 		{"jobs retry", func(ctx context.Context, client *Client) error {
 			_, err := client.Jobs.Retry(ctx, "job_123")
 			return err
-		}, http.MethodPost, "/jobs/job_123/retry"},
+		}, http.MethodPost, "/v1/jobs/job_123/retry"},
 	}
 
 	for _, test := range tests {
@@ -325,7 +325,7 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 
 func TestFilesDownloadLinkDecodesDurableMIMEData(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/files/file_123/download-link" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/files/file_123/download-link" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -369,7 +369,7 @@ func TestFilesPrepareUploadRequestsMatchNode(t *testing.T) {
 		t.Fatal(err)
 	}
 	prepared := retabClient.Files.PrepareUpload("invoice.pdf", "application/pdf", 10, "abc")
-	if prepared.URL != "/files/upload" || prepared.Method != http.MethodPost {
+	if prepared.URL != "/v1/files/upload" || prepared.Method != http.MethodPost {
 		t.Fatalf("prepared upload = %#v", prepared)
 	}
 	body, ok := prepared.Body.(map[string]any)
@@ -378,7 +378,7 @@ func TestFilesPrepareUploadRequestsMatchNode(t *testing.T) {
 	}
 
 	complete := retabClient.Files.PrepareCompleteUpload("file_123", "abc")
-	if complete.URL != "/files/upload/file_123/complete" || complete.Method != http.MethodPost {
+	if complete.URL != "/v1/files/upload/file_123/complete" || complete.Method != http.MethodPost {
 		t.Fatalf("prepared complete upload = %#v", complete)
 	}
 }
@@ -407,7 +407,7 @@ func TestFilesUploadRequestShape(t *testing.T) {
 		bodies = append(bodies, body)
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/files/upload":
+		case "/v1/files/upload":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"fileId":        "file_123",
 				"uploadUrl":     uploadServer.URL + "/direct-upload",
@@ -415,7 +415,7 @@ func TestFilesUploadRequestShape(t *testing.T) {
 				"uploadHeaders": map[string]string{"x-upload-token": "secret"},
 				"expiresAt":     "2026-01-01T00:00:00Z",
 			})
-		case "/files/upload/file_123/complete":
+		case "/v1/files/upload/file_123/complete":
 			_ = json.NewEncoder(w).Encode(MIMEData{
 				Filename: "invoice.pdf",
 				URL:      "https://files.example/invoice.pdf",
@@ -440,7 +440,7 @@ func TestFilesUploadRequestShape(t *testing.T) {
 	if mimeData.URL != "https://files.example/invoice.pdf" {
 		t.Fatalf("url = %s", mimeData.URL)
 	}
-	if strings.Join(paths, ",") != "/files/upload,/files/upload/file_123/complete" {
+	if strings.Join(paths, ",") != "/v1/files/upload,/v1/files/upload/file_123/complete" {
 		t.Fatalf("paths = %#v", paths)
 	}
 	assertBodyString(t, bodies[0], "filename", "invoice.pdf")
@@ -490,7 +490,7 @@ func TestListQueryShapes(t *testing.T) {
 				})
 				return err
 			},
-			wantPath: "/extractions",
+			wantPath: "/v1/extractions",
 			assert: func(t *testing.T, query map[string][]string) {
 				assertQuery(t, query, "limit", "7")
 				assertQuery(t, query, "order", "asc")
@@ -508,7 +508,7 @@ func TestListQueryShapes(t *testing.T) {
 				})
 				return err
 			},
-			wantPath: "/jobs/job_123",
+			wantPath: "/v1/jobs/job_123",
 			assert: func(t *testing.T, query map[string][]string) {
 				assertQuery(t, query, "include_request", "true")
 				assertQuery(t, query, "include_response", "true")
@@ -527,7 +527,7 @@ func TestListQueryShapes(t *testing.T) {
 				})
 				return err
 			},
-			wantPath: "/jobs",
+			wantPath: "/v1/jobs",
 			assert: func(t *testing.T, query map[string][]string) {
 				assertQuery(t, query, "limit", "3")
 				assertQuery(t, query, "status", "completed")
@@ -550,7 +550,7 @@ func TestListQueryShapes(t *testing.T) {
 				_, err := client.Jobs.List(ctx, &ListJobsParams{Limit: 1})
 				return err
 			},
-			wantPath: "/jobs",
+			wantPath: "/v1/jobs",
 			assert: func(t *testing.T, query map[string][]string) {
 				assertQuery(t, query, "limit", "1")
 				if _, ok := query["metadata"]; ok {

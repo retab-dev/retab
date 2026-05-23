@@ -74,7 +74,7 @@ func (s *WorkflowsService) Get(ctx context.Context, workflowID string, opts ...R
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var workflow Workflow
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID), nil, nil, &workflow, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/"+url.PathEscape(workflowID), nil, nil, &workflow, opts...)
 	return &workflow, err
 }
 
@@ -95,9 +95,7 @@ func (s *WorkflowsService) List(ctx context.Context, params *ListWorkflowsParams
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result PaginatedList[Workflow]
-	err := s.client.do(ctx, http.MethodGet, "/workflows", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Workflow](ctx, s.client, http.MethodGet, "/v1/workflows", query, nil, opts...)
 }
 
 func (s *WorkflowsService) Create(ctx context.Context, request CreateWorkflowRequest, opts ...RequestOption) (*Workflow, error) {
@@ -110,7 +108,7 @@ func (s *WorkflowsService) Create(ctx context.Context, request CreateWorkflowReq
 		"description": request.Description,
 	}
 	var workflow Workflow
-	err := s.client.do(ctx, http.MethodPost, "/workflows", nil, body, &workflow, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows", nil, body, &workflow, opts...)
 	return &workflow, err
 }
 
@@ -136,7 +134,7 @@ func (s *WorkflowsService) Update(ctx context.Context, workflowID string, reques
 		body["email_trigger"] = emailTrigger
 	}
 	var workflow Workflow
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/"+url.PathEscape(workflowID), nil, body, &workflow, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/v1/workflows/"+url.PathEscape(workflowID), nil, body, &workflow, opts...)
 	return &workflow, err
 }
 
@@ -144,7 +142,7 @@ func (s *WorkflowsService) Delete(ctx context.Context, workflowID string, opts .
 	if workflowID == "" {
 		return fmt.Errorf("retab: workflowID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/workflows/"+url.PathEscape(workflowID), nil, nil, nil, opts...)
 }
 
 func (s *WorkflowsService) Publish(ctx context.Context, workflowID string, request PublishWorkflowRequest, opts ...RequestOption) (*Workflow, error) {
@@ -153,7 +151,7 @@ func (s *WorkflowsService) Publish(ctx context.Context, workflowID string, reque
 	}
 	body := map[string]any{"description": request.Description}
 	var workflow Workflow
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/publish", nil, body, &workflow, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/"+url.PathEscape(workflowID)+"/publish", nil, body, &workflow, opts...)
 	return &workflow, err
 }
 
@@ -195,7 +193,7 @@ type DiagnoseWorkflowRequest struct {
 
 func prepareDiagnoseGraphRequest(workflowID string, request DiagnoseWorkflowGraphRequest) PreparedRequest {
 	return PreparedRequest{
-		URL:    "/workflows/" + url.PathEscape(workflowID) + "/diagnose-graph",
+		URL:    "/v1/workflows/" + url.PathEscape(workflowID) + "/diagnose-graph",
 		Method: http.MethodPost,
 		Body:   request,
 	}
@@ -209,7 +207,7 @@ func (s *WorkflowsService) PrepareDiagnose(workflowID string, rePropagate ...boo
 		shouldRePropagate = rePropagate[0]
 	}
 	return PreparedRequest{
-		URL:    "/workflows/" + url.PathEscape(workflowID) + "/diagnose-graph",
+		URL:    "/v1/workflows/" + url.PathEscape(workflowID) + "/diagnose-graph",
 		Method: http.MethodPost,
 		Body: DiagnoseWorkflowRequest{
 			RePropagate: shouldRePropagate,
@@ -268,19 +266,19 @@ type WorkflowSpecRequest struct {
 
 func (s *WorkflowSpecService) Validate(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/validate", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/spec/validate", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
 func (s *WorkflowSpecService) Plan(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/plan", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/spec/plan", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
 func (s *WorkflowSpecService) Apply(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
 	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/apply", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/spec/apply", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
 	return &result, err
 }
 
@@ -289,7 +287,7 @@ func (s *WorkflowSpecService) Export(ctx context.Context, workflowID string, opt
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result Resource
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/spec", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/"+url.PathEscape(workflowID)+"/spec", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -322,7 +320,7 @@ func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParam
 		addQuery(query, "limit", strconv.Itoa(params.Limit))
 	}
 	return PreparedRequest{
-		URL:    "/workflows/artifacts",
+		URL:    "/v1/workflows/artifacts",
 		Method: http.MethodGet,
 		Params: query,
 	}
@@ -330,7 +328,7 @@ func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParam
 
 func (s *WorkflowArtifactsService) PrepareGet(artifactID string) PreparedRequest {
 	return PreparedRequest{
-		URL:    "/workflows/artifacts/" + url.PathEscape(artifactID),
+		URL:    "/v1/workflows/artifacts/" + url.PathEscape(artifactID),
 		Method: http.MethodGet,
 	}
 }
@@ -436,7 +434,7 @@ func (s *WorkflowBlockExecutionsService) Create(ctx context.Context, request Cre
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var result StoredBlockExecution
-	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks/executions", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/blocks/executions", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -453,9 +451,7 @@ func (s *WorkflowBlockExecutionsService) List(ctx context.Context, params ListWo
 	if params.Limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", params.Limit))
 	}
-	var result PaginatedList[StoredBlockExecution]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/executions", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[StoredBlockExecution](ctx, s.client, http.MethodGet, "/v1/workflows/blocks/executions", query, nil, opts...)
 }
 
 type WorkflowBlockCreateRequest struct {
@@ -527,7 +523,7 @@ func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, par
 	// always receive a wrapped *PaginatedList, matching the rest of the
 	// SDK. Drop the bare-array branch once the server is consistent.
 	var raw json.RawMessage
-	if err := s.client.do(ctx, http.MethodGet, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), query, nil, &raw, opts...); err != nil {
+	if err := s.client.do(ctx, http.MethodGet, "/v1/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), query, nil, &raw, opts...); err != nil {
 		return nil, err
 	}
 	trimmed := bytes.TrimLeft(raw, " \t\r\n")
@@ -551,7 +547,7 @@ func (s *WorkflowBlocksService) Get(ctx context.Context, blockID string, opts ..
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID), nil, nil, &block, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/blocks/"+url.PathEscape(blockID), nil, nil, &block, opts...)
 	return &block, err
 }
 
@@ -562,7 +558,7 @@ func (s *WorkflowBlocksService) Create(ctx context.Context, workflowID string, r
 	body := resourceFromJSON(request)
 	body["workflow_id"] = workflowID
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks", nil, body, &block, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/blocks", nil, body, &block, opts...)
 	return &block, err
 }
 
@@ -571,7 +567,7 @@ func (s *WorkflowBlocksService) Update(ctx context.Context, blockID string, requ
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/blocks/"+url.PathEscape(blockID), nil, request, &block, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/v1/workflows/blocks/"+url.PathEscape(blockID), nil, request, &block, opts...)
 	return &block, err
 }
 
@@ -579,7 +575,7 @@ func (s *WorkflowBlocksService) Delete(ctx context.Context, blockID string, opts
 	if blockID == "" {
 		return fmt.Errorf("retab: blockID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/blocks/"+url.PathEscape(blockID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/workflows/blocks/"+url.PathEscape(blockID), nil, nil, nil, opts...)
 }
 
 type WorkflowEdgesService struct {
@@ -624,12 +620,7 @@ func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, para
 			addQuery(query, "limit", strconv.Itoa(params.Limit))
 		}
 	}
-	var result PaginatedList[WorkflowEdgeDoc]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), query, nil, &result, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return doPaginated[WorkflowEdgeDoc](ctx, s.client, http.MethodGet, "/v1/workflows/edges?workflow_id="+url.QueryEscape(workflowID), query, nil, opts...)
 }
 
 func (s *WorkflowEdgesService) Get(ctx context.Context, edgeID string, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
@@ -637,7 +628,7 @@ func (s *WorkflowEdgesService) Get(ctx context.Context, edgeID string, opts ...R
 		return nil, fmt.Errorf("retab: edgeID is required")
 	}
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodGet, "/workflows/edges/"+url.PathEscape(edgeID), nil, nil, &edge, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/edges/"+url.PathEscape(edgeID), nil, nil, &edge, opts...)
 	return &edge, err
 }
 
@@ -648,7 +639,7 @@ func (s *WorkflowEdgesService) Create(ctx context.Context, workflowID string, re
 	body := resourceFromJSON(request)
 	body["workflow_id"] = workflowID
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodPost, "/workflows/edges", nil, body, &edge, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/edges", nil, body, &edge, opts...)
 	return &edge, err
 }
 
@@ -656,7 +647,7 @@ func (s *WorkflowEdgesService) Delete(ctx context.Context, edgeID string, opts .
 	if edgeID == "" {
 		return fmt.Errorf("retab: edgeID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/edges/"+url.PathEscape(edgeID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/workflows/edges/"+url.PathEscape(edgeID), nil, nil, nil, opts...)
 }
 
 type WorkflowRunsService struct {
@@ -691,7 +682,7 @@ func (s *WorkflowRunsService) Create(ctx context.Context, request CreateWorkflow
 		body["version"] = request.Version
 	}
 	var run WorkflowRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs", nil, body, &run, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/runs", nil, body, &run, opts...)
 	return &run, err
 }
 
@@ -784,7 +775,7 @@ func (s *WorkflowRunsService) Get(ctx context.Context, runID string, opts ...Req
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var run WorkflowRun
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID), nil, nil, &run, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(runID), nil, nil, &run, opts...)
 	return &run, err
 }
 
@@ -845,16 +836,14 @@ func (s *WorkflowRunsService) List(ctx context.Context, params *ListWorkflowRuns
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result PaginatedList[WorkflowRun]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[WorkflowRun](ctx, s.client, http.MethodGet, "/v1/workflows/runs", query, nil, opts...)
 }
 
 func (s *WorkflowRunsService) Delete(ctx context.Context, runID string, opts ...RequestOption) error {
 	if runID == "" {
 		return fmt.Errorf("retab: runID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/runs/"+url.PathEscape(runID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/workflows/runs/"+url.PathEscape(runID), nil, nil, nil, opts...)
 }
 
 type WorkflowRunCommandRequest struct {
@@ -871,7 +860,7 @@ func (s *WorkflowRunsService) Cancel(ctx context.Context, runID string, request 
 		body["command_id"] = request.CommandID
 	}
 	var result CancelWorkflowResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/"+url.PathEscape(runID)+"/cancel", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/runs/"+url.PathEscape(runID)+"/cancel", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -888,7 +877,7 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 		body["command_id"] = request.CommandID
 	}
 	var run WorkflowRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs", nil, body, &run, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/runs", nil, body, &run, opts...)
 	return &run, err
 }
 
@@ -969,7 +958,7 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 		body["quote"] = request.Quote
 	}
 	var result WorkflowRunExportResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/runs/export", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1003,12 +992,7 @@ func (s *WorkflowStepsService) List(ctx context.Context, runID string, params *L
 			addQuery(query, "limit", strconv.Itoa(params.Limit))
 		}
 	}
-	var result PaginatedList[WorkflowRunStep]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/steps?run_id="+url.QueryEscape(runID), query, nil, &result, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return doPaginated[WorkflowRunStep](ctx, s.client, http.MethodGet, "/v1/workflows/steps?run_id="+url.QueryEscape(runID), query, nil, opts...)
 }
 
 func (s *WorkflowStepsService) Get(ctx context.Context, stepID string, opts ...RequestOption) (*WorkflowRunStep, error) {
@@ -1016,7 +1000,7 @@ func (s *WorkflowStepsService) Get(ctx context.Context, stepID string, opts ...R
 		return nil, fmt.Errorf("retab: stepID is required")
 	}
 	var step WorkflowRunStep
-	err := s.client.do(ctx, http.MethodGet, "/workflows/steps/"+url.PathEscape(stepID), nil, nil, &step, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/steps/"+url.PathEscape(stepID), nil, nil, &step, opts...)
 	return &step, err
 }
 
@@ -1075,12 +1059,7 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result PaginatedList[Review]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews", query, nil, &result, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return doPaginated[Review](ctx, s.client, http.MethodGet, "/v1/workflows/reviews", query, nil, opts...)
 }
 
 // Get returns the full review by id.
@@ -1118,12 +1097,7 @@ func (s *WorkflowReviewVersionsService) List(ctx context.Context, params *ListRe
 	if params.Limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", params.Limit))
 	}
-	var result PaginatedList[ReviewVersion]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews/versions", query, nil, &result, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return doPaginated[ReviewVersion](ctx, s.client, http.MethodGet, "/v1/workflows/reviews/versions", query, nil, opts...)
 }
 
 // Get returns one immutable review version by id.
@@ -1132,7 +1106,7 @@ func (s *WorkflowReviewVersionsService) Get(ctx context.Context, versionID strin
 		return nil, fmt.Errorf("retab: versionID is required")
 	}
 	var version ReviewVersion
-	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews/versions/"+url.PathEscape(versionID), nil, nil, &version, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/reviews/versions/"+url.PathEscape(versionID), nil, nil, &version, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1167,7 +1141,7 @@ func (s *WorkflowReviewVersionsService) Create(ctx context.Context, request Crea
 		body["note"] = request.Note
 	}
 	var version ReviewVersion
-	err := s.client.do(ctx, http.MethodPost, "/workflows/reviews/versions", nil, body, &version, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/reviews/versions", nil, body, &version, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1230,7 +1204,7 @@ func (s *WorkflowReviewsService) submitDecision(ctx context.Context, reviewID st
 }
 
 func reviewPath(reviewID string) string {
-	return "/workflows/reviews/" + url.PathEscape(reviewID)
+	return "/v1/workflows/reviews/" + url.PathEscape(reviewID)
 }
 
 type WorkflowTestsService struct {
@@ -1351,7 +1325,7 @@ func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestC
 	delete(body, "WorkflowID")
 	body["workflow_id"] = request.WorkflowID
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPost, "/workflows/tests", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/tests", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1360,7 +1334,7 @@ func (s *WorkflowTestsService) Get(ctx context.Context, testID string, opts ...R
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1375,9 +1349,7 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	}
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	addQuery(query, "target_block_id", request.TargetBlockID)
-	var result PaginatedList[WorkflowTest]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests?workflow_id="+url.QueryEscape(request.WorkflowID), query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[WorkflowTest](ctx, s.client, http.MethodGet, "/v1/workflows/tests?workflow_id="+url.QueryEscape(request.WorkflowID), query, nil, opts...)
 }
 
 func (s *WorkflowTestsService) Update(ctx context.Context, testID string, request UpdateWorkflowTestRequest, opts ...RequestOption) (*WorkflowTest, error) {
@@ -1385,7 +1357,7 @@ func (s *WorkflowTestsService) Update(ctx context.Context, testID string, reques
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/tests/"+url.PathEscape(testID), nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/v1/workflows/tests/"+url.PathEscape(testID), nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -1393,7 +1365,7 @@ func (s *WorkflowTestsService) Delete(ctx context.Context, testID string, opts .
 	if testID == "" {
 		return fmt.Errorf("retab: testID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/workflows/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
 }
 
 func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWorkflowTestRunRequest, opts ...RequestOption) (*WorkflowTestRun, error) {
@@ -1404,7 +1376,7 @@ func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWork
 	delete(body, "WorkflowID")
 	body["workflow_id"] = request.WorkflowID
 	var result WorkflowTestRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/tests/runs", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1436,9 +1408,7 @@ func (s *WorkflowTestRunsService) List(ctx context.Context, request ListWorkflow
 	addQuery(query, "before", request.Before)
 	addQuery(query, "after", request.After)
 	addQuery(query, "order", request.Order)
-	var result PaginatedList[WorkflowTestRun]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[WorkflowTestRun](ctx, s.client, http.MethodGet, "/v1/workflows/tests/runs", query, nil, opts...)
 }
 
 func (s *WorkflowTestRunsService) Get(ctx context.Context, runID string, opts ...RequestOption) (*WorkflowTestRun, error) {
@@ -1446,7 +1416,7 @@ func (s *WorkflowTestRunsService) Get(ctx context.Context, runID string, opts ..
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result WorkflowTestRun
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/tests/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1455,7 +1425,7 @@ func (s *WorkflowTestRunsService) Cancel(ctx context.Context, runID string, opts
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result WorkflowTestRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/tests/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
 	return &result, err
 }
 
@@ -1465,9 +1435,7 @@ func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, 
 	}
 	query := url.Values{}
 	query.Set("run_id", runID)
-	var result PaginatedList[WorkflowTestResult]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[WorkflowTestResult](ctx, s.client, http.MethodGet, "/v1/workflows/tests/results", query, nil, opts...)
 }
 
 func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*WorkflowTestResult, error) {
@@ -1475,7 +1443,7 @@ func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string
 		return nil, fmt.Errorf("retab: resultID is required")
 	}
 	var result WorkflowTestResult
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/tests/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1722,7 +1690,7 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 	}
 	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/experiments",
+		"/v1/workflows/experiments",
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1736,9 +1704,7 @@ func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	var result PaginatedList[WorkflowExperiment]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
-	return &result, err
+	return doPaginated[WorkflowExperiment](ctx, s.client, http.MethodGet, "/v1/workflows/experiments?workflow_id="+url.QueryEscape(workflowID), nil, nil, opts...)
 }
 
 // Get fetches one experiment by ID.
@@ -1748,7 +1714,7 @@ func (s *WorkflowExperimentsService) Get(ctx context.Context, experimentID strin
 	}
 	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/experiments/"+url.PathEscape(experimentID),
+		"/v1/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, nil, &result, opts...)
 	return &result, err
 }
@@ -1773,7 +1739,7 @@ func (s *WorkflowExperimentsService) Update(ctx context.Context, experimentID st
 	}
 	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodPatch,
-		"/workflows/experiments/"+url.PathEscape(experimentID),
+		"/v1/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1784,7 +1750,7 @@ func (s *WorkflowExperimentsService) Delete(ctx context.Context, experimentID st
 		return fmt.Errorf("retab: experimentID is required")
 	}
 	return s.client.do(ctx, http.MethodDelete,
-		"/workflows/experiments/"+url.PathEscape(experimentID),
+		"/v1/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, nil, nil, opts...)
 }
 
@@ -1802,7 +1768,7 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 	}
 	var result ExperimentRun
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/experiments/runs",
+		"/v1/workflows/experiments/runs",
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1832,9 +1798,7 @@ func (s *WorkflowExperimentRunsService) List(ctx context.Context, params *ListEx
 		addQuery(query, "order", params.Order)
 	}
 	query.Set("limit", fmt.Sprintf("%d", limit))
-	var result PaginatedList[ExperimentRun]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[ExperimentRun](ctx, s.client, http.MethodGet, "/v1/workflows/experiments/runs", query, nil, opts...)
 }
 
 func (s *WorkflowExperimentRunsService) Get(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRun, error) {
@@ -1842,7 +1806,7 @@ func (s *WorkflowExperimentRunsService) Get(ctx context.Context, runID string, o
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result ExperimentRun
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/experiments/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1851,7 +1815,7 @@ func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result CancelWorkflowExperimentRunResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/workflows/experiments/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
 	return &result, err
 }
 
@@ -1865,9 +1829,7 @@ func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID st
 	query := url.Values{}
 	query.Set("run_id", runID)
 	query.Set("limit", fmt.Sprintf("%d", limit))
-	var result PaginatedList[ExperimentResult]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/results", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[ExperimentResult](ctx, s.client, http.MethodGet, "/v1/workflows/experiments/results", query, nil, opts...)
 }
 
 func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*ExperimentResult, error) {
@@ -1875,7 +1837,7 @@ func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, resultID 
 		return nil, fmt.Errorf("retab: resultID is required")
 	}
 	var result ExperimentResult
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/experiments/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1902,6 +1864,6 @@ func (s *WorkflowExperimentRunMetricsService) Get(ctx context.Context, runID str
 	query.Set("view", view)
 	query.Set("include_prior", fmt.Sprintf("%t", includePrior))
 	var result ExperimentMetricsResponse
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/metrics", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/workflows/experiments/metrics", query, nil, &result, opts...)
 	return result, err
 }

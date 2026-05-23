@@ -767,13 +767,10 @@ export const ZListMetadata = z.lazy(() =>
 );
 export type ListMetadata = z.infer<typeof ZListMetadata>;
 
-export const ZPaginatedList = z.lazy(() =>
-  z.object({
-    data: z.array(z.any()),
-    list_metadata: ZListMetadata,
-  })
-);
-export type PaginatedList = z.infer<typeof ZPaginatedList>;
+// `ZPaginatedList` was removed: the item type was erased to `z.any()`, which
+// hid every paginated route's row shape from callers. Resource clients now
+// use the typed `PaginatedList<T>` class from `api/_pagination.ts`, which is
+// constructed by `_fetchPage(itemSchema, opts)` on the base client.
 
 export const ZExtractionSettings = z.lazy(() =>
   ZInferenceSettings.schema.merge(

@@ -1,0 +1,38 @@
+# @oagen-ignore-file
+#
+# Hand-maintained crate manifest. The generator emits this on first run and
+# then leaves it alone; spec changes do not touch it. Add new crate-level
+# dependencies here as needed.
+
+[package]
+name = "retab"
+version = "0.0.2"
+edition = "2021"
+description = "Retab official Rust library"
+authors = ["Retab <contact@retab.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/retab-dev/retab"
+homepage = "https://retab.com"
+documentation = "https://docs.rs/retab"
+keywords = ["retab", "sdk", "api", "ocr", "extraction"]
+categories = ["api-bindings", "web-programming::http-client"]
+rust-version = "1.75"
+
+[dependencies]
+http = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_urlencoded = "0.7"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+url = "2"
+base64 = "0.22"
+mime_guess = "2"
+infer = "0.16"
+futures-util = "0.3"
+percent-encoding = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }

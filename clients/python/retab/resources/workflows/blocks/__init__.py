@@ -1,7 +1,7 @@
 from typing import Any, Dict, cast
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ....types.pagination import PaginatedList
+from ....types.pagination import AsyncPaginatedList, PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows import (
     WorkflowBlock,
@@ -31,14 +31,14 @@ class WorkflowBlocksMixin:
             params["after"] = after
         if limit is not None:
             params["limit"] = limit
-        return PreparedRequest(method="GET", url="/workflows/blocks", params=params or None)
+        return PreparedRequest(method="GET", url="/v1/workflows/blocks", params=params or None)
 
     def prepare_get(self, block_id: str, workflow_id: str | None = None) -> PreparedRequest:
         """Prepare a request to get a single block."""
         params: Dict[str, Any] = {}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
-        return PreparedRequest(method="GET", url=f"/workflows/blocks/{block_id}", params=params or None)
+        return PreparedRequest(method="GET", url=f"/v1/workflows/blocks/{block_id}", params=params or None)
 
     def prepare_create(
         self,
@@ -76,7 +76,7 @@ class WorkflowBlocksMixin:
             )
         data = request.model_dump(exclude_none=True)
         data["workflow_id"] = workflow_id
-        return PreparedRequest(method="POST", url="/workflows/blocks", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/blocks", data=data)
 
     def prepare_update(
         self,
@@ -116,7 +116,7 @@ class WorkflowBlocksMixin:
             params["workflow_id"] = workflow_id
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/blocks/{block_id}",
+            url=f"/v1/workflows/blocks/{block_id}",
             data=data,
             params=params or None,
         )
@@ -126,7 +126,7 @@ class WorkflowBlocksMixin:
         params: Dict[str, Any] = {}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
-        return PreparedRequest(method="DELETE", url=f"/workflows/blocks/{block_id}", params=params or None)
+        return PreparedRequest(method="DELETE", url=f"/v1/workflows/blocks/{block_id}", params=params or None)
 
 
 class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
@@ -202,10 +202,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
     ) -> PaginatedList[WorkflowBlock]:
         """List all blocks for a workflow."""
         request = self.prepare_list(workflow_id, before=before, after=after, limit=limit)
-        response = self._client._prepared_request(request)
-        result = PaginatedList[WorkflowBlock](**response)
-        result.data = [WorkflowBlock.model_validate(item) for item in result.data]
-        return result
+        return self.request_page(request, model=WorkflowBlock)
 
     def get(self, block_id: str, workflow_id: str | None = None) -> WorkflowBlock:
         """Get a single block by ID."""
@@ -302,13 +299,10 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = None,
-    ) -> PaginatedList[WorkflowBlock]:
+    ) -> AsyncPaginatedList[WorkflowBlock]:
         """List all blocks for a workflow."""
         request = self.prepare_list(workflow_id, before=before, after=after, limit=limit)
-        response = await self._client._prepared_request(request)
-        result = PaginatedList[WorkflowBlock](**response)
-        result.data = [WorkflowBlock.model_validate(item) for item in result.data]
-        return result
+        return await self.request_page(request, model=WorkflowBlock)
 
     async def get(self, block_id: str, workflow_id: str | None = None) -> WorkflowBlock:
         """Get a single block by ID."""

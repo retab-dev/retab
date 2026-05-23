@@ -4,6 +4,7 @@ import io
 import mimetypes
 from pathlib import Path
 from typing import Sequence, TypeVar, get_args
+from urllib.parse import unquote_to_bytes
 
 import httpx
 import PIL.Image
@@ -130,6 +131,44 @@ def _passthrough_https_url(url: str) -> MIMEData:
     return MIMEData(filename=filename, url=url)
 
 
+def _build_mime_data_from_data_url(data_url: str) -> MIMEData:
+    """Decode an RFC 2397 ``data:`` URL into a MIMEData.
+
+    Grammar: ``data:[<mediatype>][;base64],<data>``. The default media type
+    when omitted is ``text/plain;charset=US-ASCII``. We split manually on the
+    first ``,`` to stay transparent (urllib.urlopen would also handle this,
+    but at the cost of an opaque dependency). Media-type parameters such as
+    ``;charset=...`` are preserved in the rebuilt data URL so MIMEData's
+    ``mime_type`` property still returns just the bare type.
+    """
+    # Strip the "data:" prefix, then split header from payload on the first comma.
+    header, _, payload = data_url[len("data:") :].partition(",")
+
+    # Detect and strip the ;base64 marker (case-insensitive, last parameter per RFC).
+    is_base64 = False
+    if header.lower().endswith(";base64"):
+        is_base64 = True
+        header = header[: -len(";base64")]
+
+    mediatype = header or "text/plain;charset=US-ASCII"
+
+    if is_base64:
+        # Tolerate whitespace that some emitters add to long base64 blobs.
+        file_bytes = base64.b64decode(payload, validate=False)
+    else:
+        file_bytes = unquote_to_bytes(payload)
+
+    encoded_content = base64.b64encode(file_bytes).decode("utf-8")
+    content_hash = hashlib.sha256(encoded_content.encode("utf-8")).hexdigest()
+
+    # Derive a filename from the bare mime type so MIMEData.extension stays sensible.
+    bare_mime_type = mediatype.split(";", 1)[0]
+    extension = mimetypes.guess_extension(bare_mime_type) or ".bin"
+    filename = f"inline_{content_hash[:16]}{extension}"
+
+    return MIMEData(filename=filename, url=f"data:{mediatype};base64,{encoded_content}")
+
+
 def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> MIMEData:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
@@ -147,6 +186,12 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
     if isinstance(document, MIMEData):
         return document
+
+    if isinstance(document, str) and document.startswith("data:"):
+        # RFC 2397 data URL: parse the mime type + (optional) ;base64 + payload.
+        # Return a MIMEData directly so callers can pass small inline payloads
+        # without writing them to disk first.
+        return _build_mime_data_from_data_url(document)
 
     if _is_https_url_string(document):
         return _passthrough_https_url(document)  # type: ignore[arg-type]
