@@ -717,12 +717,7 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 func init() {
 	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id (mutually exclusive with --after)")
 	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id (mutually exclusive with --before)")
-	// Mutual exclusion of --before / --after is enforced by an explicit
-	// `validateBeforeAfterMutex` call inside the RunE body. Cobra's
-	// `MarkFlagsMutuallyExclusive` was intentionally removed: it fires
-	// before RunE with the noisy default message ("if any flags in the
-	// group [before after] are set none of the others can be ..."), which
-	// hides our concise handwritten message.
+	workflowsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")

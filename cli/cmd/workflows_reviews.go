@@ -813,7 +813,8 @@ func init() {
 	workflowsReviewsVersionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 	workflowsReviewsVersionsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
 	workflowsReviewsVersionsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
-	workflowsReviewsVersionsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 
 	workflowsReviewsVersionsCreateCmd.Flags().String("parent-id", "", "rvr_<26-char base32> parent version id for the new version (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
