@@ -1,3 +1,3 @@
 module github.com/retab-dev/retab/clients/go
 
-go 1.22
+go 1.23

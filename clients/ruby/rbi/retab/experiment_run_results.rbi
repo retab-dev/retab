@@ -14,7 +14,7 @@ module Retab
         run_id: String,
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::ExperimentResult])
     end
     def list(run_id:, limit:, request_options:); end
 

@@ -28,7 +28,7 @@ module Retab
         order: T.nilable(String),
         sort_by: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::WorkflowRun])
     end
     def list(workflow_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, min_duration_ms:, max_duration_ms:, search:, before:, after:, limit:, order:, sort_by:, request_options:); end
 

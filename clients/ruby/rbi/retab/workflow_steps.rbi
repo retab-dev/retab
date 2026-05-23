@@ -21,7 +21,7 @@ module Retab
         after: T.nilable(String),
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::WorkflowRunStep])
     end
     def list(run_id:, block_id:, block_ids:, step_id:, block_type:, status:, before:, after:, limit:, request_options:); end
 
