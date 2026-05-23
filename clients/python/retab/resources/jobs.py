@@ -11,7 +11,7 @@ from typing import Any, Sequence
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.jobs import Job, JobListOrder, JobListSource, JobStatus, SupportedEndpoint
-from ..types.pagination import PaginatedList
+from ..types.pagination import AsyncPaginatedList, PaginatedList
 from ..types.standards import PreparedRequest
 
 TERMINAL_JOB_STATUSES: tuple[JobStatus, ...] = ("completed", "failed", "cancelled", "expired")
@@ -32,10 +32,10 @@ class BaseJobsMixin:
         }
         if metadata is not None:
             data["metadata"] = metadata
-        return PreparedRequest(method="POST", url="/jobs", data=data)
+        return PreparedRequest(method="POST", url="/v1/jobs", data=data)
 
     def _prepare_retrieve(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/jobs/{job_id}")
+        return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}")
 
     def _prepare_retrieve_with_options(
         self,
@@ -48,13 +48,13 @@ class BaseJobsMixin:
             params["include_request"] = include_request
         if include_response is not None:
             params["include_response"] = include_response
-        return PreparedRequest(method="GET", url=f"/jobs/{job_id}", params=params or None)
+        return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}", params=params or None)
 
     def _prepare_cancel(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/jobs/{job_id}/cancel")
+        return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/cancel")
 
     def _prepare_retry(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/jobs/{job_id}/retry")
+        return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/retry")
 
     def _prepare_list(
         self,
@@ -118,7 +118,7 @@ class BaseJobsMixin:
             params["include_request"] = include_request
         if include_response is not None:
             params["include_response"] = include_response
-        return PreparedRequest(method="GET", url="/jobs", params=params)
+        return PreparedRequest(method="GET", url="/v1/jobs", params=params)
 
 
 class Jobs(SyncAPIResource, BaseJobsMixin):
@@ -333,8 +333,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             include_request=include_request,
             include_response=include_response,
         )
-        response = self._client._prepared_request(prepared)
-        return PaginatedList[Job].model_validate(response)
+        return self.request_page(prepared, model=Job)
 
 
 class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
@@ -498,7 +497,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         metadata: dict[str, str] | None = None,
         include_request: bool | None = None,
         include_response: bool | None = None,
-    ) -> PaginatedList[Job]:
+    ) -> AsyncPaginatedList[Job]:
         """
         List jobs with pagination and optional filtering.
 
@@ -549,5 +548,4 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             include_request=include_request,
             include_response=include_response,
         )
-        response = await self._client._prepared_request(prepared)
-        return PaginatedList[Job].model_validate(response)
+        return await self.request_page(prepared, model=Job)

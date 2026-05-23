@@ -15,18 +15,18 @@ class WorkflowSpecMixin:
 
     def prepare_validate(self, yaml_definition: str) -> PreparedRequest:
         data: Dict[str, Any] = {"yaml_definition": yaml_definition}
-        return PreparedRequest(method="POST", url="/workflows/spec/validate", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/spec/validate", data=data)
 
     def prepare_plan(self, yaml_definition: str) -> PreparedRequest:
         data: Dict[str, Any] = {"yaml_definition": yaml_definition}
-        return PreparedRequest(method="POST", url="/workflows/spec/plan", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/spec/plan", data=data)
 
     def prepare_apply(self, yaml_definition: str) -> PreparedRequest:
         data: Dict[str, Any] = {"yaml_definition": yaml_definition}
-        return PreparedRequest(method="POST", url="/workflows/spec/apply", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/spec/apply", data=data)
 
     def prepare_export(self, workflow_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/spec")
+        return PreparedRequest(method="GET", url=f"/v1/workflows/{workflow_id}/spec")
 
 
 class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):

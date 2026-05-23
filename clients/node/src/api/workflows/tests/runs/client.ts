@@ -1,13 +1,10 @@
 import { CompositionClient, RequestOptions } from '../../../../client.js';
+import { PaginatedList } from '../../../_pagination.js';
 import {
   WorkflowTestBlockTarget,
   WorkflowTestResult,
-  WorkflowTestResultListResponse,
-  WorkflowTestRunListResponse,
   WorkflowTestRun,
   ZWorkflowTestResult,
-  ZWorkflowTestResultListResponse,
-  ZWorkflowTestRunListResponse,
   ZWorkflowTestRun,
 } from '../types.js';
 
@@ -96,7 +93,7 @@ export default class APIWorkflowTestRuns extends CompositionClient {
       order?: string;
     },
     options?: RequestOptions
-  ): Promise<WorkflowTestRunListResponse> {
+  ): Promise<PaginatedList<WorkflowTestRun>> {
     const params = Object.fromEntries(
       Object.entries({
         workflow_id: workflowId,
@@ -117,7 +114,7 @@ export default class APIWorkflowTestRuns extends CompositionClient {
         order,
       }).filter(([, value]) => value !== undefined)
     );
-    return this._fetchJson(ZWorkflowTestRunListResponse, {
+    return this._fetchPage(ZWorkflowTestRun, {
       url: '/workflows/tests/runs',
       method: 'GET',
       params: { ...params, ...(options?.params || {}) },
@@ -170,8 +167,8 @@ export class APIWorkflowTestRunResults extends CompositionClient {
   async list(
     { runId, limit = 20 }: { runId: string; limit?: number },
     options?: RequestOptions
-  ): Promise<WorkflowTestResultListResponse> {
-    return this._fetchJson(ZWorkflowTestResultListResponse, {
+  ): Promise<PaginatedList<WorkflowTestResult>> {
+    return this._fetchPage(ZWorkflowTestResult, {
       url: '/workflows/tests/results',
       method: 'GET',
       params: { run_id: runId, limit, ...(options?.params || {}) },

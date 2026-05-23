@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ....types.pagination import PaginatedList
+from ....types.pagination import AsyncPaginatedList, PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.blocks.executions import StoredBlockExecution
 
@@ -26,7 +26,7 @@ class WorkflowBlockExecutionsMixin:
             data["step_id"] = step_id
         if n_consensus is not None:
             data["n_consensus"] = n_consensus
-        return PreparedRequest(method="POST", url="/workflows/blocks/executions", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/blocks/executions", data=data)
 
     def prepare_list(
         self,
@@ -38,7 +38,7 @@ class WorkflowBlockExecutionsMixin:
         """Prepare a request to list block executions for a run/block pair."""
         return PreparedRequest(
             method="GET",
-            url="/workflows/blocks/executions",
+            url="/v1/workflows/blocks/executions",
             params={
                 "run_id": run_id,
                 "block_id": block_id,
@@ -77,10 +77,7 @@ class WorkflowBlockExecutions(SyncAPIResource, WorkflowBlockExecutionsMixin):
     ) -> PaginatedList[StoredBlockExecution]:
         """List block executions for a run/block pair."""
         request = self.prepare_list(run_id=run_id, block_id=block_id, limit=limit)
-        response = self._client._prepared_request(request)
-        result = PaginatedList[StoredBlockExecution](**response)
-        result.data = [StoredBlockExecution.model_validate(item) for item in result.data]
-        return result
+        return self.request_page(request, model=StoredBlockExecution)
 
 
 class AsyncWorkflowBlockExecutions(AsyncAPIResource, WorkflowBlockExecutionsMixin):
@@ -110,10 +107,7 @@ class AsyncWorkflowBlockExecutions(AsyncAPIResource, WorkflowBlockExecutionsMixi
         run_id: str,
         block_id: str,
         limit: int = 20,
-    ) -> PaginatedList[StoredBlockExecution]:
+    ) -> AsyncPaginatedList[StoredBlockExecution]:
         """List block executions for a run/block pair."""
         request = self.prepare_list(run_id=run_id, block_id=block_id, limit=limit)
-        response = await self._client._prepared_request(request)
-        result = PaginatedList[StoredBlockExecution](**response)
-        result.data = [StoredBlockExecution.model_validate(item) for item in result.data]
-        return result
+        return await self.request_page(request, model=StoredBlockExecution)

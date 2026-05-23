@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="smoke">
+            <file>tests/MimeSmokeTest.php</file>
+        </testsuite>
+        <testsuite name="generated">
+            <directory>tests/Service</directory>
+            <file>tests/ClientTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

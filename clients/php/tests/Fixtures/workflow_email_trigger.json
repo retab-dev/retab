@@ -1,0 +1,8 @@
+{
+  "allowed_senders": [
+    "test_allowed_senders"
+  ],
+  "allowed_domains": [
+    "test_allowed_domains"
+  ]
+}

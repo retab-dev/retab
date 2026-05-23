@@ -10,7 +10,7 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.mime import MIMEData
-from ..types.pagination import PaginatedList, PaginationOrder
+from ..types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ..types.splits import Split, SplitRequest, Subdocument
 from ..types.standards import UNSET, PreparedRequest, _Unset
 from ..utils.mime import prepare_mime_document
@@ -44,12 +44,12 @@ class SplitsMixin:
         split_request = SplitRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/splits",
+            url="/v1/splits",
             data=split_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, split_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/splits/{split_id}")
+        return PreparedRequest(method="GET", url=f"/v1/splits/{split_id}")
 
     def _prepare_list(
         self,
@@ -71,10 +71,10 @@ class SplitsMixin:
             "to_date": to_date.isoformat() if to_date else None,
         }
         params = {key: value for key, value in params.items() if value is not None}
-        return PreparedRequest(method="GET", url="/splits", params=params)
+        return PreparedRequest(method="GET", url="/v1/splits", params=params)
 
     def _prepare_delete(self, split_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/splits/{split_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/splits/{split_id}")
 
 
 class Splits(SyncAPIResource, SplitsMixin):
@@ -112,7 +112,7 @@ class Splits(SyncAPIResource, SplitsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Split]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -122,22 +122,7 @@ class Splits(SyncAPIResource, SplitsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after_cursor: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after_cursor,
-                limit=limit,
-                order=order,
-                filename=filename,
-                from_date=from_date,
-                to_date=to_date,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Split)
 
     def delete(self, split_id: str) -> None:
         request = self._prepare_delete(split_id)
@@ -179,7 +164,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Split]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -189,8 +174,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Split)
 
     async def delete(self, split_id: str) -> None:
         request = self._prepare_delete(split_id)

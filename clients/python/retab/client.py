@@ -61,7 +61,7 @@ class BaseRetab:
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
-        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com/v1
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
         timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
@@ -87,11 +87,30 @@ class BaseRetab:
             )
 
         if base_url is None:
-            base_url = os.environ.get("RETAB_API_BASE_URL", "https://api.retab.com/v1")
+            base_url = os.environ.get("RETAB_API_BASE_URL", "https://api.retab.com")
 
         truststore.inject_into_ssl()
         self.api_key = api_key
-        self.base_url = base_url.rstrip("/")
+        normalized = base_url.rstrip("/")
+        # Back-compat: older SDKs baked /v<N> into the base URL and stripped
+        # it from per-operation paths. The current SDK keeps /v<N> in the
+        # path, so a base URL ending in /v<N> would produce /v1/v1/... .
+        # Trim the trailing version segment and emit a one-time warning so
+        # operators with RETAB_API_BASE_URL=https://api.retab.com/v1 notice.
+        import re as _re
+
+        trimmed = _re.sub(r"/v\d+$", "", normalized)
+        if trimmed != normalized:
+            import warnings as _warnings
+
+            _warnings.warn(
+                f"Retab base_url {base_url!r} ends with a version segment; "
+                "the SDK now keeps /v<N> in the path. Using "
+                f"{trimmed!r} instead. Update your config to drop the trailing /v<N>.",
+                stacklevel=2,
+            )
+            normalized = trimmed
+        self.base_url = normalized
         self.timeout = timeout
         self.max_retries = max_retries
         self.headers = {
@@ -186,7 +205,7 @@ class Retab(BaseRetab):
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
-        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com/v1
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
         timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
 
@@ -454,7 +473,7 @@ class AsyncRetab(BaseRetab):
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
-        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com/v1
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
         timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
 

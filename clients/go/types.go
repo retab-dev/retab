@@ -1,17 +1,29 @@
 package retab
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"time"
 )
 
 // PaginatedList is the common Retab pagination envelope.
+//
+// Auto-pagination is opt-in: list methods on the SDK populate the unexported
+// fetchNext closure so callers can walk every page without manually copying
+// the After cursor. PaginatedList values built by hand or by direct
+// json.Unmarshal still iterate correctly via AutoPaging — they just stop at
+// the current page because fetchNext is nil.
 type PaginatedList[T any] struct {
 	Data         []T              `json:"data"`
 	ListMetadata PaginationCursor `json:"list_metadata"`
 	HasMore      bool             `json:"has_more,omitempty"`
 	Total        int              `json:"total,omitempty"`
+
+	// fetchNext is set by the list helpers in client.go and re-issues the
+	// originating request with the After cursor advanced. Zero-value means
+	// "no next page available from this PaginatedList" — AutoPaging only
+	// iterates Data, and NextPage returns (nil, nil).
+	fetchNext func(ctx context.Context, after string) (*PaginatedList[T], error)
 }
 
 type PaginationCursor struct {
@@ -19,26 +31,66 @@ type PaginationCursor struct {
 	After  string `json:"after,omitempty"`
 }
 
-func (p *PaginatedList[T]) UnmarshalJSON(data []byte) error {
-	// Most list endpoints return the {data, list_metadata} envelope, but a
-	// few (e.g. GET /workflows/{id}/edges) return a bare JSON array with no
-	// pagination wrapper. Decode either shape: if the first non-whitespace
-	// byte is '[', unmarshal straight into Data and leave the pagination
-	// fields zero-valued; otherwise decode the envelope as usual.
-	//
-	// Without this, `retab workflows edges list` failed with
-	//   json: cannot unmarshal array into Go value of type retab.alias[...]
-	// because the generic `type alias PaginatedList[T]` is a struct and the
-	// wire payload was an array.
-	if trimmed := bytes.TrimLeft(data, " \t\r\n"); len(trimmed) > 0 && trimmed[0] == '[' {
-		if err := json.Unmarshal(data, &p.Data); err != nil {
+// HasNextPage reports whether the server returned an after cursor on this
+// page. It is the canonical truncation signal across every Retab list
+// endpoint — callers should branch on this rather than inspecting HasMore /
+// Total, which are not universally populated.
+func (p *PaginatedList[T]) HasNextPage() bool {
+	return p.ListMetadata.After != ""
+}
+
+// NextPage fetches the next page using the same parameters as the originating
+// request, with the After cursor advanced. Returns (nil, nil) when no further
+// pages are available — either because the server reported the last page
+// (After == "") or because this PaginatedList was constructed without a
+// fetchNext closure (e.g. unmarshalled directly from JSON).
+func (p *PaginatedList[T]) NextPage(ctx context.Context) (*PaginatedList[T], error) {
+	if p.fetchNext == nil || p.ListMetadata.After == "" {
+		return nil, nil
+	}
+	return p.fetchNext(ctx, p.ListMetadata.After)
+}
+
+// AutoPaging walks every item across every page, calling yield once per item.
+// Returning a non-nil error from yield short-circuits iteration and the same
+// error is returned verbatim — wrap it with errors.New / fmt.Errorf if you
+// want to distinguish "stop" from "real error" at the call site.
+//
+// The closure-based shape is intentionally Go-1.22-compatible. Once the SDK
+// moves to Go 1.23+ we can add a sibling method returning iter.Seq2[T, error]
+// without breaking this API.
+//
+// When fetchNext is nil (PaginatedList built by hand or decoded directly),
+// only the current page is iterated. When fetchNext is set, AutoPaging keeps
+// fetching pages until the server reports After == "" or a page fetch fails.
+func (p *PaginatedList[T]) AutoPaging(ctx context.Context, yield func(item T) error) error {
+	current := p
+	for {
+		for _, item := range current.Data {
+			if err := yield(item); err != nil {
+				return err
+			}
+		}
+		if current.fetchNext == nil || current.ListMetadata.After == "" {
+			return nil
+		}
+		next, err := current.fetchNext(ctx, current.ListMetadata.After)
+		if err != nil {
 			return err
 		}
-		if p.Data == nil {
-			p.Data = []T{}
+		if next == nil {
+			return nil
 		}
-		return nil
+		current = next
 	}
+}
+
+// UnmarshalJSON normalizes a nil `data` field to an empty slice so callers can
+// iterate `result.Data` without a nil check. Every list endpoint in the spec
+// returns the canonical {"data": [...], "list_metadata": {...}} envelope;
+// legacy bare-array responses (e.g. the old `GET /v1/workflows/{id}/edges`,
+// which moved to `/v1/workflows/edges` with a proper envelope) no longer exist.
+func (p *PaginatedList[T]) UnmarshalJSON(data []byte) error {
 	type alias PaginatedList[T]
 	aux := (*alias)(p)
 	if err := json.Unmarshal(data, aux); err != nil {

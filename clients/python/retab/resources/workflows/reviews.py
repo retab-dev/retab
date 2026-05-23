@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList
 from ...types.standards import PreparedRequest
 from ...types.workflows.reviews import (
     Review,
@@ -58,17 +58,17 @@ class WorkflowReviewsMixin:
             params["before"] = before
         if after is not None:
             params["after"] = after
-        return PreparedRequest(method="GET", url="/workflows/reviews", params=params)
+        return PreparedRequest(method="GET", url="/v1/workflows/reviews", params=params)
 
     def prepare_get(self, review_id: str) -> PreparedRequest:
         """Prepare a request to fetch one review."""
-        return PreparedRequest(method="GET", url=f"/workflows/reviews/{review_id}")
+        return PreparedRequest(method="GET", url=f"/v1/workflows/reviews/{review_id}")
 
     def prepare_approve(self, review_id: str, *, version_id: str) -> PreparedRequest:
         """Prepare a request to approve one version."""
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/reviews/{review_id}/approve",
+            url=f"/v1/workflows/reviews/{review_id}/approve",
             data={"version_id": version_id},
         )
 
@@ -76,7 +76,7 @@ class WorkflowReviewsMixin:
         """Prepare a request to reject one version."""
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/reviews/{review_id}/reject",
+            url=f"/v1/workflows/reviews/{review_id}/reject",
             data={"version_id": version_id, "reason": reason},
         )
 
@@ -104,7 +104,7 @@ class WorkflowReviewVersionsMixin:
             data["note"] = note
         return PreparedRequest(
             method="POST",
-            url="/workflows/reviews/versions",
+            url="/v1/workflows/reviews/versions",
             data=data,
         )
 
@@ -112,7 +112,7 @@ class WorkflowReviewVersionsMixin:
         """Prepare a request to fetch one review version."""
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/reviews/versions/{version_id}",
+            url=f"/v1/workflows/reviews/versions/{version_id}",
         )
 
     def prepare_list(
@@ -131,7 +131,7 @@ class WorkflowReviewVersionsMixin:
             params["after"] = after
         return PreparedRequest(
             method="GET",
-            url="/workflows/reviews/versions",
+            url="/v1/workflows/reviews/versions",
             params=params,
         )
 
@@ -275,8 +275,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             before=before,
             after=after,
         )
-        response = self._client._prepared_request(request)
-        return PaginatedList[Review].model_validate(response)
+        return self.request_page(request, model=Review)
 
     def get(self, review_id: str) -> Review:
         """Fetch the full review by id."""
@@ -315,7 +314,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         decision_status: ReviewDecisionStatus = "pending",
         before: str | None = None,
         after: str | None = None,
-    ) -> PaginatedList[Review]:
+    ) -> AsyncPaginatedList[Review]:
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
@@ -328,8 +327,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             before=before,
             after=after,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList[Review].model_validate(response)
+        return await self.request_page(request, model=Review)
 
     async def get(self, review_id: str) -> Review:
         """Fetch the full review by id."""

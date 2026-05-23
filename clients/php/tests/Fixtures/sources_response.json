@@ -1,0 +1,16 @@
+{
+  "object": "extraction.sources",
+  "extraction_id": "extraction_id_01234",
+  "document_type": "pdf",
+  "file": {
+    "id": "01234",
+    "filename": "Test",
+    "mime_type": "test_mime_type"
+  },
+  "extraction": {
+    "key": {}
+  },
+  "sources": {
+    "key": {}
+  }
+}

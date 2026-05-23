@@ -19,7 +19,7 @@ from .types.classifications import Classification
 from .types.partitions import Partition
 from .types.splits import Split
 from .types.mime import MIMEData
-from .types.pagination import PaginatedList
+from .types.pagination import AsyncPaginatedList, PaginatedList
 
 __all__ = [
     "Retab",
@@ -48,4 +48,5 @@ __all__ = [
     # Core types
     "MIMEData",
     "PaginatedList",
+    "AsyncPaginatedList",
 ]

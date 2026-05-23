@@ -34,7 +34,7 @@ func TestWorkflowSDKDesignContractMatchesOpenAPI(t *testing.T) {
 	}
 
 	for _, path := range extractSDKWorkflowRouteStrings(readSDKSource(t)) {
-		openAPIPath := "/v1" + path
+		openAPIPath := path
 		if _, ok := openAPI.Paths[openAPIPath]; !ok {
 			t.Fatalf("Go SDK route string %s is missing from OpenAPI contract", path)
 		}
@@ -44,7 +44,7 @@ func TestWorkflowSDKDesignContractMatchesOpenAPI(t *testing.T) {
 func TestSDKRouteStringsAreOpenAPIOrExplicitException(t *testing.T) {
 	openAPI := loadSDKOpenAPIContract(t)
 	for _, path := range extractSDKPublicRouteStrings(readSDKSource(t)) {
-		openAPIPath := "/v1" + path
+		openAPIPath := path
 		if _, ok := openAPI.Paths[openAPIPath]; ok {
 			continue
 		}
@@ -59,19 +59,19 @@ func TestWorkflowSDKUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 	source := readSDKSource(t)
 
 	for _, required := range []string{
-		`"/workflows/reviews"`,
-		`"/workflows/reviews/versions"`,
-		`"/workflows/blocks/executions"`,
-		`"/workflows/tests"`,
-		`"/workflows/tests/runs"`,
-		`"/workflows/tests/results"`,
+		`"/v1/workflows/reviews"`,
+		`"/v1/workflows/reviews/versions"`,
+		`"/v1/workflows/blocks/executions"`,
+		`"/v1/workflows/tests"`,
+		`"/v1/workflows/tests/runs"`,
+		`"/v1/workflows/tests/results"`,
 	} {
 		if !strings.Contains(source, required) {
 			t.Fatalf("Go SDK source is missing canonical route string %s", required)
 		}
 	}
 
-	nestedWorkflowRoute := regexp.MustCompile(`"/workflows/"\s*\+\s*url\.PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|block executions|tests)(?:/|")`)
+	nestedWorkflowRoute := regexp.MustCompile(`"/v1/workflows/"\s*\+\s*url\.PathEscape\([^)]*workflowID[^)]*\)\s*\+\s*"/(?:reviews|block executions|tests)(?:/|")`)
 	if match := nestedWorkflowRoute.FindString(source); match != "" {
 		t.Fatalf("Go SDK must use flat workflow routes for reviews/blocks/executions/tests, found nested route expression: %s", match)
 	}
@@ -101,26 +101,26 @@ func TestWorkflowSDKUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 
 func workflowSDKRouteContract() []apiRouteContract {
 	return []apiRouteContract{
-		{method: http.MethodGet, path: "/workflows/reviews"},
-		{method: http.MethodGet, path: "/workflows/reviews/{review_id}"},
-		{method: http.MethodPost, path: "/workflows/reviews/{review_id}/approve"},
-		{method: http.MethodPost, path: "/workflows/reviews/{review_id}/reject"},
-		{method: http.MethodGet, path: "/workflows/reviews/versions"},
-		{method: http.MethodPost, path: "/workflows/reviews/versions"},
-		{method: http.MethodGet, path: "/workflows/reviews/versions/{version_id}"},
-		{method: http.MethodPost, path: "/workflows/blocks/executions"},
-		{method: http.MethodGet, path: "/workflows/blocks/executions"},
-		{method: http.MethodPost, path: "/workflows/tests"},
-		{method: http.MethodGet, path: "/workflows/tests"},
-		{method: http.MethodGet, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodPatch, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodDelete, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodPost, path: "/workflows/tests/runs"},
-		{method: http.MethodGet, path: "/workflows/tests/runs"},
-		{method: http.MethodGet, path: "/workflows/tests/runs/{run_id}"},
-		{method: http.MethodPost, path: "/workflows/tests/runs/{run_id}/cancel"},
-		{method: http.MethodGet, path: "/workflows/tests/results"},
-		{method: http.MethodGet, path: "/workflows/tests/results/{result_id}"},
+		{method: http.MethodGet, path: "/v1/workflows/reviews"},
+		{method: http.MethodGet, path: "/v1/workflows/reviews/{review_id}"},
+		{method: http.MethodPost, path: "/v1/workflows/reviews/{review_id}/approve"},
+		{method: http.MethodPost, path: "/v1/workflows/reviews/{review_id}/reject"},
+		{method: http.MethodGet, path: "/v1/workflows/reviews/versions"},
+		{method: http.MethodPost, path: "/v1/workflows/reviews/versions"},
+		{method: http.MethodGet, path: "/v1/workflows/reviews/versions/{version_id}"},
+		{method: http.MethodPost, path: "/v1/workflows/blocks/executions"},
+		{method: http.MethodGet, path: "/v1/workflows/blocks/executions"},
+		{method: http.MethodPost, path: "/v1/workflows/tests"},
+		{method: http.MethodGet, path: "/v1/workflows/tests"},
+		{method: http.MethodGet, path: "/v1/workflows/tests/{test_id}"},
+		{method: http.MethodPatch, path: "/v1/workflows/tests/{test_id}"},
+		{method: http.MethodDelete, path: "/v1/workflows/tests/{test_id}"},
+		{method: http.MethodPost, path: "/v1/workflows/tests/runs"},
+		{method: http.MethodGet, path: "/v1/workflows/tests/runs"},
+		{method: http.MethodGet, path: "/v1/workflows/tests/runs/{run_id}"},
+		{method: http.MethodPost, path: "/v1/workflows/tests/runs/{run_id}/cancel"},
+		{method: http.MethodGet, path: "/v1/workflows/tests/results"},
+		{method: http.MethodGet, path: "/v1/workflows/tests/results/{result_id}"},
 	}
 }
 
@@ -142,7 +142,7 @@ func loadSDKOpenAPIContract(t *testing.T) openAPIContract {
 
 func assertSDKOpenAPIRoute(t *testing.T, contract openAPIContract, route apiRouteContract) {
 	t.Helper()
-	openAPIPath := "/v1" + route.path
+	openAPIPath := route.path
 	operations, ok := contract.Paths[openAPIPath]
 	if !ok {
 		t.Fatalf("OpenAPI contract is missing %s", openAPIPath)
@@ -224,29 +224,29 @@ func normalizeSDKPublicRouteString(path string) string {
 		prefix      string
 		placeholder string
 	}{
-		{prefix: "/classifications/", placeholder: "{classification_id}"},
-		{prefix: "/edits/templates/", placeholder: "{template_id}"},
-		{prefix: "/edits/", placeholder: "{edit_id}"},
-		{prefix: "/extractions/", placeholder: "{extraction_id}"},
-		{prefix: "/files/upload/", placeholder: "{file_id}/complete"},
-		{prefix: "/files/", placeholder: "{file_id}"},
-		{prefix: "/jobs/", placeholder: "{job_id}"},
-		{prefix: "/parses/", placeholder: "{parse_id}"},
-		{prefix: "/partitions/", placeholder: "{partition_id}"},
-		{prefix: "/splits/", placeholder: "{split_id}"},
-		{prefix: "/workflows/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/steps/", placeholder: "{step_id}"},
-		{prefix: "/workflows/reviews/", placeholder: "{review_id}"},
-		{prefix: "/workflows/reviews/versions/", placeholder: "{version_id}"},
-		{prefix: "/workflows/artifacts/", placeholder: "{artifact_id}"},
-		{prefix: "/workflows/blocks/", placeholder: "{block_id}"},
-		{prefix: "/workflows/edges/", placeholder: "{edge_id}"},
-		{prefix: "/workflows/tests/", placeholder: "{test_id}"},
-		{prefix: "/workflows/tests/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/tests/results/", placeholder: "{result_id}"},
-		{prefix: "/workflows/experiments/", placeholder: "{experiment_id}"},
-		{prefix: "/workflows/experiments/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/experiments/results/", placeholder: "{result_id}"},
+		{prefix: "/v1/classifications/", placeholder: "{classification_id}"},
+		{prefix: "/v1/edits/templates/", placeholder: "{template_id}"},
+		{prefix: "/v1/edits/", placeholder: "{edit_id}"},
+		{prefix: "/v1/extractions/", placeholder: "{extraction_id}"},
+		{prefix: "/v1/files/upload/", placeholder: "{file_id}/complete"},
+		{prefix: "/v1/files/", placeholder: "{file_id}"},
+		{prefix: "/v1/jobs/", placeholder: "{job_id}"},
+		{prefix: "/v1/parses/", placeholder: "{parse_id}"},
+		{prefix: "/v1/partitions/", placeholder: "{partition_id}"},
+		{prefix: "/v1/splits/", placeholder: "{split_id}"},
+		{prefix: "/v1/workflows/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/steps/", placeholder: "{step_id}"},
+		{prefix: "/v1/workflows/reviews/", placeholder: "{review_id}"},
+		{prefix: "/v1/workflows/reviews/versions/", placeholder: "{version_id}"},
+		{prefix: "/v1/workflows/artifacts/", placeholder: "{artifact_id}"},
+		{prefix: "/v1/workflows/blocks/", placeholder: "{block_id}"},
+		{prefix: "/v1/workflows/edges/", placeholder: "{edge_id}"},
+		{prefix: "/v1/workflows/tests/", placeholder: "{test_id}"},
+		{prefix: "/v1/workflows/tests/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/tests/results/", placeholder: "{result_id}"},
+		{prefix: "/v1/workflows/experiments/", placeholder: "{experiment_id}"},
+		{prefix: "/v1/workflows/experiments/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/experiments/results/", placeholder: "{result_id}"},
 	} {
 		if path == replacement.prefix {
 			return path + replacement.placeholder
@@ -267,19 +267,19 @@ func normalizeSDKWorkflowRouteString(path string) string {
 		prefix      string
 		placeholder string
 	}{
-		{prefix: "/workflows/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/steps/", placeholder: "{step_id}"},
-		{prefix: "/workflows/reviews/", placeholder: "{review_id}"},
-		{prefix: "/workflows/reviews/versions/", placeholder: "{version_id}"},
-		{prefix: "/workflows/artifacts/", placeholder: "{artifact_id}"},
-		{prefix: "/workflows/blocks/", placeholder: "{block_id}"},
-		{prefix: "/workflows/edges/", placeholder: "{edge_id}"},
-		{prefix: "/workflows/tests/", placeholder: "{test_id}"},
-		{prefix: "/workflows/tests/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/tests/results/", placeholder: "{result_id}"},
-		{prefix: "/workflows/experiments/", placeholder: "{experiment_id}"},
-		{prefix: "/workflows/experiments/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/experiments/results/", placeholder: "{result_id}"},
+		{prefix: "/v1/workflows/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/steps/", placeholder: "{step_id}"},
+		{prefix: "/v1/workflows/reviews/", placeholder: "{review_id}"},
+		{prefix: "/v1/workflows/reviews/versions/", placeholder: "{version_id}"},
+		{prefix: "/v1/workflows/artifacts/", placeholder: "{artifact_id}"},
+		{prefix: "/v1/workflows/blocks/", placeholder: "{block_id}"},
+		{prefix: "/v1/workflows/edges/", placeholder: "{edge_id}"},
+		{prefix: "/v1/workflows/tests/", placeholder: "{test_id}"},
+		{prefix: "/v1/workflows/tests/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/tests/results/", placeholder: "{result_id}"},
+		{prefix: "/v1/workflows/experiments/", placeholder: "{experiment_id}"},
+		{prefix: "/v1/workflows/experiments/runs/", placeholder: "{run_id}"},
+		{prefix: "/v1/workflows/experiments/results/", placeholder: "{result_id}"},
 	} {
 		if path == replacement.prefix {
 			return path + replacement.placeholder

@@ -1,0 +1,35 @@
+<!-- @oagen-ignore-file -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Retab</RootNamespace>
+    <AssemblyName>Retab</AssemblyName>
+    <PackageId>Retab</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Retab</Authors>
+    <Company>Retab</Company>
+    <Description>Official .NET (C#) SDK for the Retab API.</Description>
+    <PackageProjectUrl>https://retab.com</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/retab-dev/retab</RepositoryUrl>
+    <PackageTags>retab;document-extraction;ai;sdk</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: missing XML doc comments on every public member. Many generated
+         types intentionally have no spec description; downgrade to warning. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

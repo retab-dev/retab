@@ -1,8 +1,7 @@
 import z from 'zod';
 import { CompositionClient, RequestOptions } from '../../client.js';
+import { PaginatedList } from '../_pagination.js';
 import {
-  ZPaginatedList,
-  PaginatedList,
   ZMIMEData,
   MIMEDataInput,
   ZJSONSchema,
@@ -121,7 +120,7 @@ export default class APIExtractions extends CompositionClient {
       filename?: string;
     } = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<ExtractionV2>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -138,7 +137,7 @@ export default class APIExtractions extends CompositionClient {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZExtractionV2, {
       url: '/extractions',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

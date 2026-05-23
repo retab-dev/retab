@@ -1,0 +1,21 @@
+# @oagen-ignore-file
+# Hand-maintained PHPStan configuration. Generator never edits this file.
+
+parameters:
+    level: 6
+    paths:
+        - lib
+    excludePaths:
+        # Generated PHPUnit tests reference hand-maintained helpers and
+        # fixture JSON files; analyzing them under level 6 trips false
+        # positives on the loadFixture/createMockClient dynamic surface.
+        # Tests are exercised via PHPUnit; this file scopes static analysis
+        # to the public SDK surface in lib/.
+        - tests
+    ignoreErrors:
+        # The TestHelper trait is consumed by generated tests under tests/,
+        # which we intentionally exclude from analysis. Without that context
+        # PHPStan reports it as unused.
+        -
+            message: '#Trait Retab\\TestHelper is used zero times#'
+            path: lib/TestHelper.php

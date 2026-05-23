@@ -1,0 +1,1034 @@
+{
+  "version": 2,
+  "language": "php",
+  "generatedAt": "2026-05-23T05:07:29.257Z",
+  "files": [
+    "composer.json",
+    "lib/Client.php",
+    "lib/Resource/Actor.php",
+    "lib/Resource/ActorKind.php",
+    "lib/Resource/AllItemsMatchCondition.php",
+    "lib/Resource/AnyItemMatchesCondition.php",
+    "lib/Resource/ApiCallAttempt.php",
+    "lib/Resource/ApiCallInvocation.php",
+    "lib/Resource/ApiTrigger.php",
+    "lib/Resource/ApproveReviewRequest.php",
+    "lib/Resource/ArrayContainsCondition.php",
+    "lib/Resource/AssertionDriftStatus.php",
+    "lib/Resource/AssertionFailure.php",
+    "lib/Resource/AssertionOutcome.php",
+    "lib/Resource/AssertionResult.php",
+    "lib/Resource/AssertionSchemaDep.php",
+    "lib/Resource/AssertionSpec.php",
+    "lib/Resource/AwaitingReviewRun.php",
+    "lib/Resource/AwaitingReviewStepLifecycle.php",
+    "lib/Resource/BBox.php",
+    "lib/Resource/BetweenCondition.php",
+    "lib/Resource/BlockTestBatchExecutionCounts.php",
+    "lib/Resource/BlockTestLifecycleCounts.php",
+    "lib/Resource/BlockTestOutcomeCounts.php",
+    "lib/Resource/CancelWorkflowExperimentRunResponse.php",
+    "lib/Resource/CancelWorkflowRequest.php",
+    "lib/Resource/CancelWorkflowResponse.php",
+    "lib/Resource/CancelWorkflowResponseCancellationStatus.php",
+    "lib/Resource/CancelledStepLifecycle.php",
+    "lib/Resource/CancelledTerminal.php",
+    "lib/Resource/CancelledWorkflowExperimentResult.php",
+    "lib/Resource/CancelledWorkflowExperimentRun.php",
+    "lib/Resource/CancelledWorkflowTestRun.php",
+    "lib/Resource/Category.php",
+    "lib/Resource/Classification.php",
+    "lib/Resource/ClassificationConsensus.php",
+    "lib/Resource/ClassificationDecision.php",
+    "lib/Resource/ClassificationRequest.php",
+    "lib/Resource/ClassificationWorkflowArtifact.php",
+    "lib/Resource/CompleteFileUploadRequest.php",
+    "lib/Resource/CompletedBlockExecutionLifecycle.php",
+    "lib/Resource/CompletedStepLifecycle.php",
+    "lib/Resource/CompletedTerminal.php",
+    "lib/Resource/CompletedWorkflowExperimentResult.php",
+    "lib/Resource/CompletedWorkflowExperimentRun.php",
+    "lib/Resource/CompletedWorkflowTestRun.php",
+    "lib/Resource/ConditionEvaluationDetails.php",
+    "lib/Resource/ConditionEvaluationPerItem.php",
+    "lib/Resource/ConditionEvaluationResult.php",
+    "lib/Resource/ConditionEvaluationResultLogicalOperator.php",
+    "lib/Resource/ConditionEvaluationSubCondition.php",
+    "lib/Resource/ConditionalEvaluation.php",
+    "lib/Resource/ContainCondition.php",
+    "lib/Resource/ContainerContextData.php",
+    "lib/Resource/CreateBlockExecutionRequest.php",
+    "lib/Resource/CreateEditTemplateRequest.php",
+    "lib/Resource/CreateExperimentRequest.php",
+    "lib/Resource/CreateExperimentRunRequest.php",
+    "lib/Resource/CreateJobRequest.php",
+    "lib/Resource/CreateReviewVersionRequest.php",
+    "lib/Resource/CreateUploadResponse.php",
+    "lib/Resource/CreateWorkflowRequest.php",
+    "lib/Resource/CreateWorkflowRunRequest.php",
+    "lib/Resource/CreateWorkflowTestRequest.php",
+    "lib/Resource/CreateWorkflowTestRunRequest.php",
+    "lib/Resource/DeclarativeApplyResponse.php",
+    "lib/Resource/DeclarativeExportResponse.php",
+    "lib/Resource/DeclarativePlanChange.php",
+    "lib/Resource/DeclarativePlanFieldChange.php",
+    "lib/Resource/DeclarativePlanFieldChangeAction.php",
+    "lib/Resource/DeclarativePlanResourceChange.php",
+    "lib/Resource/DeclarativePlanResourceChangeTarget.php",
+    "lib/Resource/DeclarativePlanResourceChangeType.php",
+    "lib/Resource/DeclarativePlanResponse.php",
+    "lib/Resource/DeclarativePlanResponseAction.php",
+    "lib/Resource/DeclarativePlanSummary.php",
+    "lib/Resource/DeclarativeValidationResponse.php",
+    "lib/Resource/DeclarativeWorkflowRequest.php",
+    "lib/Resource/Edit.php",
+    "lib/Resource/EditConfig.php",
+    "lib/Resource/EditRequest.php",
+    "lib/Resource/EditResult.php",
+    "lib/Resource/EditTemplate.php",
+    "lib/Resource/EditWorkflowArtifact.php",
+    "lib/Resource/EmailTrigger.php",
+    "lib/Resource/EndsWithCondition.php",
+    "lib/Resource/EqualCondition.php",
+    "lib/Resource/ErrorBlockExecutionLifecycle.php",
+    "lib/Resource/ErrorDetails.php",
+    "lib/Resource/ErrorStepLifecycle.php",
+    "lib/Resource/ErrorTerminal.php",
+    "lib/Resource/ErrorTerminalCategory.php",
+    "lib/Resource/ErrorTerminalStage.php",
+    "lib/Resource/ErrorWorkflowExperimentResult.php",
+    "lib/Resource/ErrorWorkflowExperimentRun.php",
+    "lib/Resource/ErrorWorkflowTestRun.php",
+    "lib/Resource/ExistCondition.php",
+    "lib/Resource/ExperimentByDocumentMetricsResponse.php",
+    "lib/Resource/ExperimentByDocumentTargetMetric.php",
+    "lib/Resource/ExperimentByTargetDocumentMetric.php",
+    "lib/Resource/ExperimentByTargetMetricsResponse.php",
+    "lib/Resource/ExperimentConfusionFlowMetric.php",
+    "lib/Resource/ExperimentConfusionSummaryAggregate.php",
+    "lib/Resource/ExperimentDocumentCaptureRequest.php",
+    "lib/Resource/ExperimentDocumentConfusionMetric.php",
+    "lib/Resource/ExperimentDocumentProvenance.php",
+    "lib/Resource/ExperimentExtractSummaryAggregate.php",
+    "lib/Resource/ExperimentMetricDocumentRef.php",
+    "lib/Resource/ExperimentMetricsMissingError.php",
+    "lib/Resource/ExperimentMetricsStaleError.php",
+    "lib/Resource/ExperimentPublicStatus.php",
+    "lib/Resource/ExperimentResult.php",
+    "lib/Resource/ExperimentResultTiming.php",
+    "lib/Resource/ExperimentRun.php",
+    "lib/Resource/ExperimentRunMetricsView.php",
+    "lib/Resource/ExperimentRunTiming.php",
+    "lib/Resource/ExperimentRunTrigger.php",
+    "lib/Resource/ExperimentSummaryMetricDocument.php",
+    "lib/Resource/ExperimentSummaryMetricsResponse.php",
+    "lib/Resource/ExperimentTargetConfusionMetric.php",
+    "lib/Resource/ExperimentVoteRow.php",
+    "lib/Resource/ExperimentVotesMetricDocument.php",
+    "lib/Resource/ExperimentVotesMetricsResponse.php",
+    "lib/Resource/ExplicitExperimentDocumentRequest.php",
+    "lib/Resource/Extraction.php",
+    "lib/Resource/ExtractionConsensus.php",
+    "lib/Resource/ExtractionRequest.php",
+    "lib/Resource/ExtractionWorkflowArtifact.php",
+    "lib/Resource/FieldType.php",
+    "lib/Resource/File.php",
+    "lib/Resource/FileHandleInput.php",
+    "lib/Resource/FileLink.php",
+    "lib/Resource/FileRef.php",
+    "lib/Resource/FormField.php",
+    "lib/Resource/FunctionInvocation.php",
+    "lib/Resource/GenerateSchemaRequest.php",
+    "lib/Resource/GenerateSchemaRequestReasoningEffort.php",
+    "lib/Resource/HandlePayload.php",
+    "lib/Resource/HandlePayloadType.php",
+    "lib/Resource/HttpValidationError.php",
+    "lib/Resource/Job.php",
+    "lib/Resource/JobError.php",
+    "lib/Resource/JobResponse.php",
+    "lib/Resource/JobStatus.php",
+    "lib/Resource/JobWarning.php",
+    "lib/Resource/JobsEndpoint.php",
+    "lib/Resource/JobsSource.php",
+    "lib/Resource/JsonHandleInput.php",
+    "lib/Resource/JsonSchemaValidCondition.php",
+    "lib/Resource/JsonSerializableTrait.php",
+    "lib/Resource/LatestBlockTestRunSummary.php",
+    "lib/Resource/LengthCompareCondition.php",
+    "lib/Resource/LengthCompareConditionOp.php",
+    "lib/Resource/LlmJudgedAsCondition.php",
+    "lib/Resource/LlmNotJudgedAsCondition.php",
+    "lib/Resource/ManualTrigger.php",
+    "lib/Resource/ManualWorkflowTestSource.php",
+    "lib/Resource/MatcheRegexCondition.php",
+    "lib/Resource/MaterializedDocument.php",
+    "lib/Resource/MetricsStaleErrorLastRun.php",
+    "lib/Resource/MimeData.php",
+    "lib/Resource/MimeDataCoerce.php",
+    "lib/Resource/NConsensusValue.php",
+    "lib/Resource/NotContainsCondition.php",
+    "lib/Resource/NotEqualsCondition.php",
+    "lib/Resource/NotExistsCondition.php",
+    "lib/Resource/NumberCompareCondition.php",
+    "lib/Resource/ObjectContainsCondition.php",
+    "lib/Resource/OutputTarget.php",
+    "lib/Resource/ParsOrder.php",
+    "lib/Resource/Parse.php",
+    "lib/Resource/ParseOutput.php",
+    "lib/Resource/ParseRequest.php",
+    "lib/Resource/ParseWorkflowArtifact.php",
+    "lib/Resource/PartialSchema.php",
+    "lib/Resource/Partition.php",
+    "lib/Resource/PartitionChunk.php",
+    "lib/Resource/PartitionChunkLikelihood.php",
+    "lib/Resource/PartitionConsensus.php",
+    "lib/Resource/PartitionRequest.php",
+    "lib/Resource/PartitionWorkflowArtifact.php",
+    "lib/Resource/PendingRun.php",
+    "lib/Resource/PendingStepLifecycle.php",
+    "lib/Resource/PendingWorkflowExperimentResult.php",
+    "lib/Resource/PendingWorkflowExperimentRun.php",
+    "lib/Resource/PendingWorkflowTestRun.php",
+    "lib/Resource/PublishWorkflowRequest.php",
+    "lib/Resource/QueuedStepLifecycle.php",
+    "lib/Resource/QueuedWorkflowExperimentResult.php",
+    "lib/Resource/QueuedWorkflowExperimentRun.php",
+    "lib/Resource/QueuedWorkflowTestRun.php",
+    "lib/Resource/RejectReviewRequest.php",
+    "lib/Resource/RestartTrigger.php",
+    "lib/Resource/ResumeStatus.php",
+    "lib/Resource/RetabUsage.php",
+    "lib/Resource/Review.php",
+    "lib/Resource/ReviewAllOf.php",
+    "lib/Resource/ReviewAlways.php",
+    "lib/Resource/ReviewAnyOf.php",
+    "lib/Resource/ReviewAnyRequiredFieldNull.php",
+    "lib/Resource/ReviewAnySplitPagesLt.php",
+    "lib/Resource/ReviewBlockType.php",
+    "lib/Resource/ReviewBoundaryConfidenceLt.php",
+    "lib/Resource/ReviewBranchIn.php",
+    "lib/Resource/ReviewCategoryIn.php",
+    "lib/Resource/ReviewConfidenceLt.php",
+    "lib/Resource/ReviewDecision.php",
+    "lib/Resource/ReviewDecisionStatus.php",
+    "lib/Resource/ReviewEvaluation.php",
+    "lib/Resource/ReviewFieldConfidenceLt.php",
+    "lib/Resource/ReviewJsonCondition.php",
+    "lib/Resource/ReviewSplitCountNeq.php",
+    "lib/Resource/ReviewTopMarginLt.php",
+    "lib/Resource/ReviewValidationFailed.php",
+    "lib/Resource/ReviewVerdict.php",
+    "lib/Resource/ReviewVersion.php",
+    "lib/Resource/RunInputs.php",
+    "lib/Resource/RunStepWorkflowTestSource.php",
+    "lib/Resource/RunTiming.php",
+    "lib/Resource/RunningRun.php",
+    "lib/Resource/RunningStepLifecycle.php",
+    "lib/Resource/RunningWorkflowExperimentResult.php",
+    "lib/Resource/RunningWorkflowExperimentRun.php",
+    "lib/Resource/RunningWorkflowTestRun.php",
+    "lib/Resource/ScheduleTrigger.php",
+    "lib/Resource/SimilarityGteCondition.php",
+    "lib/Resource/SimilarityGteConditionMethod.php",
+    "lib/Resource/SkippedBlockExecutionLifecycle.php",
+    "lib/Resource/SkippedStepLifecycle.php",
+    "lib/Resource/SourceResponse.php",
+    "lib/Resource/SourceResponseDocumentType.php",
+    "lib/Resource/Split.php",
+    "lib/Resource/SplitConsensus.php",
+    "lib/Resource/SplitIouCondition.php",
+    "lib/Resource/SplitRequest.php",
+    "lib/Resource/SplitResult.php",
+    "lib/Resource/SplitSubdocumentLikelihood.php",
+    "lib/Resource/SplitWorkflowArtifact.php",
+    "lib/Resource/StartWithCondition.php",
+    "lib/Resource/StepArtifactRef.php",
+    "lib/Resource/StepArtifactRefOperation.php",
+    "lib/Resource/StoredBlockExecution.php",
+    "lib/Resource/Subdocument.php",
+    "lib/Resource/SubmissionStatus.php",
+    "lib/Resource/SubmitDecisionResponse.php",
+    "lib/Resource/TableParsingFormat.php",
+    "lib/Resource/UpdateEditTemplateRequest.php",
+    "lib/Resource/UpdateExperimentRequest.php",
+    "lib/Resource/UpdateWorkflowBlockRequest.php",
+    "lib/Resource/UpdateWorkflowBlockRequestConfigMode.php",
+    "lib/Resource/UpdateWorkflowRequest.php",
+    "lib/Resource/UpdateWorkflowTestRequest.php",
+    "lib/Resource/UploadFileRequest.php",
+    "lib/Resource/ValidationError.php",
+    "lib/Resource/VerdictSummary.php",
+    "lib/Resource/WebhookTrigger.php",
+    "lib/Resource/WhileLoopTermination.php",
+    "lib/Resource/WhileLoopTerminationTerminationReason.php",
+    "lib/Resource/Workflow.php",
+    "lib/Resource/WorkflowArtifact.php",
+    "lib/Resource/WorkflowBlock.php",
+    "lib/Resource/WorkflowBlockCreateRequest.php",
+    "lib/Resource/WorkflowBlockCreateRequestType.php",
+    "lib/Resource/WorkflowBlockPosition.php",
+    "lib/Resource/WorkflowBlockType.php",
+    "lib/Resource/WorkflowConfigBlock.php",
+    "lib/Resource/WorkflowConfigEdge.php",
+    "lib/Resource/WorkflowDiagnosisIssue.php",
+    "lib/Resource/WorkflowDiagnosisIssueSeverity.php",
+    "lib/Resource/WorkflowDiagnosisResponse.php",
+    "lib/Resource/WorkflowDiagnosisStats.php",
+    "lib/Resource/WorkflowEdgeCreateRequest.php",
+    "lib/Resource/WorkflowEdgeDoc.php",
+    "lib/Resource/WorkflowEmailTrigger.php",
+    "lib/Resource/WorkflowExperiment.php",
+    "lib/Resource/WorkflowExperimentsStatus.php",
+    "lib/Resource/WorkflowExportPayloadRequest.php",
+    "lib/Resource/WorkflowExportPayloadRequestExportSource.php",
+    "lib/Resource/WorkflowExportPayloadResponse.php",
+    "lib/Resource/WorkflowGraphDiagnosisRequest.php",
+    "lib/Resource/WorkflowPublished.php",
+    "lib/Resource/WorkflowRun.php",
+    "lib/Resource/WorkflowRunStep.php",
+    "lib/Resource/WorkflowRunsStatus.php",
+    "lib/Resource/WorkflowRunsTriggerType.php",
+    "lib/Resource/WorkflowSnapshotRef.php",
+    "lib/Resource/WorkflowTest.php",
+    "lib/Resource/WorkflowTestBlockTarget.php",
+    "lib/Resource/WorkflowTestResult.php",
+    "lib/Resource/WorkflowTestRun.php",
+    "lib/Resource/WorkflowTestRunTiming.php",
+    "lib/Resource/WorkflowTestSchemaDrift.php",
+    "lib/Service/ClassificationService.php",
+    "lib/Service/EditService.php",
+    "lib/Service/EditTemplates.php",
+    "lib/Service/ExperimentRunMetrics.php",
+    "lib/Service/ExperimentRunResults.php",
+    "lib/Service/ExperimentRuns.php",
+    "lib/Service/ExtractionService.php",
+    "lib/Service/FileService.php",
+    "lib/Service/Jobs.php",
+    "lib/Service/Pars.php",
+    "lib/Service/PartitionService.php",
+    "lib/Service/Schema.php",
+    "lib/Service/SplitService.php",
+    "lib/Service/WorkflowArtifacts.php",
+    "lib/Service/WorkflowBlockExecutions.php",
+    "lib/Service/WorkflowBlocks.php",
+    "lib/Service/WorkflowEdges.php",
+    "lib/Service/WorkflowExperiments.php",
+    "lib/Service/WorkflowReviewVersions.php",
+    "lib/Service/WorkflowReviews.php",
+    "lib/Service/WorkflowRuns.php",
+    "lib/Service/WorkflowService.php",
+    "lib/Service/WorkflowSpecs.php",
+    "lib/Service/WorkflowSteps.php",
+    "lib/Service/WorkflowTestRunResults.php",
+    "lib/Service/WorkflowTestRuns.php",
+    "lib/Service/WorkflowTests.php",
+    "tests/ClientTest.php",
+    "tests/Fixtures/actor.json",
+    "tests/Fixtures/all_items_match_condition.json",
+    "tests/Fixtures/any_item_matches_condition.json",
+    "tests/Fixtures/api_call_attempt.json",
+    "tests/Fixtures/api_call_invocation.json",
+    "tests/Fixtures/api_trigger.json",
+    "tests/Fixtures/approve_review_request.json",
+    "tests/Fixtures/array_contains_condition.json",
+    "tests/Fixtures/assertion_failure.json",
+    "tests/Fixtures/assertion_result.json",
+    "tests/Fixtures/assertion_schema_dep.json",
+    "tests/Fixtures/assertion_spec.json",
+    "tests/Fixtures/awaiting_review_run.json",
+    "tests/Fixtures/awaiting_review_step_lifecycle.json",
+    "tests/Fixtures/b_box.json",
+    "tests/Fixtures/between_condition.json",
+    "tests/Fixtures/block_test_batch_execution_counts.json",
+    "tests/Fixtures/block_test_lifecycle_counts.json",
+    "tests/Fixtures/block_test_outcome_counts.json",
+    "tests/Fixtures/cancel_workflow_experiment_run_response.json",
+    "tests/Fixtures/cancel_workflow_request.json",
+    "tests/Fixtures/cancel_workflow_response.json",
+    "tests/Fixtures/cancelled_step_lifecycle.json",
+    "tests/Fixtures/cancelled_terminal.json",
+    "tests/Fixtures/cancelled_workflow_experiment_result.json",
+    "tests/Fixtures/cancelled_workflow_experiment_run.json",
+    "tests/Fixtures/cancelled_workflow_test_run.json",
+    "tests/Fixtures/category.json",
+    "tests/Fixtures/classification.json",
+    "tests/Fixtures/classification_consensus.json",
+    "tests/Fixtures/classification_decision.json",
+    "tests/Fixtures/classification_request.json",
+    "tests/Fixtures/classification_workflow_artifact.json",
+    "tests/Fixtures/complete_file_upload_request.json",
+    "tests/Fixtures/completed_block_execution_lifecycle.json",
+    "tests/Fixtures/completed_step_lifecycle.json",
+    "tests/Fixtures/completed_terminal.json",
+    "tests/Fixtures/completed_workflow_experiment_result.json",
+    "tests/Fixtures/completed_workflow_experiment_run.json",
+    "tests/Fixtures/completed_workflow_test_run.json",
+    "tests/Fixtures/condition_evaluation_details.json",
+    "tests/Fixtures/condition_evaluation_per_item.json",
+    "tests/Fixtures/condition_evaluation_result.json",
+    "tests/Fixtures/condition_evaluation_sub_condition.json",
+    "tests/Fixtures/conditional_evaluation.json",
+    "tests/Fixtures/contain_condition.json",
+    "tests/Fixtures/container_context_data.json",
+    "tests/Fixtures/create_block_execution_request.json",
+    "tests/Fixtures/create_edit_template_request.json",
+    "tests/Fixtures/create_experiment_request.json",
+    "tests/Fixtures/create_experiment_run_request.json",
+    "tests/Fixtures/create_job_request.json",
+    "tests/Fixtures/create_review_version_request.json",
+    "tests/Fixtures/create_upload_response.json",
+    "tests/Fixtures/create_workflow_request.json",
+    "tests/Fixtures/create_workflow_run_request.json",
+    "tests/Fixtures/create_workflow_test_request.json",
+    "tests/Fixtures/create_workflow_test_run_request.json",
+    "tests/Fixtures/declarative_apply_response.json",
+    "tests/Fixtures/declarative_export_response.json",
+    "tests/Fixtures/declarative_plan_change.json",
+    "tests/Fixtures/declarative_plan_field_change.json",
+    "tests/Fixtures/declarative_plan_resource_change.json",
+    "tests/Fixtures/declarative_plan_response.json",
+    "tests/Fixtures/declarative_plan_summary.json",
+    "tests/Fixtures/declarative_validation_response.json",
+    "tests/Fixtures/declarative_workflow_request.json",
+    "tests/Fixtures/edit.json",
+    "tests/Fixtures/edit_config.json",
+    "tests/Fixtures/edit_request.json",
+    "tests/Fixtures/edit_result.json",
+    "tests/Fixtures/edit_template.json",
+    "tests/Fixtures/edit_workflow_artifact.json",
+    "tests/Fixtures/email_trigger.json",
+    "tests/Fixtures/ends_with_condition.json",
+    "tests/Fixtures/equal_condition.json",
+    "tests/Fixtures/error_block_execution_lifecycle.json",
+    "tests/Fixtures/error_details.json",
+    "tests/Fixtures/error_step_lifecycle.json",
+    "tests/Fixtures/error_terminal.json",
+    "tests/Fixtures/error_workflow_experiment_result.json",
+    "tests/Fixtures/error_workflow_experiment_run.json",
+    "tests/Fixtures/error_workflow_test_run.json",
+    "tests/Fixtures/exist_condition.json",
+    "tests/Fixtures/experiment_by_document_metrics_response.json",
+    "tests/Fixtures/experiment_by_document_target_metric.json",
+    "tests/Fixtures/experiment_by_target_document_metric.json",
+    "tests/Fixtures/experiment_by_target_metrics_response.json",
+    "tests/Fixtures/experiment_confusion_flow_metric.json",
+    "tests/Fixtures/experiment_confusion_summary_aggregate.json",
+    "tests/Fixtures/experiment_document_capture_request.json",
+    "tests/Fixtures/experiment_document_confusion_metric.json",
+    "tests/Fixtures/experiment_document_provenance.json",
+    "tests/Fixtures/experiment_extract_summary_aggregate.json",
+    "tests/Fixtures/experiment_metric_document_ref.json",
+    "tests/Fixtures/experiment_metrics_missing_error.json",
+    "tests/Fixtures/experiment_metrics_stale_error.json",
+    "tests/Fixtures/experiment_result.json",
+    "tests/Fixtures/experiment_result_timing.json",
+    "tests/Fixtures/experiment_run.json",
+    "tests/Fixtures/experiment_run_timing.json",
+    "tests/Fixtures/experiment_run_trigger.json",
+    "tests/Fixtures/experiment_summary_metric_document.json",
+    "tests/Fixtures/experiment_summary_metrics_response.json",
+    "tests/Fixtures/experiment_target_confusion_metric.json",
+    "tests/Fixtures/experiment_vote_row.json",
+    "tests/Fixtures/experiment_votes_metric_document.json",
+    "tests/Fixtures/experiment_votes_metrics_response.json",
+    "tests/Fixtures/explicit_experiment_document_request.json",
+    "tests/Fixtures/extraction.json",
+    "tests/Fixtures/extraction_consensus.json",
+    "tests/Fixtures/extraction_request.json",
+    "tests/Fixtures/extraction_workflow_artifact.json",
+    "tests/Fixtures/file.json",
+    "tests/Fixtures/file_handle_input.json",
+    "tests/Fixtures/file_link.json",
+    "tests/Fixtures/file_ref.json",
+    "tests/Fixtures/form_field.json",
+    "tests/Fixtures/function_invocation.json",
+    "tests/Fixtures/generate_schema_request.json",
+    "tests/Fixtures/handle_payload.json",
+    "tests/Fixtures/http_validation_error.json",
+    "tests/Fixtures/job.json",
+    "tests/Fixtures/job_error.json",
+    "tests/Fixtures/job_response.json",
+    "tests/Fixtures/job_warning.json",
+    "tests/Fixtures/json_handle_input.json",
+    "tests/Fixtures/json_schema_valid_condition.json",
+    "tests/Fixtures/latest_block_test_run_summary.json",
+    "tests/Fixtures/length_compare_condition.json",
+    "tests/Fixtures/list_classification.json",
+    "tests/Fixtures/list_edit.json",
+    "tests/Fixtures/list_edit_template.json",
+    "tests/Fixtures/list_experiment_run.json",
+    "tests/Fixtures/list_extraction.json",
+    "tests/Fixtures/list_file.json",
+    "tests/Fixtures/list_job.json",
+    "tests/Fixtures/list_parse.json",
+    "tests/Fixtures/list_partition.json",
+    "tests/Fixtures/list_review.json",
+    "tests/Fixtures/list_review_version.json",
+    "tests/Fixtures/list_split.json",
+    "tests/Fixtures/list_workflow.json",
+    "tests/Fixtures/list_workflow_artifact.json",
+    "tests/Fixtures/list_workflow_block.json",
+    "tests/Fixtures/list_workflow_edge_doc.json",
+    "tests/Fixtures/list_workflow_run.json",
+    "tests/Fixtures/list_workflow_run_step.json",
+    "tests/Fixtures/list_workflow_test_run.json",
+    "tests/Fixtures/llm_judged_as_condition.json",
+    "tests/Fixtures/llm_not_judged_as_condition.json",
+    "tests/Fixtures/manual_trigger.json",
+    "tests/Fixtures/manual_workflow_test_source.json",
+    "tests/Fixtures/matche_regex_condition.json",
+    "tests/Fixtures/materialized_document.json",
+    "tests/Fixtures/metrics_stale_error_last_run.json",
+    "tests/Fixtures/mime_data.json",
+    "tests/Fixtures/not_contains_condition.json",
+    "tests/Fixtures/not_equals_condition.json",
+    "tests/Fixtures/not_exists_condition.json",
+    "tests/Fixtures/number_compare_condition.json",
+    "tests/Fixtures/object_contains_condition.json",
+    "tests/Fixtures/output_target.json",
+    "tests/Fixtures/parse.json",
+    "tests/Fixtures/parse_output.json",
+    "tests/Fixtures/parse_request.json",
+    "tests/Fixtures/parse_workflow_artifact.json",
+    "tests/Fixtures/partial_schema.json",
+    "tests/Fixtures/partition.json",
+    "tests/Fixtures/partition_chunk.json",
+    "tests/Fixtures/partition_chunk_likelihood.json",
+    "tests/Fixtures/partition_consensus.json",
+    "tests/Fixtures/partition_request.json",
+    "tests/Fixtures/partition_workflow_artifact.json",
+    "tests/Fixtures/pending_run.json",
+    "tests/Fixtures/pending_step_lifecycle.json",
+    "tests/Fixtures/pending_workflow_experiment_result.json",
+    "tests/Fixtures/pending_workflow_experiment_run.json",
+    "tests/Fixtures/pending_workflow_test_run.json",
+    "tests/Fixtures/publish_workflow_request.json",
+    "tests/Fixtures/queued_step_lifecycle.json",
+    "tests/Fixtures/queued_workflow_experiment_result.json",
+    "tests/Fixtures/queued_workflow_experiment_run.json",
+    "tests/Fixtures/queued_workflow_test_run.json",
+    "tests/Fixtures/reject_review_request.json",
+    "tests/Fixtures/restart_trigger.json",
+    "tests/Fixtures/retab_usage.json",
+    "tests/Fixtures/review.json",
+    "tests/Fixtures/review_all_of.json",
+    "tests/Fixtures/review_always.json",
+    "tests/Fixtures/review_any_of.json",
+    "tests/Fixtures/review_any_required_field_null.json",
+    "tests/Fixtures/review_any_split_pages_lt.json",
+    "tests/Fixtures/review_boundary_confidence_lt.json",
+    "tests/Fixtures/review_branch_in.json",
+    "tests/Fixtures/review_category_in.json",
+    "tests/Fixtures/review_confidence_lt.json",
+    "tests/Fixtures/review_decision.json",
+    "tests/Fixtures/review_evaluation.json",
+    "tests/Fixtures/review_field_confidence_lt.json",
+    "tests/Fixtures/review_json_condition.json",
+    "tests/Fixtures/review_split_count_neq.json",
+    "tests/Fixtures/review_top_margin_lt.json",
+    "tests/Fixtures/review_validation_failed.json",
+    "tests/Fixtures/review_version.json",
+    "tests/Fixtures/run_inputs.json",
+    "tests/Fixtures/run_step_workflow_test_source.json",
+    "tests/Fixtures/run_timing.json",
+    "tests/Fixtures/running_run.json",
+    "tests/Fixtures/running_step_lifecycle.json",
+    "tests/Fixtures/running_workflow_experiment_result.json",
+    "tests/Fixtures/running_workflow_experiment_run.json",
+    "tests/Fixtures/running_workflow_test_run.json",
+    "tests/Fixtures/schedule_trigger.json",
+    "tests/Fixtures/similarity_gte_condition.json",
+    "tests/Fixtures/skipped_block_execution_lifecycle.json",
+    "tests/Fixtures/skipped_step_lifecycle.json",
+    "tests/Fixtures/sources_response.json",
+    "tests/Fixtures/split.json",
+    "tests/Fixtures/split_consensus.json",
+    "tests/Fixtures/split_iou_condition.json",
+    "tests/Fixtures/split_request.json",
+    "tests/Fixtures/split_result.json",
+    "tests/Fixtures/split_subdocument_likelihood.json",
+    "tests/Fixtures/split_workflow_artifact.json",
+    "tests/Fixtures/start_with_condition.json",
+    "tests/Fixtures/step_artifact_ref.json",
+    "tests/Fixtures/stored_block_execution.json",
+    "tests/Fixtures/subdocument.json",
+    "tests/Fixtures/submit_decision_response.json",
+    "tests/Fixtures/update_edit_template_request.json",
+    "tests/Fixtures/update_experiment_request.json",
+    "tests/Fixtures/update_workflow_block_request.json",
+    "tests/Fixtures/update_workflow_request.json",
+    "tests/Fixtures/update_workflow_test_request.json",
+    "tests/Fixtures/upload_file_request.json",
+    "tests/Fixtures/validation_error.json",
+    "tests/Fixtures/verdict_summary.json",
+    "tests/Fixtures/webhook_trigger.json",
+    "tests/Fixtures/while_loop_termination.json",
+    "tests/Fixtures/workflow.json",
+    "tests/Fixtures/workflow_artifact.json",
+    "tests/Fixtures/workflow_block.json",
+    "tests/Fixtures/workflow_block_create_request.json",
+    "tests/Fixtures/workflow_block_position.json",
+    "tests/Fixtures/workflow_config_block.json",
+    "tests/Fixtures/workflow_config_edge.json",
+    "tests/Fixtures/workflow_diagnosis_issue.json",
+    "tests/Fixtures/workflow_diagnosis_response.json",
+    "tests/Fixtures/workflow_diagnosis_stats.json",
+    "tests/Fixtures/workflow_edge_create_request.json",
+    "tests/Fixtures/workflow_edge_doc.json",
+    "tests/Fixtures/workflow_email_trigger.json",
+    "tests/Fixtures/workflow_experiment.json",
+    "tests/Fixtures/workflow_export_payload_request.json",
+    "tests/Fixtures/workflow_export_payload_response.json",
+    "tests/Fixtures/workflow_graph_diagnosis_request.json",
+    "tests/Fixtures/workflow_published.json",
+    "tests/Fixtures/workflow_run.json",
+    "tests/Fixtures/workflow_run_step.json",
+    "tests/Fixtures/workflow_snapshot_ref.json",
+    "tests/Fixtures/workflow_test.json",
+    "tests/Fixtures/workflow_test_block_target.json",
+    "tests/Fixtures/workflow_test_result.json",
+    "tests/Fixtures/workflow_test_run.json",
+    "tests/Fixtures/workflow_test_run_timing.json",
+    "tests/Service/ClassificationTest.php",
+    "tests/Service/EditTemplatesTest.php",
+    "tests/Service/EditTest.php",
+    "tests/Service/ExperimentRunMetricsTest.php",
+    "tests/Service/ExperimentRunResultsTest.php",
+    "tests/Service/ExperimentRunsTest.php",
+    "tests/Service/ExtractionTest.php",
+    "tests/Service/FileTest.php",
+    "tests/Service/JobsTest.php",
+    "tests/Service/ParsTest.php",
+    "tests/Service/PartitionTest.php",
+    "tests/Service/SchemaTest.php",
+    "tests/Service/SplitTest.php",
+    "tests/Service/WorkflowArtifactsTest.php",
+    "tests/Service/WorkflowBlockExecutionsTest.php",
+    "tests/Service/WorkflowBlocksTest.php",
+    "tests/Service/WorkflowEdgesTest.php",
+    "tests/Service/WorkflowExperimentsTest.php",
+    "tests/Service/WorkflowReviewVersionsTest.php",
+    "tests/Service/WorkflowReviewsTest.php",
+    "tests/Service/WorkflowRunsTest.php",
+    "tests/Service/WorkflowSpecsTest.php",
+    "tests/Service/WorkflowStepsTest.php",
+    "tests/Service/WorkflowTest.php",
+    "tests/Service/WorkflowTestRunResultsTest.php",
+    "tests/Service/WorkflowTestRunsTest.php",
+    "tests/Service/WorkflowTestsTest.php"
+  ],
+  "operations": {
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "generate",
+      "service": "schemas"
+    },
+    "GET /v1/extractions": {
+      "sdkMethod": "list",
+      "service": "extractions"
+    },
+    "POST /v1/extractions": {
+      "sdkMethod": "create",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}": {
+      "sdkMethod": "get",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "sources",
+      "service": "extractions"
+    },
+    "GET /v1/classifications": {
+      "sdkMethod": "list",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "create",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "get",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "delete",
+      "service": "classifications"
+    },
+    "GET /v1/parses": {
+      "sdkMethod": "list",
+      "service": "parses"
+    },
+    "POST /v1/parses": {
+      "sdkMethod": "create",
+      "service": "parses"
+    },
+    "GET /v1/parses/{parse_id}": {
+      "sdkMethod": "get",
+      "service": "parses"
+    },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "GET /v1/partitions": {
+      "sdkMethod": "list",
+      "service": "partitions"
+    },
+    "POST /v1/partitions": {
+      "sdkMethod": "create",
+      "service": "partitions"
+    },
+    "GET /v1/partitions/{partition_id}": {
+      "sdkMethod": "get",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "delete",
+      "service": "partitions"
+    },
+    "GET /v1/splits": {
+      "sdkMethod": "list",
+      "service": "splits"
+    },
+    "POST /v1/splits": {
+      "sdkMethod": "create",
+      "service": "splits"
+    },
+    "GET /v1/splits/{split_id}": {
+      "sdkMethod": "get",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/files/upload": {
+      "sdkMethod": "upload",
+      "service": "files"
+    },
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "completeUpload",
+      "service": "files"
+    },
+    "GET /v1/files": {
+      "sdkMethod": "list",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
+      "sdkMethod": "get",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "getDownloadLink",
+      "service": "files"
+    },
+    "GET /v1/workflows/runs": {
+      "sdkMethod": "list",
+      "service": "workflowRuns"
+    },
+    "POST /v1/workflows/runs": {
+      "sdkMethod": "create",
+      "service": "workflowRuns"
+    },
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "export",
+      "service": "workflowRuns"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflowRuns"
+    },
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "delete",
+      "service": "workflowRuns"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflowRuns"
+    },
+    "GET /v1/workflows/steps": {
+      "sdkMethod": "list",
+      "service": "workflowSteps"
+    },
+    "GET /v1/workflows/steps/{step_id}": {
+      "sdkMethod": "get",
+      "service": "workflowSteps"
+    },
+    "GET /v1/workflows/reviews": {
+      "sdkMethod": "list",
+      "service": "workflowReviews"
+    },
+    "GET /v1/workflows/reviews/{review_id}": {
+      "sdkMethod": "get",
+      "service": "workflowReviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/approve": {
+      "sdkMethod": "approve",
+      "service": "workflowReviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/reject": {
+      "sdkMethod": "reject",
+      "service": "workflowReviews"
+    },
+    "GET /v1/workflows/reviews/versions": {
+      "sdkMethod": "list",
+      "service": "workflowReviewVersions"
+    },
+    "POST /v1/workflows/reviews/versions": {
+      "sdkMethod": "create",
+      "service": "workflowReviewVersions"
+    },
+    "GET /v1/workflows/reviews/versions/{version_id}": {
+      "sdkMethod": "get",
+      "service": "workflowReviewVersions"
+    },
+    "GET /v1/workflows/artifacts/{artifact_id}": {
+      "sdkMethod": "get",
+      "service": "workflowArtifacts"
+    },
+    "GET /v1/workflows/artifacts": {
+      "sdkMethod": "list",
+      "service": "workflowArtifacts"
+    },
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "list",
+      "service": "workflowTestRuns"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "create",
+      "service": "workflowTestRuns"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflowTestRuns"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflowTestRuns"
+    },
+    "GET /v1/workflows/tests/results": {
+      "sdkMethod": "list",
+      "service": "workflowTestRunResults"
+    },
+    "GET /v1/workflows/tests/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflowTestRunResults"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "list",
+      "service": "workflowBlocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "create",
+      "service": "workflowBlocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "get",
+      "service": "workflowBlocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "update",
+      "service": "workflowBlocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "delete",
+      "service": "workflowBlocks"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "list",
+      "service": "workflowEdges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "create",
+      "service": "workflowEdges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "get",
+      "service": "workflowEdges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "delete",
+      "service": "workflowEdges"
+    },
+    "GET /v1/workflows/tests": {
+      "sdkMethod": "list",
+      "service": "workflowTests"
+    },
+    "POST /v1/workflows/tests": {
+      "sdkMethod": "create",
+      "service": "workflowTests"
+    },
+    "GET /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "get",
+      "service": "workflowTests"
+    },
+    "PATCH /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "update",
+      "service": "workflowTests"
+    },
+    "DELETE /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "delete",
+      "service": "workflowTests"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "list",
+      "service": "experimentRuns"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "create",
+      "service": "experimentRuns"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "experimentRuns"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "experimentRuns"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "list",
+      "service": "experimentRunResults"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "experimentRunResults"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "get",
+      "service": "experimentRunMetrics"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "list",
+      "service": "workflowExperiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "create",
+      "service": "workflowExperiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "get",
+      "service": "workflowExperiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "update",
+      "service": "workflowExperiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "delete",
+      "service": "workflowExperiments"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "list",
+      "service": "workflowBlockExecutions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "create",
+      "service": "workflowBlockExecutions"
+    },
+    "GET /v1/workflows": {
+      "sdkMethod": "list",
+      "service": "workflows"
+    },
+    "POST /v1/workflows": {
+      "sdkMethod": "create",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/{workflow_id}": {
+      "sdkMethod": "get",
+      "service": "workflows"
+    },
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "update",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
+      "sdkMethod": "diagnose",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "validate",
+      "service": "workflowSpecs"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflowSpecs"
+    },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflowSpecs"
+    },
+    "GET /v1/workflows/{workflow_id}/spec": {
+      "sdkMethod": "get",
+      "service": "workflowSpecs"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "list",
+      "service": "editTemplates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "create",
+      "service": "editTemplates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "get",
+      "service": "editTemplates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "update",
+      "service": "editTemplates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "delete",
+      "service": "editTemplates"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "list",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "create",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "list",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "create",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "get",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "retry",
+      "service": "jobs"
+    }
+  }
+}

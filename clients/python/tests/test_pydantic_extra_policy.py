@@ -24,11 +24,21 @@ def _iter_sdk_pydantic_models() -> list[type[BaseModel]]:
 
 
 def test_sdk_pydantic_models_ignore_extra_fields() -> None:
+    """Response models must declare ``extra="ignore"`` so a newer server adding
+    a field doesn't break the SDK.
+
+    Request models are exempt: they describe what the caller sends ON THE WIRE
+    and may legitimately use ``extra="forbid"`` to catch typos in caller-
+    supplied kwargs. The convention is ``<Noun>Request`` /
+    ``<Verb><Noun>Request`` (e.g. ``ExtractionRequest``, ``CreateJobRequest``,
+    ``UpdateEditTemplateRequest``).
+    """
     models = _iter_sdk_pydantic_models()
 
     assert models
-    assert [
+    violators = [
         f"{model.__module__}.{model.__qualname__}"
         for model in models
-        if not issubclass(model, RetabBaseModel) or model.model_config.get("extra") != "ignore"
-    ] == []
+        if not model.__qualname__.endswith("Request") and (not issubclass(model, RetabBaseModel) or model.model_config.get("extra") != "ignore")
+    ]
+    assert violators == [], violators

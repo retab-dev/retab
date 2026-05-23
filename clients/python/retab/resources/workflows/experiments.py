@@ -24,7 +24,7 @@ from typing import Any, Dict, Mapping, Sequence, Union
 from pydantic import TypeAdapter
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList
 from ...types.standards import PreparedRequest
 from ...types.workflows.experiments import (
     ExperimentDocumentCaptureRequest,
@@ -115,7 +115,7 @@ class WorkflowExperimentsMixin:
         body["workflow_id"] = workflow_id
         return PreparedRequest(
             method="POST",
-            url="/workflows/experiments",
+            url="/v1/workflows/experiments",
             data=body,
         )
 
@@ -125,14 +125,14 @@ class WorkflowExperimentsMixin:
             params["workflow_id"] = workflow_id
         return PreparedRequest(
             method="GET",
-            url="/workflows/experiments",
+            url="/v1/workflows/experiments",
             params=params or None,
         )
 
     def prepare_get(self, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/{experiment_id}",
+            url=f"/v1/workflows/experiments/{experiment_id}",
         )
 
     def prepare_update(
@@ -153,14 +153,14 @@ class WorkflowExperimentsMixin:
         )
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/experiments/{experiment_id}",
+            url=f"/v1/workflows/experiments/{experiment_id}",
             data=body,
         )
 
     def prepare_delete(self, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/experiments/{experiment_id}",
+            url=f"/v1/workflows/experiments/{experiment_id}",
         )
 
 
@@ -189,7 +189,7 @@ class ExperimentRunsMixin:
             data["workflow_id"] = workflow_id
         return PreparedRequest(
             method="POST",
-            url="/workflows/experiments/runs",
+            url="/v1/workflows/experiments/runs",
             data=data,
         )
 
@@ -235,20 +235,20 @@ class ExperimentRunsMixin:
                 params[key] = value
         return PreparedRequest(
             method="GET",
-            url="/workflows/experiments/runs",
+            url="/v1/workflows/experiments/runs",
             params=params,
         )
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/runs/{run_id}",
+            url=f"/v1/workflows/experiments/runs/{run_id}",
         )
 
     def prepare_cancel(self, run_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/experiments/runs/{run_id}/cancel",
+            url=f"/v1/workflows/experiments/runs/{run_id}/cancel",
             data={},
         )
 
@@ -257,14 +257,14 @@ class ExperimentRunResultsMixin:
     def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url="/workflows/experiments/results",
+            url="/v1/workflows/experiments/results",
             params={"run_id": run_id, "limit": limit},
         )
 
     def prepare_get(self, result_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/results/{result_id}",
+            url=f"/v1/workflows/experiments/results/{result_id}",
         )
 
 
@@ -292,7 +292,7 @@ class ExperimentRunMetricsMixin:
             params["prior_run_id"] = prior_run_id
         return PreparedRequest(
             method="GET",
-            url="/workflows/experiments/metrics",
+            url="/v1/workflows/experiments/metrics",
             params=params,
         )
 
@@ -369,8 +369,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
             limit=limit,
             order=order,
         )
-        response = self._client._prepared_request(request)
-        return PaginatedList[ExperimentRun].model_validate(response)
+        return self.request_page(request, model=ExperimentRun)
 
     def get(self, run_id: str) -> ExperimentRun:
         request = self.prepare_get(run_id)
@@ -386,8 +385,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
     def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[ExperimentResult]:
         request = self.prepare_list(run_id, limit=limit)
-        response = self._client._prepared_request(request)
-        return PaginatedList[ExperimentResult].model_validate(response)
+        return self.request_page(request, model=ExperimentResult)
 
     def get(self, result_id: str) -> ExperimentResult:
         request = self.prepare_get(result_id)
@@ -499,8 +497,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
     def list(self, workflow_id: str | None = None) -> PaginatedList[WorkflowExperiment]:
         """List all experiments attached to a workflow."""
         request = self.prepare_list(workflow_id)
-        response = self._client._prepared_request(request)
-        return PaginatedList[WorkflowExperiment].model_validate(response)
+        return self.request_page(request, model=WorkflowExperiment)
 
     def get(self, experiment_id: str) -> WorkflowExperiment:
         """Fetch a single experiment by id (refreshes drift state)."""
@@ -580,7 +577,7 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         after: str | None = None,
         limit: int = 20,
         order: str | None = None,
-    ) -> PaginatedList[ExperimentRun]:
+    ) -> AsyncPaginatedList[ExperimentRun]:
         request = self.prepare_list(
             workflow_id=workflow_id,
             experiment_id=experiment_id,
@@ -599,8 +596,7 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
             limit=limit,
             order=order,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList[ExperimentRun].model_validate(response)
+        return await self.request_page(request, model=ExperimentRun)
 
     async def get(self, run_id: str) -> ExperimentRun:
         request = self.prepare_get(run_id)
@@ -614,10 +610,9 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
 
 
 class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
-    async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[ExperimentResult]:
+    async def list(self, run_id: str, *, limit: int = 20) -> AsyncPaginatedList[ExperimentResult]:
         request = self.prepare_list(run_id, limit=limit)
-        response = await self._client._prepared_request(request)
-        return PaginatedList[ExperimentResult].model_validate(response)
+        return await self.request_page(request, model=ExperimentResult)
 
     async def get(self, result_id: str) -> ExperimentResult:
         request = self.prepare_get(result_id)
@@ -682,10 +677,9 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return WorkflowExperiment.model_validate(response)
 
-    async def list(self, workflow_id: str | None = None) -> PaginatedList[WorkflowExperiment]:
+    async def list(self, workflow_id: str | None = None) -> AsyncPaginatedList[WorkflowExperiment]:
         request = self.prepare_list(workflow_id)
-        response = await self._client._prepared_request(request)
-        return PaginatedList[WorkflowExperiment].model_validate(response)
+        return await self.request_page(request, model=WorkflowExperiment)
 
     async def get(self, experiment_id: str) -> WorkflowExperiment:
         request = self.prepare_get(experiment_id)

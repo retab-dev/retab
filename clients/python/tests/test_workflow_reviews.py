@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from retab.resources.workflows.reviews import AsyncWorkflowReviews, WorkflowReviews
+from retab.types.pagination import PaginatedList
 from retab.types.workflows import (
     Actor,
     Review,
@@ -162,7 +163,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
         decision_status="decided",
     )
     assert request.method == "GET"
-    assert request.url == "/workflows/reviews"
+    assert request.url == "/v1/workflows/reviews"
     assert request.params == {
         "limit": 10,
         "decision_status": "decided",
@@ -177,7 +178,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
 def test_prepare_get_builds_review_id_url() -> None:
     request = WorkflowReviews(client=MagicMock()).prepare_get(_REVIEW_ID)
     assert request.method == "GET"
-    assert request.url == f"/workflows/reviews/{_REVIEW_ID}"
+    assert request.url == f"/v1/workflows/reviews/{_REVIEW_ID}"
 
 
 def test_review_versions_prepare_create_get_list() -> None:
@@ -190,16 +191,16 @@ def test_review_versions_prepare_create_get_list() -> None:
     get = versions.prepare_get(_CHILD_VERSION_ID)
     list_request = versions.prepare_list(review_id=_REVIEW_ID, limit=25, after=_VERSION_ID)
     assert create.method == "POST"
-    assert create.url == "/workflows/reviews/versions"
+    assert create.url == "/v1/workflows/reviews/versions"
     assert create.data == {
         "review_id": _REVIEW_ID,
         "snapshot": {"category": "Invoice"},
         "parent_id": _VERSION_ID,
     }
     assert get.method == "GET"
-    assert get.url == f"/workflows/reviews/versions/{_CHILD_VERSION_ID}"
+    assert get.url == f"/v1/workflows/reviews/versions/{_CHILD_VERSION_ID}"
     assert list_request.method == "GET"
-    assert list_request.url == "/workflows/reviews/versions"
+    assert list_request.url == "/v1/workflows/reviews/versions"
     assert list_request.params == {
         "review_id": _REVIEW_ID,
         "limit": 25,
@@ -211,9 +212,9 @@ def test_prepare_approve_and_reject_use_split_endpoints() -> None:
     reviews = WorkflowReviews(client=MagicMock())
     approve = reviews.prepare_approve(_REVIEW_ID, version_id=_VERSION_ID)
     reject = reviews.prepare_reject(_REVIEW_ID, version_id=_VERSION_ID, reason="wrong vendor")
-    assert approve.url == f"/workflows/reviews/{_REVIEW_ID}/approve"
+    assert approve.url == f"/v1/workflows/reviews/{_REVIEW_ID}/approve"
     assert approve.data == {"version_id": _VERSION_ID}
-    assert reject.url == f"/workflows/reviews/{_REVIEW_ID}/reject"
+    assert reject.url == f"/v1/workflows/reviews/{_REVIEW_ID}/reject"
     assert reject.data == {"version_id": _VERSION_ID, "reason": "wrong vendor"}
 
 
@@ -227,7 +228,9 @@ def test_list_get_approve_parse_responses() -> None:
     reviews = WorkflowReviews(client=client)
 
     queue = reviews.list(workflow_id="wf_1")
-    assert isinstance(queue, WorkflowReviewQueue)
+    # Reviews.list now returns the canonical PaginatedList[Review] envelope;
+    # WorkflowReviewQueue was the legacy custom wrapper.
+    assert isinstance(queue, PaginatedList)
     assert queue.data[0].id == _REVIEW_ID
     assert isinstance(reviews.get(_REVIEW_ID), Review)
     assert reviews.approve(_REVIEW_ID, version_id=_VERSION_ID).resume_status == "resumed"

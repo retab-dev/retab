@@ -15,7 +15,7 @@ from retab.types.classifications import Classification
 from retab.types.edits import Edit
 from retab.types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from retab.types.mime import MIMEData
-from retab.types.pagination import PaginatedList
+from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.parses import Parse
 from retab.types.splits import Split, Subdocument
 from retab.utils.mime import prepare_mime_document
@@ -102,7 +102,7 @@ def _assert_deleted(
         time.sleep(poll_interval_seconds)
 
 
-def _assert_list_contains(page: PaginatedList, target_id: str) -> None:
+def _assert_list_contains(page: PaginatedList | AsyncPaginatedList, target_id: str) -> None:
     assert any(_item_id(item) == target_id for item in page.data), f"{target_id} not found in list response"
 
 

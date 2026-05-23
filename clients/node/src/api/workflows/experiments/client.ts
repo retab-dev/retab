@@ -1,15 +1,14 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
+import { PaginatedList } from '../../_pagination.js';
 import APIWorkflowExperimentRuns, {
   APIWorkflowExperimentRunResults,
   APIWorkflowExperimentRunMetrics,
 } from './runs/client.js';
 import {
   ExperimentDocumentCaptureRequest,
-  ExperimentList,
   WorkflowExperiment,
   ExplicitExperimentDocumentRequest,
   NConsensusValue,
-  ZExperimentList,
   ZWorkflowExperiment,
 } from './types.js';
 
@@ -188,9 +187,12 @@ export default class APIWorkflowExperiments extends CompositionClient {
   /**
    * List experiments for a workflow.
    */
-  async list(workflowId: string, options?: RequestOptions): Promise<ExperimentList> {
+  async list(
+    workflowId: string,
+    options?: RequestOptions
+  ): Promise<PaginatedList<WorkflowExperiment>> {
     const request = this.prepare_list(workflowId);
-    return this._fetchJson(ZExperimentList, {
+    return this._fetchPage(ZWorkflowExperiment, {
       url: request.url,
       method: request.method,
       params: options?.params,

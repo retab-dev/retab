@@ -1,12 +1,11 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
+import { PaginatedList } from '../../_pagination.js';
 import APIWorkflowTestRuns, { APIWorkflowTestRunResults } from './runs/client.js';
 import {
   AssertionSpec,
-  WorkflowTestListResponse,
   WorkflowTest,
   WorkflowTestBlockTarget,
   WorkflowTestSource,
-  ZWorkflowTestListResponse,
   ZWorkflowTest,
 } from './types.js';
 
@@ -129,7 +128,7 @@ export default class APIWorkflowTests extends CompositionClient {
       limit?: number;
     },
     options?: RequestOptions
-  ): Promise<WorkflowTestListResponse> {
+  ): Promise<PaginatedList<WorkflowTest>> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const baseParams: Record<string, any> = { limit };
     if (targetBlockId !== undefined) {
@@ -138,7 +137,7 @@ export default class APIWorkflowTests extends CompositionClient {
     // `options.params` wins so callers can override the typed args via
     // the escape hatch — matches sibling `APIWorkflowRuns.list`
     // precedence (runs/client.ts).
-    return this._fetchJson(ZWorkflowTestListResponse, {
+    return this._fetchPage(ZWorkflowTest, {
       url: `/workflows/tests?workflow_id=${workflowId}`,
       method: 'GET',
       params: { ...baseParams, ...(options?.params || {}) },

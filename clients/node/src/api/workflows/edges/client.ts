@@ -1,11 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import {
-  PaginatedList,
-  WorkflowEdgeDoc,
-  WorkflowEdgeCreateRequest,
-  ZPaginatedList,
-  ZWorkflowEdgeDoc,
-} from '../../../types.js';
+import { PaginatedList } from '../../_pagination.js';
+import { WorkflowEdgeDoc, WorkflowEdgeCreateRequest, ZWorkflowEdgeDoc } from '../../../types.js';
 
 function serializeEdgeCreateRequest(request: WorkflowEdgeCreateRequest): Record<string, unknown> {
   return {
@@ -38,7 +33,7 @@ export default class APIWorkflowEdges extends CompositionClient {
     workflowId: string,
     { sourceBlock, targetBlock }: { sourceBlock?: string; targetBlock?: string } = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<WorkflowEdgeDoc>> {
     const params = Object.fromEntries(
       Object.entries({
         source_block: sourceBlock,
@@ -47,7 +42,7 @@ export default class APIWorkflowEdges extends CompositionClient {
       }).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZWorkflowEdgeDoc, {
       url: `/workflows/edges?workflow_id=${workflowId}`,
       method: 'GET',
       params,

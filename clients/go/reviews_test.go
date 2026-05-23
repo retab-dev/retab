@@ -93,7 +93,7 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews" {
+	if seenMethod != http.MethodGet || seenPath != "/v1/workflows/reviews" {
 		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
 	for _, want := range []string{
@@ -169,7 +169,7 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/"+reviewID {
+	if seenMethod != http.MethodGet || seenPath != "/v1/workflows/reviews/"+reviewID {
 		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
 	if review.Decision == nil || review.Decision.VersionID != reviewVersionID {
@@ -211,7 +211,7 @@ func TestWorkflowReviewsApproveSendsVersionIDToApproveEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenPath != "/workflows/reviews/"+reviewID+"/approve" {
+	if seenPath != "/v1/workflows/reviews/"+reviewID+"/approve" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if body["version_id"] != reviewVersionID || body["verdict"] != nil {
@@ -271,7 +271,7 @@ func TestWorkflowReviewsRejectSendsVersionIDAndReasonToRejectEndpoint(t *testing
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if seenPath != "/workflows/reviews/"+reviewID+"/reject" {
+	if seenPath != "/v1/workflows/reviews/"+reviewID+"/reject" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	if body["version_id"] != reviewVersionID || body["reason"] != "wrong document" || body["verdict"] != nil {
@@ -301,14 +301,14 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/reviews/versions":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/reviews/versions":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data":          []any{reviewVersionJSON(reviewVersionID, nil), reviewVersionJSON(reviewChildVersionID, reviewVersionID)},
 				"list_metadata": map[string]any{"before": nil, "after": reviewChildVersionID},
 			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/reviews/versions/"+reviewChildVersionID:
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/reviews/versions/"+reviewChildVersionID:
 			_ = json.NewEncoder(w).Encode(reviewVersionJSON(reviewChildVersionID, reviewVersionID))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/reviews/versions":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/reviews/versions":
 			raw, _ := io.ReadAll(r.Body)
 			_ = json.Unmarshal(raw, &body)
 			_ = json.NewEncoder(w).Encode(reviewVersionJSON(reviewChildVersionID, reviewVersionID))
@@ -329,7 +329,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/versions" {
+	if seenMethod != http.MethodGet || seenPath != "/v1/workflows/reviews/versions" {
 		t.Fatalf("list request = %s %s", seenMethod, seenPath)
 	}
 	for _, want := range []string{"review_id=" + reviewID, "limit=25"} {
@@ -350,7 +350,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodGet || seenPath != "/workflows/reviews/versions/"+reviewChildVersionID {
+	if seenMethod != http.MethodGet || seenPath != "/v1/workflows/reviews/versions/"+reviewChildVersionID {
 		t.Fatalf("get request = %s %s", seenMethod, seenPath)
 	}
 	if version.ID != reviewChildVersionID || version.ReviewID != reviewID {
@@ -363,7 +363,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if seenMethod != http.MethodPost || seenPath != "/workflows/reviews/versions" {
+	if seenMethod != http.MethodPost || seenPath != "/v1/workflows/reviews/versions" {
 		t.Fatalf("create request = %s %s", seenMethod, seenPath)
 	}
 	if body["review_id"] != reviewID || body["parent_id"] != reviewVersionID || body["snapshot"] == nil {

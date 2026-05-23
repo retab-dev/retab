@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.files import CreateUploadResponse, File, FileLink, UploadFileResponse
-from ..types.pagination import PaginatedList
+from ..types.pagination import AsyncPaginatedList, PaginatedList
 from ..types.standards import PreparedRequest
 
 FileUploadInput = Path | str | IOBase
@@ -29,7 +29,7 @@ class FilesMixin:
             data["sha256"] = sha256
         return PreparedRequest(
             method="POST",
-            url="/files/upload",
+            url="/v1/files/upload",
             data=data,
         )
 
@@ -37,7 +37,7 @@ class FilesMixin:
         data: dict[str, Any] = {}
         if sha256 is not None:
             data["sha256"] = sha256
-        return PreparedRequest(method="POST", url=f"/files/upload/{file_id}/complete", data=data)
+        return PreparedRequest(method="POST", url=f"/v1/files/upload/{file_id}/complete", data=data)
 
     def prepare_list(
         self,
@@ -58,13 +58,13 @@ class FilesMixin:
             params["filename"] = filename
         if mime_type is not None:
             params["mime_type"] = mime_type
-        return PreparedRequest(method="GET", url="/files", params=params)
+        return PreparedRequest(method="GET", url="/v1/files", params=params)
 
     def prepare_get(self, file_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/files/{file_id}")
+        return PreparedRequest(method="GET", url=f"/v1/files/{file_id}")
 
     def prepare_get_download_link(self, file_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/files/{file_id}/download-link")
+        return PreparedRequest(method="GET", url=f"/v1/files/{file_id}/download-link")
 
 
 def _is_remote_string(value: object) -> bool:
@@ -162,8 +162,7 @@ class Files(SyncAPIResource, FilesMixin):
         sort_by: str = "created_at",
     ) -> PaginatedList[File]:
         request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, sort_by=sort_by)
-        response = self._client._prepared_request(request)
-        return PaginatedList[File].model_validate(response)
+        return self.request_page(request, model=File)
 
     def get(self, file_id: str) -> File:
         request = self.prepare_get(file_id)
@@ -229,10 +228,9 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         filename: Optional[str] = None,
         mime_type: Optional[str] = None,
         sort_by: str = "created_at",
-    ) -> PaginatedList[File]:
+    ) -> AsyncPaginatedList[File]:
         request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, sort_by=sort_by)
-        response = await self._client._prepared_request(request)
-        return PaginatedList[File].model_validate(response)
+        return await self.request_page(request, model=File)
 
     async def get(self, file_id: str) -> File:
         request = self.prepare_get(file_id)

@@ -11,7 +11,7 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.edits import Edit, EditConfig, EditRequest
 from ...types.mime import MIMEData
-from ...types.pagination import PaginatedList, PaginationOrder
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.standards import UNSET, PreparedRequest, _Unset
 from ...utils.mime import prepare_mime_document
 from .templates import AsyncEditTemplates, EditTemplates
@@ -46,12 +46,12 @@ class EditsMixin:
         edit_request = EditRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/edits",
+            url="/v1/edits",
             data=edit_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, edit_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/edits/{edit_id}")
+        return PreparedRequest(method="GET", url=f"/v1/edits/{edit_id}")
 
     def _prepare_list(
         self,
@@ -75,10 +75,10 @@ class EditsMixin:
             "to_date": to_date.isoformat() if to_date else None,
         }
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/edits", params=params)
+        return PreparedRequest(method="GET", url="/v1/edits", params=params)
 
     def _prepare_delete(self, edit_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/edits/{edit_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/edits/{edit_id}")
 
 
 class Edits(SyncAPIResource, EditsMixin):
@@ -121,7 +121,7 @@ class Edits(SyncAPIResource, EditsMixin):
         template_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Edit]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -132,23 +132,7 @@ class Edits(SyncAPIResource, EditsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after,
-                limit=limit,
-                order=order,
-                filename=filename,
-                template_id=template_id,
-                from_date=from_date,
-                to_date=to_date,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Edit)
 
     def delete(self, edit_id: str) -> None:
         request = self._prepare_delete(edit_id)
@@ -195,7 +179,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         template_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Edit]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -206,8 +190,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Edit)
 
     async def delete(self, edit_id: str) -> None:
         request = self._prepare_delete(edit_id)

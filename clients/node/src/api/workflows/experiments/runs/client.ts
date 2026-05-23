@@ -1,18 +1,15 @@
 import { CompositionClient, RequestOptions } from '../../../../client.js';
+import { PaginatedList } from '../../../_pagination.js';
 import {
   ExperimentMetricView,
   ExperimentMetricsResponse,
   ExperimentResult,
-  ExperimentResultListResponse,
   ExperimentRun,
   CancelWorkflowExperimentRunResponse,
-  ExperimentRunListResponse,
   ZCancelWorkflowExperimentRunResponse,
   ZExperimentMetricsResponse,
   ZExperimentResult,
-  ZExperimentResultListResponse,
   ZExperimentRun,
-  ZExperimentRunListResponse,
 } from '../types.js';
 
 function normalizeCsvParam(value?: string | string[]): string | undefined {
@@ -207,7 +204,7 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
       order?: 'asc' | 'desc';
     },
     options?: RequestOptions
-  ): Promise<ExperimentRunListResponse> {
+  ): Promise<PaginatedList<ExperimentRun>> {
     const request = this.prepare_list({
       workflowId,
       experimentId,
@@ -226,7 +223,7 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
       limit,
       order,
     });
-    return this._fetchJson(ZExperimentRunListResponse, {
+    return this._fetchPage(ZExperimentRun, {
       url: request.url,
       method: request.method,
       params: { ...request.params, ...(options?.params || {}) },
@@ -281,8 +278,8 @@ export class APIWorkflowExperimentRunResults extends CompositionClient {
   async list(
     { runId, limit = 20 }: { runId: string; limit?: number },
     options?: RequestOptions
-  ): Promise<ExperimentResultListResponse> {
-    return this._fetchJson(ZExperimentResultListResponse, {
+  ): Promise<PaginatedList<ExperimentResult>> {
+    return this._fetchPage(ZExperimentResult, {
       url: '/workflows/experiments/results',
       method: 'GET',
       params: { run_id: runId, limit, ...(options?.params || {}) },

@@ -15,7 +15,7 @@ from ...types.edits import (
     UpdateEditTemplateRequest,
 )
 from ...types.mime import MIMEData
-from ...types.pagination import PaginatedList, PaginationOrder
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.standards import UNSET, PreparedRequest, _Unset
 from ...utils.mime import prepare_mime_document
 
@@ -36,12 +36,12 @@ class EditTemplatesMixin:
         )
         return PreparedRequest(
             method="POST",
-            url="/edits/templates",
+            url="/v1/edits/templates",
             data=payload.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, template_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/edits/templates/{template_id}")
+        return PreparedRequest(method="GET", url=f"/v1/edits/templates/{template_id}")
 
     def _prepare_list(
         self,
@@ -59,7 +59,7 @@ class EditTemplatesMixin:
             "name": name,
         }
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/edits/templates", params=params)
+        return PreparedRequest(method="GET", url="/v1/edits/templates", params=params)
 
     def _prepare_update(
         self,
@@ -75,12 +75,12 @@ class EditTemplatesMixin:
         payload = UpdateEditTemplateRequest(**update_dict)
         return PreparedRequest(
             method="PATCH",
-            url=f"/edits/templates/{template_id}",
+            url=f"/v1/edits/templates/{template_id}",
             data=payload.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_delete(self, template_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/edits/templates/{template_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/edits/templates/{template_id}")
 
 
 class EditTemplates(SyncAPIResource, EditTemplatesMixin):
@@ -104,16 +104,9 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
         limit: int = 10,
         order: PaginationOrder = "desc",
         name: str | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[EditTemplate]:
         request = self._prepare_list(before=before, after=after, limit=limit, order=order, name=name)
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after: str) -> PaginatedList:
-            return self.list(before=None, after=after, limit=limit, order=order, name=name)
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=EditTemplate)
 
     def update(
         self,
@@ -150,10 +143,9 @@ class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
         limit: int = 10,
         order: PaginationOrder = "desc",
         name: str | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[EditTemplate]:
         request = self._prepare_list(before=before, after=after, limit=limit, order=order, name=name)
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=EditTemplate)
 
     async def update(
         self,

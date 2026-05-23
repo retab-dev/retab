@@ -1,0 +1,20 @@
+{
+  "likelihoods": [
+    {
+      "name": 1,
+      "pages": [
+        1
+      ]
+    }
+  ],
+  "choices": [
+    [
+      {
+        "name": "Test",
+        "pages": [
+          1
+        ]
+      }
+    ]
+  ]
+}

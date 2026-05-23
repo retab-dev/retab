@@ -73,7 +73,7 @@ func (s *FilesService) PrepareUpload(filename string, contentType string, sizeBy
 		body["sha256"] = sha256Value[0]
 	}
 	return PreparedRequest{
-		URL:    "/files/upload",
+		URL:    "/v1/files/upload",
 		Method: http.MethodPost,
 		Body:   body,
 	}
@@ -85,7 +85,7 @@ func (s *FilesService) PrepareCompleteUpload(fileID string, sha256Value ...strin
 		body["sha256"] = sha256Value[0]
 	}
 	return PreparedRequest{
-		URL:    "/files/upload/" + fileID + "/complete",
+		URL:    "/v1/files/upload/" + fileID + "/complete",
 		Method: http.MethodPost,
 		Body:   body,
 	}
@@ -102,7 +102,7 @@ func (s *FilesService) CreateUpload(ctx context.Context, request PrepareUploadRe
 		return nil, fmt.Errorf("retab: sizeBytes must be >= 0")
 	}
 	var response CreateUploadResponse
-	err := s.client.do(ctx, http.MethodPost, "/files/upload", nil, request, &response, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/files/upload", nil, request, &response, opts...)
 	return &response, err
 }
 
@@ -115,7 +115,7 @@ func (s *FilesService) CompleteUpload(ctx context.Context, fileID string, sha256
 		body["sha256"] = sha256
 	}
 	var response MIMEData
-	err := s.client.do(ctx, http.MethodPost, "/files/upload/"+url.PathEscape(fileID)+"/complete", nil, body, &response, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/files/upload/"+url.PathEscape(fileID)+"/complete", nil, body, &response, opts...)
 	return &response, err
 }
 
@@ -208,7 +208,7 @@ func (s *FilesService) List(ctx context.Context, params *ListFilesParams, opts .
 		query.Set("sort_by", "created_at")
 	}
 	var result PaginatedList[File]
-	err := s.client.do(ctx, http.MethodGet, "/files", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/files", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -217,7 +217,7 @@ func (s *FilesService) Get(ctx context.Context, fileID string, opts ...RequestOp
 		return nil, fmt.Errorf("retab: fileID is required")
 	}
 	var file File
-	err := s.client.do(ctx, http.MethodGet, "/files/"+url.PathEscape(fileID), nil, nil, &file, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/files/"+url.PathEscape(fileID), nil, nil, &file, opts...)
 	return &file, err
 }
 
@@ -226,7 +226,7 @@ func (s *FilesService) GetDownloadLink(ctx context.Context, fileID string, opts 
 		return nil, fmt.Errorf("retab: fileID is required")
 	}
 	var link FileLink
-	err := s.client.do(ctx, http.MethodGet, "/files/"+url.PathEscape(fileID)+"/download-link", nil, nil, &link, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/files/"+url.PathEscape(fileID)+"/download-link", nil, nil, &link, opts...)
 	return &link, err
 }
 
@@ -236,7 +236,7 @@ func (s *FilesService) Delete(ctx context.Context, fileID string, opts ...Reques
 	if fileID == "" {
 		return fmt.Errorf("retab: fileID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/files/"+url.PathEscape(fileID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/files/"+url.PathEscape(fileID), nil, nil, nil, opts...)
 }
 
 type SchemasService struct {
@@ -253,7 +253,7 @@ func (s *SchemasService) Generate(ctx context.Context, request GenerateSchemaReq
 		return nil, fmt.Errorf("retab: documents are required")
 	}
 	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/schemas/generate", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/schemas/generate", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -291,7 +291,7 @@ func (s *ExtractionsService) Create(ctx context.Context, request ExtractionCreat
 		return nil, fmt.Errorf("retab: model is required")
 	}
 	var result Extraction
-	err := s.client.do(ctx, http.MethodPost, "/extractions", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/extractions", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -302,7 +302,7 @@ func (s *ExtractionsService) List(ctx context.Context, params *ListExtractionsPa
 		addJSONQuery(query, "metadata", params.Metadata)
 	}
 	var result PaginatedList[Extraction]
-	err := s.client.do(ctx, http.MethodGet, "/extractions", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/extractions", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -311,7 +311,7 @@ func (s *ExtractionsService) Get(ctx context.Context, extractionID string, opts 
 		return nil, fmt.Errorf("retab: extractionID is required")
 	}
 	var result Extraction
-	err := s.client.do(ctx, http.MethodGet, "/extractions/"+url.PathEscape(extractionID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/extractions/"+url.PathEscape(extractionID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -320,7 +320,7 @@ func (s *ExtractionsService) Sources(ctx context.Context, extractionID string, o
 		return nil, fmt.Errorf("retab: extractionID is required")
 	}
 	var result Resource
-	err := s.client.do(ctx, http.MethodGet, "/extractions/"+url.PathEscape(extractionID)+"/sources", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/extractions/"+url.PathEscape(extractionID)+"/sources", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -328,7 +328,7 @@ func (s *ExtractionsService) Delete(ctx context.Context, extractionID string, op
 	if extractionID == "" {
 		return fmt.Errorf("retab: extractionID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/extractions/"+url.PathEscape(extractionID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/extractions/"+url.PathEscape(extractionID), nil, nil, nil, opts...)
 }
 
 type SplitsService struct {
@@ -365,7 +365,7 @@ func (s *SplitsService) Create(ctx context.Context, request SplitCreateRequest, 
 		return nil, fmt.Errorf("retab: model is required")
 	}
 	var result Split
-	err := s.client.do(ctx, http.MethodPost, "/splits", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/splits", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -374,14 +374,14 @@ func (s *SplitsService) Get(ctx context.Context, splitID string, opts ...Request
 		return nil, fmt.Errorf("retab: splitID is required")
 	}
 	var result Split
-	err := s.client.do(ctx, http.MethodGet, "/splits/"+url.PathEscape(splitID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/splits/"+url.PathEscape(splitID), nil, nil, &result, opts...)
 	return &result, err
 }
 
 func (s *SplitsService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Split], error) {
 	query := listQuery(params)
 	var result PaginatedList[Split]
-	err := s.client.do(ctx, http.MethodGet, "/splits", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/splits", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -389,7 +389,7 @@ func (s *SplitsService) Delete(ctx context.Context, splitID string, opts ...Requ
 	if splitID == "" {
 		return fmt.Errorf("retab: splitID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/splits/"+url.PathEscape(splitID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/splits/"+url.PathEscape(splitID), nil, nil, nil, opts...)
 }
 
 type ClassificationsService struct {
@@ -424,7 +424,7 @@ func (s *ClassificationsService) Create(ctx context.Context, request Classificat
 		return nil, fmt.Errorf("retab: model is required")
 	}
 	var result Classification
-	err := s.client.do(ctx, http.MethodPost, "/classifications", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/classifications", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -433,14 +433,14 @@ func (s *ClassificationsService) Get(ctx context.Context, classificationID strin
 		return nil, fmt.Errorf("retab: classificationID is required")
 	}
 	var result Classification
-	err := s.client.do(ctx, http.MethodGet, "/classifications/"+url.PathEscape(classificationID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/classifications/"+url.PathEscape(classificationID), nil, nil, &result, opts...)
 	return &result, err
 }
 
 func (s *ClassificationsService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Classification], error) {
 	query := listQuery(params)
 	var result PaginatedList[Classification]
-	err := s.client.do(ctx, http.MethodGet, "/classifications", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/classifications", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -448,7 +448,7 @@ func (s *ClassificationsService) Delete(ctx context.Context, classificationID st
 	if classificationID == "" {
 		return fmt.Errorf("retab: classificationID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/classifications/"+url.PathEscape(classificationID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/classifications/"+url.PathEscape(classificationID), nil, nil, nil, opts...)
 }
 
 type ParsesService struct {
@@ -474,7 +474,7 @@ func (s *ParsesService) Create(ctx context.Context, request ParseCreateRequest, 
 		return nil, fmt.Errorf("retab: model is required")
 	}
 	var result Parse
-	err := s.client.do(ctx, http.MethodPost, "/parses", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/parses", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -483,14 +483,14 @@ func (s *ParsesService) Get(ctx context.Context, parseID string, opts ...Request
 		return nil, fmt.Errorf("retab: parseID is required")
 	}
 	var result Parse
-	err := s.client.do(ctx, http.MethodGet, "/parses/"+url.PathEscape(parseID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/parses/"+url.PathEscape(parseID), nil, nil, &result, opts...)
 	return &result, err
 }
 
 func (s *ParsesService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Parse], error) {
 	query := listQuery(params)
 	var result PaginatedList[Parse]
-	err := s.client.do(ctx, http.MethodGet, "/parses", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/parses", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -498,7 +498,7 @@ func (s *ParsesService) Delete(ctx context.Context, parseID string, opts ...Requ
 	if parseID == "" {
 		return fmt.Errorf("retab: parseID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/parses/"+url.PathEscape(parseID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/parses/"+url.PathEscape(parseID), nil, nil, nil, opts...)
 }
 
 type EditsService struct {
@@ -537,7 +537,7 @@ func (s *EditsService) Create(ctx context.Context, request EditCreateRequest, op
 		body["config"] = Resource{"color": request.Color}
 	}
 	var result Edit
-	err := s.client.do(ctx, http.MethodPost, "/edits", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/edits", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -546,7 +546,7 @@ func (s *EditsService) Get(ctx context.Context, editID string, opts ...RequestOp
 		return nil, fmt.Errorf("retab: editID is required")
 	}
 	var result Edit
-	err := s.client.do(ctx, http.MethodGet, "/edits/"+url.PathEscape(editID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/edits/"+url.PathEscape(editID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -557,7 +557,7 @@ func (s *EditsService) List(ctx context.Context, params *ListEditsParams, opts .
 		addQuery(query, "template_id", params.TemplateID)
 	}
 	var result PaginatedList[Edit]
-	err := s.client.do(ctx, http.MethodGet, "/edits", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/edits", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -565,7 +565,7 @@ func (s *EditsService) Delete(ctx context.Context, editID string, opts ...Reques
 	if editID == "" {
 		return fmt.Errorf("retab: editID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/edits/"+url.PathEscape(editID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/v1/edits/"+url.PathEscape(editID), nil, nil, nil, opts...)
 }
 
 type JobsService struct {
@@ -638,7 +638,7 @@ func (s *JobsService) Create(ctx context.Context, request JobCreateRequest, opts
 		return nil, fmt.Errorf("retab: request is required")
 	}
 	var result Job
-	err := s.client.do(ctx, http.MethodPost, "/jobs", nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/jobs", nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -654,7 +654,7 @@ func (s *JobsService) Retrieve(ctx context.Context, jobID string, params *JobRet
 		query.Set("include_response", strconv.FormatBool(params.IncludeResponse))
 	}
 	var result Job
-	err := s.client.do(ctx, http.MethodGet, "/jobs/"+url.PathEscape(jobID), query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/jobs/"+url.PathEscape(jobID), query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -704,7 +704,7 @@ func (s *JobsService) Cancel(ctx context.Context, jobID string, opts ...RequestO
 		return nil, fmt.Errorf("retab: jobID is required")
 	}
 	var result Job
-	err := s.client.do(ctx, http.MethodPost, "/jobs/"+url.PathEscape(jobID)+"/cancel", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/jobs/"+url.PathEscape(jobID)+"/cancel", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -713,7 +713,7 @@ func (s *JobsService) Retry(ctx context.Context, jobID string, opts ...RequestOp
 		return nil, fmt.Errorf("retab: jobID is required")
 	}
 	var result Job
-	err := s.client.do(ctx, http.MethodPost, "/jobs/"+url.PathEscape(jobID)+"/retry", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/v1/jobs/"+url.PathEscape(jobID)+"/retry", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -752,7 +752,7 @@ func (s *JobsService) List(ctx context.Context, params *ListJobsParams, opts ...
 		}
 	}
 	var result JobListResponse
-	err := s.client.do(ctx, http.MethodGet, "/jobs", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/v1/jobs", query, nil, &result, opts...)
 	if result.Data == nil {
 		result.Data = []Job{}
 	}

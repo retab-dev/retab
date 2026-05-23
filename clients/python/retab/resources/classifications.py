@@ -11,7 +11,7 @@ from pydantic import HttpUrl
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.classifications import Category, Classification, ClassificationRequest
 from ..types.mime import MIMEData
-from ..types.pagination import PaginatedList, PaginationOrder
+from ..types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ..types.standards import UNSET, PreparedRequest, _Unset
 from ..utils.mime import prepare_mime_document
 
@@ -51,12 +51,12 @@ class ClassificationsMixin:
         classify_request = ClassificationRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/classifications",
+            url="/v1/classifications",
             data=classify_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, classification_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/classifications/{classification_id}")
+        return PreparedRequest(method="GET", url=f"/v1/classifications/{classification_id}")
 
     def _prepare_list(
         self,
@@ -78,10 +78,10 @@ class ClassificationsMixin:
             "to_date": to_date.isoformat() if to_date else None,
         }
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/classifications", params=params)
+        return PreparedRequest(method="GET", url="/v1/classifications", params=params)
 
     def _prepare_delete(self, classification_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/classifications/{classification_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/classifications/{classification_id}")
 
 
 class Classifications(SyncAPIResource, ClassificationsMixin):
@@ -122,7 +122,7 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Classification]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -132,22 +132,7 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after,
-                limit=limit,
-                order=order,
-                filename=filename,
-                from_date=from_date,
-                to_date=to_date,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Classification)
 
     def delete(self, classification_id: str) -> None:
         request = self._prepare_delete(classification_id)
@@ -192,7 +177,7 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Classification]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -202,8 +187,7 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Classification)
 
     async def delete(self, classification_id: str) -> None:
         request = self._prepare_delete(classification_id)

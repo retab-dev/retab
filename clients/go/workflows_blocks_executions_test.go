@@ -16,13 +16,13 @@ func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/blocks/executions" && r.URL.RawQuery == "":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/blocks/executions" && r.URL.RawQuery == "":
 			sawCreate = true
 			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
 				t.Fatalf("decode create body: %v", err)
 			}
 			_ = json.NewEncoder(w).Encode(blockExecutionResponse("sim_123"))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/executions":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks/executions":
 			sawList = true
 			query := r.URL.Query()
 			if query.Get("run_id") != "run_123" || query.Get("block_id") != "blk_extract" || query.Get("limit") != "10" {

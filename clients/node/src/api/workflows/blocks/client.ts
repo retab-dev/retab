@@ -1,10 +1,9 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
+import { PaginatedList } from '../../_pagination.js';
 import {
-  PaginatedList,
   WorkflowBlock,
   WorkflowBlockCreateRequest,
   UpdateWorkflowBlockRequest,
-  ZPaginatedList,
   ZWorkflowBlock,
 } from '../../../types.js';
 import APIWorkflowBlockExecutions from './executions/client.js';
@@ -60,8 +59,8 @@ export default class APIWorkflowBlocks extends CompositionClient {
    * pagination envelope. ID pagination is not yet implemented for this
    * endpoint; `list_metadata` is always `{before: null, after: null}`.
    */
-  async list(workflowId: string, options?: RequestOptions): Promise<PaginatedList> {
-    return this._fetchJson(ZPaginatedList, {
+  async list(workflowId: string, options?: RequestOptions): Promise<PaginatedList<WorkflowBlock>> {
+    return this._fetchPage(ZWorkflowBlock, {
       url: `/workflows/blocks?workflow_id=${workflowId}`,
       method: 'GET',
       params: options?.params,

@@ -1,14 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZFileRef,
-  FileRef,
-  ZPaginatedList,
-  PaginatedList,
-  ZPartition,
-  Partition,
-} from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
+import { ZMIMEData, MIMEDataInput, ZFileRef, FileRef, ZPartition, Partition } from '../../types.js';
 
 export type PartitionCreateParams = {
   document: MIMEDataInput | FileRef;
@@ -95,7 +87,7 @@ export default class APIPartitions extends CompositionClient {
       to_date,
     }: PartitionListParams = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Partition>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -108,7 +100,7 @@ export default class APIPartitions extends CompositionClient {
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZPartition, {
       url: '/partitions',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

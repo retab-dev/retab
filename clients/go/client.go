@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const defaultBaseURL = "https://api.retab.com/v1"
+const defaultBaseURL = "https://api.retab.com"
 
 // Client is the root Retab API client.
 type Client struct {
@@ -43,10 +43,27 @@ type Client struct {
 // Option customizes a Retab client.
 type Option func(*Client)
 
-// WithBaseURL overrides the default Retab API base URL.
+// WithBaseURL overrides the default Retab API base URL. A trailing `/v<N>`
+// segment is stripped automatically for back-compat with older SDKs that
+// baked the version into the base URL — the current SDK keeps /v<N> in
+// per-operation paths instead.
 func WithBaseURL(baseURL string) Option {
 	return func(c *Client) {
-		c.baseURL = strings.TrimRight(baseURL, "/")
+		trimmed := strings.TrimRight(baseURL, "/")
+		if idx := strings.LastIndex(trimmed, "/v"); idx >= 0 {
+			suffix := trimmed[idx+2:]
+			allDigits := suffix != ""
+			for _, r := range suffix {
+				if r < '0' || r > '9' {
+					allDigits = false
+					break
+				}
+			}
+			if allDigits {
+				trimmed = trimmed[:idx]
+			}
+		}
+		c.baseURL = trimmed
 	}
 }
 
@@ -296,6 +313,54 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, que
 		req.Header.Set(key, value)
 	}
 	return req, nil
+}
+
+// doPaginated runs a list request and returns a PaginatedList[T] wired up for
+// auto-pagination. The returned list's NextPage / AutoPaging methods re-issue
+// the same request with the After cursor advanced — query, body, opts are
+// captured verbatim so cursor walking preserves all filters, sort orders,
+// page sizes, and per-call headers. The url.Values is cloned defensively so
+// the caller's slice mutations don't leak into subsequent page fetches.
+func doPaginated[T any](
+	ctx context.Context,
+	c *Client,
+	method string,
+	path string,
+	query url.Values,
+	body any,
+	opts ...RequestOption,
+) (*PaginatedList[T], error) {
+	baseQuery := cloneQuery(query)
+	var result PaginatedList[T]
+	if err := c.do(ctx, method, path, baseQuery, body, &result, opts...); err != nil {
+		return nil, err
+	}
+	result.fetchNext = func(ctx context.Context, after string) (*PaginatedList[T], error) {
+		next := cloneQuery(baseQuery)
+		next.Set("after", after)
+		// `before` and `after` are mutually exclusive on every Retab list
+		// endpoint — dropping any previously-set `before` lets a caller
+		// initially fetch by `before` and then auto-page forward.
+		next.Del("before")
+		return doPaginated[T](ctx, c, method, path, next, body, opts...)
+	}
+	return &result, nil
+}
+
+// cloneQuery returns a shallow copy of values so subsequent mutations on the
+// returned url.Values don't bleed back into the caller's instance. nil input
+// yields a non-nil empty url.Values to simplify Set calls downstream.
+func cloneQuery(values url.Values) url.Values {
+	if values == nil {
+		return url.Values{}
+	}
+	out := make(url.Values, len(values))
+	for key, vals := range values {
+		copied := make([]string, len(vals))
+		copy(copied, vals)
+		out[key] = copied
+	}
+	return out
 }
 
 func (c *Client) do(ctx context.Context, method string, path string, query url.Values, body any, out any, opts ...RequestOption) error {

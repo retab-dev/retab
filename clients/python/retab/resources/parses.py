@@ -10,7 +10,7 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.mime import MIMEData
-from ..types.pagination import PaginatedList, PaginationOrder
+from ..types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ..types.parses import Parse, ParseRequest, TableParsingFormat
 from ..types.standards import UNSET, PreparedRequest, _Unset
 from ..utils.mime import prepare_mime_document
@@ -47,12 +47,12 @@ class ParsesMixin:
         parse_request = ParseRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/parses",
+            url="/v1/parses",
             data=parse_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def _prepare_get(self, parse_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/parses/{parse_id}")
+        return PreparedRequest(method="GET", url=f"/v1/parses/{parse_id}")
 
     def _prepare_list(
         self,
@@ -74,10 +74,10 @@ class ParsesMixin:
             "to_date": to_date.isoformat() if to_date else None,
         }
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/parses", params=params)
+        return PreparedRequest(method="GET", url="/v1/parses", params=params)
 
     def _prepare_delete(self, parse_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/parses/{parse_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/parses/{parse_id}")
 
 
 class Parses(SyncAPIResource, ParsesMixin):
@@ -116,7 +116,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> PaginatedList[Parse]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -126,22 +126,7 @@ class Parses(SyncAPIResource, ParsesMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-
-        def fetch_next(after: str) -> PaginatedList:
-            return self.list(
-                before=None,
-                after=after,
-                limit=limit,
-                order=order,
-                filename=filename,
-                from_date=from_date,
-                to_date=to_date,
-            )
-
-        result._fetch_next_page = fetch_next
-        return result
+        return self.request_page(request, model=Parse)
 
     def delete(self, parse_id: str) -> None:
         request = self._prepare_delete(parse_id)
@@ -184,7 +169,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Parse]:
         request = self._prepare_list(
             before=before,
             after=after,
@@ -194,8 +179,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
             from_date=from_date,
             to_date=to_date,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        return await self.request_page(request, model=Parse)
 
     async def delete(self, parse_id: str) -> None:
         request = self._prepare_delete(parse_id)

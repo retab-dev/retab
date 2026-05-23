@@ -155,7 +155,7 @@ func TestFileUploadContentTypeMatchesNode(t *testing.T) {
 func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -200,7 +200,7 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -244,7 +244,7 @@ func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 func TestWorkflowRunCreateAcceptsJSONDocumentDescriptors(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -305,14 +305,14 @@ func TestListDefaultsMatchNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if requests["/workflows"] != "limit=10&order=desc" {
-		t.Fatalf("workflow defaults = %q", requests["/workflows"])
+	if requests["/v1/workflows"] != "limit=10&order=desc" {
+		t.Fatalf("workflow defaults = %q", requests["/v1/workflows"])
 	}
-	if requests["/workflows/runs"] != "limit=20&order=desc" {
-		t.Fatalf("workflow run defaults = %q", requests["/workflows/runs"])
+	if requests["/v1/workflows/runs"] != "limit=20&order=desc" {
+		t.Fatalf("workflow run defaults = %q", requests["/v1/workflows/runs"])
 	}
-	if requests["/jobs"] != "limit=20&order=desc" {
-		t.Fatalf("job defaults = %q", requests["/jobs"])
+	if requests["/v1/jobs"] != "limit=20&order=desc" {
+		t.Fatalf("job defaults = %q", requests["/v1/jobs"])
 	}
 }
 
@@ -388,21 +388,21 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		requests = append(requests, request)
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/blocks":
+		case "/v1/workflows/blocks":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data": []Resource{{
 					"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start_document",
 				}},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
-		case "/workflows/edges":
+		case "/v1/workflows/edges":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data":          []Resource{},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
-		case "/workflows/tests":
+		case "/v1/workflows/tests":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
-		case "/workflows/tests/runs":
+		case "/v1/workflows/tests/runs":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data": []Resource{{
 					"id":        "testrun_1",
@@ -436,7 +436,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "GET?workflow_id=wf_123 /workflows/blocks,GET?workflow_id=wf_123 /workflows/edges,GET?limit=50&workflow_id=wf_123 /workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /workflows/tests/runs"
+	want := "GET?workflow_id=wf_123 /v1/workflows/blocks,GET?workflow_id=wf_123 /v1/workflows/edges,GET?limit=50&workflow_id=wf_123 /v1/workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /v1/workflows/tests/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}

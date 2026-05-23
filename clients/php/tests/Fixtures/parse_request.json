@@ -1,0 +1,11 @@
+{
+  "document": {
+    "filename": "Test",
+    "url": "https://example.com"
+  },
+  "model": "test_model",
+  "table_parsing_format": "markdown",
+  "image_resolution_dpi": 1,
+  "instructions": "test_instructions",
+  "bust_cache": true
+}

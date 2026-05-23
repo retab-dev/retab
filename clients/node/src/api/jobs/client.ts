@@ -1,4 +1,5 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
+import { PaginatedList } from '../_pagination.js';
 import * as z from 'zod';
 
 // Job status type
@@ -260,7 +261,7 @@ export default class APIJobs extends CompositionClient {
       include_response?: boolean;
     } = {},
     options?: RequestOptions
-  ): Promise<JobListResponse> {
+  ): Promise<PaginatedList<Job>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -288,7 +289,7 @@ export default class APIJobs extends CompositionClient {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
 
-    return this._fetchJson(ZJobListResponse, {
+    return this._fetchPage(ZJob, {
       url: '/jobs',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

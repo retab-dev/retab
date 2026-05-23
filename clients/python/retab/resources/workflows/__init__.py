@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import PaginatedList, PaginationOrder
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
 from ...types.workflows import (
     Workflow,
@@ -23,7 +23,7 @@ class WorkflowsMixin:
 
     def prepare_get(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to get a workflow by ID."""
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}")
+        return PreparedRequest(method="GET", url=f"/v1/workflows/{workflow_id}")
 
     def prepare_list(
         self,
@@ -44,7 +44,7 @@ class WorkflowsMixin:
             "fields": fields,
         }
         params = {key: value for key, value in params.items() if value is not None}
-        return PreparedRequest(method="GET", url="/workflows", params=params)
+        return PreparedRequest(method="GET", url="/v1/workflows", params=params)
 
     def prepare_create(
         self,
@@ -53,7 +53,7 @@ class WorkflowsMixin:
     ) -> PreparedRequest:
         """Prepare a request to create a new workflow."""
         data: Dict[str, Any] = {"name": name, "description": description}
-        return PreparedRequest(method="POST", url="/workflows", data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows", data=data)
 
     def prepare_update(
         self,
@@ -70,16 +70,16 @@ class WorkflowsMixin:
             data["description"] = description
         if email_trigger is not None:
             data["email_trigger"] = email_trigger
-        return PreparedRequest(method="PATCH", url=f"/workflows/{workflow_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/v1/workflows/{workflow_id}", data=data)
 
     def prepare_delete(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to delete a workflow."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/workflows/{workflow_id}")
 
     def prepare_publish(self, workflow_id: str, description: str = "") -> PreparedRequest:
         """Prepare a request to publish a workflow."""
         data: Dict[str, Any] = {"description": description}
-        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/publish", data=data)
+        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/publish", data=data)
 
     def prepare_diagnose(
         self,
@@ -92,7 +92,7 @@ class WorkflowsMixin:
         }
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/diagnose-graph",
+            url=f"/v1/workflows/{workflow_id}/diagnose-graph",
             data=data,
         )
 
@@ -137,8 +137,15 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         order: PaginationOrder = "desc",
         sort_by: str = "updated_at",
         fields: str | None = None,
-    ) -> PaginatedList:
-        """List workflows with pagination."""
+    ) -> PaginatedList[Workflow]:
+        """List workflows with pagination.
+
+        When ``fields`` is supplied, the server returns projected dicts
+        instead of full ``Workflow`` documents — items are left as the
+        raw dicts in that case so callers see exactly what the server
+        sent back. With ``fields=None`` each item is validated against
+        ``Workflow``.
+        """
         request = self.prepare_list(
             before=before,
             after=after,
@@ -147,11 +154,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             sort_by=sort_by,
             fields=fields,
         )
-        response = self._client._prepared_request(request)
-        result = PaginatedList(**response)
-        if fields is None:
-            result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
-        return result
+        return self.request_page(request, model=Workflow if fields is None else None)
 
     def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
         """Create a new workflow.
@@ -267,7 +270,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         order: PaginationOrder = "desc",
         sort_by: str = "updated_at",
         fields: str | None = None,
-    ) -> PaginatedList:
+    ) -> AsyncPaginatedList[Workflow]:
         """List workflows with pagination."""
         request = self.prepare_list(
             before=before,
@@ -277,11 +280,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
             sort_by=sort_by,
             fields=fields,
         )
-        response = await self._client._prepared_request(request)
-        result = PaginatedList(**response)
-        if fields is None:
-            result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
-        return result
+        return await self.request_page(request, model=Workflow if fields is None else None)
 
     async def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
         """Create a new workflow."""

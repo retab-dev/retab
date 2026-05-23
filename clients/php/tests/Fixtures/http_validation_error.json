@@ -1,0 +1,15 @@
+{
+  "detail": [
+    {
+      "loc": [
+        "test_loc"
+      ],
+      "msg": "test_msg",
+      "type": "test_type",
+      "input": {},
+      "ctx": {
+        "key": {}
+      }
+    }
+  ]
+}

@@ -58,7 +58,7 @@ func TestWorkflowExperimentsListUsesPaginatedEnvelope(t *testing.T) {
 // scoped run lists.
 func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/experiments/runs" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		query := r.URL.Query()
@@ -158,7 +158,7 @@ func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 // for `GET /v1/workflows/tests/runs`.
 func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/tests/runs" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/tests/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		query := r.URL.Query()
@@ -229,7 +229,7 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 
 func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/tests/runs" || r.URL.RawQuery != "" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests/runs" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		var body Resource

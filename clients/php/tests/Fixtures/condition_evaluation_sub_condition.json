@@ -1,0 +1,18 @@
+{
+  "sub_condition_id": "sub_condition_id_01234",
+  "path": "test_path",
+  "operator": "test_operator",
+  "expected": {},
+  "actual": {},
+  "matched": true,
+  "per_item": [
+    {
+      "index": 1,
+      "indices": [
+        1
+      ],
+      "actual": {},
+      "matched": true
+    }
+  ]
+}

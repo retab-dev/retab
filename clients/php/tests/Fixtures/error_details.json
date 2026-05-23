@@ -1,0 +1,10 @@
+{
+  "message": "test_message",
+  "stack_trace": "test_stack_trace",
+  "block_id": "block_id_01234",
+  "block_name": "Test",
+  "error_code": "test_error_code",
+  "context": {
+    "key": {}
+  }
+}

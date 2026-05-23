@@ -1,0 +1,9 @@
+{
+  "endpoint": "/v1/extractions",
+  "request": {
+    "key": {}
+  },
+  "metadata": {
+    "key": "test_value"
+  }
+}

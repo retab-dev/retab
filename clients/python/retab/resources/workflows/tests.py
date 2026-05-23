@@ -19,7 +19,7 @@ from typing import Any, Dict, Mapping, Sequence, Union
 from pydantic import TypeAdapter
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList
 from ...types.standards import PreparedRequest
 from ...types.workflows.tests import (
     AssertionSpec,
@@ -87,7 +87,7 @@ def _prepare_create_run(
         data["n_consensus"] = n_consensus
     return PreparedRequest(
         method="POST",
-        url="/workflows/tests/runs",
+        url="/v1/workflows/tests/runs",
         data=data,
     )
 
@@ -114,14 +114,14 @@ class WorkflowTestsMixin:
             data["name"] = name
         return PreparedRequest(
             method="POST",
-            url="/workflows/tests",
+            url="/v1/workflows/tests",
             data=data,
         )
 
     def prepare_get(self, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests/{test_id}",
+            url=f"/v1/workflows/tests/{test_id}",
         )
 
     def prepare_list(
@@ -138,7 +138,7 @@ class WorkflowTestsMixin:
             params["target_block_id"] = target_block_id
         return PreparedRequest(
             method="GET",
-            url="/workflows/tests",
+            url="/v1/workflows/tests",
             params=params,
         )
 
@@ -162,14 +162,14 @@ class WorkflowTestsMixin:
             data["source"] = _dump_source(source)
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/tests/{test_id}",
+            url=f"/v1/workflows/tests/{test_id}",
             data=data,
         )
 
     def prepare_delete(self, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/tests/{test_id}",
+            url=f"/v1/workflows/tests/{test_id}",
         )
 
 
@@ -218,7 +218,7 @@ class WorkflowTestRunsMixin:
                 params[key] = value
         return PreparedRequest(
             method="GET",
-            url="/workflows/tests/runs",
+            url="/v1/workflows/tests/runs",
             params=params,
         )
 
@@ -240,13 +240,13 @@ class WorkflowTestRunsMixin:
     def prepare_get(self, run_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests/runs/{run_id}",
+            url=f"/v1/workflows/tests/runs/{run_id}",
         )
 
     def prepare_cancel(self, run_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/tests/runs/{run_id}/cancel",
+            url=f"/v1/workflows/tests/runs/{run_id}/cancel",
             data={},
         )
 
@@ -257,14 +257,14 @@ class WorkflowTestRunResultsMixin:
     def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url="/workflows/tests/results",
+            url="/v1/workflows/tests/results",
             params={"run_id": run_id, "limit": limit},
         )
 
     def prepare_get(self, result_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests/results/{result_id}",
+            url=f"/v1/workflows/tests/results/{result_id}",
         )
 
 
@@ -277,8 +277,7 @@ def _join_csv(value: Sequence[str] | str | None) -> str | None:
 class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
     def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
         request = self.prepare_list(run_id, limit=limit)
-        response = self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestResult].model_validate(response)
+        return self.request_page(request, model=WorkflowTestResult)
 
     def get(self, result_id: str) -> WorkflowTestResult:
         request = self.prepare_get(result_id)
@@ -287,10 +286,9 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
 
 
 class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin):
-    async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
+    async def list(self, run_id: str, *, limit: int = 20) -> AsyncPaginatedList[WorkflowTestResult]:
         request = self.prepare_list(run_id, limit=limit)
-        response = await self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestResult].model_validate(response)
+        return await self.request_page(request, model=WorkflowTestResult)
 
     async def get(self, result_id: str) -> WorkflowTestResult:
         request = self.prepare_get(result_id)
@@ -359,8 +357,7 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
             limit=limit,
             order=order,
         )
-        response = self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestRun].model_validate(response)
+        return self.request_page(request, model=WorkflowTestRun)
 
     def get(self, run_id: str) -> WorkflowTestRun:
         request = self.prepare_get(run_id)
@@ -415,7 +412,7 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
         after: str | None = None,
         limit: int = 20,
         order: str | None = None,
-    ) -> PaginatedList[WorkflowTestRun]:
+    ) -> AsyncPaginatedList[WorkflowTestRun]:
         request = self.prepare_list(
             workflow_id=workflow_id,
             test_id=test_id,
@@ -434,8 +431,7 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
             limit=limit,
             order=order,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestRun].model_validate(response)
+        return await self.request_page(request, model=WorkflowTestRun)
 
     async def get(self, run_id: str) -> WorkflowTestRun:
         request = self.prepare_get(run_id)
@@ -520,8 +516,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
             target_block_id=target_block_id,
             limit=limit,
         )
-        response = self._client._prepared_request(request)
-        return PaginatedList[WorkflowTest].model_validate(response)
+        return self.request_page(request, model=WorkflowTest)
 
     def update(
         self,
@@ -591,14 +586,13 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         *,
         target_block_id: str | None = None,
         limit: int = 50,
-    ) -> PaginatedList[WorkflowTest]:
+    ) -> AsyncPaginatedList[WorkflowTest]:
         request = self.prepare_list(
             workflow_id,
             target_block_id=target_block_id,
             limit=limit,
         )
-        response = await self._client._prepared_request(request)
-        return PaginatedList[WorkflowTest].model_validate(response)
+        return await self.request_page(request, model=WorkflowTest)
 
     async def update(
         self,

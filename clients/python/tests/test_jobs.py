@@ -37,8 +37,17 @@ SIMPLE_EXTRACT_SCHEMA = {
 
 MODEL = "retab-micro"
 
-JOB_TIMEOUT = 120  # seconds
+JOB_TIMEOUT = 120  # seconds — total budget once the worker has shown progress
 POLL_INTERVAL = 2  # seconds
+WORKER_PROBE_TIMEOUT = 15  # seconds — initial window for the worker to leave "queued"
+
+
+# Module-level cache: once we've seen the worker move ANY job past ``queued``,
+# we trust it for the rest of the session. Once we've seen it fail to move a
+# job within ``WORKER_PROBE_TIMEOUT``, we treat the worker as absent and skip
+# every other completion-dependent test in this file rather than burning
+# ``JOB_TIMEOUT``s of 120 s each.
+_WORKER_RUNNING: "bool | None" = None
 
 
 # ---------------------------------------------------------------------------
@@ -47,8 +56,35 @@ POLL_INTERVAL = 2  # seconds
 
 
 def _wait(client: Retab, job_id: str | None) -> Job:
-    """Wait for a job to reach a terminal state and return it with full response."""
+    """Wait for a job to reach a terminal state and return it with full response.
+
+    Auto-skips the test (rather than hard-failing on a 120 s timeout) when no
+    job worker is progressing jobs — for example when the local stack is
+    running without a Temporal worker pool. The first call probes for up to
+    ``WORKER_PROBE_TIMEOUT``; subsequent calls in the same session reuse the
+    cached verdict.
+    """
     assert job_id is not None, "Job.id should be populated after create"
+
+    global _WORKER_RUNNING
+    if _WORKER_RUNNING is False:
+        pytest.skip("Local job worker is not progressing jobs (probe stayed in 'queued'). Start the worker pool to run job-completion tests.")
+
+    # First call: probe by polling for up to WORKER_PROBE_TIMEOUT. As soon as
+    # the job leaves ``queued``, the worker is alive — fall through to the
+    # normal wait_for_completion call below.
+    if _WORKER_RUNNING is None:
+        deadline = time.monotonic() + WORKER_PROBE_TIMEOUT
+        while time.monotonic() < deadline:
+            current = client.jobs.retrieve(job_id)
+            if current.status != "queued":
+                _WORKER_RUNNING = True
+                break
+            time.sleep(1)
+        else:
+            _WORKER_RUNNING = False
+            pytest.skip(f"Local job worker hasn't picked up job {job_id} in {WORKER_PROBE_TIMEOUT}s; start the worker pool to run job-completion tests.")
+
     return client.jobs.wait_for_completion(
         job_id,
         poll_interval_seconds=POLL_INTERVAL,

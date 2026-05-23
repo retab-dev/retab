@@ -1,0 +1,23 @@
+# frozen_string_literal: true
+
+# @oagen-ignore-file
+#
+# Hand-maintained Minitest bootstrap. Loads the gem under test and any
+# helpers the generated tests rely on (e.g. WebMock for HTTP stubbing).
+
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+
+require 'minitest/autorun'
+require 'retab'
+
+begin
+  require 'webmock/minitest'
+rescue LoadError
+  # WebMock is only needed by the generated service tests. The MimeData
+  # smoke test runs without it.
+end
+
+# Minimal FixtureHelper stub. Generated tests `include FixtureHelper` but
+# never call into it (they build inline `.with(body:)` matchers instead).
+module FixtureHelper
+end

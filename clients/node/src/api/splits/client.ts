@@ -1,12 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZPaginatedList,
-  PaginatedList,
-  ZSplit,
-  Split,
-} from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
+import { ZMIMEData, MIMEDataInput, ZSplit, Split } from '../../types.js';
 
 export type SplitSubdocument = {
   name: string;
@@ -105,7 +99,7 @@ export default class APISplits extends CompositionClient {
       to_date,
     }: SplitListParams = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Split>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -118,7 +112,7 @@ export default class APISplits extends CompositionClient {
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZSplit, {
       url: '/splits',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

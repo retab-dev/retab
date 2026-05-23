@@ -1,12 +1,6 @@
 import { CompositionClient, RequestOptions } from '../../client.js';
-import {
-  ZMIMEData,
-  MIMEDataInput,
-  ZPaginatedList,
-  PaginatedList,
-  ZClassification,
-  Classification,
-} from '../../types.js';
+import { PaginatedList } from '../_pagination.js';
+import { ZMIMEData, MIMEDataInput, ZClassification, Classification } from '../../types.js';
 import type { Category } from '../../generated_types.js';
 
 export type ClassificationCategory = Category | { name: string; description?: string };
@@ -106,7 +100,7 @@ export default class APIClassifications extends CompositionClient {
       to_date,
     }: ClassificationListParams = {},
     options?: RequestOptions
-  ): Promise<PaginatedList> {
+  ): Promise<PaginatedList<Classification>> {
     const params: Record<string, any> = {
       before,
       after,
@@ -119,7 +113,7 @@ export default class APIClassifications extends CompositionClient {
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
-    return this._fetchJson(ZPaginatedList, {
+    return this._fetchPage(ZClassification, {
       url: '/classifications',
       method: 'GET',
       params: { ...cleanParams, ...(options?.params || {}) },

@@ -110,7 +110,7 @@ def test_create_posts_to_tests_route_with_full_body() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests"
+    assert request.url == "/v1/workflows/tests"
     assert request.data["workflow_id"] == "wf_abc123"
     # Pydantic dumps the discriminated union with `type` set explicitly.
     assert request.data["target"] == {"type": "block", "block_id": "block_extract"}
@@ -217,7 +217,7 @@ def test_get_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/wfnodetest_abc"
+    assert request.url == "/v1/workflows/tests/wfnodetest_abc"
 
 
 def test_list_uses_tests_route_with_filter() -> None:
@@ -235,8 +235,8 @@ def test_list_uses_tests_route_with_filter() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
-    assert request.params == {"limit": 25, "target_block_id": "block_extract"}
+    assert request.url == "/v1/workflows/tests"
+    assert request.params == {"limit": 25, "workflow_id": "wf_abc123", "target_block_id": "block_extract"}
     assert result.data == []
     assert result.list_metadata.before is None
     assert result.list_metadata.after is None
@@ -267,7 +267,7 @@ def test_delete_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/tests/wfnodetest_abc"
+    assert request.url == "/v1/workflows/tests/wfnodetest_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +291,7 @@ def test_update_only_includes_fields_the_caller_passed() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/tests/wfnodetest_abc"
+    assert request.url == "/v1/workflows/tests/wfnodetest_abc"
     assert request.data == {"name": "renamed"}, f"PATCH body must only carry the field the caller passed; got {request.data!r}"
 
 
@@ -345,7 +345,7 @@ def test_runs_create_with_test_id_only() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests/runs"
+    assert request.url == "/v1/workflows/tests/runs"
     assert request.data == {
         "workflow_id": "wf_abc123",
         "test_id": "wfnodetest_abc",
@@ -437,7 +437,7 @@ def test_runs_list_uses_canonical_runs_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/runs"
+    assert request.url == "/v1/workflows/tests/runs"
     assert request.params == {
         "limit": 10,
         "workflow_id": "wf_abc123",
@@ -456,7 +456,7 @@ def test_runs_get_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/runs/wftestrun_q1z2"
+    assert request.url == "/v1/workflows/tests/runs/wftestrun_q1z2"
     assert run.lifecycle.status == "completed"
 
 
@@ -468,7 +468,7 @@ def test_runs_cancel_uses_run_id_first_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/cancel"
+    assert request.url == "/v1/workflows/tests/runs/wftestrun_q1z2/cancel"
     assert request.data == {}
     assert run.lifecycle.status == "cancelled"
 
@@ -537,7 +537,7 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/results"
+    assert request.url == "/v1/workflows/tests/results"
     assert request.params == {"run_id": "wftestrun_q1z2", "limit": 20}
     assert result.data[0].test_id == "wfnodetest_abc"
     assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
@@ -551,7 +551,7 @@ def test_runs_results_get_uses_flat_result_id_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/results/wfresult_abc"
+    assert request.url == "/v1/workflows/tests/results/wfresult_abc"
     assert result.id == "wfresult_abc"
     assert result.test_id == "wfnodetest_abc"
 
@@ -589,7 +589,7 @@ async def test_async_create_posts_to_tests_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests"
+    assert request.url == "/v1/workflows/tests"
     assert request.data["workflow_id"] == "wf_abc123"
     assert test.id == "wfnodetest_abc"
 
@@ -659,7 +659,7 @@ async def test_async_runs_list_uses_test_runs_route() -> None:
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/tests/runs"
+    assert request.url == "/v1/workflows/tests/runs"
     assert request.params == {
         "limit": 10,
         "workflow_id": "wf_abc123",

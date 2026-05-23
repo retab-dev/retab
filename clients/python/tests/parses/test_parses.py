@@ -48,7 +48,7 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     assert isinstance(result, Parse)
     assert result.id == "parse_123"
     assert result.output.text == "invoice"
-    assert getattr(captured["request"], "url") == "/parses"
+    assert getattr(captured["request"], "url") == "/v1/parses"
 
 
 def test_parse_request_rejects_benchmark_model_policy_fields() -> None:
