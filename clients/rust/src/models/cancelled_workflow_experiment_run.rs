@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The experiment run was cancelled before reaching a natural terminal state.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CancelledWorkflowExperimentRun {
     /// Defaults to `cancelled`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

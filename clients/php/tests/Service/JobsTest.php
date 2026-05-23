@@ -17,7 +17,7 @@ class JobsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_job');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->jobs()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, jobId: 'test_value', status: \Retab\Resource\JobStatus::Validating, endpoint: \Retab\Resource\JobsEndpoint::V1Extractions, source: \Retab\Resource\JobsSource::Api, projectId: 'test_value', workflowId: 'test_value', workflowBlockId: 'test_value', model: 'test_value', filenameRegex: 'test_value', filenameContains: 'test_value', documentType: [], fromDate: 'test_value', toDate: 'test_value', metadata: 'test_value', includeRequest: true, includeResponse: true);
+        $result = $client->jobs()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, jobId: 'test_value', status: \Retab\Resource\JobStatus::Validating, endpoint: \Retab\Resource\JobsEndpoint::V1Extractions, source: \Retab\Resource\JobsSource::Api, projectId: 'test_value', workflowId: 'test_value', workflowBlockId: 'test_value', model: 'test_value', filenameRegex: 'test_value', filenameContains: 'test_value', documentType: [], fromDate: 'test_value', toDate: 'test_value', metadata: 'test_value', includeRequest: true, includeResponse: true);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

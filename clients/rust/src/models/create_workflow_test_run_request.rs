@@ -7,4 +7,24 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Request body for POST /v1/workflows/tests/runs. Use exactly one of the single-test, target, or all-tests shapes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateWorkflowTestRunRequest {}
+#[serde(untagged)]
+pub enum CreateWorkflowTestRunRequest {
+    CreateWorkflowTestRunForTestRequest(Box<CreateWorkflowTestRunForTestRequest>),
+    CreateWorkflowTestRunForTargetRequest(Box<CreateWorkflowTestRunForTargetRequest>),
+    CreateWorkflowTestRunAllRequest(Box<CreateWorkflowTestRunAllRequest>),
+}
+impl From<CreateWorkflowTestRunForTestRequest> for CreateWorkflowTestRunRequest {
+    fn from(v: CreateWorkflowTestRunForTestRequest) -> Self {
+        CreateWorkflowTestRunRequest::CreateWorkflowTestRunForTestRequest(Box::new(v))
+    }
+}
+impl From<CreateWorkflowTestRunForTargetRequest> for CreateWorkflowTestRunRequest {
+    fn from(v: CreateWorkflowTestRunForTargetRequest) -> Self {
+        CreateWorkflowTestRunRequest::CreateWorkflowTestRunForTargetRequest(Box::new(v))
+    }
+}
+impl From<CreateWorkflowTestRunAllRequest> for CreateWorkflowTestRunRequest {
+    fn from(v: CreateWorkflowTestRunAllRequest) -> Self {
+        CreateWorkflowTestRunRequest::CreateWorkflowTestRunAllRequest(Box::new(v))
+    }
+}

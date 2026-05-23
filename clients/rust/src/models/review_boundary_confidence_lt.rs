@@ -13,3 +13,13 @@ pub struct ReviewBoundaryConfidenceLt {
     pub kind: Option<String>,
     pub threshold: f64,
 }
+impl ReviewBoundaryConfidenceLt {
+    /// Construct a new `ReviewBoundaryConfidenceLt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(threshold: f64) -> Self {
+        Self {
+            kind: Default::default(),
+            threshold,
+        }
+    }
+}

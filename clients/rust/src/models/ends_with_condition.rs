@@ -12,3 +12,13 @@ pub struct EndsWithCondition {
     pub kind: Option<String>,
     pub expected: String,
 }
+impl EndsWithCondition {
+    /// Construct a new `EndsWithCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(expected: impl Into<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            expected: expected.into(),
+        }
+    }
+}

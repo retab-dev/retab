@@ -20,3 +20,27 @@ pub struct WorkflowTestRun {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub counts: Option<BlockTestBatchExecutionCounts>,
 }
+impl WorkflowTestRun {
+    /// Construct a new `WorkflowTestRun` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow: WorkflowSnapshotRef,
+        trigger: WorkflowRunTriggerOneOf,
+        lifecycle: WorkflowTestResultLifecycleOneOf,
+        timing: WorkflowTestRunTiming,
+        total_tests: i64,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow,
+            trigger,
+            lifecycle,
+            timing,
+            target: Default::default(),
+            test_id: Default::default(),
+            total_tests,
+            counts: Default::default(),
+        }
+    }
+}

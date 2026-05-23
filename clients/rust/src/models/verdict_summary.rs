@@ -20,3 +20,16 @@ pub struct VerdictSummary {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failed_assertion_ids: Option<Vec<String>>,
 }
+impl VerdictSummary {
+    /// Construct a new `VerdictSummary` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(result: bool) -> Self {
+        Self {
+            result,
+            assertions_passed: Default::default(),
+            assertions_failed: Default::default(),
+            blocked_assertions: Default::default(),
+            failed_assertion_ids: Default::default(),
+        }
+    }
+}

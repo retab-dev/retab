@@ -7,4 +7,18 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Request body for POST /v1/workflows/runs. Use the fresh-run shape or the restart shape.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateWorkflowRunRequest {}
+#[serde(untagged)]
+pub enum CreateWorkflowRunRequest {
+    CreateFreshWorkflowRunRequest(Box<CreateFreshWorkflowRunRequest>),
+    CreateRestartWorkflowRunRequest(Box<CreateRestartWorkflowRunRequest>),
+}
+impl From<CreateFreshWorkflowRunRequest> for CreateWorkflowRunRequest {
+    fn from(v: CreateFreshWorkflowRunRequest) -> Self {
+        CreateWorkflowRunRequest::CreateFreshWorkflowRunRequest(Box::new(v))
+    }
+}
+impl From<CreateRestartWorkflowRunRequest> for CreateWorkflowRunRequest {
+    fn from(v: CreateRestartWorkflowRunRequest) -> Self {
+        CreateWorkflowRunRequest::CreateRestartWorkflowRunRequest(Box::new(v))
+    }
+}

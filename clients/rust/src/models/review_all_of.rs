@@ -13,3 +13,13 @@ pub struct ReviewAllOf {
     pub kind: Option<String>,
     pub predicates: Vec<ReviewAllOfPredicatesOneOf>,
 }
+impl ReviewAllOf {
+    /// Construct a new `ReviewAllOf` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(predicates: Vec<ReviewAllOfPredicatesOneOf>) -> Self {
+        Self {
+            kind: Default::default(),
+            predicates,
+        }
+    }
+}

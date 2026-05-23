@@ -18,3 +18,16 @@ pub struct BBox {
     /// 1-based index of the page where this field appears.
     pub page: i64,
 }
+impl BBox {
+    /// Construct a new `BBox` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(left: f64, top: f64, width: f64, height: f64, page: i64) -> Self {
+        Self {
+            left,
+            top,
+            width,
+            height,
+            page,
+        }
+    }
+}

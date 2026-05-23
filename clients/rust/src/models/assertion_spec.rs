@@ -17,3 +17,15 @@ pub struct AssertionSpec {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub label: Option<String>,
 }
+impl AssertionSpec {
+    /// Construct a new `AssertionSpec` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(target: OutputTarget, condition: AllItemsMatchConditionConditionOneOf) -> Self {
+        Self {
+            id: Default::default(),
+            target,
+            condition,
+            label: Default::default(),
+        }
+    }
+}

@@ -15,3 +15,14 @@ pub struct ReviewFieldConfidenceLt {
     pub path: String,
     pub threshold: f64,
 }
+impl ReviewFieldConfidenceLt {
+    /// Construct a new `ReviewFieldConfidenceLt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(path: impl Into<String>, threshold: f64) -> Self {
+        Self {
+            kind: Default::default(),
+            path: path.into(),
+            threshold,
+        }
+    }
+}

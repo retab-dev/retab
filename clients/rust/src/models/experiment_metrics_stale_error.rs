@@ -24,3 +24,22 @@ pub struct ExperimentMetricsStaleError {
     pub current_config_fingerprint: Option<String>,
     pub message: String,
 }
+impl ExperimentMetricsStaleError {
+    /// Construct a new `ExperimentMetricsStaleError` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        experiment_id: impl Into<String>,
+        last_run: MetricsStaleErrorLastRun,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            kind: Default::default(),
+            error: Default::default(),
+            experiment_id: experiment_id.into(),
+            stale_reasons: Default::default(),
+            last_run,
+            current_config_fingerprint: Default::default(),
+            message: message.into(),
+        }
+    }
+}

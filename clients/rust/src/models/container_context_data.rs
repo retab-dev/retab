@@ -21,3 +21,15 @@ pub struct ContainerContextData {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parallel_item_index: Option<i64>,
 }
+impl ContainerContextData {
+    /// Construct a new `ContainerContextData` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(container_id: impl Into<String>, iteration: i64) -> Self {
+        Self {
+            container_id: container_id.into(),
+            iteration,
+            is_parallel: Default::default(),
+            parallel_item_index: Default::default(),
+        }
+    }
+}

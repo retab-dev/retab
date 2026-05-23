@@ -20,3 +20,24 @@ pub struct ReviewVersion {
     /// When the review version was created.
     pub created_at: String,
 }
+impl ReviewVersion {
+    /// Construct a new `ReviewVersion` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        review_id: impl Into<String>,
+        author: Actor,
+        snapshot: std::collections::HashMap<String, serde_json::Value>,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            review_id: review_id.into(),
+            parent_id: Default::default(),
+            author,
+            snapshot,
+            note: Default::default(),
+            created_at: created_at.into(),
+        }
+    }
+}

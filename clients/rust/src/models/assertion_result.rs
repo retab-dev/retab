@@ -33,3 +33,25 @@ pub struct AssertionResult {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failure: Option<AssertionFailure>,
 }
+impl AssertionResult {
+    /// Construct a new `AssertionResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        assertion_id: impl Into<String>,
+        condition_kind: impl Into<String>,
+        outcome: AssertionOutcome,
+    ) -> Self {
+        Self {
+            assertion_id: assertion_id.into(),
+            condition_kind: condition_kind.into(),
+            outcome,
+            actual_value: Default::default(),
+            expected_value: Default::default(),
+            score: Default::default(),
+            threshold: Default::default(),
+            metric_kind: Default::default(),
+            assertion_label: Default::default(),
+            failure: Default::default(),
+        }
+    }
+}

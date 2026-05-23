@@ -9,7 +9,7 @@ namespace Tests\Service;
 use PHPUnit\Framework\TestCase;
 use Retab\TestHelper;
 
-class WorkflowTest extends TestCase
+class WorkflowsTest extends TestCase
 {
     use TestHelper;
 
@@ -17,7 +17,7 @@ class WorkflowTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflows()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

@@ -19,3 +19,15 @@ pub struct WorkflowDiagnosisResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stats: Option<WorkflowDiagnosisStats>,
 }
+impl WorkflowDiagnosisResponse {
+    /// Construct a new `WorkflowDiagnosisResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(is_valid: bool) -> Self {
+        Self {
+            is_valid,
+            issues: Default::default(),
+            suggestions: Default::default(),
+            stats: Default::default(),
+        }
+    }
+}

@@ -12,3 +12,13 @@ pub struct EditResult {
     /// PDF with the filled form values rendered in.
     pub filled_document: MimeData,
 }
+impl EditResult {
+    /// Construct a new `EditResult` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new<D: Into<crate::MimeData>>(form_data: Vec<FormField>, filled_document: D) -> Self {
+        Self {
+            form_data,
+            filled_document: filled_document.into(),
+        }
+    }
+}

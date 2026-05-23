@@ -36,3 +36,22 @@ pub struct Workflow {
     pub created_at: String,
     pub updated_at: String,
 }
+impl Workflow {
+    /// Construct a new `Workflow` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        created_at: impl Into<String>,
+        updated_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            name: Default::default(),
+            description: Default::default(),
+            published: Default::default(),
+            email_trigger: Default::default(),
+            created_at: created_at.into(),
+            updated_at: updated_at.into(),
+        }
+    }
+}

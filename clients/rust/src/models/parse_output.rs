@@ -12,3 +12,13 @@ pub struct ParseOutput {
     /// Concatenated text content of the full document
     pub text: String,
 }
+impl ParseOutput {
+    /// Construct a new `ParseOutput` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(pages: Vec<String>, text: impl Into<String>) -> Self {
+        Self {
+            pages,
+            text: text.into(),
+        }
+    }
+}

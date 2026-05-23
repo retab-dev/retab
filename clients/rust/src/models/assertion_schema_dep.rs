@@ -16,3 +16,15 @@ pub struct AssertionSchemaDep {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub depends_on_root: Option<bool>,
 }
+impl AssertionSchemaDep {
+    /// Construct a new `AssertionSchemaDep` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(schema_path: impl Into<String>, subtree_hash: impl Into<String>) -> Self {
+        Self {
+            output_handle_id: Default::default(),
+            schema_path: schema_path.into(),
+            subtree_hash: subtree_hash.into(),
+            depends_on_root: Default::default(),
+        }
+    }
+}

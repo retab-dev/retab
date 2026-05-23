@@ -41,3 +41,26 @@ pub struct LatestBlockTestRunSummary {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub blocked_assertions: Option<i64>,
 }
+impl LatestBlockTestRunSummary {
+    /// Construct a new `LatestBlockTestRunSummary` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        run_record_id: impl Into<String>,
+        status: LatestBlockTestRunSummaryStatus,
+        started_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            run_record_id: run_record_id.into(),
+            status,
+            outcome: Default::default(),
+            started_at: started_at.into(),
+            completed_at: Default::default(),
+            duration_ms: Default::default(),
+            workflow_draft_fingerprint: Default::default(),
+            block_config_fingerprint: Default::default(),
+            assertions_passed: Default::default(),
+            assertions_failed: Default::default(),
+            blocked_assertions: Default::default(),
+        }
+    }
+}

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 /// The ``lifecycle_counts`` name disambiguates from the API_DESIGN.md
 /// ``lifecycle`` convention (which signals a discriminated union of
 /// typed states). This field is a counts subdocument, not a union.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlockTestBatchExecutionCounts {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub lifecycle_counts: Option<BlockTestLifecycleCounts>,

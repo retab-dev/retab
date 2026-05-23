@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Per-outcome counts. Only completed runs contribute to these buckets.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlockTestOutcomeCounts {
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

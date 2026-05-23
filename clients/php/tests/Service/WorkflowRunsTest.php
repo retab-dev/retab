@@ -17,7 +17,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\ParsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflowRuns()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

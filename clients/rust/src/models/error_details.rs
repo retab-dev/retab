@@ -7,7 +7,7 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Detailed error information for debugging.
 /// Captures stack traces and context about where and why an error occurred.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorDetails {
     /// Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.
     #[serde(skip_serializing_if = "Option::is_none", default)]

@@ -23,3 +23,23 @@ pub struct DeclarativePlanFieldChange {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub unified_diff: Option<String>,
 }
+impl DeclarativePlanFieldChange {
+    /// Construct a new `DeclarativePlanFieldChange` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        path: Vec<DeclarativePlanFieldChangePathOneOf>,
+        path_display: impl Into<String>,
+        action: DeclarativePlanFieldChangeAction,
+    ) -> Self {
+        Self {
+            path,
+            path_display: path_display.into(),
+            action,
+            before: Default::default(),
+            after: Default::default(),
+            before_sensitive: Default::default(),
+            after_sensitive: Default::default(),
+            unified_diff: Default::default(),
+        }
+    }
+}

@@ -12,3 +12,13 @@ pub struct MatcheRegexCondition {
     pub kind: Option<String>,
     pub pattern: String,
 }
+impl MatcheRegexCondition {
+    /// Construct a new `MatcheRegexCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(pattern: impl Into<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            pattern: pattern.into(),
+        }
+    }
+}

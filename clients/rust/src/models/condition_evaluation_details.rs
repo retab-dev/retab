@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Detailed evaluation information for frontend display.
 /// The frontend reads evaluation data from this nested 'details' object
 /// for compatibility with the ConditionalEvaluationsTable component.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ConditionEvaluationDetails {
     /// JSON path that was evaluated
     ///

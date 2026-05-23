@@ -24,3 +24,15 @@ pub struct ConditionEvaluationPerItem {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub matched: Option<bool>,
 }
+impl ConditionEvaluationPerItem {
+    /// Construct a new `ConditionEvaluationPerItem` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(index: i64) -> Self {
+        Self {
+            index,
+            indices: Default::default(),
+            actual: Default::default(),
+            matched: Default::default(),
+        }
+    }
+}

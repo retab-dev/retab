@@ -124,7 +124,6 @@ class WorkflowRunsMixin:
         max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "timing.created_at",
-        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -171,9 +170,6 @@ class WorkflowRunsMixin:
             params["max_duration_ms"] = max_duration_ms
         if search is not None:
             params["search"] = search
-        normalized_fields = _normalize_csv_param(fields)
-        if normalized_fields is not None:
-            params["fields"] = normalized_fields
         if before is not None:
             params["before"] = before
         if after is not None:
@@ -301,7 +297,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "timing.created_at",
-        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -326,7 +321,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "timing.created_at"; backend accepts "timing.created_at" or "timing.started_at")
-            fields: Comma-separated list of fields to return
             before: First run ID from the current page, used to fetch the previous page
             after: Last run ID from the previous page, used to fetch the next page
             limit: Items per page (1-100, default 20)
@@ -352,13 +346,12 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             max_duration_ms=max_duration_ms,
             search=search,
             sort_by=sort_by,
-            fields=fields,
             before=before,
             after=after,
             limit=limit,
             order=order,
         )
-        return self.request_page(request, model=WorkflowRun if fields is None else None)
+        return self.request_page(request, model=WorkflowRun)
 
     def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.
@@ -563,7 +556,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         max_duration_ms: int | None = None,
         search: str | None = None,
         sort_by: str = "timing.created_at",
-        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -588,7 +580,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             max_duration_ms: Filter runs with duration <= this value (milliseconds)
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "timing.created_at"; backend accepts "timing.created_at" or "timing.started_at")
-            fields: Comma-separated list of fields to return
             before: First run ID from the current page, used to fetch the previous page
             after: Last run ID from the previous page, used to fetch the next page
             limit: Items per page (1-100, default 20)
@@ -614,13 +605,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             max_duration_ms=max_duration_ms,
             search=search,
             sort_by=sort_by,
-            fields=fields,
             before=before,
             after=after,
             limit=limit,
             order=order,
         )
-        return await self.request_page(request, model=WorkflowRun if fields is None else None)
+        return await self.request_page(request, model=WorkflowRun)
 
     async def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.

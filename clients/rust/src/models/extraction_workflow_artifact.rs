@@ -46,3 +46,31 @@ pub struct ExtractionWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
 }
+impl ExtractionWorkflowArtifact {
+    /// Construct a new `ExtractionWorkflowArtifact` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        json_schema: std::collections::HashMap<String, serde_json::Value>,
+        output: std::collections::HashMap<String, serde_json::Value>,
+        created_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            json_schema,
+            n_consensus: Default::default(),
+            image_resolution_dpi: Default::default(),
+            instructions: Default::default(),
+            output,
+            consensus: Default::default(),
+            metadata: Default::default(),
+            usage: Default::default(),
+            created_at: created_at.into(),
+            operation: Default::default(),
+        }
+    }
+}

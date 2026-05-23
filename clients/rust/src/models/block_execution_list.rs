@@ -10,3 +10,13 @@ pub struct BlockExecutionList {
     pub data: Vec<StoredBlockExecution>,
     pub list_metadata: ListMetadata,
 }
+impl BlockExecutionList {
+    /// Construct a new `BlockExecutionList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<StoredBlockExecution>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

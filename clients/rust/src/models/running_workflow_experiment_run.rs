@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The experiment run is executing.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunningWorkflowExperimentRun {
     /// Defaults to `running`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

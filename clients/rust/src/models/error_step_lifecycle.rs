@@ -20,3 +20,16 @@ pub struct ErrorStepLifecycle {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<ErrorDetails>,
 }
+impl ErrorStepLifecycle {
+    /// Construct a new `ErrorStepLifecycle` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(message: impl Into<String>) -> Self {
+        Self {
+            status: Default::default(),
+            message: message.into(),
+            stage: Default::default(),
+            category: Default::default(),
+            details: Default::default(),
+        }
+    }
+}

@@ -15,3 +15,18 @@ pub struct FileRef {
     /// MIME type of the file
     pub mime_type: String,
 }
+impl FileRef {
+    /// Construct a new `FileRef` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        filename: impl Into<String>,
+        mime_type: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            filename: filename.into(),
+            mime_type: mime_type.into(),
+        }
+    }
+}

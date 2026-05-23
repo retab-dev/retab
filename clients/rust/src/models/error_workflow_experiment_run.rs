@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// The experiment run failed.
 /// Carries a human-readable ``message`` and a structured ``details`` envelope
 /// consumers can branch on instead of parsing free text.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorWorkflowExperimentRun {
     /// Defaults to `error`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

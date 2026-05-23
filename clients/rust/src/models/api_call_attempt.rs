@@ -31,3 +31,27 @@ pub struct ApiCallAttempt {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub completed_at: Option<String>,
 }
+impl ApiCallAttempt {
+    /// Construct a new `ApiCallAttempt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        attempt_number: i64,
+        request_method: impl Into<String>,
+        request_url: impl Into<String>,
+    ) -> Self {
+        Self {
+            attempt_number,
+            request_method: request_method.into(),
+            request_url: request_url.into(),
+            request_headers: Default::default(),
+            request_body: Default::default(),
+            response_status: Default::default(),
+            response_headers: Default::default(),
+            response_body: Default::default(),
+            duration_ms: Default::default(),
+            error: Default::default(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+        }
+    }
+}

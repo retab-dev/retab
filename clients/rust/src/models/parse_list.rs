@@ -10,3 +10,13 @@ pub struct ParseList {
     pub data: Vec<Parse>,
     pub list_metadata: ListMetadata,
 }
+impl ParseList {
+    /// Construct a new `ParseList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<Parse>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

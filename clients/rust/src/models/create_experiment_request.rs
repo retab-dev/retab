@@ -33,3 +33,18 @@ pub struct CreateExperimentRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub source_experiment_id: Option<String>,
 }
+impl CreateExperimentRequest {
+    /// Construct a new `CreateExperimentRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            block_id: Default::default(),
+            document_captures: Default::default(),
+            documents: Default::default(),
+            n_consensus: Default::default(),
+            name: Default::default(),
+            source_experiment_id: Default::default(),
+        }
+    }
+}

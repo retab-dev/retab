@@ -12,3 +12,13 @@ pub struct OutputTarget {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub path: Option<String>,
 }
+impl OutputTarget {
+    /// Construct a new `OutputTarget` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(output_handle_id: impl Into<String>) -> Self {
+        Self {
+            output_handle_id: output_handle_id.into(),
+            path: Default::default(),
+        }
+    }
+}

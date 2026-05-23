@@ -16,3 +16,13 @@ pub struct ReviewConfidenceLt {
     /// Gate fires when confidence < threshold
     pub threshold: f64,
 }
+impl ReviewConfidenceLt {
+    /// Construct a new `ReviewConfidenceLt` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(threshold: f64) -> Self {
+        Self {
+            kind: Default::default(),
+            threshold,
+        }
+    }
+}

@@ -10,3 +10,13 @@ pub struct ExtractionList {
     pub data: Vec<Extraction>,
     pub list_metadata: ListMetadata,
 }
+impl ExtractionList {
+    /// Construct a new `ExtractionList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<Extraction>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

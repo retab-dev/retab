@@ -32,7 +32,6 @@ class WorkflowsMixin:
         limit: int = 10,
         order: PaginationOrder = "desc",
         sort_by: str = "updated_at",
-        fields: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to list workflows with pagination."""
         params = {
@@ -41,7 +40,6 @@ class WorkflowsMixin:
             "limit": limit,
             "order": order,
             "sort_by": sort_by,
-            "fields": fields,
         }
         params = {key: value for key, value in params.items() if value is not None}
         return PreparedRequest(method="GET", url="/v1/workflows", params=params)
@@ -136,25 +134,16 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         limit: int = 10,
         order: PaginationOrder = "desc",
         sort_by: str = "updated_at",
-        fields: str | None = None,
     ) -> PaginatedList[Workflow]:
-        """List workflows with pagination.
-
-        When ``fields`` is supplied, the server returns projected dicts
-        instead of full ``Workflow`` documents — items are left as the
-        raw dicts in that case so callers see exactly what the server
-        sent back. With ``fields=None`` each item is validated against
-        ``Workflow``.
-        """
+        """List workflows with pagination."""
         request = self.prepare_list(
             before=before,
             after=after,
             limit=limit,
             order=order,
             sort_by=sort_by,
-            fields=fields,
         )
-        return self.request_page(request, model=Workflow if fields is None else None)
+        return self.request_page(request, model=Workflow)
 
     def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
         """Create a new workflow.
@@ -269,7 +258,6 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         limit: int = 10,
         order: PaginationOrder = "desc",
         sort_by: str = "updated_at",
-        fields: str | None = None,
     ) -> AsyncPaginatedList[Workflow]:
         """List workflows with pagination."""
         request = self.prepare_list(
@@ -278,9 +266,8 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
             limit=limit,
             order=order,
             sort_by=sort_by,
-            fields=fields,
         )
-        return await self.request_page(request, model=Workflow if fields is None else None)
+        return await self.request_page(request, model=Workflow)
 
     async def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
         """Create a new workflow."""

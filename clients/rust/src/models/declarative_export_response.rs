@@ -10,3 +10,13 @@ pub struct DeclarativeExportResponse {
     pub workflow_id: String,
     pub yaml_definition: String,
 }
+impl DeclarativeExportResponse {
+    /// Construct a new `DeclarativeExportResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>, yaml_definition: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            yaml_definition: yaml_definition.into(),
+        }
+    }
+}

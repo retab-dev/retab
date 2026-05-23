@@ -16,3 +16,13 @@ pub struct SkippedBlockExecutionLifecycle {
     /// Reason the block was skipped
     pub reason: String,
 }
+impl SkippedBlockExecutionLifecycle {
+    /// Construct a new `SkippedBlockExecutionLifecycle` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(reason: impl Into<String>) -> Self {
+        Self {
+            status: Default::default(),
+            reason: reason.into(),
+        }
+    }
+}

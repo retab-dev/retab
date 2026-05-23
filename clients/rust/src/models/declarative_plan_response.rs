@@ -23,3 +23,26 @@ pub struct DeclarativePlanResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub rendered_plan: Option<String>,
 }
+impl DeclarativePlanResponse {
+    /// Construct a new `DeclarativePlanResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        action: DeclarativePlanResponseAction,
+        block_count: i64,
+        edge_count: i64,
+        diagnostics: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            action,
+            block_count,
+            edge_count,
+            diagnostics,
+            format_version: Default::default(),
+            summary: Default::default(),
+            resource_changes: Default::default(),
+            rendered_plan: Default::default(),
+        }
+    }
+}

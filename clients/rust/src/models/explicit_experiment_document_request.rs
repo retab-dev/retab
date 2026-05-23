@@ -12,3 +12,18 @@ pub struct ExplicitExperimentDocumentRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub provenance: Option<ExperimentDocumentProvenance>,
 }
+impl ExplicitExperimentDocumentRequest {
+    /// Construct a new `ExplicitExperimentDocumentRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        handle_inputs: std::collections::HashMap<
+            String,
+            ExplicitExperimentDocumentRequestHandleInputsOneOf,
+        >,
+    ) -> Self {
+        Self {
+            handle_inputs,
+            provenance: Default::default(),
+        }
+    }
+}

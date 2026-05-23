@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Directional confusion slice for one split/classifier target.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentTargetConfusionMetric {
     #[serde(rename = "self")]
     #[serde(skip_serializing_if = "Option::is_none", default)]

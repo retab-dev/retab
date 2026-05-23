@@ -21,3 +21,17 @@ pub struct WorkflowConfigEdge {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub animated: Option<bool>,
 }
+impl WorkflowConfigEdge {
+    /// Construct a new `WorkflowConfigEdge` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(source: impl Into<String>, target: impl Into<String>) -> Self {
+        Self {
+            id: Default::default(),
+            source: source.into(),
+            target: target.into(),
+            source_handle: Default::default(),
+            target_handle: Default::default(),
+            animated: Default::default(),
+        }
+    }
+}

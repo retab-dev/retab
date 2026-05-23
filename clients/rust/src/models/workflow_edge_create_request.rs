@@ -24,3 +24,21 @@ pub struct WorkflowEdgeCreateRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub target_handle: Option<String>,
 }
+impl WorkflowEdgeCreateRequest {
+    /// Construct a new `WorkflowEdgeCreateRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        source_block: impl Into<String>,
+        target_block: impl Into<String>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            id: Default::default(),
+            source_block: source_block.into(),
+            target_block: target_block.into(),
+            source_handle: Default::default(),
+            target_handle: Default::default(),
+        }
+    }
+}

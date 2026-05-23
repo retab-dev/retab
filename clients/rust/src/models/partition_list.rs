@@ -10,3 +10,13 @@ pub struct PartitionList {
     pub data: Vec<Partition>,
     pub list_metadata: ListMetadata,
 }
+impl PartitionList {
+    /// Construct a new `PartitionList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<Partition>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

@@ -48,3 +48,28 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub response: Option<JobResponse>,
 }
+impl Job {
+    /// Construct a new `Job` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(endpoint: SupportedEndpoint) -> Self {
+        Self {
+            id: Default::default(),
+            object: Default::default(),
+            status: Default::default(),
+            endpoint,
+            error: Default::default(),
+            warnings: Default::default(),
+            created_at: Default::default(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            expires_at: Default::default(),
+            metadata: Default::default(),
+            cancelled: Default::default(),
+            attempt_count: Default::default(),
+            last_attempt_at: Default::default(),
+            last_failure_code: Default::default(),
+            request: Default::default(),
+            response: Default::default(),
+        }
+    }
+}

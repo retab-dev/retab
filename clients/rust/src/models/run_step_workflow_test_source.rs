@@ -15,3 +15,14 @@ pub struct RunStepWorkflowTestSource {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub step_id: Option<String>,
 }
+impl RunStepWorkflowTestSource {
+    /// Construct a new `RunStepWorkflowTestSource` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(run_id: impl Into<String>) -> Self {
+        Self {
+            type_: Default::default(),
+            run_id: run_id.into(),
+            step_id: Default::default(),
+        }
+    }
+}

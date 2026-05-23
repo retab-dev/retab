@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The run is paused on at least one gated block.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AwaitingReviewRun {
     /// Defaults to `awaiting_review`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

@@ -44,3 +44,21 @@ pub struct WorkflowBlockCreateRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_id: Option<String>,
 }
+impl WorkflowBlockCreateRequest {
+    /// Construct a new `WorkflowBlockCreateRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>, type_: WorkflowBlockCreateRequestType) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            id: Default::default(),
+            type_,
+            label: Default::default(),
+            position_x: Default::default(),
+            position_y: Default::default(),
+            width: Default::default(),
+            height: Default::default(),
+            config: Default::default(),
+            parent_id: Default::default(),
+        }
+    }
+}

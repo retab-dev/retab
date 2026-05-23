@@ -15,3 +15,13 @@ pub struct ReviewBranchIn {
     pub kind: Option<String>,
     pub branches: Vec<String>,
 }
+impl ReviewBranchIn {
+    /// Construct a new `ReviewBranchIn` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(branches: Vec<String>) -> Self {
+        Self {
+            kind: Default::default(),
+            branches,
+        }
+    }
+}

@@ -50,3 +50,33 @@ pub struct WorkflowRunStep {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub retry_count: Option<i64>,
 }
+impl WorkflowRunStep {
+    /// Construct a new `WorkflowRunStep` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        block_id: impl Into<String>,
+        step_id: impl Into<String>,
+        block_type: WorkflowRunStepBlockType,
+        block_label: impl Into<String>,
+        lifecycle: WorkflowRunStepLifecycleOneOf,
+        run_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            block_id: block_id.into(),
+            step_id: step_id.into(),
+            block_type,
+            block_label: block_label.into(),
+            lifecycle,
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            model: Default::default(),
+            loop_containers: Default::default(),
+            run_id: run_id.into(),
+            created_at: Default::default(),
+            handle_inputs: Default::default(),
+            handle_outputs: Default::default(),
+            artifact: Default::default(),
+            retry_count: Default::default(),
+        }
+    }
+}

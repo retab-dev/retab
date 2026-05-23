@@ -10,3 +10,13 @@ pub struct WorkflowStepList {
     pub data: Vec<WorkflowRunStep>,
     pub list_metadata: ListMetadata,
 }
+impl WorkflowStepList {
+    /// Construct a new `WorkflowStepList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<WorkflowRunStep>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

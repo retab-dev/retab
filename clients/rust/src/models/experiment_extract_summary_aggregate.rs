@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Extract-only diagnostics attached to the summary response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentExtractSummaryAggregate {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub likelihoods: Option<std::collections::HashMap<String, f64>>,

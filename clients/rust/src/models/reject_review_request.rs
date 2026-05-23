@@ -13,3 +13,13 @@ pub struct RejectReviewRequest {
     /// Required, non-empty rejection reason.
     pub reason: String,
 }
+impl RejectReviewRequest {
+    /// Construct a new `RejectReviewRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(version_id: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self {
+            version_id: version_id.into(),
+            reason: reason.into(),
+        }
+    }
+}

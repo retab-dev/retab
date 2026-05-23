@@ -16,3 +16,13 @@ pub struct StepArtifactRef {
     /// Persisted resource identifier
     pub id: String,
 }
+impl StepArtifactRef {
+    /// Construct a new `StepArtifactRef` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(operation: StepArtifactRefOperation, id: impl Into<String>) -> Self {
+        Self {
+            operation,
+            id: id.into(),
+        }
+    }
+}

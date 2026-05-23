@@ -25,3 +25,17 @@ pub struct GenerateSchemaRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stream: Option<bool>,
 }
+impl GenerateSchemaRequest {
+    /// Construct a new `GenerateSchemaRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(documents: Vec<MimeData>) -> Self {
+        Self {
+            documents,
+            model: Default::default(),
+            reasoning_effort: Default::default(),
+            instructions: Default::default(),
+            image_resolution_dpi: Default::default(),
+            stream: Default::default(),
+        }
+    }
+}

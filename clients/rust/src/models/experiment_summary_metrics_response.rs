@@ -32,3 +32,26 @@ pub struct ExperimentSummaryMetricsResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub prior_run_id: Option<String>,
 }
+impl ExperimentSummaryMetricsResponse {
+    /// Construct a new `ExperimentSummaryMetricsResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        experiment_id: impl Into<String>,
+        run_id: impl Into<String>,
+        block_type: ExperimentSummaryMetricsResponseBlockType,
+    ) -> Self {
+        Self {
+            experiment_id: experiment_id.into(),
+            run_id: run_id.into(),
+            kind: Default::default(),
+            view: Default::default(),
+            definition_fingerprint: Default::default(),
+            block_type,
+            score: Default::default(),
+            prior_score: Default::default(),
+            documents: Default::default(),
+            aggregate: Default::default(),
+            prior_run_id: Default::default(),
+        }
+    }
+}

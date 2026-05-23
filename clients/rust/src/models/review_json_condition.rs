@@ -18,3 +18,13 @@ pub struct ReviewJsonCondition {
     /// Conditional-block Condition payload.
     pub condition: std::collections::HashMap<String, serde_json::Value>,
 }
+impl ReviewJsonCondition {
+    /// Construct a new `ReviewJsonCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(condition: std::collections::HashMap<String, serde_json::Value>) -> Self {
+        Self {
+            kind: Default::default(),
+            condition,
+        }
+    }
+}

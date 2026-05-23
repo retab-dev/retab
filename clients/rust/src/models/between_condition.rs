@@ -16,3 +16,15 @@ pub struct BetweenCondition {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inclusive: Option<bool>,
 }
+impl BetweenCondition {
+    /// Construct a new `BetweenCondition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(lower: BetweenConditionLowerOneOf, upper: BetweenConditionLowerOneOf) -> Self {
+        Self {
+            kind: Default::default(),
+            lower,
+            upper,
+            inclusive: Default::default(),
+        }
+    }
+}

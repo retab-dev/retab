@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Per-lifecycle counts for a batch of block-test runs.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlockTestLifecycleCounts {
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

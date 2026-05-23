@@ -69,7 +69,6 @@ export default class APIWorkflowTestRuns extends CompositionClient {
       fromDate,
       toDate,
       sortBy,
-      fields,
       before,
       after,
       limit = 20,
@@ -86,7 +85,6 @@ export default class APIWorkflowTestRuns extends CompositionClient {
       fromDate?: string;
       toDate?: string;
       sortBy?: string;
-      fields?: string[] | string;
       before?: string;
       after?: string;
       limit?: number;
@@ -107,7 +105,6 @@ export default class APIWorkflowTestRuns extends CompositionClient {
         from_date: fromDate,
         to_date: toDate,
         sort_by: sortBy,
-        fields: Array.isArray(fields) ? fields.join(',') : fields,
         before,
         after,
         limit,

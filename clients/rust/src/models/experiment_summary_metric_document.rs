@@ -15,3 +15,15 @@ pub struct ExperimentSummaryMetricDocument {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub prior_score: Option<f64>,
 }
+impl ExperimentSummaryMetricDocument {
+    /// Construct a new `ExperimentSummaryMetricDocument` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(id: impl Into<String>, filename: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            filename: filename.into(),
+            score: Default::default(),
+            prior_score: Default::default(),
+        }
+    }
+}

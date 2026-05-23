@@ -16,3 +16,20 @@ pub struct ValidationError {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub ctx: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
+impl ValidationError {
+    /// Construct a new `ValidationError` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        loc: Vec<DeclarativePlanFieldChangePathOneOf>,
+        msg: impl Into<String>,
+        type_: impl Into<String>,
+    ) -> Self {
+        Self {
+            loc,
+            msg: msg.into(),
+            type_: type_.into(),
+            input: Default::default(),
+            ctx: Default::default(),
+        }
+    }
+}

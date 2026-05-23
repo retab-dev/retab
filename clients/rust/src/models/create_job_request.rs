@@ -14,3 +14,17 @@ pub struct CreateJobRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub metadata: Option<std::collections::HashMap<String, String>>,
 }
+impl CreateJobRequest {
+    /// Construct a new `CreateJobRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        endpoint: CreateJobRequestEndpoint,
+        request: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            endpoint,
+            request,
+            metadata: Default::default(),
+        }
+    }
+}

@@ -31,3 +31,21 @@ pub struct WorkflowRun {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inputs: Option<RunInputs>,
 }
+impl WorkflowRun {
+    /// Construct a new `WorkflowRun` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        workflow: WorkflowSnapshotRef,
+        trigger: WorkflowRunTriggerOneOf,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            workflow,
+            trigger,
+            lifecycle: Default::default(),
+            timing: Default::default(),
+            inputs: Default::default(),
+        }
+    }
+}

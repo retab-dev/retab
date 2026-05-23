@@ -10,3 +10,13 @@ pub struct SplitList {
     pub data: Vec<Split>,
     pub list_metadata: ListMetadata,
 }
+impl SplitList {
+    /// Construct a new `SplitList` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(data: Vec<Split>, list_metadata: ListMetadata) -> Self {
+        Self {
+            data,
+            list_metadata,
+        }
+    }
+}

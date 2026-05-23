@@ -11,3 +11,12 @@ pub struct ApproveReviewRequest {
     /// Exact content-addressed key of the version to approve.
     pub version_id: String,
 }
+impl ApproveReviewRequest {
+    /// Construct a new `ApproveReviewRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(version_id: impl Into<String>) -> Self {
+        Self {
+            version_id: version_id.into(),
+        }
+    }
+}

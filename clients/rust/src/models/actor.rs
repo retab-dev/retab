@@ -12,3 +12,14 @@ pub struct Actor {
     pub id: String,
     pub display_name: String,
 }
+impl Actor {
+    /// Construct a new `Actor` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(kind: ActorKind, id: impl Into<String>, display_name: impl Into<String>) -> Self {
+        Self {
+            kind,
+            id: id.into(),
+            display_name: display_name.into(),
+        }
+    }
+}

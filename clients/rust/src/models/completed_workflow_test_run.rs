@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The test run finished. Per-test verdicts live on each result row.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CompletedWorkflowTestRun {
     /// Defaults to `completed`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

@@ -15,3 +15,18 @@ pub struct CreateEditTemplateRequest {
     /// Form fields to attach to the template.
     pub form_fields: Vec<FormField>,
 }
+impl CreateEditTemplateRequest {
+    /// Construct a new `CreateEditTemplateRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new<D: Into<crate::MimeData>>(
+        name: impl Into<String>,
+        document: D,
+        form_fields: Vec<FormField>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            document: document.into(),
+            form_fields,
+        }
+    }
+}

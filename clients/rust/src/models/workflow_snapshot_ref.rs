@@ -23,3 +23,19 @@ pub struct WorkflowSnapshotRef {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub requested_version: Option<String>,
 }
+impl WorkflowSnapshotRef {
+    /// Construct a new `WorkflowSnapshotRef` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        version_id: impl Into<String>,
+        name_at_run_time: impl Into<String>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            version_id: version_id.into(),
+            name_at_run_time: name_at_run_time.into(),
+            requested_version: Default::default(),
+        }
+    }
+}

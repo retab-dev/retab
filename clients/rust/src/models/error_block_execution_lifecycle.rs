@@ -15,3 +15,13 @@ pub struct ErrorBlockExecutionLifecycle {
     /// Human-readable error message
     pub message: String,
 }
+impl ErrorBlockExecutionLifecycle {
+    /// Construct a new `ErrorBlockExecutionLifecycle` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(message: impl Into<String>) -> Self {
+        Self {
+            status: Default::default(),
+            message: message.into(),
+        }
+    }
+}

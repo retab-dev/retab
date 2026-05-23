@@ -16,3 +16,13 @@ pub struct WorkflowTestBlockTarget {
     pub type_: Option<String>,
     pub block_id: String,
 }
+impl WorkflowTestBlockTarget {
+    /// Construct a new `WorkflowTestBlockTarget` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(block_id: impl Into<String>) -> Self {
+        Self {
+            type_: Default::default(),
+            block_id: block_id.into(),
+        }
+    }
+}

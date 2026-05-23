@@ -13,3 +13,22 @@ pub struct DeclarativeValidationResponse {
     pub is_valid: bool,
     pub diagnostics: std::collections::HashMap<String, serde_json::Value>,
 }
+impl DeclarativeValidationResponse {
+    /// Construct a new `DeclarativeValidationResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        block_count: i64,
+        edge_count: i64,
+        is_valid: bool,
+        diagnostics: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            block_count,
+            edge_count,
+            is_valid,
+            diagnostics,
+        }
+    }
+}

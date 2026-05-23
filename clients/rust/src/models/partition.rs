@@ -40,3 +40,27 @@ pub struct Partition {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }
+impl Partition {
+    /// Construct a new `Partition` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        file: FileRef,
+        model: impl Into<String>,
+        key: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            file,
+            model: model.into(),
+            key: key.into(),
+            instructions: Default::default(),
+            n_consensus: Default::default(),
+            allow_overlap: Default::default(),
+            output: Default::default(),
+            consensus: Default::default(),
+            usage: Default::default(),
+            created_at: Default::default(),
+        }
+    }
+}

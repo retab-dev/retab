@@ -15,14 +15,20 @@ class WorkflowBlockExecutionsTest extends TestCase
 
     public function testList(): void
     {
-        $fixture = $this->loadFixture('block_execution_list');
+        $fixture = $this->loadFixture('list_stored_block_execution');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlockExecutions()->list(runId: 'test_value', blockId: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\BlockExecutionList::class, $result);
-        $this->assertIsArray($result->toArray());
+        $result = $client->workflowBlockExecutions()->list(runId: 'test_value', blockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/blocks/executions', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['run_id']);
+        $this->assertSame('test_value', $query['block_id']);
+        $this->assertSame('test_value', $query['before']);
+        $this->assertSame('test_value', $query['after']);
+        $this->assertArrayHasKey('limit', $query);
+        $this->assertSame('asc', $query['order']);
     }
 
     public function testCreate(): void
@@ -40,5 +46,24 @@ class WorkflowBlockExecutionsTest extends TestCase
         $body = json_decode((string) $request->getBody(), true);
         $this->assertSame('test_value', $body['run_id']);
         $this->assertSame('test_value', $body['block_id']);
+    }
+
+    public function testPaginationBoundary(): void
+    {
+        $fixture = $this->loadFixture('list_stored_block_execution');
+        // Ensure cursors are null (first/last page boundary)
+        $fixture['list_metadata']['before'] = null;
+        $fixture['list_metadata']['after'] = null;
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflowBlockExecutions()->list(runId: 'test_value', blockId: 'test_value');
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
+        // Verify cursors are null on boundary page
+        $this->assertNull($result->listMetadata['before']);
+        $this->assertNull($result->listMetadata['after']);
+        // Iterating should not throw on null cursors
+        foreach ($result as $item) {
+            $this->assertNotNull($item);
+            break;
+        }
     }
 }

@@ -14,3 +14,14 @@ pub struct WorkflowExportPayloadResponse {
     /// Column count including fixed columns
     pub columns: i64,
 }
+impl WorkflowExportPayloadResponse {
+    /// Construct a new `WorkflowExportPayloadResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(csv_data: impl Into<String>, rows: i64, columns: i64) -> Self {
+        Self {
+            csv_data: csv_data.into(),
+            rows,
+            columns,
+        }
+    }
+}

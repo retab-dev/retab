@@ -22,3 +22,22 @@ pub struct File {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub page_count: Option<i64>,
 }
+impl File {
+    /// Construct a new `File` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        id: impl Into<String>,
+        filename: impl Into<String>,
+        created_at: impl Into<String>,
+        updated_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            object: Default::default(),
+            id: id.into(),
+            filename: filename.into(),
+            created_at: created_at.into(),
+            updated_at: updated_at.into(),
+            page_count: Default::default(),
+        }
+    }
+}
