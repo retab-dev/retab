@@ -7,38 +7,79 @@ import type { Split, SplitResponse, Subdocument } from '../splits/interfaces/ind
 import { deserializeSplit } from '../splits/interfaces/index.js';
 
 export class Splits {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Splits */
-  async list(options?: { filename?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Split>> {
-    return this.client._fetchPage(deserializeSplit, { method: 'GET', path: "/v1/splits", query: { "filename": options?.filename, "from_date": options?.fromDate, "to_date": options?.toDate, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    filename?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Split>> {
+    return this.client._fetchPage(deserializeSplit, {
+      method: 'GET',
+      path: '/v1/splits',
+      query: {
+        filename: options?.filename,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Split */
-  async create(document: MIMEDataInput, subdocuments: Subdocument[], model?: string, instructions?: string | null, nConsensus?: number, bustCache?: boolean): Promise<Split> {
+  async create(
+    document: MIMEDataInput,
+    subdocuments: Subdocument[],
+    model?: string,
+    instructions?: string | null,
+    nConsensus?: number,
+    bustCache?: boolean
+  ): Promise<Split> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
-      "document": documentCoerced,
-      "subdocuments": subdocuments,
-      "model": model,
-      "instructions": instructions,
-      "n_consensus": nConsensus,
-      "bust_cache": bustCache,
+      document: documentCoerced,
+      subdocuments: subdocuments,
+      model: model,
+      instructions: instructions,
+      n_consensus: nConsensus,
+      bust_cache: bustCache,
     };
-    const __wire = await this.client.request<SplitResponse>({ method: 'POST', path: "/v1/splits", query: undefined, body: body });
+    const __wire = await this.client.request<SplitResponse>({
+      method: 'POST',
+      path: '/v1/splits',
+      query: undefined,
+      body: body,
+    });
     return deserializeSplit(__wire);
   }
 
   /** Get Split */
   async get(splitId: string): Promise<Split> {
-    const __wire = await this.client.request<SplitResponse>({ method: 'GET', path: `/v1/splits/${splitId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<SplitResponse>({
+      method: 'GET',
+      path: `/v1/splits/${splitId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeSplit(__wire);
   }
 
   /** Delete Split */
   async delete(splitId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/splits/${splitId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/splits/${splitId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

@@ -2,6 +2,13 @@
 
 import { z } from 'zod';
 
-export type CancelWorkflowResponseCancellationStatus = 'cancelled' | 'cancellation_requested' | 'cancellation_failed';
+export type CancelWorkflowResponseCancellationStatus =
+  | 'cancelled'
+  | 'cancellation_requested'
+  | 'cancellation_failed';
 
-export const ZCancelWorkflowResponseCancellationStatus = z.enum(['cancelled', 'cancellation_requested', 'cancellation_failed'] as const);
+export const ZCancelWorkflowResponseCancellationStatus = z.enum([
+  'cancelled',
+  'cancellation_requested',
+  'cancellation_failed',
+] as const);

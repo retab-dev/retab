@@ -45,7 +45,7 @@ export class RetabBase {
       const stripped = baseUrl.replace(/\/v\d+\/?$/, '');
       // eslint-disable-next-line no-console
       console.warn(
-        `Retab: baseUrl "${baseUrl}" ends with a version segment; the SDK now keeps the version segment in request paths. Using "${stripped}" instead.`,
+        `Retab: baseUrl "${baseUrl}" ends with a version segment; the SDK now keeps the version segment in request paths. Using "${stripped}" instead.`
       );
       baseUrl = stripped;
     }
@@ -105,7 +105,7 @@ export class RetabBase {
    */
   async _fetchPage<Wire, Item>(
     deserializeItem: (wire: Wire) => Item,
-    opts: RequestOptions,
+    opts: RequestOptions
   ): Promise<PaginatedList<Item>> {
     const envelope = await this.request<{ data: Wire[]; list_metadata: ListMetadata }>(opts);
     const items = envelope.data.map(deserializeItem);

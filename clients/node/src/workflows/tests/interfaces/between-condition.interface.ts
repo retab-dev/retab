@@ -18,17 +18,17 @@ export interface BetweenConditionResponse {
 }
 
 export const ZBetweenCondition = z.object({
-  "kind": z.literal('between'),
-  "lower": z.number().int(),
-  "upper": z.number().int(),
-  "inclusive": z.boolean().optional(),
+  kind: z.literal('between'),
+  lower: z.number().int(),
+  upper: z.number().int(),
+  inclusive: z.boolean().optional(),
 }) as z.ZodType<BetweenCondition>;
 
 export function deserializeBetweenCondition(wire: BetweenConditionResponse): BetweenCondition {
   return {
-    kind: wire["kind"],
-    lower: wire["lower"],
-    upper: wire["upper"],
-    inclusive: wire["inclusive"],
+    kind: wire['kind'],
+    lower: wire['lower'],
+    upper: wire['upper'],
+    inclusive: wire['inclusive'],
   };
 }

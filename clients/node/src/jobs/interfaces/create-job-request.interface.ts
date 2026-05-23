@@ -19,15 +19,15 @@ export interface CreateJobRequestResponse {
 }
 
 export const ZCreateJobRequest = z.object({
-  "endpoint": ZCreateJobRequestEndpoint,
-  "request": z.record(z.string(), z.unknown()),
-  "metadata": z.record(z.string(), z.string()).nullable().optional(),
+  endpoint: ZCreateJobRequestEndpoint,
+  request: z.record(z.string(), z.unknown()),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
 }) as z.ZodType<CreateJobRequest>;
 
 export function deserializeCreateJobRequest(wire: CreateJobRequestResponse): CreateJobRequest {
   return {
-    endpoint: wire["endpoint"],
-    request: wire["request"],
-    metadata: wire["metadata"],
+    endpoint: wire['endpoint'],
+    request: wire['request'],
+    metadata: wire['metadata'],
   };
 }

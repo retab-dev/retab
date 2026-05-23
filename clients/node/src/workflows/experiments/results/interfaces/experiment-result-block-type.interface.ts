@@ -4,4 +4,9 @@ import { z } from 'zod';
 
 export type ExperimentResultBlockType = 'extract' | 'classifier' | 'split' | 'for_each';
 
-export const ZExperimentResultBlockType = z.enum(['extract', 'classifier', 'split', 'for_each'] as const);
+export const ZExperimentResultBlockType = z.enum([
+  'extract',
+  'classifier',
+  'split',
+  'for_each',
+] as const);

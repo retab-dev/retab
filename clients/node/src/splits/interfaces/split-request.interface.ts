@@ -43,21 +43,21 @@ export interface SplitRequestResponse {
 }
 
 export const ZSplitRequest = z.object({
-  "document": z.union([ZMIMEData, ZFileRef]),
-  "subdocuments": ZSubdocument.array(),
-  "model": z.string().optional(),
-  "instructions": z.string().nullable().optional(),
-  "nConsensus": z.number().int().optional(),
-  "bustCache": z.boolean().optional(),
+  document: z.union([ZMIMEData, ZFileRef]),
+  subdocuments: ZSubdocument.array(),
+  model: z.string().optional(),
+  instructions: z.string().nullable().optional(),
+  nConsensus: z.number().int().optional(),
+  bustCache: z.boolean().optional(),
 }) as z.ZodType<SplitRequest>;
 
 export function deserializeSplitRequest(wire: SplitRequestResponse): SplitRequest {
   return {
-    document: (wire["document"] as unknown as MIMEData | FileRef),
-    subdocuments: wire["subdocuments"].map((__i) => deserializeSubdocument(__i)),
-    model: wire["model"],
-    instructions: wire["instructions"],
-    nConsensus: wire["n_consensus"],
-    bustCache: wire["bust_cache"],
+    document: wire['document'] as unknown as MIMEData | FileRef,
+    subdocuments: wire['subdocuments'].map((__i) => deserializeSubdocument(__i)),
+    model: wire['model'],
+    instructions: wire['instructions'],
+    nConsensus: wire['n_consensus'],
+    bustCache: wire['bust_cache'],
   };
 }

@@ -13,13 +13,15 @@ export interface MatcheRegexConditionResponse {
 }
 
 export const ZMatcheRegexCondition = z.object({
-  "kind": z.literal('matches_regex'),
-  "pattern": z.string(),
+  kind: z.literal('matches_regex'),
+  pattern: z.string(),
 }) as z.ZodType<MatcheRegexCondition>;
 
-export function deserializeMatcheRegexCondition(wire: MatcheRegexConditionResponse): MatcheRegexCondition {
+export function deserializeMatcheRegexCondition(
+  wire: MatcheRegexConditionResponse
+): MatcheRegexCondition {
   return {
-    kind: wire["kind"],
-    pattern: wire["pattern"],
+    kind: wire['kind'],
+    pattern: wire['pattern'],
   };
 }

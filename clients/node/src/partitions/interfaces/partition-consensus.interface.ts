@@ -3,8 +3,14 @@
 import { z } from 'zod';
 import type { PartitionChunk, PartitionChunkResponse } from './partition-chunk.interface.js';
 import { ZPartitionChunk, deserializePartitionChunk } from './partition-chunk.interface.js';
-import type { PartitionChunkLikelihood, PartitionChunkLikelihoodResponse } from './partition-chunk-likelihood.interface.js';
-import { ZPartitionChunkLikelihood, deserializePartitionChunkLikelihood } from './partition-chunk-likelihood.interface.js';
+import type {
+  PartitionChunkLikelihood,
+  PartitionChunkLikelihoodResponse,
+} from './partition-chunk-likelihood.interface.js';
+import {
+  ZPartitionChunkLikelihood,
+  deserializePartitionChunkLikelihood,
+} from './partition-chunk-likelihood.interface.js';
 
 export interface PartitionConsensus {
   /** Alternative partition vote outputs used to build the consolidated result. */
@@ -19,13 +25,23 @@ export interface PartitionConsensusResponse {
 }
 
 export const ZPartitionConsensus = z.object({
-  "choices": ZPartitionChunk.array().array().optional(),
-  "likelihoods": ZPartitionChunkLikelihood.array().nullable().optional(),
+  choices: ZPartitionChunk.array().array().optional(),
+  likelihoods: ZPartitionChunkLikelihood.array().nullable().optional(),
 }) as z.ZodType<PartitionConsensus>;
 
-export function deserializePartitionConsensus(wire: PartitionConsensusResponse): PartitionConsensus {
+export function deserializePartitionConsensus(
+  wire: PartitionConsensusResponse
+): PartitionConsensus {
   return {
-    choices: wire["choices"] == null ? (wire["choices"] as undefined) : wire["choices"].map((__i) => __i.map((__i1) => deserializePartitionChunk(__i1))),
-    likelihoods: wire["likelihoods"] == null ? (wire["likelihoods"] as undefined) : (wire["likelihoods"] == null ? wire["likelihoods"] : wire["likelihoods"].map((__i) => deserializePartitionChunkLikelihood(__i))),
+    choices:
+      wire['choices'] == null
+        ? (wire['choices'] as undefined)
+        : wire['choices'].map((__i) => __i.map((__i1) => deserializePartitionChunk(__i1))),
+    likelihoods:
+      wire['likelihoods'] == null
+        ? (wire['likelihoods'] as undefined)
+        : wire['likelihoods'] == null
+          ? wire['likelihoods']
+          : wire['likelihoods'].map((__i) => deserializePartitionChunkLikelihood(__i)),
   };
 }

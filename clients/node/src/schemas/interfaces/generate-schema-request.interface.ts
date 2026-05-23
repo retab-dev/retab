@@ -32,21 +32,23 @@ export interface GenerateSchemaRequestResponse {
 }
 
 export const ZGenerateSchemaRequest = z.object({
-  "documents": ZMIMEData.array(),
-  "model": z.string().optional(),
-  "reasoningEffort": ZGenerateSchemaRequestReasoningEffort.nullable().optional(),
-  "instructions": z.string().nullable().optional(),
-  "imageResolutionDpi": z.number().int().optional(),
-  "stream": z.boolean().optional(),
+  documents: ZMIMEData.array(),
+  model: z.string().optional(),
+  reasoningEffort: ZGenerateSchemaRequestReasoningEffort.nullable().optional(),
+  instructions: z.string().nullable().optional(),
+  imageResolutionDpi: z.number().int().optional(),
+  stream: z.boolean().optional(),
 }) as z.ZodType<GenerateSchemaRequest>;
 
-export function deserializeGenerateSchemaRequest(wire: GenerateSchemaRequestResponse): GenerateSchemaRequest {
+export function deserializeGenerateSchemaRequest(
+  wire: GenerateSchemaRequestResponse
+): GenerateSchemaRequest {
   return {
-    documents: wire["documents"].map((__i) => deserializeMIMEData(__i)),
-    model: wire["model"],
-    reasoningEffort: wire["reasoning_effort"],
-    instructions: wire["instructions"],
-    imageResolutionDpi: wire["image_resolution_dpi"],
-    stream: wire["stream"],
+    documents: wire['documents'].map((__i) => deserializeMIMEData(__i)),
+    model: wire['model'],
+    reasoningEffort: wire['reasoning_effort'],
+    instructions: wire['instructions'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
+    stream: wire['stream'],
   };
 }

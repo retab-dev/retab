@@ -14,13 +14,15 @@ export interface ReviewSplitCountNeqResponse {
 }
 
 export const ZReviewSplitCountNeq = z.object({
-  "kind": z.literal('split_count_neq'),
-  "expected": z.number().int(),
+  kind: z.literal('split_count_neq'),
+  expected: z.number().int(),
 }) as z.ZodType<ReviewSplitCountNeq>;
 
-export function deserializeReviewSplitCountNeq(wire: ReviewSplitCountNeqResponse): ReviewSplitCountNeq {
+export function deserializeReviewSplitCountNeq(
+  wire: ReviewSplitCountNeqResponse
+): ReviewSplitCountNeq {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

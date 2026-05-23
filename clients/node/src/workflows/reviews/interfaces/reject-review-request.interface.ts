@@ -15,13 +15,15 @@ export interface RejectReviewRequestResponse {
 }
 
 export const ZRejectReviewRequest = z.object({
-  "versionId": z.string(),
-  "reason": z.string(),
+  versionId: z.string(),
+  reason: z.string(),
 }) as z.ZodType<RejectReviewRequest>;
 
-export function deserializeRejectReviewRequest(wire: RejectReviewRequestResponse): RejectReviewRequest {
+export function deserializeRejectReviewRequest(
+  wire: RejectReviewRequestResponse
+): RejectReviewRequest {
   return {
-    versionId: wire["version_id"],
-    reason: wire["reason"],
+    versionId: wire['version_id'],
+    reason: wire['reason'],
   };
 }

@@ -23,17 +23,19 @@ export interface WorkflowDiagnosisIssueResponse {
 }
 
 export const ZWorkflowDiagnosisIssue = z.object({
-  "severity": ZWorkflowDiagnosisIssueSeverity,
-  "code": z.string(),
-  "message": z.string(),
-  "blockId": z.string().nullable().optional(),
+  severity: ZWorkflowDiagnosisIssueSeverity,
+  code: z.string(),
+  message: z.string(),
+  blockId: z.string().nullable().optional(),
 }) as z.ZodType<WorkflowDiagnosisIssue>;
 
-export function deserializeWorkflowDiagnosisIssue(wire: WorkflowDiagnosisIssueResponse): WorkflowDiagnosisIssue {
+export function deserializeWorkflowDiagnosisIssue(
+  wire: WorkflowDiagnosisIssueResponse
+): WorkflowDiagnosisIssue {
   return {
-    severity: wire["severity"],
-    code: wire["code"],
-    message: wire["message"],
-    blockId: wire["block_id"],
+    severity: wire['severity'],
+    code: wire['code'],
+    message: wire['message'],
+    blockId: wire['block_id'],
   };
 }

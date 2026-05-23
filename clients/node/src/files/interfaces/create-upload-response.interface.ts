@@ -32,21 +32,23 @@ export interface CreateUploadResponseResponse {
 }
 
 export const ZCreateUploadResponse = z.object({
-  "fileId": z.string(),
-  "uploadUrl": z.string(),
-  "uploadMethod": z.string().optional(),
-  "uploadHeaders": z.record(z.string(), z.string()).optional(),
-  "mimeData": ZMIMEData,
-  "expiresAt": z.coerce.date(),
+  fileId: z.string(),
+  uploadUrl: z.string(),
+  uploadMethod: z.string().optional(),
+  uploadHeaders: z.record(z.string(), z.string()).optional(),
+  mimeData: ZMIMEData,
+  expiresAt: z.coerce.date(),
 }) as z.ZodType<CreateUploadResponse>;
 
-export function deserializeCreateUploadResponse(wire: CreateUploadResponseResponse): CreateUploadResponse {
+export function deserializeCreateUploadResponse(
+  wire: CreateUploadResponseResponse
+): CreateUploadResponse {
   return {
-    fileId: wire["file_id"],
-    uploadUrl: wire["upload_url"],
-    uploadMethod: wire["upload_method"],
-    uploadHeaders: wire["upload_headers"],
-    mimeData: deserializeMIMEData(wire["mime_data"]),
-    expiresAt: new Date(wire["expires_at"]),
+    fileId: wire['file_id'],
+    uploadUrl: wire['upload_url'],
+    uploadMethod: wire['upload_method'],
+    uploadHeaders: wire['upload_headers'],
+    mimeData: deserializeMIMEData(wire['mime_data']),
+    expiresAt: new Date(wire['expires_at']),
   };
 }

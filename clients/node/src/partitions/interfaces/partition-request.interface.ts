@@ -47,23 +47,23 @@ export interface PartitionRequestResponse {
 }
 
 export const ZPartitionRequest = z.object({
-  "document": z.union([ZMIMEData, ZFileRef]),
-  "key": z.string(),
-  "instructions": z.string(),
-  "model": z.string().optional(),
-  "nConsensus": z.number().int().optional(),
-  "allowOverlap": z.boolean().optional(),
-  "bustCache": z.boolean().optional(),
+  document: z.union([ZMIMEData, ZFileRef]),
+  key: z.string(),
+  instructions: z.string(),
+  model: z.string().optional(),
+  nConsensus: z.number().int().optional(),
+  allowOverlap: z.boolean().optional(),
+  bustCache: z.boolean().optional(),
 }) as z.ZodType<PartitionRequest>;
 
 export function deserializePartitionRequest(wire: PartitionRequestResponse): PartitionRequest {
   return {
-    document: (wire["document"] as unknown as MIMEData | FileRef),
-    key: wire["key"],
-    instructions: wire["instructions"],
-    model: wire["model"],
-    nConsensus: wire["n_consensus"],
-    allowOverlap: wire["allow_overlap"],
-    bustCache: wire["bust_cache"],
+    document: wire['document'] as unknown as MIMEData | FileRef,
+    key: wire['key'],
+    instructions: wire['instructions'],
+    model: wire['model'],
+    nConsensus: wire['n_consensus'],
+    allowOverlap: wire['allow_overlap'],
+    bustCache: wire['bust_cache'],
   };
 }

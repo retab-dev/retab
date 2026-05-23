@@ -18,17 +18,19 @@ export interface CreateReviewVersionRequestResponse {
 }
 
 export const ZCreateReviewVersionRequest = z.object({
-  "reviewId": z.string(),
-  "parentId": z.string(),
-  "snapshot": z.record(z.string(), z.unknown()),
-  "note": z.string().nullable().optional(),
+  reviewId: z.string(),
+  parentId: z.string(),
+  snapshot: z.record(z.string(), z.unknown()),
+  note: z.string().nullable().optional(),
 }) as z.ZodType<CreateReviewVersionRequest>;
 
-export function deserializeCreateReviewVersionRequest(wire: CreateReviewVersionRequestResponse): CreateReviewVersionRequest {
+export function deserializeCreateReviewVersionRequest(
+  wire: CreateReviewVersionRequestResponse
+): CreateReviewVersionRequest {
   return {
-    reviewId: wire["review_id"],
-    parentId: wire["parent_id"],
-    snapshot: wire["snapshot"],
-    note: wire["note"],
+    reviewId: wire['review_id'],
+    parentId: wire['parent_id'],
+    snapshot: wire['snapshot'],
+    note: wire['note'],
   };
 }

@@ -18,13 +18,29 @@ export interface ManualWorkflowTestSourceResponse {
 }
 
 export const ZManualWorkflowTestSource = z.object({
-  "type": z.literal('manual'),
-  "handleInputs": z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
+  type: z.literal('manual'),
+  handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
 }) as z.ZodType<ManualWorkflowTestSource>;
 
-export function deserializeManualWorkflowTestSource(wire: ManualWorkflowTestSourceResponse): ManualWorkflowTestSource {
+export function deserializeManualWorkflowTestSource(
+  wire: ManualWorkflowTestSourceResponse
+): ManualWorkflowTestSource {
   return {
-    type: wire["type"],
-    handleInputs: wire["handle_inputs"] == null ? (wire["handle_inputs"] as undefined) : Object.fromEntries(Object.entries(wire["handle_inputs"]).map(([__k, __v]) => [__k, (({ "file": () => deserializeFileHandleInput(__v as FileHandleInputResponse), "json": () => deserializeJsonHandleInput(__v as JsonHandleInputResponse) } as Record<string, () => JsonHandleInput | FileHandleInput>)[(__v as unknown as Record<string, string>)["type"]]?.() ?? (__v as unknown as JsonHandleInput | FileHandleInput))])),
+    type: wire['type'],
+    handleInputs:
+      wire['handle_inputs'] == null
+        ? (wire['handle_inputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(wire['handle_inputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => deserializeFileHandleInput(__v as FileHandleInputResponse),
+                  json: () => deserializeJsonHandleInput(__v as JsonHandleInputResponse),
+                } as Record<string, () => JsonHandleInput | FileHandleInput>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInput | FileHandleInput),
+            ])
+          ),
   };
 }

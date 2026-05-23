@@ -15,13 +15,13 @@ export interface ScheduleTriggerResponse {
 }
 
 export const ZScheduleTrigger = z.object({
-  "type": z.literal('schedule'),
-  "scheduleId": z.string(),
+  type: z.literal('schedule'),
+  scheduleId: z.string(),
 }) as z.ZodType<ScheduleTrigger>;
 
 export function deserializeScheduleTrigger(wire: ScheduleTriggerResponse): ScheduleTrigger {
   return {
-    type: wire["type"],
-    scheduleId: wire["schedule_id"],
+    type: wire['type'],
+    scheduleId: wire['schedule_id'],
   };
 }

@@ -3,10 +3,22 @@
 import { z } from 'zod';
 import type { AssertionSpec, AssertionSpecResponse } from './assertion-spec.interface.js';
 import { ZAssertionSpec, deserializeAssertionSpec } from './assertion-spec.interface.js';
-import type { ManualWorkflowTestSource, ManualWorkflowTestSourceResponse } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
-import { ZManualWorkflowTestSource, deserializeManualWorkflowTestSource } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
-import type { RunStepWorkflowTestSource, RunStepWorkflowTestSourceResponse } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
-import { ZRunStepWorkflowTestSource, deserializeRunStepWorkflowTestSource } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+import type {
+  ManualWorkflowTestSource,
+  ManualWorkflowTestSourceResponse,
+} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+import {
+  ZManualWorkflowTestSource,
+  deserializeManualWorkflowTestSource,
+} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+import type {
+  RunStepWorkflowTestSource,
+  RunStepWorkflowTestSourceResponse,
+} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+import {
+  ZRunStepWorkflowTestSource,
+  deserializeRunStepWorkflowTestSource,
+} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
 
 export interface UpdateWorkflowTestRequest {
   name?: string | null;
@@ -21,15 +33,39 @@ export interface UpdateWorkflowTestRequestResponse {
 }
 
 export const ZUpdateWorkflowTestRequest = z.object({
-  "name": z.string().nullable().optional(),
-  "assertion": ZAssertionSpec.nullable().optional(),
-  "source": z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]).nullable().optional(),
+  name: z.string().nullable().optional(),
+  assertion: ZAssertionSpec.nullable().optional(),
+  source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]).nullable().optional(),
 }) as z.ZodType<UpdateWorkflowTestRequest>;
 
-export function deserializeUpdateWorkflowTestRequest(wire: UpdateWorkflowTestRequestResponse): UpdateWorkflowTestRequest {
+export function deserializeUpdateWorkflowTestRequest(
+  wire: UpdateWorkflowTestRequestResponse
+): UpdateWorkflowTestRequest {
   return {
-    name: wire["name"],
-    assertion: wire["assertion"] == null ? (wire["assertion"] as undefined) : (wire["assertion"] == null ? wire["assertion"] : deserializeAssertionSpec(wire["assertion"])),
-    source: wire["source"] == null ? (wire["source"] as undefined) : (wire["source"] == null ? wire["source"] : (({ "manual": () => deserializeManualWorkflowTestSource(wire["source"] as ManualWorkflowTestSourceResponse), "run_step": () => deserializeRunStepWorkflowTestSource(wire["source"] as RunStepWorkflowTestSourceResponse) } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>)[(wire["source"] as unknown as Record<string, string>)["type"]]?.() ?? (wire["source"] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource))),
+    name: wire['name'],
+    assertion:
+      wire['assertion'] == null
+        ? (wire['assertion'] as undefined)
+        : wire['assertion'] == null
+          ? wire['assertion']
+          : deserializeAssertionSpec(wire['assertion']),
+    source:
+      wire['source'] == null
+        ? (wire['source'] as undefined)
+        : wire['source'] == null
+          ? wire['source']
+          : ((
+              {
+                manual: () =>
+                  deserializeManualWorkflowTestSource(
+                    wire['source'] as ManualWorkflowTestSourceResponse
+                  ),
+                run_step: () =>
+                  deserializeRunStepWorkflowTestSource(
+                    wire['source'] as RunStepWorkflowTestSourceResponse
+                  ),
+              } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>
+            )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
+            (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource)),
   };
 }

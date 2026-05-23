@@ -2,7 +2,14 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
-import type { CreateExperimentRequestNConsensus, ExperimentDocumentCaptureRequest, ExplicitExperimentDocumentRequest, UpdateExperimentRequestNConsensus, WorkflowExperiment, WorkflowExperimentResponse } from '../../workflows/experiments/interfaces/index.js';
+import type {
+  CreateExperimentRequestNConsensus,
+  ExperimentDocumentCaptureRequest,
+  ExplicitExperimentDocumentRequest,
+  UpdateExperimentRequestNConsensus,
+  WorkflowExperiment,
+  WorkflowExperimentResponse,
+} from '../../workflows/experiments/interfaces/index.js';
 import { deserializeWorkflowExperiment } from '../../workflows/experiments/interfaces/index.js';
 import { ExperimentRunMetrics } from './metrics/experiment-run-metrics.js';
 import { ExperimentRunResults } from './results/experiment-run-results.js';
@@ -20,45 +27,96 @@ export class WorkflowExperiments {
   }
 
   /** List Experiments */
-  async list(options: { workflowId: string; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowExperiment>> {
-    return this.client._fetchPage(deserializeWorkflowExperiment, { method: 'GET', path: "/v1/workflows/experiments", query: { "workflow_id": options?.workflowId, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    workflowId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowExperiment>> {
+    return this.client._fetchPage(deserializeWorkflowExperiment, {
+      method: 'GET',
+      path: '/v1/workflows/experiments',
+      query: {
+        workflow_id: options?.workflowId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Experiment */
-  async create(workflowId: string, blockId?: string | null, documentCaptures?: ExperimentDocumentCaptureRequest[] | null, documents?: ExplicitExperimentDocumentRequest[] | null, nConsensus?: CreateExperimentRequestNConsensus | null, name?: string | null, sourceExperimentId?: string | null): Promise<WorkflowExperiment> {
+  async create(
+    workflowId: string,
+    blockId?: string | null,
+    documentCaptures?: ExperimentDocumentCaptureRequest[] | null,
+    documents?: ExplicitExperimentDocumentRequest[] | null,
+    nConsensus?: CreateExperimentRequestNConsensus | null,
+    name?: string | null,
+    sourceExperimentId?: string | null
+  ): Promise<WorkflowExperiment> {
     const body = {
-      "workflow_id": workflowId,
-      "block_id": blockId,
-      "document_captures": documentCaptures,
-      "documents": documents,
-      "n_consensus": nConsensus,
-      "name": name,
-      "source_experiment_id": sourceExperimentId,
+      workflow_id: workflowId,
+      block_id: blockId,
+      document_captures: documentCaptures,
+      documents: documents,
+      n_consensus: nConsensus,
+      name: name,
+      source_experiment_id: sourceExperimentId,
     };
-    const __wire = await this.client.request<WorkflowExperimentResponse>({ method: 'POST', path: "/v1/workflows/experiments", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowExperimentResponse>({
+      method: 'POST',
+      path: '/v1/workflows/experiments',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowExperiment(__wire);
   }
 
   /** Get Experiment */
   async get(experimentId: string): Promise<WorkflowExperiment> {
-    const __wire = await this.client.request<WorkflowExperimentResponse>({ method: 'GET', path: `/v1/workflows/experiments/${experimentId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowExperimentResponse>({
+      method: 'GET',
+      path: `/v1/workflows/experiments/${experimentId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowExperiment(__wire);
   }
 
   /** Update Experiment */
-  async update(experimentId: string, documentCaptures?: ExperimentDocumentCaptureRequest[] | null, documents?: ExplicitExperimentDocumentRequest[] | null, nConsensus?: UpdateExperimentRequestNConsensus | null, name?: string | null): Promise<WorkflowExperiment> {
+  async update(
+    experimentId: string,
+    documentCaptures?: ExperimentDocumentCaptureRequest[] | null,
+    documents?: ExplicitExperimentDocumentRequest[] | null,
+    nConsensus?: UpdateExperimentRequestNConsensus | null,
+    name?: string | null
+  ): Promise<WorkflowExperiment> {
     const body = {
-      "document_captures": documentCaptures,
-      "documents": documents,
-      "n_consensus": nConsensus,
-      "name": name,
+      document_captures: documentCaptures,
+      documents: documents,
+      n_consensus: nConsensus,
+      name: name,
     };
-    const __wire = await this.client.request<WorkflowExperimentResponse>({ method: 'PATCH', path: `/v1/workflows/experiments/${experimentId}`, query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowExperimentResponse>({
+      method: 'PATCH',
+      path: `/v1/workflows/experiments/${experimentId}`,
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowExperiment(__wire);
   }
 
   /** Delete Experiment */
   async delete(experimentId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/workflows/experiments/${experimentId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/workflows/experiments/${experimentId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

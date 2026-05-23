@@ -3,8 +3,14 @@
 import { z } from 'zod';
 import type { SplitResult, SplitResultResponse } from './split-result.interface.js';
 import { ZSplitResult, deserializeSplitResult } from './split-result.interface.js';
-import type { SplitSubdocumentLikelihood, SplitSubdocumentLikelihoodResponse } from './split-subdocument-likelihood.interface.js';
-import { ZSplitSubdocumentLikelihood, deserializeSplitSubdocumentLikelihood } from './split-subdocument-likelihood.interface.js';
+import type {
+  SplitSubdocumentLikelihood,
+  SplitSubdocumentLikelihoodResponse,
+} from './split-subdocument-likelihood.interface.js';
+import {
+  ZSplitSubdocumentLikelihood,
+  deserializeSplitSubdocumentLikelihood,
+} from './split-subdocument-likelihood.interface.js';
 
 export interface SplitConsensus {
   /** Consensus likelihood tree mirroring the split output */
@@ -19,13 +25,21 @@ export interface SplitConsensusResponse {
 }
 
 export const ZSplitConsensus = z.object({
-  "likelihoods": ZSplitSubdocumentLikelihood.array().nullable().optional(),
-  "choices": ZSplitResult.array().array().optional(),
+  likelihoods: ZSplitSubdocumentLikelihood.array().nullable().optional(),
+  choices: ZSplitResult.array().array().optional(),
 }) as z.ZodType<SplitConsensus>;
 
 export function deserializeSplitConsensus(wire: SplitConsensusResponse): SplitConsensus {
   return {
-    likelihoods: wire["likelihoods"] == null ? (wire["likelihoods"] as undefined) : (wire["likelihoods"] == null ? wire["likelihoods"] : wire["likelihoods"].map((__i) => deserializeSplitSubdocumentLikelihood(__i))),
-    choices: wire["choices"] == null ? (wire["choices"] as undefined) : wire["choices"].map((__i) => __i.map((__i1) => deserializeSplitResult(__i1))),
+    likelihoods:
+      wire['likelihoods'] == null
+        ? (wire['likelihoods'] as undefined)
+        : wire['likelihoods'] == null
+          ? wire['likelihoods']
+          : wire['likelihoods'].map((__i) => deserializeSplitSubdocumentLikelihood(__i)),
+    choices:
+      wire['choices'] == null
+        ? (wire['choices'] as undefined)
+        : wire['choices'].map((__i) => __i.map((__i1) => deserializeSplitResult(__i1))),
   };
 }

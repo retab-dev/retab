@@ -12,13 +12,15 @@ export interface WorkflowBlockPositionResponse {
 }
 
 export const ZWorkflowBlockPosition = z.object({
-  "x": z.number(),
-  "y": z.number(),
+  x: z.number(),
+  y: z.number(),
 }) as z.ZodType<WorkflowBlockPosition>;
 
-export function deserializeWorkflowBlockPosition(wire: WorkflowBlockPositionResponse): WorkflowBlockPosition {
+export function deserializeWorkflowBlockPosition(
+  wire: WorkflowBlockPositionResponse
+): WorkflowBlockPosition {
   return {
-    x: wire["x"],
-    y: wire["y"],
+    x: wire['x'],
+    y: wire['y'],
   };
 }

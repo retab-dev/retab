@@ -2,6 +2,29 @@
 
 import { z } from 'zod';
 
-export type StepArtifactRefOperation = 'extraction' | 'split' | 'classification' | 'parse' | 'edit' | 'partition' | 'conditional_evaluation' | 'review_trigger_evaluation' | 'while_loop_termination' | 'api_call_invocation' | 'function_invocation';
+export type StepArtifactRefOperation =
+  | 'extraction'
+  | 'split'
+  | 'classification'
+  | 'parse'
+  | 'edit'
+  | 'partition'
+  | 'conditional_evaluation'
+  | 'review_trigger_evaluation'
+  | 'while_loop_termination'
+  | 'api_call_invocation'
+  | 'function_invocation';
 
-export const ZStepArtifactRefOperation = z.enum(['extraction', 'split', 'classification', 'parse', 'edit', 'partition', 'conditional_evaluation', 'review_trigger_evaluation', 'while_loop_termination', 'api_call_invocation', 'function_invocation'] as const);
+export const ZStepArtifactRefOperation = z.enum([
+  'extraction',
+  'split',
+  'classification',
+  'parse',
+  'edit',
+  'partition',
+  'conditional_evaluation',
+  'review_trigger_evaluation',
+  'while_loop_termination',
+  'api_call_invocation',
+  'function_invocation',
+] as const);

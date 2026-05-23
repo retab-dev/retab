@@ -12,11 +12,13 @@ export interface ApproveReviewRequestResponse {
 }
 
 export const ZApproveReviewRequest = z.object({
-  "versionId": z.string(),
+  versionId: z.string(),
 }) as z.ZodType<ApproveReviewRequest>;
 
-export function deserializeApproveReviewRequest(wire: ApproveReviewRequestResponse): ApproveReviewRequest {
+export function deserializeApproveReviewRequest(
+  wire: ApproveReviewRequestResponse
+): ApproveReviewRequest {
   return {
-    versionId: wire["version_id"],
+    versionId: wire['version_id'],
   };
 }

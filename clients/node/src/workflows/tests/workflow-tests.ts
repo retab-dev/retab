@@ -2,8 +2,15 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
-import type { AssertionSpec, WorkflowTest, WorkflowTestResponse } from '../../workflows/tests/interfaces/index.js';
-import type { ManualWorkflowTestSource, RunStepWorkflowTestSource } from '../../workflows/tests/results/interfaces/index.js';
+import type {
+  AssertionSpec,
+  WorkflowTest,
+  WorkflowTestResponse,
+} from '../../workflows/tests/interfaces/index.js';
+import type {
+  ManualWorkflowTestSource,
+  RunStepWorkflowTestSource,
+} from '../../workflows/tests/results/interfaces/index.js';
 import type { WorkflowTestBlockTarget } from '../../workflows/tests/runs/interfaces/index.js';
 import { deserializeWorkflowTest } from '../../workflows/tests/interfaces/index.js';
 import { WorkflowTestRunResults } from './results/workflow-test-run-results.js';
@@ -19,42 +26,92 @@ export class WorkflowTests {
   }
 
   /** List Tests */
-  async list(options: { workflowId: string; targetBlockId?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowTest>> {
-    return this.client._fetchPage(deserializeWorkflowTest, { method: 'GET', path: "/v1/workflows/tests", query: { "workflow_id": options?.workflowId, "target_block_id": options?.targetBlockId, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    workflowId: string;
+    targetBlockId?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowTest>> {
+    return this.client._fetchPage(deserializeWorkflowTest, {
+      method: 'GET',
+      path: '/v1/workflows/tests',
+      query: {
+        workflow_id: options?.workflowId,
+        target_block_id: options?.targetBlockId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Test */
-  async create(workflowId: string, target: WorkflowTestBlockTarget, source: ManualWorkflowTestSource | RunStepWorkflowTestSource, assertion: AssertionSpec, name?: string | null): Promise<WorkflowTest> {
+  async create(
+    workflowId: string,
+    target: WorkflowTestBlockTarget,
+    source: ManualWorkflowTestSource | RunStepWorkflowTestSource,
+    assertion: AssertionSpec,
+    name?: string | null
+  ): Promise<WorkflowTest> {
     const body = {
-      "workflow_id": workflowId,
-      "target": target,
-      "source": source,
-      "name": name,
-      "assertion": assertion,
+      workflow_id: workflowId,
+      target: target,
+      source: source,
+      name: name,
+      assertion: assertion,
     };
-    const __wire = await this.client.request<WorkflowTestResponse>({ method: 'POST', path: "/v1/workflows/tests", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowTestResponse>({
+      method: 'POST',
+      path: '/v1/workflows/tests',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowTest(__wire);
   }
 
   /** Get Test */
   async get(testId: string): Promise<WorkflowTest> {
-    const __wire = await this.client.request<WorkflowTestResponse>({ method: 'GET', path: `/v1/workflows/tests/${testId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowTestResponse>({
+      method: 'GET',
+      path: `/v1/workflows/tests/${testId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowTest(__wire);
   }
 
   /** Update Test */
-  async update(testId: string, name?: string | null, assertion?: AssertionSpec | null, source?: (ManualWorkflowTestSource | RunStepWorkflowTestSource) | null): Promise<WorkflowTest> {
+  async update(
+    testId: string,
+    name?: string | null,
+    assertion?: AssertionSpec | null,
+    source?: (ManualWorkflowTestSource | RunStepWorkflowTestSource) | null
+  ): Promise<WorkflowTest> {
     const body = {
-      "name": name,
-      "assertion": assertion,
-      "source": source,
+      name: name,
+      assertion: assertion,
+      source: source,
     };
-    const __wire = await this.client.request<WorkflowTestResponse>({ method: 'PATCH', path: `/v1/workflows/tests/${testId}`, query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowTestResponse>({
+      method: 'PATCH',
+      path: `/v1/workflows/tests/${testId}`,
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowTest(__wire);
   }
 
   /** Delete Test */
   async delete(testId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/workflows/tests/${testId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/workflows/tests/${testId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

@@ -21,19 +21,19 @@ export interface VerdictSummaryResponse {
 }
 
 export const ZVerdictSummary = z.object({
-  "result": z.boolean(),
-  "assertionsPassed": z.number().int().optional(),
-  "assertionsFailed": z.number().int().optional(),
-  "blockedAssertions": z.number().int().optional(),
-  "failedAssertionIds": z.string().array().optional(),
+  result: z.boolean(),
+  assertionsPassed: z.number().int().optional(),
+  assertionsFailed: z.number().int().optional(),
+  blockedAssertions: z.number().int().optional(),
+  failedAssertionIds: z.string().array().optional(),
 }) as z.ZodType<VerdictSummary>;
 
 export function deserializeVerdictSummary(wire: VerdictSummaryResponse): VerdictSummary {
   return {
-    result: wire["result"],
-    assertionsPassed: wire["assertions_passed"],
-    assertionsFailed: wire["assertions_failed"],
-    blockedAssertions: wire["blocked_assertions"],
-    failedAssertionIds: wire["failed_assertion_ids"],
+    result: wire['result'],
+    assertionsPassed: wire['assertions_passed'],
+    assertionsFailed: wire['assertions_failed'],
+    blockedAssertions: wire['blocked_assertions'],
+    failedAssertionIds: wire['failed_assertion_ids'],
   };
 }

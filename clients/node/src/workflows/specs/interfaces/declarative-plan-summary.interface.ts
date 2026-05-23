@@ -29,23 +29,25 @@ export interface DeclarativePlanSummaryResponse {
 }
 
 export const ZDeclarativePlanSummary = z.object({
-  "add": z.number().int().optional(),
-  "change": z.number().int().optional(),
-  "destroy": z.number().int().optional(),
-  "replace": z.number().int().optional(),
-  "noop": z.number().int().optional(),
-  "total": z.number().int().optional(),
-  "hasChanges": z.boolean().optional(),
+  add: z.number().int().optional(),
+  change: z.number().int().optional(),
+  destroy: z.number().int().optional(),
+  replace: z.number().int().optional(),
+  noop: z.number().int().optional(),
+  total: z.number().int().optional(),
+  hasChanges: z.boolean().optional(),
 }) as z.ZodType<DeclarativePlanSummary>;
 
-export function deserializeDeclarativePlanSummary(wire: DeclarativePlanSummaryResponse): DeclarativePlanSummary {
+export function deserializeDeclarativePlanSummary(
+  wire: DeclarativePlanSummaryResponse
+): DeclarativePlanSummary {
   return {
-    add: wire["add"],
-    change: wire["change"],
-    destroy: wire["destroy"],
-    replace: wire["replace"],
-    noop: wire["noop"],
-    total: wire["total"],
-    hasChanges: wire["has_changes"],
+    add: wire['add'],
+    change: wire['change'],
+    destroy: wire['destroy'],
+    replace: wire['replace'],
+    noop: wire['noop'],
+    total: wire['total'],
+    hasChanges: wire['has_changes'],
   };
 }

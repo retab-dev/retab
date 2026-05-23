@@ -3,14 +3,32 @@
 import { z } from 'zod';
 import type { Category, CategoryResponse } from './category.interface.js';
 import { ZCategory, deserializeCategory } from './category.interface.js';
-import type { ClassificationConsensus, ClassificationConsensusResponse } from './classification-consensus.interface.js';
-import { ZClassificationConsensus, deserializeClassificationConsensus } from './classification-consensus.interface.js';
-import type { ClassificationDecision, ClassificationDecisionResponse } from './classification-decision.interface.js';
-import { ZClassificationDecision, deserializeClassificationDecision } from './classification-decision.interface.js';
+import type {
+  ClassificationConsensus,
+  ClassificationConsensusResponse,
+} from './classification-consensus.interface.js';
+import {
+  ZClassificationConsensus,
+  deserializeClassificationConsensus,
+} from './classification-consensus.interface.js';
+import type {
+  ClassificationDecision,
+  ClassificationDecisionResponse,
+} from './classification-decision.interface.js';
+import {
+  ZClassificationDecision,
+  deserializeClassificationDecision,
+} from './classification-decision.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type { RetabUsage, RetabUsageResponse } from '../../extractions/interfaces/retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from '../../extractions/interfaces/retab-usage.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../extractions/interfaces/retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+} from '../../extractions/interfaces/retab-usage.interface.js';
 
 export interface Classification {
   /** Unique identifier of the classification */
@@ -51,29 +69,42 @@ export interface ClassificationResponse {
 }
 
 export const ZClassification = z.object({
-  "id": z.string(),
-  "file": ZFileRef,
-  "model": z.string(),
-  "categories": ZCategory.array(),
-  "nConsensus": z.number().int().optional(),
-  "instructions": z.string().nullable().optional(),
-  "output": ZClassificationDecision,
-  "consensus": ZClassificationConsensus.optional(),
-  "usage": ZRetabUsage.nullable().optional(),
-  "createdAt": z.coerce.date().nullable().optional(),
+  id: z.string(),
+  file: ZFileRef,
+  model: z.string(),
+  categories: ZCategory.array(),
+  nConsensus: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  output: ZClassificationDecision,
+  consensus: ZClassificationConsensus.optional(),
+  usage: ZRetabUsage.nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Classification>;
 
 export function deserializeClassification(wire: ClassificationResponse): Classification {
   return {
-    id: wire["id"],
-    file: deserializeFileRef(wire["file"]),
-    model: wire["model"],
-    categories: wire["categories"].map((__i) => deserializeCategory(__i)),
-    nConsensus: wire["n_consensus"],
-    instructions: wire["instructions"],
-    output: deserializeClassificationDecision(wire["output"]),
-    consensus: wire["consensus"] == null ? (wire["consensus"] as undefined) : deserializeClassificationConsensus(wire["consensus"]),
-    usage: wire["usage"] == null ? (wire["usage"] as undefined) : (wire["usage"] == null ? wire["usage"] : deserializeRetabUsage(wire["usage"])),
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : (wire["created_at"] == null ? wire["created_at"] : new Date(wire["created_at"])),
+    id: wire['id'],
+    file: deserializeFileRef(wire['file']),
+    model: wire['model'],
+    categories: wire['categories'].map((__i) => deserializeCategory(__i)),
+    nConsensus: wire['n_consensus'],
+    instructions: wire['instructions'],
+    output: deserializeClassificationDecision(wire['output']),
+    consensus:
+      wire['consensus'] == null
+        ? (wire['consensus'] as undefined)
+        : deserializeClassificationConsensus(wire['consensus']),
+    usage:
+      wire['usage'] == null
+        ? (wire['usage'] as undefined)
+        : wire['usage'] == null
+          ? wire['usage']
+          : deserializeRetabUsage(wire['usage']),
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
   };
 }

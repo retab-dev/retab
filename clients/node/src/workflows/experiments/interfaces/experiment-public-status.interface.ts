@@ -4,4 +4,10 @@ import { z } from 'zod';
 
 export type ExperimentPublicStatus = 'draft' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-export const ZExperimentPublicStatus = z.enum(['draft', 'processing', 'completed', 'failed', 'cancelled'] as const);
+export const ZExperimentPublicStatus = z.enum([
+  'draft',
+  'processing',
+  'completed',
+  'failed',
+  'cancelled',
+] as const);

@@ -18,15 +18,15 @@ export interface FileRefResponse {
 }
 
 export const ZFileRef = z.object({
-  "id": z.string(),
-  "filename": z.string(),
-  "mimeType": z.string(),
+  id: z.string(),
+  filename: z.string(),
+  mimeType: z.string(),
 }) as z.ZodType<FileRef>;
 
 export function deserializeFileRef(wire: FileRefResponse): FileRef {
   return {
-    id: wire["id"],
-    filename: wire["filename"],
-    mimeType: wire["mime_type"],
+    id: wire['id'],
+    filename: wire['filename'],
+    mimeType: wire['mime_type'],
   };
 }

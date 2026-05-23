@@ -12,11 +12,13 @@ export interface RunningStepLifecycleResponse {
 }
 
 export const ZRunningStepLifecycle = z.object({
-  "status": z.literal('running'),
+  status: z.literal('running'),
 }) as z.ZodType<RunningStepLifecycle>;
 
-export function deserializeRunningStepLifecycle(wire: RunningStepLifecycleResponse): RunningStepLifecycle {
+export function deserializeRunningStepLifecycle(
+  wire: RunningStepLifecycleResponse
+): RunningStepLifecycle {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

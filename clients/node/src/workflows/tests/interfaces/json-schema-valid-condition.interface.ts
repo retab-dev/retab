@@ -13,13 +13,15 @@ export interface JsonSchemaValidConditionResponse {
 }
 
 export const ZJsonSchemaValidCondition = z.object({
-  "kind": z.literal('json_schema_valid'),
-  "schema": z.record(z.string(), z.unknown()).nullable().optional(),
+  kind: z.literal('json_schema_valid'),
+  schema: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<JsonSchemaValidCondition>;
 
-export function deserializeJsonSchemaValidCondition(wire: JsonSchemaValidConditionResponse): JsonSchemaValidCondition {
+export function deserializeJsonSchemaValidCondition(
+  wire: JsonSchemaValidConditionResponse
+): JsonSchemaValidCondition {
   return {
-    kind: wire["kind"],
-    schema: wire["schema"],
+    kind: wire['kind'],
+    schema: wire['schema'],
   };
 }

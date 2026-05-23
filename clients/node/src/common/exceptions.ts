@@ -8,7 +8,7 @@ export class RetabError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly responseBody: string,
+    public readonly responseBody: string
   ) {
     super(message);
     this.name = 'RetabError';

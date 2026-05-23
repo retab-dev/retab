@@ -11,11 +11,13 @@ export interface CompleteFileUploadRequestResponse {
 }
 
 export const ZCompleteFileUploadRequest = z.object({
-  "sha256": z.string().nullable().optional(),
+  sha256: z.string().nullable().optional(),
 }) as z.ZodType<CompleteFileUploadRequest>;
 
-export function deserializeCompleteFileUploadRequest(wire: CompleteFileUploadRequestResponse): CompleteFileUploadRequest {
+export function deserializeCompleteFileUploadRequest(
+  wire: CompleteFileUploadRequestResponse
+): CompleteFileUploadRequest {
   return {
-    sha256: wire["sha_256"],
+    sha256: wire['sha_256'],
   };
 }

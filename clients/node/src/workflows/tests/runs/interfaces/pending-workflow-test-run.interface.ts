@@ -12,11 +12,13 @@ export interface PendingWorkflowTestRunResponse {
 }
 
 export const ZPendingWorkflowTestRun = z.object({
-  "status": z.literal('pending'),
+  status: z.literal('pending'),
 }) as z.ZodType<PendingWorkflowTestRun>;
 
-export function deserializePendingWorkflowTestRun(wire: PendingWorkflowTestRunResponse): PendingWorkflowTestRun {
+export function deserializePendingWorkflowTestRun(
+  wire: PendingWorkflowTestRunResponse
+): PendingWorkflowTestRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

@@ -12,11 +12,13 @@ export interface CompletedWorkflowExperimentRunResponse {
 }
 
 export const ZCompletedWorkflowExperimentRun = z.object({
-  "status": z.literal('completed'),
+  status: z.literal('completed'),
 }) as z.ZodType<CompletedWorkflowExperimentRun>;
 
-export function deserializeCompletedWorkflowExperimentRun(wire: CompletedWorkflowExperimentRunResponse): CompletedWorkflowExperimentRun {
+export function deserializeCompletedWorkflowExperimentRun(
+  wire: CompletedWorkflowExperimentRunResponse
+): CompletedWorkflowExperimentRun {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

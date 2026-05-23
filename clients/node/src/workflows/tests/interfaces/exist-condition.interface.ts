@@ -11,11 +11,11 @@ export interface ExistConditionResponse {
 }
 
 export const ZExistCondition = z.object({
-  "kind": z.literal('exists'),
+  kind: z.literal('exists'),
 }) as z.ZodType<ExistCondition>;
 
 export function deserializeExistCondition(wire: ExistConditionResponse): ExistCondition {
   return {
-    kind: wire["kind"],
+    kind: wire['kind'],
   };
 }

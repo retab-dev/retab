@@ -18,17 +18,19 @@ export interface AssertionSchemaDepResponse {
 }
 
 export const ZAssertionSchemaDep = z.object({
-  "outputHandleId": z.string().nullable().optional(),
-  "schemaPath": z.string(),
-  "subtreeHash": z.string(),
-  "dependsOnRoot": z.boolean().optional(),
+  outputHandleId: z.string().nullable().optional(),
+  schemaPath: z.string(),
+  subtreeHash: z.string(),
+  dependsOnRoot: z.boolean().optional(),
 }) as z.ZodType<AssertionSchemaDep>;
 
-export function deserializeAssertionSchemaDep(wire: AssertionSchemaDepResponse): AssertionSchemaDep {
+export function deserializeAssertionSchemaDep(
+  wire: AssertionSchemaDepResponse
+): AssertionSchemaDep {
   return {
-    outputHandleId: wire["output_handle_id"],
-    schemaPath: wire["schema_path"],
-    subtreeHash: wire["subtree_hash"],
-    dependsOnRoot: wire["depends_on_root"],
+    outputHandleId: wire['output_handle_id'],
+    schemaPath: wire['schema_path'],
+    subtreeHash: wire['subtree_hash'],
+    dependsOnRoot: wire['depends_on_root'],
   };
 }

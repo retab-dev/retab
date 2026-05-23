@@ -2,6 +2,19 @@
 
 import { z } from 'zod';
 
-export type WorkflowExportPayloadRequestTriggerTypes = 'manual' | 'api' | 'schedule' | 'webhook' | 'email' | 'restart';
+export type WorkflowExportPayloadRequestTriggerTypes =
+  | 'manual'
+  | 'api'
+  | 'schedule'
+  | 'webhook'
+  | 'email'
+  | 'restart';
 
-export const ZWorkflowExportPayloadRequestTriggerTypes = z.enum(['manual', 'api', 'schedule', 'webhook', 'email', 'restart'] as const);
+export const ZWorkflowExportPayloadRequestTriggerTypes = z.enum([
+  'manual',
+  'api',
+  'schedule',
+  'webhook',
+  'email',
+  'restart',
+] as const);

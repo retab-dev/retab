@@ -10,11 +10,13 @@ export interface ExperimentRunTriggerResponse {
 }
 
 export const ZExperimentRunTrigger = z.object({
-  "type": z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
 }) as z.ZodType<ExperimentRunTrigger>;
 
-export function deserializeExperimentRunTrigger(wire: ExperimentRunTriggerResponse): ExperimentRunTrigger {
+export function deserializeExperimentRunTrigger(
+  wire: ExperimentRunTriggerResponse
+): ExperimentRunTrigger {
   return {
-    type: wire["type"],
+    type: wire['type'],
   };
 }

@@ -21,21 +21,21 @@ export interface ExperimentVoteRowResponse {
 }
 
 export const ZExperimentVoteRow = z.object({
-  "consensus": z.unknown().nullable().optional(),
-  "votes": z.unknown().array().optional(),
-  "score": z.number().nullable().optional(),
-  "rowPresenceScore": z.number().nullable().optional(),
-  "presentVoterCount": z.number().int().nullable().optional(),
-  "totalVoterCount": z.number().int().nullable().optional(),
+  consensus: z.unknown().nullable().optional(),
+  votes: z.unknown().array().optional(),
+  score: z.number().nullable().optional(),
+  rowPresenceScore: z.number().nullable().optional(),
+  presentVoterCount: z.number().int().nullable().optional(),
+  totalVoterCount: z.number().int().nullable().optional(),
 }) as z.ZodType<ExperimentVoteRow>;
 
 export function deserializeExperimentVoteRow(wire: ExperimentVoteRowResponse): ExperimentVoteRow {
   return {
-    consensus: wire["consensus"],
-    votes: wire["votes"],
-    score: wire["score"],
-    rowPresenceScore: wire["row_presence_score"],
-    presentVoterCount: wire["present_voter_count"],
-    totalVoterCount: wire["total_voter_count"],
+    consensus: wire['consensus'],
+    votes: wire['votes'],
+    score: wire['score'],
+    rowPresenceScore: wire['row_presence_score'],
+    presentVoterCount: wire['present_voter_count'],
+    totalVoterCount: wire['total_voter_count'],
   };
 }

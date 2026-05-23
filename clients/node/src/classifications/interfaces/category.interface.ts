@@ -20,15 +20,15 @@ export interface CategoryResponse {
 }
 
 export const ZCategory = z.object({
-  "name": z.string(),
-  "handleKey": z.string().nullable().optional(),
-  "description": z.string().optional(),
+  name: z.string(),
+  handleKey: z.string().nullable().optional(),
+  description: z.string().optional(),
 }) as z.ZodType<Category>;
 
 export function deserializeCategory(wire: CategoryResponse): Category {
   return {
-    name: wire["name"],
-    handleKey: wire["handle_key"],
-    description: wire["description"],
+    name: wire['name'],
+    handleKey: wire['handle_key'],
+    description: wire['description'],
   };
 }

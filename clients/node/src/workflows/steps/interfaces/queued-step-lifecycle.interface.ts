@@ -12,11 +12,13 @@ export interface QueuedStepLifecycleResponse {
 }
 
 export const ZQueuedStepLifecycle = z.object({
-  "status": z.literal('queued'),
+  status: z.literal('queued'),
 }) as z.ZodType<QueuedStepLifecycle>;
 
-export function deserializeQueuedStepLifecycle(wire: QueuedStepLifecycleResponse): QueuedStepLifecycle {
+export function deserializeQueuedStepLifecycle(
+  wire: QueuedStepLifecycleResponse
+): QueuedStepLifecycle {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

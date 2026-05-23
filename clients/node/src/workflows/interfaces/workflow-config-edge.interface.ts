@@ -23,21 +23,23 @@ export interface WorkflowConfigEdgeResponse {
 }
 
 export const ZWorkflowConfigEdge = z.object({
-  "id": z.string().optional(),
-  "source": z.string(),
-  "target": z.string(),
-  "sourceHandle": z.string().nullable().optional(),
-  "targetHandle": z.string().nullable().optional(),
-  "animated": z.boolean().optional(),
+  id: z.string().optional(),
+  source: z.string(),
+  target: z.string(),
+  sourceHandle: z.string().nullable().optional(),
+  targetHandle: z.string().nullable().optional(),
+  animated: z.boolean().optional(),
 }) as z.ZodType<WorkflowConfigEdge>;
 
-export function deserializeWorkflowConfigEdge(wire: WorkflowConfigEdgeResponse): WorkflowConfigEdge {
+export function deserializeWorkflowConfigEdge(
+  wire: WorkflowConfigEdgeResponse
+): WorkflowConfigEdge {
   return {
-    id: wire["id"],
-    source: wire["source"],
-    target: wire["target"],
-    sourceHandle: wire["source_handle"],
-    targetHandle: wire["target_handle"],
-    animated: wire["animated"],
+    id: wire['id'],
+    source: wire['source'],
+    target: wire['target'],
+    sourceHandle: wire['source_handle'],
+    targetHandle: wire['target_handle'],
+    animated: wire['animated'],
   };
 }

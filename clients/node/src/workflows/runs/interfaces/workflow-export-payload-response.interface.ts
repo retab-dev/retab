@@ -17,15 +17,17 @@ export interface WorkflowExportPayloadResponseResponse {
 }
 
 export const ZWorkflowExportPayloadResponse = z.object({
-  "csvData": z.string(),
-  "rows": z.number().int(),
-  "columns": z.number().int(),
+  csvData: z.string(),
+  rows: z.number().int(),
+  columns: z.number().int(),
 }) as z.ZodType<WorkflowExportPayloadResponse>;
 
-export function deserializeWorkflowExportPayloadResponse(wire: WorkflowExportPayloadResponseResponse): WorkflowExportPayloadResponse {
+export function deserializeWorkflowExportPayloadResponse(
+  wire: WorkflowExportPayloadResponseResponse
+): WorkflowExportPayloadResponse {
   return {
-    csvData: wire["csv_data"],
-    rows: wire["rows"],
-    columns: wire["columns"],
+    csvData: wire['csv_data'],
+    rows: wire['rows'],
+    columns: wire['columns'],
   };
 }

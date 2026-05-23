@@ -5,10 +5,22 @@ import type { EditConfig, EditConfigResponse } from './edit-config.interface.js'
 import { ZEditConfig, deserializeEditConfig } from './edit-config.interface.js';
 import type { EditResult, EditResultResponse } from './edit-result.interface.js';
 import { ZEditResult, deserializeEditResult } from './edit-result.interface.js';
-import type { FileRef, FileRefResponse } from '../../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../../extractions/interfaces/file-ref.interface.js';
-import type { RetabUsage, RetabUsageResponse } from '../../../extractions/interfaces/retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from '../../../extractions/interfaces/retab-usage.interface.js';
+import type {
+  FileRef,
+  FileRefResponse,
+} from '../../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+} from '../../../extractions/interfaces/file-ref.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../../extractions/interfaces/retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+} from '../../../extractions/interfaces/retab-usage.interface.js';
 
 export interface EditWorkflowArtifact {
   /** Unique identifier of the edit. */
@@ -50,29 +62,36 @@ export interface EditWorkflowArtifactResponse {
 }
 
 export const ZEditWorkflowArtifact = z.object({
-  "id": z.string(),
-  "file": ZFileRef,
-  "model": z.string(),
-  "instructions": z.string().nullable().optional(),
-  "config": ZEditConfig,
-  "templateId": z.string().nullable().optional(),
-  "output": ZEditResult,
-  "usage": ZRetabUsage.nullable().optional(),
-  "createdAt": z.coerce.date(),
-  "operation": z.literal('edit'),
+  id: z.string(),
+  file: ZFileRef,
+  model: z.string(),
+  instructions: z.string().nullable().optional(),
+  config: ZEditConfig,
+  templateId: z.string().nullable().optional(),
+  output: ZEditResult,
+  usage: ZRetabUsage.nullable().optional(),
+  createdAt: z.coerce.date(),
+  operation: z.literal('edit'),
 }) as z.ZodType<EditWorkflowArtifact>;
 
-export function deserializeEditWorkflowArtifact(wire: EditWorkflowArtifactResponse): EditWorkflowArtifact {
+export function deserializeEditWorkflowArtifact(
+  wire: EditWorkflowArtifactResponse
+): EditWorkflowArtifact {
   return {
-    id: wire["id"],
-    file: deserializeFileRef(wire["file"]),
-    model: wire["model"],
-    instructions: wire["instructions"],
-    config: deserializeEditConfig(wire["config"]),
-    templateId: wire["template_id"],
-    output: deserializeEditResult(wire["output"]),
-    usage: wire["usage"] == null ? (wire["usage"] as undefined) : (wire["usage"] == null ? wire["usage"] : deserializeRetabUsage(wire["usage"])),
-    createdAt: new Date(wire["created_at"]),
-    operation: wire["operation"],
+    id: wire['id'],
+    file: deserializeFileRef(wire['file']),
+    model: wire['model'],
+    instructions: wire['instructions'],
+    config: deserializeEditConfig(wire['config']),
+    templateId: wire['template_id'],
+    output: deserializeEditResult(wire['output']),
+    usage:
+      wire['usage'] == null
+        ? (wire['usage'] as undefined)
+        : wire['usage'] == null
+          ? wire['usage']
+          : deserializeRetabUsage(wire['usage']),
+    createdAt: new Date(wire['created_at']),
+    operation: wire['operation'],
   };
 }

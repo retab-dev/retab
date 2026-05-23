@@ -18,19 +18,13 @@ export interface FileRefInput {
   type: 'file_url';
 }
 
-export type MIMEDataInput =
-  | MIMEData
-  | Buffer
-  | string
-  | URL
-  | Readable
-  | FileRefInput;
+export type MIMEDataInput = MIMEData | Buffer | string | URL | Readable | FileRefInput;
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     stream.on('data', (chunk: Buffer | string) =>
-      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk),
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
     );
     stream.on('end', () => resolve(Buffer.concat(chunks)));
     stream.on('error', reject);
@@ -85,10 +79,13 @@ function passthroughHttpsUrl(url: string): MIMEData {
 function detectMimeFromBuffer(buf: Buffer): string {
   // Lightweight magic-byte sniffing for the formats the Retab API accepts.
   // Returns 'application/octet-stream' on no match so the backend can re-derive.
-  if (buf.length >= 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return 'application/pdf';
+  if (buf.length >= 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)
+    return 'application/pdf';
   if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
-  if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
-  if (buf.length >= 4 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return 'image/gif';
+  if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
+    return 'image/png';
+  if (buf.length >= 4 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38)
+    return 'image/gif';
   if (
     buf.length >= 4 &&
     buf[0] === 0x50 &&
@@ -115,7 +112,12 @@ export async function coerceMimeData(input: MIMEDataInput): Promise<MIMEData> {
     return input as MIMEData;
   }
   // FileRefInput — backend resolves a remote URL.
-  if (typeof input === 'object' && input !== null && 'type' in input && (input as FileRefInput).type === 'file_url') {
+  if (
+    typeof input === 'object' &&
+    input !== null &&
+    'type' in input &&
+    (input as FileRefInput).type === 'file_url'
+  ) {
     return passthroughHttpsUrl((input as FileRefInput).url);
   }
   if (input instanceof URL) {
@@ -161,7 +163,9 @@ export async function coerceMimeData(input: MIMEDataInput): Promise<MIMEData> {
     const ext = extFromMime(mime);
     const streamInput = input as Readable & { path?: unknown };
     const filename =
-      typeof streamInput.path === 'string' ? path.basename(streamInput.path) : `uploaded_file.${ext}`;
+      typeof streamInput.path === 'string'
+        ? path.basename(streamInput.path)
+        : `uploaded_file.${ext}`;
     return {
       filename,
       url: `data:${mime};base64,${buf.toString('base64')}`,

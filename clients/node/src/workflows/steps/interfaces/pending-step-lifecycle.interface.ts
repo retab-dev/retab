@@ -12,11 +12,13 @@ export interface PendingStepLifecycleResponse {
 }
 
 export const ZPendingStepLifecycle = z.object({
-  "status": z.literal('pending'),
+  status: z.literal('pending'),
 }) as z.ZodType<PendingStepLifecycle>;
 
-export function deserializePendingStepLifecycle(wire: PendingStepLifecycleResponse): PendingStepLifecycle {
+export function deserializePendingStepLifecycle(
+  wire: PendingStepLifecycleResponse
+): PendingStepLifecycle {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

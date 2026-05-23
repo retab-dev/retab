@@ -14,13 +14,13 @@ export interface ParseOutputResponse {
 }
 
 export const ZParseOutput = z.object({
-  "pages": z.string().array(),
-  "text": z.string(),
+  pages: z.string().array(),
+  text: z.string(),
 }) as z.ZodType<ParseOutput>;
 
 export function deserializeParseOutput(wire: ParseOutputResponse): ParseOutput {
   return {
-    pages: wire["pages"],
-    text: wire["text"],
+    pages: wire['pages'],
+    text: wire['text'],
   };
 }

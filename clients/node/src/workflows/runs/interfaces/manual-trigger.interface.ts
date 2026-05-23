@@ -15,13 +15,13 @@ export interface ManualTriggerResponse {
 }
 
 export const ZManualTrigger = z.object({
-  "type": z.literal('manual'),
-  "userId": z.string().nullable().optional(),
+  type: z.literal('manual'),
+  userId: z.string().nullable().optional(),
 }) as z.ZodType<ManualTrigger>;
 
 export function deserializeManualTrigger(wire: ManualTriggerResponse): ManualTrigger {
   return {
-    type: wire["type"],
-    userId: wire["user_id"],
+    type: wire['type'],
+    userId: wire['user_id'],
   };
 }

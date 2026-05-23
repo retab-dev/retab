@@ -27,19 +27,21 @@ export interface CreateBlockExecutionRequestResponse {
 }
 
 export const ZCreateBlockExecutionRequest = z.object({
-  "runId": z.string(),
-  "blockId": z.string(),
-  "stepId": z.string().nullable().optional(),
-  "nConsensus": z.number().int().nullable().optional(),
-  "checkEligibility": z.boolean().optional(),
+  runId: z.string(),
+  blockId: z.string(),
+  stepId: z.string().nullable().optional(),
+  nConsensus: z.number().int().nullable().optional(),
+  checkEligibility: z.boolean().optional(),
 }) as z.ZodType<CreateBlockExecutionRequest>;
 
-export function deserializeCreateBlockExecutionRequest(wire: CreateBlockExecutionRequestResponse): CreateBlockExecutionRequest {
+export function deserializeCreateBlockExecutionRequest(
+  wire: CreateBlockExecutionRequestResponse
+): CreateBlockExecutionRequest {
   return {
-    runId: wire["run_id"],
-    blockId: wire["block_id"],
-    stepId: wire["step_id"],
-    nConsensus: wire["n_consensus"],
-    checkEligibility: wire["check_eligibility"],
+    runId: wire['run_id'],
+    blockId: wire['block_id'],
+    stepId: wire['step_id'],
+    nConsensus: wire['n_consensus'],
+    checkEligibility: wire['check_eligibility'],
   };
 }

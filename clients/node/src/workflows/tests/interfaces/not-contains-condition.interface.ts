@@ -13,13 +13,15 @@ export interface NotContainsConditionResponse {
 }
 
 export const ZNotContainsCondition = z.object({
-  "kind": z.literal('not_contains'),
-  "expected": z.unknown(),
+  kind: z.literal('not_contains'),
+  expected: z.unknown(),
 }) as z.ZodType<NotContainsCondition>;
 
-export function deserializeNotContainsCondition(wire: NotContainsConditionResponse): NotContainsCondition {
+export function deserializeNotContainsCondition(
+  wire: NotContainsConditionResponse
+): NotContainsCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

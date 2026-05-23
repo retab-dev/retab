@@ -27,21 +27,23 @@ export interface BlockTestLifecycleCountsResponse {
 }
 
 export const ZBlockTestLifecycleCounts = z.object({
-  "pending": z.number().int().optional(),
-  "queued": z.number().int().optional(),
-  "running": z.number().int().optional(),
-  "completed": z.number().int().optional(),
-  "error": z.number().int().optional(),
-  "cancelled": z.number().int().optional(),
+  pending: z.number().int().optional(),
+  queued: z.number().int().optional(),
+  running: z.number().int().optional(),
+  completed: z.number().int().optional(),
+  error: z.number().int().optional(),
+  cancelled: z.number().int().optional(),
 }) as z.ZodType<BlockTestLifecycleCounts>;
 
-export function deserializeBlockTestLifecycleCounts(wire: BlockTestLifecycleCountsResponse): BlockTestLifecycleCounts {
+export function deserializeBlockTestLifecycleCounts(
+  wire: BlockTestLifecycleCountsResponse
+): BlockTestLifecycleCounts {
   return {
-    pending: wire["pending"],
-    queued: wire["queued"],
-    running: wire["running"],
-    completed: wire["completed"],
-    error: wire["error"],
-    cancelled: wire["cancelled"],
+    pending: wire['pending'],
+    queued: wire['queued'],
+    running: wire['running'],
+    completed: wire['completed'],
+    error: wire['error'],
+    cancelled: wire['cancelled'],
   };
 }

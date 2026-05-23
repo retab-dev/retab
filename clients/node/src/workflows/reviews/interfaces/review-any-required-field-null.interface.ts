@@ -12,11 +12,13 @@ export interface ReviewAnyRequiredFieldNullResponse {
 }
 
 export const ZReviewAnyRequiredFieldNull = z.object({
-  "kind": z.literal('any_required_field_null'),
+  kind: z.literal('any_required_field_null'),
 }) as z.ZodType<ReviewAnyRequiredFieldNull>;
 
-export function deserializeReviewAnyRequiredFieldNull(wire: ReviewAnyRequiredFieldNullResponse): ReviewAnyRequiredFieldNull {
+export function deserializeReviewAnyRequiredFieldNull(
+  wire: ReviewAnyRequiredFieldNullResponse
+): ReviewAnyRequiredFieldNull {
   return {
-    kind: wire["kind"],
+    kind: wire['kind'],
   };
 }

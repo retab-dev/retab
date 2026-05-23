@@ -18,13 +18,13 @@ export interface StepArtifactRefResponse {
 }
 
 export const ZStepArtifactRef = z.object({
-  "operation": ZStepArtifactRefOperation,
-  "id": z.string(),
+  operation: ZStepArtifactRefOperation,
+  id: z.string(),
 }) as z.ZodType<StepArtifactRef>;
 
 export function deserializeStepArtifactRef(wire: StepArtifactRefResponse): StepArtifactRef {
   return {
-    operation: wire["operation"],
-    id: wire["id"],
+    operation: wire['operation'],
+    id: wire['id'],
   };
 }

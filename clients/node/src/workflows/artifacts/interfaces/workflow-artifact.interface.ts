@@ -18,13 +18,13 @@ export interface WorkflowArtifactResponse {
 }
 
 export const ZWorkflowArtifact = z.object({
-  "operation": ZWorkflowArtifactOperation,
-  "id": z.string(),
+  operation: ZWorkflowArtifactOperation,
+  id: z.string(),
 }) as z.ZodType<WorkflowArtifact>;
 
 export function deserializeWorkflowArtifact(wire: WorkflowArtifactResponse): WorkflowArtifact {
   return {
-    operation: wire["operation"],
-    id: wire["id"],
+    operation: wire['operation'],
+    id: wire['id'],
   };
 }

@@ -51,39 +51,43 @@ export interface WorkflowExperimentResponse {
 }
 
 export const ZWorkflowExperiment = z.object({
-  "id": z.string(),
-  "workflowId": z.string(),
-  "blockId": z.string(),
-  "nConsensus": ZNConsensusValue,
-  "documentCount": z.number().int().optional(),
-  "name": z.string(),
-  "lastRunId": z.string().nullable().optional(),
-  "createdAt": z.coerce.date().optional(),
-  "updatedAt": z.coerce.date().optional(),
-  "status": ZExperimentPublicStatus.optional(),
-  "blockType": ZExperimentBlockType,
-  "score": z.number().nullable().optional(),
-  "isStale": z.boolean().optional(),
-  "schemaDrift": ZExperimentSchemaDriftStatus.optional(),
-  "schemaDriftDetail": z.string().nullable().optional(),
+  id: z.string(),
+  workflowId: z.string(),
+  blockId: z.string(),
+  nConsensus: ZNConsensusValue,
+  documentCount: z.number().int().optional(),
+  name: z.string(),
+  lastRunId: z.string().nullable().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  status: ZExperimentPublicStatus.optional(),
+  blockType: ZExperimentBlockType,
+  score: z.number().nullable().optional(),
+  isStale: z.boolean().optional(),
+  schemaDrift: ZExperimentSchemaDriftStatus.optional(),
+  schemaDriftDetail: z.string().nullable().optional(),
 }) as z.ZodType<WorkflowExperiment>;
 
-export function deserializeWorkflowExperiment(wire: WorkflowExperimentResponse): WorkflowExperiment {
+export function deserializeWorkflowExperiment(
+  wire: WorkflowExperimentResponse
+): WorkflowExperiment {
   return {
-    id: wire["id"],
-    workflowId: wire["workflow_id"],
-    blockId: wire["block_id"],
-    nConsensus: wire["n_consensus"],
-    documentCount: wire["document_count"],
-    name: wire["name"],
-    lastRunId: wire["last_run_id"],
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : new Date(wire["created_at"]),
-    updatedAt: wire["updated_at"] == null ? (wire["updated_at"] as undefined) : new Date(wire["updated_at"]),
-    status: wire["status"],
-    blockType: wire["block_type"],
-    score: wire["score"],
-    isStale: wire["is_stale"],
-    schemaDrift: wire["schema_drift"],
-    schemaDriftDetail: wire["schema_drift_detail"],
+    id: wire['id'],
+    workflowId: wire['workflow_id'],
+    blockId: wire['block_id'],
+    nConsensus: wire['n_consensus'],
+    documentCount: wire['document_count'],
+    name: wire['name'],
+    lastRunId: wire['last_run_id'],
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    updatedAt:
+      wire['updated_at'] == null ? (wire['updated_at'] as undefined) : new Date(wire['updated_at']),
+    status: wire['status'],
+    blockType: wire['block_type'],
+    score: wire['score'],
+    isStale: wire['is_stale'],
+    schemaDrift: wire['schema_drift'],
+    schemaDriftDetail: wire['schema_drift_detail'],
   };
 }

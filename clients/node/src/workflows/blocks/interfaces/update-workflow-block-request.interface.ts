@@ -29,25 +29,27 @@ export interface UpdateWorkflowBlockRequestResponse {
 }
 
 export const ZUpdateWorkflowBlockRequest = z.object({
-  "label": z.string().nullable().optional(),
-  "positionX": z.number().nullable().optional(),
-  "positionY": z.number().nullable().optional(),
-  "width": z.number().nullable().optional(),
-  "height": z.number().nullable().optional(),
-  "config": z.record(z.string(), z.unknown()).nullable().optional(),
-  "parentId": z.string().nullable().optional(),
-  "configMode": ZUpdateWorkflowBlockRequestConfigMode.nullable().optional(),
+  label: z.string().nullable().optional(),
+  positionX: z.number().nullable().optional(),
+  positionY: z.number().nullable().optional(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  config: z.record(z.string(), z.unknown()).nullable().optional(),
+  parentId: z.string().nullable().optional(),
+  configMode: ZUpdateWorkflowBlockRequestConfigMode.nullable().optional(),
 }) as z.ZodType<UpdateWorkflowBlockRequest>;
 
-export function deserializeUpdateWorkflowBlockRequest(wire: UpdateWorkflowBlockRequestResponse): UpdateWorkflowBlockRequest {
+export function deserializeUpdateWorkflowBlockRequest(
+  wire: UpdateWorkflowBlockRequestResponse
+): UpdateWorkflowBlockRequest {
   return {
-    label: wire["label"],
-    positionX: wire["position_x"],
-    positionY: wire["position_y"],
-    width: wire["width"],
-    height: wire["height"],
-    config: wire["config"],
-    parentId: wire["parent_id"],
-    configMode: wire["config_mode"],
+    label: wire['label'],
+    positionX: wire['position_x'],
+    positionY: wire['position_y'],
+    width: wire['width'],
+    height: wire['height'],
+    config: wire['config'],
+    parentId: wire['parent_id'],
+    configMode: wire['config_mode'],
   };
 }

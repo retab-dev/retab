@@ -14,13 +14,15 @@ export interface ClassificationDecisionResponse {
 }
 
 export const ZClassificationDecision = z.object({
-  "reasoning": z.string(),
-  "category": z.string(),
+  reasoning: z.string(),
+  category: z.string(),
 }) as z.ZodType<ClassificationDecision>;
 
-export function deserializeClassificationDecision(wire: ClassificationDecisionResponse): ClassificationDecision {
+export function deserializeClassificationDecision(
+  wire: ClassificationDecisionResponse
+): ClassificationDecision {
   return {
-    reasoning: wire["reasoning"],
-    category: wire["category"],
+    reasoning: wire['reasoning'],
+    category: wire['category'],
   };
 }

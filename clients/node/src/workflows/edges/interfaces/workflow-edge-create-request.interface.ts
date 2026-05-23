@@ -27,21 +27,23 @@ export interface WorkflowEdgeCreateRequestResponse {
 }
 
 export const ZWorkflowEdgeCreateRequest = z.object({
-  "workflowId": z.string(),
-  "id": z.string().optional(),
-  "sourceBlock": z.string(),
-  "targetBlock": z.string(),
-  "sourceHandle": z.string().nullable().optional(),
-  "targetHandle": z.string().nullable().optional(),
+  workflowId: z.string(),
+  id: z.string().optional(),
+  sourceBlock: z.string(),
+  targetBlock: z.string(),
+  sourceHandle: z.string().nullable().optional(),
+  targetHandle: z.string().nullable().optional(),
 }) as z.ZodType<WorkflowEdgeCreateRequest>;
 
-export function deserializeWorkflowEdgeCreateRequest(wire: WorkflowEdgeCreateRequestResponse): WorkflowEdgeCreateRequest {
+export function deserializeWorkflowEdgeCreateRequest(
+  wire: WorkflowEdgeCreateRequestResponse
+): WorkflowEdgeCreateRequest {
   return {
-    workflowId: wire["workflow_id"],
-    id: wire["id"],
-    sourceBlock: wire["source_block"],
-    targetBlock: wire["target_block"],
-    sourceHandle: wire["source_handle"],
-    targetHandle: wire["target_handle"],
+    workflowId: wire['workflow_id'],
+    id: wire['id'],
+    sourceBlock: wire['source_block'],
+    targetBlock: wire['target_block'],
+    sourceHandle: wire['source_handle'],
+    targetHandle: wire['target_handle'],
   };
 }

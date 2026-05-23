@@ -11,11 +11,13 @@ export interface DeclarativeWorkflowRequestResponse {
 }
 
 export const ZDeclarativeWorkflowRequest = z.object({
-  "yamlDefinition": z.string(),
+  yamlDefinition: z.string(),
 }) as z.ZodType<DeclarativeWorkflowRequest>;
 
-export function deserializeDeclarativeWorkflowRequest(wire: DeclarativeWorkflowRequestResponse): DeclarativeWorkflowRequest {
+export function deserializeDeclarativeWorkflowRequest(
+  wire: DeclarativeWorkflowRequestResponse
+): DeclarativeWorkflowRequest {
   return {
-    yamlDefinition: wire["yaml_definition"],
+    yamlDefinition: wire['yaml_definition'],
   };
 }

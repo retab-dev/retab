@@ -46,21 +46,21 @@ export interface ParseRequestResponse {
 }
 
 export const ZParseRequest = z.object({
-  "document": z.union([ZMIMEData, ZFileRef]),
-  "model": z.string().optional(),
-  "tableParsingFormat": ZParseRequestTableParsingFormat.optional(),
-  "imageResolutionDpi": z.number().int().optional(),
-  "instructions": z.string().nullable().optional(),
-  "bustCache": z.boolean().optional(),
+  document: z.union([ZMIMEData, ZFileRef]),
+  model: z.string().optional(),
+  tableParsingFormat: ZParseRequestTableParsingFormat.optional(),
+  imageResolutionDpi: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  bustCache: z.boolean().optional(),
 }) as z.ZodType<ParseRequest>;
 
 export function deserializeParseRequest(wire: ParseRequestResponse): ParseRequest {
   return {
-    document: (wire["document"] as unknown as MIMEData | FileRef),
-    model: wire["model"],
-    tableParsingFormat: wire["table_parsing_format"],
-    imageResolutionDpi: wire["image_resolution_dpi"],
-    instructions: wire["instructions"],
-    bustCache: wire["bust_cache"],
+    document: wire['document'] as unknown as MIMEData | FileRef,
+    model: wire['model'],
+    tableParsingFormat: wire['table_parsing_format'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
+    instructions: wire['instructions'],
+    bustCache: wire['bust_cache'],
   };
 }

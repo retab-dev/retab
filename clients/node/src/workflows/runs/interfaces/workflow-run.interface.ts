@@ -3,12 +3,30 @@
 import { z } from 'zod';
 import type { ApiTrigger, ApiTriggerResponse } from './api-trigger.interface.js';
 import { ZApiTrigger, deserializeApiTrigger } from './api-trigger.interface.js';
-import type { AwaitingReviewRun, AwaitingReviewRunResponse } from './awaiting-review-run.interface.js';
-import { ZAwaitingReviewRun, deserializeAwaitingReviewRun } from './awaiting-review-run.interface.js';
-import type { CancelledTerminal, CancelledTerminalResponse } from './cancelled-terminal.interface.js';
-import { ZCancelledTerminal, deserializeCancelledTerminal } from './cancelled-terminal.interface.js';
-import type { CompletedTerminal, CompletedTerminalResponse } from './completed-terminal.interface.js';
-import { ZCompletedTerminal, deserializeCompletedTerminal } from './completed-terminal.interface.js';
+import type {
+  AwaitingReviewRun,
+  AwaitingReviewRunResponse,
+} from './awaiting-review-run.interface.js';
+import {
+  ZAwaitingReviewRun,
+  deserializeAwaitingReviewRun,
+} from './awaiting-review-run.interface.js';
+import type {
+  CancelledTerminal,
+  CancelledTerminalResponse,
+} from './cancelled-terminal.interface.js';
+import {
+  ZCancelledTerminal,
+  deserializeCancelledTerminal,
+} from './cancelled-terminal.interface.js';
+import type {
+  CompletedTerminal,
+  CompletedTerminalResponse,
+} from './completed-terminal.interface.js';
+import {
+  ZCompletedTerminal,
+  deserializeCompletedTerminal,
+} from './completed-terminal.interface.js';
 import type { EmailTrigger, EmailTriggerResponse } from './email-trigger.interface.js';
 import { ZEmailTrigger, deserializeEmailTrigger } from './email-trigger.interface.js';
 import type { ErrorTerminal, ErrorTerminalResponse } from './error-terminal.interface.js';
@@ -29,8 +47,14 @@ import type { ScheduleTrigger, ScheduleTriggerResponse } from './schedule-trigge
 import { ZScheduleTrigger, deserializeScheduleTrigger } from './schedule-trigger.interface.js';
 import type { WebhookTrigger, WebhookTriggerResponse } from './webhook-trigger.interface.js';
 import { ZWebhookTrigger, deserializeWebhookTrigger } from './webhook-trigger.interface.js';
-import type { WorkflowSnapshotRef, WorkflowSnapshotRefResponse } from './workflow-snapshot-ref.interface.js';
-import { ZWorkflowSnapshotRef, deserializeWorkflowSnapshotRef } from './workflow-snapshot-ref.interface.js';
+import type {
+  WorkflowSnapshotRef,
+  WorkflowSnapshotRefResponse,
+} from './workflow-snapshot-ref.interface.js';
+import {
+  ZWorkflowSnapshotRef,
+  deserializeWorkflowSnapshotRef,
+} from './workflow-snapshot-ref.interface.js';
 
 /** Public workflow run response without tenant isolation fields. */
 export interface WorkflowRun {
@@ -39,9 +63,21 @@ export interface WorkflowRun {
   /** Workflow + version reference */
   workflow: WorkflowSnapshotRef;
   /** What started this run */
-  trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger;
+  trigger:
+    | ManualTrigger
+    | ApiTrigger
+    | ScheduleTrigger
+    | WebhookTrigger
+    | EmailTrigger
+    | RestartTrigger;
   /** Discriminated lifecycle state. */
-  lifecycle?: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal;
+  lifecycle?:
+    | PendingRun
+    | RunningRun
+    | AwaitingReviewRun
+    | CompletedTerminal
+    | ErrorTerminal
+    | CancelledTerminal;
   /** All timing information */
   timing?: RunTiming;
   /** Input payloads supplied at run creation time */
@@ -51,28 +87,115 @@ export interface WorkflowRun {
 export interface WorkflowRunResponse {
   id: string;
   workflow: WorkflowSnapshotRefResponse;
-  trigger: ManualTriggerResponse | ApiTriggerResponse | ScheduleTriggerResponse | WebhookTriggerResponse | EmailTriggerResponse | RestartTriggerResponse;
-  lifecycle?: PendingRunResponse | RunningRunResponse | AwaitingReviewRunResponse | CompletedTerminalResponse | ErrorTerminalResponse | CancelledTerminalResponse;
+  trigger:
+    | ManualTriggerResponse
+    | ApiTriggerResponse
+    | ScheduleTriggerResponse
+    | WebhookTriggerResponse
+    | EmailTriggerResponse
+    | RestartTriggerResponse;
+  lifecycle?:
+    | PendingRunResponse
+    | RunningRunResponse
+    | AwaitingReviewRunResponse
+    | CompletedTerminalResponse
+    | ErrorTerminalResponse
+    | CancelledTerminalResponse;
   timing?: RunTimingResponse;
   inputs?: RunInputsResponse;
 }
 
 export const ZWorkflowRun = z.object({
-  "id": z.string(),
-  "workflow": ZWorkflowSnapshotRef,
-  "trigger": z.union([ZManualTrigger, ZApiTrigger, ZScheduleTrigger, ZWebhookTrigger, ZEmailTrigger, ZRestartTrigger]),
-  "lifecycle": z.union([ZPendingRun, ZRunningRun, ZAwaitingReviewRun, ZCompletedTerminal, ZErrorTerminal, ZCancelledTerminal]).optional(),
-  "timing": ZRunTiming.optional(),
-  "inputs": ZRunInputs.optional(),
+  id: z.string(),
+  workflow: ZWorkflowSnapshotRef,
+  trigger: z.union([
+    ZManualTrigger,
+    ZApiTrigger,
+    ZScheduleTrigger,
+    ZWebhookTrigger,
+    ZEmailTrigger,
+    ZRestartTrigger,
+  ]),
+  lifecycle: z
+    .union([
+      ZPendingRun,
+      ZRunningRun,
+      ZAwaitingReviewRun,
+      ZCompletedTerminal,
+      ZErrorTerminal,
+      ZCancelledTerminal,
+    ])
+    .optional(),
+  timing: ZRunTiming.optional(),
+  inputs: ZRunInputs.optional(),
 }) as z.ZodType<WorkflowRun>;
 
 export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
   return {
-    id: wire["id"],
-    workflow: deserializeWorkflowSnapshotRef(wire["workflow"]),
-    trigger: (({ "api": () => deserializeApiTrigger(wire["trigger"] as ApiTriggerResponse), "email": () => deserializeEmailTrigger(wire["trigger"] as EmailTriggerResponse), "manual": () => deserializeManualTrigger(wire["trigger"] as ManualTriggerResponse), "restart": () => deserializeRestartTrigger(wire["trigger"] as RestartTriggerResponse), "schedule": () => deserializeScheduleTrigger(wire["trigger"] as ScheduleTriggerResponse), "webhook": () => deserializeWebhookTrigger(wire["trigger"] as WebhookTriggerResponse) } as Record<string, () => ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger>)[(wire["trigger"] as unknown as Record<string, string>)["type"]]?.() ?? (wire["trigger"] as unknown as ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger)),
-    lifecycle: wire["lifecycle"] == null ? (wire["lifecycle"] as undefined) : (({ "awaiting_review": () => deserializeAwaitingReviewRun(wire["lifecycle"] as AwaitingReviewRunResponse), "cancelled": () => deserializeCancelledTerminal(wire["lifecycle"] as CancelledTerminalResponse), "completed": () => deserializeCompletedTerminal(wire["lifecycle"] as CompletedTerminalResponse), "error": () => deserializeErrorTerminal(wire["lifecycle"] as ErrorTerminalResponse), "pending": () => deserializePendingRun(wire["lifecycle"] as PendingRunResponse), "running": () => deserializeRunningRun(wire["lifecycle"] as RunningRunResponse) } as Record<string, () => PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal>)[(wire["lifecycle"] as unknown as Record<string, string>)["status"]]?.() ?? (wire["lifecycle"] as unknown as PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal)),
-    timing: wire["timing"] == null ? (wire["timing"] as undefined) : deserializeRunTiming(wire["timing"]),
-    inputs: wire["inputs"] == null ? (wire["inputs"] as undefined) : deserializeRunInputs(wire["inputs"]),
+    id: wire['id'],
+    workflow: deserializeWorkflowSnapshotRef(wire['workflow']),
+    trigger:
+      (
+        {
+          api: () => deserializeApiTrigger(wire['trigger'] as ApiTriggerResponse),
+          email: () => deserializeEmailTrigger(wire['trigger'] as EmailTriggerResponse),
+          manual: () => deserializeManualTrigger(wire['trigger'] as ManualTriggerResponse),
+          restart: () => deserializeRestartTrigger(wire['trigger'] as RestartTriggerResponse),
+          schedule: () => deserializeScheduleTrigger(wire['trigger'] as ScheduleTriggerResponse),
+          webhook: () => deserializeWebhookTrigger(wire['trigger'] as WebhookTriggerResponse),
+        } as Record<
+          string,
+          () =>
+            | ManualTrigger
+            | ApiTrigger
+            | ScheduleTrigger
+            | WebhookTrigger
+            | EmailTrigger
+            | RestartTrigger
+        >
+      )[(wire['trigger'] as unknown as Record<string, string>)['type']]?.() ??
+      (wire['trigger'] as unknown as
+        | ManualTrigger
+        | ApiTrigger
+        | ScheduleTrigger
+        | WebhookTrigger
+        | EmailTrigger
+        | RestartTrigger),
+    lifecycle:
+      wire['lifecycle'] == null
+        ? (wire['lifecycle'] as undefined)
+        : ((
+            {
+              awaiting_review: () =>
+                deserializeAwaitingReviewRun(wire['lifecycle'] as AwaitingReviewRunResponse),
+              cancelled: () =>
+                deserializeCancelledTerminal(wire['lifecycle'] as CancelledTerminalResponse),
+              completed: () =>
+                deserializeCompletedTerminal(wire['lifecycle'] as CompletedTerminalResponse),
+              error: () => deserializeErrorTerminal(wire['lifecycle'] as ErrorTerminalResponse),
+              pending: () => deserializePendingRun(wire['lifecycle'] as PendingRunResponse),
+              running: () => deserializeRunningRun(wire['lifecycle'] as RunningRunResponse),
+            } as Record<
+              string,
+              () =>
+                | PendingRun
+                | RunningRun
+                | AwaitingReviewRun
+                | CompletedTerminal
+                | ErrorTerminal
+                | CancelledTerminal
+            >
+          )[(wire['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+          (wire['lifecycle'] as unknown as
+            | PendingRun
+            | RunningRun
+            | AwaitingReviewRun
+            | CompletedTerminal
+            | ErrorTerminal
+            | CancelledTerminal)),
+    timing:
+      wire['timing'] == null ? (wire['timing'] as undefined) : deserializeRunTiming(wire['timing']),
+    inputs:
+      wire['inputs'] == null ? (wire['inputs'] as undefined) : deserializeRunInputs(wire['inputs']),
   };
 }

@@ -15,13 +15,13 @@ export interface AwaitingReviewRunResponse {
 }
 
 export const ZAwaitingReviewRun = z.object({
-  "status": z.literal('awaiting_review'),
-  "waitingForBlockIds": z.string().array().optional(),
+  status: z.literal('awaiting_review'),
+  waitingForBlockIds: z.string().array().optional(),
 }) as z.ZodType<AwaitingReviewRun>;
 
 export function deserializeAwaitingReviewRun(wire: AwaitingReviewRunResponse): AwaitingReviewRun {
   return {
-    status: wire["status"],
-    waitingForBlockIds: wire["waiting_for_block_ids"],
+    status: wire['status'],
+    waitingForBlockIds: wire['waiting_for_block_ids'],
   };
 }

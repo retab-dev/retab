@@ -2,6 +2,23 @@
 
 import { z } from 'zod';
 
-export type WorkflowRunsExcludeStatus = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'failed' | 'awaiting_review' | 'cancelled';
+export type WorkflowRunsExcludeStatus =
+  | 'pending'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'error'
+  | 'failed'
+  | 'awaiting_review'
+  | 'cancelled';
 
-export const ZWorkflowRunsExcludeStatus = z.enum(['pending', 'queued', 'running', 'completed', 'error', 'failed', 'awaiting_review', 'cancelled'] as const);
+export const ZWorkflowRunsExcludeStatus = z.enum([
+  'pending',
+  'queued',
+  'running',
+  'completed',
+  'error',
+  'failed',
+  'awaiting_review',
+  'cancelled',
+] as const);

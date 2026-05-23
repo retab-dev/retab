@@ -6,6 +6,12 @@ export type CreateWorkflowTestRunRequest = object;
 
 export type CreateWorkflowTestRunRequestResponse = object;
 
-export const ZCreateWorkflowTestRunRequest = z.object({}) as z.ZodType<CreateWorkflowTestRunRequest>;
+export const ZCreateWorkflowTestRunRequest = z.object(
+  {}
+) as z.ZodType<CreateWorkflowTestRunRequest>;
 
-export function deserializeCreateWorkflowTestRunRequest(wire: CreateWorkflowTestRunRequestResponse): CreateWorkflowTestRunRequest { return wire as CreateWorkflowTestRunRequest; }
+export function deserializeCreateWorkflowTestRunRequest(
+  wire: CreateWorkflowTestRunRequestResponse
+): CreateWorkflowTestRunRequest {
+  return wire as CreateWorkflowTestRunRequest;
+}

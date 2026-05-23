@@ -2,22 +2,45 @@
 
 import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
-import type { WorkflowTestResult, WorkflowTestResultResponse } from '../../../workflows/tests/results/interfaces/index.js';
+import type {
+  WorkflowTestResult,
+  WorkflowTestResultResponse,
+} from '../../../workflows/tests/results/interfaces/index.js';
 import { deserializeWorkflowTestResult } from '../../../workflows/tests/results/interfaces/index.js';
 
 export class WorkflowTestRunResults {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Test Execution Results */
-  async list(options: { runId: string; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowTestResult>> {
-    return this.client._fetchPage(deserializeWorkflowTestResult, { method: 'GET', path: "/v1/workflows/tests/results", query: { "run_id": options?.runId, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    runId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowTestResult>> {
+    return this.client._fetchPage(deserializeWorkflowTestResult, {
+      method: 'GET',
+      path: '/v1/workflows/tests/results',
+      query: {
+        run_id: options?.runId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Get Test Execution Result */
   async get(resultId: string): Promise<WorkflowTestResult> {
-    const __wire = await this.client.request<WorkflowTestResultResponse>({ method: 'GET', path: `/v1/workflows/tests/results/${resultId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowTestResultResponse>({
+      method: 'GET',
+      path: `/v1/workflows/tests/results/${resultId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowTestResult(__wire);
   }
 }

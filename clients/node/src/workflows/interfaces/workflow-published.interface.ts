@@ -20,15 +20,20 @@ export interface WorkflowPublishedResponse {
 }
 
 export const ZWorkflowPublished = z.object({
-  "versionId": z.string().nullable().optional(),
-  "publishedAt": z.coerce.date().nullable().optional(),
-  "description": z.string().optional(),
+  versionId: z.string().nullable().optional(),
+  publishedAt: z.coerce.date().nullable().optional(),
+  description: z.string().optional(),
 }) as z.ZodType<WorkflowPublished>;
 
 export function deserializeWorkflowPublished(wire: WorkflowPublishedResponse): WorkflowPublished {
   return {
-    versionId: wire["version_id"],
-    publishedAt: wire["published_at"] == null ? (wire["published_at"] as undefined) : (wire["published_at"] == null ? wire["published_at"] : new Date(wire["published_at"])),
-    description: wire["description"],
+    versionId: wire['version_id'],
+    publishedAt:
+      wire['published_at'] == null
+        ? (wire['published_at'] as undefined)
+        : wire['published_at'] == null
+          ? wire['published_at']
+          : new Date(wire['published_at']),
+    description: wire['description'],
   };
 }

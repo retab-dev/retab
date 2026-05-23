@@ -14,13 +14,13 @@ export interface ReviewBranchInResponse {
 }
 
 export const ZReviewBranchIn = z.object({
-  "kind": z.literal('branch_in'),
-  "branches": z.string().array(),
+  kind: z.literal('branch_in'),
+  branches: z.string().array(),
 }) as z.ZodType<ReviewBranchIn>;
 
 export function deserializeReviewBranchIn(wire: ReviewBranchInResponse): ReviewBranchIn {
   return {
-    kind: wire["kind"],
-    branches: wire["branches"],
+    kind: wire['kind'],
+    branches: wire['branches'],
   };
 }

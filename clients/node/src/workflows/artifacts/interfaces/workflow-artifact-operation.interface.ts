@@ -2,6 +2,29 @@
 
 import { z } from 'zod';
 
-export type WorkflowArtifactOperation = 'extraction' | 'split' | 'classification' | 'parse' | 'edit' | 'partition' | 'conditional_evaluation' | 'review_trigger_evaluation' | 'while_loop_termination' | 'api_call_invocation' | 'function_invocation';
+export type WorkflowArtifactOperation =
+  | 'extraction'
+  | 'split'
+  | 'classification'
+  | 'parse'
+  | 'edit'
+  | 'partition'
+  | 'conditional_evaluation'
+  | 'review_trigger_evaluation'
+  | 'while_loop_termination'
+  | 'api_call_invocation'
+  | 'function_invocation';
 
-export const ZWorkflowArtifactOperation = z.enum(['extraction', 'split', 'classification', 'parse', 'edit', 'partition', 'conditional_evaluation', 'review_trigger_evaluation', 'while_loop_termination', 'api_call_invocation', 'function_invocation'] as const);
+export const ZWorkflowArtifactOperation = z.enum([
+  'extraction',
+  'split',
+  'classification',
+  'parse',
+  'edit',
+  'partition',
+  'conditional_evaluation',
+  'review_trigger_evaluation',
+  'while_loop_termination',
+  'api_call_invocation',
+  'function_invocation',
+] as const);

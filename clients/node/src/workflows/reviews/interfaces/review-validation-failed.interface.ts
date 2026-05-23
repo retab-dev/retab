@@ -12,11 +12,13 @@ export interface ReviewValidationFailedResponse {
 }
 
 export const ZReviewValidationFailed = z.object({
-  "kind": z.literal('validation_failed'),
+  kind: z.literal('validation_failed'),
 }) as z.ZodType<ReviewValidationFailed>;
 
-export function deserializeReviewValidationFailed(wire: ReviewValidationFailedResponse): ReviewValidationFailed {
+export function deserializeReviewValidationFailed(
+  wire: ReviewValidationFailedResponse
+): ReviewValidationFailed {
   return {
-    kind: wire["kind"],
+    kind: wire['kind'],
   };
 }

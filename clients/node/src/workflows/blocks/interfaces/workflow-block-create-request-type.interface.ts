@@ -2,6 +2,35 @@
 
 import { z } from 'zod';
 
-export type WorkflowBlockCreateRequestType = 'start_document' | 'start_json' | 'note' | 'parse' | 'edit' | 'extract' | 'split' | 'classifier' | 'conditional' | 'api_call' | 'function' | 'while_loop' | 'for_each' | 'merge_dicts';
+export type WorkflowBlockCreateRequestType =
+  | 'start_document'
+  | 'start_json'
+  | 'note'
+  | 'parse'
+  | 'edit'
+  | 'extract'
+  | 'split'
+  | 'classifier'
+  | 'conditional'
+  | 'api_call'
+  | 'function'
+  | 'while_loop'
+  | 'for_each'
+  | 'merge_dicts';
 
-export const ZWorkflowBlockCreateRequestType = z.enum(['start_document', 'start_json', 'note', 'parse', 'edit', 'extract', 'split', 'classifier', 'conditional', 'api_call', 'function', 'while_loop', 'for_each', 'merge_dicts'] as const);
+export const ZWorkflowBlockCreateRequestType = z.enum([
+  'start_document',
+  'start_json',
+  'note',
+  'parse',
+  'edit',
+  'extract',
+  'split',
+  'classifier',
+  'conditional',
+  'api_call',
+  'function',
+  'while_loop',
+  'for_each',
+  'merge_dicts',
+] as const);

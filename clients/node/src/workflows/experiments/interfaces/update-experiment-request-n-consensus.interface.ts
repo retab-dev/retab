@@ -4,4 +4,8 @@ import { z } from 'zod';
 
 export type UpdateExperimentRequestNConsensus = 3 | 5 | 7;
 
-export const ZUpdateExperimentRequestNConsensus = z.union([z.literal(3), z.literal(5), z.literal(7)]);
+export const ZUpdateExperimentRequestNConsensus = z.union([
+  z.literal(3),
+  z.literal(5),
+  z.literal(7),
+]);

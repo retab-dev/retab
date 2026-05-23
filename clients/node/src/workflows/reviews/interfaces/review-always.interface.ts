@@ -12,11 +12,11 @@ export interface ReviewAlwaysResponse {
 }
 
 export const ZReviewAlways = z.object({
-  "kind": z.literal('always'),
+  kind: z.literal('always'),
 }) as z.ZodType<ReviewAlways>;
 
 export function deserializeReviewAlways(wire: ReviewAlwaysResponse): ReviewAlways {
   return {
-    kind: wire["kind"],
+    kind: wire['kind'],
   };
 }

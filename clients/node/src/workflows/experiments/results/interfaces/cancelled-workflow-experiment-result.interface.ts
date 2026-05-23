@@ -15,13 +15,15 @@ export interface CancelledWorkflowExperimentResultResponse {
 }
 
 export const ZCancelledWorkflowExperimentResult = z.object({
-  "status": z.literal('cancelled'),
-  "reason": z.string().nullable().optional(),
+  status: z.literal('cancelled'),
+  reason: z.string().nullable().optional(),
 }) as z.ZodType<CancelledWorkflowExperimentResult>;
 
-export function deserializeCancelledWorkflowExperimentResult(wire: CancelledWorkflowExperimentResultResponse): CancelledWorkflowExperimentResult {
+export function deserializeCancelledWorkflowExperimentResult(
+  wire: CancelledWorkflowExperimentResultResponse
+): CancelledWorkflowExperimentResult {
   return {
-    status: wire["status"],
-    reason: wire["reason"],
+    status: wire['status'],
+    reason: wire['reason'],
   };
 }

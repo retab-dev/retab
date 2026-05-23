@@ -12,13 +12,15 @@ export interface DeclarativeExportResponseResponse {
 }
 
 export const ZDeclarativeExportResponse = z.object({
-  "workflowId": z.string(),
-  "yamlDefinition": z.string(),
+  workflowId: z.string(),
+  yamlDefinition: z.string(),
 }) as z.ZodType<DeclarativeExportResponse>;
 
-export function deserializeDeclarativeExportResponse(wire: DeclarativeExportResponseResponse): DeclarativeExportResponse {
+export function deserializeDeclarativeExportResponse(
+  wire: DeclarativeExportResponseResponse
+): DeclarativeExportResponse {
   return {
-    workflowId: wire["workflow_id"],
-    yamlDefinition: wire["yaml_definition"],
+    workflowId: wire['workflow_id'],
+    yamlDefinition: wire['yaml_definition'],
   };
 }

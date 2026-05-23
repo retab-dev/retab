@@ -2,6 +2,21 @@
 
 import { z } from 'zod';
 
-export type ErrorStepLifecycleStage = 'input_collection' | 'registry_lookup' | 'document_fetch' | 'execution' | 'output_storage' | 'routing' | 'history_payload';
+export type ErrorStepLifecycleStage =
+  | 'input_collection'
+  | 'registry_lookup'
+  | 'document_fetch'
+  | 'execution'
+  | 'output_storage'
+  | 'routing'
+  | 'history_payload';
 
-export const ZErrorStepLifecycleStage = z.enum(['input_collection', 'registry_lookup', 'document_fetch', 'execution', 'output_storage', 'routing', 'history_payload'] as const);
+export const ZErrorStepLifecycleStage = z.enum([
+  'input_collection',
+  'registry_lookup',
+  'document_fetch',
+  'execution',
+  'output_storage',
+  'routing',
+  'history_payload',
+] as const);

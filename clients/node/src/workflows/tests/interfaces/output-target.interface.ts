@@ -13,13 +13,13 @@ export interface OutputTargetResponse {
 }
 
 export const ZOutputTarget = z.object({
-  "outputHandleId": z.string(),
-  "path": z.string().nullable().optional(),
+  outputHandleId: z.string(),
+  path: z.string().nullable().optional(),
 }) as z.ZodType<OutputTarget>;
 
 export function deserializeOutputTarget(wire: OutputTargetResponse): OutputTarget {
   return {
-    outputHandleId: wire["output_handle_id"],
-    path: wire["path"],
+    outputHandleId: wire['output_handle_id'],
+    path: wire['path'],
   };
 }

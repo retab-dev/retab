@@ -17,17 +17,29 @@ export interface WorkflowTestRunTimingResponse {
 }
 
 export const ZWorkflowTestRunTiming = z.object({
-  "createdAt": z.coerce.date(),
-  "startedAt": z.coerce.date().nullable().optional(),
-  "completedAt": z.coerce.date().nullable().optional(),
-  "durationMs": z.number().int().nullable().optional(),
+  createdAt: z.coerce.date(),
+  startedAt: z.coerce.date().nullable().optional(),
+  completedAt: z.coerce.date().nullable().optional(),
+  durationMs: z.number().int().nullable().optional(),
 }) as z.ZodType<WorkflowTestRunTiming>;
 
-export function deserializeWorkflowTestRunTiming(wire: WorkflowTestRunTimingResponse): WorkflowTestRunTiming {
+export function deserializeWorkflowTestRunTiming(
+  wire: WorkflowTestRunTimingResponse
+): WorkflowTestRunTiming {
   return {
-    createdAt: new Date(wire["created_at"]),
-    startedAt: wire["started_at"] == null ? (wire["started_at"] as undefined) : (wire["started_at"] == null ? wire["started_at"] : new Date(wire["started_at"])),
-    completedAt: wire["completed_at"] == null ? (wire["completed_at"] as undefined) : (wire["completed_at"] == null ? wire["completed_at"] : new Date(wire["completed_at"])),
-    durationMs: wire["duration_ms"],
+    createdAt: new Date(wire['created_at']),
+    startedAt:
+      wire['started_at'] == null
+        ? (wire['started_at'] as undefined)
+        : wire['started_at'] == null
+          ? wire['started_at']
+          : new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : wire['completed_at'] == null
+          ? wire['completed_at']
+          : new Date(wire['completed_at']),
+    durationMs: wire['duration_ms'],
   };
 }

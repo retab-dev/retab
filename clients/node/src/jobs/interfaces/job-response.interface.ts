@@ -13,13 +13,13 @@ export interface JobResponseResponse {
 }
 
 export const ZJobResponse = z.object({
-  "statusCode": z.number().int(),
-  "body": z.record(z.string(), z.unknown()),
+  statusCode: z.number().int(),
+  body: z.record(z.string(), z.unknown()),
 }) as z.ZodType<JobResponse>;
 
 export function deserializeJobResponse(wire: JobResponseResponse): JobResponse {
   return {
-    statusCode: wire["status_code"],
-    body: wire["body"],
+    statusCode: wire['status_code'],
+    body: wire['body'],
   };
 }

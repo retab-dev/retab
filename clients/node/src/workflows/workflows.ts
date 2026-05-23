@@ -2,8 +2,18 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import type { Workflow, WorkflowConfigBlock, WorkflowConfigEdge, WorkflowDiagnosisResponse, WorkflowDiagnosisResponseResponse, WorkflowResponse } from '../workflows/interfaces/index.js';
-import { deserializeWorkflow, deserializeWorkflowDiagnosisResponse } from '../workflows/interfaces/index.js';
+import type {
+  Workflow,
+  WorkflowConfigBlock,
+  WorkflowConfigEdge,
+  WorkflowDiagnosisResponse,
+  WorkflowDiagnosisResponseResponse,
+  WorkflowResponse,
+} from '../workflows/interfaces/index.js';
+import {
+  deserializeWorkflow,
+  deserializeWorkflowDiagnosisResponse,
+} from '../workflows/interfaces/index.js';
 import { WorkflowArtifacts } from './artifacts/workflow-artifacts.js';
 import { WorkflowBlocks } from './blocks/workflow-blocks.js';
 import { WorkflowEdges } from './edges/workflow-edges.js';
@@ -38,58 +48,114 @@ export class Workflows {
   }
 
   /** List Workflows */
-  async list(options?: { sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Workflow>> {
-    return this.client._fetchPage(deserializeWorkflow, { method: 'GET', path: "/v1/workflows", query: { "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Workflow>> {
+    return this.client._fetchPage(deserializeWorkflow, {
+      method: 'GET',
+      path: '/v1/workflows',
+      query: {
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Workflow */
   async create(name?: string, description?: string): Promise<Workflow> {
     const body = {
-      "name": name,
-      "description": description,
+      name: name,
+      description: description,
     };
-    const __wire = await this.client.request<WorkflowResponse>({ method: 'POST', path: "/v1/workflows", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'POST',
+      path: '/v1/workflows',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflow(__wire);
   }
 
   /** Get Workflow */
   async get(workflowId: string): Promise<Workflow> {
-    const __wire = await this.client.request<WorkflowResponse>({ method: 'GET', path: `/v1/workflows/${workflowId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'GET',
+      path: `/v1/workflows/${workflowId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflow(__wire);
   }
 
   /** Update Workflow */
-  async update(workflowId: string, name?: string | null, description?: string | null): Promise<Workflow> {
+  async update(
+    workflowId: string,
+    name?: string | null,
+    description?: string | null
+  ): Promise<Workflow> {
     const body = {
-      "name": name,
-      "description": description,
+      name: name,
+      description: description,
     };
-    const __wire = await this.client.request<WorkflowResponse>({ method: 'PATCH', path: `/v1/workflows/${workflowId}`, query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'PATCH',
+      path: `/v1/workflows/${workflowId}`,
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflow(__wire);
   }
 
   /** Delete Workflow */
   async delete(workflowId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/workflows/${workflowId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/workflows/${workflowId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 
   /** Diagnose Workflow Graph */
-  async diagnose(workflowId: string, blocks?: WorkflowConfigBlock[] | null, edges?: WorkflowConfigEdge[] | null, rePropagate?: boolean): Promise<WorkflowDiagnosisResponse> {
+  async diagnose(
+    workflowId: string,
+    blocks?: WorkflowConfigBlock[] | null,
+    edges?: WorkflowConfigEdge[] | null,
+    rePropagate?: boolean
+  ): Promise<WorkflowDiagnosisResponse> {
     const body = {
-      "blocks": blocks,
-      "edges": edges,
-      "re_propagate": rePropagate,
+      blocks: blocks,
+      edges: edges,
+      re_propagate: rePropagate,
     };
-    const __wire = await this.client.request<WorkflowDiagnosisResponseResponse>({ method: 'POST', path: `/v1/workflows/${workflowId}/diagnose-graph`, query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowDiagnosisResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/${workflowId}/diagnose-graph`,
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowDiagnosisResponse(__wire);
   }
 
   /** Publish Workflow */
   async publish(workflowId: string, description?: string): Promise<Workflow> {
     const body = {
-      "description": description,
+      description: description,
     };
-    const __wire = await this.client.request<WorkflowResponse>({ method: 'POST', path: `/v1/workflows/${workflowId}/publish`, query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'POST',
+      path: `/v1/workflows/${workflowId}/publish`,
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflow(__wire);
   }
 }

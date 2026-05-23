@@ -3,7 +3,10 @@
 import { z } from 'zod';
 import type { FormField, FormFieldResponse } from './form-field.interface.js';
 import { ZFormField, deserializeFormField } from './form-field.interface.js';
-import type { MIMEData, MIMEDataResponse } from '../../../schemas/interfaces/mime-data.interface.js';
+import type {
+  MIMEData,
+  MIMEDataResponse,
+} from '../../../schemas/interfaces/mime-data.interface.js';
 import { ZMIMEData, deserializeMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
 
 export interface EditResult {
@@ -19,13 +22,13 @@ export interface EditResultResponse {
 }
 
 export const ZEditResult = z.object({
-  "formData": ZFormField.array(),
-  "filledDocument": ZMIMEData,
+  formData: ZFormField.array(),
+  filledDocument: ZMIMEData,
 }) as z.ZodType<EditResult>;
 
 export function deserializeEditResult(wire: EditResultResponse): EditResult {
   return {
-    formData: wire["form_data"].map((__i) => deserializeFormField(__i)),
-    filledDocument: deserializeMIMEData(wire["filled_document"]),
+    formData: wire['form_data'].map((__i) => deserializeFormField(__i)),
+    filledDocument: deserializeMIMEData(wire['filled_document']),
   };
 }

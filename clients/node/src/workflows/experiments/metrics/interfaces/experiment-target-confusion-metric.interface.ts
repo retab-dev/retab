@@ -15,15 +15,17 @@ export interface ExperimentTargetConfusionMetricResponse {
 }
 
 export const ZExperimentTargetConfusionMetric = z.object({
-  "self": z.number().nullable().optional(),
-  "flowFrom": z.record(z.string(), z.number()).optional(),
-  "flowTo": z.record(z.string(), z.number()).optional(),
+  self: z.number().nullable().optional(),
+  flowFrom: z.record(z.string(), z.number()).optional(),
+  flowTo: z.record(z.string(), z.number()).optional(),
 }) as z.ZodType<ExperimentTargetConfusionMetric>;
 
-export function deserializeExperimentTargetConfusionMetric(wire: ExperimentTargetConfusionMetricResponse): ExperimentTargetConfusionMetric {
+export function deserializeExperimentTargetConfusionMetric(
+  wire: ExperimentTargetConfusionMetricResponse
+): ExperimentTargetConfusionMetric {
   return {
-    self: wire["self"],
-    flowFrom: wire["flow_from"],
-    flowTo: wire["flow_to"],
+    self: wire['self'],
+    flowFrom: wire['flow_from'],
+    flowTo: wire['flow_to'],
   };
 }

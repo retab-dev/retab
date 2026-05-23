@@ -2,6 +2,21 @@
 
 import { z } from 'zod';
 
-export type ErrorTerminalStage = 'input_collection' | 'registry_lookup' | 'document_fetch' | 'execution' | 'output_storage' | 'routing' | 'history_payload';
+export type ErrorTerminalStage =
+  | 'input_collection'
+  | 'registry_lookup'
+  | 'document_fetch'
+  | 'execution'
+  | 'output_storage'
+  | 'routing'
+  | 'history_payload';
 
-export const ZErrorTerminalStage = z.enum(['input_collection', 'registry_lookup', 'document_fetch', 'execution', 'output_storage', 'routing', 'history_payload'] as const);
+export const ZErrorTerminalStage = z.enum([
+  'input_collection',
+  'registry_lookup',
+  'document_fetch',
+  'execution',
+  'output_storage',
+  'routing',
+  'history_payload',
+] as const);

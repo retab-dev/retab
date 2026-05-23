@@ -58,43 +58,58 @@ export interface JobWire {
 }
 
 export const ZJob = z.object({
-  "id": z.string().optional(),
-  "object": z.literal('job'),
-  "status": ZJobStatus.optional(),
-  "endpoint": ZSupportedEndpoint,
-  "error": ZJobError.nullable().optional(),
-  "warnings": ZJobWarning.array().nullable().optional(),
-  "createdAt": z.string().nullable().optional(),
-  "startedAt": z.string().nullable().optional(),
-  "completedAt": z.string().nullable().optional(),
-  "expiresAt": z.string().nullable().optional(),
-  "metadata": z.record(z.string(), z.string()).nullable().optional(),
-  "cancelled": z.boolean().optional(),
-  "attemptCount": z.number().int().optional(),
-  "lastAttemptAt": z.string().nullable().optional(),
-  "lastFailureCode": z.string().nullable().optional(),
-  "request": z.record(z.string(), z.unknown()).nullable().optional(),
-  "response": ZJobResponse.nullable().optional(),
+  id: z.string().optional(),
+  object: z.literal('job'),
+  status: ZJobStatus.optional(),
+  endpoint: ZSupportedEndpoint,
+  error: ZJobError.nullable().optional(),
+  warnings: ZJobWarning.array().nullable().optional(),
+  createdAt: z.string().nullable().optional(),
+  startedAt: z.string().nullable().optional(),
+  completedAt: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
+  cancelled: z.boolean().optional(),
+  attemptCount: z.number().int().optional(),
+  lastAttemptAt: z.string().nullable().optional(),
+  lastFailureCode: z.string().nullable().optional(),
+  request: z.record(z.string(), z.unknown()).nullable().optional(),
+  response: ZJobResponse.nullable().optional(),
 }) as z.ZodType<Job>;
 
 export function deserializeJob(wire: JobWire): Job {
   return {
-    id: wire["id"],
-    object: wire["object"],
-    status: wire["status"],
-    endpoint: wire["endpoint"],
-    error: wire["error"] == null ? (wire["error"] as undefined) : (wire["error"] == null ? wire["error"] : deserializeJobError(wire["error"])),
-    warnings: wire["warnings"] == null ? (wire["warnings"] as undefined) : (wire["warnings"] == null ? wire["warnings"] : wire["warnings"].map((__i) => deserializeJobWarning(__i))),
-    createdAt: wire["created_at"],
-    startedAt: wire["started_at"],
-    completedAt: wire["completed_at"],
-    expiresAt: wire["expires_at"],
-    metadata: wire["metadata"],
-    cancelled: wire["cancelled"],
-    attemptCount: wire["attempt_count"],
-    lastAttemptAt: wire["last_attempt_at"],
-    lastFailureCode: wire["last_failure_code"],
-    request: wire["request"],
-    response: wire["response"] == null ? (wire["response"] as undefined) : (wire["response"] == null ? wire["response"] : deserializeJobResponse(wire["response"])),
+    id: wire['id'],
+    object: wire['object'],
+    status: wire['status'],
+    endpoint: wire['endpoint'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializeJobError(wire['error']),
+    warnings:
+      wire['warnings'] == null
+        ? (wire['warnings'] as undefined)
+        : wire['warnings'] == null
+          ? wire['warnings']
+          : wire['warnings'].map((__i) => deserializeJobWarning(__i)),
+    createdAt: wire['created_at'],
+    startedAt: wire['started_at'],
+    completedAt: wire['completed_at'],
+    expiresAt: wire['expires_at'],
+    metadata: wire['metadata'],
+    cancelled: wire['cancelled'],
+    attemptCount: wire['attempt_count'],
+    lastAttemptAt: wire['last_attempt_at'],
+    lastFailureCode: wire['last_failure_code'],
+    request: wire['request'],
+    response:
+      wire['response'] == null
+        ? (wire['response'] as undefined)
+        : wire['response'] == null
+          ? wire['response']
+          : deserializeJobResponse(wire['response']),
   };
 }

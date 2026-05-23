@@ -14,13 +14,13 @@ export interface ReviewCategoryInResponse {
 }
 
 export const ZReviewCategoryIn = z.object({
-  "kind": z.literal('category_in'),
-  "categories": z.string().array(),
+  kind: z.literal('category_in'),
+  categories: z.string().array(),
 }) as z.ZodType<ReviewCategoryIn>;
 
 export function deserializeReviewCategoryIn(wire: ReviewCategoryInResponse): ReviewCategoryIn {
   return {
-    kind: wire["kind"],
-    categories: wire["categories"],
+    kind: wire['kind'],
+    categories: wire['categories'],
   };
 }

@@ -12,11 +12,11 @@ export interface CompletedTerminalResponse {
 }
 
 export const ZCompletedTerminal = z.object({
-  "status": z.literal('completed'),
+  status: z.literal('completed'),
 }) as z.ZodType<CompletedTerminal>;
 
 export function deserializeCompletedTerminal(wire: CompletedTerminalResponse): CompletedTerminal {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

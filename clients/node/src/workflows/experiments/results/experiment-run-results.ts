@@ -2,22 +2,45 @@
 
 import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
-import type { ExperimentResult, ExperimentResultResponse } from '../../../workflows/experiments/results/interfaces/index.js';
+import type {
+  ExperimentResult,
+  ExperimentResultResponse,
+} from '../../../workflows/experiments/results/interfaces/index.js';
 import { deserializeExperimentResult } from '../../../workflows/experiments/results/interfaces/index.js';
 
 export class ExperimentRunResults {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Experiment Results */
-  async list(options: { runId: string; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<ExperimentResult>> {
-    return this.client._fetchPage(deserializeExperimentResult, { method: 'GET', path: "/v1/workflows/experiments/results", query: { "run_id": options?.runId, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    runId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<ExperimentResult>> {
+    return this.client._fetchPage(deserializeExperimentResult, {
+      method: 'GET',
+      path: '/v1/workflows/experiments/results',
+      query: {
+        run_id: options?.runId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Get Experiment Result */
   async get(resultId: string): Promise<ExperimentResult> {
-    const __wire = await this.client.request<ExperimentResultResponse>({ method: 'GET', path: `/v1/workflows/experiments/results/${resultId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<ExperimentResultResponse>({
+      method: 'GET',
+      path: `/v1/workflows/experiments/results/${resultId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeExperimentResult(__wire);
   }
 }

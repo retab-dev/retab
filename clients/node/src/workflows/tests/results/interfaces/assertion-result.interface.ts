@@ -34,29 +34,34 @@ export interface AssertionResultResponse {
 }
 
 export const ZAssertionResult = z.object({
-  "assertionId": z.string(),
-  "conditionKind": z.string(),
-  "outcome": ZAssertionOutcome,
-  "actualValue": z.unknown().optional(),
-  "expectedValue": z.unknown().optional(),
-  "score": z.number().nullable().optional(),
-  "threshold": z.number().nullable().optional(),
-  "metricKind": z.string().nullable().optional(),
-  "assertionLabel": z.string().nullable().optional(),
-  "failure": ZAssertionFailure.nullable().optional(),
+  assertionId: z.string(),
+  conditionKind: z.string(),
+  outcome: ZAssertionOutcome,
+  actualValue: z.unknown().optional(),
+  expectedValue: z.unknown().optional(),
+  score: z.number().nullable().optional(),
+  threshold: z.number().nullable().optional(),
+  metricKind: z.string().nullable().optional(),
+  assertionLabel: z.string().nullable().optional(),
+  failure: ZAssertionFailure.nullable().optional(),
 }) as z.ZodType<AssertionResult>;
 
 export function deserializeAssertionResult(wire: AssertionResultResponse): AssertionResult {
   return {
-    assertionId: wire["assertion_id"],
-    conditionKind: wire["condition_kind"],
-    outcome: wire["outcome"],
-    actualValue: wire["actual_value"],
-    expectedValue: wire["expected_value"],
-    score: wire["score"],
-    threshold: wire["threshold"],
-    metricKind: wire["metric_kind"],
-    assertionLabel: wire["assertion_label"],
-    failure: wire["failure"] == null ? (wire["failure"] as undefined) : (wire["failure"] == null ? wire["failure"] : deserializeAssertionFailure(wire["failure"])),
+    assertionId: wire['assertion_id'],
+    conditionKind: wire['condition_kind'],
+    outcome: wire['outcome'],
+    actualValue: wire['actual_value'],
+    expectedValue: wire['expected_value'],
+    score: wire['score'],
+    threshold: wire['threshold'],
+    metricKind: wire['metric_kind'],
+    assertionLabel: wire['assertion_label'],
+    failure:
+      wire['failure'] == null
+        ? (wire['failure'] as undefined)
+        : wire['failure'] == null
+          ? wire['failure']
+          : deserializeAssertionFailure(wire['failure']),
   };
 }

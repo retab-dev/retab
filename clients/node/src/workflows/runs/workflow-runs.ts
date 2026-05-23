@@ -2,65 +2,161 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
-import type { WorkflowRunsExcludeStatus, WorkflowRunsStatus, WorkflowRunsTriggerType } from '../../common/interfaces/index.js';
-import type { CancelWorkflowResponse, CancelWorkflowResponseResponse, WorkflowExportPayloadRequestExcludeStatus, WorkflowExportPayloadRequestExportSource, WorkflowExportPayloadRequestStatus, WorkflowExportPayloadRequestTriggerTypes, WorkflowExportPayloadResponse, WorkflowExportPayloadResponseResponse, WorkflowRun, WorkflowRunResponse } from '../../workflows/runs/interfaces/index.js';
-import { deserializeCancelWorkflowResponse, deserializeWorkflowExportPayloadResponse, deserializeWorkflowRun } from '../../workflows/runs/interfaces/index.js';
+import type {
+  WorkflowRunsExcludeStatus,
+  WorkflowRunsStatus,
+  WorkflowRunsTriggerType,
+} from '../../common/interfaces/index.js';
+import type {
+  CancelWorkflowResponse,
+  CancelWorkflowResponseResponse,
+  WorkflowExportPayloadRequestExcludeStatus,
+  WorkflowExportPayloadRequestExportSource,
+  WorkflowExportPayloadRequestStatus,
+  WorkflowExportPayloadRequestTriggerTypes,
+  WorkflowExportPayloadResponse,
+  WorkflowExportPayloadResponseResponse,
+  WorkflowRun,
+  WorkflowRunResponse,
+} from '../../workflows/runs/interfaces/index.js';
+import {
+  deserializeCancelWorkflowResponse,
+  deserializeWorkflowExportPayloadResponse,
+  deserializeWorkflowRun,
+} from '../../workflows/runs/interfaces/index.js';
 
 export class WorkflowRuns {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Workflow Runs */
-  async list(options?: { workflowId?: string | null | undefined; status?: WorkflowRunsStatus | null | undefined; statuses?: string | null | undefined; excludeStatus?: WorkflowRunsExcludeStatus | null | undefined; triggerType?: WorkflowRunsTriggerType | null | undefined; triggerTypes?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; minDurationMs?: number | null | undefined; maxDurationMs?: number | null | undefined; search?: string | null | undefined; sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowRun>> {
-    return this.client._fetchPage(deserializeWorkflowRun, { method: 'GET', path: "/v1/workflows/runs", query: { "workflow_id": options?.workflowId, "status": options?.status, "statuses": options?.statuses, "exclude_status": options?.excludeStatus, "trigger_type": options?.triggerType, "trigger_types": options?.triggerTypes, "from_date": options?.fromDate, "to_date": options?.toDate, "min_duration_ms": options?.minDurationMs, "max_duration_ms": options?.maxDurationMs, "search": options?.search, "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    workflowId?: string | null | undefined;
+    status?: WorkflowRunsStatus | null | undefined;
+    statuses?: string | null | undefined;
+    excludeStatus?: WorkflowRunsExcludeStatus | null | undefined;
+    triggerType?: WorkflowRunsTriggerType | null | undefined;
+    triggerTypes?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    minDurationMs?: number | null | undefined;
+    maxDurationMs?: number | null | undefined;
+    search?: string | null | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowRun>> {
+    return this.client._fetchPage(deserializeWorkflowRun, {
+      method: 'GET',
+      path: '/v1/workflows/runs',
+      query: {
+        workflow_id: options?.workflowId,
+        status: options?.status,
+        statuses: options?.statuses,
+        exclude_status: options?.excludeStatus,
+        trigger_type: options?.triggerType,
+        trigger_types: options?.triggerTypes,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        min_duration_ms: options?.minDurationMs,
+        max_duration_ms: options?.maxDurationMs,
+        search: options?.search,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Workflow Run Route */
   async create(body: unknown): Promise<WorkflowRun> {
-    const __wire = await this.client.request<WorkflowRunResponse>({ method: 'POST', path: "/v1/workflows/runs", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowRunResponse>({
+      method: 'POST',
+      path: '/v1/workflows/runs',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowRun(__wire);
   }
 
   /** Get Workflow Export Payload */
-  async export(workflowId: string, blockId: string, exportSource?: WorkflowExportPayloadRequestExportSource, selectedRunIds?: string[] | null, selectedDocTypes?: string[] | null, status?: WorkflowExportPayloadRequestStatus | null, excludeStatus?: WorkflowExportPayloadRequestExcludeStatus | null, fromDate?: string | null, toDate?: string | null, triggerTypes?: WorkflowExportPayloadRequestTriggerTypes[] | null, preferredColumns?: string[], delimiter?: string, lineDelimiter?: string, quote?: string): Promise<WorkflowExportPayloadResponse> {
+  async export(
+    workflowId: string,
+    blockId: string,
+    exportSource?: WorkflowExportPayloadRequestExportSource,
+    selectedRunIds?: string[] | null,
+    selectedDocTypes?: string[] | null,
+    status?: WorkflowExportPayloadRequestStatus | null,
+    excludeStatus?: WorkflowExportPayloadRequestExcludeStatus | null,
+    fromDate?: string | null,
+    toDate?: string | null,
+    triggerTypes?: WorkflowExportPayloadRequestTriggerTypes[] | null,
+    preferredColumns?: string[],
+    delimiter?: string,
+    lineDelimiter?: string,
+    quote?: string
+  ): Promise<WorkflowExportPayloadResponse> {
     const body = {
-      "workflow_id": workflowId,
-      "block_id": blockId,
-      "export_source": exportSource,
-      "selected_run_ids": selectedRunIds,
-      "selected_doc_types": selectedDocTypes,
-      "status": status,
-      "exclude_status": excludeStatus,
-      "from_date": fromDate,
-      "to_date": toDate,
-      "trigger_types": triggerTypes,
-      "preferred_columns": preferredColumns,
-      "delimiter": delimiter,
-      "line_delimiter": lineDelimiter,
-      "quote": quote,
+      workflow_id: workflowId,
+      block_id: blockId,
+      export_source: exportSource,
+      selected_run_ids: selectedRunIds,
+      selected_doc_types: selectedDocTypes,
+      status: status,
+      exclude_status: excludeStatus,
+      from_date: fromDate,
+      to_date: toDate,
+      trigger_types: triggerTypes,
+      preferred_columns: preferredColumns,
+      delimiter: delimiter,
+      line_delimiter: lineDelimiter,
+      quote: quote,
     };
-    const __wire = await this.client.request<WorkflowExportPayloadResponseResponse>({ method: 'POST', path: "/v1/workflows/runs/export", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowExportPayloadResponseResponse>({
+      method: 'POST',
+      path: '/v1/workflows/runs/export',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowExportPayloadResponse(__wire);
   }
 
   /** Get Workflow Run */
   async get(runId: string): Promise<WorkflowRun> {
-    const __wire = await this.client.request<WorkflowRunResponse>({ method: 'GET', path: `/v1/workflows/runs/${runId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowRunResponse>({
+      method: 'GET',
+      path: `/v1/workflows/runs/${runId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowRun(__wire);
   }
 
   /** Delete Workflow Run */
   async delete(runId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/workflows/runs/${runId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/workflows/runs/${runId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 
   /** Cancel Workflow Run */
   async cancel(runId: string, commandId?: string | null): Promise<CancelWorkflowResponse> {
     const body = {
-      "command_id": commandId,
+      command_id: commandId,
     };
-    const __wire = await this.client.request<CancelWorkflowResponseResponse>({ method: 'POST', path: `/v1/workflows/runs/${runId}/cancel`, query: undefined, body: body });
+    const __wire = await this.client.request<CancelWorkflowResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/runs/${runId}/cancel`,
+      query: undefined,
+      body: body,
+    });
     return deserializeCancelWorkflowResponse(__wire);
   }
 }

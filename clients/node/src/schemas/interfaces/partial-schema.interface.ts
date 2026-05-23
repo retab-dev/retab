@@ -19,17 +19,17 @@ export interface PartialSchemaResponse {
 }
 
 export const ZPartialSchema = z.object({
-  "object": z.string().optional(),
-  "createdAt": z.string().optional(),
-  "jsonSchema": z.record(z.string(), z.unknown()).optional(),
-  "strict": z.boolean().optional(),
+  object: z.string().optional(),
+  createdAt: z.string().optional(),
+  jsonSchema: z.record(z.string(), z.unknown()).optional(),
+  strict: z.boolean().optional(),
 }) as z.ZodType<PartialSchema>;
 
 export function deserializePartialSchema(wire: PartialSchemaResponse): PartialSchema {
   return {
-    object: wire["object"],
-    createdAt: wire["created_at"],
-    jsonSchema: wire["json_schema"],
-    strict: wire["strict"],
+    object: wire['object'],
+    createdAt: wire['created_at'],
+    jsonSchema: wire['json_schema'],
+    strict: wire['strict'],
   };
 }

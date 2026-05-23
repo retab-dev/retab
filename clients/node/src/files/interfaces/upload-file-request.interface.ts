@@ -20,17 +20,17 @@ export interface UploadFileRequestResponse {
 }
 
 export const ZUploadFileRequest = z.object({
-  "filename": z.string(),
-  "contentType": z.string().nullable().optional(),
-  "sizeBytes": z.number().int(),
-  "sha256": z.string().nullable().optional(),
+  filename: z.string(),
+  contentType: z.string().nullable().optional(),
+  sizeBytes: z.number().int(),
+  sha256: z.string().nullable().optional(),
 }) as z.ZodType<UploadFileRequest>;
 
 export function deserializeUploadFileRequest(wire: UploadFileRequestResponse): UploadFileRequest {
   return {
-    filename: wire["filename"],
-    contentType: wire["content_type"],
-    sizeBytes: wire["size_bytes"],
-    sha256: wire["sha_256"],
+    filename: wire['filename'],
+    contentType: wire['content_type'],
+    sizeBytes: wire['size_bytes'],
+    sha256: wire['sha_256'],
   };
 }

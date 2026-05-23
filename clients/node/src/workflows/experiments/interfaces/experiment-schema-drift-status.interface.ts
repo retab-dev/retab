@@ -4,4 +4,9 @@ import { z } from 'zod';
 
 export type ExperimentSchemaDriftStatus = 'none' | 'partial' | 'drifted' | 'unknown';
 
-export const ZExperimentSchemaDriftStatus = z.enum(['none', 'partial', 'drifted', 'unknown'] as const);
+export const ZExperimentSchemaDriftStatus = z.enum([
+  'none',
+  'partial',
+  'drifted',
+  'unknown',
+] as const);

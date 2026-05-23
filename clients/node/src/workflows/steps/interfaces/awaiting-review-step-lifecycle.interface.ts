@@ -12,11 +12,13 @@ export interface AwaitingReviewStepLifecycleResponse {
 }
 
 export const ZAwaitingReviewStepLifecycle = z.object({
-  "status": z.literal('awaiting_review'),
+  status: z.literal('awaiting_review'),
 }) as z.ZodType<AwaitingReviewStepLifecycle>;
 
-export function deserializeAwaitingReviewStepLifecycle(wire: AwaitingReviewStepLifecycleResponse): AwaitingReviewStepLifecycle {
+export function deserializeAwaitingReviewStepLifecycle(
+  wire: AwaitingReviewStepLifecycleResponse
+): AwaitingReviewStepLifecycle {
   return {
-    status: wire["status"],
+    status: wire['status'],
   };
 }

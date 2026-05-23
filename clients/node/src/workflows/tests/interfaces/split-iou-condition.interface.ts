@@ -17,15 +17,15 @@ export interface SplitIouConditionResponse {
 }
 
 export const ZSplitIouCondition = z.object({
-  "kind": z.literal('split_iou_gte'),
-  "expected": z.record(z.string(), z.unknown()),
-  "threshold": z.number().optional(),
+  kind: z.literal('split_iou_gte'),
+  expected: z.record(z.string(), z.unknown()),
+  threshold: z.number().optional(),
 }) as z.ZodType<SplitIouCondition>;
 
 export function deserializeSplitIouCondition(wire: SplitIouConditionResponse): SplitIouCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
-    threshold: wire["threshold"],
+    kind: wire['kind'],
+    expected: wire['expected'],
+    threshold: wire['threshold'],
   };
 }

@@ -3,8 +3,14 @@
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type { RetabUsage, RetabUsageResponse } from '../../extractions/interfaces/retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from '../../extractions/interfaces/retab-usage.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../extractions/interfaces/retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+} from '../../extractions/interfaces/retab-usage.interface.js';
 import type { SplitConsensus, SplitConsensusResponse } from './split-consensus.interface.js';
 import { ZSplitConsensus, deserializeSplitConsensus } from './split-consensus.interface.js';
 import type { SplitResult, SplitResultResponse } from './split-result.interface.js';
@@ -51,29 +57,44 @@ export interface SplitResponse {
 }
 
 export const ZSplit = z.object({
-  "id": z.string(),
-  "file": ZFileRef,
-  "model": z.string(),
-  "subdocuments": ZSubdocument.array(),
-  "nConsensus": z.number().int().optional(),
-  "instructions": z.string().nullable().optional(),
-  "output": ZSplitResult.array(),
-  "consensus": ZSplitConsensus.nullable().optional(),
-  "usage": ZRetabUsage.nullable().optional(),
-  "createdAt": z.coerce.date().nullable().optional(),
+  id: z.string(),
+  file: ZFileRef,
+  model: z.string(),
+  subdocuments: ZSubdocument.array(),
+  nConsensus: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  output: ZSplitResult.array(),
+  consensus: ZSplitConsensus.nullable().optional(),
+  usage: ZRetabUsage.nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Split>;
 
 export function deserializeSplit(wire: SplitResponse): Split {
   return {
-    id: wire["id"],
-    file: deserializeFileRef(wire["file"]),
-    model: wire["model"],
-    subdocuments: wire["subdocuments"].map((__i) => deserializeSubdocument(__i)),
-    nConsensus: wire["n_consensus"],
-    instructions: wire["instructions"],
-    output: wire["output"].map((__i) => deserializeSplitResult(__i)),
-    consensus: wire["consensus"] == null ? (wire["consensus"] as undefined) : (wire["consensus"] == null ? wire["consensus"] : deserializeSplitConsensus(wire["consensus"])),
-    usage: wire["usage"] == null ? (wire["usage"] as undefined) : (wire["usage"] == null ? wire["usage"] : deserializeRetabUsage(wire["usage"])),
-    createdAt: wire["created_at"] == null ? (wire["created_at"] as undefined) : (wire["created_at"] == null ? wire["created_at"] : new Date(wire["created_at"])),
+    id: wire['id'],
+    file: deserializeFileRef(wire['file']),
+    model: wire['model'],
+    subdocuments: wire['subdocuments'].map((__i) => deserializeSubdocument(__i)),
+    nConsensus: wire['n_consensus'],
+    instructions: wire['instructions'],
+    output: wire['output'].map((__i) => deserializeSplitResult(__i)),
+    consensus:
+      wire['consensus'] == null
+        ? (wire['consensus'] as undefined)
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializeSplitConsensus(wire['consensus']),
+    usage:
+      wire['usage'] == null
+        ? (wire['usage'] as undefined)
+        : wire['usage'] == null
+          ? wire['usage']
+          : deserializeRetabUsage(wire['usage']),
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
   };
 }

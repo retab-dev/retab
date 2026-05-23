@@ -15,13 +15,13 @@ export interface WebhookTriggerResponse {
 }
 
 export const ZWebhookTrigger = z.object({
-  "type": z.literal('webhook'),
-  "webhookId": z.string().nullable().optional(),
+  type: z.literal('webhook'),
+  webhookId: z.string().nullable().optional(),
 }) as z.ZodType<WebhookTrigger>;
 
 export function deserializeWebhookTrigger(wire: WebhookTriggerResponse): WebhookTrigger {
   return {
-    type: wire["type"],
-    webhookId: wire["webhook_id"],
+    type: wire['type'],
+    webhookId: wire['webhook_id'],
   };
 }

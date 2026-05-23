@@ -18,15 +18,17 @@ export interface NumberCompareConditionResponse {
 }
 
 export const ZNumberCompareCondition = z.object({
-  "kind": z.literal('number_compare'),
-  "op": ZNumberCompareConditionOp,
-  "expected": z.number().int(),
+  kind: z.literal('number_compare'),
+  op: ZNumberCompareConditionOp,
+  expected: z.number().int(),
 }) as z.ZodType<NumberCompareCondition>;
 
-export function deserializeNumberCompareCondition(wire: NumberCompareConditionResponse): NumberCompareCondition {
+export function deserializeNumberCompareCondition(
+  wire: NumberCompareConditionResponse
+): NumberCompareCondition {
   return {
-    kind: wire["kind"],
-    op: wire["op"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    op: wire['op'],
+    expected: wire['expected'],
   };
 }

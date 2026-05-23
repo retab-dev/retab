@@ -2,51 +2,112 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import type { CreateUploadResponse, CreateUploadResponseResponse, File, FileLink, FileLinkResponse, FileResponse } from '../files/interfaces/index.js';
+import type {
+  CreateUploadResponse,
+  CreateUploadResponseResponse,
+  File,
+  FileLink,
+  FileLinkResponse,
+  FileResponse,
+} from '../files/interfaces/index.js';
 import type { MIMEData, MIMEDataResponse } from '../schemas/interfaces/index.js';
-import { deserializeCreateUploadResponse, deserializeFile, deserializeFileLink } from '../files/interfaces/index.js';
+import {
+  deserializeCreateUploadResponse,
+  deserializeFile,
+  deserializeFileLink,
+} from '../files/interfaces/index.js';
 import { deserializeMIMEData } from '../schemas/interfaces/index.js';
 
 export class Files {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** Upload File */
-  async create_upload(filename: string, sizeBytes: number, contentType?: string | null, sha256?: string | null): Promise<CreateUploadResponse> {
+  async create_upload(
+    filename: string,
+    sizeBytes: number,
+    contentType?: string | null,
+    sha256?: string | null
+  ): Promise<CreateUploadResponse> {
     const body = {
-      "filename": filename,
-      "content_type": contentType,
-      "size_bytes": sizeBytes,
-      "sha_256": sha256,
+      filename: filename,
+      content_type: contentType,
+      size_bytes: sizeBytes,
+      sha_256: sha256,
     };
-    const __wire = await this.client.request<CreateUploadResponseResponse>({ method: 'POST', path: "/v1/files/upload", query: undefined, body: body });
+    const __wire = await this.client.request<CreateUploadResponseResponse>({
+      method: 'POST',
+      path: '/v1/files/upload',
+      query: undefined,
+      body: body,
+    });
     return deserializeCreateUploadResponse(__wire);
   }
 
   /** Complete Upload File */
   async complete_upload(fileId: string, sha256?: string | null): Promise<MIMEData> {
     const body = {
-      "sha_256": sha256,
+      sha_256: sha256,
     };
-    const __wire = await this.client.request<MIMEDataResponse>({ method: 'POST', path: `/v1/files/upload/${fileId}/complete`, query: undefined, body: body });
+    const __wire = await this.client.request<MIMEDataResponse>({
+      method: 'POST',
+      path: `/v1/files/upload/${fileId}/complete`,
+      query: undefined,
+      body: body,
+    });
     return deserializeMIMEData(__wire);
   }
 
   /** List Files */
-  async list(options?: { filename?: string | null | undefined; mimeType?: string | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; includeEmbeddings?: boolean | undefined; sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<File>> {
-    return this.client._fetchPage(deserializeFile, { method: 'GET', path: "/v1/files", query: { "filename": options?.filename, "mime_type": options?.mimeType, "from_date": options?.fromDate, "to_date": options?.toDate, "include_embeddings": options?.includeEmbeddings, "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    filename?: string | null | undefined;
+    mimeType?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    includeEmbeddings?: boolean | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<File>> {
+    return this.client._fetchPage(deserializeFile, {
+      method: 'GET',
+      path: '/v1/files',
+      query: {
+        filename: options?.filename,
+        mime_type: options?.mimeType,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        include_embeddings: options?.includeEmbeddings,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Get File */
   async get(fileId: string): Promise<File> {
-    const __wire = await this.client.request<FileResponse>({ method: 'GET', path: `/v1/files/${fileId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<FileResponse>({
+      method: 'GET',
+      path: `/v1/files/${fileId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeFile(__wire);
   }
 
   /** Download Link */
   async get_download_link(fileId: string): Promise<FileLink> {
-    const __wire = await this.client.request<FileLinkResponse>({ method: 'GET', path: `/v1/files/${fileId}/download-link`, query: undefined, body: undefined });
+    const __wire = await this.client.request<FileLinkResponse>({
+      method: 'GET',
+      path: `/v1/files/${fileId}/download-link`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeFileLink(__wire);
   }
 }

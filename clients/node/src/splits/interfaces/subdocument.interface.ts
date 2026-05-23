@@ -23,15 +23,15 @@ export interface SubdocumentResponse {
 }
 
 export const ZSubdocument = z.object({
-  "name": z.string(),
-  "description": z.string().optional(),
-  "allowMultipleInstances": z.boolean().optional(),
+  name: z.string(),
+  description: z.string().optional(),
+  allowMultipleInstances: z.boolean().optional(),
 }) as z.ZodType<Subdocument>;
 
 export function deserializeSubdocument(wire: SubdocumentResponse): Subdocument {
   return {
-    name: wire["name"],
-    description: wire["description"],
-    allowMultipleInstances: wire["allow_multiple_instances"],
+    name: wire['name'],
+    description: wire['description'],
+    allowMultipleInstances: wire['allow_multiple_instances'],
   };
 }

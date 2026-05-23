@@ -3,8 +3,16 @@
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
 import type { ReviewDecisionStatus } from '../../common/interfaces/index.js';
-import type { Review, ReviewResponse, SubmitDecisionResponse, SubmitDecisionResponseResponse } from '../../workflows/reviews/interfaces/index.js';
-import { deserializeReview, deserializeSubmitDecisionResponse } from '../../workflows/reviews/interfaces/index.js';
+import type {
+  Review,
+  ReviewResponse,
+  SubmitDecisionResponse,
+  SubmitDecisionResponseResponse,
+} from '../../workflows/reviews/interfaces/index.js';
+import {
+  deserializeReview,
+  deserializeSubmitDecisionResponse,
+} from '../../workflows/reviews/interfaces/index.js';
 import { WorkflowReviewVersions } from './versions/workflow-review-versions.js';
 
 export class WorkflowReviews {
@@ -15,32 +23,78 @@ export class WorkflowReviews {
   }
 
   /** List Reviews Route */
-  async list(options?: { workflowId?: string | null | undefined; runId?: string | null | undefined; blockId?: string | null | undefined; stepId?: string | null | undefined; iterationKey?: string | null | undefined; decisionStatus?: ReviewDecisionStatus | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Review>> {
-    return this.client._fetchPage(deserializeReview, { method: 'GET', path: "/v1/workflows/reviews", query: { "workflow_id": options?.workflowId, "run_id": options?.runId, "block_id": options?.blockId, "step_id": options?.stepId, "iteration_key": options?.iterationKey, "decision_status": options?.decisionStatus, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    workflowId?: string | null | undefined;
+    runId?: string | null | undefined;
+    blockId?: string | null | undefined;
+    stepId?: string | null | undefined;
+    iterationKey?: string | null | undefined;
+    decisionStatus?: ReviewDecisionStatus | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Review>> {
+    return this.client._fetchPage(deserializeReview, {
+      method: 'GET',
+      path: '/v1/workflows/reviews',
+      query: {
+        workflow_id: options?.workflowId,
+        run_id: options?.runId,
+        block_id: options?.blockId,
+        step_id: options?.stepId,
+        iteration_key: options?.iterationKey,
+        decision_status: options?.decisionStatus,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Get Review Route */
   async get(reviewId: string): Promise<Review> {
-    const __wire = await this.client.request<ReviewResponse>({ method: 'GET', path: `/v1/workflows/reviews/${reviewId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<ReviewResponse>({
+      method: 'GET',
+      path: `/v1/workflows/reviews/${reviewId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeReview(__wire);
   }
 
   /** Approve Review Route */
   async approve(reviewId: string, versionId: string): Promise<SubmitDecisionResponse> {
     const body = {
-      "version_id": versionId,
+      version_id: versionId,
     };
-    const __wire = await this.client.request<SubmitDecisionResponseResponse>({ method: 'POST', path: `/v1/workflows/reviews/${reviewId}/approve`, query: undefined, body: body });
+    const __wire = await this.client.request<SubmitDecisionResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/reviews/${reviewId}/approve`,
+      query: undefined,
+      body: body,
+    });
     return deserializeSubmitDecisionResponse(__wire);
   }
 
   /** Reject Review Route */
-  async reject(reviewId: string, versionId: string, reason: string): Promise<SubmitDecisionResponse> {
+  async reject(
+    reviewId: string,
+    versionId: string,
+    reason: string
+  ): Promise<SubmitDecisionResponse> {
     const body = {
-      "version_id": versionId,
-      "reason": reason,
+      version_id: versionId,
+      reason: reason,
     };
-    const __wire = await this.client.request<SubmitDecisionResponseResponse>({ method: 'POST', path: `/v1/workflows/reviews/${reviewId}/reject`, query: undefined, body: body });
+    const __wire = await this.client.request<SubmitDecisionResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/reviews/${reviewId}/reject`,
+      query: undefined,
+      body: body,
+    });
     return deserializeSubmitDecisionResponse(__wire);
   }
 }

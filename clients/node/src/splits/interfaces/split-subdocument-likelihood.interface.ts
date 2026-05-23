@@ -14,13 +14,15 @@ export interface SplitSubdocumentLikelihoodResponse {
 }
 
 export const ZSplitSubdocumentLikelihood = z.object({
-  "name": z.number().nullable().optional(),
-  "pages": z.number().array().optional(),
+  name: z.number().nullable().optional(),
+  pages: z.number().array().optional(),
 }) as z.ZodType<SplitSubdocumentLikelihood>;
 
-export function deserializeSplitSubdocumentLikelihood(wire: SplitSubdocumentLikelihoodResponse): SplitSubdocumentLikelihood {
+export function deserializeSplitSubdocumentLikelihood(
+  wire: SplitSubdocumentLikelihoodResponse
+): SplitSubdocumentLikelihood {
   return {
-    name: wire["name"],
-    pages: wire["pages"],
+    name: wire['name'],
+    pages: wire['pages'],
   };
 }

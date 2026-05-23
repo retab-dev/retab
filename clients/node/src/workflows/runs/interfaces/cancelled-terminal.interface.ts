@@ -15,13 +15,13 @@ export interface CancelledTerminalResponse {
 }
 
 export const ZCancelledTerminal = z.object({
-  "status": z.literal('cancelled'),
-  "reason": z.string().nullable().optional(),
+  status: z.literal('cancelled'),
+  reason: z.string().nullable().optional(),
 }) as z.ZodType<CancelledTerminal>;
 
 export function deserializeCancelledTerminal(wire: CancelledTerminalResponse): CancelledTerminal {
   return {
-    status: wire["status"],
-    reason: wire["reason"],
+    status: wire['status'],
+    reason: wire['reason'],
   };
 }

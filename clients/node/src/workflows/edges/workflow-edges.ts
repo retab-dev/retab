@@ -2,41 +2,85 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
-import type { WorkflowEdgeDoc, WorkflowEdgeDocResponse } from '../../workflows/edges/interfaces/index.js';
+import type {
+  WorkflowEdgeDoc,
+  WorkflowEdgeDocResponse,
+} from '../../workflows/edges/interfaces/index.js';
 import { deserializeWorkflowEdgeDoc } from '../../workflows/edges/interfaces/index.js';
 
 export class WorkflowEdges {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Edges */
-  async list(options: { workflowId: string; sourceBlock?: string | null | undefined; targetBlock?: string | null | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowEdgeDoc>> {
-    return this.client._fetchPage(deserializeWorkflowEdgeDoc, { method: 'GET', path: "/v1/workflows/edges", query: { "workflow_id": options?.workflowId, "source_block": options?.sourceBlock, "target_block": options?.targetBlock, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    workflowId: string;
+    sourceBlock?: string | null | undefined;
+    targetBlock?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowEdgeDoc>> {
+    return this.client._fetchPage(deserializeWorkflowEdgeDoc, {
+      method: 'GET',
+      path: '/v1/workflows/edges',
+      query: {
+        workflow_id: options?.workflowId,
+        source_block: options?.sourceBlock,
+        target_block: options?.targetBlock,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Edge */
-  async create(workflowId: string, sourceBlock: string, targetBlock: string, id?: string, sourceHandle?: string | null, targetHandle?: string | null): Promise<WorkflowEdgeDoc> {
+  async create(
+    workflowId: string,
+    sourceBlock: string,
+    targetBlock: string,
+    id?: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): Promise<WorkflowEdgeDoc> {
     const body = {
-      "workflow_id": workflowId,
-      "id": id,
-      "source_block": sourceBlock,
-      "target_block": targetBlock,
-      "source_handle": sourceHandle,
-      "target_handle": targetHandle,
+      workflow_id: workflowId,
+      id: id,
+      source_block: sourceBlock,
+      target_block: targetBlock,
+      source_handle: sourceHandle,
+      target_handle: targetHandle,
     };
-    const __wire = await this.client.request<WorkflowEdgeDocResponse>({ method: 'POST', path: "/v1/workflows/edges", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowEdgeDocResponse>({
+      method: 'POST',
+      path: '/v1/workflows/edges',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowEdgeDoc(__wire);
   }
 
   /** Get Edge */
   async get(edgeId: string): Promise<WorkflowEdgeDoc> {
-    const __wire = await this.client.request<WorkflowEdgeDocResponse>({ method: 'GET', path: `/v1/workflows/edges/${edgeId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowEdgeDocResponse>({
+      method: 'GET',
+      path: `/v1/workflows/edges/${edgeId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowEdgeDoc(__wire);
   }
 
   /** Delete Edge */
   async delete(edgeId: string): Promise<void> {
-    await this.client.request<unknown>({ method: 'DELETE', path: `/v1/workflows/edges/${edgeId}`, query: undefined, body: undefined });
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/workflows/edges/${edgeId}`,
+      query: undefined,
+      body: undefined,
+    });
   }
 }

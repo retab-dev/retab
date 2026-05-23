@@ -15,13 +15,15 @@ export interface ReviewJsonConditionResponse {
 }
 
 export const ZReviewJsonCondition = z.object({
-  "kind": z.literal('json_condition'),
-  "condition": z.record(z.string(), z.unknown()),
+  kind: z.literal('json_condition'),
+  condition: z.record(z.string(), z.unknown()),
 }) as z.ZodType<ReviewJsonCondition>;
 
-export function deserializeReviewJsonCondition(wire: ReviewJsonConditionResponse): ReviewJsonCondition {
+export function deserializeReviewJsonCondition(
+  wire: ReviewJsonConditionResponse
+): ReviewJsonCondition {
   return {
-    kind: wire["kind"],
-    condition: wire["condition"],
+    kind: wire['kind'],
+    condition: wire['condition'],
   };
 }

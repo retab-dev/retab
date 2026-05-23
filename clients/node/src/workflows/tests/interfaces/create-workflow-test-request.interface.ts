@@ -3,12 +3,30 @@
 import { z } from 'zod';
 import type { AssertionSpec, AssertionSpecResponse } from './assertion-spec.interface.js';
 import { ZAssertionSpec, deserializeAssertionSpec } from './assertion-spec.interface.js';
-import type { ManualWorkflowTestSource, ManualWorkflowTestSourceResponse } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
-import { ZManualWorkflowTestSource, deserializeManualWorkflowTestSource } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
-import type { RunStepWorkflowTestSource, RunStepWorkflowTestSourceResponse } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
-import { ZRunStepWorkflowTestSource, deserializeRunStepWorkflowTestSource } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
-import type { WorkflowTestBlockTarget, WorkflowTestBlockTargetResponse } from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
-import { ZWorkflowTestBlockTarget, deserializeWorkflowTestBlockTarget } from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+import type {
+  ManualWorkflowTestSource,
+  ManualWorkflowTestSourceResponse,
+} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+import {
+  ZManualWorkflowTestSource,
+  deserializeManualWorkflowTestSource,
+} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+import type {
+  RunStepWorkflowTestSource,
+  RunStepWorkflowTestSourceResponse,
+} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+import {
+  ZRunStepWorkflowTestSource,
+  deserializeRunStepWorkflowTestSource,
+} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+import type {
+  WorkflowTestBlockTarget,
+  WorkflowTestBlockTargetResponse,
+} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+import {
+  ZWorkflowTestBlockTarget,
+  deserializeWorkflowTestBlockTarget,
+} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
 
 export interface CreateWorkflowTestRequest {
   workflowId: string;
@@ -27,19 +45,32 @@ export interface CreateWorkflowTestRequestResponse {
 }
 
 export const ZCreateWorkflowTestRequest = z.object({
-  "workflowId": z.string(),
-  "target": ZWorkflowTestBlockTarget,
-  "source": z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
-  "name": z.string().nullable().optional(),
-  "assertion": ZAssertionSpec,
+  workflowId: z.string(),
+  target: ZWorkflowTestBlockTarget,
+  source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
+  name: z.string().nullable().optional(),
+  assertion: ZAssertionSpec,
 }) as z.ZodType<CreateWorkflowTestRequest>;
 
-export function deserializeCreateWorkflowTestRequest(wire: CreateWorkflowTestRequestResponse): CreateWorkflowTestRequest {
+export function deserializeCreateWorkflowTestRequest(
+  wire: CreateWorkflowTestRequestResponse
+): CreateWorkflowTestRequest {
   return {
-    workflowId: wire["workflow_id"],
-    target: deserializeWorkflowTestBlockTarget(wire["target"]),
-    source: (({ "manual": () => deserializeManualWorkflowTestSource(wire["source"] as ManualWorkflowTestSourceResponse), "run_step": () => deserializeRunStepWorkflowTestSource(wire["source"] as RunStepWorkflowTestSourceResponse) } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>)[(wire["source"] as unknown as Record<string, string>)["type"]]?.() ?? (wire["source"] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource)),
-    name: wire["name"],
-    assertion: deserializeAssertionSpec(wire["assertion"]),
+    workflowId: wire['workflow_id'],
+    target: deserializeWorkflowTestBlockTarget(wire['target']),
+    source:
+      (
+        {
+          manual: () =>
+            deserializeManualWorkflowTestSource(wire['source'] as ManualWorkflowTestSourceResponse),
+          run_step: () =>
+            deserializeRunStepWorkflowTestSource(
+              wire['source'] as RunStepWorkflowTestSourceResponse
+            ),
+        } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>
+      )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
+      (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource),
+    name: wire['name'],
+    assertion: deserializeAssertionSpec(wire['assertion']),
   };
 }

@@ -2,34 +2,67 @@
 
 import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
-import type { ReviewVersion, ReviewVersionResponse } from '../../../workflows/reviews/versions/interfaces/index.js';
+import type {
+  ReviewVersion,
+  ReviewVersionResponse,
+} from '../../../workflows/reviews/versions/interfaces/index.js';
 import { deserializeReviewVersion } from '../../../workflows/reviews/versions/interfaces/index.js';
 
 export class WorkflowReviewVersions {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Review Versions Route */
-  async list(options: { reviewId: string; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<ReviewVersion>> {
-    return this.client._fetchPage(deserializeReviewVersion, { method: 'GET', path: "/v1/workflows/reviews/versions", query: { "review_id": options?.reviewId, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options: {
+    reviewId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<ReviewVersion>> {
+    return this.client._fetchPage(deserializeReviewVersion, {
+      method: 'GET',
+      path: '/v1/workflows/reviews/versions',
+      query: {
+        review_id: options?.reviewId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Review Version Route */
-  async create(reviewId: string, parentId: string, snapshot: Record<string, unknown>, note?: string | null): Promise<ReviewVersion> {
+  async create(
+    reviewId: string,
+    parentId: string,
+    snapshot: Record<string, unknown>,
+    note?: string | null
+  ): Promise<ReviewVersion> {
     const body = {
-      "review_id": reviewId,
-      "parent_id": parentId,
-      "snapshot": snapshot,
-      "note": note,
+      review_id: reviewId,
+      parent_id: parentId,
+      snapshot: snapshot,
+      note: note,
     };
-    const __wire = await this.client.request<ReviewVersionResponse>({ method: 'POST', path: "/v1/workflows/reviews/versions", query: undefined, body: body });
+    const __wire = await this.client.request<ReviewVersionResponse>({
+      method: 'POST',
+      path: '/v1/workflows/reviews/versions',
+      query: undefined,
+      body: body,
+    });
     return deserializeReviewVersion(__wire);
   }
 
   /** Get Review Version Route */
   async get(versionId: string): Promise<ReviewVersion> {
-    const __wire = await this.client.request<ReviewVersionResponse>({ method: 'GET', path: `/v1/workflows/reviews/versions/${versionId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<ReviewVersionResponse>({
+      method: 'GET',
+      path: `/v1/workflows/reviews/versions/${versionId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeReviewVersion(__wire);
   }
 }

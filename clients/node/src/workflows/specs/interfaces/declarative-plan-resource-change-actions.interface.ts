@@ -4,4 +4,8 @@ import { z } from 'zod';
 
 export type DeclarativePlanResourceChangeActions = 'create' | 'update' | 'delete';
 
-export const ZDeclarativePlanResourceChangeActions = z.enum(['create', 'update', 'delete'] as const);
+export const ZDeclarativePlanResourceChangeActions = z.enum([
+  'create',
+  'update',
+  'delete',
+] as const);

@@ -34,21 +34,26 @@ export interface ErrorTerminalResponse {
 }
 
 export const ZErrorTerminal = z.object({
-  "status": z.literal('error'),
-  "message": z.string(),
-  "stage": ZErrorTerminalStage.nullable().optional(),
-  "category": ZErrorTerminalCategory.nullable().optional(),
-  "details": ZErrorDetails.nullable().optional(),
-  "failingStepId": z.string().nullable().optional(),
+  status: z.literal('error'),
+  message: z.string(),
+  stage: ZErrorTerminalStage.nullable().optional(),
+  category: ZErrorTerminalCategory.nullable().optional(),
+  details: ZErrorDetails.nullable().optional(),
+  failingStepId: z.string().nullable().optional(),
 }) as z.ZodType<ErrorTerminal>;
 
 export function deserializeErrorTerminal(wire: ErrorTerminalResponse): ErrorTerminal {
   return {
-    status: wire["status"],
-    message: wire["message"],
-    stage: wire["stage"],
-    category: wire["category"],
-    details: wire["details"] == null ? (wire["details"] as undefined) : (wire["details"] == null ? wire["details"] : deserializeErrorDetails(wire["details"])),
-    failingStepId: wire["failing_step_id"],
+    status: wire['status'],
+    message: wire['message'],
+    stage: wire['stage'],
+    category: wire['category'],
+    details:
+      wire['details'] == null
+        ? (wire['details'] as undefined)
+        : wire['details'] == null
+          ? wire['details']
+          : deserializeErrorDetails(wire['details']),
+    failingStepId: wire['failing_step_id'],
   };
 }

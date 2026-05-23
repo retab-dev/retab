@@ -7,41 +7,116 @@ import type { CreateJobRequestEndpoint, Job, JobWire } from '../jobs/interfaces/
 import { deserializeJob } from '../jobs/interfaces/index.js';
 
 export class Jobs {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Jobs */
-  async list(options?: { jobId?: string | null | undefined; status?: JobsStatus | null | undefined; endpoint?: JobsEndpoint | null | undefined; source?: JobsSource | null | undefined; projectId?: string | null | undefined; workflowId?: string | null | undefined; workflowBlockId?: string | null | undefined; model?: string | null | undefined; filenameRegex?: string | null | undefined; filenameContains?: string | null | undefined; documentType?: string[] | null | undefined; fromDate?: string | null | undefined; toDate?: string | null | undefined; metadata?: string | null | undefined; includeRequest?: boolean | undefined; includeResponse?: boolean | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<Job>> {
-    return this.client._fetchPage(deserializeJob, { method: 'GET', path: "/v1/jobs", query: { "job_id": options?.jobId, "status": options?.status, "endpoint": options?.endpoint, "source": options?.source, "project_id": options?.projectId, "workflow_id": options?.workflowId, "workflow_block_id": options?.workflowBlockId, "model": options?.model, "filename_regex": options?.filenameRegex, "filename_contains": options?.filenameContains, "document_type": options?.documentType, "from_date": options?.fromDate, "to_date": options?.toDate, "metadata": options?.metadata, "include_request": options?.includeRequest, "include_response": options?.includeResponse, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    jobId?: string | null | undefined;
+    status?: JobsStatus | null | undefined;
+    endpoint?: JobsEndpoint | null | undefined;
+    source?: JobsSource | null | undefined;
+    projectId?: string | null | undefined;
+    workflowId?: string | null | undefined;
+    workflowBlockId?: string | null | undefined;
+    model?: string | null | undefined;
+    filenameRegex?: string | null | undefined;
+    filenameContains?: string | null | undefined;
+    documentType?: string[] | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    metadata?: string | null | undefined;
+    includeRequest?: boolean | undefined;
+    includeResponse?: boolean | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Job>> {
+    return this.client._fetchPage(deserializeJob, {
+      method: 'GET',
+      path: '/v1/jobs',
+      query: {
+        job_id: options?.jobId,
+        status: options?.status,
+        endpoint: options?.endpoint,
+        source: options?.source,
+        project_id: options?.projectId,
+        workflow_id: options?.workflowId,
+        workflow_block_id: options?.workflowBlockId,
+        model: options?.model,
+        filename_regex: options?.filenameRegex,
+        filename_contains: options?.filenameContains,
+        document_type: options?.documentType,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        metadata: options?.metadata,
+        include_request: options?.includeRequest,
+        include_response: options?.includeResponse,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Job */
-  async create(endpoint: CreateJobRequestEndpoint, request: Record<string, unknown>, metadata?: Record<string, string> | null): Promise<Job> {
+  async create(
+    endpoint: CreateJobRequestEndpoint,
+    request: Record<string, unknown>,
+    metadata?: Record<string, string> | null
+  ): Promise<Job> {
     const body = {
-      "endpoint": endpoint,
-      "request": request,
-      "metadata": metadata,
+      endpoint: endpoint,
+      request: request,
+      metadata: metadata,
     };
-    const __wire = await this.client.request<JobWire>({ method: 'POST', path: "/v1/jobs", query: undefined, body: body });
+    const __wire = await this.client.request<JobWire>({
+      method: 'POST',
+      path: '/v1/jobs',
+      query: undefined,
+      body: body,
+    });
     return deserializeJob(__wire);
   }
 
   /** Retrieve Job */
-  async get(jobId: string, options?: { includeRequest?: boolean | undefined; includeResponse?: boolean | undefined }): Promise<Job> {
-    const __wire = await this.client.request<JobWire>({ method: 'GET', path: `/v1/jobs/${jobId}`, query: { "include_request": options?.includeRequest, "include_response": options?.includeResponse }, body: undefined });
+  async get(
+    jobId: string,
+    options?: { includeRequest?: boolean | undefined; includeResponse?: boolean | undefined }
+  ): Promise<Job> {
+    const __wire = await this.client.request<JobWire>({
+      method: 'GET',
+      path: `/v1/jobs/${jobId}`,
+      query: {
+        include_request: options?.includeRequest,
+        include_response: options?.includeResponse,
+      },
+      body: undefined,
+    });
     return deserializeJob(__wire);
   }
 
   /** Cancel Job */
   async cancel(jobId: string): Promise<Job> {
-    const __wire = await this.client.request<JobWire>({ method: 'POST', path: `/v1/jobs/${jobId}/cancel`, query: undefined, body: undefined });
+    const __wire = await this.client.request<JobWire>({
+      method: 'POST',
+      path: `/v1/jobs/${jobId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeJob(__wire);
   }
 
   /** Retry Job */
   async retry(jobId: string): Promise<Job> {
-    const __wire = await this.client.request<JobWire>({ method: 'POST', path: `/v1/jobs/${jobId}/retry`, query: undefined, body: undefined });
+    const __wire = await this.client.request<JobWire>({
+      method: 'POST',
+      path: `/v1/jobs/${jobId}/retry`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeJob(__wire);
   }
 }

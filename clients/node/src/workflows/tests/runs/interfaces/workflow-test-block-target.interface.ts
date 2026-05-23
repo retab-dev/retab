@@ -14,13 +14,15 @@ export interface WorkflowTestBlockTargetResponse {
 }
 
 export const ZWorkflowTestBlockTarget = z.object({
-  "type": z.literal('block'),
-  "blockId": z.string(),
+  type: z.literal('block'),
+  blockId: z.string(),
 }) as z.ZodType<WorkflowTestBlockTarget>;
 
-export function deserializeWorkflowTestBlockTarget(wire: WorkflowTestBlockTargetResponse): WorkflowTestBlockTarget {
+export function deserializeWorkflowTestBlockTarget(
+  wire: WorkflowTestBlockTargetResponse
+): WorkflowTestBlockTarget {
   return {
-    type: wire["type"],
-    blockId: wire["block_id"],
+    type: wire['type'],
+    blockId: wire['block_id'],
   };
 }

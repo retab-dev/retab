@@ -14,13 +14,13 @@ export interface ReviewTopMarginLtResponse {
 }
 
 export const ZReviewTopMarginLt = z.object({
-  "kind": z.literal('top_margin_lt'),
-  "margin": z.number(),
+  kind: z.literal('top_margin_lt'),
+  margin: z.number(),
 }) as z.ZodType<ReviewTopMarginLt>;
 
 export function deserializeReviewTopMarginLt(wire: ReviewTopMarginLtResponse): ReviewTopMarginLt {
   return {
-    kind: wire["kind"],
-    margin: wire["margin"],
+    kind: wire['kind'],
+    margin: wire['margin'],
   };
 }

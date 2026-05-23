@@ -13,13 +13,15 @@ export interface NotEqualsConditionResponse {
 }
 
 export const ZNotEqualsCondition = z.object({
-  "kind": z.literal('not_equals'),
-  "expected": z.unknown(),
+  kind: z.literal('not_equals'),
+  expected: z.unknown(),
 }) as z.ZodType<NotEqualsCondition>;
 
-export function deserializeNotEqualsCondition(wire: NotEqualsConditionResponse): NotEqualsCondition {
+export function deserializeNotEqualsCondition(
+  wire: NotEqualsConditionResponse
+): NotEqualsCondition {
   return {
-    kind: wire["kind"],
-    expected: wire["expected"],
+    kind: wire['kind'],
+    expected: wire['expected'],
   };
 }

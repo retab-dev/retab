@@ -24,17 +24,19 @@ export interface WorkflowSnapshotRefResponse {
 }
 
 export const ZWorkflowSnapshotRef = z.object({
-  "workflowId": z.string(),
-  "versionId": z.string(),
-  "nameAtRunTime": z.string(),
-  "requestedVersion": z.string().optional(),
+  workflowId: z.string(),
+  versionId: z.string(),
+  nameAtRunTime: z.string(),
+  requestedVersion: z.string().optional(),
 }) as z.ZodType<WorkflowSnapshotRef>;
 
-export function deserializeWorkflowSnapshotRef(wire: WorkflowSnapshotRefResponse): WorkflowSnapshotRef {
+export function deserializeWorkflowSnapshotRef(
+  wire: WorkflowSnapshotRefResponse
+): WorkflowSnapshotRef {
   return {
-    workflowId: wire["workflow_id"],
-    versionId: wire["version_id"],
-    nameAtRunTime: wire["name_at_run_time"],
-    requestedVersion: wire["requested_version"],
+    workflowId: wire['workflow_id'],
+    versionId: wire['version_id'],
+    nameAtRunTime: wire['name_at_run_time'],
+    requestedVersion: wire['requested_version'],
   };
 }

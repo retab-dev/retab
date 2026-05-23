@@ -12,11 +12,13 @@ export interface CancelWorkflowRequestResponse {
 }
 
 export const ZCancelWorkflowRequest = z.object({
-  "commandId": z.string().nullable().optional(),
+  commandId: z.string().nullable().optional(),
 }) as z.ZodType<CancelWorkflowRequest>;
 
-export function deserializeCancelWorkflowRequest(wire: CancelWorkflowRequestResponse): CancelWorkflowRequest {
+export function deserializeCancelWorkflowRequest(
+  wire: CancelWorkflowRequestResponse
+): CancelWorkflowRequest {
   return {
-    commandId: wire["command_id"],
+    commandId: wire['command_id'],
   };
 }

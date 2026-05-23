@@ -6,7 +6,6 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use futures_util::stream;
 use futures_util::Stream;
 use serde::Deserialize;
 

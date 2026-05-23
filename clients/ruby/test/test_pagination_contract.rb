@@ -20,8 +20,8 @@
 # See .notes/blueprints/sdk-pagination-contract.md for the full
 # cross-language contract.
 
-require 'test_helper'
-require 'set'
+require "test_helper"
+require "set"
 
 class PaginationContractTest < Minitest::Test
   # Resource registry: every list method the SDK exposes off
@@ -33,54 +33,150 @@ class PaginationContractTest < Minitest::Test
   # blob that the resource model accepts. `invoke_proc` calls the list
   # method with the smallest valid argument set.
   REGISTRY = [
-    { service: :classifications, path: '/v1/classifications', sample: '{}',
-      invoke: ->(c) { c.classifications.list } },
-    { service: :edit_templates, path: '/v1/edits/templates', sample: '{}',
-      invoke: ->(c) { c.edit_templates.list } },
-    { service: :edits, path: '/v1/edits', sample: '{}',
-      invoke: ->(c) { c.edits.list } },
-    { service: :experiment_run_results, path: '/v1/workflows/experiments/results', sample: '{}',
-      invoke: ->(c) { c.experiment_run_results.list(run_id: 'run_x') } },
-    { service: :experiment_runs, path: '/v1/workflows/experiments/runs', sample: '{}',
-      invoke: ->(c) { c.experiment_runs.list } },
-    { service: :extractions, path: '/v1/extractions', sample: '{}',
-      invoke: ->(c) { c.extractions.list } },
-    { service: :files, path: '/v1/files', sample: '{}',
-      invoke: ->(c) { c.files.list } },
-    { service: :jobs, path: '/v1/jobs', sample: '{}',
-      invoke: ->(c) { c.jobs.list } },
-    { service: :parses, path: '/v1/parses', sample: '{}',
-      invoke: ->(c) { c.parses.list } },
-    { service: :partitions, path: '/v1/partitions', sample: '{}',
-      invoke: ->(c) { c.partitions.list } },
-    { service: :splits, path: '/v1/splits', sample: '{}',
-      invoke: ->(c) { c.splits.list } },
-    { service: :workflow_artifacts, path: '/v1/workflows/artifacts', sample: '{}',
-      invoke: ->(c) { c.workflow_artifacts.list(run_id: 'run_x') } },
-    { service: :workflow_block_executions, path: '/v1/workflows/blocks/executions', sample: '{}',
-      invoke: ->(c) { c.workflow_block_executions.list(run_id: 'run_x', block_id: 'blk_x') } },
-    { service: :workflow_blocks, path: '/v1/workflows/blocks', sample: '{}',
-      invoke: ->(c) { c.workflow_blocks.list(workflow_id: 'wf_x') } },
-    { service: :workflow_edges, path: '/v1/workflows/edges', sample: '{}',
-      invoke: ->(c) { c.workflow_edges.list(workflow_id: 'wf_x') } },
-    { service: :workflow_experiments, path: '/v1/workflows/experiments', sample: '{}',
-      invoke: ->(c) { c.workflow_experiments.list(workflow_id: 'wf_x') } },
-    { service: :workflow_review_versions, path: '/v1/workflows/reviews/versions', sample: '{}',
-      invoke: ->(c) { c.workflow_review_versions.list(review_id: 'rev_x') } },
-    { service: :workflow_reviews, path: '/v1/workflows/reviews', sample: '{}',
-      invoke: ->(c) { c.workflow_reviews.list } },
-    { service: :workflow_runs, path: '/v1/workflows/runs', sample: '{}',
-      invoke: ->(c) { c.workflow_runs.list } },
-    { service: :workflow_steps, path: '/v1/workflows/steps', sample: '{}',
-      invoke: ->(c) { c.workflow_steps.list } },
-    { service: :workflow_test_run_results, path: '/v1/workflows/tests/results', sample: '{}',
-      invoke: ->(c) { c.workflow_test_run_results.list(run_id: 'run_x') } },
-    { service: :workflow_test_runs, path: '/v1/workflows/tests/runs', sample: '{}',
-      invoke: ->(c) { c.workflow_test_runs.list } },
-    { service: :workflow_tests, path: '/v1/workflows/tests', sample: '{}',
-      invoke: ->(c) { c.workflow_tests.list(workflow_id: 'wf_x') } },
-    { service: :workflows, path: '/v1/workflows', sample: '{}',
-      invoke: ->(c) { c.workflows.list } },
+    {
+      service: :classifications,
+      path: "/v1/classifications",
+      sample: "{}",
+      invoke: -> (c) { c.classifications.list }
+    },
+    {
+      service: :edit_templates,
+      path: "/v1/edits/templates",
+      sample: "{}",
+      invoke: -> (c) { c.edit_templates.list }
+    },
+    {
+      service: :edits,
+      path: "/v1/edits",
+      sample: "{}",
+      invoke: -> (c) { c.edits.list }
+    },
+    {
+      service: :experiment_run_results,
+      path: "/v1/workflows/experiments/results",
+      sample: "{}",
+      invoke: -> (c) { c.experiment_run_results.list(run_id: "run_x") }
+    },
+    {
+      service: :experiment_runs,
+      path: "/v1/workflows/experiments/runs",
+      sample: "{}",
+      invoke: -> (c) { c.experiment_runs.list }
+    },
+    {
+      service: :extractions,
+      path: "/v1/extractions",
+      sample: "{}",
+      invoke: -> (c) { c.extractions.list }
+    },
+    {
+      service: :files,
+      path: "/v1/files",
+      sample: "{}",
+      invoke: -> (c) { c.files.list }
+    },
+    {
+      service: :jobs,
+      path: "/v1/jobs",
+      sample: "{}",
+      invoke: -> (c) { c.jobs.list }
+    },
+    {
+      service: :parses,
+      path: "/v1/parses",
+      sample: "{}",
+      invoke: -> (c) { c.parses.list }
+    },
+    {
+      service: :partitions,
+      path: "/v1/partitions",
+      sample: "{}",
+      invoke: -> (c) { c.partitions.list }
+    },
+    {
+      service: :splits,
+      path: "/v1/splits",
+      sample: "{}",
+      invoke: -> (c) { c.splits.list }
+    },
+    {
+      service: :workflow_artifacts,
+      path: "/v1/workflows/artifacts",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_artifacts.list(run_id: "run_x") }
+    },
+    {
+      service: :workflow_block_executions,
+      path: "/v1/workflows/blocks/executions",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_block_executions.list(run_id: "run_x", block_id: "blk_x") }
+    },
+    {
+      service: :workflow_blocks,
+      path: "/v1/workflows/blocks",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_blocks.list(workflow_id: "wf_x") }
+    },
+    {
+      service: :workflow_edges,
+      path: "/v1/workflows/edges",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_edges.list(workflow_id: "wf_x") }
+    },
+    {
+      service: :workflow_experiments,
+      path: "/v1/workflows/experiments",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_experiments.list(workflow_id: "wf_x") }
+    },
+    {
+      service: :workflow_review_versions,
+      path: "/v1/workflows/reviews/versions",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_review_versions.list(review_id: "rev_x") }
+    },
+    {
+      service: :workflow_reviews,
+      path: "/v1/workflows/reviews",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_reviews.list }
+    },
+    {
+      service: :workflow_runs,
+      path: "/v1/workflows/runs",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_runs.list }
+    },
+    {
+      service: :workflow_steps,
+      path: "/v1/workflows/steps",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_steps.list }
+    },
+    {
+      service: :workflow_test_run_results,
+      path: "/v1/workflows/tests/results",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_test_run_results.list(run_id: "run_x") }
+    },
+    {
+      service: :workflow_test_runs,
+      path: "/v1/workflows/tests/runs",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_test_runs.list }
+    },
+    {
+      service: :workflow_tests,
+      path: "/v1/workflows/tests",
+      sample: "{}",
+      invoke: -> (c) { c.workflow_tests.list(workflow_id: "wf_x") }
+    },
+    {
+      service: :workflows,
+      path: "/v1/workflows",
+      sample: "{}",
+      invoke: -> (c) { c.workflows.list }
+    }
   ].freeze
 
   # Resources that legitimately bypass the central `request_page` helper.
@@ -89,7 +185,7 @@ class PaginationContractTest < Minitest::Test
   KNOWN_BYPASS = [].freeze
 
   def setup
-    @client = Retab::Client.new(api_key: 'sk_test_123')
+    @client = Retab::Client.new(api_key: "sk_test_123")
   end
 
   # --- Discovery test ------------------------------------------------------
@@ -106,7 +202,7 @@ class PaginationContractTest < Minitest::Test
     services_with_list = []
 
     client_methods.each do |meth|
-      next if meth.to_s.start_with?('_')
+      next if meth.to_s.start_with?("_")
       service = @client.send(meth)
       next unless service.respond_to?(:list)
       services_with_list << meth
@@ -131,27 +227,33 @@ class PaginationContractTest < Minitest::Test
   REGISTRY.each do |row|
     define_method("test_#{row[:service]}_pagination_walks_every_page") do
       first_body = JSON.generate(
-        'data' => [JSON.parse(row[:sample])],
-        'list_metadata' => { 'before' => nil, 'after' => 'cursor-2' },
+        "data" => [JSON.parse(row[:sample])],
+        "list_metadata" => {"before" => nil, "after" => "cursor-2"}
       )
       second_body = JSON.generate(
-        'data' => [JSON.parse(row[:sample])],
-        'list_metadata' => { 'before' => nil, 'after' => nil },
+        "data" => [JSON.parse(row[:sample])],
+        "list_metadata" => {"before" => nil, "after" => nil}
       )
 
       stub = stub_request(:get, %r{\Ahttps://api\.retab\.com#{Regexp.escape(row[:path])}(\?|\z)})
         .to_return(
-          { body: first_body, status: 200 },
-          { body: second_body, status: 200 },
+          {body: first_body, status: 200},
+          {body: second_body, status: 200}
         )
 
       result = row[:invoke].call(@client)
-      assert_kind_of Retab::PaginatedList, result,
+      assert_kind_of(
+        Retab::PaginatedList,
+        result,
         "#{row[:service]}.list returned #{result.class}, expected Retab::PaginatedList"
+      )
 
       all_items = result.to_a
-      assert_equal 2, all_items.length,
+      assert_equal(
+        2,
+        all_items.length,
         "#{row[:service]}.list#each yielded #{all_items.length} items across 2 pages; closure is not wired"
+      )
 
       assert_requested(stub, times: 2)
     end

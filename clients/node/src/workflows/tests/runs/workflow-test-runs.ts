@@ -2,34 +2,87 @@
 
 import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
-import type { WorkflowTestRun, WorkflowTestRunResponse } from '../../../workflows/tests/runs/interfaces/index.js';
+import type {
+  WorkflowTestRun,
+  WorkflowTestRunResponse,
+} from '../../../workflows/tests/runs/interfaces/index.js';
 import { deserializeWorkflowTestRun } from '../../../workflows/tests/runs/interfaces/index.js';
 
 export class WorkflowTestRuns {
-
-  constructor(private readonly client: Retab) {
-  }
+  constructor(private readonly client: Retab) {}
 
   /** List Test Execution Runs */
-  async list(options?: { workflowId?: string | null | undefined; testId?: string | null | undefined; targetBlockId?: string | null | undefined; status?: string | null | undefined; statuses?: string[] | null | undefined; excludeStatus?: string | null | undefined; triggerType?: string | null | undefined; triggerTypes?: string[] | null | undefined; fromDate?: Date | null | undefined; toDate?: Date | null | undefined; sortBy?: string | undefined; limit?: number; before?: string; after?: string; order?: 'asc' | 'desc' }): Promise<PaginatedList<WorkflowTestRun>> {
-    return this.client._fetchPage(deserializeWorkflowTestRun, { method: 'GET', path: "/v1/workflows/tests/runs", query: { "workflow_id": options?.workflowId, "test_id": options?.testId, "target_block_id": options?.targetBlockId, "status": options?.status, "statuses": options?.statuses, "exclude_status": options?.excludeStatus, "trigger_type": options?.triggerType, "trigger_types": options?.triggerTypes, "from_date": options?.fromDate, "to_date": options?.toDate, "sort_by": options?.sortBy, limit: options?.limit, before: options?.before, after: options?.after, order: options?.order }, body: undefined });
+  async list(options?: {
+    workflowId?: string | null | undefined;
+    testId?: string | null | undefined;
+    targetBlockId?: string | null | undefined;
+    status?: string | null | undefined;
+    statuses?: string[] | null | undefined;
+    excludeStatus?: string | null | undefined;
+    triggerType?: string | null | undefined;
+    triggerTypes?: string[] | null | undefined;
+    fromDate?: Date | null | undefined;
+    toDate?: Date | null | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowTestRun>> {
+    return this.client._fetchPage(deserializeWorkflowTestRun, {
+      method: 'GET',
+      path: '/v1/workflows/tests/runs',
+      query: {
+        workflow_id: options?.workflowId,
+        test_id: options?.testId,
+        target_block_id: options?.targetBlockId,
+        status: options?.status,
+        statuses: options?.statuses,
+        exclude_status: options?.excludeStatus,
+        trigger_type: options?.triggerType,
+        trigger_types: options?.triggerTypes,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
   }
 
   /** Create Test Run */
   async create(body: unknown): Promise<WorkflowTestRun> {
-    const __wire = await this.client.request<WorkflowTestRunResponse>({ method: 'POST', path: "/v1/workflows/tests/runs", query: undefined, body: body });
+    const __wire = await this.client.request<WorkflowTestRunResponse>({
+      method: 'POST',
+      path: '/v1/workflows/tests/runs',
+      query: undefined,
+      body: body,
+    });
     return deserializeWorkflowTestRun(__wire);
   }
 
   /** Get Test Execution Run */
   async get(runId: string): Promise<WorkflowTestRun> {
-    const __wire = await this.client.request<WorkflowTestRunResponse>({ method: 'GET', path: `/v1/workflows/tests/runs/${runId}`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowTestRunResponse>({
+      method: 'GET',
+      path: `/v1/workflows/tests/runs/${runId}`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowTestRun(__wire);
   }
 
   /** Cancel Test Execution Run */
   async cancel(runId: string): Promise<WorkflowTestRun> {
-    const __wire = await this.client.request<WorkflowTestRunResponse>({ method: 'POST', path: `/v1/workflows/tests/runs/${runId}/cancel`, query: undefined, body: undefined });
+    const __wire = await this.client.request<WorkflowTestRunResponse>({
+      method: 'POST',
+      path: `/v1/workflows/tests/runs/${runId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
     return deserializeWorkflowTestRun(__wire);
   }
 }
