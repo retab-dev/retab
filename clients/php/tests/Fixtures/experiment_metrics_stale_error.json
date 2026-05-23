@@ -1,0 +1,16 @@
+{
+  "kind": "stale_metrics",
+  "error": "stale_metrics",
+  "experiment_id": "experiment_id_01234",
+  "stale_reasons": [
+    "test_stale_reasons"
+  ],
+  "last_run": {
+    "run_id": "run_id_01234",
+    "definition_fingerprint": "test_definition_fingerprint",
+    "score": 1,
+    "created_at": "2023-01-01T00:00:00.000Z"
+  },
+  "current_config_fingerprint": "test_current_config_fingerprint",
+  "message": "test_message"
+}

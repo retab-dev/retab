@@ -1,0 +1,6 @@
+{
+  "kind": "similarity_gte",
+  "reference": {},
+  "threshold": 1,
+  "method": "levenshtein"
+}

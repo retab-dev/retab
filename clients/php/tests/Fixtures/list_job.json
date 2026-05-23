@@ -1,0 +1,50 @@
+{
+  "data": [
+    {
+      "id": "01234",
+      "object": "job",
+      "status": "validating",
+      "endpoint": "/v1/extractions",
+      "error": {
+        "code": "test_code",
+        "message": "test_message",
+        "details": {
+          "key": {}
+        }
+      },
+      "warnings": [
+        {
+          "code": "test_code",
+          "message": "test_message",
+          "details": {
+            "key": {}
+          }
+        }
+      ],
+      "created_at": "test_created_at",
+      "started_at": "test_started_at",
+      "completed_at": "test_completed_at",
+      "expires_at": "test_expires_at",
+      "metadata": {
+        "key": "test_value"
+      },
+      "cancelled": true,
+      "attempt_count": 1,
+      "last_attempt_at": "test_last_attempt_at",
+      "last_failure_code": "test_last_failure_code",
+      "request": {
+        "key": {}
+      },
+      "response": {
+        "status_code": 1,
+        "body": {
+          "key": {}
+        }
+      }
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}
