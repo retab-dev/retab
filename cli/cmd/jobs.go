@@ -270,10 +270,10 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := retab.JobsListParams{PaginationParams: collectListParams(cmd)}
-		if params.Before != nil && params.After != nil {
-			return fmt.Errorf("--before and --after are mutually exclusive")
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
 		}
+		params := retab.JobsListParams{PaginationParams: collectListParams(cmd)}
 		if v, _ := cmd.Flags().GetString("id"); v != "" {
 			params.JobID = ptr(v)
 		}
@@ -666,7 +666,8 @@ func init() {
 
 	jobsListCmd.Flags().String("before", "", "job id: return items before this id (mutually exclusive with --after)")
 	jobsListCmd.Flags().String("after", "", "job id: return items after this id (mutually exclusive with --before)")
-	jobsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 	jobsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
 	jobsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	jobsListCmd.Flags().String("id", "", "filter by job id")

@@ -1262,9 +1262,7 @@ func init() {
 	workflowsRunsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
-	// Mutex enforced inside RunE via validateBeforeAfterMutex so the
-	// CLI surfaces the concise handwritten message instead of cobra's
-	// default mutual-exclusion line.
+	workflowsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")

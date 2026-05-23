@@ -696,8 +696,7 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsTestsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
-	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
-	// handwritten message; see workflowsListCmd for the rationale).
+	workflowsTestsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
