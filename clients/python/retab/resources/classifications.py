@@ -149,7 +149,7 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
     def delete(self, classification_id: str, **extra_params: Any) -> None:
         """Delete Classification"""
         request = self.prepare_delete(classification_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -205,7 +205,7 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
     async def delete(self, classification_id: str, **extra_params: Any) -> None:
         """Delete Classification"""
         request = self.prepare_delete(classification_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
 

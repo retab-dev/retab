@@ -104,7 +104,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
     def delete(self, edge_id: str, **extra_params: Any) -> None:
         """Delete Edge Delete an edge from a workflow."""
         request = self.prepare_delete(edge_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -144,7 +144,7 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
     async def delete(self, edge_id: str, **extra_params: Any) -> None:
         """Delete Edge Delete an edge from a workflow."""
         request = self.prepare_delete(edge_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
 

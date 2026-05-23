@@ -138,7 +138,7 @@ class Splits(SyncAPIResource, SplitsMixin):
     def delete(self, split_id: str, **extra_params: Any) -> None:
         """Delete Split"""
         request = self.prepare_delete(split_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -186,7 +186,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
     async def delete(self, split_id: str, **extra_params: Any) -> None:
         """Delete Split"""
         request = self.prepare_delete(split_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
 

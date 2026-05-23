@@ -140,7 +140,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
     def delete(self, partition_id: str, **extra_params: Any) -> None:
         """Delete Partition"""
         request = self.prepare_delete(partition_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -189,7 +189,7 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
     async def delete(self, partition_id: str, **extra_params: Any) -> None:
         """Delete Partition"""
         request = self.prepare_delete(partition_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
 
