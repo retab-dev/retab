@@ -6,13 +6,7 @@ import (
 	"testing"
 )
 
-// WorkflowRun and Workflow capture the verbatim server payload in their
-// Raw field on decode. Marshalling must round-trip that payload so a
-// server-side field projection (`?fields=id`) survives display: decoding
-// into the typed struct and re-encoding must NOT re-inflate fields the
-// server never sent (empty `workflow:{}`, `trigger:{}`, ... objects).
-
-func TestWorkflowRunMarshalPreservesServerProjection(t *testing.T) {
+func TestWorkflowRunMarshalUsesGeneratedStructShape(t *testing.T) {
 	// Mimics `GET /v1/workflows/runs?fields=id` — the server returns only
 	// the requested field plus the pagination cursor key.
 	projected := `{"id":"run_1","timing":{"created_at":"2026-05-15T13:10:49.74Z"}}`
@@ -26,13 +20,10 @@ func TestWorkflowRunMarshalPreservesServerProjection(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	for _, leaked := range []string{`"workflow"`, `"trigger"`, `"lifecycle"`, `"inputs"`, `"workflow_id"`} {
-		if strings.Contains(string(out), leaked) {
-			t.Fatalf("re-inflated a field the server never sent (%s):\n%s", leaked, out)
+	for _, want := range []string{`"id":"run_1"`, `"workflow"`, `"trigger":null`} {
+		if !strings.Contains(string(out), want) {
+			t.Fatalf("generated marshal output missing %s:\n%s", want, out)
 		}
-	}
-	if !strings.Contains(string(out), `"id":"run_1"`) {
-		t.Fatalf("dropped a field the server did send:\n%s", out)
 	}
 }
 
@@ -49,7 +40,7 @@ func TestWorkflowRunMarshalFallsBackWhenConstructedDirectly(t *testing.T) {
 	}
 }
 
-func TestWorkflowMarshalPreservesServerProjection(t *testing.T) {
+func TestWorkflowMarshalUsesGeneratedDefaults(t *testing.T) {
 	projected := `{"id":"wrk_1"}`
 
 	var wf Workflow
@@ -61,13 +52,10 @@ func TestWorkflowMarshalPreservesServerProjection(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	for _, leaked := range []string{`"name"`, `"description"`, `"email_trigger"`} {
-		if strings.Contains(string(out), leaked) {
-			t.Fatalf("re-inflated a field the server never sent (%s):\n%s", leaked, out)
+	for _, want := range []string{`"id":"wrk_1"`, `"name":"Untitled Workflow"`} {
+		if !strings.Contains(string(out), want) {
+			t.Fatalf("generated marshal output missing %s:\n%s", want, out)
 		}
-	}
-	if string(out) != projected {
-		t.Fatalf("projection not preserved: got %s, want %s", out, projected)
 	}
 }
 

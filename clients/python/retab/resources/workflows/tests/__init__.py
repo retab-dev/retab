@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
@@ -23,7 +23,7 @@ class WorkflowTestsMixin:
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Tests"""
@@ -55,7 +55,9 @@ class WorkflowTestsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateWorkflowTestRequest(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion)
+        payload = CreateWorkflowTestRequest(
+            workflow_id=cast(Any, workflow_id), target=cast(Any, target), source=cast(Any, source), name=cast(Any, name), assertion=cast(Any, assertion)
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/tests", params=params or None, data=data)
 
@@ -81,7 +83,7 @@ class WorkflowTestsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = UpdateWorkflowTestRequest(name=name, assertion=assertion, source=source)
+        payload = UpdateWorkflowTestRequest(name=cast(Any, name), assertion=cast(Any, assertion), source=cast(Any, source))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/tests/{test_id}", params=params or None, data=data)
 
@@ -110,12 +112,12 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowTest]:
         """List Tests"""
-        request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
-        return self.request_page(request, model=WorkflowTest)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowTest)
 
     def create(
         self,
@@ -127,14 +129,14 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         **extra_params: Any,
     ) -> WorkflowTest:
         """Create Test"""
-        request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     def get(self, test_id: str, **extra_params: Any) -> WorkflowTest:
         """Get Test"""
-        request = self.prepare_get(test_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(test_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     def update(
@@ -146,14 +148,14 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         **extra_params: Any,
     ) -> WorkflowTest:
         """Update Test"""
-        request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     def delete(self, test_id: str, **extra_params: Any) -> None:
         """Delete Test"""
-        request = self.prepare_delete(test_id, **extra_params)
-        self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(test_id, **extra_params)
+        self._client._prepared_request(prepared_request)
         return None
 
 
@@ -172,12 +174,12 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowTest]:
         """List Tests"""
-        request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
-        return await self.request_page(request, model=WorkflowTest)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        return await self.request_page(prepared_request, model=WorkflowTest)
 
     async def create(
         self,
@@ -189,14 +191,14 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         **extra_params: Any,
     ) -> WorkflowTest:
         """Create Test"""
-        request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     async def get(self, test_id: str, **extra_params: Any) -> WorkflowTest:
         """Get Test"""
-        request = self.prepare_get(test_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(test_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     async def update(
@@ -208,14 +210,14 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         **extra_params: Any,
     ) -> WorkflowTest:
         """Update Test"""
-        request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     async def delete(self, test_id: str, **extra_params: Any) -> None:
         """Delete Test"""
-        request = self.prepare_delete(test_id, **extra_params)
-        await self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(test_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
         return None
 
 

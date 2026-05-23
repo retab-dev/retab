@@ -73,7 +73,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	blocks, err := client.Workflows.Blocks.List(ctx, "wf_aaa", nil)
+	blocks, err := client.WorkflowBlocks.List(ctx, &WorkflowBlocksListParams{WorkflowID: "wf_aaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("blocks.ListMetadata = %#v", blocks.ListMetadata)
 	}
 
-	edges, err := client.Workflows.Edges.List(ctx, "wf_aaa", nil)
+	edges, err := client.WorkflowEdges.List(ctx, &WorkflowEdgesListParams{WorkflowID: "wf_aaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,15 +92,16 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("edges = %#v", edges)
 	}
 
-	artifacts, err := client.Workflows.Artifacts.List(ctx, ListWorkflowArtifactsParams{RunID: "run_aaa"})
+	runID := "run_aaa"
+	artifacts, err := client.WorkflowArtifacts.List(ctx, &WorkflowArtifactsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(artifacts.Data) != 1 || artifacts.Data[0]["id"] != "ext_123" {
+	if len(artifacts.Data) != 1 || artifacts.Data[0].ID != "ext_123" {
 		t.Fatalf("artifacts = %#v", artifacts)
 	}
 
-	steps, err := client.Workflows.Steps.List(ctx, "run_aaa", nil)
+	steps, err := client.WorkflowSteps.List(ctx, &WorkflowStepsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatal(err)
 	}

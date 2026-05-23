@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -38,7 +39,7 @@ func TestWorkflowExperimentsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Experiments.List(context.Background(), "wf_1")
+	page, err := client.WorkflowExperiments.List(context.Background(), &WorkflowExperimentsListParams{WorkflowID: "wf_1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,22 +99,27 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Experiments.Runs.List(context.Background(), &ListExperimentRunsParams{
-		WorkflowID:    "wf_1",
-		ExperimentID:  "exp_1",
-		BlockID:       "block_1",
-		Status:        "completed",
-		Statuses:      []string{"completed", "error"},
-		ExcludeStatus: "cancelled",
-		TriggerType:   "api",
-		TriggerTypes:  []string{"api", "manual_run"},
-		FromDate:      "2026-05-01",
-		ToDate:        "2026-05-18",
-		SortBy:        "created_at",
-		Before:        "exprun_before",
-		After:         "exprun_after",
-		Limit:         10,
-		Order:         "asc",
+	completedStatus := WorkflowExperimentsStatus(LatestBlockTestRunSummaryStatusCompleted)
+	cancelledStatus := WorkflowExperimentsExcludeStatus(LatestBlockTestRunSummaryStatusCancelled)
+	limit := 10
+	page, err := client.ExperimentRuns.List(context.Background(), &ExperimentRunsListParams{
+		WorkflowID:    ptrString("wf_1"),
+		ExperimentID:  ptrString("exp_1"),
+		BlockID:       ptrString("block_1"),
+		Status:        &completedStatus,
+		Statuses:      ptrString("completed,error"),
+		ExcludeStatus: &cancelledStatus,
+		TriggerType:   ptrString("api"),
+		TriggerTypes:  ptrString("api,manual_run"),
+		FromDate:      ptrString("2026-05-01"),
+		ToDate:        ptrString("2026-05-18"),
+		SortBy:        ptrString("created_at"),
+		PaginationParams: PaginationParams{
+			Before: ptrString("exprun_before"),
+			After:  ptrString("exprun_after"),
+			Limit:  &limit,
+			Order:  ptrString("asc"),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -141,15 +147,15 @@ func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Tests.List(context.Background(), ListWorkflowTestsRequest{WorkflowID: "wf_1"})
+	page, err := client.WorkflowTests.List(context.Background(), &WorkflowTestsListParams{WorkflowID: "wf_1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Data) != 1 {
 		t.Fatalf("page.Data length = %d, want 1", len(page.Data))
 	}
-	if id, _ := page.Data[0]["id"].(string); id != "wfnodetest_1" {
-		t.Fatalf("page.Data[0][id] = %v, want wfnodetest_1", page.Data[0]["id"])
+	if page.Data[0].ID != "wfnodetest_1" {
+		t.Fatalf("page.Data[0].ID = %v, want wfnodetest_1", page.Data[0].ID)
 	}
 }
 
@@ -165,12 +171,10 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 			query.Get("test_id") != "wfnodetest_1" ||
 			query.Get("target_block_id") != "block_1" ||
 			query.Get("status") != "passed" ||
-			query.Get("statuses") != "passed,failed" ||
+			strings.Join(query["statuses"], ",") != "passed,failed" ||
 			query.Get("exclude_status") != "cancelled" ||
 			query.Get("trigger_type") != "api" ||
-			query.Get("trigger_types") != "api,manual_run" ||
-			query.Get("from_date") != "2026-05-01" ||
-			query.Get("to_date") != "2026-05-18" ||
+			strings.Join(query["trigger_types"], ",") != "api,manual_run" ||
 			query.Get("sort_by") != "created_at" ||
 			query.Has("fields") ||
 			query.Get("before") != "wftestrun_before" ||
@@ -197,22 +201,23 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Tests.Runs.List(context.Background(), ListWorkflowTestRunsParams{
-		WorkflowID:    "wf_1",
-		TestID:        "wfnodetest_1",
-		TargetBlockID: "block_1",
-		Status:        "passed",
+	limit := 10
+	page, err := client.WorkflowTestRuns.List(context.Background(), &WorkflowTestRunsListParams{
+		WorkflowID:    ptrString("wf_1"),
+		TestID:        ptrString("wfnodetest_1"),
+		TargetBlockID: ptrString("block_1"),
+		Status:        ptrString("passed"),
 		Statuses:      []string{"passed", "failed"},
-		ExcludeStatus: "cancelled",
-		TriggerType:   "api",
+		ExcludeStatus: ptrString("cancelled"),
+		TriggerType:   ptrString("api"),
 		TriggerTypes:  []string{"api", "manual_run"},
-		FromDate:      "2026-05-01",
-		ToDate:        "2026-05-18",
-		SortBy:        "created_at",
-		Before:        "wftestrun_before",
-		After:         "wftestrun_after",
-		Limit:         10,
-		Order:         "asc",
+		SortBy:        ptrString("created_at"),
+		PaginationParams: PaginationParams{
+			Before: ptrString("wftestrun_before"),
+			After:  ptrString("wftestrun_after"),
+			Limit:  &limit,
+			Order:  ptrString("asc"),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -255,21 +260,21 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	result, err := client.Workflows.Tests.Runs.Create(context.Background(), CreateWorkflowTestRunRequest{
-		WorkflowID: "wf_1",
-		TestID:     "wfnodetest_1",
-		NConsensus: 3,
-	})
+	result, err := client.WorkflowTestRuns.Create(context.Background(), WithRequestBody(map[string]any{
+		"workflow_id": "wf_1",
+		"test_id":     "wfnodetest_1",
+		"n_consensus": 3,
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Lifecycle.Status != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
+	if result.Lifecycle == nil || result.Lifecycle.Status == nil || *result.Lifecycle.Status != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID == nil || *result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
 		t.Fatalf("create response lost fields: %#v", result)
 	}
 	if result.ID != "wftestrun_1" {
 		t.Fatalf("run id = %q, want wftestrun_1", result.ID)
 	}
-	if result.Target == nil || (*result.Target)["block_id"] != "block_transform" {
+	if result.Target == nil || result.Target.BlockID != "block_transform" {
 		t.Fatalf("target = %#v, want block_transform", result.Target)
 	}
 	if result.Timing.StartedAt != nil {

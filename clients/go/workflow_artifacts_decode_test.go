@@ -4,11 +4,10 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
-// Pins the live decode contract for `Workflows.Artifacts.List`. The server
+// Pins the live decode contract for `WorkflowArtifacts.List`. The server
 // emits the canonical {data, list_metadata} envelope; PaginatedList[T] is
 // the typed wrapper callers consume.
 
@@ -21,29 +20,14 @@ func TestArtifactsList_AcceptsEnvelopeShape(t *testing.T) {
 	defer srv.Close()
 
 	client := newArtifactsTestClient(t, srv)
-	got, err := client.Workflows.Artifacts.List(context.Background(),
-		ListWorkflowArtifactsParams{RunID: "run_xyz"})
+	runID := "run_xyz"
+	got, err := client.WorkflowArtifacts.List(context.Background(),
+		&WorkflowArtifactsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatalf("List against envelope-shape response: %v", err)
 	}
-	if len(got.Data) != 1 || got.Data[0]["id"] != "art_3" {
+	if len(got.Data) != 1 || got.Data[0].ID != "art_3" {
 		t.Errorf("got %#v, want one artifact with id art_3", got)
-	}
-}
-
-// RunID is required — guards against an accidental unfiltered call.
-// The check returns before any HTTP request, so the base URL is never
-// dialled; a properly-constructed client (services wired up) is still
-// needed because List() is a method on the Artifacts service.
-func TestArtifactsList_RequiresRunID(t *testing.T) {
-	client, err := NewClient("api_key_for_test", WithBaseURL("http://127.0.0.1:0/v1"))
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
-	_, err = client.Workflows.Artifacts.List(context.Background(),
-		ListWorkflowArtifactsParams{})
-	if err == nil || !strings.Contains(err.Error(), "runID is required") {
-		t.Errorf("expected runID-required error, got %v", err)
 	}
 }
 
@@ -70,7 +54,7 @@ func newArtifactsListServer(t *testing.T, jsonBody string) *httptest.Server {
 // it doesn't collide with the same-named helper in resources_test.go.
 func newArtifactsTestClient(t *testing.T, srv *httptest.Server) *Client {
 	t.Helper()
-	client, err := NewClient("api_key_for_test", WithBaseURL(srv.URL+"/v1"))
+	client, err := NewClient("api_key_for_test", WithBaseURL(srv.URL))
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
@@ -24,7 +24,13 @@ from .runs import ExperimentRuns, AsyncExperimentRuns
 
 class WorkflowExperimentsMixin:
     def prepare_list(
-        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = "desc", **extra_params: Any
+        self,
+        workflow_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
     ) -> PreparedRequest:
         """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
         params: dict[str, Any] = {
@@ -57,13 +63,13 @@ class WorkflowExperimentsMixin:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         payload = CreateExperimentRequest(
-            workflow_id=workflow_id,
-            block_id=block_id,
-            document_captures=document_captures,
-            documents=documents,
-            n_consensus=n_consensus,
-            name=name,
-            source_experiment_id=source_experiment_id,
+            workflow_id=cast(Any, workflow_id),
+            block_id=cast(Any, block_id),
+            document_captures=cast(Any, document_captures),
+            documents=cast(Any, documents),
+            n_consensus=cast(Any, n_consensus),
+            name=cast(Any, name),
+            source_experiment_id=cast(Any, source_experiment_id),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/experiments", params=params or None, data=data)
@@ -91,7 +97,7 @@ class WorkflowExperimentsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = UpdateExperimentRequest(document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name)
+        payload = UpdateExperimentRequest(document_captures=cast(Any, document_captures), documents=cast(Any, documents), n_consensus=cast(Any, n_consensus), name=cast(Any, name))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/experiments/{experiment_id}", params=params or None, data=data)
 
@@ -115,11 +121,17 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         self.runs = ExperimentRuns(client=client)
 
     def list(
-        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = "desc", **extra_params: Any
+        self,
+        workflow_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
     ) -> PaginatedList[WorkflowExperiment]:
         """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
-        request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
-        return self.request_page(request, model=WorkflowExperiment)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowExperiment)
 
     def create(
         self,
@@ -133,7 +145,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         **extra_params: Any,
     ) -> WorkflowExperiment:
         """Create Experiment Create an experiment. When ``source_experiment_id`` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
-        request = self.prepare_create(
+        prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             block_id=block_id,
             document_captures=document_captures,
@@ -143,13 +155,13 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
             source_experiment_id=source_experiment_id,
             **extra_params,
         )
-        response = self._client._prepared_request(request)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     def get(self, experiment_id: str, **extra_params: Any) -> WorkflowExperiment:
         """Get Experiment"""
-        request = self.prepare_get(experiment_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(experiment_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     def update(
@@ -162,14 +174,14 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         **extra_params: Any,
     ) -> WorkflowExperiment:
         """Update Experiment"""
-        request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     def delete(self, experiment_id: str, **extra_params: Any) -> None:
         """Delete Experiment"""
-        request = self.prepare_delete(experiment_id, **extra_params)
-        self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(experiment_id, **extra_params)
+        self._client._prepared_request(prepared_request)
         return None
 
 
@@ -183,11 +195,17 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         self.runs = AsyncExperimentRuns(client=client)
 
     async def list(
-        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = "desc", **extra_params: Any
+        self,
+        workflow_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowExperiment]:
         """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
-        request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
-        return await self.request_page(request, model=WorkflowExperiment)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        return await self.request_page(prepared_request, model=WorkflowExperiment)
 
     async def create(
         self,
@@ -201,7 +219,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         **extra_params: Any,
     ) -> WorkflowExperiment:
         """Create Experiment Create an experiment. When ``source_experiment_id`` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
-        request = self.prepare_create(
+        prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             block_id=block_id,
             document_captures=document_captures,
@@ -211,13 +229,13 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
             source_experiment_id=source_experiment_id,
             **extra_params,
         )
-        response = await self._client._prepared_request(request)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     async def get(self, experiment_id: str, **extra_params: Any) -> WorkflowExperiment:
         """Get Experiment"""
-        request = self.prepare_get(experiment_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(experiment_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     async def update(
@@ -230,14 +248,14 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         **extra_params: Any,
     ) -> WorkflowExperiment:
         """Update Experiment"""
-        request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     async def delete(self, experiment_id: str, **extra_params: Any) -> None:
         """Delete Experiment"""
-        request = self.prepare_delete(experiment_id, **extra_params)
-        await self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(experiment_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
         return None
 
 

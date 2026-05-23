@@ -81,8 +81,8 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         | FunctionInvocation
     ):
         """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
-        request = self.prepare_get(artifact_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(artifact_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return TypeAdapter(
             ExtractionWorkflowArtifact
             | SplitWorkflowArtifact
@@ -109,8 +109,8 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         **extra_params: Any,
     ) -> PaginatedList[WorkflowArtifact]:
         """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
-        request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
-        return self.request_page(request, model=WorkflowArtifact)
+        prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowArtifact)
 
 
 class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
@@ -132,8 +132,8 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         | FunctionInvocation
     ):
         """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
-        request = self.prepare_get(artifact_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(artifact_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return TypeAdapter(
             ExtractionWorkflowArtifact
             | SplitWorkflowArtifact
@@ -160,8 +160,8 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowArtifact]:
         """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
-        request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
-        return await self.request_page(request, model=WorkflowArtifact)
+        prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
+        return await self.request_page(prepared_request, model=WorkflowArtifact)
 
 
 __all__ = ["WorkflowArtifacts", "AsyncWorkflowArtifacts", "WorkflowArtifactsMixin"]

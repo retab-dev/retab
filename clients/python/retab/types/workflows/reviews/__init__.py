@@ -3,26 +3,26 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 
 
-ActorKind = Literal["model", "agent", "human"]
+ActorKind: TypeAlias = Literal["model", "agent", "human"]
 
 
-ReviewVerdict = Literal["approved", "rejected"]
+ReviewVerdict: TypeAlias = Literal["approved", "rejected"]
 
 
-ReviewBlockType = Literal["extract", "split", "classifier", "for_each"]
+ReviewBlockType: TypeAlias = Literal["extract", "split", "classifier", "for_each"]
 
 
-SubmissionStatus = Literal["accepted", "already_applied", "conflict"]
+SubmissionStatus: TypeAlias = Literal["accepted", "already_applied", "conflict"]
 
 
-ResumeStatus = Literal["resumed", "pending", "skipped"]
+ResumeStatus: TypeAlias = Literal["resumed", "pending", "skipped"]
 
 
-ReviewDecisionStatus = Literal["pending", "approved", "rejected", "decided", "all"]
+ReviewDecisionStatus: TypeAlias = Literal["pending", "approved", "rejected", "decided", "all"]
 
 
 class Actor(BaseModel):
@@ -276,9 +276,9 @@ class SubmitDecisionResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    submission_status: SubmissionStatus | None = Field(default="accepted")
+    submission_status: SubmissionStatus | None = Field(default=cast(SubmissionStatus, "accepted"))
     review: Review
-    resume_status: ResumeStatus | None = Field(default="resumed")
+    resume_status: ResumeStatus | None = Field(default=cast(ResumeStatus, "resumed"))
     resume_error: str | None = None
 
 

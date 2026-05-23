@@ -5,11 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 type capturedRequest struct {
@@ -59,16 +56,16 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "extractions create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Extractions.Create(ctx, ExtractionCreateRequest{
+				_, err := client.Extractions.Create(ctx, &ExtractionsCreateParams{
 					Document:           document,
-					JSONSchema:         Resource{"type": "object"},
-					Model:              "retab-small",
-					ImageResolutionDPI: 192,
-					NConsensus:         2,
-					Instructions:       "read totals",
+					JSONSchema:         map[string]interface{}{"type": "object"},
+					Model:              ptrTo("retab-small"),
+					ImageResolutionDpi: ptrTo(192),
+					NConsensus:         ptrTo(2),
+					Instructions:       ptrTo("read totals"),
 					Metadata:           map[string]string{"source": "test"},
-					AdditionalMessages: []Resource{{"role": "user", "content": "extra"}},
-					BustCache:          true,
+					AdditionalMessages: []map[string]interface{}{{"role": "user", "content": "extra"}},
+					BustCache:          ptrTo(true),
 				})
 				return err
 			},
@@ -86,19 +83,17 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "splits create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Splits.Create(ctx, SplitCreateRequest{
+				_, err := client.Splits.Create(ctx, &SplitsCreateParams{
 					Document: document,
-					Subdocuments: []SplitSubdocument{{
+					Subdocuments: []*Subdocument{{
 						Name:                   "invoice",
-						Description:            "invoice pages",
-						PartitionKey:           "invoice_number",
-						AllowOverlap:           true,
-						AllowMultipleInstances: true,
+						Description:            ptrTo("invoice pages"),
+						AllowMultipleInstances: ptrTo(true),
 					}},
-					Model:        "retab-small",
-					NConsensus:   3,
-					BustCache:    true,
-					Instructions: "split carefully",
+					Model:        ptrTo("retab-small"),
+					NConsensus:   ptrTo(3),
+					BustCache:    ptrTo(true),
+					Instructions: ptrTo("split carefully"),
 				})
 				return err
 			},
@@ -115,27 +110,24 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				if !ok {
 					t.Fatalf("subdocuments[0] = %#v", subdocuments[0])
 				}
-				if got, _ := subdocument["partition_key"].(string); got != "invoice_number" {
-					t.Fatalf("subdocuments[0].partition_key = %#v", subdocument["partition_key"])
-				}
-				if got, _ := subdocument["allow_overlap"].(bool); got != true {
-					t.Fatalf("subdocuments[0].allow_overlap = %#v", subdocument["allow_overlap"])
+				if got, _ := subdocument["allow_multiple_instances"].(bool); got != true {
+					t.Fatalf("subdocuments[0].allow_multiple_instances = %#v", subdocument["allow_multiple_instances"])
 				}
 			},
 		},
 		{
 			name: "classifications create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Classifications.Create(ctx, ClassificationCreateRequest{
+				_, err := client.Classifications.Create(ctx, &ClassificationsCreateParams{
 					Document: document,
-					Categories: []ClassificationCategory{{
+					Categories: []*Category{{
 						Name:        "invoice",
-						Description: "invoice document",
+						Description: ptrTo("invoice document"),
 					}},
-					Model:        "retab-small",
-					NConsensus:   2,
-					FirstNPages:  4,
-					Instructions: "choose one",
+					Model:        ptrTo("retab-small"),
+					NConsensus:   ptrTo(2),
+					FirstNPages:  ptrTo(4),
+					Instructions: ptrTo("choose one"),
 				})
 				return err
 			},
@@ -150,13 +142,14 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "parses create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Parses.Create(ctx, ParseCreateRequest{
+				format := ParseRequestTableParsingFormatMarkdown
+				_, err := client.Parses.Create(ctx, &ParsesCreateParams{
 					Document:           document,
-					Model:              "retab-small",
-					TableParsingFormat: "markdown",
-					ImageResolutionDPI: 192,
-					Instructions:       "tables",
-					BustCache:          true,
+					Model:              ptrTo("retab-small"),
+					TableParsingFormat: &format,
+					ImageResolutionDpi: ptrTo(192),
+					Instructions:       ptrTo("tables"),
+					BustCache:          ptrTo(true),
 				})
 				return err
 			},
@@ -170,12 +163,12 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "edits create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Edits.Create(ctx, EditCreateRequest{
+				_, err := client.Edits.Create(ctx, &EditsCreateParams{
 					Instructions: "fill the form",
 					Document:     document,
-					Model:        "retab-small",
-					Color:        "#000080",
-					BustCache:    true,
+					Model:        ptrTo("retab-small"),
+					Config:       &EditConfig{Color: "#000080"},
+					BustCache:    ptrTo(true),
 				})
 				return err
 			},
@@ -189,9 +182,9 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "schemas generate",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Schemas.Generate(ctx, GenerateSchemaRequest{
+				_, err := client.Schemas.Generate(ctx, &SchemasGenerateParams{
 					Documents: []any{document},
-					Model:     "retab-small",
+					Model:     ptrTo("retab-small"),
 				})
 				return err
 			},
@@ -208,9 +201,9 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 		{
 			name: "jobs create",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.Create(ctx, JobCreateRequest{
-					Endpoint: "/v1/extractions",
-					Request:  Resource{"model": "retab-small"},
+				_, err := client.Jobs.Create(ctx, &JobsCreateParams{
+					Endpoint: CreateJobRequestEndpointV1Extractions,
+					Request:  map[string]interface{}{"model": "retab-small"},
 					Metadata: map[string]string{"owner": "go-test"},
 				})
 				return err
@@ -260,16 +253,19 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 			return err
 		}, http.MethodGet, "/v1/files/file_123/download-link"},
 		{"files create upload", func(ctx context.Context, client *Client) error {
-			_, err := client.Files.CreateUpload(ctx, PrepareUploadRequest{
+			contentType := "application/pdf"
+			sha256 := "abc"
+			_, err := client.Files.CreateUpload(ctx, &FilesCreateUploadParams{
 				Filename:    "invoice.pdf",
-				ContentType: "application/pdf",
+				ContentType: &contentType,
 				SizeBytes:   10,
-				SHA256:      "abc",
+				Sha256:      &sha256,
 			})
 			return err
 		}, http.MethodPost, "/v1/files/upload"},
 		{"files complete upload", func(ctx context.Context, client *Client) error {
-			_, err := client.Files.CompleteUpload(ctx, "file_123", "abc")
+			sha256 := "abc"
+			_, err := client.Files.CompleteUpload(ctx, "file_123", &FilesCompleteUploadParams{Sha256: &sha256})
 			return err
 		}, http.MethodPost, "/v1/files/upload/file_123/complete"},
 		{"extractions get", func(ctx context.Context, client *Client) error {
@@ -357,44 +353,7 @@ func TestFilesDownloadLinkDecodesDurableMIMEData(t *testing.T) {
 	}
 }
 
-func TestFilesPrepareUploadRequestsMatchNode(t *testing.T) {
-	client := &Client{}
-	uploadRequest := client.Files
-	if uploadRequest != nil {
-		t.Fatalf("zero-value client should not have files service installed")
-	}
-
-	retabClient, err := NewClient("test-key")
-	if err != nil {
-		t.Fatal(err)
-	}
-	prepared := retabClient.Files.PrepareUpload("invoice.pdf", "application/pdf", 10, "abc")
-	if prepared.URL != "/v1/files/upload" || prepared.Method != http.MethodPost {
-		t.Fatalf("prepared upload = %#v", prepared)
-	}
-	body, ok := prepared.Body.(map[string]any)
-	if !ok || body["sha256"] != "abc" || body["size_bytes"] != int64(10) {
-		t.Fatalf("prepared upload body = %#v", prepared.Body)
-	}
-
-	complete := retabClient.Files.PrepareCompleteUpload("file_123", "abc")
-	if complete.URL != "/v1/files/upload/file_123/complete" || complete.Method != http.MethodPost {
-		t.Fatalf("prepared complete upload = %#v", complete)
-	}
-}
-
 func TestFilesUploadRequestShape(t *testing.T) {
-	uploadMethod := ""
-	uploadPath := ""
-	uploadHeader := ""
-	uploadServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		uploadMethod = r.Method
-		uploadPath = r.URL.Path
-		uploadHeader = r.Header.Get("x-upload-token")
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer uploadServer.Close()
-
 	var paths []string
 	var bodies []Resource
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -410,7 +369,7 @@ func TestFilesUploadRequestShape(t *testing.T) {
 		case "/v1/files/upload":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"fileId":        "file_123",
-				"uploadUrl":     uploadServer.URL + "/direct-upload",
+				"uploadUrl":     "https://uploads.example/direct-upload",
 				"uploadMethod":  "PUT",
 				"uploadHeaders": map[string]string{"x-upload-token": "secret"},
 				"expiresAt":     "2026-01-01T00:00:00Z",
@@ -428,12 +387,18 @@ func TestFilesUploadRequestShape(t *testing.T) {
 	defer apiServer.Close()
 	client := newTestClient(t, apiServer)
 
-	tempDir := t.TempDir()
-	filePath := filepath.Join(tempDir, "invoice.pdf")
-	if err := os.WriteFile(filePath, []byte("invoice"), 0o600); err != nil {
+	contentType := "application/pdf"
+	sha256 := "abc"
+	upload, err := client.Files.CreateUpload(context.Background(), &FilesCreateUploadParams{
+		Filename:    "invoice.pdf",
+		ContentType: &contentType,
+		SizeBytes:   7,
+		Sha256:      &sha256,
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
-	mimeData, err := client.Files.Upload(context.Background(), filePath)
+	mimeData, err := client.Files.CompleteUpload(context.Background(), upload.FileID, &FilesCompleteUploadParams{Sha256: &sha256})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,23 +414,14 @@ func TestFilesUploadRequestShape(t *testing.T) {
 	if _, ok := bodies[0]["sha256"].(string); !ok {
 		t.Fatalf("sha256 = %#v", bodies[0]["sha256"])
 	}
-	if uploadMethod != http.MethodPut {
-		t.Fatalf("upload method = %s", uploadMethod)
-	}
-	if uploadPath != "/direct-upload" {
-		t.Fatalf("upload path = %s", uploadPath)
-	}
-	if uploadHeader != "secret" {
-		t.Fatalf("upload header = %s", uploadHeader)
-	}
 	if len(bodies[1]) != 1 {
 		t.Fatalf("complete body = %#v", bodies[1])
 	}
 }
 
 func TestListQueryShapes(t *testing.T) {
-	fromDate := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
-	toDate := time.Date(2026, 1, 3, 4, 5, 6, 0, time.UTC)
+	fromDate := "2026-01-02"
+	toDate := "2026-01-03"
 	includeRequest := true
 	tests := []struct {
 		name     string
@@ -476,17 +432,17 @@ func TestListQueryShapes(t *testing.T) {
 		{
 			name: "extractions list metadata",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Extractions.List(ctx, &ListExtractionsParams{
-					ListParams: ListParams{
-						Before:   "before",
-						After:    "after",
-						Limit:    7,
-						Order:    "asc",
-						Filename: "invoice.pdf",
-						FromDate: &fromDate,
-						ToDate:   &toDate,
+				_, err := client.Extractions.List(ctx, &ExtractionsListParams{
+					PaginationParams: PaginationParams{
+						Before: ptrTo("before"),
+						After:  ptrTo("after"),
+						Limit:  ptrTo(7),
+						Order:  ptrTo("asc"),
 					},
-					Metadata: map[string]string{"tenant": "acme"},
+					Filename: ptrTo("invoice.pdf"),
+					FromDate: &fromDate,
+					ToDate:   &toDate,
+					Metadata: ptrTo(`{"tenant":"acme"}`),
 				})
 				return err
 			},
@@ -495,16 +451,16 @@ func TestListQueryShapes(t *testing.T) {
 				assertQuery(t, query, "limit", "7")
 				assertQuery(t, query, "order", "asc")
 				assertQuery(t, query, "filename", "invoice.pdf")
-				assertQuery(t, query, "from_date", "2026-01-02T03:04:05Z")
+				assertQuery(t, query, "from_date", "2026-01-02")
 				assertQuery(t, query, "metadata", `{"tenant":"acme"}`)
 			},
 		},
 		{
 			name: "jobs retrieve",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.Retrieve(ctx, "job_123", &JobRetrieveParams{
-					IncludeRequest:  true,
-					IncludeResponse: true,
+				_, err := client.Jobs.Get(ctx, "job_123", &JobsGetParams{
+					IncludeRequest:  ptrTo(true),
+					IncludeResponse: ptrTo(true),
 				})
 				return err
 			},
@@ -517,13 +473,15 @@ func TestListQueryShapes(t *testing.T) {
 		{
 			name: "jobs list filters",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.List(ctx, &ListJobsParams{
-					Limit:          3,
-					Status:         "completed",
-					Endpoint:       "/v1/parses",
-					DocumentType:   []string{"invoice", "receipt"},
-					Metadata:       map[string]string{"tenant": "acme"},
-					IncludeRequest: &includeRequest,
+				status := JobStatusCompleted
+				endpoint := CreateJobRequestEndpointV1Parses
+				_, err := client.Jobs.List(ctx, &JobsListParams{
+					PaginationParams: PaginationParams{Limit: ptrTo(3)},
+					Status:           &status,
+					Endpoint:         &endpoint,
+					DocumentType:     []string{"invoice", "receipt"},
+					Metadata:         ptrTo(`{"tenant":"acme"}`),
+					IncludeRequest:   &includeRequest,
 				})
 				return err
 			},
@@ -547,7 +505,9 @@ func TestListQueryShapes(t *testing.T) {
 			// Pin the fix: an unset Metadata must NOT appear in the URL.
 			name: "jobs list omits metadata when unset",
 			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.List(ctx, &ListJobsParams{Limit: 1})
+				_, err := client.Jobs.List(ctx, &JobsListParams{
+					PaginationParams: PaginationParams{Limit: ptrTo(1)},
+				})
 				return err
 			},
 			wantPath: "/v1/jobs",
@@ -610,6 +570,10 @@ func assertNestedString(t *testing.T, body Resource, parent string, key string, 
 	if got, _ := nested[key].(string); got != want {
 		t.Fatalf("%s.%s = %#v", parent, key, nested[key])
 	}
+}
+
+func ptrTo[T any](value T) *T {
+	return &value
 }
 
 func assertQuery(t *testing.T, query map[string][]string, key string, want string) {

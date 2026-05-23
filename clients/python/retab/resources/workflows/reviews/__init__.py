@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
@@ -20,7 +20,7 @@ class WorkflowReviewsMixin:
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = "pending",
+        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
@@ -59,7 +59,7 @@ class WorkflowReviewsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = ApproveReviewRequest(version_id=version_id)
+        payload = ApproveReviewRequest(version_id=cast(Any, version_id))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/reviews/{review_id}/approve", params=params or None, data=data)
 
@@ -69,7 +69,7 @@ class WorkflowReviewsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = RejectReviewRequest(version_id=version_id, reason=reason)
+        payload = RejectReviewRequest(version_id=cast(Any, version_id), reason=cast(Any, reason))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/reviews/{review_id}/reject", params=params or None, data=data)
 
@@ -88,14 +88,14 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = "pending",
+        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
         **extra_params: Any,
     ) -> PaginatedList[Review]:
         """List Reviews Route List reviews — the review queue, oldest first by ``created_at``."""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             run_id=run_id,
             block_id=block_id,
@@ -107,24 +107,24 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             limit=limit,
             **extra_params,
         )
-        return self.request_page(request, model=Review)
+        return self.request_page(prepared_request, model=Review)
 
     def get(self, review_id: str, **extra_params: Any) -> Review:
         """Get Review Route Read one review's metadata + decision. Versions are fetched separately."""
-        request = self.prepare_get(review_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(review_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
     def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
         """Approve Review Route Approve one exact review version and resume the Temporal run. Earns its action-verb shape per the four criteria in ``meta-pattern-blueprint.md`` §2: precondition (``decision is None``), side-effect dominates (Temporal resume signal), divergent request body vs ``/reject``, divergent response (carries ``resume_status``)."""
-        request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
     def reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> SubmitDecisionResponse:
         """Reject Review Route Reject one exact review version and resume the Temporal run. ``reason`` is required by the request shape — "rejected without reason" is unrepresentable on the wire."""
-        request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
 
@@ -142,14 +142,14 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         block_id: str | None = None,
         step_id: str | None = None,
         iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = "pending",
+        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Review]:
         """List Reviews Route List reviews — the review queue, oldest first by ``created_at``."""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             run_id=run_id,
             block_id=block_id,
@@ -161,24 +161,24 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             limit=limit,
             **extra_params,
         )
-        return await self.request_page(request, model=Review)
+        return await self.request_page(prepared_request, model=Review)
 
     async def get(self, review_id: str, **extra_params: Any) -> Review:
         """Get Review Route Read one review's metadata + decision. Versions are fetched separately."""
-        request = self.prepare_get(review_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(review_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
     async def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
         """Approve Review Route Approve one exact review version and resume the Temporal run. Earns its action-verb shape per the four criteria in ``meta-pattern-blueprint.md`` §2: precondition (``decision is None``), side-effect dominates (Temporal resume signal), divergent request body vs ``/reject``, divergent response (carries ``resume_status``)."""
-        request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
     async def reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> SubmitDecisionResponse:
         """Reject Review Route Reject one exact review version and resume the Temporal run. ``reason`` is required by the request shape — "rejected without reason" is unrepresentable on the wire."""
-        request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
 

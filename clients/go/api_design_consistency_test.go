@@ -83,12 +83,12 @@ func TestWorkflowSDKUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 	}
 
 	for _, serviceType := range []reflect.Type{
-		reflect.TypeOf(&WorkflowReviewsService{}),
-		reflect.TypeOf(&WorkflowReviewVersionsService{}),
-		reflect.TypeOf(&WorkflowBlockExecutionsService{}),
-		reflect.TypeOf(&WorkflowTestsService{}),
-		reflect.TypeOf(&WorkflowTestRunsService{}),
-		reflect.TypeOf(&WorkflowTestRunResultsService{}),
+		reflect.TypeOf(&WorkflowReviewService{}),
+		reflect.TypeOf(&WorkflowReviewVersionService{}),
+		reflect.TypeOf(&WorkflowBlockExecutionService{}),
+		reflect.TypeOf(&WorkflowTestService{}),
+		reflect.TypeOf(&WorkflowTestRunService{}),
+		reflect.TypeOf(&WorkflowTestRunResultService{}),
 	} {
 		for i := 0; i < serviceType.NumMethod(); i++ {
 			method := serviceType.Method(i)

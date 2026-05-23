@@ -7,10 +7,10 @@ func TestReviewWireConstantsMatchHardCutover(t *testing.T) {
 		wire     string
 		constant string
 	}{
-		{"accepted", SubmissionStatusAccepted},
-		{"pending", ResumeStatusPending},
-		{"resumed", ResumeStatusResumed},
-		{"skipped", ResumeStatusSkipped},
+		{"accepted", string(SubmissionStatusAccepted)},
+		{"pending", string(ResumeStatusPending)},
+		{"resumed", string(ResumeStatusResumed)},
+		{"skipped", string(ResumeStatusSkipped)},
 	}
 	for _, tc := range cases {
 		if tc.constant != tc.wire {

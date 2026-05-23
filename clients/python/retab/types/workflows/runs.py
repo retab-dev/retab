@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import FileRef
 from retab.types.schemas import MimeDataInput
@@ -97,7 +97,9 @@ class CancelWorkflowResponse(BaseModel):
 
     run: WorkflowRun
     redis_available: bool | None = Field(default=True, description="Whether immediate cancellation signaling was available")
-    cancellation_status: CancelWorkflowResponseCancellationStatus | None = Field(default="cancellation_requested", description="Cancellation delivery state from this request")
+    cancellation_status: CancelWorkflowResponseCancellationStatus | None = Field(
+        default=cast(CancelWorkflowResponseCancellationStatus, "cancellation_requested"), description="Cancellation delivery state from this request"
+    )
 
 
 class CancelledTerminal(BaseModel):
@@ -277,7 +279,9 @@ class WorkflowExportPayloadRequest(BaseModel):
 
     workflow_id: str = Field(..., description="Workflow ID to export")
     block_id: str = Field(..., description="Block ID to export")
-    export_source: WorkflowExportPayloadRequestExportSource | None = Field(default="outputs", description="Use block outputs or inputs")
+    export_source: WorkflowExportPayloadRequestExportSource | None = Field(
+        default=cast(WorkflowExportPayloadRequestExportSource, "outputs"), description="Use block outputs or inputs"
+    )
     selected_run_ids: list[str] | None = Field(default=None, description="Run IDs filter (null means all runs)")
     selected_doc_types: list[str] | None = Field(default=None, description="Doc type filter (null/empty means all)")
     status: WorkflowExportPayloadRequestStatus | None = Field(default=None, description="Optional status filter (intersects with completed-only export scope)")

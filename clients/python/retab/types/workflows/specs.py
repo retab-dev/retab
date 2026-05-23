@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 
 
-DeclarativeApplyResponseAction = Literal["create", "update", "noop"]
+DeclarativeApplyResponseAction: TypeAlias = Literal["create", "update", "noop"]
 
 
-DeclarativePlanFieldChangeAction = Literal["create", "update", "delete"]
+DeclarativePlanFieldChangeAction: TypeAlias = Literal["create", "update", "delete"]
 
 
 class DeclarativePlanResourceChangeTarget(str, Enum):

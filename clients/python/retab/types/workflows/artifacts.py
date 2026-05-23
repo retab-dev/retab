@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.classifications import Category, ClassificationConsensus, ClassificationDecision
 from retab.types.documents.usage import RetabUsage
@@ -15,10 +15,10 @@ from retab.types.splits import SplitConsensus, SplitResult, Subdocument
 from retab.types.workflows.runs import ErrorDetails
 
 
-ConditionEvaluationDetailsLogicalOperator = Literal["and", "or"]
+ConditionEvaluationDetailsLogicalOperator: TypeAlias = Literal["and", "or"]
 
 
-WorkflowArtifactOperation = Literal[
+WorkflowArtifactOperation: TypeAlias = Literal[
     "extraction",
     "split",
     "classification",

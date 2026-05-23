@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
@@ -47,7 +47,16 @@ class WorkflowBlocksMixin:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         payload = WorkflowBlockCreateRequest(
-            workflow_id=workflow_id, id=id, type=type, label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id
+            workflow_id=cast(Any, workflow_id),
+            id=cast(Any, id),
+            type=cast(Any, type),
+            label=cast(Any, label),
+            position_x=cast(Any, position_x),
+            position_y=cast(Any, position_y),
+            width=cast(Any, width),
+            height=cast(Any, height),
+            config=cast(Any, config),
+            parent_id=cast(Any, parent_id),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/blocks", params=params or None, data=data)
@@ -85,7 +94,14 @@ class WorkflowBlocksMixin:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         payload = UpdateWorkflowBlockRequest(
-            label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id, config_mode=config_mode
+            label=cast(Any, label),
+            position_x=cast(Any, position_x),
+            position_y=cast(Any, position_y),
+            width=cast(Any, width),
+            height=cast(Any, height),
+            config=cast(Any, config),
+            parent_id=cast(Any, parent_id),
+            config_mode=cast(Any, config_mode),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/blocks/{block_id}", params=params or None, data=data)
@@ -111,8 +127,8 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
 
     def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PaginatedList[WorkflowBlock]:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` (the previous response's ``list_metadata.after``) for the next page, ``before`` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
-        request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
-        return self.request_page(request, model=WorkflowBlock)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowBlock)
 
     def create(
         self,
@@ -129,7 +145,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         **extra_params: Any,
     ) -> WorkflowBlock:
         """Create Block Create a new block in a workflow. This creates a block in the live workflow_blocks collection."""
-        request = self.prepare_create(
+        prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             id=id,
             type=type,
@@ -142,13 +158,13 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             parent_id=parent_id,
             **extra_params,
         )
-        response = self._client._prepared_request(request)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     def get(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Get Block Get a single block by ID."""
-        request = self.prepare_get(block_id, workflow_id=workflow_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(block_id, workflow_id=workflow_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     def update(
@@ -166,7 +182,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         **extra_params: Any,
     ) -> WorkflowBlock:
         """Update Block Update a block with partial data. Only the provided fields are updated. This enables targeted updates like position changes without affecting other block properties."""
-        request = self.prepare_update(
+        prepared_request = self.prepare_update(
             block_id,
             label=label,
             position_x=position_x,
@@ -179,13 +195,13 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             workflow_id=workflow_id,
             **extra_params,
         )
-        response = self._client._prepared_request(request)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     def delete(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> None:
         """Delete Block Delete a block from a workflow. This also deletes any edges connected to this block."""
-        request = self.prepare_delete(block_id, workflow_id=workflow_id, **extra_params)
-        self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(block_id, workflow_id=workflow_id, **extra_params)
+        self._client._prepared_request(prepared_request)
         return None
 
 
@@ -198,8 +214,8 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
 
     async def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> AsyncPaginatedList[WorkflowBlock]:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` (the previous response's ``list_metadata.after``) for the next page, ``before`` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
-        request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
-        return await self.request_page(request, model=WorkflowBlock)
+        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
+        return await self.request_page(prepared_request, model=WorkflowBlock)
 
     async def create(
         self,
@@ -216,7 +232,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         **extra_params: Any,
     ) -> WorkflowBlock:
         """Create Block Create a new block in a workflow. This creates a block in the live workflow_blocks collection."""
-        request = self.prepare_create(
+        prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             id=id,
             type=type,
@@ -229,13 +245,13 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             parent_id=parent_id,
             **extra_params,
         )
-        response = await self._client._prepared_request(request)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     async def get(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Get Block Get a single block by ID."""
-        request = self.prepare_get(block_id, workflow_id=workflow_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(block_id, workflow_id=workflow_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     async def update(
@@ -253,7 +269,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         **extra_params: Any,
     ) -> WorkflowBlock:
         """Update Block Update a block with partial data. Only the provided fields are updated. This enables targeted updates like position changes without affecting other block properties."""
-        request = self.prepare_update(
+        prepared_request = self.prepare_update(
             block_id,
             label=label,
             position_x=position_x,
@@ -266,13 +282,13 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             workflow_id=workflow_id,
             **extra_params,
         )
-        response = await self._client._prepared_request(request)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
     async def delete(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> None:
         """Delete Block Delete a block from a workflow. This also deletes any edges connected to this block."""
-        request = self.prepare_delete(block_id, workflow_id=workflow_id, **extra_params)
-        await self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(block_id, workflow_id=workflow_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
         return None
 
 
