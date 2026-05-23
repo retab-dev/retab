@@ -6,37 +6,37 @@
 #
 # Hand-maintained smoke test for the ergonomic MimeData input affordances.
 
-require 'test_helper'
-require 'pathname'
-require 'stringio'
+require "test_helper"
+require "pathname"
+require "stringio"
 
 class MimeSmokeTest < Minitest::Test
   def test_coerce_pathname
     md = Retab::MimeData.coerce(Pathname.new(__FILE__))
-    assert_equal File.basename(__FILE__), md.filename
+    assert_equal(File.basename(__FILE__), md.filename)
     assert_match(/\Adata:.*;base64,/, md.url)
   end
 
   def test_coerce_stringio
-    md = Retab::MimeData.coerce(StringIO.new('hello'))
-    assert_equal 'document', md.filename
+    md = Retab::MimeData.coerce(StringIO.new("hello"))
+    assert_equal("document", md.filename)
     assert_match(/\Adata:.*;base64,/, md.url)
   end
 
   def test_coerce_url_string
-    md = Retab::MimeData.coerce('https://example.com/invoice.pdf')
-    assert_equal 'invoice.pdf', md.filename
-    assert_equal 'https://example.com/invoice.pdf', md.url
+    md = Retab::MimeData.coerce("https://example.com/invoice.pdf")
+    assert_equal("invoice.pdf", md.filename)
+    assert_equal("https://example.com/invoice.pdf", md.url)
   end
 
   def test_coerce_passthrough
-    original = Retab::MimeData.new(filename: 'x.pdf', url: 'data:application/pdf;base64,XYZ')
-    assert_same original, Retab::MimeData.coerce(original)
+    original = Retab::MimeData.new(filename: "x.pdf", url: "data:application/pdf;base64,XYZ")
+    assert_same(original, Retab::MimeData.coerce(original))
   end
 
   def test_coerce_hash
-    md = Retab::MimeData.coerce(filename: 'x.pdf', url: 'data:foo')
-    assert_equal 'x.pdf', md.filename
-    assert_equal 'data:foo', md.url
+    md = Retab::MimeData.coerce(filename: "x.pdf", url: "data:foo")
+    assert_equal("x.pdf", md.filename)
+    assert_equal("data:foo", md.url)
   end
 end

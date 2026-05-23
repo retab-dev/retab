@@ -146,7 +146,7 @@ class Parses(SyncAPIResource, ParsesMixin):
     def delete(self, parse_id: str, **extra_params: Any) -> None:
         """Delete Parse"""
         request = self.prepare_delete(parse_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -200,7 +200,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
     async def delete(self, parse_id: str, **extra_params: Any) -> None:
         """Delete Parse"""
         request = self.prepare_delete(parse_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
 

@@ -201,7 +201,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
     def delete(self, extraction_id: str, **extra_params: Any) -> None:
         """Delete Extraction Delete an extraction"""
         request = self.prepare_delete(extraction_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
     def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:
@@ -286,7 +286,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     async def delete(self, extraction_id: str, **extra_params: Any) -> None:
         """Delete Extraction Delete an extraction"""
         request = self.prepare_delete(extraction_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
     async def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:

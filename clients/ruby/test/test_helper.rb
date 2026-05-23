@@ -7,13 +7,14 @@
 # Hand-maintained Minitest bootstrap. Loads the gem under test and any
 # helpers the generated tests rely on (e.g. WebMock for HTTP stubbing).
 
-$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 
-require 'minitest/autorun'
-require 'retab'
+require "minitest/autorun"
+require "retab"
 
 begin
-  require 'webmock/minitest'
+  require "webmock/minitest"
+
 rescue LoadError
   # WebMock is only needed by the generated service tests. The MimeData
   # smoke test runs without it.

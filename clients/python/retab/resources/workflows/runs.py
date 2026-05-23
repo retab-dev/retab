@@ -301,7 +301,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def delete(self, run_id: str, **extra_params: Any) -> None:
         """Delete Workflow Run Delete a workflow run and its associated step data."""
         request = self.prepare_delete(run_id, **extra_params)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
     def cancel(self, run_id: str, command_id: str | None = None, **extra_params: Any) -> CancelWorkflowResponse:
@@ -429,7 +429,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def delete(self, run_id: str, **extra_params: Any) -> None:
         """Delete Workflow Run Delete a workflow run and its associated step data."""
         request = self.prepare_delete(run_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        await self._client._prepared_request(request)
         return None
 
     async def cancel(self, run_id: str, command_id: str | None = None, **extra_params: Any) -> CancelWorkflowResponse:
