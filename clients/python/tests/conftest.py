@@ -1,4 +1,5 @@
 import json
+import re
 import warnings
 import os
 import shutil
@@ -55,6 +56,20 @@ def load_env(request: pytest.FixtureRequest) -> None:
     print("EMAIL_DOMAIN", os.environ["EMAIL_DOMAIN"])
 
 
+_BASE_URL_VERSION_SUFFIX_RE = re.compile(r"/v\d+/?$")
+
+
+def _strip_legacy_version_suffix(base_url: str) -> str:
+    """Normalize a legacy ``…/v<N>`` base URL to the new convention.
+
+    The SDK constructor will do the same stripping internally and emit a
+    deprecation ``UserWarning`` — handling it here at test-setup time keeps
+    the warning out of every test run while still letting developer
+    ``.env`` files lag behind the new convention.
+    """
+    return _BASE_URL_VERSION_SUFFIX_RE.sub("", base_url).rstrip("/")
+
+
 class EnvConfig(BaseModel):
     retab_api_key: str = Field(..., description="Retab API key")
     retab_api_base_url: str = Field(..., description="Retab API base URL")
@@ -71,7 +86,7 @@ def api_keys(load_env: None) -> EnvConfig:
 
     return EnvConfig(
         retab_api_key=retab_api_key,
-        retab_api_base_url=retab_api_base_url,
+        retab_api_base_url=_strip_legacy_version_suffix(retab_api_base_url),
     )
 
 
