@@ -6,7 +6,7 @@
 
 [package]
 name = "retab"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "Retab official Rust library"
 authors = ["Retab <contact@retab.com>"]
