@@ -13,7 +13,7 @@ module Retab
       params(
         run_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::WorkflowTestResult])
     end
     def list(run_id:, request_options:); end
 

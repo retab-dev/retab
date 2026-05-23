@@ -23,7 +23,7 @@ module Retab
         to_date: T.nilable(String),
         metadata: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::Extraction])
     end
     def list(before:, after:, limit:, order:, filename:, filename_regex:, filename_contains:, document_type:, from_date:, to_date:, metadata:, request_options:); end
 

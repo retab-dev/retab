@@ -27,7 +27,7 @@ module Retab
         limit: T.nilable(Integer),
         order: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct)
+      ).returns(Retab::Types::ListStruct[Retab::ExperimentRun])
     end
     def list(workflow_id:, experiment_id:, block_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, sort_by:, before:, after:, limit:, order:, request_options:); end
 
