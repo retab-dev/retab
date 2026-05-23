@@ -70,15 +70,15 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         **extra_params: Any,
     ) -> PaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker (the same compound key the underlying index uses). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``run_id`` is optional; when omitted the list is scoped to the caller's organization."""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             run_id=run_id, block_id=block_id, block_ids=block_ids, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
         )
-        return self.request_page(request, model=WorkflowRunStep)
+        return self.request_page(prepared_request, model=WorkflowRunStep)
 
     def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
         """Get Workflow Step Get one persisted step document by step id. This is the canonical step object shape used by ``GET /workflows/steps``. It intentionally does not join fingerprint rows or return experiment query projections."""
-        request = self.prepare_get(step_id, run_id=run_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(step_id, run_id=run_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowRunStep.model_validate(response)
 
 
@@ -99,15 +99,15 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker (the same compound key the underlying index uses). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``run_id`` is optional; when omitted the list is scoped to the caller's organization."""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             run_id=run_id, block_id=block_id, block_ids=block_ids, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
         )
-        return await self.request_page(request, model=WorkflowRunStep)
+        return await self.request_page(prepared_request, model=WorkflowRunStep)
 
     async def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
         """Get Workflow Step Get one persisted step document by step id. This is the canonical step object shape used by ``GET /workflows/steps``. It intentionally does not join fingerprint rows or return experiment query projections."""
-        request = self.prepare_get(step_id, run_id=run_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(step_id, run_id=run_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowRunStep.model_validate(response)
 
 

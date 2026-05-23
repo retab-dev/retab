@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import MIMEData
 
@@ -100,7 +100,7 @@ class GenerateSchemaRequest(BaseModel):
 
     documents: list[MIMEData]
     model: str | None = Field(default="retab-small")
-    reasoning_effort: GenerateSchemaRequestReasoningEffort | None = Field(default="minimal")
+    reasoning_effort: GenerateSchemaRequestReasoningEffort | None = Field(default=cast(GenerateSchemaRequestReasoningEffort, "minimal"))
     instructions: str | None = None
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
     stream: bool | None = Field(default=False)

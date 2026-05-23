@@ -60,7 +60,8 @@ func TestWorkflowsCreateUpdatePublishAndDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	workflow, err := client.Workflows.Create(context.Background(), CreateWorkflowRequest{Name: "Invoice Extractor"})
+	workflowName := "Invoice Extractor"
+	workflow, err := client.Workflows.Create(context.Background(), &WorkflowsCreateParams{Name: &workflowName})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,29 +71,25 @@ func TestWorkflowsCreateUpdatePublishAndDelete(t *testing.T) {
 
 	name := "Renamed"
 	description := "Updated"
-	_, err = client.Workflows.Update(context.Background(), "wf_123", UpdateWorkflowRequest{
+	_, err = client.Workflows.Update(context.Background(), "wf_123", &WorkflowsUpdateParams{
 		Name:        &name,
 		Description: &description,
-		EmailTrigger: &WorkflowEmailTrigger{
-			AllowedSenders: []string{"ops@example.com"},
-		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	emailTrigger, ok := updateBody["email_trigger"].(map[string]any)
-	if !ok {
-		t.Fatalf("email_trigger = %#v", updateBody["email_trigger"])
-	}
-	if len(emailTrigger["allowed_senders"].([]any)) != 1 {
-		t.Fatalf("allowed_senders = %#v", emailTrigger["allowed_senders"])
+	if updateBody["name"] != "Renamed" || updateBody["description"] != "Updated" {
+		t.Fatalf("update body = %#v", updateBody)
 	}
 
-	published, err := client.Workflows.Publish(context.Background(), "wf_123", PublishWorkflowRequest{Description: "v1"})
+	publishDescription := "v1"
+	published, err := client.Workflows.Publish(context.Background(), "wf_123", &WorkflowsPublishParams{
+		Body: PublishWorkflowRequest{Description: &publishDescription},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if published.Published == nil || published.Published.VersionID != "ver_0123456789abcdef0123456789abcdef" {
+	if published.Published == nil || published.Published.VersionID == nil || *published.Published.VersionID != "ver_0123456789abcdef0123456789abcdef" {
 		t.Fatalf("published = %#v", published.Published)
 	}
 	if publishBody["description"] != "v1" {
@@ -119,113 +116,14 @@ func TestHandlePayloadDoesNotExposeRemovedTextField(t *testing.T) {
 	}
 }
 
-func TestWorkflowsPrepareDiagnoseMatchesPythonSurface(t *testing.T) {
-	client, err := NewClient("test-key")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	prepared := client.Workflows.PrepareDiagnose("wf_123")
-	if prepared.URL != "/v1/workflows/wf_123/diagnose-graph" || prepared.Method != http.MethodPost {
-		t.Fatalf("prepared diagnose = %#v", prepared)
-	}
-	body, ok := prepared.Body.(DiagnoseWorkflowRequest)
-	if !ok {
-		t.Fatalf("prepared diagnose body = %#v", prepared.Body)
-	}
-	if !body.RePropagate {
-		t.Fatalf("prepared diagnose body = %#v", body)
-	}
-
-	prepared = client.Workflows.PrepareDiagnose("wf_123", false)
-	body = prepared.Body.(DiagnoseWorkflowRequest)
-	if body.RePropagate {
-		t.Fatalf("expected re-propagate override to be false: %#v", body)
-	}
-}
-
-func TestWorkflowsPrepareDiagnoseGraphKeepsInMemoryGraphSurface(t *testing.T) {
-	client, err := NewClient("test-key")
-	if err != nil {
-		t.Fatal(err)
-	}
-	blocks := []map[string]any{{"id": "start-1", "type": "start_document"}}
-	edges := []map[string]any{{"id": "edge-1", "source": "start-1", "target": "extract-1"}}
-
-	prepared := client.Workflows.PrepareDiagnoseGraph("wf_123", blocks, edges, false)
-	if prepared.URL != "/v1/workflows/wf_123/diagnose-graph" || prepared.Method != http.MethodPost {
-		t.Fatalf("prepared diagnose graph = %#v", prepared)
-	}
-	body, ok := prepared.Body.(DiagnoseWorkflowGraphRequest)
-	if !ok {
-		t.Fatalf("prepared diagnose graph body = %#v", prepared.Body)
-	}
-	if body.RePropagate || body.Blocks[0]["id"] != "start-1" || body.Edges[0]["id"] != "edge-1" {
-		t.Fatalf("prepared diagnose graph body = %#v", body)
-	}
-}
-
-func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
+func TestWorkflowsDiagnoseSendsPersistedDraftRequest(t *testing.T) {
+	var requestBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/wf_123/diagnose-graph" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"is_valid": true,
-			"issues": []map[string]any{
-				{
-					"severity": "warning",
-					"code":     "MISSING_REVIEW_PREDICATE",
-					"message":  "Review gate needs a predicate",
-					"block_id": "extract_1",
-				},
-			},
-			"suggestions": []string{},
-			"stats": map[string]any{
-				"total_blocks":          1,
-				"total_edges":           0,
-				"block_types":           map[string]int{"start": 1},
-				"start_document_blocks": 1,
-			},
-		})
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	diagnosis, err := client.Workflows.DiagnoseGraph(context.Background(), "wf_123", DiagnoseWorkflowGraphRequest{
-		Blocks:      []map[string]any{{"id": "start-1", "type": "start_document"}},
-		Edges:       []map[string]any{},
-		RePropagate: true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !diagnosis.IsValid || len(diagnosis.Issues) != 1 {
-		t.Fatalf("diagnosis = %#v", diagnosis)
-	}
-	if diagnosis.Issues[0].Severity != "warning" || diagnosis.Issues[0].Code != "MISSING_REVIEW_PREDICATE" {
-		t.Fatalf("issue = %#v", diagnosis.Issues[0])
-	}
-}
-
-func TestWorkflowsDiagnosePostsDirectly(t *testing.T) {
-	var requests []string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests = append(requests, r.Method+" "+r.URL.Path)
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/wf_123/diagnose-graph" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
-		}
-		var body DiagnoseWorkflowRequest
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 			t.Fatalf("decode request: %v", err)
-		}
-		if !body.RePropagate {
-			t.Fatalf("body = %#v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -247,15 +145,83 @@ func TestWorkflowsDiagnosePostsDirectly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	diagnosis, err := client.Workflows.Diagnose(context.Background(), "wf_123")
+	rePropagate := true
+	diagnosis, err := client.Workflows.Diagnose(context.Background(), "wf_123", &WorkflowsDiagnoseParams{
+		RePropagate: &rePropagate,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !diagnosis.IsValid {
 		t.Fatalf("diagnosis = %#v", diagnosis)
 	}
-	if strings.Join(requests, ",") != "POST /v1/workflows/wf_123/diagnose-graph" {
-		t.Fatalf("requests = %#v", requests)
+	if requestBody["re_propagate"] != true {
+		t.Fatalf("request body = %#v", requestBody)
+	}
+}
+
+func TestWorkflowsDiagnoseSendsInMemoryGraph(t *testing.T) {
+	var requestBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/wf_123/diagnose-graph" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"is_valid":    true,
+			"issues":      []map[string]any{},
+			"suggestions": []string{},
+			"stats": map[string]any{
+				"total_blocks":          1,
+				"total_edges":           0,
+				"block_types":           map[string]int{"start_document": 1},
+				"start_document_blocks": 1,
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blockID := "start-1"
+	edgeID := "edge-1"
+	rePropagate := false
+	diagnosis, err := client.Workflows.Diagnose(context.Background(), "wf_123", &WorkflowsDiagnoseParams{
+		Blocks: []*WorkflowConfigBlock{{
+			ID:       &blockID,
+			Type:     WorkflowBlockTypeStartDocument,
+			Position: WorkflowBlockPosition{X: 0, Y: 0},
+			Label:    "Start",
+		}},
+		Edges: []*WorkflowConfigEdge{{
+			ID:     &edgeID,
+			Source: "start-1",
+			Target: "extract-1",
+		}},
+		RePropagate: &rePropagate,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !diagnosis.IsValid {
+		t.Fatalf("diagnosis = %#v", diagnosis)
+	}
+	blocks, ok := requestBody["blocks"].([]any)
+	if !ok || len(blocks) != 1 || blocks[0].(map[string]any)["id"] != "start-1" {
+		t.Fatalf("blocks = %#v", requestBody["blocks"])
+	}
+	edges, ok := requestBody["edges"].([]any)
+	if !ok || len(edges) != 1 || edges[0].(map[string]any)["id"] != "edge-1" {
+		t.Fatalf("edges = %#v", requestBody["edges"])
+	}
+	if requestBody["re_propagate"] != false {
+		t.Fatalf("request body = %#v", requestBody)
 	}
 }
 
@@ -279,16 +245,16 @@ func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.Spec.Validate(context.Background(), "name: test"); err != nil {
+	if _, err := client.WorkflowSpecs.Validate(context.Background(), &WorkflowSpecsValidateParams{YamlDefinition: "name: test"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Spec.Plan(context.Background(), "name: test"); err != nil {
+	if _, err := client.WorkflowSpecs.Plan(context.Background(), &WorkflowSpecsPlanParams{YamlDefinition: "name: test"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Spec.Apply(context.Background(), "name: test"); err != nil {
+	if _, err := client.WorkflowSpecs.Apply(context.Background(), &WorkflowSpecsApplyParams{YamlDefinition: "name: test"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Spec.Export(context.Background(), "wf_123"); err != nil {
+	if _, err := client.WorkflowSpecs.Get(context.Background(), "wf_123"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -338,28 +304,18 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	preparedList := client.Workflows.Artifacts.PrepareList(ListWorkflowArtifactsParams{
-		RunID:     "run_123",
-		Operation: "extraction",
-		BlockID:   "extract-1",
-	})
-	if preparedList.URL != "/v1/workflows/artifacts" || preparedList.Method != http.MethodGet || preparedList.Params.Get("run_id") != "run_123" {
-		t.Fatalf("prepared artifact list = %#v", preparedList)
-	}
-	preparedGet := client.Workflows.Artifacts.PrepareGet("ext_123")
-	if preparedGet.URL != "/v1/workflows/artifacts/ext_123" || preparedGet.Method != http.MethodGet {
-		t.Fatalf("prepared artifact get = %#v", preparedGet)
-	}
-
-	artifacts, err := client.Workflows.Artifacts.List(context.Background(), ListWorkflowArtifactsParams{
-		RunID:     "run_123",
-		Operation: "extraction",
-		BlockID:   "extract-1",
+	runID := "run_123"
+	operation := WorkflowArtifactsOperation(StepArtifactRefOperationExtraction)
+	blockID := "extract-1"
+	artifacts, err := client.WorkflowArtifacts.List(context.Background(), &WorkflowArtifactsListParams{
+		RunID:     &runID,
+		Operation: &operation,
+		BlockID:   &blockID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(artifacts.Data) != 1 || artifacts.Data[0]["id"] != "ext_123" {
+	if len(artifacts.Data) != 1 || artifacts.Data[0].ID != "ext_123" {
 		t.Fatalf("artifacts = %#v", artifacts)
 	}
 	if artifacts.ListMetadata.Before != "" || artifacts.ListMetadata.After != "" {
@@ -368,11 +324,11 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
 	}
-	artifact, err := client.Workflows.Artifacts.Get(context.Background(), "ext_123")
+	artifact, err := client.WorkflowArtifacts.Get(context.Background(), "ext_123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if (*artifact)["id"] != "ext_123" || (*artifact)["operation"] != "extraction" {
+	if artifact.ID != "ext_123" {
 		t.Fatalf("artifact = %#v", artifact)
 	}
 	if strings.Join(requests, ",") != "GET /v1/workflows/artifacts,GET /v1/workflows/artifacts/ext_123" {
@@ -430,32 +386,36 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.Workflows.Experiments.Runs.Get(context.Background(), "exprun_123")
+	result, err := client.ExperimentRuns.Get(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if result.ID != "exprun_123" {
 		t.Fatalf("result = %#v", result)
 	}
-	results, err := client.Workflows.Experiments.Results.List(context.Background(), "exprun_123", 25)
+	limit := 25
+	results, err := client.ExperimentRunResults.List(context.Background(), &ExperimentRunResultsListParams{
+		RunID:            "exprun_123",
+		PaginationParams: PaginationParams{Limit: &limit},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(results.Data) != 0 || rawQuery != "limit=25&run_id=exprun_123" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
-	runResult, err := client.Workflows.Experiments.Results.Get(context.Background(), "expresult_123")
+	runResult, err := client.ExperimentRunResults.Get(context.Background(), "expresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if runResult.ID != "expresult_123" || runResult.RunID != "exprun_123" {
 		t.Fatalf("runResult = %#v", runResult)
 	}
-	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
+	cancelled, err := client.ExperimentRuns.Cancel(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cancelled.ID != "exprun_123" || cancelled.Lifecycle.Status != "cancelled" {
+	if cancelled.ID != "exprun_123" || cancelled.Lifecycle == nil || cancelled.Lifecycle.Status == nil || *cancelled.Lifecycle.Status != "cancelled" {
 		t.Fatalf("cancelled = %#v", cancelled)
 	}
 	cancelledJSON, err := json.Marshal(cancelled)
@@ -465,11 +425,11 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if strings.Contains(string(cancelledJSON), "experiment_id") || strings.Contains(string(cancelledJSON), "workflow") {
 		t.Fatalf("cancel response should only model id/lifecycle, got %s", cancelledJSON)
 	}
-	metrics, err := client.Workflows.Experiments.Metrics.Get(context.Background(), "exprun_123", nil)
+	metrics, err := client.ExperimentRunMetrics.Get(context.Background(), &ExperimentRunMetricsGetParams{RunID: "exprun_123"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if metrics["view"] != "summary" {
+	if metrics.View == nil || *metrics.View != "summary" {
 		t.Fatalf("result = %#v rawQuery = %q", result, rawQuery)
 	}
 	expected := []string{
@@ -507,11 +467,11 @@ func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.Workflows.Tests.Results.Get(context.Background(), "wfresult_123")
+	result, err := client.WorkflowTestRunResults.Get(context.Background(), "wfresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if (*result)["id"] != "wfresult_123" || (*result)["test_id"] != "wfnodetest_123" {
+	if result.ID != "wfresult_123" || result.TestID != "wfnodetest_123" {
 		t.Fatalf("result = %#v", result)
 	}
 	if strings.Join(requests, ",") != "GET /v1/workflows/tests/results/wfresult_123" {
@@ -550,7 +510,11 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.Experiments.Runs.Create(context.Background(), "wf_123", "exp_123"); err != nil {
+	workflowID := "wf_123"
+	if _, err := client.ExperimentRuns.Create(context.Background(), &ExperimentRunsCreateParams{
+		WorkflowID:   &workflowID,
+		ExperimentID: "exp_123",
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if runBody["experiment_id"] != "exp_123" || runBody["workflow_id"] != "wf_123" {
@@ -559,9 +523,10 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 }
 
 func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
+	completedStatus := "completed"
 	testRunJSON, err := json.Marshal(WorkflowTestRun{
 		ID:        "wftestrun_123",
-		Lifecycle: WorkflowTestRunLifecycle{Status: "completed"},
+		Lifecycle: &PendingWorkflowTestRun{Status: &completedStatus},
 		Timing:    WorkflowTestRunTiming{},
 	})
 	if err != nil {
@@ -574,7 +539,7 @@ func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
 
 	experimentRunJSON, err := json.Marshal(ExperimentRun{
 		ID:        "exprun_123",
-		Lifecycle: ExperimentRunLifecycle{Status: "completed"},
+		Lifecycle: &PendingWorkflowExperimentRun{Status: &completedStatus},
 		Timing:    ExperimentRunTiming{},
 	})
 	if err != nil {
@@ -638,34 +603,48 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	runs, err := client.Workflows.Runs.List(context.Background(), &ListWorkflowRunsParams{
-		WorkflowID:   "wf_123",
-		Statuses:     []string{"running", "awaiting_review"},
-		TriggerTypes: []string{"api", "email"},
-		Limit:        5,
-		Order:        "asc",
+	workflowID := "wf_123"
+	statuses := "running,awaiting_review"
+	triggerTypes := "api,email"
+	limit := 5
+	order := "asc"
+	runs, err := client.WorkflowRuns.List(context.Background(), &WorkflowRunsListParams{
+		WorkflowID:   &workflowID,
+		Statuses:     &statuses,
+		TriggerTypes: &triggerTypes,
+		PaginationParams: PaginationParams{
+			Limit: &limit,
+			Order: &order,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(runs.Data) != 1 || runs.Data[0].WorkflowID != "wf_123" {
+	if len(runs.Data) != 1 || runs.Data[0].Workflow.WorkflowID != "wf_123" {
 		t.Fatalf("runs = %#v", runs)
 	}
 	if !strings.Contains(listQuery, "statuses=running%2Cawaiting_review") {
 		t.Fatalf("list query = %s", listQuery)
 	}
 
-	if err := client.Workflows.Runs.Delete(context.Background(), "run_123"); err != nil {
+	if err := client.WorkflowRuns.Delete(context.Background(), "run_123"); err != nil {
 		t.Fatal(err)
 	}
-	cancelled, err := client.Workflows.Runs.Cancel(context.Background(), "run_123", WorkflowRunCommandRequest{CommandID: "cmd_cancel"})
+	cancelCommandID := "cmd_cancel"
+	cancelled, err := client.WorkflowRuns.Cancel(context.Background(), "run_123", &WorkflowRunsCancelParams{
+		Body: CancelWorkflowRequest{CommandID: &cancelCommandID},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cancelled.CancellationStatus != "cancelled" || cancelBody["command_id"] != "cmd_cancel" {
+	if cancelled.CancellationStatus == nil || *cancelled.CancellationStatus != "cancelled" || cancelBody["command_id"] != "cmd_cancel" {
 		t.Fatalf("cancelled = %#v body = %#v", cancelled, cancelBody)
 	}
-	restarted, err := client.Workflows.Runs.Restart(context.Background(), "run_123", WorkflowRunCommandRequest{CommandID: "cmd_restart"})
+	restarted, err := client.WorkflowRuns.Create(context.Background(), WithRequestBody(map[string]any{
+		"restart_of":    "run_123",
+		"command_id":    "cmd_restart",
+		"config_source": "published",
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -673,11 +652,12 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 		t.Fatalf("restarted = %#v body = %#v", restarted, restartBody)
 	}
 
-	exported, err := client.Workflows.Runs.Export(context.Background(), ExportWorkflowRunsRequest{
+	exportSource := WorkflowExportPayloadRequestExportSourceOutputs
+	exported, err := client.WorkflowRuns.Export(context.Background(), &WorkflowRunsExportParams{
 		WorkflowID:       "wf_123",
 		BlockID:          "extract-1",
+		ExportSource:     &exportSource,
 		SelectedRunIDs:   []string{"run_123"},
-		TriggerTypes:     []string{},
 		PreferredColumns: []string{"total"},
 	})
 	if err != nil {
@@ -713,11 +693,12 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.Runs.Export(context.Background(), ExportWorkflowRunsRequest{
+	manualTrigger := WorkflowExportPayloadRequestTriggerTypesManual
+	_, err = client.WorkflowRuns.Export(context.Background(), &WorkflowRunsExportParams{
 		WorkflowID:     "wf_123",
 		BlockID:        "block_1",
 		SelectedRunIDs: []string{},
-		TriggerTypes:   []string{"manual"},
+		TriggerTypes:   []WorkflowExportPayloadRequestTriggerTypes{manualTrigger},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -732,10 +713,10 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 }
 
 func TestWorkflowRunsDoNotExposeWaitHelpers(t *testing.T) {
-	runServiceType := reflect.TypeOf(&WorkflowRunsService{})
+	runServiceType := reflect.TypeOf(&WorkflowRunService{})
 	for _, methodName := range []string{"WaitForCompletion", "Wait", "CreateAndWait"} {
 		if _, ok := runServiceType.MethodByName(methodName); ok {
-			t.Fatalf("WorkflowRunsService still exposes %s", methodName)
+			t.Fatalf("WorkflowRunService still exposes %s", methodName)
 		}
 	}
 }
@@ -747,38 +728,38 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 		methods []string
 	}{
 		{
-			name:    "WorkflowsService",
-			service: &WorkflowsService{},
+			name:    "WorkflowService",
+			service: &WorkflowService{},
 			methods: []string{"Duplicate", "GetEntities", "GetResolvedSchemas", "ListSnapshots"},
 		},
 		{
-			name:    "WorkflowReviewsService",
-			service: &WorkflowReviewsService{},
+			name:    "WorkflowReviewService",
+			service: &WorkflowReviewService{},
 			methods: []string{"WaitFor"},
 		},
 		{
-			name:    "WorkflowBlocksService",
-			service: &WorkflowBlocksService{},
+			name:    "WorkflowBlockService",
+			service: &WorkflowBlockService{},
 			methods: []string{"ConfigHistory", "GetResolvedSchemas", "CreateBatch", "ListBlock executions", "PrepareExecute", "Execute"},
 		},
 		{
-			name:    "WorkflowStepsService",
-			service: &WorkflowStepsService{},
+			name:    "WorkflowStepService",
+			service: &WorkflowStepService{},
 			methods: []string{"ListBlock executions", "PrepareListBlock executions", "PrepareExecute", "Execute"},
 		},
 		{
-			name:    "WorkflowEdgesService",
-			service: &WorkflowEdgesService{},
+			name:    "WorkflowEdgeService",
+			service: &WorkflowEdgeService{},
 			methods: []string{"CreateBatch", "DeleteAll"},
 		},
 		{
-			name:    "WorkflowExperimentsService",
-			service: &WorkflowExperimentsService{},
+			name:    "WorkflowExperimentService",
+			service: &WorkflowExperimentService{},
 			methods: []string{"Duplicate", "ListEligibleBlocks"},
 		},
 		{
-			name:    "JobsService",
-			service: &JobsService{},
+			name:    "JobService",
+			service: &JobService{},
 			methods: []string{"RetrieveFull"},
 		},
 	}
@@ -793,9 +774,9 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 }
 
 func TestWorkflowTestsDoNotExposeWaitForCompletion(t *testing.T) {
-	testServiceType := reflect.TypeOf(&WorkflowTestsService{})
+	testServiceType := reflect.TypeOf(&WorkflowTestService{})
 	if _, ok := testServiceType.MethodByName("WaitForCompletion"); ok {
-		t.Fatal("WorkflowTestsService still exposes WaitForCompletion")
+		t.Fatal("WorkflowTestService still exposes WaitForCompletion")
 	}
 }
 
@@ -829,11 +810,11 @@ func TestWorkflowStepsGetRequiresStepID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.Workflows.Steps.Get(context.Background(), "")
+	_, err = client.WorkflowSteps.Get(context.Background(), "", nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if err.Error() != "retab: stepID is required" {
+	if err.Error() != "retab: step_id is required" {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -880,7 +861,7 @@ func TestWorkflowStepsGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	step, err := client.Workflows.Steps.Get(context.Background(), "step_123")
+	step, err := client.WorkflowSteps.Get(context.Background(), "step_123", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -900,7 +881,7 @@ func TestWorkflowStepsGet(t *testing.T) {
 	if step.BlockID != "extract-1" {
 		t.Fatalf("block id = %s", step.BlockID)
 	}
-	if step.Lifecycle["status"] != "completed" {
+	if step.Lifecycle == nil || step.Lifecycle.Status == nil || *step.Lifecycle.Status != "completed" {
 		t.Fatalf("lifecycle = %#v", step.Lifecycle)
 	}
 	if len(step.HandleInputs) != 1 {
@@ -958,17 +939,18 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	steps, err := client.Workflows.Steps.List(context.Background(), "run_123", nil)
+	runID := "run_123"
+	steps, err := client.WorkflowSteps.List(context.Background(), &WorkflowStepsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(steps.Data) != 1 {
 		t.Fatalf("steps length = %d", len(steps.Data))
 	}
-	if steps.Data[0].HandleInputs == nil || steps.Data[0].HandleOutputs == nil {
-		t.Fatalf("handle maps should be normalized: %#v", steps.Data[0])
+	if steps.Data[0].HandleInputs != nil || steps.Data[0].HandleOutputs != nil {
+		t.Fatalf("null handle maps should remain nil: %#v", steps.Data[0])
 	}
-	if steps.Data[0].Lifecycle["status"] != "completed" {
+	if steps.Data[0].Lifecycle == nil || steps.Data[0].Lifecycle.Status == nil || *steps.Data[0].Lifecycle.Status != "completed" {
 		t.Fatalf("lifecycle = %#v", steps.Data[0].Lifecycle)
 	}
 	if steps.ListMetadata.Before != "" || steps.ListMetadata.After != "" {
@@ -996,7 +978,7 @@ func TestAPIError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -1034,7 +1016,7 @@ func TestAPIErrorUnwrappedEnvelope(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -1083,7 +1065,7 @@ func TestAPIErrorFlatValidationEnvelope(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}

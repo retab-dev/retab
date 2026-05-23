@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
@@ -35,8 +35,8 @@ class WorkflowsMixin:
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
-        sort_by: str | None = "updated_at",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Workflows List workflows with pagination and optional filtering."""
@@ -59,7 +59,7 @@ class WorkflowsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateWorkflowRequest(name=name, description=description)
+        payload = CreateWorkflowRequest(name=cast(Any, name), description=cast(Any, description))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows", params=params or None, data=data)
 
@@ -78,7 +78,7 @@ class WorkflowsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = UpdateWorkflowRequest(name=name, description=description)
+        payload = UpdateWorkflowRequest(name=cast(Any, name), description=cast(Any, description))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/{workflow_id}", params=params or None, data=data)
 
@@ -99,7 +99,7 @@ class WorkflowsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = WorkflowGraphDiagnosisRequest(blocks=blocks, edges=edges, re_propagate=re_propagate)
+        payload = WorkflowGraphDiagnosisRequest(blocks=cast(Any, blocks), edges=cast(Any, edges), re_propagate=cast(Any, re_propagate))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/diagnose-graph", params=params or None, data=data)
 
@@ -109,7 +109,7 @@ class WorkflowsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = PublishWorkflowRequest(description=description)
+        payload = PublishWorkflowRequest(description=cast(Any, description))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/publish", params=params or None, data=data)
 
@@ -135,50 +135,50 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
-        sort_by: str | None = "updated_at",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
         **extra_params: Any,
     ) -> PaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
-        request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
-        return self.request_page(request, model=Workflow)
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
+        return self.request_page(prepared_request, model=Workflow)
 
     def create(self, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
         """Create Workflow Create a new workflow. The workflow starts unpublished and is scaffolded with a default "Document" input block in the live block collection."""
-        request = self.prepare_create(name=name, description=description, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_create(name=name, description=description, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     def get(self, workflow_id: str, **extra_params: Any) -> Workflow:
         """Get Workflow Get a single workflow by ID. Returns workflow metadata only."""
-        request = self.prepare_get(workflow_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(workflow_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     def update(self, workflow_id: str, name: str | None = None, description: str | None = None, **extra_params: Any) -> Workflow:
         """Update Workflow Update an existing workflow."""
-        request = self.prepare_update(workflow_id, name=name, description=description, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_update(workflow_id, name=name, description=description, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     def delete(self, workflow_id: str, **extra_params: Any) -> None:
         """Delete Workflow Delete a workflow and all its associated entities. This deletes: - The workflow document - All blocks and edges (live collections) - All block and edge snapshots - All workflow snapshots"""
-        request = self.prepare_delete(workflow_id, **extra_params)
-        self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(workflow_id, **extra_params)
+        self._client._prepared_request(prepared_request)
         return None
 
     def diagnose(
         self, workflow_id: str, blocks: list[WorkflowConfigBlock] | None = None, edges: list[WorkflowConfigEdge] | None = None, re_propagate: bool = True, **extra_params: Any
     ) -> WorkflowDiagnosisResponse:
         """Diagnose Workflow Graph Diagnose a workflow graph payload for the given workflow. When the request omits ``blocks`` and ``edges`` (both ``None``) the route loads the persisted draft from MongoDB. When either is provided (including an explicit empty list) the request body is diagnosed as-is."""
-        request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return WorkflowDiagnosisResponse.model_validate(response)
 
     def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
-        request = self.prepare_publish(workflow_id, description=description, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_publish(workflow_id, description=description, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
 
@@ -203,50 +203,50 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
-        sort_by: str | None = "updated_at",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
-        request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
-        return await self.request_page(request, model=Workflow)
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
+        return await self.request_page(prepared_request, model=Workflow)
 
     async def create(self, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
         """Create Workflow Create a new workflow. The workflow starts unpublished and is scaffolded with a default "Document" input block in the live block collection."""
-        request = self.prepare_create(name=name, description=description, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_create(name=name, description=description, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     async def get(self, workflow_id: str, **extra_params: Any) -> Workflow:
         """Get Workflow Get a single workflow by ID. Returns workflow metadata only."""
-        request = self.prepare_get(workflow_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(workflow_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     async def update(self, workflow_id: str, name: str | None = None, description: str | None = None, **extra_params: Any) -> Workflow:
         """Update Workflow Update an existing workflow."""
-        request = self.prepare_update(workflow_id, name=name, description=description, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_update(workflow_id, name=name, description=description, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
     async def delete(self, workflow_id: str, **extra_params: Any) -> None:
         """Delete Workflow Delete a workflow and all its associated entities. This deletes: - The workflow document - All blocks and edges (live collections) - All block and edge snapshots - All workflow snapshots"""
-        request = self.prepare_delete(workflow_id, **extra_params)
-        await self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(workflow_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
         return None
 
     async def diagnose(
         self, workflow_id: str, blocks: list[WorkflowConfigBlock] | None = None, edges: list[WorkflowConfigEdge] | None = None, re_propagate: bool = True, **extra_params: Any
     ) -> WorkflowDiagnosisResponse:
         """Diagnose Workflow Graph Diagnose a workflow graph payload for the given workflow. When the request omits ``blocks`` and ``edges`` (both ``None``) the route loads the persisted draft from MongoDB. When either is provided (including an explicit empty list) the request body is diagnosed as-is."""
-        request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return WorkflowDiagnosisResponse.model_validate(response)
 
     async def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
-        request = self.prepare_publish(workflow_id, description=description, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_publish(workflow_id, description=description, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
 

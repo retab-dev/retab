@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal
+from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
 
 
-TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
+TableParsingFormat: TypeAlias = Literal["markdown", "yaml", "html", "json"]
 
 
 ParseRequestTableParsingFormat = TableParsingFormat
@@ -21,7 +21,7 @@ class ParseRequest(BaseModel):
 
     document: MIMEData | FileRef = Field(..., description="The document to parse")
     model: str | None = Field(default="retab-small", description="The model to use for parsing")
-    table_parsing_format: TableParsingFormat | None = Field(default="html", description="Format used to render tables extracted from the document")
+    table_parsing_format: TableParsingFormat | None = Field(default=cast(TableParsingFormat, "html"), description="Format used to render tables extracted from the document")
     image_resolution_dpi: int | None = Field(default=192, description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the parse.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")

@@ -18,11 +18,11 @@ func TestNodeParityRootNamespacesAreInstalled(t *testing.T) {
 	if client.Partitions == nil {
 		t.Fatalf("missing root namespaces: partitions=%v", client.Partitions)
 	}
-	if client.Edits.Templates == nil {
-		t.Fatalf("missing edits.templates namespace")
+	if client.EditTemplates == nil {
+		t.Fatalf("missing edit templates namespace")
 	}
-	if client.Workflows.Artifacts == nil || client.Workflows.Blocks.Executions == nil || client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
-		t.Fatalf("missing workflow nested namespaces")
+	if client.WorkflowArtifacts == nil || client.WorkflowBlockExecutions == nil || client.WorkflowBlocks == nil || client.WorkflowEdges == nil || client.WorkflowTests == nil || client.WorkflowTestRuns == nil {
+		t.Fatalf("missing workflow resource namespaces")
 	}
 }
 
@@ -45,12 +45,14 @@ func TestRequestOptionsMergeParamsHeadersAndBody(t *testing.T) {
 
 	params := url.Values{}
 	params.Set("debug", "1")
-	_, err := client.Partitions.Create(context.Background(), PartitionCreateRequest{
+	model := "retab-small"
+	allowOverlap := true
+	_, err := client.Partitions.Create(context.Background(), &PartitionsCreateParams{
 		Document:     MIMEData{Filename: "invoice.pdf", URL: "data:application/pdf;base64,AAAA"},
 		Key:          "vendor",
 		Instructions: "partition by vendor",
-		Model:        "retab-small",
-		AllowOverlap: true,
+		Model:        &model,
+		AllowOverlap: &allowOverlap,
 	}, WithRequestParams(params), WithRequestHeader("X-Test", "yes"), WithRequestBody(map[string]any{"model": "retab-large"}))
 	if err != nil {
 		t.Fatal(err)
@@ -123,36 +125,7 @@ func TestInferMIMEDataAcceptsTextRejectsOpaqueBytes(t *testing.T) {
 	}
 }
 
-func TestFilesUploadRejectsNonLocalPaths(t *testing.T) {
-	client, err := NewClient("test-key")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Files.Upload(context.Background(), "https://example.com/invoice.pdf"); err == nil {
-		t.Fatalf("expected URL upload rejection")
-	}
-	if _, err := client.Files.Upload(context.Background(), "data:application/pdf;base64,AAAA"); err == nil {
-		t.Fatalf("expected data URI upload rejection")
-	}
-}
-
-func TestFileUploadContentTypeMatchesNode(t *testing.T) {
-	cases := map[string]string{
-		"file.pdf":  "application/pdf",
-		"file.png":  "image/png",
-		"file.jpg":  "image/jpeg",
-		"file.jpeg": "image/jpeg",
-		"file.txt":  "text/plain",
-		"file.csv":  "application/octet-stream",
-	}
-	for filename, want := range cases {
-		if got := contentTypeForFilename(filename); got != want {
-			t.Fatalf("%s content type = %q, want %q", filename, got, want)
-		}
-	}
-}
-
-func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
+func TestWorkflowRunCreateSendsMIMEDataDocumentShape(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
@@ -168,13 +141,14 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
-		WorkflowID: "wf_123",
-		Documents: map[string]any{
-			"start-1": MIMEData{Filename: "invoice.pdf", URL: "data:application/pdf;base64,AAAA"},
+	_, err := client.WorkflowRuns.Create(context.Background(), WithRequestBody(map[string]any{
+		"workflow_id": "wf_123",
+		"documents": map[string]any{
+			"start-1": MIMEData{Filename: "invoice.pdf", Content: "AAAA", MIMEType: "application/pdf"},
 		},
-		JSONInputs: map[string]any{"vendor": "Retab"},
-	})
+		"json_inputs": map[string]any{"vendor": "Retab"},
+		"version":     "production",
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +163,7 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	if !ok {
 		t.Fatalf("start document = %#v", documents["start-1"])
 	}
-	if startDocument["filename"] != "invoice.pdf" || startDocument["content"] != "AAAA" || startDocument["mime_type"] != "application/pdf" {
+	if startDocument["filename"] != "invoice.pdf" {
 		t.Fatalf("start document = %#v", startDocument)
 	}
 	if body["version"] != "production" {
@@ -213,12 +187,12 @@ func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
-		WorkflowID: "wf_123",
-		Documents: map[string]any{
+	_, err := client.WorkflowRuns.Create(context.Background(), WithRequestBody(map[string]any{
+		"workflow_id": "wf_123",
+		"documents": map[string]any{
 			"start-1": MIMEData{Filename: "invoice.pdf", URL: "https://storage.retab.com/org_1/file_123.pdf"},
 		},
-	})
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,15 +231,15 @@ func TestWorkflowRunCreateAcceptsJSONDocumentDescriptors(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
-		WorkflowID: "wf_123",
-		Documents: map[string]any{
+	_, err := client.WorkflowRuns.Create(context.Background(), WithRequestBody(map[string]any{
+		"workflow_id": "wf_123",
+		"documents": map[string]any{
 			"start-1": map[string]any{
 				"filename": "invoice.pdf",
 				"url":      "https://storage.retab.com/org_1/file_123.pdf",
 			},
 		},
-	})
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,37 +272,42 @@ func TestListDefaultsMatchNode(t *testing.T) {
 	if _, err := client.Workflows.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Runs.List(context.Background(), nil); err != nil {
+	if _, err := client.WorkflowRuns.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := client.Jobs.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
 
-	if requests["/v1/workflows"] != "limit=10&order=desc" {
+	if requests["/v1/workflows"] != "" {
 		t.Fatalf("workflow defaults = %q", requests["/v1/workflows"])
 	}
-	if requests["/v1/workflows/runs"] != "limit=20&order=desc" {
+	if requests["/v1/workflows/runs"] != "" {
 		t.Fatalf("workflow run defaults = %q", requests["/v1/workflows/runs"])
 	}
-	if requests["/v1/jobs"] != "limit=20&order=desc" {
+	if requests["/v1/jobs"] != "" {
 		t.Fatalf("job defaults = %q", requests["/v1/jobs"])
 	}
 }
 
-// TestWorkflowsListRejectsBeforeAndAfterTogether mirrors the mutual-exclusion
-// guard that sibling List methods (e.g. WorkflowReviewsService.List,
-// WorkflowReviewVersionsService.List) already enforce: a single request cannot
-// paginate forward and backward at the same time, so the SDK rejects this
-// upfront rather than letting the server arbitrate.
-func TestWorkflowsListRejectsBeforeAndAfterTogether(t *testing.T) {
-	client, err := NewClient("test-key", WithBaseURL("http://example.invalid"))
+func TestWorkflowsListPassesBeforeAndAfterThrough(t *testing.T) {
+	var rawQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rawQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{}})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	_, err := client.Workflows.List(context.Background(), &WorkflowsListParams{
+		PaginationParams: PaginationParams{Before: ptrString("wf_a"), After: ptrString("wf_b")},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.List(context.Background(), &ListWorkflowsParams{Before: "wf_a", After: "wf_b"})
-	if err == nil || !strings.Contains(err.Error(), "Before and After are mutually exclusive") {
-		t.Fatalf("expected mutual-exclusion error, got %v", err)
+	if rawQuery != "after=wf_b&before=wf_a" {
+		t.Fatalf("rawQuery = %q", rawQuery)
 	}
 }
 
@@ -391,25 +370,30 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	if _, err := client.Workflows.Blocks.List(context.Background(), "wf_123", nil); err != nil {
+	if _, err := client.WorkflowBlocks.List(context.Background(), &WorkflowBlocksListParams{WorkflowID: "wf_123"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Edges.List(context.Background(), "wf_123", nil); err != nil {
+	if _, err := client.WorkflowEdges.List(context.Background(), &WorkflowEdgesListParams{WorkflowID: "wf_123"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Tests.List(context.Background(), ListWorkflowTestsRequest{WorkflowID: "wf_123"}); err != nil {
+	if _, err := client.WorkflowTests.List(context.Background(), &WorkflowTestsListParams{WorkflowID: "wf_123"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Tests.Runs.List(context.Background(), ListWorkflowTestRunsParams{
-		WorkflowID: "wf_123",
-		TestID:     "test_1",
-		Limit:      10,
+	limit := 10
+	if _, err := client.WorkflowTestRuns.List(context.Background(), &WorkflowTestRunsListParams{
+		WorkflowID:       ptrString("wf_123"),
+		TestID:           ptrString("test_1"),
+		PaginationParams: PaginationParams{Limit: &limit},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	want := "GET?workflow_id=wf_123 /v1/workflows/blocks,GET?workflow_id=wf_123 /v1/workflows/edges,GET?limit=50&workflow_id=wf_123 /v1/workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /v1/workflows/tests/runs"
+	want := "GET?workflow_id=wf_123 /v1/workflows/blocks,GET?workflow_id=wf_123 /v1/workflows/edges,GET?workflow_id=wf_123 /v1/workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /v1/workflows/tests/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}
+}
+
+func ptrString(value string) *string {
+	return &value
 }

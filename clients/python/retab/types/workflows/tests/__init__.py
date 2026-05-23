@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.tests.results import ManualWorkflowTestSource, RunStepWorkflowTestSource
 from retab.types.workflows.tests.runs import WorkflowTestBlockTarget
 
 
-AssertionDriftStatus = Literal["valid", "drifted", "broken"]
+AssertionDriftStatus: TypeAlias = Literal["valid", "drifted", "broken"]
 
 
 class LatestBlockTestRunSummaryStatus(str, Enum):
@@ -326,7 +326,7 @@ class SimilarityGteCondition(BaseModel):
     kind: Literal["similarity_gte"] = Field(default="similarity_gte")
     reference: Any
     threshold: float
-    method: SimilarityGteConditionMethod | None = Field(default="levenshtein")
+    method: SimilarityGteConditionMethod | None = Field(default=cast(SimilarityGteConditionMethod, "levenshtein"))
 
 
 class SplitIouCondition(BaseModel):
@@ -368,7 +368,7 @@ class WorkflowTest(BaseModel):
     assertion: AssertionSpec | None = None
     assertion_schema_dep: AssertionSchemaDep | None = None
     assertion_drift_status: AssertionDriftStatus | None = None
-    schema_drift: WorkflowTestSchemaDrift | None = Field(default="unknown")
+    schema_drift: WorkflowTestSchemaDrift | None = Field(default=cast(WorkflowTestSchemaDrift, "unknown"))
     schema_drift_detail: str | None = None
     validation_status: str | None = Field(default="valid")
     validation_issues: list[Any] | None = None

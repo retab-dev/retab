@@ -3,21 +3,21 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal
+from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.tests.results import FileHandleInput, JsonHandleInput
 
 
-NConsensusValue = Literal[3, 5, 7]
+NConsensusValue: TypeAlias = Literal[3, 5, 7]
 
 
-ExperimentPublicStatus = Literal["draft", "processing", "completed", "failed", "cancelled"]
+ExperimentPublicStatus: TypeAlias = Literal["draft", "processing", "completed", "failed", "cancelled"]
 
 
-ExperimentBlockType = Literal["extract", "classifier", "split", "for_each"]
+ExperimentBlockType: TypeAlias = Literal["extract", "classifier", "split", "for_each"]
 
 
-ExperimentSchemaDriftStatus = Literal["none", "partial", "drifted", "unknown"]
+ExperimentSchemaDriftStatus: TypeAlias = Literal["none", "partial", "drifted", "unknown"]
 
 
 CreateExperimentRequestNConsensus = NConsensusValue
@@ -100,11 +100,11 @@ class WorkflowExperiment(BaseModel):
     last_run_id: str | None = None
     created_at: datetime.datetime | None = None
     updated_at: datetime.datetime | None = None
-    status: ExperimentPublicStatus | None = Field(default="draft")
+    status: ExperimentPublicStatus | None = Field(default=cast(ExperimentPublicStatus, "draft"))
     block_type: ExperimentBlockType
     score: float | None = None
     is_stale: bool | None = Field(default=False)
-    schema_drift: ExperimentSchemaDriftStatus | None = Field(default="unknown")
+    schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"))
     schema_drift_detail: str | None = None
 
 

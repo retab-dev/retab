@@ -4,11 +4,14 @@ package retab
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+var errStopPaging = errors.New("stop paging")
 
 func TestAutoPagingSeqWalksEveryItemAcrossPages(t *testing.T) {
 	server, seenAfter := newTwoPageWorkflowsServer(t)
@@ -24,12 +27,12 @@ func TestAutoPagingSeqWalksEveryItemAcrossPages(t *testing.T) {
 		t.Fatalf("first page: %v", err)
 	}
 
-	var ids []string
-	for w, err := range page.AutoPagingSeq(context.Background()) {
-		if err != nil {
-			t.Fatalf("unexpected err mid-iteration: %v", err)
-		}
+	ids := []string{}
+	if err := page.AutoPaging(context.Background(), func(w Workflow) error {
 		ids = append(ids, w.ID)
+		return nil
+	}); err != nil {
+		t.Fatalf("unexpected err mid-iteration: %v", err)
 	}
 
 	if len(ids) != 4 {
@@ -61,15 +64,16 @@ func TestAutoPagingSeqBreaksCleanlyWithoutFetchingNextPage(t *testing.T) {
 		t.Fatalf("first page: %v", err)
 	}
 
-	var ids []string
-	for w, err := range page.AutoPagingSeq(context.Background()) {
-		if err != nil {
-			t.Fatalf("unexpected err: %v", err)
-		}
+	ids := []string{}
+	err = page.AutoPaging(context.Background(), func(w Workflow) error {
 		ids = append(ids, w.ID)
 		if len(ids) == 1 {
-			break // caller short-circuits after first item
+			return errStopPaging
 		}
+		return nil
+	})
+	if err != errStopPaging {
+		t.Fatalf("expected stop sentinel, got %v", err)
 	}
 
 	if len(ids) != 1 {
@@ -108,15 +112,11 @@ func TestAutoPagingSeqYieldsErrorOnFetchFailure(t *testing.T) {
 		t.Fatalf("first page should succeed: %v", err)
 	}
 
-	var ids []string
-	var seenErr error
-	for w, err := range page.AutoPagingSeq(context.Background()) {
-		if err != nil {
-			seenErr = err
-			break
-		}
+	ids := []string{}
+	seenErr := page.AutoPaging(context.Background(), func(w Workflow) error {
 		ids = append(ids, w.ID)
-	}
+		return nil
+	})
 
 	if seenErr == nil {
 		t.Fatal("expected an error to be yielded after the second page fetch failed")

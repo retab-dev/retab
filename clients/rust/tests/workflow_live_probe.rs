@@ -33,10 +33,10 @@ async fn exercise_workflow_system_live() {
         .unwrap()
         .as_millis();
 
-    let mut workflow_body = CreateWorkflowRequest::default();
-    workflow_body.name = Some(format!("rust-sdk-live-probe-{unique}"));
-    workflow_body.description =
-        Some("temporary workflow created by Rust SDK live probe".to_string());
+    let workflow_body = CreateWorkflowRequest {
+        name: Some(format!("rust-sdk-live-probe-{unique}")),
+        description: Some("temporary workflow created by Rust SDK live probe".to_string()),
+    };
 
     let workflow = client
         .workflows()
@@ -46,8 +46,10 @@ async fn exercise_workflow_system_live() {
     println!("created workflow {}", workflow.id);
 
     let probe_result: Result<(), String> = (async {
-        let mut update_body = UpdateWorkflowRequest::default();
-        update_body.description = Some("updated by Rust SDK live probe".to_string());
+        let update_body = UpdateWorkflowRequest {
+            description: Some("updated by Rust SDK live probe".to_string()),
+            ..Default::default()
+        };
         let updated = api!(
             client.workflows().update(
                 &workflow.id,
@@ -102,14 +104,16 @@ async fn exercise_workflow_system_live() {
         );
         println!("created note block {}", note.id);
 
-        let mut block_patch = UpdateWorkflowBlockRequest::default();
-        block_patch.label = Some("Rust SDK probe note updated".to_string());
-        block_patch.position_x = Some(360.0);
-        block_patch.config_mode = Some(UpdateWorkflowBlockRequestConfigMode::Merge);
-        block_patch.config = Some(HashMap::from([(
-            "text".to_string(),
-            json!("Updated by Rust SDK live probe"),
-        )]));
+        let block_patch = UpdateWorkflowBlockRequest {
+            label: Some("Rust SDK probe note updated".to_string()),
+            position_x: Some(360.0),
+            config_mode: Some(UpdateWorkflowBlockRequestConfigMode::Merge),
+            config: Some(HashMap::from([(
+                "text".to_string(),
+                json!("Updated by Rust SDK live probe"),
+            )])),
+            ..Default::default()
+        };
         let updated_note = api!(
             client.workflow_blocks().update(
                 &note.id,
@@ -246,8 +250,9 @@ async fn exercise_workflow_system_live() {
             Ok(run) => {
                 println!("created run {}", run.id);
                 let _ = api!(client.workflow_runs().get(&run.id), "get workflow run");
-                let mut cancel_body = CancelWorkflowRequest::default();
-                cancel_body.command_id = Some(format!("rust-sdk-live-probe-{unique}"));
+                let cancel_body = CancelWorkflowRequest {
+                    command_id: Some(format!("rust-sdk-live-probe-{unique}")),
+                };
                 let _ = client
                     .workflow_runs()
                     .cancel(

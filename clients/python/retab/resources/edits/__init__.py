@@ -2,7 +2,7 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from io import IOBase
 from pathlib import Path
 import PIL.Image
@@ -36,7 +36,7 @@ class EditsMixin:
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
         from_date: str | None = None,
@@ -75,9 +75,17 @@ class EditsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        if document is not None:
-            document = _coerce_mime_document_input(document)
-        payload = EditRequest(instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache)
+        document_payload: Any = document
+        if document_payload is not None:
+            document_payload = _coerce_mime_document_input(document_payload)
+        payload = EditRequest(
+            instructions=cast(Any, instructions),
+            document=cast(Any, document_payload),
+            template_id=cast(Any, template_id),
+            model=cast(Any, model),
+            config=cast(Any, config),
+            bust_cache=cast(Any, bust_cache),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/edits", params=params or None, data=data)
 
@@ -112,7 +120,7 @@ class Edits(SyncAPIResource, EditsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
         from_date: str | None = None,
@@ -120,10 +128,10 @@ class Edits(SyncAPIResource, EditsMixin):
         **extra_params: Any,
     ) -> PaginatedList[Edit]:
         """List Edits"""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
         )
-        return self.request_page(request, model=Edit)
+        return self.request_page(prepared_request, model=Edit)
 
     def create(
         self,
@@ -136,20 +144,22 @@ class Edits(SyncAPIResource, EditsMixin):
         **extra_params: Any,
     ) -> Edit:
         """Create Edit"""
-        request = self.prepare_create(instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_create(
+            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
+        )
+        response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     def get(self, edit_id: str, **extra_params: Any) -> Edit:
         """Get Edit"""
-        request = self.prepare_get(edit_id, **extra_params)
-        response = self._client._prepared_request(request)
+        prepared_request = self.prepare_get(edit_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     def delete(self, edit_id: str, **extra_params: Any) -> None:
         """Delete Edit"""
-        request = self.prepare_delete(edit_id, **extra_params)
-        self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(edit_id, **extra_params)
+        self._client._prepared_request(prepared_request)
         return None
 
 
@@ -165,7 +175,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 10,
-        order: PaginationOrder | None = "desc",
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
         from_date: str | None = None,
@@ -173,10 +183,10 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         **extra_params: Any,
     ) -> AsyncPaginatedList[Edit]:
         """List Edits"""
-        request = self.prepare_list(
+        prepared_request = self.prepare_list(
             before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
         )
-        return await self.request_page(request, model=Edit)
+        return await self.request_page(prepared_request, model=Edit)
 
     async def create(
         self,
@@ -189,20 +199,22 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         **extra_params: Any,
     ) -> Edit:
         """Create Edit"""
-        request = self.prepare_create(instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_create(
+            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
+        )
+        response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     async def get(self, edit_id: str, **extra_params: Any) -> Edit:
         """Get Edit"""
-        request = self.prepare_get(edit_id, **extra_params)
-        response = await self._client._prepared_request(request)
+        prepared_request = self.prepare_get(edit_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     async def delete(self, edit_id: str, **extra_params: Any) -> None:
         """Delete Edit"""
-        request = self.prepare_delete(edit_id, **extra_params)
-        await self._client._prepared_request(request)
+        prepared_request = self.prepare_delete(edit_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
         return None
 
 

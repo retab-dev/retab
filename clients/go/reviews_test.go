@@ -86,9 +86,17 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{
-		WorkflowID: "wf_1", RunID: "run_1", BlockID: "blk_1", StepID: "step_1", IterationKey: "0",
-		Limit: 25, DecisionStatus: "decided",
+	decisionStatus := ReviewDecisionStatusDecided
+	resp, err := client.WorkflowReviews.List(context.Background(), &WorkflowReviewsListParams{
+		WorkflowID:     ptrTo("wf_1"),
+		RunID:          ptrTo("run_1"),
+		BlockID:        ptrTo("blk_1"),
+		StepID:         ptrTo("step_1"),
+		IterationKey:   ptrTo("0"),
+		DecisionStatus: ptrTo(decisionStatus),
+		PaginationParams: PaginationParams{
+			Limit: ptrTo(25),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +128,7 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 	}
 }
 
-func TestWorkflowReviewsListDefaultsToPending(t *testing.T) {
+func TestWorkflowReviewsListOmitsDecisionStatusWhenUnset(t *testing.T) {
 	var seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenQuery = r.URL.RawQuery
@@ -133,22 +141,24 @@ func TestWorkflowReviewsListDefaultsToPending(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.List(context.Background(), nil); err != nil {
+	if _, err := client.WorkflowReviews.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(seenQuery, "decision_status=pending") {
-		t.Fatalf("default query = %q", seenQuery)
+	if strings.Contains(seenQuery, "decision_status=") {
+		t.Fatalf("default query should not set decision_status: %q", seenQuery)
 	}
 }
 
-func TestWorkflowReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
+func TestWorkflowReviewsListAcceptsPaginationParams(t *testing.T) {
 	client, err := NewClient("test-key", WithBaseURL("http://example.invalid"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{Before: "a", After: "b"})
-	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
-		t.Fatalf("expected mutual-exclusion error, got %v", err)
+	_, err = client.WorkflowReviews.List(context.Background(), &WorkflowReviewsListParams{
+		PaginationParams: PaginationParams{Before: ptrTo("a"), After: ptrTo("b")},
+	})
+	if err == nil || !strings.Contains(err.Error(), "example.invalid") {
+		t.Fatalf("expected request to use generated pagination params, got %v", err)
 	}
 }
 
@@ -165,7 +175,7 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	review, err := client.Workflows.Reviews.Get(context.Background(), reviewID)
+	review, err := client.WorkflowReviews.Get(context.Background(), reviewID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +192,7 @@ func TestWorkflowReviewsGetRequiresReviewID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.Get(context.Background(), ""); err == nil {
+	if _, err := client.WorkflowReviews.Get(context.Background(), ""); err == nil {
 		t.Fatal("expected error for empty reviewID")
 	}
 }
@@ -207,7 +217,7 @@ func TestWorkflowReviewsApproveSendsVersionIDToApproveEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, ApproveReviewRequest{VersionID: reviewVersionID})
+	resp, err := client.WorkflowReviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +227,7 @@ func TestWorkflowReviewsApproveSendsVersionIDToApproveEndpoint(t *testing.T) {
 	if body["version_id"] != reviewVersionID || body["verdict"] != nil {
 		t.Fatalf("body = %#v", body)
 	}
-	if resp.ResumeStatus != "resumed" || resp.Review.Decision == nil {
+	if resp.ResumeStatus == nil || *resp.ResumeStatus != ResumeStatusResumed || resp.Review.Decision == nil {
 		t.Fatalf("resp = %#v", resp)
 	}
 }
@@ -238,12 +248,12 @@ func TestWorkflowReviewsApproveSurfacesPendingResume(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, ApproveReviewRequest{VersionID: reviewVersionID})
+	resp, err := client.WorkflowReviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ResumeStatus != "pending" {
-		t.Fatalf("ResumeStatus = %q", resp.ResumeStatus)
+	if resp.ResumeStatus == nil || *resp.ResumeStatus != ResumeStatusPending {
+		t.Fatalf("ResumeStatus = %#v", resp.ResumeStatus)
 	}
 	if resp.ResumeError == nil || *resp.ResumeError == "" {
 		t.Fatalf("ResumeError = %#v", resp.ResumeError)
@@ -266,7 +276,7 @@ func TestWorkflowReviewsRejectSendsVersionIDAndReasonToRejectEndpoint(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{
+	if _, err := client.WorkflowReviews.Reject(context.Background(), reviewID, &WorkflowReviewsRejectParams{
 		VersionID: reviewVersionID, Reason: "wrong document",
 	}); err != nil {
 		t.Fatal(err)
@@ -279,16 +289,16 @@ func TestWorkflowReviewsRejectSendsVersionIDAndReasonToRejectEndpoint(t *testing
 	}
 }
 
-func TestWorkflowReviewsRejectRequiresInputs(t *testing.T) {
+func TestWorkflowReviewsRejectRequiresReviewID(t *testing.T) {
 	client, err := NewClient("test-key", WithBaseURL("http://127.0.0.1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{Reason: "wrong"}); err == nil || !strings.Contains(err.Error(), "VersionID is required") {
-		t.Fatalf("expected VersionID required error, got %v", err)
-	}
-	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, RejectReviewRequest{VersionID: reviewVersionID}); err == nil || !strings.Contains(err.Error(), "Reason is required") {
-		t.Fatalf("expected Reason required error, got %v", err)
+	if _, err := client.WorkflowReviews.Reject(context.Background(), "", &WorkflowReviewsRejectParams{
+		VersionID: reviewVersionID,
+		Reason:    "wrong",
+	}); err == nil || !strings.Contains(err.Error(), "review_id is required") {
+		t.Fatalf("expected review_id required error, got %v", err)
 	}
 }
 
@@ -323,8 +333,9 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	list, err := client.Workflows.Reviews.Versions.List(context.Background(), &ListReviewVersionsParams{
-		ReviewID: reviewID, Limit: 25,
+	list, err := client.WorkflowReviewVersions.List(context.Background(), &WorkflowReviewVersionsListParams{
+		ReviewID:         reviewID,
+		PaginationParams: PaginationParams{Limit: ptrTo(25)},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -346,7 +357,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatalf("list = %#v", list)
 	}
 
-	version, err := client.Workflows.Reviews.Versions.Get(context.Background(), reviewChildVersionID)
+	version, err := client.WorkflowReviewVersions.Get(context.Background(), reviewChildVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,8 +368,8 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatalf("version = %#v", version)
 	}
 
-	created, err := client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
-		ReviewID: reviewID, ParentID: reviewVersionID, Snapshot: map[string]any{"category": "Invoice"}, Note: "fixed category",
+	created, err := client.WorkflowReviewVersions.Create(context.Background(), &WorkflowReviewVersionsCreateParams{
+		ReviewID: reviewID, ParentID: reviewVersionID, Snapshot: map[string]interface{}{"category": "Invoice"}, Note: ptrTo("fixed category"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -382,20 +393,12 @@ func TestWorkflowReviewVersionsRequiresInputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Workflows.Reviews.Versions.List(context.Background(), nil)
-	if err == nil || !strings.Contains(err.Error(), "ReviewID is required") {
-		t.Fatalf("expected ReviewID required error, got %v", err)
+	_, err = client.WorkflowReviewVersions.List(context.Background(), nil)
+	if err == nil || !strings.Contains(err.Error(), "review_id is required") {
+		t.Fatalf("expected review_id required error, got %v", err)
 	}
-	_, err = client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
-		Snapshot: map[string]any{"category": "Invoice"},
-	})
-	if err == nil || !strings.Contains(err.Error(), "ReviewID is required") {
-		t.Fatalf("expected ReviewID required error, got %v", err)
-	}
-	_, err = client.Workflows.Reviews.Versions.Create(context.Background(), CreateReviewVersionRequest{
-		ReviewID: reviewID, Snapshot: map[string]any{"category": "Invoice"},
-	})
-	if err == nil || !strings.Contains(err.Error(), "ParentID is required") {
-		t.Fatalf("expected ParentID required error, got %v", err)
+	_, err = client.WorkflowReviewVersions.Get(context.Background(), "")
+	if err == nil || !strings.Contains(err.Error(), "version_id is required") {
+		t.Fatalf("expected version_id required error, got %v", err)
 	}
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-23T21:10:35.769Z",
+  "generatedAt": "2026-05-23T21:24:19.281Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
