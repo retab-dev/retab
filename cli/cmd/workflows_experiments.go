@@ -706,7 +706,6 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
-	workflowsExperimentsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")

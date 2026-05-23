@@ -666,8 +666,6 @@ func init() {
 
 	jobsListCmd.Flags().String("before", "", "job id: return items before this id (mutually exclusive with --after)")
 	jobsListCmd.Flags().String("after", "", "job id: return items after this id (mutually exclusive with --before)")
-	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
-	// handwritten message; see workflowsListCmd for the rationale).
 	jobsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
 	jobsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	jobsListCmd.Flags().String("id", "", "filter by job id")
