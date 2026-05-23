@@ -20,7 +20,7 @@ module Retab
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::Edit])
+      ).returns(Retab::PaginatedList[Retab::Edit])
     end
     def list(before:, after:, limit:, order:, filename:, template_id:, from_date:, to_date:, request_options:); end
 

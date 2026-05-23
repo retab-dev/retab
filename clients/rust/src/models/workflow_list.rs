@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WorkflowList {
-    pub data: Vec<Workflow>,
-    pub list_metadata: ListMetadata,
-}
-impl WorkflowList {
-    /// Construct a new `WorkflowList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<Workflow>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type WorkflowList = crate::pagination::PaginatedList<Workflow>;

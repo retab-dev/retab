@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlockExecutionList {
-    pub data: Vec<StoredBlockExecution>,
-    pub list_metadata: ListMetadata,
-}
-impl BlockExecutionList {
-    /// Construct a new `BlockExecutionList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<StoredBlockExecution>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type BlockExecutionList = crate::pagination::PaginatedList<StoredBlockExecution>;

@@ -60,12 +60,15 @@ class JobsTest extends TestCase
     {
         $fixture = $this->loadFixture('job');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->jobs()->get('test_job_id');
+        $result = $client->jobs()->get('test_job_id', includeRequest: true, includeResponse: true);
         $this->assertInstanceOf(\Retab\Resource\Job::class, $result);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/jobs/test_job_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertArrayHasKey('include_request', $query);
+        $this->assertArrayHasKey('include_response', $query);
     }
 
     public function testCancel(): void

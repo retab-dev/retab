@@ -43,7 +43,7 @@ namespace Retab
         public static MimeData FromFile(FileInfo file)
         {
             if (file == null) throw new ArgumentNullException(nameof(file));
-            var bytes = File.ReadAllBytes(file.FullName);
+            var bytes = System.IO.File.ReadAllBytes(file.FullName);
             var mime = DetectMimeType(bytes) ?? "application/octet-stream";
             var dataUrl = $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
             return new MimeData(file.Name, dataUrl);

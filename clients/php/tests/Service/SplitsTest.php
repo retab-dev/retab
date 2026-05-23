@@ -36,7 +36,7 @@ class SplitsTest extends TestCase
     {
         $fixture = $this->loadFixture('split');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->splits()->create(document: 'test_value', subdocuments: []);
+        $result = $client->splits()->create(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), subdocuments: []);
         $this->assertInstanceOf(\Retab\Resource\Split::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);

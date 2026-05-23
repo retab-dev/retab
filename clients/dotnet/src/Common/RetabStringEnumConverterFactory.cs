@@ -16,8 +16,7 @@ namespace Retab
     {
         public override bool CanConvert(Type typeToConvert)
         {
-            var t = Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert;
-            return t.IsEnum;
+            return typeToConvert.IsEnum;
         }
 
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)

@@ -207,9 +207,7 @@ func (s *FilesService) List(ctx context.Context, params *ListFilesParams, opts .
 	} else {
 		query.Set("sort_by", "created_at")
 	}
-	var result PaginatedList[File]
-	err := s.client.do(ctx, http.MethodGet, "/v1/files", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[File](ctx, s.client, http.MethodGet, "/v1/files", query, nil, opts...)
 }
 
 func (s *FilesService) Get(ctx context.Context, fileID string, opts ...RequestOption) (*File, error) {
@@ -301,9 +299,7 @@ func (s *ExtractionsService) List(ctx context.Context, params *ListExtractionsPa
 		applyListParams(query, &params.ListParams)
 		addJSONQuery(query, "metadata", params.Metadata)
 	}
-	var result PaginatedList[Extraction]
-	err := s.client.do(ctx, http.MethodGet, "/v1/extractions", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Extraction](ctx, s.client, http.MethodGet, "/v1/extractions", query, nil, opts...)
 }
 
 func (s *ExtractionsService) Get(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
@@ -380,9 +376,7 @@ func (s *SplitsService) Get(ctx context.Context, splitID string, opts ...Request
 
 func (s *SplitsService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Split], error) {
 	query := listQuery(params)
-	var result PaginatedList[Split]
-	err := s.client.do(ctx, http.MethodGet, "/v1/splits", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Split](ctx, s.client, http.MethodGet, "/v1/splits", query, nil, opts...)
 }
 
 func (s *SplitsService) Delete(ctx context.Context, splitID string, opts ...RequestOption) error {
@@ -439,9 +433,7 @@ func (s *ClassificationsService) Get(ctx context.Context, classificationID strin
 
 func (s *ClassificationsService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Classification], error) {
 	query := listQuery(params)
-	var result PaginatedList[Classification]
-	err := s.client.do(ctx, http.MethodGet, "/v1/classifications", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Classification](ctx, s.client, http.MethodGet, "/v1/classifications", query, nil, opts...)
 }
 
 func (s *ClassificationsService) Delete(ctx context.Context, classificationID string, opts ...RequestOption) error {
@@ -489,9 +481,7 @@ func (s *ParsesService) Get(ctx context.Context, parseID string, opts ...Request
 
 func (s *ParsesService) List(ctx context.Context, params *ListParams, opts ...RequestOption) (*PaginatedList[Parse], error) {
 	query := listQuery(params)
-	var result PaginatedList[Parse]
-	err := s.client.do(ctx, http.MethodGet, "/v1/parses", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Parse](ctx, s.client, http.MethodGet, "/v1/parses", query, nil, opts...)
 }
 
 func (s *ParsesService) Delete(ctx context.Context, parseID string, opts ...RequestOption) error {
@@ -556,9 +546,7 @@ func (s *EditsService) List(ctx context.Context, params *ListEditsParams, opts .
 		applyListParams(query, &params.ListParams)
 		addQuery(query, "template_id", params.TemplateID)
 	}
-	var result PaginatedList[Edit]
-	err := s.client.do(ctx, http.MethodGet, "/v1/edits", query, nil, &result, opts...)
-	return &result, err
+	return doPaginated[Edit](ctx, s.client, http.MethodGet, "/v1/edits", query, nil, opts...)
 }
 
 func (s *EditsService) Delete(ctx context.Context, editID string, opts ...RequestOption) error {
@@ -751,12 +739,10 @@ func (s *JobsService) List(ctx context.Context, params *ListJobsParams, opts ...
 			query.Set("include_response", strconv.FormatBool(*params.IncludeResponse))
 		}
 	}
-	var result JobListResponse
-	err := s.client.do(ctx, http.MethodGet, "/v1/jobs", query, nil, &result, opts...)
-	if result.Data == nil {
-		result.Data = []Job{}
-	}
-	return &result, err
+	// doPaginated returns a *PaginatedList[Job] (== *JobListResponse via type alias).
+	// PaginatedList[T].UnmarshalJSON already normalizes a nil Data field to an
+	// empty slice, so no post-hoc nil check is needed here.
+	return doPaginated[Job](ctx, s.client, http.MethodGet, "/v1/jobs", query, nil, opts...)
 }
 
 func listQuery(params *ListParams) url.Values {

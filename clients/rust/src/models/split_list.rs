@@ -2,21 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SplitList {
-    pub data: Vec<Split>,
-    pub list_metadata: ListMetadata,
-}
-impl SplitList {
-    /// Construct a new `SplitList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<Split>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type SplitList = crate::pagination::PaginatedList<Split>;

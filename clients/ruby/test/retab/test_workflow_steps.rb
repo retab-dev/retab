@@ -15,7 +15,7 @@ class WorkflowStepsTest < Minitest::Test
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/steps(\?|\z)})
       .to_return(body: '{"data": [], "list_metadata": {}}', status: 200)
     result = @client.workflow_steps.list()
-    assert_kind_of Retab::Types::ListStruct, result
+    assert_kind_of Retab::PaginatedList, result
   end
 
   def test_get_returns_expected_result

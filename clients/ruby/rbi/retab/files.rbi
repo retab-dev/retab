@@ -18,7 +18,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::CreateUploadResponse)
     end
-    def upload(filename:, size_bytes:, content_type:, sha_256:, request_options:); end
+    def create_upload(filename:, size_bytes:, content_type:, sha_256:, request_options:); end
 
     sig do
       params(
@@ -42,7 +42,7 @@ module Retab
         include_embeddings: T.nilable(T::Boolean),
         sort_by: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::FileModel])
+      ).returns(Retab::PaginatedList[Retab::FileModel])
     end
     def list(before:, after:, limit:, order:, filename:, mime_type:, from_date:, to_date:, include_embeddings:, sort_by:, request_options:); end
 

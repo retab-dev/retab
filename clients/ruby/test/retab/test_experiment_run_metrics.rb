@@ -18,6 +18,12 @@ class ExperimentRunMetricsTest < Minitest::Test
     refute_nil result
   end
 
+  def test_get_requires_required_query_params
+    assert_raises(ArgumentError) do
+      @client.experiment_run_metrics.get()
+    end
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     { name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/metrics(\?|\z)}, args: { run_id: "stub" } },

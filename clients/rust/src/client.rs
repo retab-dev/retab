@@ -12,8 +12,10 @@ use std::time::Duration;
 use http::{HeaderName, HeaderValue, Method, StatusCode};
 use reqwest::Client as HttpClient;
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json::Value;
 
 use crate::error::Error;
+use crate::pagination::{PageEnvelope, PaginatedList};
 
 const DEFAULT_BASE_URL: &str = "https://api.retab.com";
 const DEFAULT_TIMEOUT_SECS: u64 = 60;
@@ -43,7 +45,9 @@ pub struct Retab {
 struct Inner {
     http: HttpClient,
     api_key: String,
+    #[allow(dead_code)]
     base_url: String,
+    #[allow(dead_code)]
     client_id: String,
 }
 
@@ -128,14 +132,17 @@ impl Retab {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn api_key(&self) -> &str {
         &self.inner.api_key
     }
 
+    #[allow(dead_code)]
     pub(crate) fn client_id(&self) -> &str {
         &self.inner.client_id
     }
 
+    #[allow(dead_code)]
     pub fn base_url(&self) -> &str {
         &self.inner.base_url
     }
@@ -160,6 +167,7 @@ impl Retab {
     }
 
     /// Variant returning `()` for endpoints with no response body.
+    #[allow(dead_code)]
     pub(crate) async fn request_with_body_opts_empty<Q, B>(
         &self,
         method: Method,
@@ -192,6 +200,45 @@ impl Retab {
             .send::<Q, ()>(method, path, query, None, options)
             .await?;
         serde_json::from_slice(&bytes).map_err(|e| Error::Deserialize(e.to_string()))
+    }
+
+    /// Execute a cursor-paginated request and return a stream-capable page.
+    pub(crate) async fn request_page<Q, T>(
+        &self,
+        method: Method,
+        path: &str,
+        query: &Q,
+        cursor_param: &'static str,
+        options: Option<&RequestOptions>,
+    ) -> Result<PaginatedList<T>, Error>
+    where
+        Q: Serialize + ?Sized,
+        T: DeserializeOwned + Send + Unpin + 'static,
+    {
+        let page: PageEnvelope<T> = self
+            .request_with_query_opts(method.clone(), path, query, options)
+            .await?;
+        let client = self.clone();
+        let path = path.to_string();
+        let options = options.cloned();
+        let query_template = normalized_query_value(query)?;
+
+        Ok(PaginatedList::new(
+            page.data,
+            page.list_metadata,
+            Some(Box::new(move |cursor| {
+                let client = client.clone();
+                let path = path.clone();
+                let options = options.clone();
+                let method = method.clone();
+                let query = query_with_cursor(query_template.clone(), cursor_param, cursor);
+                Box::pin(async move {
+                    client
+                        .request_with_query_opts(method, &path, &query, options.as_ref())
+                        .await
+                })
+            })),
+        ))
     }
 
     pub(crate) async fn request_with_query_opts_empty<Q>(
@@ -272,4 +319,43 @@ impl Retab {
 pub fn path_segment(s: &str) -> String {
     use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
     utf8_percent_encode(s, NON_ALPHANUMERIC).to_string()
+}
+
+fn normalized_query_value<Q>(query: &Q) -> Result<Value, Error>
+where
+    Q: Serialize + ?Sized,
+{
+    let mut value = serde_json::to_value(query)
+        .map_err(|e| Error::Builder(format!("query encode failed: {e}")))?;
+    strip_nulls(&mut value);
+    Ok(value)
+}
+
+fn strip_nulls(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            map.retain(|_, v| !v.is_null());
+            for v in map.values_mut() {
+                strip_nulls(v);
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                strip_nulls(item);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn query_with_cursor(mut query: Value, cursor_param: &str, cursor: String) -> Value {
+    if let Value::Object(map) = &mut query {
+        map.insert(cursor_param.to_string(), Value::String(cursor));
+        if cursor_param == "after" {
+            map.remove("before");
+        } else if cursor_param == "before" {
+            map.remove("after");
+        }
+    }
+    query
 }

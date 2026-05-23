@@ -11,10 +11,10 @@ class FilesTest < Minitest::Test
     @client = Retab::Client.new(api_key: "sk_test_123")
   end
 
-  def test_upload_returns_expected_result
+  def test_create_upload_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/files/upload(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.files.upload(filename: "stub", size_bytes: 1)
+    result = @client.files.create_upload(filename: "stub", size_bytes: 1)
     refute_nil result
   end
 
@@ -29,7 +29,7 @@ class FilesTest < Minitest::Test
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/files(\?|\z)})
       .to_return(body: '{"data": [], "list_metadata": {}}', status: 200)
     result = @client.files.list()
-    assert_kind_of Retab::Types::ListStruct, result
+    assert_kind_of Retab::PaginatedList, result
   end
 
   def test_get_returns_expected_result
@@ -48,7 +48,7 @@ class FilesTest < Minitest::Test
 
   # Parameterized authentication error tests (one per endpoint).
   [
-    { name: :upload, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/files/upload(\?|\z)}, args: { filename: "stub", size_bytes: 1 } },
+    { name: :create_upload, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/files/upload(\?|\z)}, args: { filename: "stub", size_bytes: 1 } },
     { name: :complete_upload, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/files/upload/stub/complete(\?|\z)}, args: { file_id: "stub" } },
     { name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/files(\?|\z)} },
     { name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/files/stub(\?|\z)}, args: { file_id: "stub" } },

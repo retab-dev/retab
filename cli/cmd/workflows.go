@@ -50,10 +50,7 @@ func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 }
 
 func isStartDocumentBlock(block retab.WorkflowBlock) bool {
-	// Accept the canonical snake_case literal plus historical spellings so the CLI
-	// keeps working against backends where m_051 (start-document → start_document) or
-	// m_042 (start → start-document) have not yet run.
-	return block.Type == "start_document" || block.Type == "start-document" || block.Type == "start"
+	return block.Type == "start_document"
 }
 
 func workflowGraphObjects(body map[string]any, key string) ([]map[string]any, error) {

@@ -17,7 +17,7 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->list(workflowId: 'test_value', testId: 'test_value', targetBlockId: 'test_value', status: 'test_value', statuses: [], excludeStatus: 'test_value', triggerType: 'test_value', triggerTypes: [], fromDate: 'test_value', toDate: 'test_value', sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflowTestRuns()->list(workflowId: 'test_value', testId: 'test_value', targetBlockId: 'test_value', status: 'test_value', statuses: [], excludeStatus: 'test_value', triggerType: 'test_value', triggerTypes: [], fromDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), toDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -29,8 +29,8 @@ class WorkflowTestRunsTest extends TestCase
         $this->assertSame('test_value', $query['status']);
         $this->assertSame('test_value', $query['exclude_status']);
         $this->assertSame('test_value', $query['trigger_type']);
-        $this->assertSame('test_value', $query['from_date']);
-        $this->assertSame('test_value', $query['to_date']);
+        $this->assertSame('2026-01-02T03:04:05.000+00:00', $query['from_date']);
+        $this->assertSame('2026-01-02T03:04:05.000+00:00', $query['to_date']);
         $this->assertSame('test_value', $query['sort_by']);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);

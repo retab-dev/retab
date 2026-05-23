@@ -8,7 +8,7 @@
     <RootNamespace>Retab</RootNamespace>
     <AssemblyName>Retab</AssemblyName>
     <PackageId>Retab</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Authors>Retab</Authors>
     <Company>Retab</Company>
     <Description>Official .NET (C#) SDK for the Retab API.</Description>
@@ -27,6 +27,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="tests/**/obj/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

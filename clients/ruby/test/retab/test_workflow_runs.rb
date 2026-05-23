@@ -15,7 +15,7 @@ class WorkflowRunsTest < Minitest::Test
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/runs(\?|\z)})
       .to_return(body: '{"data": [], "list_metadata": {}}', status: 200)
     result = @client.workflow_runs.list()
-    assert_kind_of Retab::Types::ListStruct, result
+    assert_kind_of Retab::PaginatedList, result
   end
 
   def test_create_returns_expected_result

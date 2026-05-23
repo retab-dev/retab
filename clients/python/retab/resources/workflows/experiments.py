@@ -24,7 +24,7 @@ from typing import Any, Dict, Mapping, Sequence, Union
 from pydantic import TypeAdapter
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.pagination import AsyncPaginatedList, PaginatedList
+from ...types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
 from ...types.workflows.experiments import (
     ExperimentDocumentCaptureRequest,
@@ -119,10 +119,26 @@ class WorkflowExperimentsMixin:
             data=body,
         )
 
-    def prepare_list(self, workflow_id: str | None = None) -> PreparedRequest:
+    def prepare_list(
+        self,
+        workflow_id: str | None = None,
+        *,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = None,
+        order: PaginationOrder | None = None,
+    ) -> PreparedRequest:
         params: Dict[str, Any] = {}
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        if limit is not None:
+            params["limit"] = limit
+        if order is not None:
+            params["order"] = order
         return PreparedRequest(
             method="GET",
             url="/v1/workflows/experiments",
@@ -490,9 +506,29 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return WorkflowExperiment.model_validate(response)
 
-    def list(self, workflow_id: str | None = None) -> PaginatedList[WorkflowExperiment]:
-        """List all experiments attached to a workflow."""
-        request = self.prepare_list(workflow_id)
+    def list(
+        self,
+        workflow_id: str | None = None,
+        *,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = "desc",
+    ) -> PaginatedList[WorkflowExperiment]:
+        """List experiments under one workflow with cursor pagination.
+
+        The enrichment passes (latest-run snapshot, block info, drift
+        detection) run on the paginated page, not the full collection — so
+        they scale with ``limit``, not with the total experiment count under
+        the workflow.
+        """
+        request = self.prepare_list(
+            workflow_id,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+        )
         return self.request_page(request, model=WorkflowExperiment)
 
     def get(self, experiment_id: str) -> WorkflowExperiment:
@@ -671,8 +707,23 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return WorkflowExperiment.model_validate(response)
 
-    async def list(self, workflow_id: str | None = None) -> AsyncPaginatedList[WorkflowExperiment]:
-        request = self.prepare_list(workflow_id)
+    async def list(
+        self,
+        workflow_id: str | None = None,
+        *,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = "desc",
+    ) -> AsyncPaginatedList[WorkflowExperiment]:
+        """Async variant of ``WorkflowExperiments.list``."""
+        request = self.prepare_list(
+            workflow_id,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+        )
         return await self.request_page(request, model=WorkflowExperiment)
 
     async def get(self, experiment_id: str) -> WorkflowExperiment:

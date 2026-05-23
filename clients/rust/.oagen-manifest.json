@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-23T11:42:07.001Z",
+  "generatedAt": "2026-05-23T15:03:15.361Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -35,6 +35,7 @@
     "src/enums/experiment_run_block_type.rs",
     "src/enums/experiment_run_metrics_view.rs",
     "src/enums/experiment_run_n_consensus.rs",
+    "src/enums/experiment_run_results_order.rs",
     "src/enums/experiment_runs_order.rs",
     "src/enums/experiment_schema_drift_status.rs",
     "src/enums/experiment_summary_metrics_response_block_type.rs",
@@ -93,6 +94,7 @@
     "src/enums/workflow_runs_status.rs",
     "src/enums/workflow_runs_trigger_type.rs",
     "src/enums/workflow_test_result_verdict.rs",
+    "src/enums/workflow_test_run_results_order.rs",
     "src/enums/workflow_test_runs_order.rs",
     "src/enums/workflow_test_schema_drift.rs",
     "src/enums/workflow_tests_order.rs",
@@ -504,7 +506,7 @@
       "service": "splits"
     },
     "POST /v1/files/upload": {
-      "sdkMethod": "upload",
+      "sdkMethod": "create_upload",
       "service": "files"
     },
     "POST /v1/files/upload/{file_id}/complete": {

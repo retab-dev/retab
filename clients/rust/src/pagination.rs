@@ -1,19 +1,118 @@
 // @oagen-ignore-file
 //
-// Cursor-pagination helper used by generated `*_auto_paging` methods.
-// Returns an async [`futures_util::Stream`] that walks every page until
-// the cursor is exhausted.
-//
-// No `'static` bound on the closure / future — the generated wrappers
-// capture `&'a self` to call the underlying `*_with_options` method, and
-// imposing `'static` would force them to clone the client (or worse, leak
-// it). Lifetime inference threads through the returned `impl Stream`.
+// Cursor-pagination primitives shared by every generated `list` method.
 
 use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use futures_util::stream::{self, Stream};
+use futures_util::stream;
+use futures_util::Stream;
+use serde::Deserialize;
 
 use crate::error::Error;
+use crate::models::ListMetadata;
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct PageEnvelope<T> {
+    pub data: Vec<T>,
+    pub list_metadata: ListMetadata,
+}
+
+type FetchNext<T> = Box<
+    dyn FnMut(String) -> Pin<Box<dyn Future<Output = Result<PageEnvelope<T>, Error>> + Send>>
+        + Send,
+>;
+
+/// Cursor-paginated list returned by every generated `list` method.
+///
+/// The first page stays available through `data` and `list_metadata`.
+/// Polling the value as a [`Stream`] yields those items, then lazily fetches
+/// subsequent pages until `list_metadata.after` is exhausted.
+pub struct PaginatedList<T> {
+    pub data: Vec<T>,
+    pub list_metadata: ListMetadata,
+    fetch_next: Option<FetchNext<T>>,
+    pending: Option<Pin<Box<dyn Future<Output = Result<PageEnvelope<T>, Error>> + Send>>>,
+}
+
+impl<T> std::fmt::Debug for PaginatedList<T>
+where
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaginatedList")
+            .field("data", &self.data)
+            .field("list_metadata", &self.list_metadata)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<T> PaginatedList<T> {
+    pub(crate) fn new(
+        data: Vec<T>,
+        list_metadata: ListMetadata,
+        fetch_next: Option<FetchNext<T>>,
+    ) -> Self {
+        Self {
+            data,
+            list_metadata,
+            fetch_next,
+            pending: None,
+        }
+    }
+
+    pub fn has_next_page(&self) -> bool {
+        self.list_metadata.after.is_some()
+    }
+}
+
+impl<T> Unpin for PaginatedList<T> {}
+
+impl<T> Stream for PaginatedList<T>
+where
+    T: Unpin,
+{
+    type Item = Result<T, Error>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.get_mut();
+
+        if !this.data.is_empty() {
+            return Poll::Ready(Some(Ok(this.data.remove(0))));
+        }
+
+        loop {
+            if let Some(pending) = this.pending.as_mut() {
+                match pending.as_mut().poll(cx) {
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Ok(page)) => {
+                        this.pending = None;
+                        this.data = page.data;
+                        this.list_metadata = page.list_metadata;
+                        if !this.data.is_empty() {
+                            return Poll::Ready(Some(Ok(this.data.remove(0))));
+                        }
+                        continue;
+                    }
+                    Poll::Ready(Err(err)) => {
+                        this.pending = None;
+                        this.fetch_next = None;
+                        return Poll::Ready(Some(Err(err)));
+                    }
+                }
+            }
+
+            let Some(after) = this.list_metadata.after.clone() else {
+                return Poll::Ready(None);
+            };
+            let Some(fetch_next) = this.fetch_next.as_mut() else {
+                return Poll::Ready(None);
+            };
+            this.pending = Some(fetch_next(after));
+        }
+    }
+}
 
 pub fn auto_paginate_pages<T, F, Fut>(load: F) -> impl Stream<Item = Result<T, Error>>
 where

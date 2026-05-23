@@ -2,22 +2,5 @@
 
 #[allow(unused_imports)]
 use super::*;
-#[allow(unused_imports)]
-use crate::enums::*;
-use serde::{Deserialize, Serialize};
-/// List response for GET /v1/jobs.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JobList {
-    pub data: Vec<Job>,
-    pub list_metadata: ListMetadata,
-}
-impl JobList {
-    /// Construct a new `JobList` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(data: Vec<Job>, list_metadata: ListMetadata) -> Self {
-        Self {
-            data,
-            list_metadata,
-        }
-    }
-}
+
+pub type JobList = crate::pagination::PaginatedList<Job>;

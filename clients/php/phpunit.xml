@@ -14,5 +14,8 @@
             <directory>tests/Service</directory>
             <file>tests/ClientTest.php</file>
         </testsuite>
+        <testsuite name="contract">
+            <file>tests/PaginationContractTest.php</file>
+        </testsuite>
     </testsuites>
 </phpunit>

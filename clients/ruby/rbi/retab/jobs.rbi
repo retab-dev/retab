@@ -32,7 +32,7 @@ module Retab
         include_request: T.nilable(T::Boolean),
         include_response: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Types::ListStruct[Retab::Job])
+      ).returns(Retab::PaginatedList[Retab::Job])
     end
     def list(before:, after:, limit:, order:, job_id:, status:, endpoint:, source:, project_id:, workflow_id:, workflow_block_id:, model:, filename_regex:, filename_contains:, document_type:, from_date:, to_date:, metadata:, include_request:, include_response:, request_options:); end
 

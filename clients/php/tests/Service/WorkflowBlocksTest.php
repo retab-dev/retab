@@ -49,7 +49,7 @@ class WorkflowBlocksTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_block');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlocks()->get('test_block_id');
+        $result = $client->workflowBlocks()->get('test_block_id', workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowBlock::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -57,13 +57,15 @@ class WorkflowBlocksTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/blocks/test_block_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
     }
 
     public function testUpdate(): void
     {
         $fixture = $this->loadFixture('workflow_block');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlocks()->update('test_block_id');
+        $result = $client->workflowBlocks()->update('test_block_id', label: 'test_value', positionX: 1.0, positionY: 1.0, width: 1.0, height: 1.0, config: [], parentId: 'test_value', configMode: \Retab\Resource\UpdateWorkflowBlockRequestConfigMode::Merge, workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowBlock::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -71,15 +73,19 @@ class WorkflowBlocksTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('PATCH', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/blocks/test_block_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
     }
 
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->workflowBlocks()->delete('test_block_id');
+        $client->workflowBlocks()->delete('test_block_id', workflowId: 'test_value');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/blocks/test_block_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
     }
 
     public function testPaginationBoundary(): void
