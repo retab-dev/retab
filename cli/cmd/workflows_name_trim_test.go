@@ -66,7 +66,7 @@ func TestWorkflowsCreateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -106,7 +106,7 @@ func TestWorkflowsUpdateTrimsNameInRequestBody(t *testing.T) {
 	var patchBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method == http.MethodPatch && r.URL.Path == "/workflows/wf_abc" {
+		if r.Method == http.MethodPatch && r.URL.Path == "/v1/workflows/wf_abc" {
 			if err := json.NewDecoder(r.Body).Decode(&patchBody); err != nil {
 				t.Fatalf("decode patch: %v", err)
 			}
@@ -153,7 +153,7 @@ func TestWorkflowsExperimentsCreateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -206,7 +206,7 @@ func TestWorkflowsExperimentsUpdateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPatch || r.URL.Path != "/workflows/experiments/exp_abc" {
+		if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/experiments/exp_abc" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -262,7 +262,7 @@ func TestWorkflowsTestsCreateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/tests" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -313,7 +313,7 @@ func TestWorkflowsTestsUpdateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPatch || r.URL.Path != "/workflows/tests/tst_abc" {
+		if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/tests/tst_abc" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -424,11 +424,11 @@ func TestWorkflowsExperimentsListJSONOutputUnchanged(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/experiments" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":[{"id":"exp_aaa","name":"x","block_kind":"extract","status":"completed","created_at":"2026-05-21T12:00:00Z","updated_at":"2026-05-21T12:00:00Z","workflow_id":"wrk_xx","block_id":"blk_xx","n_consensus":3,"document_count":1}],"list_metadata":{}}`))
+		_, _ = w.Write([]byte(`{"data":[{"id":"exp_aaa","name":"x","block_type":"extract","status":"completed","created_at":"2026-05-21T12:00:00Z","updated_at":"2026-05-21T12:00:00Z","workflow_id":"wrk_xx","block_id":"blk_xx","n_consensus":3,"document_count":1}],"list_metadata":{}}`))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -438,7 +438,7 @@ func TestWorkflowsExperimentsListJSONOutputUnchanged(t *testing.T) {
 			t.Fatalf("experiments list: %v", err)
 		}
 	})
-	if !strings.Contains(stdout, `"id": "exp_aaa"`) || !strings.Contains(stdout, `"block_kind": "extract"`) {
+	if !strings.Contains(stdout, `"id": "exp_aaa"`) || !strings.Contains(stdout, `"block_type": "extract"`) {
 		t.Fatalf("JSON output missing expected fields:\n%s", stdout)
 	}
 }

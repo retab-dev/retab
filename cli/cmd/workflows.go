@@ -201,11 +201,11 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		if err := validateFieldsAgainstAllowlist(fields, workflowsListAllowedFields); err != nil {
 			return err
 		}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		before, _ := cmd.Flags().GetString("before")
 		after, _ := cmd.Flags().GetString("after")
-		if before != "" && after != "" {
-			return fmt.Errorf("--before and --after are mutually exclusive")
-		}
 		limit, _ := cmd.Flags().GetInt("limit")
 		order, _ := cmd.Flags().GetString("order")
 		sortBy, _ := cmd.Flags().GetString("sort-by")
@@ -668,10 +668,24 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 			if err != nil {
 				return err
 			}
+			// `--graph-file` is the user telling us "diagnose THIS graph".
+			// `workflowGraphObjects` returns `nil` when the file omits the
+			// key (e.g. `{}`), and the server then falls back to the
+			// persisted draft — silently switching the meaning of the
+			// command from "diagnose my proposed graph" to "diagnose the
+			// stored one". Coerce nil to an empty slice so the server sees
+			// an explicit zero-block / zero-edge graph and returns
+			// `total_blocks: 0` instead of `total_blocks: <persisted>`.
+			if blocks == nil {
+				blocks = []map[string]any{}
+			}
 			req["blocks"] = blocks
 			edges, err := workflowGraphObjects(body, "edges")
 			if err != nil {
 				return err
+			}
+			if edges == nil {
+				edges = []map[string]any{}
 			}
 			req["edges"] = edges
 			if v, ok := body["re_propagate"].(bool); ok {
@@ -703,7 +717,12 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 func init() {
 	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id (mutually exclusive with --after)")
 	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id (mutually exclusive with --before)")
-	workflowsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutual exclusion of --before / --after is enforced by an explicit
+	// `validateBeforeAfterMutex` call inside the RunE body. Cobra's
+	// `MarkFlagsMutuallyExclusive` was intentionally removed: it fires
+	// before RunE with the noisy default message ("if any flags in the
+	// group [before after] are set none of the others can be ..."), which
+	// hides our concise handwritten message.
 	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")

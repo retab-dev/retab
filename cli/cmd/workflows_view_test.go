@@ -365,6 +365,24 @@ func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 	if !strings.Contains(out, "[start_document]") {
 		t.Fatalf("expected [start_document] tag to survive truncation, got:\n%s", out)
 	}
+
+	// Regression for issue #3: the start_document meta cell used to render
+	// as `bloc... [start_document]` for every block whose id starts with
+	// `block_`, because the tight-budget head-tail truncation only kept the
+	// first 4 chars of the id — which were always the literal "bloc". The
+	// fix strips the redundant `block_` prefix in the rendered string so the
+	// nanoid suffix (the actually-distinguishing chars) survives. The cell
+	// must NOT be the useless `bloc...`, and it must surface at least 4 chars
+	// of the nanoid suffix.
+	if strings.Contains(out, "bloc... [start_document]") {
+		t.Fatalf("start_document meta cell must not render as 'bloc... [start_document]' (issue #3), got:\n%s", out)
+	}
+	// The nanoid suffix of the start block id is "a2KYG" — at least the
+	// last 4 chars ("2KYG") must appear adjacent to the [start_document]
+	// tag in the rendered cell.
+	if !strings.Contains(out, "2KYG [start_document]") {
+		t.Fatalf("expected at least 4 chars of the nanoid suffix ('2KYG') adjacent to [start_document], got:\n%s", out)
+	}
 }
 
 func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
@@ -409,9 +427,9 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workflows/wf_graph":
+		case "/v1/workflows/wf_graph":
 			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wf_graph", "name": "Invoice flow"})
-		case "/workflows/blocks":
+		case "/v1/workflows/blocks":
 			if r.URL.Query().Get("workflow_id") != "wf_graph" {
 				t.Fatalf("blocks workflow_id = %q", r.URL.Query().Get("workflow_id"))
 			}
@@ -422,7 +440,7 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 				},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
 			})
-		case "/workflows/edges":
+		case "/v1/workflows/edges":
 			if r.URL.Query().Get("workflow_id") != "wf_graph" {
 				t.Fatalf("edges workflow_id = %q", r.URL.Query().Get("workflow_id"))
 			}

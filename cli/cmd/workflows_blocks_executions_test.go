@@ -16,7 +16,7 @@ func TestWorkflowsBlockExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/blocks/executions" || r.URL.RawQuery != "" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/blocks/executions" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74,7 +74,7 @@ func TestWorkflowsBlockExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 
 	var sawRequest bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/executions" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/blocks/executions" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		query := r.URL.Query()

@@ -21,8 +21,8 @@ func TestJobsListOutputTable(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/jobs" {
-			t.Fatalf("path = %s, want /jobs", r.URL.Path)
+		if r.URL.Path != "/v1/jobs" {
+			t.Fatalf("path = %s, want /v1/jobs", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		// The backend serializes job timestamps as ISO 8601 strings on the
@@ -236,8 +236,8 @@ func TestJobsListNormalizesDocumentTypesLikeBackend(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/jobs" {
-			t.Fatalf("path = %s, want /jobs", r.URL.Path)
+		if r.URL.Path != "/v1/jobs" {
+			t.Fatalf("path = %s, want /v1/jobs", r.URL.Path)
 		}
 		got := r.URL.Query()["document_type"]
 		want := []string{"pdf", "docx"}
@@ -511,8 +511,14 @@ func TestJobsWaitReturnsNonZeroForFailedJob(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/jobs/job_failed" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/jobs/job_failed" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.String())
+		}
+		if got := r.URL.Query().Get("include_request"); got != "false" {
+			t.Fatalf("include_request = %q, want false", got)
+		}
+		if got := r.URL.Query().Get("include_response"); got != "false" {
+			t.Fatalf("include_response = %q, want false", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -571,8 +577,14 @@ func TestJobsRetrieveReturnsZeroForFailedJob(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/jobs/job_failed" {
-			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/jobs/job_failed" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.String())
+		}
+		if got := r.URL.Query().Get("include_request"); got != "false" {
+			t.Fatalf("include_request = %q, want false", got)
+		}
+		if got := r.URL.Query().Get("include_response"); got != "false" {
+			t.Fatalf("include_response = %q, want false", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

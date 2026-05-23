@@ -861,11 +861,16 @@ func workflowASCIIBlockLabel(block retab.WorkflowBlock) string {
 }
 
 func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
+	// Every cell in this column is a block, so the leading `block_`/`blk_`
+	// prefix is redundant noise; strip it before truncating so the
+	// nanoid suffix (the actually-distinguishing chars) survives the
+	// tight-budget head-tail truncation below.
+	displayID := workflowASCIIStripBlockPrefix(block.ID)
 	if block.Type == "" {
-		return workflowASCIIShortID(block.ID)
+		return workflowASCIIShortID(displayID)
 	}
 	typeTag := " [" + string(block.Type) + "]"
-	short := workflowASCIIShortID(block.ID)
+	short := workflowASCIIShortID(displayID)
 	// Box content is capped at workflowASCIIMaxBoxWidth-4. When id+tag would
 	// overflow, shorten the id further so the type tag survives — the type
 	// is more useful than the trailing chars of an opaque id.
@@ -878,15 +883,33 @@ func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
 	case idBudget >= 10:
 		// Room for prefix + "..." + 4-char suffix.
 		prefix := idBudget - 7
-		return block.ID[:prefix] + "..." + block.ID[len(block.ID)-4:] + typeTag
+		return displayID[:prefix] + "..." + displayID[len(displayID)-4:] + typeTag
 	case idBudget >= 5:
-		// Tight budget — drop the suffix, keep at least 2 chars of prefix.
-		prefix := idBudget - 3
-		return block.ID[:prefix] + "..." + typeTag
+		// Tight budget — keep the nanoid suffix (the only distinguishing
+		// part) and prepend "..." to signal truncation. Drop the head
+		// rather than the tail: a 4-char head of a nanoid collides
+		// across blocks at the same rate as random chance, whereas the
+		// suffix is what humans copy/paste to disambiguate.
+		suffixLen := idBudget - 3
+		if suffixLen > len(displayID) {
+			suffixLen = len(displayID)
+		}
+		return "..." + displayID[len(displayID)-suffixLen:] + typeTag
 	default:
 		// Type tag eats the whole budget; let the canvas truncate the tail.
 		return short + typeTag
 	}
+}
+
+// workflowASCIIStripBlockPrefix removes the redundant `block_`/`blk_` prefix
+// from a block id for display purposes only. The stored id is unchanged.
+func workflowASCIIStripBlockPrefix(id string) string {
+	for _, prefix := range []string{"block_", "blk_"} {
+		if rest := strings.TrimPrefix(id, prefix); rest != id && rest != "" {
+			return rest
+		}
+	}
+	return id
 }
 
 func workflowASCIIShortID(id string) string {

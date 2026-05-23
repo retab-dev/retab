@@ -18,10 +18,10 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 		path string
 		id   string
 	}{
-		{name: "classifications", cmd: classificationsListCmd, path: "/classifications", id: "clas_123"},
-		{name: "splits", cmd: splitsListCmd, path: "/splits", id: "splt_123"},
-		{name: "partitions", cmd: partitionsListCmd, path: "/partitions", id: "part_123"},
-		{name: "edits", cmd: editsListCmd, path: "/edits", id: "edt_123"},
+		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications", id: "clas_123"},
+		{name: "splits", cmd: splitsListCmd, path: "/v1/splits", id: "splt_123"},
+		{name: "partitions", cmd: partitionsListCmd, path: "/v1/partitions", id: "part_123"},
+		{name: "edits", cmd: editsListCmd, path: "/v1/edits", id: "edt_123"},
 	}
 
 	for _, tc := range cases {
@@ -91,8 +91,8 @@ func TestEditTemplatesListHonorsOutputTable(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/edits/templates" {
-			t.Fatalf("path = %s, want /edits/templates", r.URL.Path)
+		if r.URL.Path != "/v1/edits/templates" {
+			t.Fatalf("path = %s, want /v1/edits/templates", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

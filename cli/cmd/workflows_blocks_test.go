@@ -303,6 +303,272 @@ func TestWorkflowsBlocksCreateHelpExampleHasUniquePlaceholderID(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksUpdateAcceptsTwoPositionalArgs(t *testing.T) {
+	// `blocks update wf_x blk_y` should resolve to the canonical block-id
+	// shape on the wire (PATCH /v1/workflows/blocks/blk_y) and wire the
+	// positional workflow id through to the `--workflow-id` query string,
+	// matching what `--workflow-id wf_x` produces.
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var gotPath, gotQuery, gotMethod string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          "blk_y",
+			"workflow_id": "wf_x",
+			"type":        "extract",
+			"config":      map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksUpdateCmd.Flags().Set("label", "renamed"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksUpdateCmd.Flags().Set("label", "")
+		// Reset workflow-id so subsequent tests start clean (positional path sets it).
+		_ = workflowsBlocksUpdateCmd.Flags().Set("workflow-id", "")
+	})
+
+	if err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"wf_x", "blk_y"}); err != nil {
+		t.Fatalf("update with two positionals: %v", err)
+	}
+
+	if gotMethod != http.MethodPatch {
+		t.Fatalf("method = %s, want PATCH", gotMethod)
+	}
+	if gotPath != "/v1/workflows/blocks/blk_y" {
+		t.Fatalf("path = %s, want /v1/workflows/blocks/blk_y", gotPath)
+	}
+	if !strings.Contains(gotQuery, "workflow_id=wf_x") {
+		t.Fatalf("query = %s, want workflow_id=wf_x", gotQuery)
+	}
+}
+
+func TestWorkflowsBlocksUpdateAcceptsSinglePositionalArg(t *testing.T) {
+	// Backward-compat: `blocks update <block-id>` keeps its original shape
+	// with no workflow_id query parameter (server resolves by org-unique id).
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var gotPath, gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          "blk_y",
+			"workflow_id": "wf_x",
+			"type":        "extract",
+			"config":      map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksUpdateCmd.Flags().Set("label", "renamed"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksUpdateCmd.Flags().Set("label", "")
+		_ = workflowsBlocksUpdateCmd.Flags().Set("workflow-id", "")
+	})
+
+	if err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"blk_y"}); err != nil {
+		t.Fatalf("update with one positional: %v", err)
+	}
+
+	if gotPath != "/v1/workflows/blocks/blk_y" {
+		t.Fatalf("path = %s, want /v1/workflows/blocks/blk_y", gotPath)
+	}
+	if gotQuery != "" {
+		t.Fatalf("query = %s, want empty", gotQuery)
+	}
+}
+
+func TestWorkflowsBlocksUpdateRejectsConflictingWorkflowID(t *testing.T) {
+	// `blocks update wf_a blk_y --workflow-id wf_b` is ambiguous: the user
+	// asked for two different workflow ids in the same invocation. The CLI
+	// must refuse with a clear conflict message rather than silently picking
+	// one and issuing a request that lands on the wrong workflow.
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksUpdateCmd.Flags().Set("workflow-id", "wf_b"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksUpdateCmd.Flags().Set("label", "renamed"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksUpdateCmd.Flags().Set("workflow-id", "")
+		_ = workflowsBlocksUpdateCmd.Flags().Set("label", "")
+	})
+
+	err := workflowsBlocksUpdateCmd.RunE(workflowsBlocksUpdateCmd, []string{"wf_a", "blk_y"})
+	if err == nil {
+		t.Fatal("expected conflicting workflow id to be rejected")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "conflict") {
+		t.Fatalf("error should mention conflict, got %q", msg)
+	}
+	if !strings.Contains(msg, "wf_a") || !strings.Contains(msg, "wf_b") {
+		t.Fatalf("error should name both workflow ids, got %q", msg)
+	}
+	if httpCalled {
+		t.Fatal("CLI must reject conflict before any HTTP call")
+	}
+}
+
+func TestWorkflowsBlocksGetAcceptsTwoPositionalArgs(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var gotPath, gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          "blk_y",
+			"workflow_id": "wf_x",
+			"type":        "extract",
+			"config":      map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	t.Cleanup(func() { _ = workflowsBlocksGetCmd.Flags().Set("workflow-id", "") })
+
+	if err := workflowsBlocksGetCmd.RunE(workflowsBlocksGetCmd, []string{"wf_x", "blk_y"}); err != nil {
+		t.Fatalf("get with two positionals: %v", err)
+	}
+	if gotPath != "/v1/workflows/blocks/blk_y" {
+		t.Fatalf("path = %s, want /v1/workflows/blocks/blk_y", gotPath)
+	}
+	if !strings.Contains(gotQuery, "workflow_id=wf_x") {
+		t.Fatalf("query = %s, want workflow_id=wf_x", gotQuery)
+	}
+}
+
+func TestWorkflowsBlocksGetRejectsConflictingWorkflowID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksGetCmd.Flags().Set("workflow-id", "wf_b"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsBlocksGetCmd.Flags().Set("workflow-id", "") })
+
+	err := workflowsBlocksGetCmd.RunE(workflowsBlocksGetCmd, []string{"wf_a", "blk_y"})
+	if err == nil {
+		t.Fatal("expected conflicting workflow id to be rejected")
+	}
+	if !strings.Contains(err.Error(), "conflict") {
+		t.Fatalf("error should mention conflict, got %q", err.Error())
+	}
+	if httpCalled {
+		t.Fatal("CLI must reject conflict before any HTTP call")
+	}
+}
+
+func TestWorkflowsBlocksDeleteAcceptsTwoPositionalArgs(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var gotPath, gotQuery, gotMethod string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksDeleteCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksDeleteCmd.Flags().Set("yes", "false")
+		_ = workflowsBlocksDeleteCmd.Flags().Set("workflow-id", "")
+	})
+
+	_, _ = captureStd(t, func() {
+		if err := workflowsBlocksDeleteCmd.RunE(workflowsBlocksDeleteCmd, []string{"wf_x", "blk_y"}); err != nil {
+			t.Fatalf("delete with two positionals: %v", err)
+		}
+	})
+
+	if gotMethod != http.MethodDelete {
+		t.Fatalf("method = %s, want DELETE", gotMethod)
+	}
+	if gotPath != "/v1/workflows/blocks/blk_y" {
+		t.Fatalf("path = %s, want /v1/workflows/blocks/blk_y", gotPath)
+	}
+	if !strings.Contains(gotQuery, "workflow_id=wf_x") {
+		t.Fatalf("query = %s, want workflow_id=wf_x", gotQuery)
+	}
+}
+
+func TestWorkflowsBlocksDeleteRejectsConflictingWorkflowID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksDeleteCmd.Flags().Set("workflow-id", "wf_b"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksDeleteCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksDeleteCmd.Flags().Set("workflow-id", "")
+		_ = workflowsBlocksDeleteCmd.Flags().Set("yes", "false")
+	})
+
+	err := workflowsBlocksDeleteCmd.RunE(workflowsBlocksDeleteCmd, []string{"wf_a", "blk_y"})
+	if err == nil {
+		t.Fatal("expected conflicting workflow id to be rejected")
+	}
+	if !strings.Contains(err.Error(), "conflict") {
+		t.Fatalf("error should mention conflict, got %q", err.Error())
+	}
+	if httpCalled {
+		t.Fatal("CLI must reject conflict before any HTTP call")
+	}
+}
+
 func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -311,7 +577,7 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/blocks/blk_1" || r.URL.RawQuery != "" {
+		if r.URL.Path != "/v1/workflows/blocks/blk_1" || r.URL.RawQuery != "" {
 			t.Fatalf("path = %s?%s, want block get", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")

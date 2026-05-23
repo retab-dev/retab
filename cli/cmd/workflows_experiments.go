@@ -521,10 +521,8 @@ positional, filters are flags — same convention as the rest of the
 		if positionalExperimentID != "" {
 			resolvedExperimentID = positionalExperimentID
 		}
-		if before, _ := cmd.Flags().GetString("before"); before != "" {
-			if after, _ := cmd.Flags().GetString("after"); after != "" {
-				return fmt.Errorf("--before and --after are mutually exclusive")
-			}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
 		}
 		query := url.Values{}
 		if resolvedWorkflowID != "" {
@@ -708,7 +706,8 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
-	workflowsExperimentsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
+	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
+	// handwritten message; see workflowsListCmd for the rationale).
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")

@@ -160,18 +160,28 @@ func workflowBlocksListParams(cmd *cobra.Command, workflowID string) *retab.Work
 }
 
 var workflowsBlocksGetCmd = &cobra.Command{
-	Use:   "get <block-id>",
+	Use:   "get [<workflow-id>] <block-id>",
 	Short: "Get a workflow block",
 	Long: `Fetch a single block's full definition: type, label, position,
 parent group, and the typed config blob.
 
-Pass ` + "`--workflow-id`" + ` only when the block id is not unique within
-your organization — typically pre-uniqueness dev / staging data where
-custom block ids (` + "`block_split`" + `, ` + "`block_extract`" + `) were
-created in multiple workflows. The server's 409 response on a duplicate
-lists the colliding workflow_ids so you know what to pass.`,
+Block IDs are unique per organization, so the canonical form is
+` + "`get <block-id>`" + `. As a convenience for users whose mental model is
+"block X in workflow Y" you can also pass two positionals
+(` + "`get <workflow-id> <block-id>`" + `); the workflow id is then used as
+the disambiguator described below.
+
+Pass ` + "`--workflow-id`" + ` (or the two-positional form) only when the
+block id is not unique within your organization — typically pre-uniqueness
+dev / staging data where custom block ids (` + "`block_split`" + `,
+` + "`block_extract`" + `) were created in multiple workflows. The server's
+409 response on a duplicate lists the colliding workflow_ids so you know
+what to pass.`,
 	Example: `  # Inspect a block
   retab workflows blocks get blk_def456
+
+  # Two-positional convenience form (same effect as --workflow-id)
+  retab workflows blocks get wf_abc123 blk_def456
 
   # Disambiguate a legacy duplicate id
   retab workflows blocks get block_split --workflow-id wf_abc123
@@ -179,16 +189,20 @@ lists the colliding workflow_ids so you know what to pass.`,
   # Save a block's config for offline editing
   retab workflows blocks get blk_def456 \
     | jq '.config' > cfg.json`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := &retab.WorkflowBlocksGetParams{WorkflowID: workflowBlockLookupWorkflowID(cmd)}
-		result, err := client.WorkflowBlocks.Get(ctx, args[0], params)
+		params := &retab.WorkflowBlocksGetParams{WorkflowID: workflowID}
+		result, err := client.WorkflowBlocks.Get(ctx, blockID, params)
 		if err != nil {
 			return err
 		}
@@ -206,6 +220,34 @@ func workflowBlockLookupWorkflowID(cmd *cobra.Command) *string {
 		return nil
 	}
 	return ptr(workflowID)
+}
+
+// resolveBlockPositionalWorkflowID lets `blocks get/update/delete` accept
+// either `<block-id>` (the canonical, server-resolved form) or
+// `<workflow-id> <block-id>` (matches the user mental model of "block X in
+// workflow Y" and the shape of `blocks create`/`blocks list`). When the
+// two-positional form is used, the workflow id takes the same disambiguator
+// path as the `--workflow-id` flag. Returns the resolved (workflowID,
+// blockID), where workflowID is nil unless either the flag or the positional
+// supplied one. Errors if both are set with conflicting values.
+func resolveBlockPositionalWorkflowID(cmd *cobra.Command, args []string) (*string, string, error) {
+	flagWorkflowID := workflowBlockLookupWorkflowID(cmd)
+	switch len(args) {
+	case 1:
+		return flagWorkflowID, args[0], nil
+	case 2:
+		positionalWorkflowID := strings.TrimSpace(args[0])
+		blockID := args[1]
+		if positionalWorkflowID == "" {
+			return nil, "", fmt.Errorf("workflow-id positional argument is empty")
+		}
+		if flagWorkflowID != nil && *flagWorkflowID != positionalWorkflowID {
+			return nil, "", fmt.Errorf("conflicting workflow id: positional %q vs --workflow-id %q", positionalWorkflowID, *flagWorkflowID)
+		}
+		return ptr(positionalWorkflowID), blockID, nil
+	default:
+		return nil, "", fmt.Errorf("expected 1 or 2 positional arguments, got %d", len(args))
+	}
 }
 
 var workflowsBlocksCreateCmd = &cobra.Command{
@@ -299,7 +341,7 @@ Review is not a standalone block type.`,
 }
 
 var workflowsBlocksUpdateCmd = &cobra.Command{
-	Use:   "update <block-id>",
+	Use:   "update [<workflow-id>] <block-id>",
 	Short: "Update a workflow block",
 	Long: `Tune an existing block in place. The two config flags map to
 explicit server-side modes:
@@ -321,9 +363,20 @@ Pass ` + "`{\"review\":null}`" + ` to remove review without touching anything el
 
 The flags are mutually exclusive. Layout fields (` + "`position-*`" + `,
 ` + "`width`" + `, ` + "`height`" + `, ` + "`parent-id`" + `) only affect
-the visual editor.`,
+the visual editor.
+
+Block IDs are unique per organization, so the canonical form is
+` + "`update <block-id>`" + `. As a convenience for users whose mental model is
+"block X in workflow Y" you can also pass two positionals
+(` + "`update <workflow-id> <block-id>`" + `); the workflow id is then wired
+through to the same ` + "`--workflow-id`" + ` disambiguator used for legacy
+duplicate block ids.`,
 	Example: `  # Swap the config blob
   retab workflows blocks update blk_def456 \
+    --config-file ./new-config.json
+
+  # Two-positional convenience form (same effect as --workflow-id)
+  retab workflows blocks update wf_abc123 blk_def456 \
     --config-file ./new-config.json
 
   # Add review to an existing block
@@ -333,8 +386,12 @@ the visual editor.`,
   # Rename a block's label
   retab workflows blocks update blk_def456 \
     --label "Extract line items"`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
+		if err != nil {
+			return err
+		}
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
 		configPath, _ := cmd.Flags().GetString("config-file")
@@ -422,8 +479,8 @@ the visual editor.`,
 			req.Config = patch
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
-		req.WorkflowID = workflowBlockLookupWorkflowID(cmd)
-		result, err := client.WorkflowBlocks.Update(ctx, args[0], &req)
+		req.WorkflowID = workflowID
+		result, err := client.WorkflowBlocks.Update(ctx, blockID, &req)
 		if err != nil {
 			return err
 		}
@@ -432,7 +489,7 @@ the visual editor.`,
 }
 
 var workflowsBlocksDeleteCmd = &cobra.Command{
-	Use:   "delete <block-id>",
+	Use:   "delete [<workflow-id>] <block-id>",
 	Short: "Delete a workflow block",
 	Long: `Remove a block from the draft graph. Edges that referenced this
 block are also deleted. Past runs that used this block remain intact —
@@ -440,15 +497,29 @@ deletion only affects the draft.
 
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
-is not a terminal.`,
+is not a terminal.
+
+Block IDs are unique per organization, so the canonical form is
+` + "`delete <block-id>`" + `. As a convenience for users whose mental model is
+"block X in workflow Y" you can also pass two positionals
+(` + "`delete <workflow-id> <block-id>`" + `); the workflow id is then wired
+through to the same ` + "`--workflow-id`" + ` disambiguator used for legacy
+duplicate block ids.`,
 	Example: `  # Remove a block (interactive, asks to confirm)
   retab workflows blocks delete blk_def456
 
+  # Two-positional convenience form (same effect as --workflow-id)
+  retab workflows blocks delete wf_abc123 blk_def456
+
   # Skip the prompt in scripts
   retab workflows blocks delete blk_def456 --yes`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "block", args[0]); err != nil {
+		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
+		if err != nil {
+			return err
+		}
+		if err := confirmDestructive(cmd, "block", blockID); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -457,11 +528,11 @@ is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := &retab.WorkflowBlocksDeleteParams{WorkflowID: workflowBlockLookupWorkflowID(cmd)}
-		if err := client.WorkflowBlocks.Delete(ctx, args[0], params); err != nil {
+		params := &retab.WorkflowBlocksDeleteParams{WorkflowID: workflowID}
+		if err := client.WorkflowBlocks.Delete(ctx, blockID, params); err != nil {
 			return err
 		}
-		confirmDeleted("block", args[0])
+		confirmDeleted("block", blockID)
 		return nil
 	}),
 }

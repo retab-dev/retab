@@ -61,7 +61,7 @@ func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/runs/run_123" {
+		if r.URL.Path != "/v1/workflows/runs/run_123" {
 			t.Fatalf("path = %s, want run get", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -103,7 +103,7 @@ func TestWorkflowsRunsCancelSurfacesPendingCancellationStatusToStderr(t *testing
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/run_pending/cancel" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs/run_pending/cancel" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -174,7 +174,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
 					{"id": "block_generated", "type": "start_document", "label": "Document"},
@@ -369,7 +369,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
 					{"id": "block_generated", "type": "start_document", "label": "Document"},
@@ -435,7 +435,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 	var hits atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_123" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_123" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -1131,7 +1131,7 @@ func TestWorkflowsStepsGetUsesStepIDRoute(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/steps/step_123" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/steps/step_123" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -1289,7 +1289,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1889,7 +1889,7 @@ func TestWorkflowsRunsExportAcceptsPositionalWorkflowID(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1934,7 +1934,7 @@ func TestWorkflowsRunsExportFlagFormStillWorksWithDeprecationWarning(t *testing.
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs/export" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

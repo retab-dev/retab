@@ -28,8 +28,8 @@ func fakeFileLinkServer(t *testing.T, hits *atomic.Int32) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
-		if r.URL.Path != "/files/file_123/download-link" {
-			t.Fatalf("path = %s, want /files/file_123/download-link", r.URL.Path)
+		if r.URL.Path != "/v1/files/file_123/download-link" {
+			t.Fatalf("path = %s, want /v1/files/file_123/download-link", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
@@ -656,9 +656,9 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/files/file_123/download-link":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
 			_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
-		case r.Method == http.MethodPost && r.URL.Path == "/partitions":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/partitions":
 			defer r.Body.Close()
 			if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
 				t.Fatalf("decode request body: %v", err)
@@ -712,9 +712,9 @@ func TestPartitionCreateForwardsExplicitFalseAllowOverlapFlag(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/files/file_123/download-link":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
 			_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
-		case r.Method == http.MethodPost && r.URL.Path == "/partitions":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/partitions":
 			defer r.Body.Close()
 			if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
 				t.Fatalf("decode request body: %v", err)

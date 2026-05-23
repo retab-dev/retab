@@ -252,7 +252,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	var sawGet bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/blocks/blk_extract" || r.URL.RawQuery != "" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/blocks/blk_extract" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 		}
 		sawGet = true
@@ -292,7 +292,7 @@ func TestWorkflowsBlocksUpdateMergeConfigSendsPatchMode(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/blocks/blk_extract" && r.URL.RawQuery == "":
+		case r.Method == http.MethodPatch && r.URL.Path == "/v1/workflows/blocks/blk_extract" && r.URL.RawQuery == "":
 			sawPatch = true
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -633,7 +633,7 @@ func TestWorkflowsUpdatePreservesUnspecifiedEmailAllowlist(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				switch {
-				case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_abc":
+				case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/wf_abc":
 					_ = json.NewEncoder(w).Encode(map[string]any{
 						"id":            "wf_abc",
 						"name":          "Existing",
@@ -903,7 +903,7 @@ func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
 // fresh draft" scenario.
 func TestWarnIfEmptyWorkflowOnPublish_StartOnly(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_abc" {
+		if r.URL.Path != "/v1/workflows/blocks" || r.URL.Query().Get("workflow_id") != "wf_abc" {
 			t.Errorf("unexpected path: %s?%s", r.URL.Path, r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -995,7 +995,7 @@ func TestWorkflowsDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
 
 	var sawDelete atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && r.URL.Path == "/workflows/wf_to_delete" {
+		if r.Method == http.MethodDelete && r.URL.Path == "/v1/workflows/wf_to_delete" {
 			sawDelete.Add(1)
 			w.WriteHeader(http.StatusNoContent)
 			return
