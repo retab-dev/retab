@@ -826,54 +826,73 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 	}
 }
 
-func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
+func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
+
+	if flag := workflowsRunsRestartCmd.Flags().Lookup("command-id"); flag != nil {
+		t.Fatalf("restart should not expose --command-id")
+	}
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "run_123",
+				"workflow": map[string]any{
+					"workflow_id":       "wf_123",
+					"version_id":        "ver_old",
+					"name_at_run_time":  "Workflow",
+					"requested_version": "production",
+				},
+				"trigger":   map[string]any{"type": "manual"},
+				"lifecycle": map[string]any{"status": "error"},
+				"inputs": map[string]any{
+					"documents": map[string]any{
+						"start_doc": map[string]any{
+							"id":        "file_123",
+							"filename":  "invoice.pdf",
+							"mime_type": "application/pdf",
+						},
+					},
+					"json_data": map[string]any{
+						"start_json": map[string]any{"invoice_id": "INV-1"},
+					},
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "run_456",
+				"workflow": map[string]any{
+					"workflow_id":       "wf_123",
+					"version_id":        "ver_123",
+					"name_at_run_time":  "Workflow",
+					"requested_version": "production",
+				},
+				"trigger":   map[string]any{"type": "api"},
+				"lifecycle": map[string]any{"status": "running"},
+				"timing":    map[string]any{"created_at": "2026-05-15T00:00:00Z"},
+				"inputs": map[string]any{
+					"documents": map[string]any{},
+					"json_data": map[string]any{},
+				},
+			})
+		default:
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatalf("decode request body: %v", err)
-		}
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id":          "run_456",
-			"workflow_id": "wf_123",
-			"workflow": map[string]any{
-				"workflow_id":       "wf_123",
-				"version_id":        "ver_123",
-				"name_at_run_time":  "Workflow",
-				"requested_version": "production",
-			},
-			"trigger": map[string]any{"type": "api"},
-			"lifecycle": map[string]any{
-				"status": "running",
-			},
-			"timing": map[string]any{
-				"created_at": "2026-05-15T00:00:00Z",
-			},
-			"inputs": map[string]any{
-				"documents": map[string]any{},
-				"json_data": map[string]any{},
-			},
-		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	if err := workflowsRunsRestartCmd.Flags().Set("command-id", "cmd_restart"); err != nil {
-		t.Fatal(err)
-	}
 	if err := workflowsRunsRestartCmd.Flags().Set("config-source", "published"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		_ = workflowsRunsRestartCmd.Flags().Set("command-id", "")
-		_ = workflowsRunsRestartCmd.Flags().Set("config-source", "published")
-	})
+	t.Cleanup(func() { _ = workflowsRunsRestartCmd.Flags().Set("config-source", "published") })
 
 	stdout, stderr := captureStd(t, func() {
 		if err := workflowsRunsRestartCmd.RunE(workflowsRunsRestartCmd, []string{"run_123"}); err != nil {
@@ -886,8 +905,100 @@ func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 	if !strings.Contains(stdout, "run_456") {
 		t.Fatalf("expected restart response on stdout, got:\n%s", stdout)
 	}
-	if body["restart_of"] != "run_123" || body["command_id"] != "cmd_restart" || body["config_source"] != "published" {
-		t.Fatalf("restart body = %#v", body)
+	if body["workflow_id"] != "wf_123" || body["version"] != "production" {
+		t.Fatalf("create body = %#v", body)
+	}
+	if _, ok := body["restart_of"]; ok {
+		t.Fatalf("restart_of leaked into composed create body: %#v", body)
+	}
+	if _, ok := body["command_id"]; ok {
+		t.Fatalf("command_id leaked into composed create body: %#v", body)
+	}
+	if _, ok := body["config_source"]; ok {
+		t.Fatalf("config_source leaked into composed create body: %#v", body)
+	}
+	documents, ok := body["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", body["documents"])
+	}
+	startDoc, ok := documents["start_doc"].(map[string]any)
+	if !ok {
+		t.Fatalf("start_doc = %#v", documents["start_doc"])
+	}
+	if startDoc["id"] != "file_123" || startDoc["filename"] != "invoice.pdf" || startDoc["mime_type"] != "application/pdf" {
+		t.Fatalf("start_doc = %#v", startDoc)
+	}
+	jsonInputs, ok := body["json_inputs"].(map[string]any)
+	if !ok {
+		t.Fatalf("json_inputs = %#v", body["json_inputs"])
+	}
+	startJSON, ok := jsonInputs["start_json"].(map[string]any)
+	if !ok || startJSON["invoice_id"] != "INV-1" {
+		t.Fatalf("start_json = %#v", jsonInputs["start_json"])
+	}
+}
+
+func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "run_123",
+				"workflow": map[string]any{
+					"workflow_id":       "wf_123",
+					"version_id":        "ver_old",
+					"name_at_run_time":  "Workflow",
+					"requested_version": "production",
+				},
+				"trigger":   map[string]any{"type": "manual"},
+				"lifecycle": map[string]any{"status": "error"},
+				"inputs": map[string]any{
+					"documents": map[string]any{},
+					"json_data": map[string]any{},
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "run_456",
+				"workflow": map[string]any{
+					"workflow_id":       "wf_123",
+					"version_id":        "ver_draft",
+					"name_at_run_time":  "Workflow",
+					"requested_version": "draft",
+				},
+				"trigger":   map[string]any{"type": "api"},
+				"lifecycle": map[string]any{"status": "running"},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsRestartCmd.Flags().Set("config-source", "draft"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsRunsRestartCmd.Flags().Set("config-source", "published") })
+
+	_, stderr := captureStd(t, func() {
+		if err := workflowsRunsRestartCmd.RunE(workflowsRunsRestartCmd, []string{"run_123"}); err != nil {
+			t.Fatalf("runs restart: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if body["version"] != "draft" {
+		t.Fatalf("create body = %#v", body)
 	}
 }
 
