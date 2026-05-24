@@ -369,6 +369,8 @@ def test_experiments_runs_list_uses_canonical_runs_route() -> None:
     assert request.url == "/v1/workflows/experiments/runs"
     assert request.params == {
         "limit": 20,
+        "order": "desc",
+        "sort_by": "created_at",
         "workflow_id": "wf_abc123",
         "experiment_id": "exp_abc",
     }
@@ -409,10 +411,10 @@ def test_experiments_runs_list_exposes_workflow_run_style_filters() -> None:
         "experiment_id": "exp_abc",
         "block_id": "block_extract",
         "status": "completed",
-        "statuses": "completed,error",
+        "statuses": ["completed", "error"],
         "exclude_status": "cancelled",
         "trigger_type": "api",
-        "trigger_types": "api,manual_run",
+        "trigger_types": ["api", "manual_run"],
         "from_date": "2026-05-01",
         "to_date": "2026-05-18",
         "sort_by": "created_at",
@@ -461,7 +463,7 @@ def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/experiments/runs/exprun_1/cancel"
-    assert request.data == {}
+    assert request.data is None
     assert not hasattr(run, "workflow")
     assert run.lifecycle.status == "cancelled"
 
@@ -478,7 +480,7 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/experiments/results"
-    assert request.params == {"run_id": "exprun_1", "limit": 20}
+    assert request.params == {"run_id": "exprun_1", "limit": 100, "order": "desc"}
     assert page.data[0].document_id == "expdoc_1"
     handle_input = page.data[0].handle_inputs["input-file-0"]
     assert isinstance(handle_input, FileHandleInput)
