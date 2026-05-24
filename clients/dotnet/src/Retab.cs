@@ -15,6 +15,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Retab
 {
@@ -29,7 +31,7 @@ namespace Retab
         /// <summary>The configured HTTP client.</summary>
         public HttpClient HttpClient { get; }
 
-        /// <summary>The configured API key (sent as a Bearer token).</summary>
+        /// <summary>The configured API key (sent with the Api-Key header).</summary>
         public string ApiKey { get; }
 
         /// <summary>The configured client-id, if any. Optional for Retab; required for some integrations.</summary>
@@ -47,6 +49,18 @@ namespace Retab
             Converters = { new RetabStringEnumConverterFactory() },
         };
 
+        private static readonly JsonSerializerSettings NewtonsoftJsonSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy
+                {
+                    ProcessDictionaryKeys = false,
+                    OverrideSpecifiedNames = false,
+                },
+            },
+        };
+
         /// <summary>Construct a Retab client with the supplied API key.</summary>
         public Retab(string apiKey) : this(new RetabOptions { ApiKey = apiKey }) { }
 
@@ -59,13 +73,9 @@ namespace Retab
 
             this.ApiKey = options.ApiKey!;
             this.ClientId = options.ClientId;
-            this.BaseUrl = options.BaseUrl ?? new Uri("https://api.retab.com");
+            this.BaseUrl = NormalizeBaseUrl(options.BaseUrl ?? new Uri("https://api.retab.com"));
             this.HttpClient = options.HttpClient ?? new HttpClient();
 
-            if (this.HttpClient.DefaultRequestHeaders.Authorization == null)
-            {
-                this.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.ApiKey);
-            }
             this.HttpClient.DefaultRequestHeaders.UserAgent.TryParseAdd($"retab-dotnet/{SdkVersion}");
         }
 
@@ -100,7 +110,10 @@ namespace Retab
             var basePart = this.BaseUrl.ToString().TrimEnd('/');
             var pathPart = request.Path.StartsWith("/") ? request.Path : "/" + request.Path;
             var builder = new UriBuilder(basePart + pathPart);
-            var query = ExtractQueryParams(request.Options);
+            var method = request.Method ?? HttpMethod.Get;
+            var query = IsBodyMethod(method)
+                ? new Dictionary<string, string>(StringComparer.Ordinal)
+                : ExtractQueryParams(request.Options);
             if (request.ExtraQuery != null)
             {
                 foreach (var kv in request.ExtraQuery) query[kv.Key] = kv.Value;
@@ -113,6 +126,12 @@ namespace Retab
         {
             var uri = BuildRequestUri(request);
             var httpRequest = new HttpRequestMessage(request.Method ?? HttpMethod.Get, uri);
+            var requestApiKey = request.RequestOptions?.ApiKey ?? this.ApiKey;
+
+            if (!string.IsNullOrWhiteSpace(requestApiKey) && !HasHeader(request.RequestOptions?.Headers, "Api-Key"))
+            {
+                httpRequest.Headers.TryAddWithoutValidation("Api-Key", requestApiKey);
+            }
 
             if (!string.IsNullOrEmpty(request.AccessToken))
             {
@@ -121,12 +140,12 @@ namespace Retab
 
             if (request.Body != null)
             {
-                var json = JsonSerializer.Serialize(request.Body, request.Body.GetType(), JsonOptions);
+                var json = System.Text.Json.JsonSerializer.Serialize(request.Body, request.Body.GetType(), JsonOptions);
                 httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
             }
             else if (request.Options != null && IsBodyMethod(httpRequest.Method))
             {
-                var json = JsonSerializer.Serialize(request.Options, request.Options.GetType(), JsonOptions);
+                var json = System.Text.Json.JsonSerializer.Serialize(request.Options, request.Options.GetType(), JsonOptions);
                 httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
             }
 
@@ -139,6 +158,24 @@ namespace Retab
             }
 
             return httpRequest;
+        }
+
+        private static bool HasHeader(Dictionary<string, string>? headers, string name)
+        {
+            if (headers == null) return false;
+            return headers.Keys.Any(key => string.Equals(key, name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static Uri NormalizeBaseUrl(Uri baseUrl)
+        {
+            var builder = new UriBuilder(baseUrl);
+            var path = builder.Path.TrimEnd('/');
+            if (path.EndsWith("/v1", StringComparison.OrdinalIgnoreCase))
+            {
+                var withoutVersion = path.Substring(0, path.Length - "/v1".Length);
+                builder.Path = string.IsNullOrEmpty(withoutVersion) ? "/" : withoutVersion;
+            }
+            return builder.Uri;
         }
 
         private static bool IsBodyMethod(HttpMethod method)
@@ -161,8 +198,8 @@ namespace Retab
             {
                 return default!;
             }
-            await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            var result = await JsonSerializer.DeserializeAsync<TResult>(stream, JsonOptions, cancellationToken).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            var result = JsonConvert.DeserializeObject<TResult>(body, NewtonsoftJsonSettings);
             return result!;
         }
 

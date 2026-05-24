@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_reviews
+
 package cmd
 
 import (
@@ -104,7 +106,7 @@ exclusive.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowReviews.List(ctx, params)
+		result, err := client.Workflows.Reviews.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -133,7 +135,7 @@ Use ` + "`reviews schema`" + ` when you need the snapshot shape for a correction
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowReviews.Get(ctx, args[0])
+		result, err := client.Workflows.Reviews.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -171,7 +173,7 @@ to the review and it does not change the stored review object.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		review, err := client.WorkflowReviews.Get(ctx, args[0])
+		review, err := client.Workflows.Reviews.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -208,7 +210,7 @@ Any version returned by ` + "`reviews versions list`" + ` is a valid approval ta
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.WorkflowReviewsApproveParams{VersionID: versionID}
-		result, err := client.WorkflowReviews.Approve(ctx, args[0], &req)
+		result, err := client.Workflows.Reviews.Approve(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -241,7 +243,7 @@ auditable.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.WorkflowReviewsRejectParams{VersionID: versionID, Reason: reason}
-		result, err := client.WorkflowReviews.Reject(ctx, args[0], &req)
+		result, err := client.Workflows.Reviews.Reject(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -280,7 +282,7 @@ because versions are queried per review.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowReviewVersions.List(ctx, params)
+		result, err := client.Workflows.Reviews.Versions.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -303,7 +305,7 @@ var workflowsReviewsVersionsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowReviewVersions.Get(ctx, args[0])
+		result, err := client.Workflows.Reviews.Versions.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -364,7 +366,7 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 		if note, _ := cmd.Flags().GetString("note"); note != "" {
 			req.Note = ptr(note)
 		}
-		result, err := client.WorkflowReviewVersions.Create(ctx, &req)
+		result, err := client.Workflows.Reviews.Versions.Create(ctx, &req)
 		if err != nil {
 			return err
 		}

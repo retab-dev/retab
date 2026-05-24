@@ -13,9 +13,7 @@ from retab.types.workflows import (
     Actor,
     Review,
     ReviewDecision,
-    WorkflowReviewQueue,
     ReviewVersion,
-    ReviewVersionListResponse,
     SubmitDecisionResponse,
 )
 
@@ -56,7 +54,7 @@ _REVIEW = {
     "parent_step_id": None,
     "iteration_key": None,
     "block_type": "extract",
-    "triggered_by": {"kind": "low_confidence", "threshold": 0.8},
+    "triggered_by": {"kind": "confidence_lt", "threshold": 0.8},
     "created_at": _NOW,
     "decision": _DECISION,
 }
@@ -79,7 +77,7 @@ _QUEUE_ROW = {
     "parent_step_id": None,
     "iteration_key": None,
     "block_type": "extract",
-    "triggered_by": {"kind": "low_confidence"},
+    "triggered_by": {"kind": "confidence_lt", "threshold": 0.8},
     "created_at": _NOW,
     "decision": None,
 }
@@ -101,7 +99,7 @@ def test_review_queue_row_round_trips_without_full_history() -> None:
 
 
 def test_review_queue_response_round_trips() -> None:
-    resp = WorkflowReviewQueue.model_validate({"data": [_QUEUE_ROW], "list_metadata": {"before": None, "after": _REVIEW_ID}})
+    resp = PaginatedList[Review].model_validate({"data": [_QUEUE_ROW], "list_metadata": {"before": None, "after": _REVIEW_ID}})
     assert resp.has_more is True
     assert resp.data[0].step_id == "step_1"
 
@@ -127,7 +125,7 @@ def test_review_version_round_trips() -> None:
 
 
 def test_review_version_list_response_round_trips() -> None:
-    resp = ReviewVersionListResponse.model_validate(
+    resp = PaginatedList[ReviewVersion].model_validate(
         {
             "data": [_OUTPUT_VERSION, _CHILD_OUTPUT_VERSION],
             "list_metadata": {"before": _VERSION_ID, "after": _CHILD_VERSION_ID},
@@ -229,8 +227,6 @@ def test_list_get_approve_parse_responses() -> None:
     reviews = WorkflowReviews(client=client)
 
     queue = reviews.list(workflow_id="wf_1")
-    # Reviews.list now returns the canonical PaginatedList[Review] envelope;
-    # WorkflowReviewQueue was the legacy custom wrapper.
     assert isinstance(queue, PaginatedList)
     assert queue.data[0].id == _REVIEW_ID
     assert isinstance(reviews.get(_REVIEW_ID), Review)
@@ -264,12 +260,17 @@ def test_review_versions_create_requires_parent_id() -> None:
     versions = WorkflowReviews(client=MagicMock()).versions
     with pytest.raises(TypeError):
         versions.create(review_id=_REVIEW_ID, snapshot={"category": "Invoice"})  # type: ignore[call-arg]
-    with pytest.raises(ValueError, match="parent_id is required"):
-        versions.create(
-            review_id=_REVIEW_ID,
-            parent_id="",  # type: ignore[arg-type]
-            snapshot={"category": "Invoice"},
-        )
+
+    request = versions.prepare_create(
+        review_id=_REVIEW_ID,
+        parent_id="",
+        snapshot={"category": "Invoice"},
+    )
+    assert request.data == {
+        "review_id": _REVIEW_ID,
+        "parent_id": "",
+        "snapshot": {"category": "Invoice"},
+    }
 
 
 def test_reject_requires_reason_keyword() -> None:

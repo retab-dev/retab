@@ -1,0 +1,763 @@
+{
+  "version": 2,
+  "language": "java",
+  "generatedAt": "2026-05-24T19:39:17.840Z",
+  "files": [
+    "build.gradle.kts",
+    "checkstyle.xml",
+    "pom.xml",
+    "settings.gradle.kts",
+    "src/main/java/com/retab/RetabClient.java",
+    "src/main/java/com/retab/classifications/ClassificationsApi.java",
+    "src/main/java/com/retab/edits/EditsApi.java",
+    "src/main/java/com/retab/edittemplates/EditTemplatesApi.java",
+    "src/main/java/com/retab/experimentrunmetrics/ExperimentRunMetricsApi.java",
+    "src/main/java/com/retab/experimentrunresults/ExperimentRunResultsApi.java",
+    "src/main/java/com/retab/experimentruns/ExperimentRunsApi.java",
+    "src/main/java/com/retab/extractions/ExtractionsApi.java",
+    "src/main/java/com/retab/files/FilesApi.java",
+    "src/main/java/com/retab/jobs/JobsApi.java",
+    "src/main/java/com/retab/models/Actor.java",
+    "src/main/java/com/retab/models/AllItemsMatchCondition.java",
+    "src/main/java/com/retab/models/AnyItemMatchesCondition.java",
+    "src/main/java/com/retab/models/ApiCallAttempt.java",
+    "src/main/java/com/retab/models/ApiCallInvocation.java",
+    "src/main/java/com/retab/models/ApiTrigger.java",
+    "src/main/java/com/retab/models/ApproveReviewRequest.java",
+    "src/main/java/com/retab/models/ArrayContainsCondition.java",
+    "src/main/java/com/retab/models/AssertionFailure.java",
+    "src/main/java/com/retab/models/AssertionResult.java",
+    "src/main/java/com/retab/models/AssertionSchemaDep.java",
+    "src/main/java/com/retab/models/AssertionSpec.java",
+    "src/main/java/com/retab/models/AwaitingReviewRun.java",
+    "src/main/java/com/retab/models/AwaitingReviewStepLifecycle.java",
+    "src/main/java/com/retab/models/BBox.java",
+    "src/main/java/com/retab/models/BetweenCondition.java",
+    "src/main/java/com/retab/models/BlockTestBatchExecutionCounts.java",
+    "src/main/java/com/retab/models/BlockTestLifecycleCounts.java",
+    "src/main/java/com/retab/models/BlockTestOutcomeCounts.java",
+    "src/main/java/com/retab/models/CancelWorkflowExperimentRunResponse.java",
+    "src/main/java/com/retab/models/CancelWorkflowRequest.java",
+    "src/main/java/com/retab/models/CancelWorkflowResponse.java",
+    "src/main/java/com/retab/models/CancelledStepLifecycle.java",
+    "src/main/java/com/retab/models/CancelledTerminal.java",
+    "src/main/java/com/retab/models/CancelledWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/CancelledWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/CancelledWorkflowTestRun.java",
+    "src/main/java/com/retab/models/Category.java",
+    "src/main/java/com/retab/models/Classification.java",
+    "src/main/java/com/retab/models/ClassificationConsensus.java",
+    "src/main/java/com/retab/models/ClassificationDecision.java",
+    "src/main/java/com/retab/models/ClassificationRequest.java",
+    "src/main/java/com/retab/models/ClassificationWorkflowArtifact.java",
+    "src/main/java/com/retab/models/CompleteFileUploadRequest.java",
+    "src/main/java/com/retab/models/CompletedBlockExecutionLifecycle.java",
+    "src/main/java/com/retab/models/CompletedStepLifecycle.java",
+    "src/main/java/com/retab/models/CompletedTerminal.java",
+    "src/main/java/com/retab/models/CompletedWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/CompletedWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/CompletedWorkflowTestRun.java",
+    "src/main/java/com/retab/models/ConditionEvaluationDetails.java",
+    "src/main/java/com/retab/models/ConditionEvaluationPerItem.java",
+    "src/main/java/com/retab/models/ConditionEvaluationResult.java",
+    "src/main/java/com/retab/models/ConditionEvaluationSubCondition.java",
+    "src/main/java/com/retab/models/ConditionalEvaluation.java",
+    "src/main/java/com/retab/models/ContainCondition.java",
+    "src/main/java/com/retab/models/ContainerContextData.java",
+    "src/main/java/com/retab/models/CreateBlockExecutionRequest.java",
+    "src/main/java/com/retab/models/CreateEditTemplateRequest.java",
+    "src/main/java/com/retab/models/CreateExperimentRequest.java",
+    "src/main/java/com/retab/models/CreateExperimentRunRequest.java",
+    "src/main/java/com/retab/models/CreateJobRequest.java",
+    "src/main/java/com/retab/models/CreateReviewVersionRequest.java",
+    "src/main/java/com/retab/models/CreateUploadResponse.java",
+    "src/main/java/com/retab/models/CreateWorkflowRequest.java",
+    "src/main/java/com/retab/models/CreateWorkflowRunRequest.java",
+    "src/main/java/com/retab/models/CreateWorkflowTestRequest.java",
+    "src/main/java/com/retab/models/CreateWorkflowTestRunRequest.java",
+    "src/main/java/com/retab/models/DeclarativeApplyResponse.java",
+    "src/main/java/com/retab/models/DeclarativeExportResponse.java",
+    "src/main/java/com/retab/models/DeclarativePlanChange.java",
+    "src/main/java/com/retab/models/DeclarativePlanFieldChange.java",
+    "src/main/java/com/retab/models/DeclarativePlanResourceChange.java",
+    "src/main/java/com/retab/models/DeclarativePlanResponse.java",
+    "src/main/java/com/retab/models/DeclarativePlanSummary.java",
+    "src/main/java/com/retab/models/DeclarativeValidationResponse.java",
+    "src/main/java/com/retab/models/DeclarativeWorkflowRequest.java",
+    "src/main/java/com/retab/models/Edit.java",
+    "src/main/java/com/retab/models/EditConfig.java",
+    "src/main/java/com/retab/models/EditRequest.java",
+    "src/main/java/com/retab/models/EditResult.java",
+    "src/main/java/com/retab/models/EditTemplate.java",
+    "src/main/java/com/retab/models/EditWorkflowArtifact.java",
+    "src/main/java/com/retab/models/EmailTrigger.java",
+    "src/main/java/com/retab/models/EndsWithCondition.java",
+    "src/main/java/com/retab/models/EqualCondition.java",
+    "src/main/java/com/retab/models/ErrorBlockExecutionLifecycle.java",
+    "src/main/java/com/retab/models/ErrorDetails.java",
+    "src/main/java/com/retab/models/ErrorStepLifecycle.java",
+    "src/main/java/com/retab/models/ErrorTerminal.java",
+    "src/main/java/com/retab/models/ErrorWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/ErrorWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/ErrorWorkflowTestRun.java",
+    "src/main/java/com/retab/models/ExistCondition.java",
+    "src/main/java/com/retab/models/ExperimentByDocumentMetricsResponse.java",
+    "src/main/java/com/retab/models/ExperimentByDocumentTargetMetric.java",
+    "src/main/java/com/retab/models/ExperimentByTargetDocumentMetric.java",
+    "src/main/java/com/retab/models/ExperimentByTargetMetricsResponse.java",
+    "src/main/java/com/retab/models/ExperimentConfusionFlowMetric.java",
+    "src/main/java/com/retab/models/ExperimentConfusionSummaryAggregate.java",
+    "src/main/java/com/retab/models/ExperimentDocumentCaptureRequest.java",
+    "src/main/java/com/retab/models/ExperimentDocumentConfusionMetric.java",
+    "src/main/java/com/retab/models/ExperimentDocumentProvenance.java",
+    "src/main/java/com/retab/models/ExperimentExtractSummaryAggregate.java",
+    "src/main/java/com/retab/models/ExperimentMetricDocumentRef.java",
+    "src/main/java/com/retab/models/ExperimentMetricsMissingError.java",
+    "src/main/java/com/retab/models/ExperimentMetricsStaleError.java",
+    "src/main/java/com/retab/models/ExperimentResult.java",
+    "src/main/java/com/retab/models/ExperimentResultTiming.java",
+    "src/main/java/com/retab/models/ExperimentRun.java",
+    "src/main/java/com/retab/models/ExperimentRunTiming.java",
+    "src/main/java/com/retab/models/ExperimentRunTrigger.java",
+    "src/main/java/com/retab/models/ExperimentSummaryMetricDocument.java",
+    "src/main/java/com/retab/models/ExperimentSummaryMetricsResponse.java",
+    "src/main/java/com/retab/models/ExperimentTargetConfusionMetric.java",
+    "src/main/java/com/retab/models/ExperimentVoteRow.java",
+    "src/main/java/com/retab/models/ExperimentVotesMetricDocument.java",
+    "src/main/java/com/retab/models/ExperimentVotesMetricsResponse.java",
+    "src/main/java/com/retab/models/ExplicitExperimentDocumentRequest.java",
+    "src/main/java/com/retab/models/Extraction.java",
+    "src/main/java/com/retab/models/ExtractionConsensus.java",
+    "src/main/java/com/retab/models/ExtractionRequest.java",
+    "src/main/java/com/retab/models/ExtractionWorkflowArtifact.java",
+    "src/main/java/com/retab/models/File.java",
+    "src/main/java/com/retab/models/FileHandleInput.java",
+    "src/main/java/com/retab/models/FileLink.java",
+    "src/main/java/com/retab/models/FileRef.java",
+    "src/main/java/com/retab/models/FormField.java",
+    "src/main/java/com/retab/models/FunctionInvocation.java",
+    "src/main/java/com/retab/models/GenerateSchemaRequest.java",
+    "src/main/java/com/retab/models/HandlePayload.java",
+    "src/main/java/com/retab/models/HttpValidationError.java",
+    "src/main/java/com/retab/models/Job.java",
+    "src/main/java/com/retab/models/JobError.java",
+    "src/main/java/com/retab/models/JobResponse.java",
+    "src/main/java/com/retab/models/JobWarning.java",
+    "src/main/java/com/retab/models/JsonHandleInput.java",
+    "src/main/java/com/retab/models/JsonSchemaValidCondition.java",
+    "src/main/java/com/retab/models/LatestBlockTestRunSummary.java",
+    "src/main/java/com/retab/models/LengthCompareCondition.java",
+    "src/main/java/com/retab/models/LlmJudgedAsCondition.java",
+    "src/main/java/com/retab/models/LlmNotJudgedAsCondition.java",
+    "src/main/java/com/retab/models/ManualTrigger.java",
+    "src/main/java/com/retab/models/ManualWorkflowTestSource.java",
+    "src/main/java/com/retab/models/MatcheRegexCondition.java",
+    "src/main/java/com/retab/models/MaterializedDocument.java",
+    "src/main/java/com/retab/models/MetricsStaleErrorLastRun.java",
+    "src/main/java/com/retab/models/MimeData.java",
+    "src/main/java/com/retab/models/NotContainsCondition.java",
+    "src/main/java/com/retab/models/NotEqualsCondition.java",
+    "src/main/java/com/retab/models/NotExistsCondition.java",
+    "src/main/java/com/retab/models/NumberCompareCondition.java",
+    "src/main/java/com/retab/models/ObjectContainsCondition.java",
+    "src/main/java/com/retab/models/OutputTarget.java",
+    "src/main/java/com/retab/models/Parse.java",
+    "src/main/java/com/retab/models/ParseOutput.java",
+    "src/main/java/com/retab/models/ParseRequest.java",
+    "src/main/java/com/retab/models/ParseWorkflowArtifact.java",
+    "src/main/java/com/retab/models/PartialSchema.java",
+    "src/main/java/com/retab/models/Partition.java",
+    "src/main/java/com/retab/models/PartitionChunk.java",
+    "src/main/java/com/retab/models/PartitionChunkLikelihood.java",
+    "src/main/java/com/retab/models/PartitionConsensus.java",
+    "src/main/java/com/retab/models/PartitionRequest.java",
+    "src/main/java/com/retab/models/PartitionWorkflowArtifact.java",
+    "src/main/java/com/retab/models/PendingRun.java",
+    "src/main/java/com/retab/models/PendingStepLifecycle.java",
+    "src/main/java/com/retab/models/PendingWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/PendingWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/PendingWorkflowTestRun.java",
+    "src/main/java/com/retab/models/PublishWorkflowRequest.java",
+    "src/main/java/com/retab/models/QueuedStepLifecycle.java",
+    "src/main/java/com/retab/models/QueuedWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/QueuedWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/QueuedWorkflowTestRun.java",
+    "src/main/java/com/retab/models/RejectReviewRequest.java",
+    "src/main/java/com/retab/models/RestartTrigger.java",
+    "src/main/java/com/retab/models/RetabUsage.java",
+    "src/main/java/com/retab/models/Review.java",
+    "src/main/java/com/retab/models/ReviewAllOf.java",
+    "src/main/java/com/retab/models/ReviewAlways.java",
+    "src/main/java/com/retab/models/ReviewAnyOf.java",
+    "src/main/java/com/retab/models/ReviewAnyRequiredFieldNull.java",
+    "src/main/java/com/retab/models/ReviewAnySplitPagesLt.java",
+    "src/main/java/com/retab/models/ReviewBoundaryConfidenceLt.java",
+    "src/main/java/com/retab/models/ReviewBranchIn.java",
+    "src/main/java/com/retab/models/ReviewCategoryIn.java",
+    "src/main/java/com/retab/models/ReviewConfidenceLt.java",
+    "src/main/java/com/retab/models/ReviewDecision.java",
+    "src/main/java/com/retab/models/ReviewEvaluation.java",
+    "src/main/java/com/retab/models/ReviewFieldConfidenceLt.java",
+    "src/main/java/com/retab/models/ReviewJsonCondition.java",
+    "src/main/java/com/retab/models/ReviewSplitCountNeq.java",
+    "src/main/java/com/retab/models/ReviewTopMarginLt.java",
+    "src/main/java/com/retab/models/ReviewValidationFailed.java",
+    "src/main/java/com/retab/models/ReviewVersion.java",
+    "src/main/java/com/retab/models/RunInputs.java",
+    "src/main/java/com/retab/models/RunStepWorkflowTestSource.java",
+    "src/main/java/com/retab/models/RunTiming.java",
+    "src/main/java/com/retab/models/RunningRun.java",
+    "src/main/java/com/retab/models/RunningStepLifecycle.java",
+    "src/main/java/com/retab/models/RunningWorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/RunningWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/RunningWorkflowTestRun.java",
+    "src/main/java/com/retab/models/ScheduleTrigger.java",
+    "src/main/java/com/retab/models/SimilarityGteCondition.java",
+    "src/main/java/com/retab/models/SkippedBlockExecutionLifecycle.java",
+    "src/main/java/com/retab/models/SkippedStepLifecycle.java",
+    "src/main/java/com/retab/models/SourcesResponse.java",
+    "src/main/java/com/retab/models/Split.java",
+    "src/main/java/com/retab/models/SplitConsensus.java",
+    "src/main/java/com/retab/models/SplitIouCondition.java",
+    "src/main/java/com/retab/models/SplitRequest.java",
+    "src/main/java/com/retab/models/SplitResult.java",
+    "src/main/java/com/retab/models/SplitSubdocumentLikelihood.java",
+    "src/main/java/com/retab/models/SplitWorkflowArtifact.java",
+    "src/main/java/com/retab/models/StartWithCondition.java",
+    "src/main/java/com/retab/models/StepArtifactRef.java",
+    "src/main/java/com/retab/models/StoredBlockExecution.java",
+    "src/main/java/com/retab/models/Subdocument.java",
+    "src/main/java/com/retab/models/SubmitDecisionResponse.java",
+    "src/main/java/com/retab/models/UpdateEditTemplateRequest.java",
+    "src/main/java/com/retab/models/UpdateExperimentRequest.java",
+    "src/main/java/com/retab/models/UpdateWorkflowBlockRequest.java",
+    "src/main/java/com/retab/models/UpdateWorkflowRequest.java",
+    "src/main/java/com/retab/models/UpdateWorkflowTestRequest.java",
+    "src/main/java/com/retab/models/UploadFileRequest.java",
+    "src/main/java/com/retab/models/ValidationError.java",
+    "src/main/java/com/retab/models/VerdictSummary.java",
+    "src/main/java/com/retab/models/WebhookTrigger.java",
+    "src/main/java/com/retab/models/WhileLoopTermination.java",
+    "src/main/java/com/retab/models/Workflow.java",
+    "src/main/java/com/retab/models/WorkflowArtifact.java",
+    "src/main/java/com/retab/models/WorkflowBlock.java",
+    "src/main/java/com/retab/models/WorkflowBlockCreateRequest.java",
+    "src/main/java/com/retab/models/WorkflowEdgeCreateRequest.java",
+    "src/main/java/com/retab/models/WorkflowEdgeDoc.java",
+    "src/main/java/com/retab/models/WorkflowExperiment.java",
+    "src/main/java/com/retab/models/WorkflowExportPayloadRequest.java",
+    "src/main/java/com/retab/models/WorkflowExportPayloadResponse.java",
+    "src/main/java/com/retab/models/WorkflowPublished.java",
+    "src/main/java/com/retab/models/WorkflowRun.java",
+    "src/main/java/com/retab/models/WorkflowRunStep.java",
+    "src/main/java/com/retab/models/WorkflowSnapshotRef.java",
+    "src/main/java/com/retab/models/WorkflowTest.java",
+    "src/main/java/com/retab/models/WorkflowTestBlockTarget.java",
+    "src/main/java/com/retab/models/WorkflowTestResult.java",
+    "src/main/java/com/retab/models/WorkflowTestRun.java",
+    "src/main/java/com/retab/models/WorkflowTestRunBlockScope.java",
+    "src/main/java/com/retab/models/WorkflowTestRunSingleScope.java",
+    "src/main/java/com/retab/models/WorkflowTestRunTiming.java",
+    "src/main/java/com/retab/models/WorkflowTestRunWorkflowScope.java",
+    "src/main/java/com/retab/parses/ParsesApi.java",
+    "src/main/java/com/retab/partitions/PartitionsApi.java",
+    "src/main/java/com/retab/schemas/SchemasApi.java",
+    "src/main/java/com/retab/splits/SplitsApi.java",
+    "src/main/java/com/retab/types/ActorKind.java",
+    "src/main/java/com/retab/types/AssertionDriftStatus.java",
+    "src/main/java/com/retab/types/AssertionOutcome.java",
+    "src/main/java/com/retab/types/CancelWorkflowResponseCancellationStatus.java",
+    "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
+    "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
+    "src/main/java/com/retab/types/CreateExperimentRequestNConsensus.java",
+    "src/main/java/com/retab/types/CreateJobRequestEndpoint.java",
+    "src/main/java/com/retab/types/DeclarativeApplyResponseAction.java",
+    "src/main/java/com/retab/types/DeclarativePlanFieldChangeAction.java",
+    "src/main/java/com/retab/types/DeclarativePlanResourceChangeActions.java",
+    "src/main/java/com/retab/types/DeclarativePlanResourceChangeTarget.java",
+    "src/main/java/com/retab/types/DeclarativePlanResourceChangeType.java",
+    "src/main/java/com/retab/types/DeclarativePlanResponseAction.java",
+    "src/main/java/com/retab/types/ErrorStepLifecycleCategory.java",
+    "src/main/java/com/retab/types/ErrorStepLifecycleStage.java",
+    "src/main/java/com/retab/types/ErrorTerminalCategory.java",
+    "src/main/java/com/retab/types/ErrorTerminalStage.java",
+    "src/main/java/com/retab/types/ExperimentBlockType.java",
+    "src/main/java/com/retab/types/ExperimentPublicStatus.java",
+    "src/main/java/com/retab/types/ExperimentResultBlockType.java",
+    "src/main/java/com/retab/types/ExperimentRunBlockType.java",
+    "src/main/java/com/retab/types/ExperimentRunMetricsView.java",
+    "src/main/java/com/retab/types/ExperimentRunNConsensus.java",
+    "src/main/java/com/retab/types/ExperimentSchemaDriftStatus.java",
+    "src/main/java/com/retab/types/ExperimentSummaryMetricsResponseBlockType.java",
+    "src/main/java/com/retab/types/FieldType.java",
+    "src/main/java/com/retab/types/GenerateSchemaRequestReasoningEffort.java",
+    "src/main/java/com/retab/types/HandlePayloadType.java",
+    "src/main/java/com/retab/types/JobStatus.java",
+    "src/main/java/com/retab/types/JobsEndpoint.java",
+    "src/main/java/com/retab/types/JobsSource.java",
+    "src/main/java/com/retab/types/JobsStatus.java",
+    "src/main/java/com/retab/types/LatestBlockTestRunSummaryOutcome.java",
+    "src/main/java/com/retab/types/LatestBlockTestRunSummaryStatus.java",
+    "src/main/java/com/retab/types/LengthCompareConditionOp.java",
+    "src/main/java/com/retab/types/NConsensusValue.java",
+    "src/main/java/com/retab/types/NumberCompareConditionOp.java",
+    "src/main/java/com/retab/types/ParseRequestTableParsingFormat.java",
+    "src/main/java/com/retab/types/ParseWorkflowArtifactTableParsingFormat.java",
+    "src/main/java/com/retab/types/ResumeStatus.java",
+    "src/main/java/com/retab/types/ReviewBlockType.java",
+    "src/main/java/com/retab/types/ReviewDecisionStatus.java",
+    "src/main/java/com/retab/types/ReviewEvaluationReviewDecision.java",
+    "src/main/java/com/retab/types/ReviewVerdict.java",
+    "src/main/java/com/retab/types/SimilarityGteConditionMethod.java",
+    "src/main/java/com/retab/types/SortOrder.java",
+    "src/main/java/com/retab/types/SourcesResponseDocumentType.java",
+    "src/main/java/com/retab/types/StepArtifactRefOperation.java",
+    "src/main/java/com/retab/types/SubmissionStatus.java",
+    "src/main/java/com/retab/types/SupportedEndpoint.java",
+    "src/main/java/com/retab/types/TableParsingFormat.java",
+    "src/main/java/com/retab/types/UpdateExperimentRequestNConsensus.java",
+    "src/main/java/com/retab/types/UpdateWorkflowBlockRequestConfigMode.java",
+    "src/main/java/com/retab/types/WhileLoopTerminationTerminationReason.java",
+    "src/main/java/com/retab/types/WorkflowArtifactOperation.java",
+    "src/main/java/com/retab/types/WorkflowArtifactsOperation.java",
+    "src/main/java/com/retab/types/WorkflowBlockCreateRequestType.java",
+    "src/main/java/com/retab/types/WorkflowBlockType.java",
+    "src/main/java/com/retab/types/WorkflowExperimentsExcludeStatus.java",
+    "src/main/java/com/retab/types/WorkflowExperimentsStatus.java",
+    "src/main/java/com/retab/types/WorkflowExportPayloadRequestExcludeStatus.java",
+    "src/main/java/com/retab/types/WorkflowExportPayloadRequestExportSource.java",
+    "src/main/java/com/retab/types/WorkflowExportPayloadRequestStatus.java",
+    "src/main/java/com/retab/types/WorkflowExportPayloadRequestTriggerTypes.java",
+    "src/main/java/com/retab/types/WorkflowRunStepBlockType.java",
+    "src/main/java/com/retab/types/WorkflowRunsExcludeStatus.java",
+    "src/main/java/com/retab/types/WorkflowRunsStatus.java",
+    "src/main/java/com/retab/types/WorkflowRunsTriggerType.java",
+    "src/main/java/com/retab/types/WorkflowTestResultVerdict.java",
+    "src/main/java/com/retab/types/WorkflowTestSchemaDrift.java",
+    "src/main/java/com/retab/workflowartifacts/WorkflowArtifactsApi.java",
+    "src/main/java/com/retab/workflowblockexecutions/WorkflowBlockExecutionsApi.java",
+    "src/main/java/com/retab/workflowblocks/WorkflowBlocksApi.java",
+    "src/main/java/com/retab/workflowedges/WorkflowEdgesApi.java",
+    "src/main/java/com/retab/workflowexperiments/WorkflowExperimentsApi.java",
+    "src/main/java/com/retab/workflowreviews/WorkflowReviewsApi.java",
+    "src/main/java/com/retab/workflowreviewversions/WorkflowReviewVersionsApi.java",
+    "src/main/java/com/retab/workflowruns/WorkflowRunsApi.java",
+    "src/main/java/com/retab/workflows/WorkflowsApi.java",
+    "src/main/java/com/retab/workflowspec/WorkflowSpecApi.java",
+    "src/main/java/com/retab/workflowsteps/WorkflowStepsApi.java",
+    "src/main/java/com/retab/workflowtestrunresults/WorkflowTestRunResultsApi.java",
+    "src/main/java/com/retab/workflowtestruns/WorkflowTestRunsApi.java",
+    "src/main/java/com/retab/workflowtests/WorkflowTestsApi.java",
+    "src/test/java/com/retab/GeneratedSdkSmokeTest.java"
+  ],
+  "operations": {
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "generate",
+      "service": "schemas"
+    },
+    "GET /v1/extractions": {
+      "sdkMethod": "list",
+      "service": "extractions"
+    },
+    "POST /v1/extractions": {
+      "sdkMethod": "create",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}": {
+      "sdkMethod": "get",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "GET /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "sources",
+      "service": "extractions"
+    },
+    "GET /v1/classifications": {
+      "sdkMethod": "list",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "create",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "get",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "delete",
+      "service": "classifications"
+    },
+    "GET /v1/parses": {
+      "sdkMethod": "list",
+      "service": "parses"
+    },
+    "POST /v1/parses": {
+      "sdkMethod": "create",
+      "service": "parses"
+    },
+    "GET /v1/parses/{parse_id}": {
+      "sdkMethod": "get",
+      "service": "parses"
+    },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "GET /v1/partitions": {
+      "sdkMethod": "list",
+      "service": "partitions"
+    },
+    "POST /v1/partitions": {
+      "sdkMethod": "create",
+      "service": "partitions"
+    },
+    "GET /v1/partitions/{partition_id}": {
+      "sdkMethod": "get",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "delete",
+      "service": "partitions"
+    },
+    "GET /v1/splits": {
+      "sdkMethod": "list",
+      "service": "splits"
+    },
+    "POST /v1/splits": {
+      "sdkMethod": "create",
+      "service": "splits"
+    },
+    "GET /v1/splits/{split_id}": {
+      "sdkMethod": "get",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/files/upload": {
+      "sdkMethod": "createUpload",
+      "service": "files"
+    },
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "completeUpload",
+      "service": "files"
+    },
+    "GET /v1/files": {
+      "sdkMethod": "list",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
+      "sdkMethod": "get",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "getDownloadLink",
+      "service": "files"
+    },
+    "GET /v1/workflows/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.runs"
+    },
+    "POST /v1/workflows/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.runs"
+    },
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "export",
+      "service": "workflows.runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.runs"
+    },
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflows.runs"
+    },
+    "GET /v1/workflows/steps": {
+      "sdkMethod": "list",
+      "service": "workflows.steps"
+    },
+    "GET /v1/workflows/steps/{step_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.steps"
+    },
+    "GET /v1/workflows/reviews": {
+      "sdkMethod": "list",
+      "service": "workflows.reviews"
+    },
+    "GET /v1/workflows/reviews/{review_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/approve": {
+      "sdkMethod": "approve",
+      "service": "workflows.reviews"
+    },
+    "POST /v1/workflows/reviews/{review_id}/reject": {
+      "sdkMethod": "reject",
+      "service": "workflows.reviews"
+    },
+    "GET /v1/workflows/reviews/versions": {
+      "sdkMethod": "list",
+      "service": "workflows.reviews.versions"
+    },
+    "POST /v1/workflows/reviews/versions": {
+      "sdkMethod": "create",
+      "service": "workflows.reviews.versions"
+    },
+    "GET /v1/workflows/reviews/versions/{version_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.reviews.versions"
+    },
+    "GET /v1/workflows/artifacts/{artifact_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.artifacts"
+    },
+    "GET /v1/workflows/artifacts": {
+      "sdkMethod": "list",
+      "service": "workflows.artifacts"
+    },
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.tests.runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflows.tests.runs"
+    },
+    "GET /v1/workflows/tests/results": {
+      "sdkMethod": "list",
+      "service": "workflows.tests.results"
+    },
+    "GET /v1/workflows/tests/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.tests.results"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "list",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "create",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "list",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/tests": {
+      "sdkMethod": "list",
+      "service": "workflows.tests"
+    },
+    "POST /v1/workflows/tests": {
+      "sdkMethod": "create",
+      "service": "workflows.tests"
+    },
+    "GET /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.tests"
+    },
+    "PATCH /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.tests"
+    },
+    "DELETE /v1/workflows/tests/{test_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.tests"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.experiments.runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflows.experiments.runs"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.metrics"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "create",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "list",
+      "service": "workflows.blocks.executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "create",
+      "service": "workflows.blocks.executions"
+    },
+    "GET /v1/workflows": {
+      "sdkMethod": "list",
+      "service": "workflows"
+    },
+    "POST /v1/workflows": {
+      "sdkMethod": "create",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/{workflow_id}": {
+      "sdkMethod": "get",
+      "service": "workflows"
+    },
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "update",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "validate",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows.spec"
+    },
+    "GET /v1/workflows/spec/{workflow_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.spec"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "list",
+      "service": "edits.templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "create",
+      "service": "edits.templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "get",
+      "service": "edits.templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "update",
+      "service": "edits.templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "delete",
+      "service": "edits.templates"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "list",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "create",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "list",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "create",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "get",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "retry",
+      "service": "jobs"
+    }
+  }
+}

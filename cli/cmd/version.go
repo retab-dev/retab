@@ -70,9 +70,9 @@ build.`,
 				{Header: "BUILT", Extract: func(row any) string { return versionTableCell(row, "built") }},
 			})
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "retab %s (commit %s, built %s)\n",
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "retab %s (commit %s, built %s)\n",
 			version, commit, date)
-		return nil
+		return err
 	},
 }
 

@@ -76,7 +76,7 @@ step.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowBlockExecutions.Create(ctx, &request)
+		result, err := client.Workflows.Blocks.Executions.Create(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ block execution history should be returned.`,
 			RunID:            args[0],
 		}
 		params.BlockID, _ = cmd.Flags().GetString("block-id")
-		result, err := client.WorkflowBlockExecutions.List(ctx, &params)
+		result, err := client.Workflows.Blocks.Executions.List(ctx, &params)
 		if err != nil {
 			return err
 		}

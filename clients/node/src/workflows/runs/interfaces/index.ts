@@ -8,6 +8,7 @@ export * from './cancel-workflow-response-cancellation-status.interface.js';
 export * from './cancelled-terminal.interface.js';
 export * from './completed-terminal.interface.js';
 export * from './create-workflow-run-request.interface.js';
+export * from './email-trigger.interface.js';
 export * from './error-details.interface.js';
 export * from './error-terminal.interface.js';
 export * from './error-terminal-category.interface.js';

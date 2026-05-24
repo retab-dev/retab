@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_blocks
+
 package cmd
 
 import (
@@ -143,7 +145,7 @@ Paginate by passing the cursor from a previous response's
 		params := workflowBlocksListParams(cmd, args[0])
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowBlocks.List(ctx, params)
+		result, err := client.Workflows.Blocks.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -201,7 +203,7 @@ what to pass.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := &retab.WorkflowBlocksGetParams{WorkflowID: workflowID}
-		result, err := client.WorkflowBlocks.Get(ctx, blockID, params)
+		result, err := client.Workflows.Blocks.Get(ctx, blockID, params)
 		if err != nil {
 			return err
 		}
@@ -331,7 +333,7 @@ Review is not a standalone block type.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowBlocks.Create(ctx, &req)
+		result, err := client.Workflows.Blocks.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -479,7 +481,7 @@ duplicate block ids.`,
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
 		req.WorkflowID = workflowID
-		result, err := client.WorkflowBlocks.Update(ctx, blockID, &req)
+		result, err := client.Workflows.Blocks.Update(ctx, blockID, &req)
 		if err != nil {
 			return err
 		}
@@ -528,7 +530,7 @@ duplicate block ids.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := &retab.WorkflowBlocksDeleteParams{WorkflowID: workflowID}
-		if err := client.WorkflowBlocks.Delete(ctx, blockID, params); err != nil {
+		if err := client.Workflows.Blocks.Delete(ctx, blockID, params); err != nil {
 			return err
 		}
 		confirmDeleted("block", blockID)

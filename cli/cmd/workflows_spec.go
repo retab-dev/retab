@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_spec
+
 package cmd
 
 import (
@@ -113,7 +115,7 @@ of main.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowSpecs.Validate(ctx, &retab.WorkflowSpecsValidateParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Spec.Validate(ctx, &retab.WorkflowSpecValidateParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -146,7 +148,7 @@ Plan is read-only — safe to run on production specs. Pair it with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowSpecs.Plan(ctx, &retab.WorkflowSpecsPlanParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -197,7 +199,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		// shape, but only AFTER applying — by then the destroy already
 		// happened. The only safe place to inspect it is from a prior
 		// plan call.
-		plan, err := client.WorkflowSpecs.Plan(ctx, &retab.WorkflowSpecsPlanParams{YamlDefinition: yaml})
+		plan, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -208,7 +210,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.WorkflowSpecs.Apply(ctx, &retab.WorkflowSpecsApplyParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -252,11 +254,17 @@ func confirmDestructiveApply(cmd *cobra.Command, plan *retab.Resource) error {
 		)
 	}
 	out := cmd.ErrOrStderr()
-	fmt.Fprintf(out, "This apply will destroy %d resource(s):\n", destroy)
-	for _, r := range doomed {
-		fmt.Fprintf(out, "  - %s\n", r)
+	if _, err := fmt.Fprintf(out, "This apply will destroy %d resource(s):\n", destroy); err != nil {
+		return err
 	}
-	fmt.Fprint(out, "Apply this change? [y/N] ")
+	for _, r := range doomed {
+		if _, err := fmt.Fprintf(out, "  - %s\n", r); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprint(out, "Apply this change? [y/N] "); err != nil {
+		return err
+	}
 	answer, err := bufio.NewReader(stdin).ReadString('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("read confirmation: %w", err)
@@ -363,7 +371,7 @@ pull out other fields).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowSpecs.Get(ctx, args[0])
+		result, err := client.Workflows.Spec.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -508,10 +516,7 @@ func translateSpecAPIError(err error) error {
 	if !strings.Contains(msg, `"type":"missing"`) {
 		return err
 	}
-	return fmt.Errorf(`spec: metadata.id is required.
-  For new workflows, use any unique identifier (e.g. metadata.id: wrk_my-pipeline).
-  For existing workflows, use the id returned by ` + "`retab workflows list`" + `.
-  Use --debug to see the full server response.`)
+	return fmt.Errorf("spec: metadata.id is required; for new workflows, use any unique identifier (e.g. metadata.id: wrk_my-pipeline); for existing workflows, use the id returned by `retab workflows list`; use --debug to see the full server response")
 }
 
 func init() {

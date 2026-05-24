@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_tests
+
 package cmd
 
 import (
@@ -55,12 +57,16 @@ func resolveWorkflowIDArgTo(cmd *cobra.Command, args []string, warnTo io.Writer)
 	}
 	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
 		if flagSet {
-			fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; positional argument takes precedence")
+			if _, err := fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; positional argument takes precedence"); err != nil {
+				return "", err
+			}
 		}
 		return args[0], nil
 	}
 	if flagSet && strings.TrimSpace(flagVal) != "" {
-		fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; pass the workflow id as the first positional argument")
+		if _, err := fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; pass the workflow id as the first positional argument"); err != nil {
+			return "", err
+		}
 		return flagVal, nil
 	}
 	return "", fmt.Errorf("workflow id required")
@@ -300,7 +306,7 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTests.Create(ctx, &req)
+		result, err := client.Workflows.Tests.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -323,7 +329,7 @@ output, name, timestamps.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTests.Get(ctx, args[0])
+		result, err := client.Workflows.Tests.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -357,7 +363,7 @@ particular block.`,
 		if v := getIntFlagOrDefault(cmd, "limit", 50); v > 0 {
 			req.Limit = ptr(v)
 		}
-		result, err := client.WorkflowTests.List(ctx, &req)
+		result, err := client.Workflows.Tests.List(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -428,7 +434,7 @@ flaky runs.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTests.Update(ctx, args[0], &req)
+		result, err := client.Workflows.Tests.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -460,7 +466,7 @@ is not a terminal. Run history is removed alongside the test definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.WorkflowTests.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Tests.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("test", args[0])
@@ -549,7 +555,7 @@ results with ` + "`workflows tests runs results list`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRuns.Create(ctx, params)
+		result, err := client.Workflows.Tests.Runs.Create(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -630,7 +636,7 @@ status, trigger, date, or cursor.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRuns.List(ctx, params, retab.WithRequestParams(dateQuery))
+		result, err := client.Workflows.Tests.Runs.List(ctx, params, retab.WithRequestParams(dateQuery))
 		if err != nil {
 			return err
 		}
@@ -681,7 +687,7 @@ var workflowsTestsRunsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRuns.Get(ctx, args[0])
+		result, err := client.Workflows.Tests.Runs.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -700,7 +706,7 @@ var workflowsTestsRunsCancelCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRuns.Cancel(ctx, args[0])
+		result, err := client.Workflows.Tests.Runs.Cancel(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -730,7 +736,7 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRunResults.List(ctx, params)
+		result, err := client.Workflows.Tests.Results.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -750,7 +756,7 @@ var workflowsTestsRunsResultsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRunResults.Get(ctx, args[0])
+		result, err := client.Workflows.Tests.Results.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}

@@ -6,6 +6,7 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::workflow_block_executions::WorkflowBlockExecutionsApi;
 use serde::Serialize;
 
 pub struct WorkflowBlocksApi<'a> {
@@ -97,6 +98,13 @@ pub struct DeleteParams {
 }
 
 impl<'a> WorkflowBlocksApi<'a> {
+    /// Access the `executions` sub-resource.
+    pub fn executions(&self) -> WorkflowBlockExecutionsApi<'a> {
+        WorkflowBlockExecutionsApi {
+            client: self.client,
+        }
+    }
+
     /// List Blocks
     ///
     /// List blocks for a workflow with keyset cursor pagination.

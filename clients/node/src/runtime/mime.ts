@@ -18,7 +18,21 @@ export interface FileRefInput {
   type: 'file_url';
 }
 
-export type DocumentInput = MIMEData | Buffer | string | URL | Readable | FileRefInput;
+export interface FileRefDocumentInput {
+  id: string;
+  filename: string;
+  mimeType?: string;
+  mime_type?: string;
+}
+
+export type DocumentInput =
+  | MIMEData
+  | FileRefDocumentInput
+  | Buffer
+  | string
+  | URL
+  | Readable
+  | FileRefInput;
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -76,6 +90,16 @@ function passthroughHttpsUrl(url: string): MIMEData {
   };
 }
 
+function isFileRefDocumentInput(input: unknown): input is FileRefDocumentInput {
+  if (typeof input !== 'object' || input === null) return false;
+  const value = input as Record<string, unknown>;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.filename === 'string' &&
+    (typeof value.mimeType === 'string' || typeof value.mime_type === 'string')
+  );
+}
+
 function detectMimeFromBuffer(buf: Buffer): string {
   // Lightweight magic-byte sniffing for the formats the Retab API accepts.
   // Returns 'application/octet-stream' on no match so the backend can re-derive.
@@ -106,10 +130,16 @@ function extFromMime(mime: string): string {
   return sub;
 }
 
-export async function coerceMimeData(input: DocumentInput): Promise<MIMEData> {
+export async function coerceMimeData(
+  input: DocumentInput
+): Promise<MIMEData | FileRefDocumentInput> {
   // Already shaped — pass through.
   if (typeof input === 'object' && input !== null && 'filename' in input && 'url' in input) {
     return input as MIMEData;
+  }
+  // Stored file reference — pass through so the backend resolves the file.
+  if (isFileRefDocumentInput(input)) {
+    return input;
   }
   // FileRefInput — backend resolves a remote URL.
   if (

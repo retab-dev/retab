@@ -17,7 +17,7 @@ class WorkflowEdgesTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_edge_doc');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowEdges()->list(workflowId: 'test_value', sourceBlock: 'test_value', targetBlock: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->edges()->list(workflowId: 'test_value', sourceBlock: 'test_value', targetBlock: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -35,7 +35,7 @@ class WorkflowEdgesTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_edge_doc');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowEdges()->create(workflowId: 'test_value', sourceBlock: 'test_value', targetBlock: 'test_value');
+        $result = $client->workflows()->edges()->create(workflowId: 'test_value', sourceBlock: 'test_value', targetBlock: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowEdgeDoc::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -53,7 +53,7 @@ class WorkflowEdgesTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_edge_doc');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowEdges()->get('test_edge_id');
+        $result = $client->workflows()->edges()->get('test_edge_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowEdgeDoc::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -66,7 +66,7 @@ class WorkflowEdgesTest extends TestCase
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->workflowEdges()->delete('test_edge_id');
+        $client->workflows()->edges()->delete('test_edge_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/edges/test_edge_id', $request->getUri()->getPath());
@@ -79,7 +79,7 @@ class WorkflowEdgesTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowEdges()->list(workflowId: 'test_value');
+        $result = $client->workflows()->edges()->list(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

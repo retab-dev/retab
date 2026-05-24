@@ -10,6 +10,10 @@ import (
 	"golang.org/x/term"
 )
 
+func helpFprintf(w io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(w, format, args...)
+}
+
 // Polished help renderer for the root command — inspired by `bun`'s layout:
 // brand line, single-section grouped commands with aligned descriptions,
 // minimal colour, footer with docs links.
@@ -158,17 +162,17 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	const wordmark = "Retab"
 	if len(tagline) >= len(wordmark) && tagline[:len(wordmark)] == wordmark {
 		rest := tagline[len(wordmark):]
-		fmt.Fprintf(w, "\n%s%s%s%s %s(%s)%s\n",
+		helpFprintf(w, "\n%s%s%s%s %s(%s)%s\n",
 			s.brand, wordmark, s.reset, rest, s.dim, versionDisplay, s.reset)
 	} else {
-		fmt.Fprintf(w, "\n%s %s(%s)%s\n",
+		helpFprintf(w, "\n%s %s(%s)%s\n",
 			tagline, s.dim, versionDisplay, s.reset)
 	}
 
 	// ----- usage line -----
 	// `<command>` in brand pink, matching bun's convention where the
 	// placeholder is the same colour as the wordmark.
-	fmt.Fprintf(w, "\n%sUsage:%s retab %s<command>%s [flags]\n",
+	helpFprintf(w, "\n%sUsage:%s retab %s<command>%s [flags]\n",
 		s.headline, s.reset, s.brand, s.reset)
 
 	// ----- index visible subcommands by name -----
@@ -215,7 +219,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		// Group sub-header and its commands all sit at col 2 — vertically
 		// aligned in the same column. Hierarchy comes from the colon on
 		// the header + reading order, not from horizontal indent.
-		fmt.Fprintf(w, "\n  %s%s:%s\n", s.groupHeader, g.title, s.reset)
+		helpFprintf(w, "\n  %s%s:%s\n", s.groupHeader, g.title, s.reset)
 		for _, name := range g.commands {
 			c, ok := byName[name]
 			if !ok {
@@ -226,7 +230,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 			// plain spaces so escape codes don't bleed into trailing
 			// whitespace (would corrupt terminal redraw on resize).
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+			helpFprintf(w, "  %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 
 			renderRouterSubcommands(w, c, s, pad)
@@ -244,10 +248,10 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		sort.Slice(others, func(i, j int) bool { return others[i].Name() < others[j].Name() })
 		// "Other" is a group sub-header just like Primitives/Utils/etc.
 		// Same col 2 alignment for both the header and its commands.
-		fmt.Fprintf(w, "\n  %sOther:%s\n", s.groupHeader, s.reset)
+		helpFprintf(w, "\n  %sOther:%s\n", s.groupHeader, s.reset)
 		for _, c := range others {
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+			helpFprintf(w, "  %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 			renderRouterSubcommands(w, c, s, pad)
 		}
@@ -258,7 +262,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	// control over wording and column alignment. Keep this in sync with
 	// the PersistentFlags registered in init() below — there's a small
 	// unit test that enforces that contract.
-	fmt.Fprintf(w, "\n%sFlags:%s\n", s.headline, s.reset)
+	helpFprintf(w, "\n%sFlags:%s\n", s.headline, s.reset)
 	flagRows := []struct {
 		name string // e.g. "--api-key"
 		hint string // e.g. "KEY"   (empty for boolean flags)
@@ -298,18 +302,18 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		if f.env != "" {
 			suffix = "   " + s.dim + "(env: " + f.env + ")" + s.reset
 		}
-		fmt.Fprintf(w, "  %s%s  %s%s\n",
+		helpFprintf(w, "  %s%s  %s%s\n",
 			left, repeat(" ", leftWidth-visualWidth), f.desc, suffix)
 	}
 
 	// ----- footer: docs + hint -----
-	fmt.Fprintf(w, "\n%sLearn more:%s\n", s.headline, s.reset)
-	fmt.Fprintf(w, "  Docs      %s%s%s\n", s.cyan, "https://docs.retab.com", s.reset)
-	fmt.Fprintf(w, "  GitHub    %s%s%s\n", s.cyan, "https://github.com/retab-dev/retab", s.reset)
+	helpFprintf(w, "\n%sLearn more:%s\n", s.headline, s.reset)
+	helpFprintf(w, "  Docs      %s%s%s\n", s.cyan, "https://docs.retab.com", s.reset)
+	helpFprintf(w, "  GitHub    %s%s%s\n", s.cyan, "https://github.com/retab-dev/retab", s.reset)
 
 	// Footer hint — same `<command>` colour rule as the Usage line above so
 	// the placeholder reads as a consistent visual token throughout.
-	fmt.Fprintf(w, "\n%sRun%s retab %s<command>%s %s--help%s for command-specific options.\n\n",
+	helpFprintf(w, "\n%sRun%s retab %s<command>%s %s--help%s for command-specific options.\n\n",
 		s.dim, s.reset, s.brand, s.reset, s.dim, s.reset)
 }
 
@@ -355,7 +359,7 @@ func renderRouterSubcommands(w io.Writer, c *cobra.Command, s styles, parentPad 
 		if spaces < 1 {
 			spaces = 1
 		}
-		fmt.Fprintf(w, "    %s%s%s%s  %s\n",
+		helpFprintf(w, "    %s%s%s%s  %s\n",
 			s.accent, r.name, s.reset, repeat(" ", spaces), r.short)
 	}
 }

@@ -43,7 +43,7 @@ def test_steps_list_block_ids_sends_param_on_first_page() -> None:
 
     assert [step.step_id for step in page.data] == ["s_a1"]
     first_request = client._prepared_request.call_args_list[0].args[0]
-    assert first_request.params == {"run_id": "run_1", "block_ids": ["block_keep"]}
+    assert first_request.params == {"run_id": "run_1", "block_ids": ["block_keep"], "limit": 200}
 
 
 def test_steps_list_block_ids_filter_survives_auto_paging() -> None:
@@ -67,11 +67,12 @@ def test_steps_list_block_ids_filter_survives_auto_paging() -> None:
 
     page1_request = client._prepared_request.call_args_list[0].args[0]
     page2_request = client._prepared_request.call_args_list[1].args[0]
-    assert page1_request.params == {"run_id": "run_1", "block_ids": ["block_keep"]}
+    assert page1_request.params == {"run_id": "run_1", "block_ids": ["block_keep"], "limit": 200}
     # Page 2 must keep `block_ids` AND add the cursor.
     assert page2_request.params == {
         "run_id": "run_1",
         "block_ids": ["block_keep"],
+        "limit": 200,
         "after": "cursor_p2",
     }
 
@@ -88,7 +89,7 @@ def test_steps_list_without_block_ids_omits_param() -> None:
 
     assert [step.step_id for step in page.data] == ["s_a1", "s_b1"]
     request = client._prepared_request.call_args_list[0].args[0]
-    assert request.params == {"run_id": "run_1"}
+    assert request.params == {"run_id": "run_1", "limit": 200}
 
 
 # ---------------------------------------------------------------------------
@@ -114,9 +115,10 @@ async def test_async_steps_list_block_ids_filter_survives_auto_paging() -> None:
 
     page1_request = client._prepared_request.call_args_list[0].args[0]
     page2_request = client._prepared_request.call_args_list[1].args[0]
-    assert page1_request.params == {"run_id": "run_1", "block_ids": ["block_keep"]}
+    assert page1_request.params == {"run_id": "run_1", "block_ids": ["block_keep"], "limit": 200}
     assert page2_request.params == {
         "run_id": "run_1",
         "block_ids": ["block_keep"],
+        "limit": 200,
         "after": "cursor_p2",
     }

@@ -143,10 +143,10 @@ func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testi
 	reviewLine, reviewCol := lineAndColumn(t, out, "| Manual review")
 	routeLine, routeCol := lineAndColumn(t, out, "| Route invoice")
 	archiveLine, archiveCol := lineAndColumn(t, out, "| Archive clean")
-	if !(reviewLine < routeLine && routeLine < archiveLine) {
+	if reviewLine >= routeLine || routeLine >= archiveLine {
 		t.Fatalf("vertical block order should follow position_y, got review=%d route=%d archive=%d:\n%s", reviewLine, routeLine, archiveLine, out)
 	}
-	if !(routeCol < reviewCol && routeCol < archiveCol) {
+	if routeCol >= reviewCol || routeCol >= archiveCol {
 		t.Fatalf("branch targets should render to the right of the router, got route=%d review=%d archive=%d:\n%s", routeCol, reviewCol, archiveCol, out)
 	}
 	for _, want := range []string{"needs review", "clean"} {
@@ -188,16 +188,16 @@ func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
 	approveLine, approveCol := lineAndColumn(t, out, "| Approve exception")
 	exportLine, exportCol := lineAndColumn(t, out, "| Export result")
 
-	if !(startCol < splitCol && splitCol < invoiceCol && invoiceCol < matchCol && matchCol < approveCol) {
+	if startCol >= splitCol || splitCol >= invoiceCol || invoiceCol >= matchCol || matchCol >= approveCol {
 		t.Fatalf("top path columns should follow position_x, got start=%d split=%d invoice=%d match=%d approve=%d:\n%s", startCol, splitCol, invoiceCol, matchCol, approveCol, out)
 	}
-	if !(splitCol < poCol && poCol < matchCol && matchCol < exportCol) {
+	if splitCol >= poCol || poCol >= matchCol || matchCol >= exportCol {
 		t.Fatalf("bottom path columns should follow position_x, got split=%d po=%d match=%d export=%d:\n%s", splitCol, poCol, matchCol, exportCol, out)
 	}
-	if !(invoiceLine < splitLine && splitLine == startLine && splitLine == matchLine && poLine > splitLine) {
+	if invoiceLine >= splitLine || splitLine != startLine || splitLine != matchLine || poLine <= splitLine {
 		t.Fatalf("merge workflow rows should follow position_y, got invoice=%d start=%d split=%d match=%d po=%d:\n%s", invoiceLine, startLine, splitLine, matchLine, poLine, out)
 	}
-	if !(approveLine < matchLine && exportLine > matchLine) {
+	if approveLine >= matchLine || exportLine <= matchLine {
 		t.Fatalf("post-merge branches should stay above/below match, got approve=%d match=%d export=%d:\n%s", approveLine, matchLine, exportLine, out)
 	}
 	for _, want := range []string{"invoice", "purchase order", "mismatch", "matched"} {

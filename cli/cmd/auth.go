@@ -386,16 +386,22 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	// preview, otherwise "Not logged in" (matches the JSON's empty-source
 	// case, where api_key_preview is absent because there's no key).
 	if preview != "" {
-		fmt.Fprintf(w, "Logged in as %s%s%s\n", s.brand, preview, s.reset)
+		if _, err := fmt.Fprintf(w, "Logged in as %s%s%s\n", s.brand, preview, s.reset); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintln(w, "Not logged in")
+		if _, err := fmt.Fprintln(w, "Not logged in"); err != nil {
+			return err
+		}
 	}
 
 	// Second line — credential source.
 	if source == "" {
 		source = "none"
 	}
-	fmt.Fprintf(w, "%sSource:%s  %s\n", s.dim, s.reset, source)
+	if _, err := fmt.Fprintf(w, "%sSource:%s  %s\n", s.dim, s.reset, source); err != nil {
+		return err
+	}
 
 	// Third line — verification result. The `valid` key is absent when
 	// we never got far enough to probe (no creds, or hint path); treat
@@ -414,8 +420,8 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	} else {
 		status = "not authenticated"
 	}
-	fmt.Fprintf(w, "%sStatus:%s  %s\n", s.dim, s.reset, status)
-	return nil
+	_, err := fmt.Fprintf(w, "%sStatus:%s  %s\n", s.dim, s.reset, status)
+	return err
 }
 
 // writeAuthStatusTable renders the auth payload as a KEY  VALUE
@@ -434,8 +440,12 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
+	var writeErr error
 	row := func(key string, value any) {
-		fmt.Fprintf(tw, "%s\t%v\n", key, value)
+		if writeErr != nil {
+			return
+		}
+		_, writeErr = fmt.Fprintf(tw, "%s\t%v\n", key, value)
 	}
 
 	// AUTHENTICATED is always present — the rest are optional and
@@ -488,6 +498,9 @@ func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 		}
 	}
 
+	if writeErr != nil {
+		return writeErr
+	}
 	return tw.Flush()
 }
 

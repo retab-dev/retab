@@ -14,12 +14,11 @@ from retab import AsyncRetab, Retab
 from retab.exceptions import InternalServerError, NotFoundError, ValidationError as RetabValidationError
 from retab.types.classifications import Classification
 from retab.types.edits import Edit
-from retab.types.extractions import Extraction, ExtractionRequest, SourcesResponse
+from retab.types.extractions import Extraction, SourcesResponse
 from retab.types.mime import MIMEData
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.parses import Parse
 from retab.types.splits import Split, Subdocument
-from retab.utils.mime import prepare_mime_document
 
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -148,11 +147,9 @@ def created_extraction(
     client = _new_client(api_keys)
     try:
         extraction = client.extractions.create(
-            ExtractionRequest(
-                document=prepare_mime_document(booking_confirmation_file_path_1),
-                json_schema=booking_confirmation_json_schema,
-                model="retab-micro",
-            )
+            document=booking_confirmation_file_path_1,
+            json_schema=booking_confirmation_json_schema,
+            model="retab-micro",
         )
     except InternalServerError as exc:
         _skip_if_resource_route_unavailable(exc, "/v1/extractions")
@@ -272,11 +269,9 @@ def test_extractions_resource_crud(
         _assert_list_contains(page, created_extraction.id)
 
         temp = client.extractions.create(
-            ExtractionRequest(
-                document=prepare_mime_document(booking_confirmation_file_path_2),
-                json_schema=booking_confirmation_json_schema,
-                model="retab-micro",
-            )
+            document=booking_confirmation_file_path_2,
+            json_schema=booking_confirmation_json_schema,
+            model="retab-micro",
         )
         client.extractions.delete(temp.id)
 

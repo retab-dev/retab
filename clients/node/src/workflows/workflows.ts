@@ -10,7 +10,7 @@ import { WorkflowEdges } from './edges/workflow-edges.js';
 import { WorkflowExperiments } from './experiments/workflow-experiments.js';
 import { WorkflowReviews } from './reviews/workflow-reviews.js';
 import { WorkflowRuns } from './runs/workflow-runs.js';
-import { WorkflowSpecs } from './specs/workflow-specs.js';
+import { WorkflowSpec } from './spec/workflow-spec.js';
 import { WorkflowSteps } from './steps/workflow-steps.js';
 import { WorkflowTests } from './tests/workflow-tests.js';
 
@@ -21,7 +21,7 @@ export class Workflows {
   readonly experiments: WorkflowExperiments;
   readonly reviews: WorkflowReviews;
   readonly runs: WorkflowRuns;
-  readonly specs: WorkflowSpecs;
+  readonly spec: WorkflowSpec;
   readonly steps: WorkflowSteps;
   readonly tests: WorkflowTests;
 
@@ -32,7 +32,7 @@ export class Workflows {
     this.experiments = new WorkflowExperiments(client);
     this.reviews = new WorkflowReviews(client);
     this.runs = new WorkflowRuns(client);
-    this.specs = new WorkflowSpecs(client);
+    this.spec = new WorkflowSpec(client);
     this.steps = new WorkflowSteps(client);
     this.tests = new WorkflowTests(client);
   }

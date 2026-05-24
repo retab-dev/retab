@@ -29,7 +29,7 @@ pub struct ListParams {
     /// Filter by single trigger type (deprecated, use 'trigger_types')
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<WorkflowRunsTriggerType>,
-    /// Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,restart)
+    /// Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_types: Option<String>,
     /// Filter runs created on or after this date (YYYY-MM-DD)

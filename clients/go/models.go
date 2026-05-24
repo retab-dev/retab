@@ -735,6 +735,15 @@ type EditWorkflowArtifact struct {
 	Operation *string `json:"operation,omitempty"`
 }
 
+// EmailTrigger run started by an inbound email.
+type EmailTrigger struct {
+	Type *string `json:"type,omitempty"`
+	// Sender is sender email address, when known
+	Sender *string `json:"sender,omitempty"`
+	// Subject is email subject, when known
+	Subject *string `json:"subject,omitempty"`
+}
+
 // EndsWithCondition represents an ends with condition.
 type EndsWithCondition struct {
 	Kind     *string `json:"kind,omitempty"`

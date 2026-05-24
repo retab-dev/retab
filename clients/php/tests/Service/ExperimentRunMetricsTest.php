@@ -17,7 +17,7 @@ class ExperimentRunMetricsTest extends TestCase
     {
         $fixture = $this->loadFixture('experiment_summary_metrics_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRunMetrics()->get(runId: 'test_value', view: \Retab\Resource\ExperimentRunMetricsView::Summary, documentId: 'test_value', targetPath: 'test_value', includePrior: true, priorRunId: 'test_value');
+        $result = $client->workflows()->experiments()->metrics()->get(runId: 'test_value', view: \Retab\Resource\ExperimentRunMetricsView::Summary, documentId: 'test_value', targetPath: 'test_value', includePrior: true, priorRunId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\ExperimentSummaryMetricsResponse::class, $result);
         $this->assertSame($fixture['experiment_id'], $result->experimentId);
         $this->assertIsArray($result->toArray());

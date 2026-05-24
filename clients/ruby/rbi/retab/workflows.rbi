@@ -9,6 +9,33 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::WorkflowArtifacts) }
+    def artifacts; end
+
+    sig { returns(Retab::WorkflowBlocks) }
+    def blocks; end
+
+    sig { returns(Retab::WorkflowEdges) }
+    def edges; end
+
+    sig { returns(Retab::WorkflowExperiments) }
+    def experiments; end
+
+    sig { returns(Retab::WorkflowReviews) }
+    def reviews; end
+
+    sig { returns(Retab::WorkflowRuns) }
+    def runs; end
+
+    sig { returns(Retab::WorkflowSpec) }
+    def spec; end
+
+    sig { returns(Retab::WorkflowSteps) }
+    def steps; end
+
+    sig { returns(Retab::WorkflowTests) }
+    def tests; end
+
     sig do
       params(
         before: T.nilable(String),

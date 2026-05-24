@@ -237,7 +237,12 @@ def test_list_uses_tests_route_with_filter() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/tests"
-    assert request.params == {"limit": 25, "workflow_id": "wf_abc123", "target_block_id": "block_extract"}
+    assert request.params == {
+        "limit": 25,
+        "order": "desc",
+        "workflow_id": "wf_abc123",
+        "target_block_id": "block_extract",
+    }
     assert result.data == []
     assert result.list_metadata.before is None
     assert result.list_metadata.after is None
@@ -304,7 +309,7 @@ def test_update_with_assertion_serializes_assertion_only() -> None:
         test_id="wfnodetest_abc",
         assertion={
             "target": {"output_handle_id": "output-json-0", "path": "vendor.name"},
-            "condition": {"kind": "matches_regex", "expected": "^Acme.*"},
+            "condition": {"kind": "matches_regex", "pattern": "^Acme.*"},
         },
     )
 
@@ -341,7 +346,7 @@ def test_runs_create_with_test_id_only() -> None:
 
     response = Workflows(client=client).tests.runs.create(
         "wf_abc123",
-        test_id="wfnodetest_abc",
+        scope={"type": "single", "test_id": "wfnodetest_abc"},
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -349,27 +354,25 @@ def test_runs_create_with_test_id_only() -> None:
     assert request.url == "/v1/workflows/tests/runs"
     assert request.data == {
         "workflow_id": "wf_abc123",
-        "test_id": "wfnodetest_abc",
+        "scope": {"type": "single", "test_id": "wfnodetest_abc"},
     }
     assert response.lifecycle.status == "pending"
     assert response.id == "wftestrun_q1z2"
 
 
-def test_runs_create_with_target_and_consensus() -> None:
+def test_runs_create_with_block_scope() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _run_response()
 
     Workflows(client=client).tests.runs.create(
         "wf_abc123",
-        target={"type": "block", "block_id": "block_extract"},
-        n_consensus=5,
+        scope={"type": "block", "block_id": "block_extract"},
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.data == {
         "workflow_id": "wf_abc123",
-        "target": {"type": "block", "block_id": "block_extract"},
-        "n_consensus": 5,
+        "scope": {"type": "block", "block_id": "block_extract"},
     }
 
 
@@ -441,6 +444,8 @@ def test_runs_list_uses_canonical_runs_route() -> None:
     assert request.url == "/v1/workflows/tests/runs"
     assert request.params == {
         "limit": 10,
+        "order": "desc",
+        "sort_by": "created_at",
         "workflow_id": "wf_abc123",
         "test_id": "wfnodetest_abc",
     }
@@ -470,7 +475,7 @@ def test_runs_cancel_uses_run_id_first_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/tests/runs/wftestrun_q1z2/cancel"
-    assert request.data == {}
+    assert request.data is None
     assert run.lifecycle.status == "cancelled"
 
 
@@ -539,7 +544,7 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/tests/results"
-    assert request.params == {"run_id": "wftestrun_q1z2", "limit": 20}
+    assert request.params == {"run_id": "wftestrun_q1z2", "limit": 20, "order": "desc"}
     assert result.data[0].test_id == "wfnodetest_abc"
     assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
 
@@ -663,6 +668,8 @@ async def test_async_runs_list_uses_test_runs_route() -> None:
     assert request.url == "/v1/workflows/tests/runs"
     assert request.params == {
         "limit": 10,
+        "order": "desc",
+        "sort_by": "created_at",
         "workflow_id": "wf_abc123",
         "test_id": "wfnodetest_abc",
     }

@@ -32,7 +32,7 @@ export * from './workflows/experiments/metrics/interfaces/index.js';
 export * from './workflows/experiments/interfaces/index.js';
 export * from './workflows/blocks/executions/interfaces/index.js';
 export * from './workflows/interfaces/index.js';
-export * from './workflows/specs/interfaces/index.js';
+export * from './workflows/spec/interfaces/index.js';
 export * from './edits/templates/interfaces/index.js';
 export * from './edits/interfaces/index.js';
 export * from './jobs/interfaces/index.js';

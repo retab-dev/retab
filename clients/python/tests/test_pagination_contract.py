@@ -33,12 +33,11 @@ exactly the prompt to think about the closure contract.
 
 The contract is "every ``PaginatedList[T]``-returning ``.list()`` method goes
 through ``request_page``". Methods that return a different envelope type
-(e.g. ``WorkflowReviewVersions.list`` → ``ReviewVersionListResponse``) are
 *not* paginated lists in the contract's sense — they don't claim to support
-``auto_paging_iter()``. We filter those out by inspecting the return
-annotation. If a future resource needs to bypass ``request_page`` for a
-genuinely paginated route, add it to ``KNOWN_BYPASS`` with a comment
-pointing at the "Acceptable exceptions" section of the contract doc.
+``auto_paging_iter()``. We filter those out by inspecting the return annotation.
+If a future resource needs to bypass ``request_page`` for a genuinely paginated
+route, add it to ``KNOWN_BYPASS`` with a comment pointing at the "Acceptable
+exceptions" section of the contract doc.
 """
 
 from __future__ import annotations
@@ -125,8 +124,8 @@ def _returns_paginated_list(method: Callable[..., Any]) -> bool:
     ``AsyncPaginatedList[T]``.
 
     The closure invariant only applies to paginated envelopes — list methods
-    that return a different envelope type (e.g. ``ReviewVersionListResponse``)
-    don't claim to support ``auto_paging_iter()`` and are out of scope.
+    that return a different envelope type don't claim to support
+    ``auto_paging_iter()`` and are out of scope.
 
     Pydantic generics like ``PaginatedList[Extraction]`` are real classes
     (subclasses of ``PaginatedList``) rather than ``typing.GenericAlias``
@@ -223,6 +222,8 @@ _ASYNC_CLIENT_FOR_DISCOVERY = AsyncRetab(api_key="contract-test", base_url="http
 
 _SYNC_METHODS = _discover_methods(_SYNC_CLIENT_FOR_DISCOVERY)
 _ASYNC_METHODS = _discover_methods(_ASYNC_CLIENT_FOR_DISCOVERY)
+_SYNC_CLIENT_FOR_DISCOVERY.close()
+asyncio.run(_ASYNC_CLIENT_FOR_DISCOVERY.close())
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +238,11 @@ def test_discovery_found_methods() -> None:
     """
     assert len(_SYNC_METHODS) >= 10, f"Sync discovery returned only {len(_SYNC_METHODS)} method(s); the resource enumeration or return-annotation filter is likely broken."
     assert len(_ASYNC_METHODS) >= 10, f"Async discovery returned only {len(_ASYNC_METHODS)} method(s); the resource enumeration or return-annotation filter is likely broken."
+
+
+def test_discovery_clients_are_closed_after_param_generation() -> None:
+    assert _SYNC_CLIENT_FOR_DISCOVERY.client.is_closed
+    assert _ASYNC_CLIENT_FOR_DISCOVERY.client.is_closed
 
 
 @pytest.mark.parametrize(

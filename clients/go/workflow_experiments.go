@@ -10,7 +10,10 @@ import (
 
 // WorkflowExperimentService handles WorkflowExperiments operations.
 type WorkflowExperimentService struct {
-	client *Client
+	client  *Client
+	Metrics *ExperimentRunMetricService
+	Results *ExperimentRunResultService
+	Runs    *ExperimentRunService
 }
 
 // WorkflowExperimentsListParams contains the parameters for List.

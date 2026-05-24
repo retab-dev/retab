@@ -14,34 +14,34 @@ class WorkflowEdgesTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_edges.list(workflow_id: "stub")
+    result = @client.workflows.edges.list(workflow_id: "stub")
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_list_requires_required_query_params
     assert_raises(ArgumentError) do
-      @client.workflow_edges.list
+      @client.workflows.edges.list
     end
   end
 
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/edges(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_edges.create(workflow_id: "stub", source_block: "stub", target_block: "stub")
+    result = @client.workflows.edges.create(workflow_id: "stub", source_block: "stub", target_block: "stub")
     refute_nil(result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_edges.get(edge_id: "stub")
+    result = @client.workflows.edges.get(edge_id: "stub")
     refute_nil(result)
   end
 
   def test_delete_returns_expected_result
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_edges.delete(edge_id: "stub")
+    result = @client.workflows.edges.delete(edge_id: "stub")
     assert_nil(result)
   end
 
@@ -66,7 +66,7 @@ class WorkflowEdgesTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_edges.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.edges.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

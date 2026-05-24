@@ -6,6 +6,15 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::workflow_artifacts::WorkflowArtifactsApi;
+use crate::resources::workflow_blocks::WorkflowBlocksApi;
+use crate::resources::workflow_edges::WorkflowEdgesApi;
+use crate::resources::workflow_experiments::WorkflowExperimentsApi;
+use crate::resources::workflow_reviews::WorkflowReviewsApi;
+use crate::resources::workflow_runs::WorkflowRunsApi;
+use crate::resources::workflow_spec::WorkflowSpecApi;
+use crate::resources::workflow_steps::WorkflowStepsApi;
+use crate::resources::workflow_tests::WorkflowTestsApi;
 use serde::Serialize;
 
 pub struct WorkflowsApi<'a> {
@@ -86,6 +95,69 @@ pub struct PublishParams {
 }
 
 impl<'a> WorkflowsApi<'a> {
+    /// Access the `artifacts` sub-resource.
+    pub fn artifacts(&self) -> WorkflowArtifactsApi<'a> {
+        WorkflowArtifactsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `blocks` sub-resource.
+    pub fn blocks(&self) -> WorkflowBlocksApi<'a> {
+        WorkflowBlocksApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `edges` sub-resource.
+    pub fn edges(&self) -> WorkflowEdgesApi<'a> {
+        WorkflowEdgesApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `experiments` sub-resource.
+    pub fn experiments(&self) -> WorkflowExperimentsApi<'a> {
+        WorkflowExperimentsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `reviews` sub-resource.
+    pub fn reviews(&self) -> WorkflowReviewsApi<'a> {
+        WorkflowReviewsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `runs` sub-resource.
+    pub fn runs(&self) -> WorkflowRunsApi<'a> {
+        WorkflowRunsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `spec` sub-resource.
+    pub fn spec(&self) -> WorkflowSpecApi<'a> {
+        WorkflowSpecApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `steps` sub-resource.
+    pub fn steps(&self) -> WorkflowStepsApi<'a> {
+        WorkflowStepsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `tests` sub-resource.
+    pub fn tests(&self) -> WorkflowTestsApi<'a> {
+        WorkflowTestsApi {
+            client: self.client,
+        }
+    }
+
     /// List Workflows
     ///
     /// List workflows with pagination and optional filtering.

@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the jobs API operations on <see cref="Retab"/>.</summary>
     public class JobsService : Service
@@ -20,20 +21,19 @@ namespace Retab
         /// <remarks>
         /// List jobs with pagination and optional status filtering.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="Job"/> results.</returns>
-        public virtual async Task<PaginatedList<Job>> ListAsync(string httpBearer, JobsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<Job>> ListAsync(JobsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<Job>("/v1/jobs", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<Job>("/v1/jobs", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<Job>> List(string httpBearer, JobsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<Job>> List(JobsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -52,54 +52,36 @@ namespace Retab
         /// The job will be queued for processing and can be polled for status
         /// using the retrieve endpoint.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Job"/> result.</returns>
-        public virtual async Task<Job> CreateAsync(string httpBearer, JobsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Job> CreateAsync(JobsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/jobs",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Job>(request, cancellationToken);
+            return await this.PostAsync<Job>("/v1/jobs", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<Job> Create(string httpBearer, JobsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Job> Create(JobsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Retrieve Job</summary>
         /// <param name="jobId">The job id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Job"/> result.</returns>
-        public virtual async Task<Job> GetAsync(string jobId, string httpBearer, JobsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Job> GetAsync(string jobId, JobsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/jobs/{Uri.EscapeDataString(jobId)}",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Job>(request, cancellationToken);
+            return await this.GetAsync<Job>($"/v1/jobs/{Uri.EscapeDataString(jobId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Job> Get(string jobId, string httpBearer, JobsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Job> Get(string jobId, JobsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(jobId, httpBearer, options, requestOptions, cancellationToken);
+            return this.GetAsync(jobId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Cancel Job</summary>
@@ -108,26 +90,18 @@ namespace Retab
         /// Returns the updated job with status 'cancelled'.
         /// </remarks>
         /// <param name="jobId">The job id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Job"/> result.</returns>
-        public virtual async Task<Job> CancelAsync(string jobId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Job> CancelAsync(string jobId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = $"/v1/jobs/{Uri.EscapeDataString(jobId)}/cancel",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Job>(request, cancellationToken);
+            return await this.PostAsync<Job>($"/v1/jobs/{Uri.EscapeDataString(jobId)}/cancel", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CancelAsync"/>.</summary>
-        public virtual Task<Job> Cancel(string jobId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Job> Cancel(string jobId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CancelAsync(jobId, httpBearer, requestOptions, cancellationToken);
+            return this.CancelAsync(jobId, requestOptions, cancellationToken);
         }
 
         /// <summary>Retry Job</summary>
@@ -136,26 +110,18 @@ namespace Retab
         /// The job is reset to queued and processed again.
         /// </remarks>
         /// <param name="jobId">The job id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Job"/> result.</returns>
-        public virtual async Task<Job> RetryAsync(string jobId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Job> RetryAsync(string jobId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = $"/v1/jobs/{Uri.EscapeDataString(jobId)}/retry",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Job>(request, cancellationToken);
+            return await this.PostAsync<Job>($"/v1/jobs/{Uri.EscapeDataString(jobId)}/retry", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="RetryAsync"/>.</summary>
-        public virtual Task<Job> Retry(string jobId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Job> Retry(string jobId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.RetryAsync(jobId, httpBearer, requestOptions, cancellationToken);
+            return this.RetryAsync(jobId, requestOptions, cancellationToken);
         }
     }
 }

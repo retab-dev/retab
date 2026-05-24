@@ -9,6 +9,9 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::WorkflowReviewVersions) }
+    def versions; end
+
     sig do
       params(
         workflow_id: T.nilable(String),

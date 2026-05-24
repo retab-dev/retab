@@ -597,7 +597,7 @@ func TestUploadResponseMarshalJSON(t *testing.T) {
 	if idIdx == -1 || filenameIdx == -1 || urlIdx == -1 || mimeIdx == -1 {
 		t.Fatalf("expected all 4 keys present, got: %s", rendered)
 	}
-	if !(idIdx < filenameIdx && filenameIdx < urlIdx && urlIdx < mimeIdx) {
+	if idIdx >= filenameIdx || filenameIdx >= urlIdx || urlIdx >= mimeIdx {
 		t.Errorf("expected key order id, filename, url, mime_type — got: %s", rendered)
 	}
 

@@ -28,6 +28,84 @@ from retab.types.workflows.model import (
     StoredBlockExecution,
 )
 
+INVOICE_WORKFLOW_YAML = """apiVersion: workflows.retab.com/v1alpha2
+kind: Workflow
+metadata:
+  id: wf_invoice_validation
+  name: Invoice Validation Workflow
+spec:
+  blocks:
+    start:
+      type: start_json
+      label: Invoice JSON
+      config:
+        json_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            line_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  amount:
+                    type: number
+                required:
+                  - description
+                  - amount
+            tax_rate:
+              type: number
+            stated_total:
+              type: number
+          required:
+            - invoice_id
+            - line_items
+            - tax_rate
+            - stated_total
+    validate_total:
+      type: function
+      label: Validate Invoice Total
+      config:
+        output_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            subtotal:
+              type: number
+            computed_total:
+              type: number
+            is_valid:
+              type: boolean
+          required:
+            - invoice_id
+            - subtotal
+            - computed_total
+            - is_valid
+        code: |
+          from models import Input, Output
+
+          def transform(input_data: Input) -> Output:
+              subtotal = sum(item.amount for item in input_data.line_items)
+              computed_total = round(subtotal + subtotal * input_data.tax_rate, 2)
+              return Output(
+                  invoice_id=input_data.invoice_id,
+                  subtotal=subtotal,
+                  computed_total=computed_total,
+                  is_valid=abs(computed_total - input_data.stated_total) <= 0.01,
+              )
+  edges:
+    - from:
+        block: start
+        handle: output-json-0
+      to:
+        block: validate_total
+        handle: input-json-0
+"""
+
 
 def test_workflows_get_uses_detail_route() -> None:
     client = MagicMock()
@@ -198,6 +276,7 @@ def test_workflow_block_executions_create_uses_top_level_route() -> None:
         "block_id": "block_1",
         "step_id": "step_1",
         "n_consensus": 5,
+        "check_eligibility": True,
     }
     assert "workflow_id" not in request.data
     assert isinstance(block_execution, StoredBlockExecution)
@@ -234,6 +313,7 @@ def test_workflow_block_executions_list_uses_top_level_route() -> None:
         "run_id": "run_1",
         "block_id": "block_1",
         "limit": 10,
+        "order": "desc",
     }
     assert result.data[0].id == "sim_1"
 
@@ -248,7 +328,7 @@ async def test_async_workflow_block_executions_create_uses_top_level_route() -> 
             "run_id": "run_1",
             "block_id": "block_1",
             "block_type": "extract",
-            "success": True,
+            "lifecycle": {"status": "completed"},
             "created_at": "2026-03-12T10:00:00Z",
         }
     )
@@ -266,11 +346,12 @@ async def test_async_workflow_block_executions_create_uses_top_level_route() -> 
         "run_id": "run_1",
         "block_id": "block_1",
         "step_id": "step_1",
+        "check_eligibility": True,
     }
     assert block_execution.id == "sim_1"
 
 
-def test_workflow_specs_validate_uses_spec_validate_route() -> None:
+def test_workflow_spec_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -280,17 +361,17 @@ def test_workflow_specs_validate_uses_spec_validate_route() -> None:
         "diagnostics": {"issues": []},
     }
 
-    response = WorkflowSpec(client=client).validate("apiVersion: workflows.retab.com/v1alpha2\n")
+    response = WorkflowSpec(client=client).validate(INVOICE_WORKFLOW_YAML)
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/spec/validate"
-    assert request.data == {"yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n"}
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
     assert isinstance(response, DeclarativeValidationResponse)
     assert response.is_valid is True
 
 
-def test_workflow_specs_plan_uses_spec_plan_route() -> None:
+def test_workflow_spec_plan_uses_spec_plan_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -329,12 +410,12 @@ def test_workflow_specs_plan_uses_spec_plan_route() -> None:
         "rendered_plan": "Plan: 0 to add, 1 to change, 0 to destroy.",
     }
 
-    response = WorkflowSpec(client=client).plan("spec: {}\n")
+    response = WorkflowSpec(client=client).plan(INVOICE_WORKFLOW_YAML)
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/spec/plan"
-    assert request.data == {"yaml_definition": "spec: {}\n"}
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
     assert isinstance(response, DeclarativePlanResponse)
     assert response.summary is not None
     assert response.summary.change == 1
@@ -346,7 +427,7 @@ def test_workflow_specs_plan_uses_spec_plan_route() -> None:
     assert "1 to change" in response.rendered_plan
 
 
-def test_workflow_specs_apply_uses_spec_apply_route() -> None:
+def test_workflow_spec_apply_uses_spec_apply_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -361,12 +442,12 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
         "rendered_plan": "No changes. Infrastructure is up-to-date.",
     }
 
-    response = WorkflowSpec(client=client).apply("spec: {}\n")
+    response = WorkflowSpec(client=client).apply(INVOICE_WORKFLOW_YAML)
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/spec/apply"
-    assert request.data == {"yaml_definition": "spec: {}\n"}
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
     assert isinstance(response, DeclarativeApplyResponse)
     assert response.action == "noop"
     assert response.summary is not None
@@ -374,24 +455,24 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
     assert response.resource_changes == []
 
 
-def test_workflow_specs_export_uses_spec_export_route() -> None:
+def test_workflow_spec_get_uses_spec_resource_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
         "yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n",
     }
 
-    response = WorkflowSpec(client=client).export("wf_1")
+    response = WorkflowSpec(client=client).get("wf_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/wf_1/spec"
+    assert request.url == "/v1/workflows/spec/wf_1"
     assert isinstance(response, DeclarativeExportResponse)
     assert response.yaml_definition.startswith("apiVersion:")
 
 
 @pytest.mark.asyncio
-async def test_async_workflow_specs_validate_uses_spec_validate_route() -> None:
+async def test_async_workflow_spec_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(
         return_value={
@@ -485,12 +566,12 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
     assert run.timing is not None
     assert run.timing.accumulated_review_waiting_ms == 5000
-    assert not hasattr(run.timing, "duration_ms")
+    assert run.timing.duration_ms is None
     assert not hasattr(run.timing, "active_duration_ms")
-    assert "duration_ms" not in run.timing.model_dump()
+    assert run.timing.model_dump()["duration_ms"] is None
     assert "active_duration_ms" not in run.timing.model_dump()
 
-    # Defaults: inputs default to empty
+    # Defaults: omitted inputs remain absent.
     run2 = WorkflowRun.model_validate(
         {
             "id": "run_000",
@@ -505,9 +586,7 @@ def test_workflow_run_v2_typed_fields() -> None:
             "timing": {"created_at": "2026-01-01T00:00:00Z"},
         }
     )
-    assert run2.inputs is not None
-    assert run2.inputs.documents == {}
-    assert run2.inputs.json_data == {}
+    assert run2.inputs is None
     assert run2.timing is not None
     assert run2.timing.accumulated_review_waiting_ms == 0
 
@@ -538,40 +617,31 @@ def test_workflows_create_route() -> None:
     assert wf.id == "wf_new"
 
 
-def test_workflows_update_accepts_email_trigger_policy() -> None:
+def test_workflows_update_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "id": "workflow_123",
-        "name": "Test Workflow",
-        "description": "",
+        "name": "Renamed Workflow",
+        "description": "Updated",
         "published": None,
-        "email_trigger": {
-            "allowed_senders": ["ops@example.com"],
-            "allowed_domains": ["example.com"],
-        },
         "created_at": "2026-03-12T10:00:00Z",
         "updated_at": "2026-03-12T10:00:00Z",
     }
 
     workflow = Workflows(client=client).update(
         "workflow_123",
-        email_trigger={
-            "allowed_senders": ["ops@example.com"],
-            "allowed_domains": ["example.com"],
-        },
+        name="Renamed Workflow",
+        description="Updated",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
     assert request.url == "/v1/workflows/workflow_123"
     assert request.data == {
-        "email_trigger": {
-            "allowed_senders": ["ops@example.com"],
-            "allowed_domains": ["example.com"],
-        }
+        "name": "Renamed Workflow",
+        "description": "Updated",
     }
-    assert workflow.email_trigger is not None
-    assert workflow.email_trigger.allowed_senders == ["ops@example.com"]
+    assert workflow.name == "Renamed Workflow"
 
 
 def test_workflow_blocks_create_accepts_typed_request() -> None:
@@ -583,18 +653,17 @@ def test_workflow_blocks_create_accepts_typed_request() -> None:
         "draft_version": "draft_1",
         "type": "extract",
         "label": "Extract",
+        "updated_at": "2026-03-12T10:00:00Z",
     }
 
     block = WorkflowBlocks(client=client).create(
-        "wf_1",
-        request=WorkflowBlockCreateRequest(
-            id="extract-1",
-            type="extract",
-            label="Extract",
-            position_x=120,
-            position_y=80,
-            config={"json_schema": {"type": "object"}},
-        ),
+        workflow_id="wf_1",
+        id="extract-1",
+        type="extract",
+        label="Extract",
+        position_x=120,
+        position_y=80,
+        config={"json_schema": {"type": "object"}},
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -621,14 +690,13 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
         "draft_version": "draft_1",
         "type": "extract",
         "label": "Renamed",
+        "updated_at": "2026-03-12T10:00:00Z",
     }
 
     block = WorkflowBlocks(client=client).update(
         block_id="extract-1",
-        request=UpdateWorkflowBlockRequest(
-            label="Renamed",
-            position_x=200,
-        ),
+        label="Renamed",
+        position_x=200,
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -647,6 +715,7 @@ def test_workflow_block_parses_live_editing_metadata() -> None:
             "draft_version": "draft_1",
             "type": "extract",
             "label": "Extract",
+            "updated_at": "2026-03-12T10:00:00Z",
         }
     )
 
@@ -665,6 +734,7 @@ def test_workflow_block_exposes_resolved_schema_sidecar() -> None:
             "draft_version": "draft_1",
             "type": "extract",
             "label": "Extract",
+            "updated_at": "2026-03-12T10:00:00Z",
             "resolved_schemas": {
                 "input_schemas": {},
                 "output_schemas": {
@@ -678,13 +748,16 @@ def test_workflow_block_exposes_resolved_schema_sidecar() -> None:
     )
 
     assert block.resolved_schemas is not None
-    assert block.resolved_schemas.output_schemas["output-json-0"]["properties"]["invoice_number"]["type"] == "string"
+    assert block.resolved_schemas["output_schemas"]["output-json-0"]["properties"]["invoice_number"]["type"] == "string"
 
 
 def test_step_execution_response_ignores_removed_payload_schema_fields() -> None:
     removed_payload_key = "raw" + "_" + "output"
     step_execution = StepExecutionResponse.model_validate(
         {
+            "id": "sim_1",
+            "workflow_id": "wf_1",
+            "run_id": "run_1",
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
@@ -710,7 +783,8 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
     assert "output" not in dumped
     assert removed_payload_key not in dumped
     assert "json_schema" not in dumped
-    assert step_execution.get_json_output() == {"invoice_number": "INV-001"}
+    assert step_execution.handle_outputs is not None
+    assert step_execution.handle_outputs["output-json-0"]["data"] == {"invoice_number": "INV-001"}
 
 
 def test_workflow_edges_create_accepts_typed_request() -> None:
@@ -724,17 +798,16 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
         "target_block": "extract-1",
         "source_handle": "output-file-0",
         "target_handle": "input-file-0",
+        "updated_at": "2026-03-12T10:00:00Z",
     }
 
     edge = WorkflowEdges(client=client).create(
-        "wf_1",
-        request=WorkflowEdgeCreateRequest(
-            id="edge-1",
-            source_block="start-1",
-            target_block="extract-1",
-            source_handle="output-file-0",
-            target_handle="input-file-0",
-        ),
+        workflow_id="wf_1",
+        id="edge-1",
+        source_block="start-1",
+        target_block="extract-1",
+        source_handle="output-file-0",
+        target_handle="input-file-0",
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -770,7 +843,8 @@ def test_workflows_publish_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/wf_1/publish"
-    assert wf.published_version_id == "ver_0123456789abcdef0123456789abcdef"
+    assert wf.published is not None
+    assert wf.published.version_id == "ver_0123456789abcdef0123456789abcdef"
 
 
 def test_workflows_list_returns_typed_items() -> None:
@@ -959,8 +1033,8 @@ def test_workflow_runs_do_not_expose_wait_for_completion() -> None:
     assert not hasattr(AsyncWorkflowRuns(client=MagicMock()), "wait_for_completion")
 
 
-def test_workflow_run_step_extracted_data() -> None:
-    """WorkflowRunStep.extracted_data works with typed handle_outputs."""
+def test_workflow_run_step_handle_outputs_data() -> None:
+    """WorkflowRunStep exposes extracted JSON through typed handle_outputs."""
     from retab.types.workflows.model import WorkflowRunStep
 
     step = WorkflowRunStep.model_validate(
@@ -977,7 +1051,8 @@ def test_workflow_run_step_extracted_data() -> None:
             },
         }
     )
-    assert step.extracted_data == {"total": 1234}
+    assert step.handle_outputs is not None
+    assert step.handle_outputs["output-json-0"].data == {"total": 1234}
     dumped = step.model_dump()
     assert "status" not in dumped
     assert "terminal" not in dumped

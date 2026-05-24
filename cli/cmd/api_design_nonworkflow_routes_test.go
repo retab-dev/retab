@@ -142,19 +142,19 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Edits.List": {
 			{method: http.MethodGet, path: "/edits"},
 		},
-		"EditTemplates.Create": {
+		"Edits.Templates.Create": {
 			{method: http.MethodPost, path: "/edits/templates"},
 		},
-		"EditTemplates.Delete": {
+		"Edits.Templates.Delete": {
 			{method: http.MethodDelete, path: "/edits/templates/{template_id}"},
 		},
-		"EditTemplates.Get": {
+		"Edits.Templates.Get": {
 			{method: http.MethodGet, path: "/edits/templates/{template_id}"},
 		},
-		"EditTemplates.List": {
+		"Edits.Templates.List": {
 			{method: http.MethodGet, path: "/edits/templates"},
 		},
-		"EditTemplates.Update": {
+		"Edits.Templates.Update": {
 			{method: http.MethodPatch, path: "/edits/templates/{template_id}"},
 		},
 		"Extractions.Create": {

@@ -14,7 +14,7 @@ class EditTemplatesTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/edits/templates(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.edit_templates.list
+    result = @client.edits.templates.list
     assert_kind_of(Retab::PaginatedList, result)
   end
 
@@ -22,7 +22,8 @@ class EditTemplatesTest < Minitest::Test
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/edits/templates(\?|\z)})
       .to_return(body: "{}", status: 200)
     result = @client
-      .edit_templates
+      .edits
+      .templates
       .create(
         name: "stub",
         document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="},
@@ -34,21 +35,21 @@ class EditTemplatesTest < Minitest::Test
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/edits/templates/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.edit_templates.get(template_id: "stub")
+    result = @client.edits.templates.get(template_id: "stub")
     refute_nil(result)
   end
 
   def test_update_returns_expected_result
     stub_request(:patch, %r{\Ahttps://api\.retab\.com/v1/edits/templates/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.edit_templates.update(template_id: "stub")
+    result = @client.edits.templates.update(template_id: "stub")
     refute_nil(result)
   end
 
   def test_delete_returns_expected_result
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/edits/templates/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.edit_templates.delete(template_id: "stub")
+    result = @client.edits.templates.delete(template_id: "stub")
     assert_nil(result)
   end
 
@@ -88,7 +89,7 @@ class EditTemplatesTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.edit_templates.send(spec[:name], **(spec[:args] || {}))
+        @client.edits.templates.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

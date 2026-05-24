@@ -27,59 +27,8 @@ module Retab
     sig { returns(Retab::Files) }
     def files; end
 
-    sig { returns(Retab::WorkflowRuns) }
-    def workflow_runs; end
-
-    sig { returns(Retab::WorkflowSteps) }
-    def workflow_steps; end
-
-    sig { returns(Retab::WorkflowReviews) }
-    def workflow_reviews; end
-
-    sig { returns(Retab::WorkflowReviewVersions) }
-    def workflow_review_versions; end
-
-    sig { returns(Retab::WorkflowArtifacts) }
-    def workflow_artifacts; end
-
-    sig { returns(Retab::WorkflowTestRuns) }
-    def workflow_test_runs; end
-
-    sig { returns(Retab::WorkflowTestRunResults) }
-    def workflow_test_run_results; end
-
-    sig { returns(Retab::WorkflowBlocks) }
-    def workflow_blocks; end
-
-    sig { returns(Retab::WorkflowEdges) }
-    def workflow_edges; end
-
-    sig { returns(Retab::WorkflowTests) }
-    def workflow_tests; end
-
-    sig { returns(Retab::ExperimentRuns) }
-    def experiment_runs; end
-
-    sig { returns(Retab::ExperimentRunResults) }
-    def experiment_run_results; end
-
-    sig { returns(Retab::ExperimentRunMetrics) }
-    def experiment_run_metrics; end
-
-    sig { returns(Retab::WorkflowExperiments) }
-    def workflow_experiments; end
-
-    sig { returns(Retab::WorkflowBlockExecutions) }
-    def workflow_block_executions; end
-
     sig { returns(Retab::Workflows) }
     def workflows; end
-
-    sig { returns(Retab::WorkflowSpecs) }
-    def workflow_specs; end
-
-    sig { returns(Retab::EditTemplates) }
-    def edit_templates; end
 
     sig { returns(Retab::Edits) }
     def edits; end

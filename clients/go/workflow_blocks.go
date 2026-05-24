@@ -10,7 +10,8 @@ import (
 
 // WorkflowBlockService handles WorkflowBlocks operations.
 type WorkflowBlockService struct {
-	client *Client
+	client     *Client
+	Executions *WorkflowBlockExecutionService
 }
 
 // WorkflowBlocksListParams contains the parameters for List.

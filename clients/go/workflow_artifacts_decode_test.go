@@ -21,7 +21,7 @@ func TestArtifactsList_AcceptsEnvelopeShape(t *testing.T) {
 
 	client := newArtifactsTestClient(t, srv)
 	runID := "run_xyz"
-	got, err := client.WorkflowArtifacts.List(context.Background(),
+	got, err := client.Workflows.Artifacts.List(context.Background(),
 		&WorkflowArtifactsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatalf("List against envelope-shape response: %v", err)

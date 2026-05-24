@@ -138,7 +138,7 @@ func fetchOAuthDiscovery(ctx context.Context, baseURL string) (*cliOAuthDiscover
 	if err != nil {
 		return nil, fmt.Errorf("fetch %s: %w", endpoint, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("discovery returned %d from %s — is the deployment configured for CLI OAuth?", resp.StatusCode, endpoint)
 	}
@@ -392,7 +392,7 @@ func postTokenEndpoint(ctx context.Context, tokenURL string, form url.Values, di
 	if err != nil {
 		return nil, fmt.Errorf("POST %s: %w", tokenURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var tr tokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {

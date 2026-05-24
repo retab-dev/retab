@@ -40,10 +40,10 @@ class PaginationContractTest < Minitest::Test
       invoke: -> (c) { c.classifications.list }
     },
     {
-      service: :edit_templates,
+      service: "edits.templates",
       path: "/v1/edits/templates",
       sample: "{}",
-      invoke: -> (c) { c.edit_templates.list }
+      invoke: -> (c) { c.edits.templates.list }
     },
     {
       service: :edits,
@@ -52,16 +52,16 @@ class PaginationContractTest < Minitest::Test
       invoke: -> (c) { c.edits.list }
     },
     {
-      service: :experiment_run_results,
+      service: "workflows.experiments.results",
       path: "/v1/workflows/experiments/results",
       sample: "{}",
-      invoke: -> (c) { c.experiment_run_results.list(run_id: "run_x") }
+      invoke: -> (c) { c.workflows.experiments.results.list(run_id: "run_x") }
     },
     {
-      service: :experiment_runs,
+      service: "workflows.experiments.runs",
       path: "/v1/workflows/experiments/runs",
       sample: "{}",
-      invoke: -> (c) { c.experiment_runs.list }
+      invoke: -> (c) { c.workflows.experiments.runs.list }
     },
     {
       service: :extractions,
@@ -100,76 +100,76 @@ class PaginationContractTest < Minitest::Test
       invoke: -> (c) { c.splits.list }
     },
     {
-      service: :workflow_artifacts,
+      service: "workflows.artifacts",
       path: "/v1/workflows/artifacts",
       sample: "{}",
-      invoke: -> (c) { c.workflow_artifacts.list(run_id: "run_x") }
+      invoke: -> (c) { c.workflows.artifacts.list(run_id: "run_x") }
     },
     {
-      service: :workflow_block_executions,
+      service: "workflows.blocks.executions",
       path: "/v1/workflows/blocks/executions",
       sample: "{}",
-      invoke: -> (c) { c.workflow_block_executions.list(run_id: "run_x", block_id: "blk_x") }
+      invoke: -> (c) { c.workflows.blocks.executions.list(run_id: "run_x", block_id: "blk_x") }
     },
     {
-      service: :workflow_blocks,
+      service: "workflows.blocks",
       path: "/v1/workflows/blocks",
       sample: "{}",
-      invoke: -> (c) { c.workflow_blocks.list(workflow_id: "wf_x") }
+      invoke: -> (c) { c.workflows.blocks.list(workflow_id: "wf_x") }
     },
     {
-      service: :workflow_edges,
+      service: "workflows.edges",
       path: "/v1/workflows/edges",
       sample: "{}",
-      invoke: -> (c) { c.workflow_edges.list(workflow_id: "wf_x") }
+      invoke: -> (c) { c.workflows.edges.list(workflow_id: "wf_x") }
     },
     {
-      service: :workflow_experiments,
+      service: "workflows.experiments",
       path: "/v1/workflows/experiments",
       sample: "{}",
-      invoke: -> (c) { c.workflow_experiments.list(workflow_id: "wf_x") }
+      invoke: -> (c) { c.workflows.experiments.list(workflow_id: "wf_x") }
     },
     {
-      service: :workflow_review_versions,
+      service: "workflows.reviews.versions",
       path: "/v1/workflows/reviews/versions",
       sample: "{}",
-      invoke: -> (c) { c.workflow_review_versions.list(review_id: "rev_x") }
+      invoke: -> (c) { c.workflows.reviews.versions.list(review_id: "rev_x") }
     },
     {
-      service: :workflow_reviews,
+      service: "workflows.reviews",
       path: "/v1/workflows/reviews",
       sample: "{}",
-      invoke: -> (c) { c.workflow_reviews.list }
+      invoke: -> (c) { c.workflows.reviews.list }
     },
     {
-      service: :workflow_runs,
+      service: "workflows.runs",
       path: "/v1/workflows/runs",
       sample: "{}",
-      invoke: -> (c) { c.workflow_runs.list }
+      invoke: -> (c) { c.workflows.runs.list }
     },
     {
-      service: :workflow_steps,
+      service: "workflows.steps",
       path: "/v1/workflows/steps",
       sample: "{}",
-      invoke: -> (c) { c.workflow_steps.list }
+      invoke: -> (c) { c.workflows.steps.list }
     },
     {
-      service: :workflow_test_run_results,
+      service: "workflows.tests.results",
       path: "/v1/workflows/tests/results",
       sample: "{}",
-      invoke: -> (c) { c.workflow_test_run_results.list(run_id: "run_x") }
+      invoke: -> (c) { c.workflows.tests.results.list(run_id: "run_x") }
     },
     {
-      service: :workflow_test_runs,
+      service: "workflows.tests.runs",
       path: "/v1/workflows/tests/runs",
       sample: "{}",
-      invoke: -> (c) { c.workflow_test_runs.list }
+      invoke: -> (c) { c.workflows.tests.runs.list }
     },
     {
-      service: :workflow_tests,
+      service: "workflows.tests",
       path: "/v1/workflows/tests",
       sample: "{}",
-      invoke: -> (c) { c.workflow_tests.list(workflow_id: "wf_x") }
+      invoke: -> (c) { c.workflows.tests.list(workflow_id: "wf_x") }
     },
     {
       service: :workflows,
@@ -196,17 +196,8 @@ class PaginationContractTest < Minitest::Test
   # itself here will fail this assertion.
 
   def test_registry_covers_every_list_method
-    registered = REGISTRY.map { |row| row[:service] }.to_set + KNOWN_BYPASS.to_set
-
-    client_methods = (Retab::Client.instance_methods - Retab::BaseClient.instance_methods - Object.instance_methods)
-    services_with_list = []
-
-    client_methods.each do |meth|
-      next if meth.to_s.start_with?("_")
-      service = @client.send(meth)
-      next unless service.respond_to?(:list)
-      services_with_list << meth
-    end
+    registered = REGISTRY.map { |row| row[:service].to_s }.to_set + KNOWN_BYPASS.to_set
+    services_with_list = collect_list_services(@client)
 
     missing = services_with_list.reject { |s| registered.include?(s) }
     assert_empty(
@@ -214,6 +205,33 @@ class PaginationContractTest < Minitest::Test
       "These services expose a `list` method but are not in REGISTRY or KNOWN_BYPASS: #{missing.inspect}. " \
         "Add them to test/test_pagination_contract.rb."
     )
+  end
+
+  def collect_list_services(root)
+    out = []
+    visited = Set.new
+    walk_resources(root, [], out, visited)
+    out
+  end
+
+  def walk_resources(resource, path, out, visited)
+    return if visited.include?(resource.object_id)
+    visited << resource.object_id
+
+    out << path.join(".") if path.any? && resource.respond_to?(:list)
+
+    resource.public_methods(false).sort.each do |meth|
+      next if meth == :list || meth.to_s.start_with?("_")
+      method_object = resource.method(meth)
+      next unless method_object.parameters.empty?
+
+      child = resource.public_send(meth)
+      next unless child.class.name&.start_with?("Retab::")
+
+      walk_resources(child, [*path, meth.to_s], out, visited)
+    rescue StandardError
+      next
+    end
   end
 
   # --- Closure-wired test --------------------------------------------------
@@ -225,7 +243,7 @@ class PaginationContractTest < Minitest::Test
   # auto-paging closure is wired and re-issues with the swapped cursor.
 
   REGISTRY.each do |row|
-    define_method("test_#{row[:service]}_pagination_walks_every_page") do
+    define_method("test_#{row[:service].to_s.tr(".", "_")}_pagination_walks_every_page") do
       first_body = JSON.generate(
         "data" => [JSON.parse(row[:sample])],
         "list_metadata" => {"before" => nil, "after" => "cursor-2"}

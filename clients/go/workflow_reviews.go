@@ -10,7 +10,8 @@ import (
 
 // WorkflowReviewService handles WorkflowReviews operations.
 type WorkflowReviewService struct {
-	client *Client
+	client   *Client
+	Versions *WorkflowReviewVersionService
 }
 
 // WorkflowReviewsListParams contains the parameters for List.

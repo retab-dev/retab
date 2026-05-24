@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the experiment run metrics API operations on <see cref="Retab"/>.</summary>
     public class ExperimentRunMetricsService : Service
@@ -17,28 +18,19 @@ namespace Retab
         public ExperimentRunMetricsService(Retab client) : base(client) { }
 
         /// <summary>Get Experiment Metrics For Run</summary>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="ExperimentSummaryMetricsResponse"/> result.</returns>
-        public virtual async Task<ExperimentSummaryMetricsResponse> GetAsync(string httpBearer, ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<ExperimentSummaryMetricsResponse> GetAsync(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = "/v1/workflows/experiments/metrics",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<ExperimentSummaryMetricsResponse>(request, cancellationToken);
+            return await this.GetAsync<ExperimentSummaryMetricsResponse>("/v1/workflows/experiments/metrics", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<ExperimentSummaryMetricsResponse> Get(string httpBearer, ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<ExperimentSummaryMetricsResponse> Get(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.GetAsync(options, requestOptions, cancellationToken);
         }
     }
 }

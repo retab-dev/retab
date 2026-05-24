@@ -17,7 +17,7 @@ class ExperimentRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_experiment_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRuns()->list(workflowId: 'test_value', experimentId: 'test_value', blockId: 'test_value', status: \Retab\Resource\WorkflowExperimentsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowExperimentsStatus::Pending, triggerType: 'test_value', triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->experiments()->runs()->list(workflowId: 'test_value', experimentId: 'test_value', blockId: 'test_value', status: \Retab\Resource\WorkflowExperimentsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowExperimentsStatus::Pending, triggerType: 'test_value', triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -44,7 +44,7 @@ class ExperimentRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('experiment_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRuns()->create(experimentId: 'test_value');
+        $result = $client->workflows()->experiments()->runs()->create(experimentId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\ExperimentRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['experiment_id'], $result->experimentId);
@@ -60,7 +60,7 @@ class ExperimentRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('experiment_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRuns()->get('test_run_id');
+        $result = $client->workflows()->experiments()->runs()->get('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\ExperimentRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['experiment_id'], $result->experimentId);
@@ -74,7 +74,7 @@ class ExperimentRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('cancel_workflow_experiment_run_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRuns()->cancel('test_run_id');
+        $result = $client->workflows()->experiments()->runs()->cancel('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\CancelWorkflowExperimentRunResponse::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -90,7 +90,7 @@ class ExperimentRunsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->experimentRuns()->list();
+        $result = $client->workflows()->experiments()->runs()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

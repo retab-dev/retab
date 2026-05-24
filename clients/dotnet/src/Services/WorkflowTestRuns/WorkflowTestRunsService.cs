@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the workflow test runs API operations on <see cref="Retab"/>.</summary>
     public class WorkflowTestRunsService : Service
@@ -17,20 +18,19 @@ namespace Retab
         public WorkflowTestRunsService(Retab client) : base(client) { }
 
         /// <summary>List Test Execution Runs</summary>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="WorkflowTestRun"/> results.</returns>
-        public virtual async Task<PaginatedList<WorkflowTestRun>> ListAsync(string httpBearer, WorkflowTestRunsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<WorkflowTestRun>> ListAsync(WorkflowTestRunsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<WorkflowTestRun>("/v1/workflows/tests/runs", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<WorkflowTestRun>("/v1/workflows/tests/runs", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<WorkflowTestRun>> List(string httpBearer, WorkflowTestRunsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<WorkflowTestRun>> List(WorkflowTestRunsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -49,76 +49,51 @@ namespace Retab
         /// ``workflow_id`` is the execution context. Optional ``scope`` narrows the
         /// run to one saved test or one block; omitted scope runs all workflow tests.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowTestRun"/> result.</returns>
-        public virtual async Task<WorkflowTestRun> CreateAsync(string httpBearer, WorkflowTestRunsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowTestRun> CreateAsync(WorkflowTestRunsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/workflows/tests/runs",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowTestRun>(request, cancellationToken);
+            return await this.PostAsync<WorkflowTestRun>("/v1/workflows/tests/runs", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<WorkflowTestRun> Create(string httpBearer, WorkflowTestRunsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowTestRun> Create(WorkflowTestRunsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Test Execution Run</summary>
         /// <param name="runId">The run id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowTestRun"/> result.</returns>
-        public virtual async Task<WorkflowTestRun> GetAsync(string runId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowTestRun> GetAsync(string runId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/workflows/tests/runs/{Uri.EscapeDataString(runId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowTestRun>(request, cancellationToken);
+            return await this.GetAsync<WorkflowTestRun>($"/v1/workflows/tests/runs/{Uri.EscapeDataString(runId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<WorkflowTestRun> Get(string runId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowTestRun> Get(string runId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(runId, httpBearer, requestOptions, cancellationToken);
+            return this.GetAsync(runId, requestOptions, cancellationToken);
         }
 
         /// <summary>Cancel Test Execution Run</summary>
         /// <param name="runId">The run id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowTestRun"/> result.</returns>
-        public virtual async Task<WorkflowTestRun> CancelAsync(string runId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowTestRun> CancelAsync(string runId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = $"/v1/workflows/tests/runs/{Uri.EscapeDataString(runId)}/cancel",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowTestRun>(request, cancellationToken);
+            return await this.PostAsync<WorkflowTestRun>($"/v1/workflows/tests/runs/{Uri.EscapeDataString(runId)}/cancel", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CancelAsync"/>.</summary>
-        public virtual Task<WorkflowTestRun> Cancel(string runId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowTestRun> Cancel(string runId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CancelAsync(runId, httpBearer, requestOptions, cancellationToken);
+            return this.CancelAsync(runId, requestOptions, cancellationToken);
         }
     }
 }

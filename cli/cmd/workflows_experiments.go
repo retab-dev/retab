@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_experiments
+
 package cmd
 
 import (
@@ -224,7 +226,7 @@ After creation, create a run with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowExperiments.Create(ctx, &req)
+		result, err := client.Workflows.Experiments.Create(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -247,7 +249,7 @@ blocks.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowExperiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: args[0]})
+		result, err := client.Workflows.Experiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
@@ -308,7 +310,7 @@ consensus count, recent run status.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowExperiments.Get(ctx, args[0])
+		result, err := client.Workflows.Experiments.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -362,7 +364,7 @@ previously-captured results for that experiment.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowExperiments.Update(ctx, args[0], &req)
+		result, err := client.Workflows.Experiments.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -396,7 +398,7 @@ definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.WorkflowExperiments.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Experiments.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("experiment", args[0])
@@ -464,7 +466,7 @@ of being silently dropped.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRuns.Create(ctx, &params)
+		result, err := client.Workflows.Experiments.Runs.Create(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -565,14 +567,14 @@ positional, filters are flags — same convention as the rest of the
 			params.SortBy = &value
 		}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
-		params.PaginationParams.Limit = &limit
+		params.Limit = &limit
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRuns.List(ctx, &params)
+		result, err := client.Workflows.Experiments.Runs.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -594,7 +596,7 @@ var workflowsExperimentsRunsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRuns.Get(ctx, args[0])
+		result, err := client.Workflows.Experiments.Runs.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -613,7 +615,7 @@ var workflowsExperimentsRunsCancelCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRuns.Cancel(ctx, args[0])
+		result, err := client.Workflows.Experiments.Runs.Cancel(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -638,7 +640,7 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRunResults.List(ctx, &retab.ExperimentRunResultsListParams{
+		result, err := client.Workflows.Experiments.Results.List(ctx, &retab.ExperimentRunResultsListParams{
 			RunID: args[0],
 			PaginationParams: retab.PaginationParams{
 				Limit: &limit,
@@ -663,7 +665,7 @@ var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRunResults.Get(ctx, args[0])
+		result, err := client.Workflows.Experiments.Results.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -732,7 +734,7 @@ numbers down to individual fields. Compare against a prior run with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.ExperimentRunMetrics.Get(ctx, &params)
+		result, err := client.Workflows.Experiments.Metrics.Get(ctx, &params)
 		if err != nil {
 			return err
 		}

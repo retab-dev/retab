@@ -10,7 +10,9 @@ import (
 
 // WorkflowTestService handles WorkflowTests operations.
 type WorkflowTestService struct {
-	client *Client
+	client  *Client
+	Results *WorkflowTestRunResultService
+	Runs    *WorkflowTestRunService
 }
 
 // WorkflowTestsListParams contains the parameters for List.

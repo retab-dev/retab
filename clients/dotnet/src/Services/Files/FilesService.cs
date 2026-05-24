@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the files API operations on <see cref="Retab"/>.</summary>
     public class FilesService : Service
@@ -17,74 +18,55 @@ namespace Retab
         public FilesService(Retab client) : base(client) { }
 
         /// <summary>Upload File</summary>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="CreateUploadResponse"/> result.</returns>
-        public virtual async Task<CreateUploadResponse> CreateUploadAsync(string httpBearer, FilesCreateUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<CreateUploadResponse> CreateUploadAsync(FilesCreateUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/files/upload",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<CreateUploadResponse>(request, cancellationToken);
+            return await this.PostAsync<CreateUploadResponse>("/v1/files/upload", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateUploadAsync"/>.</summary>
-        public virtual Task<CreateUploadResponse> CreateUpload(string httpBearer, FilesCreateUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<CreateUploadResponse> CreateUpload(FilesCreateUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateUploadAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateUploadAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Complete Upload File</summary>
         /// <param name="fileId">The file id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="MimeData"/> result.</returns>
-        public virtual async Task<MimeData> CompleteUploadAsync(string fileId, string httpBearer, FilesCompleteUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<MimeData> CompleteUploadAsync(string fileId, FilesCompleteUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = $"/v1/files/upload/{Uri.EscapeDataString(fileId)}/complete",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<MimeData>(request, cancellationToken);
+            return await this.PostAsync<MimeData>($"/v1/files/upload/{Uri.EscapeDataString(fileId)}/complete", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CompleteUploadAsync"/>.</summary>
-        public virtual Task<MimeData> CompleteUpload(string fileId, string httpBearer, FilesCompleteUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<MimeData> CompleteUpload(string fileId, FilesCompleteUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CompleteUploadAsync(fileId, httpBearer, options, requestOptions, cancellationToken);
+            return this.CompleteUploadAsync(fileId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>List Files</summary>
         /// <remarks>
         /// List files with pagination and optional filtering.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="File"/> results.</returns>
-        public virtual async Task<PaginatedList<File>> ListAsync(string httpBearer, FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<File>> ListAsync(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<File>("/v1/files", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<File>("/v1/files", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<File>> List(string httpBearer, FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<File>> List(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -99,50 +81,34 @@ namespace Retab
 
         /// <summary>Get File</summary>
         /// <param name="fileId">The file id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="File"/> result.</returns>
-        public virtual async Task<File> GetAsync(string fileId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<File> GetAsync(string fileId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/files/{Uri.EscapeDataString(fileId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<File>(request, cancellationToken);
+            return await this.GetAsync<File>($"/v1/files/{Uri.EscapeDataString(fileId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<File> Get(string fileId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<File> Get(string fileId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(fileId, httpBearer, requestOptions, cancellationToken);
+            return this.GetAsync(fileId, requestOptions, cancellationToken);
         }
 
         /// <summary>Download Link</summary>
         /// <param name="fileId">The file id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="FileLink"/> result.</returns>
-        public virtual async Task<FileLink> GetDownloadLinkAsync(string fileId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<FileLink> GetDownloadLinkAsync(string fileId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/files/{Uri.EscapeDataString(fileId)}/download-link",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<FileLink>(request, cancellationToken);
+            return await this.GetAsync<FileLink>($"/v1/files/{Uri.EscapeDataString(fileId)}/download-link", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetDownloadLinkAsync"/>.</summary>
-        public virtual Task<FileLink> GetDownloadLink(string fileId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<FileLink> GetDownloadLink(string fileId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetDownloadLinkAsync(fileId, httpBearer, requestOptions, cancellationToken);
+            return this.GetDownloadLinkAsync(fileId, requestOptions, cancellationToken);
         }
     }
 }

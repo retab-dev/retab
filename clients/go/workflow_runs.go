@@ -26,7 +26,7 @@ type WorkflowRunsListParams struct {
 	ExcludeStatus *WorkflowRunsExcludeStatus `url:"exclude_status,omitempty" json:"-"`
 	// TriggerType is filter by single trigger type (deprecated, use 'trigger_types')
 	TriggerType *WorkflowRunsTriggerType `url:"trigger_type,omitempty" json:"-"`
-	// TriggerTypes is filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,restart)
+	// TriggerTypes is filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
 	TriggerTypes *string `url:"trigger_types,omitempty" json:"-"`
 	// FromDate is filter runs created on or after this date (YYYY-MM-DD)
 	FromDate *string `url:"from_date,omitempty" json:"-"`

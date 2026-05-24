@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_edits && !retab_oagen_cli_edits_templates
+
 package cmd
 
 import (
@@ -273,7 +275,7 @@ to ` + "`retab edits create`" + `.`,
 		if err != nil {
 			return err
 		}
-		result, err := client.EditTemplates.Create(ctx, &retab.EditTemplatesCreateParams{
+		result, err := client.Edits.Templates.Create(ctx, &retab.EditTemplatesCreateParams{
 			Name:       name,
 			Document:   document,
 			FormFields: fields,
@@ -302,7 +304,7 @@ anchor document.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.EditTemplates.Get(ctx, args[0])
+		result, err := client.Edits.Templates.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -333,7 +335,7 @@ Filter by name substring with ` + "`--name`" + `. Page by template id with
 		if name, _ := cmd.Flags().GetString("name"); name != "" {
 			params.Name = ptr(name)
 		}
-		result, err := client.EditTemplates.List(ctx, &params)
+		result, err := client.Edits.Templates.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -391,7 +393,7 @@ template are not retroactively re-rendered.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.EditTemplates.Update(ctx, args[0], &req)
+		result, err := client.Edits.Templates.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -428,7 +430,7 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.EditTemplates.Delete(ctx, args[0]); err != nil {
+		if err := client.Edits.Templates.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("edit template", args[0])

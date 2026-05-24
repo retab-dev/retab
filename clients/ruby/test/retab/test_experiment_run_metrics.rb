@@ -14,13 +14,13 @@ class ExperimentRunMetricsTest < Minitest::Test
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/metrics(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.experiment_run_metrics.get(run_id: "stub")
+    result = @client.workflows.experiments.metrics.get(run_id: "stub")
     refute_nil(result)
   end
 
   def test_get_requires_required_query_params
     assert_raises(ArgumentError) do
-      @client.experiment_run_metrics.get
+      @client.workflows.experiments.metrics.get
     end
   end
 
@@ -37,7 +37,7 @@ class ExperimentRunMetricsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.experiment_run_metrics.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.experiments.metrics.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

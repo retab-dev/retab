@@ -14,20 +14,20 @@ class WorkflowTestRunResultsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/tests/results(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_test_run_results.list(run_id: "stub")
+    result = @client.workflows.tests.results.list(run_id: "stub")
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_list_requires_required_query_params
     assert_raises(ArgumentError) do
-      @client.workflow_test_run_results.list
+      @client.workflows.tests.results.list
     end
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/tests/results/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_test_run_results.get(result_id: "stub")
+    result = @client.workflows.tests.results.get(result_id: "stub")
     refute_nil(result)
   end
 
@@ -50,7 +50,7 @@ class WorkflowTestRunResultsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_test_run_results.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.tests.results.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

@@ -9,6 +9,15 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::ExperimentRunMetrics) }
+    def metrics; end
+
+    sig { returns(Retab::ExperimentRunResults) }
+    def results; end
+
+    sig { returns(Retab::ExperimentRuns) }
+    def runs; end
+
     sig do
       params(
         workflow_id: String,

@@ -592,6 +592,8 @@ pub enum WorkflowRunTriggerOneOf {
     ScheduleTrigger(Box<ScheduleTrigger>),
     #[serde(rename = "webhook")]
     WebhookTrigger(Box<WebhookTrigger>),
+    #[serde(rename = "email")]
+    EmailTrigger(Box<EmailTrigger>),
     #[serde(rename = "restart")]
     RestartTrigger(Box<RestartTrigger>),
 }
@@ -617,6 +619,12 @@ impl From<ScheduleTrigger> for WorkflowRunTriggerOneOf {
 impl From<WebhookTrigger> for WorkflowRunTriggerOneOf {
     fn from(v: WebhookTrigger) -> Self {
         WorkflowRunTriggerOneOf::WebhookTrigger(Box::new(v))
+    }
+}
+
+impl From<EmailTrigger> for WorkflowRunTriggerOneOf {
+    fn from(v: EmailTrigger) -> Self {
+        WorkflowRunTriggerOneOf::EmailTrigger(Box::new(v))
     }
 }
 

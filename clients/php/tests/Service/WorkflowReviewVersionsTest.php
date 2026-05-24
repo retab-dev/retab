@@ -17,7 +17,7 @@ class WorkflowReviewVersionsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_review_version');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviewVersions()->list(reviewId: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->reviews()->versions()->list(reviewId: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -33,7 +33,7 @@ class WorkflowReviewVersionsTest extends TestCase
     {
         $fixture = $this->loadFixture('review_version');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviewVersions()->create(reviewId: 'test_value', parentId: 'test_value', snapshot: []);
+        $result = $client->workflows()->reviews()->versions()->create(reviewId: 'test_value', parentId: 'test_value', snapshot: []);
         $this->assertInstanceOf(\Retab\Resource\ReviewVersion::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['review_id'], $result->reviewId);
@@ -50,7 +50,7 @@ class WorkflowReviewVersionsTest extends TestCase
     {
         $fixture = $this->loadFixture('review_version');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviewVersions()->get('test_version_id');
+        $result = $client->workflows()->reviews()->versions()->get('test_version_id');
         $this->assertInstanceOf(\Retab\Resource\ReviewVersion::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['review_id'], $result->reviewId);
@@ -67,7 +67,7 @@ class WorkflowReviewVersionsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviewVersions()->list(reviewId: 'test_value');
+        $result = $client->workflows()->reviews()->versions()->list(reviewId: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

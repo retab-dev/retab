@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows
+
 package cmd
 
 import (
@@ -22,15 +24,15 @@ import (
 // keep the user from publishing — the publish call itself will surface any
 // real auth/server failure with its own error.
 func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, workflowID string, w io.Writer) {
-	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return
 	}
 	if !isEffectivelyEmptyDraft(blocks.Data) {
 		return
 	}
-	fmt.Fprintln(w, "warning: workflow has only a start_document block — publishing an empty workflow.")
-	fmt.Fprintln(w, "warning: add blocks with `retab workflows blocks create` before publishing.")
+	_, _ = fmt.Fprintln(w, "warning: workflow has only a start_document block — publishing an empty workflow.")
+	_, _ = fmt.Fprintln(w, "warning: add blocks with `retab workflows blocks create` before publishing.")
 }
 
 // isEffectivelyEmptyDraft returns true for the two empty-ish shapes that

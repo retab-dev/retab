@@ -9,6 +9,9 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::WorkflowBlockExecutions) }
+    def executions; end
+
     sig do
       params(
         workflow_id: String,

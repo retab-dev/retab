@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use futures_util::StreamExt;
-use retab::enums::{UpdateWorkflowBlockRequestConfigMode, WorkflowBlockCreateRequestType};
+use retab::enums::{
+    DeclarativeApplyResponseAction, DeclarativePlanResponseAction, WorkflowBlockType,
+};
 use retab::models::{
-    CancelWorkflowRequest, CreateWorkflowRequest, CreateWorkflowRunRequest,
-    DeclarativeWorkflowRequest, PublishWorkflowRequest, UpdateWorkflowBlockRequest,
-    UpdateWorkflowRequest, WorkflowBlockCreateRequest, WorkflowEdgeCreateRequest,
+    CreateWorkflowRunRequest, DeclarativeWorkflowRequest, PublishWorkflowRequest,
+    UpdateWorkflowRequest,
 };
 use retab::resources;
 use retab::Retab;
@@ -31,37 +32,181 @@ async fn exercise_workflow_system_live() {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis();
+    let workflow_id = format!("wrk_rust_sdk_live_probe_{unique}");
 
-    let workflow_body = CreateWorkflowRequest {
-        name: Some(format!("rust-sdk-live-probe-{unique}")),
-        description: Some("temporary workflow created by Rust SDK live probe".to_string()),
-    };
+    let yaml_definition = format!(
+        r#"apiVersion: workflows.retab.com/v1alpha2
+kind: Workflow
+metadata:
+  id: {workflow_id}
+  name: Rust SDK Invoice Validation Probe {unique}
+  description: Temporary invoice total validation workflow created by the Rust SDK live probe.
+spec:
+  blocks:
+    start:
+      type: start_json
+      label: Invoice JSON
+      config:
+        json_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            line_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  amount:
+                    type: number
+                required:
+                  - description
+                  - amount
+            tax_rate:
+              type: number
+            stated_total:
+              type: number
+          required:
+            - invoice_id
+            - line_items
+            - tax_rate
+            - stated_total
+    transform:
+      type: function
+      label: Validate Invoice Total
+      config:
+        output_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            subtotal:
+              type: number
+            tax:
+              type: number
+            computed_total:
+              type: number
+            stated_total:
+              type: number
+            is_valid:
+              type: boolean
+            error_message:
+              type: string
+          required:
+            - invoice_id
+            - subtotal
+            - tax
+            - computed_total
+            - stated_total
+            - is_valid
+            - error_message
+        code: |
+          from models import Input, Output
 
-    let workflow = client
-        .workflows()
-        .create(resources::workflows::CreateParams::new(workflow_body))
-        .await
-        .expect("create workflow");
-    println!("created workflow {}", workflow.id);
+          def transform(input_data: Input) -> Output:
+              subtotal = sum(item.amount for item in input_data.line_items)
+              tax = round(subtotal * input_data.tax_rate, 2)
+              computed_total = round(subtotal + tax, 2)
+              stated_total = round(input_data.stated_total, 2)
+              is_valid = abs(computed_total - stated_total) <= 0.01
+              error_message = "" if is_valid else f"Expected {{computed_total}}, got {{stated_total}}"
+              return Output(
+                  invoice_id=input_data.invoice_id,
+                  subtotal=subtotal,
+                  tax=tax,
+                  computed_total=computed_total,
+                  stated_total=stated_total,
+                  is_valid=is_valid,
+                  error_message=error_message,
+              )
+  edges:
+    - from:
+        block: start
+        handle: output-json-0
+      to:
+        block: transform
+        handle: input-json-0
+"#
+    );
 
     let probe_result: Result<(), String> = (async {
+        let spec_body = DeclarativeWorkflowRequest::new(yaml_definition.clone());
+
+        let validation = api!(
+            client
+                .workflows()
+                .spec()
+                .validate(resources::workflow_spec::ValidateParams::new(
+                    spec_body.clone(),
+                )),
+            "validate workflow spec"
+        );
+        if !validation.is_valid {
+            return Err(format!(
+                "valid workflow spec returned is_valid=false: {:?}",
+                validation.diagnostics
+            ));
+        }
+        if validation.block_count != 2 || validation.edge_count != 1 {
+            return Err(format!(
+                "valid workflow spec returned unexpected topology counts: blocks={}, edges={}",
+                validation.block_count, validation.edge_count
+            ));
+        }
+
+        let plan = api!(
+            client
+                .workflows()
+                .spec()
+                .plan(resources::workflow_spec::PlanParams::new(spec_body.clone())),
+            "plan workflow spec"
+        );
+        if plan.action != DeclarativePlanResponseAction::Create {
+            return Err(format!(
+                "new workflow spec planned unexpected action: {:?}",
+                plan.action
+            ));
+        }
+
+        let apply = api!(
+            client
+                .workflows()
+                .spec()
+                .apply(resources::workflow_spec::ApplyParams::new(spec_body)),
+            "apply workflow spec"
+        );
+        if apply.workflow_id != workflow_id {
+            return Err("apply workflow spec returned wrong workflow_id".to_string());
+        }
+        if apply.action != DeclarativeApplyResponseAction::Create || !apply.created {
+            return Err(format!(
+                "apply workflow spec returned unexpected action/created: {:?}/{}",
+                apply.action, apply.created
+            ));
+        }
+        println!("created workflow {workflow_id} from declarative spec");
+
         let update_body = UpdateWorkflowRequest {
-            description: Some("updated by Rust SDK live probe".to_string()),
+            description: Some("validates invoice subtotals, tax, and stated totals".to_string()),
             ..Default::default()
         };
         let updated = api!(
             client.workflows().update(
-                &workflow.id,
+                &workflow_id,
                 resources::workflows::UpdateParams::new(update_body),
             ),
             "update workflow"
         );
-        if updated.description.as_deref() != Some("updated by Rust SDK live probe") {
+        if updated.description.as_deref()
+            != Some("validates invoice subtotals, tax, and stated totals")
+        {
             return Err("update workflow returned unexpected description".to_string());
         }
 
-        let fetched = api!(client.workflows().get(&workflow.id), "get workflow");
-        if fetched.id != workflow.id {
+        let fetched = api!(client.workflows().get(&workflow_id), "get workflow");
+        if fetched.id != workflow_id {
             return Err("get workflow returned wrong id".to_string());
         }
 
@@ -78,198 +223,164 @@ async fn exercise_workflow_system_live() {
             .transpose()
             .map_err(|err| format!("stream workflows: {err:?}"))?;
 
-        let initial_blocks = api!(
+        let blocks = api!(
             client
-                .workflow_blocks()
-                .list(resources::workflow_blocks::ListParams::new(&workflow.id)),
-            "list initial blocks"
+                .workflows()
+                .blocks()
+                .list(resources::workflow_blocks::ListParams::new(&workflow_id)),
+            "list workflow blocks"
         );
-        println!("initial block count {}", initial_blocks.data.len());
-
-        let mut note_body =
-            WorkflowBlockCreateRequest::new(&workflow.id, WorkflowBlockCreateRequestType::Note);
-        note_body.label = Some("Rust SDK probe note".to_string());
-        note_body.position_x = Some(320.0);
-        note_body.position_y = Some(120.0);
-        note_body.config = Some(HashMap::from([(
-            "text".to_string(),
-            json!("Created by Rust SDK live probe"),
-        )]));
-        let note = api!(
-            client
-                .workflow_blocks()
-                .create(resources::workflow_blocks::CreateParams::new(note_body)),
-            "create note block"
-        );
-        println!("created note block {}", note.id);
-
-        let block_patch = UpdateWorkflowBlockRequest {
-            label: Some("Rust SDK probe note updated".to_string()),
-            position_x: Some(360.0),
-            config_mode: Some(UpdateWorkflowBlockRequestConfigMode::Merge),
-            config: Some(HashMap::from([(
-                "text".to_string(),
-                json!("Updated by Rust SDK live probe"),
-            )])),
-            ..Default::default()
-        };
-        let updated_note = api!(
-            client.workflow_blocks().update(
-                &note.id,
-                resources::workflow_blocks::UpdateParams {
-                    workflow_id: Some(workflow.id.clone()),
-                    body: block_patch,
-                },
-            ),
-            "update note block"
-        );
-        if updated_note.label.as_deref() != Some("Rust SDK probe note updated") {
-            return Err("update note block returned unexpected label".to_string());
-        }
-
+        let start_json_id = blocks
+            .data
+            .iter()
+            .find(|block| block.type_ == WorkflowBlockType::StartJson)
+            .map(|block| block.id.clone())
+            .ok_or_else(|| "applied workflow has no start_json block".to_string())?;
+        let transform_id = blocks
+            .data
+            .iter()
+            .find(|block| block.type_ == WorkflowBlockType::Function)
+            .map(|block| block.id.clone())
+            .ok_or_else(|| "applied workflow has no function block".to_string())?;
         let _ = api!(
-            client.workflow_blocks().get(
-                &note.id,
+            client.workflows().blocks().get(
+                &transform_id,
                 resources::workflow_blocks::GetParams {
-                    workflow_id: Some(workflow.id.clone()),
+                    workflow_id: Some(workflow_id.clone()),
                 },
             ),
-            "get note block"
+            "get function block"
         );
 
-        let blocks_after_note = api!(
+        let edges = api!(
             client
-                .workflow_blocks()
-                .list(resources::workflow_blocks::ListParams::new(&workflow.id)),
-            "list blocks after note"
+                .workflows()
+                .edges()
+                .list(resources::workflow_edges::ListParams::new(&workflow_id)),
+            "list workflow edges"
         );
-        println!("block count after note {}", blocks_after_note.data.len());
-
-        if let Some(source) = blocks_after_note.data.iter().find(|b| b.id != note.id) {
-            let edge_body = WorkflowEdgeCreateRequest::new(&workflow.id, &source.id, &note.id);
-            match client
-                .workflow_edges()
-                .create(resources::workflow_edges::CreateParams::new(edge_body))
-                .await
-            {
-                Ok(edge) => {
-                    println!("created edge {}", edge.id);
-                    let got = api!(client.workflow_edges().get(&edge.id), "get edge");
-                    if got.id != edge.id {
-                        return Err("get edge returned wrong id".to_string());
-                    }
-                    api!(client.workflow_edges().delete(&edge.id), "delete edge");
-                }
-                Err(err) => {
-                    println!("edge create returned API error, continuing: {err:?}");
-                }
-            }
+        if edges.data.len() != 1 {
+            return Err(format!(
+                "expected one workflow edge, got {}",
+                edges.data.len()
+            ));
+        }
+        let edge = api!(
+            client.workflows().edges().get(&edges.data[0].id),
+            "get workflow edge"
+        );
+        if edge.workflow_id != workflow_id {
+            return Err("get workflow edge returned wrong workflow_id".to_string());
         }
 
         let exported_spec = api!(
-            client.workflow_specs().get(&workflow.id),
+            client.workflows().spec().get(&workflow_id),
             "export workflow spec"
         );
-        if exported_spec.workflow_id != workflow.id {
+        if exported_spec.workflow_id != workflow_id {
             return Err("export workflow spec returned wrong workflow_id".to_string());
         }
-        println!(
-            "exported spec bytes {}",
-            exported_spec.yaml_definition.len()
+        let exported_body = DeclarativeWorkflowRequest::new(exported_spec.yaml_definition);
+        let exported_plan = api!(
+            client
+                .workflows()
+                .spec()
+                .plan(resources::workflow_spec::PlanParams::new(
+                    exported_body.clone(),
+                )),
+            "plan exported workflow spec"
         );
-
-        let spec_body = DeclarativeWorkflowRequest::new(exported_spec.yaml_definition.clone());
-        match client
-            .workflow_specs()
-            .validate(resources::workflow_specs::ValidateParams::new(
-                spec_body.clone(),
-            ))
-            .await
-        {
-            Ok(validation) => {
-                println!(
-                    "validated spec blocks={} edges={} valid={}",
-                    validation.block_count, validation.edge_count, validation.is_valid
-                );
-
-                let plan = api!(
-                    client
-                        .workflow_specs()
-                        .plan(resources::workflow_specs::PlanParams::new(
-                            spec_body.clone()
-                        )),
-                    "plan exported workflow spec"
-                );
-                println!("planned exported spec action={:?}", plan.action);
-
-                let apply = api!(
-                    client
-                        .workflow_specs()
-                        .apply(resources::workflow_specs::ApplyParams::new(spec_body)),
-                    "apply exported workflow spec"
-                );
-                println!("applied exported spec action={:?}", apply.action);
-            }
-            Err(err) => println!("validate exported spec returned API error, continuing: {err:?}"),
+        if exported_plan.action != DeclarativePlanResponseAction::Noop {
+            return Err(format!(
+                "exported workflow spec planned unexpected action: {:?}",
+                exported_plan.action
+            ));
+        }
+        let exported_apply = api!(
+            client
+                .workflows()
+                .spec()
+                .apply(resources::workflow_spec::ApplyParams::new(exported_body)),
+            "apply exported workflow spec"
+        );
+        if exported_apply.action != DeclarativeApplyResponseAction::Noop {
+            return Err(format!(
+                "exported workflow spec applied unexpected action: {:?}",
+                exported_apply.action
+            ));
         }
 
-        match client
-            .workflows()
-            .publish(
-                &workflow.id,
+        let published = api!(
+            client.workflows().publish(
+                &workflow_id,
                 resources::workflows::PublishParams {
                     body: Some(PublishWorkflowRequest {
                         description: Some("Rust SDK live probe publication".to_string()),
                     }),
                 },
-            )
-            .await
-        {
-            Ok(published) => println!("published workflow {:?}", published.published),
-            Err(err) => println!("publish returned API error, continuing: {err:?}"),
+            ),
+            "publish workflow"
+        );
+        let published_version_id = published
+            .published
+            .and_then(|published| published.version_id)
+            .ok_or_else(|| "publish workflow returned no version id".to_string())?;
+        println!("published workflow {workflow_id} as {published_version_id}");
+
+        let mut fresh_run = CreateWorkflowRunRequest::new(&workflow_id);
+        fresh_run.version = Some("production".to_string());
+        fresh_run.json_inputs = Some(HashMap::from([(
+            start_json_id,
+            json!({
+                "invoice_id": format!("inv-rust-sdk-live-probe-{unique}"),
+                "line_items": [
+                    {"description": "warehouse handling", "amount": 120.0},
+                    {"description": "local delivery", "amount": 80.0}
+                ],
+                "tax_rate": 0.2,
+                "stated_total": 240.0
+            }),
+        )]));
+        let run = api!(
+            client
+                .workflows()
+                .runs()
+                .create(resources::workflow_runs::CreateParams::new(fresh_run)),
+            "create workflow run"
+        );
+        println!("created workflow run {}", run.id);
+        let got_run = api!(client.workflows().runs().get(&run.id), "get workflow run");
+        if got_run.id != run.id {
+            return Err("get workflow run returned wrong id".to_string());
         }
 
-        let mut fresh_run = CreateWorkflowRunRequest::new(&workflow.id);
-        fresh_run.version = Some("draft".to_string());
-        match client
-            .workflow_runs()
-            .create(resources::workflow_runs::CreateParams::new(fresh_run))
+        let mut runs_page = api!(
+            client
+                .workflows()
+                .runs()
+                .list(resources::workflow_runs::ListParams {
+                    workflow_id: Some(workflow_id.clone()),
+                    limit: Some(1),
+                    ..Default::default()
+                }),
+            "list workflow runs"
+        );
+        let _ = runs_page
+            .next()
             .await
-        {
-            Ok(run) => {
-                println!("created run {}", run.id);
-                let _ = api!(client.workflow_runs().get(&run.id), "get workflow run");
-                let cancel_body = CancelWorkflowRequest {
-                    command_id: Some(format!("rust-sdk-live-probe-{unique}")),
-                };
-                let _ = client
-                    .workflow_runs()
-                    .cancel(
-                        &run.id,
-                        resources::workflow_runs::CancelParams {
-                            body: Some(cancel_body),
-                        },
-                    )
-                    .await;
-            }
-            Err(err) => println!("run create returned API error, continuing: {err:?}"),
-        }
+            .transpose()
+            .map_err(|err| format!("stream workflow runs: {err:?}"))?;
 
         api!(
-            client.workflow_blocks().delete(
-                &note.id,
-                resources::workflow_blocks::DeleteParams {
-                    workflow_id: Some(workflow.id.clone()),
-                },
-            ),
-            "delete note block"
+            client.workflows().runs().delete(&run.id),
+            "delete workflow run"
         );
 
         Ok(())
     })
     .await;
 
-    let delete_result = client.workflows().delete(&workflow.id).await;
+    let delete_result = client.workflows().delete(&workflow_id).await;
     if let Err(err) = delete_result {
         panic!("delete workflow cleanup failed: {err:?}");
     }

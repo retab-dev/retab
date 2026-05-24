@@ -17,7 +17,7 @@ class WorkflowReviewsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_review');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviews()->list(workflowId: 'test_value', runId: 'test_value', blockId: 'test_value', stepId: 'test_value', iterationKey: 'test_value', decisionStatus: \Retab\Resource\ReviewDecisionStatus::Pending, before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->reviews()->list(workflowId: 'test_value', runId: 'test_value', blockId: 'test_value', stepId: 'test_value', iterationKey: 'test_value', decisionStatus: \Retab\Resource\ReviewDecisionStatus::Pending, before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -38,7 +38,7 @@ class WorkflowReviewsTest extends TestCase
     {
         $fixture = $this->loadFixture('review');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviews()->get('test_review_id');
+        $result = $client->workflows()->reviews()->get('test_review_id');
         $this->assertInstanceOf(\Retab\Resource\Review::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -52,7 +52,7 @@ class WorkflowReviewsTest extends TestCase
     {
         $fixture = $this->loadFixture('submit_decision_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviews()->approve('test_review_id', versionId: 'test_value');
+        $result = $client->workflows()->reviews()->approve('test_review_id', versionId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\SubmitDecisionResponse::class, $result);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
@@ -66,7 +66,7 @@ class WorkflowReviewsTest extends TestCase
     {
         $fixture = $this->loadFixture('submit_decision_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviews()->reject('test_review_id', versionId: 'test_value', reason: 'test_value');
+        $result = $client->workflows()->reviews()->reject('test_review_id', versionId: 'test_value', reason: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\SubmitDecisionResponse::class, $result);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
@@ -84,7 +84,7 @@ class WorkflowReviewsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowReviews()->list();
+        $result = $client->workflows()->reviews()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

@@ -138,7 +138,7 @@ func TestSchemasGenerateLongDisambiguatesFormatVsOutput(t *testing.T) {
 	lowered := strings.ToLower(long)
 	hasWhich := strings.Contains(lowered, "which")
 	hasHow := strings.Contains(lowered, "how")
-	if !(hasWhich && hasHow) {
+	if !hasWhich || !hasHow {
 		t.Errorf("Long: text should explain --format selects WHICH payload and --output selects HOW to print:\n%s", long)
 	}
 }

@@ -25,20 +25,19 @@ namespace Retab
         /// ``run_id`` is optional; when omitted the list is scoped to the caller's
         /// organization.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="WorkflowRunStep"/> results.</returns>
-        public virtual async Task<PaginatedList<WorkflowRunStep>> ListAsync(string httpBearer, WorkflowStepsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<WorkflowRunStep>> ListAsync(WorkflowStepsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<WorkflowRunStep>("/v1/workflows/steps", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<WorkflowRunStep>("/v1/workflows/steps", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<WorkflowRunStep>> List(string httpBearer, WorkflowStepsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<WorkflowRunStep>> List(WorkflowStepsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -59,28 +58,19 @@ namespace Retab
         /// projections.
         /// </remarks>
         /// <param name="stepId">The step id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowRunStep"/> result.</returns>
-        public virtual async Task<WorkflowRunStep> GetAsync(string stepId, string httpBearer, WorkflowStepsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowRunStep> GetAsync(string stepId, WorkflowStepsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/workflows/steps/{Uri.EscapeDataString(stepId)}",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowRunStep>(request, cancellationToken);
+            return await this.GetAsync<WorkflowRunStep>($"/v1/workflows/steps/{Uri.EscapeDataString(stepId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<WorkflowRunStep> Get(string stepId, string httpBearer, WorkflowStepsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowRunStep> Get(string stepId, WorkflowStepsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(stepId, httpBearer, options, requestOptions, cancellationToken);
+            return this.GetAsync(stepId, options, requestOptions, cancellationToken);
         }
     }
 }

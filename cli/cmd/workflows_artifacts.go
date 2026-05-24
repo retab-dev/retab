@@ -81,7 +81,7 @@ derives the backing collection from the id prefix.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowArtifacts.Get(ctx, artifactID)
+		result, err := client.Workflows.Artifacts.Get(ctx, artifactID)
 		if err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ one. The two are mutually exclusive.`,
 		if blockID, _ := cmd.Flags().GetString("block-id"); blockID != "" {
 			params.BlockID = ptr(blockID)
 		}
-		result, err := client.WorkflowArtifacts.List(ctx, &params)
+		result, err := client.Workflows.Artifacts.List(ctx, &params)
 		if err != nil {
 			return err
 		}

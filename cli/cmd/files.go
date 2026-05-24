@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_files
+
 package cmd
 
 import (
@@ -259,7 +261,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return nil, fmt.Errorf("direct upload failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
@@ -537,7 +539,7 @@ truncates an existing file or leaves a half-written one behind.`,
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			body, _ := io.ReadAll(resp.Body)
 			return fmt.Errorf("download failed: %d %s", resp.StatusCode, string(body))

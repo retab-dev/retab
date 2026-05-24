@@ -363,7 +363,7 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -718,32 +718,6 @@ func (v *positiveIntFlagValue) Set(raw string) error {
 	}
 	if parsed <= 0 {
 		return fmt.Errorf("must be positive")
-	}
-	v.value = raw
-	return nil
-}
-
-type minIntFlagValue struct {
-	value string
-	min   int
-}
-
-func (v *minIntFlagValue) String() string {
-	if v.value == "" {
-		return "0"
-	}
-	return v.value
-}
-
-func (v *minIntFlagValue) Type() string { return "int" }
-
-func (v *minIntFlagValue) Set(raw string) error {
-	parsed, err := strconv.Atoi(raw)
-	if err != nil {
-		return err
-	}
-	if parsed < v.min {
-		return fmt.Errorf("must be at least %d", v.min)
 	}
 	v.value = raw
 	return nil
@@ -1316,7 +1290,9 @@ func confirmDestructive(cmd *cobra.Command, kind, id string) error {
 	if !ok || !term.IsTerminal(int(stdin.Fd())) {
 		return fmt.Errorf("refusing to delete %s %q without --yes (stdin is not a terminal)", kind, id)
 	}
-	fmt.Fprintf(cmd.ErrOrStderr(), "Permanently delete %s %s? Type the id to confirm: ", kind, id)
+	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Permanently delete %s %s? Type the id to confirm: ", kind, id); err != nil {
+		return err
+	}
 	answer, err := bufio.NewReader(stdin).ReadString('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("read confirmation: %w", err)

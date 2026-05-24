@@ -49,7 +49,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123"}
+    assert request.params == {"run_id": "run_123", "limit": 200}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -100,6 +100,7 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
         "run_id": "run_123",
         "operation": "conditional_evaluation",
         "block_id": "conditional-1",
+        "limit": 100,
     }
     assert len(artifacts) == 1
     assert artifacts[0].operation == "conditional_evaluation"
@@ -110,17 +111,20 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
 def test_workflow_artifacts_get_uses_flat_artifact_id_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "operation": "extraction",
-        "id": "ext_123",
+        "operation": "function_invocation",
+        "id": "func_123",
+        "workflow_run_id": "run_123",
+        "step_id": "function-1",
+        "created_at": "2026-03-12T10:00:00Z",
     }
 
-    artifact = WorkflowArtifacts(client=client).get("ext_123")
+    artifact = WorkflowArtifacts(client=client).get("func_123")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/artifacts/ext_123"
-    assert artifact.id == "ext_123"
-    assert artifact.operation == "extraction"
+    assert request.url == "/v1/workflows/artifacts/func_123"
+    assert artifact.id == "func_123"
+    assert artifact.operation == "function_invocation"
 
 
 @pytest.mark.asyncio
@@ -148,7 +152,7 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123"}
+    assert request.params == {"run_id": "run_123", "limit": 200}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -160,17 +164,20 @@ async def test_async_workflow_artifacts_get_uses_flat_artifact_id_route() -> Non
     client = MagicMock()
     client._prepared_request = AsyncMock(
         return_value={
-            "operation": "classification",
-            "id": "clss_123",
+            "operation": "function_invocation",
+            "id": "func_123",
+            "workflow_run_id": "run_123",
+            "step_id": "function-1",
+            "created_at": "2026-03-12T10:00:00Z",
         }
     )
 
-    artifact = await AsyncWorkflowArtifacts(client=client).get("clss_123")
+    artifact = await AsyncWorkflowArtifacts(client=client).get("func_123")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/artifacts/clss_123"
-    assert artifact.id == "clss_123"
+    assert request.url == "/v1/workflows/artifacts/func_123"
+    assert artifact.id == "func_123"
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:
@@ -320,7 +327,7 @@ def test_workflow_steps_list_with_block_ids_pushes_to_server() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123", "block_ids": ["extract-1"]}
+    assert request.params == {"run_id": "run_123", "block_ids": ["extract-1"], "limit": 200}
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
     assert result[0].artifact is not None
@@ -338,7 +345,7 @@ def test_workflow_steps_list_without_block_ids_omits_param() -> None:
     WorkflowSteps(client=client).list("run_123")
 
     request = client._prepared_request.call_args.args[0]
-    assert request.params == {"run_id": "run_123"}
+    assert request.params == {"run_id": "run_123", "limit": 200}
 
 
 def test_workflow_steps_list_block_ids_auto_paging_carries_filter() -> None:
@@ -389,12 +396,13 @@ def test_workflow_steps_list_block_ids_auto_paging_carries_filter() -> None:
     assert client._prepared_request.call_count == 2
     # Page 1 carries the filter alongside run_id.
     page1_request = client._prepared_request.call_args_list[0].args[0]
-    assert page1_request.params == {"run_id": "run_123", "block_ids": ["extract-1"]}
+    assert page1_request.params == {"run_id": "run_123", "block_ids": ["extract-1"], "limit": 200}
     # Page 2 must still carry the filter, plus the next-page cursor (after).
     page2_request = client._prepared_request.call_args_list[1].args[0]
     assert page2_request.params == {
         "run_id": "run_123",
         "block_ids": ["extract-1"],
+        "limit": 200,
         "after": "cursor_p2",
     }
 
@@ -405,10 +413,11 @@ def test_workflow_steps_get_requires_step_id() -> None:
 
     with pytest.raises(TypeError):
         steps.get()  # type: ignore[call-arg]
-    with pytest.raises(TypeError, match="step_id is required"):
-        steps.get("")  # type: ignore[arg-type]
 
     client._prepared_request.assert_not_called()
+
+    request = steps.prepare_get("")
+    assert request.url == "/v1/workflows/steps/"
 
 
 def test_workflow_steps_does_not_expose_removed_query_fetches() -> None:
@@ -474,6 +483,9 @@ def test_workflow_steps_get_uses_lifecycle_for_failed_step() -> None:
 def test_step_execution_response_has_no_compatibility_error_field() -> None:
     response = StepExecutionResponse.model_validate(
         {
+            "id": "sim_1",
+            "workflow_id": "wf_1",
+            "run_id": "run_1",
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",

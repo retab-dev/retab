@@ -54,6 +54,7 @@ class WorkflowExportPayloadRequestTriggerTypes(str, Enum):
     API = "api"
     SCHEDULE = "schedule"
     WEBHOOK = "webhook"
+    EMAIL = "email"
     RESTART = "restart"
 
 
@@ -123,6 +124,16 @@ class CreateWorkflowRunRequest(BaseModel):
     version: str | None = Field(
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
     )
+
+
+class EmailTrigger(BaseModel):
+    """Run started by an inbound email."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["email"] = Field(default="email")
+    sender: str | None = Field(default="", description="Sender email address, when known")
+    subject: str | None = Field(default=None, description="Email subject, when known")
 
 
 class ErrorDetails(BaseModel):
@@ -285,7 +296,7 @@ class WorkflowRun(BaseModel):
 
     id: str = Field(..., description="Unique ID for this run")
     workflow: WorkflowSnapshotRef = Field(..., description="Workflow + version reference")
-    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | RestartTrigger = Field(..., description="What started this run", discriminator="type")
+    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., description="What started this run", discriminator="type")
     lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal | None = Field(
         default=None, description="Discriminated lifecycle state.", discriminator="status"
     )
@@ -320,6 +331,7 @@ CancelWorkflowResponse.model_rebuild()
 CancelledTerminal.model_rebuild()
 CompletedTerminal.model_rebuild()
 CreateWorkflowRunRequest.model_rebuild()
+EmailTrigger.model_rebuild()
 ErrorDetails.model_rebuild()
 ErrorTerminal.model_rebuild()
 ManualTrigger.model_rebuild()

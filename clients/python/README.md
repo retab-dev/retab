@@ -60,7 +60,7 @@ client = Retab()
 validation = client.workflows.spec.validate(yaml_definition)
 plan = client.workflows.spec.plan(yaml_definition)
 result = client.workflows.spec.apply(yaml_definition)
-exported = client.workflows.spec.export(result.workflow_id)
+exported = client.workflows.spec.get(result.workflow_id)
 ```
 
 A declarative spec uses `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
@@ -84,12 +84,22 @@ attempts. Review decisions live on the review queue APIs; artifact records are
 for inspecting why a branch or gate fired.
 
 ```python
-run = client.workflows.runs.create_and_wait(
+import time
+
+run = client.workflows.runs.create(
     workflow_id="workflow_abc123",
     documents={"start_document-node": "invoice.pdf"},
 )
 
-step = client.workflows.steps.get(run.id, "review-node")
+while run.lifecycle.status not in {"completed", "error", "failed", "cancelled"}:
+    time.sleep(1)
+    run = client.workflows.runs.get(run.id)
+
+steps = client.workflows.steps.list(run_id=run.id)
+review_step = next((step for step in steps if step.block_id == "review-node"), None)
+if review_step is not None:
+    step = client.workflows.steps.get(review_step.step_id, run_id=run.id)
+
 all_artifacts = client.workflows.artifacts.list(run.id)
 ```
 
