@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_schemas
+
 package cmd
 
 import (

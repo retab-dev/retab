@@ -13,7 +13,7 @@ Retab supports:
 - Workflows: saved multi-step pipelines that can combine primitives, custom logic, branches, loops, API calls, and review steps
 - review-based: workflow runs can pause at review steps and resume after a human decision
 - Consensus: run multiple passes and reconcile results when accuracy matters more than latency
-- SDKs and REST APIs for Python, Node, Go, and direct HTTP usage
+- SDKs and REST APIs for Python, Node, Go, Ruby, PHP, .NET, Rust, and direct HTTP usage
 - MCP access so AI agents can inspect and operate Retab through a tool server
 
 Before implementing, install the relevant Retab tools, then read the docs.
@@ -37,6 +37,18 @@ npm install @retab/node
 
 # Go SDK
 go get github.com/retab-dev/retab/clients/go
+
+# Ruby SDK
+gem install retab
+
+# PHP SDK
+composer require retab/retab
+
+# .NET SDK
+dotnet add package Retab
+
+# Rust SDK
+cargo add retab
 ```
 
 MCP:

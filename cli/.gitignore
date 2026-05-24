@@ -2,3 +2,10 @@
 /dist/
 *.test
 *.out
+
+# Temporary oagen CLI emitter prototype outputs.
+# Remove these ignores when generated CLI command files are ready to be
+# committed as source artifacts.
+/cmd/zz_oagen_*.go
+/cmd/.oagen-cli-manifest.json
+/cmd/retab-cli-command-plan.json

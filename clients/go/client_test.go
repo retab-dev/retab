@@ -156,7 +156,7 @@ func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 		"POST /v1/workflows/spec/validate",
 		"POST /v1/workflows/spec/plan",
 		"POST /v1/workflows/spec/apply",
-		"GET /v1/workflows/wf_123/spec",
+		"GET /v1/workflows/spec/wf_123",
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
 		t.Fatalf("requests = %#v", requests)
