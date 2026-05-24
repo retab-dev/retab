@@ -4,6 +4,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.mime import MIMEData
 
 
 class GenerateSchemaRequestReasoningEffort(str, Enum):
@@ -96,7 +97,7 @@ class JobsSource(str, Enum):
 class GenerateSchemaRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    documents: list[MimeDataInput]
+    documents: list[MIMEData]
     model: str | None = Field(default="retab-small")
     reasoning_effort: GenerateSchemaRequestReasoningEffort | None = Field(default=cast(GenerateSchemaRequestReasoningEffort, "minimal"))
     instructions: str | None = None
@@ -108,13 +109,6 @@ class HttpValidationError(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     detail: list[ValidationError] | None = None
-
-
-class MimeDataInput(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    filename: str = Field(..., description="The filename of the file")
-    url: str = Field(..., description="The URL of the file in base64 format")
 
 
 class PartialSchema(BaseModel):
@@ -143,6 +137,5 @@ class ValidationError(BaseModel):
 # generated module via a TYPE_CHECKING-guarded import.
 GenerateSchemaRequest.model_rebuild()
 HttpValidationError.model_rebuild()
-MimeDataInput.model_rebuild()
 PartialSchema.model_rebuild()
 ValidationError.model_rebuild()

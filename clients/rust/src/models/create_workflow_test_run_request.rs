@@ -5,26 +5,21 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Request body for POST /v1/workflows/tests/runs. Use exactly one of the single-test, target, or all-tests shapes.
+/// Request body for POST /v1/workflows/tests/runs. Provide a workflow_id and optionally narrow execution with scope.type single or block. Omit scope, or pass scope.type workflow, to run every saved workflow test.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum CreateWorkflowTestRunRequest {
-    CreateWorkflowTestRunForTestRequest(Box<CreateWorkflowTestRunForTestRequest>),
-    CreateWorkflowTestRunForTargetRequest(Box<CreateWorkflowTestRunForTargetRequest>),
-    CreateWorkflowTestRunAllRequest(Box<CreateWorkflowTestRunAllRequest>),
+pub struct CreateWorkflowTestRunRequest {
+    pub workflow_id: String,
+    /// Optional execution scope. Omit to run every saved test in the workflow.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub scope: Option<CreateWorkflowTestRunRequestScopeOneOf>,
 }
-impl From<CreateWorkflowTestRunForTestRequest> for CreateWorkflowTestRunRequest {
-    fn from(v: CreateWorkflowTestRunForTestRequest) -> Self {
-        CreateWorkflowTestRunRequest::CreateWorkflowTestRunForTestRequest(Box::new(v))
-    }
-}
-impl From<CreateWorkflowTestRunForTargetRequest> for CreateWorkflowTestRunRequest {
-    fn from(v: CreateWorkflowTestRunForTargetRequest) -> Self {
-        CreateWorkflowTestRunRequest::CreateWorkflowTestRunForTargetRequest(Box::new(v))
-    }
-}
-impl From<CreateWorkflowTestRunAllRequest> for CreateWorkflowTestRunRequest {
-    fn from(v: CreateWorkflowTestRunAllRequest) -> Self {
-        CreateWorkflowTestRunRequest::CreateWorkflowTestRunAllRequest(Box::new(v))
+impl CreateWorkflowTestRunRequest {
+    /// Construct a new `CreateWorkflowTestRunRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            scope: Default::default(),
+        }
     }
 }

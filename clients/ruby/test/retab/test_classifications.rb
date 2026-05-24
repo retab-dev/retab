@@ -21,7 +21,9 @@ class ClassificationsTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/classifications(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.classifications.create(document: {}, categories: [{}])
+    result = @client
+      .classifications
+      .create(document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, categories: [{}])
     refute_nil(result)
   end
 
@@ -46,7 +48,7 @@ class ClassificationsTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/classifications(\?|\z)},
-      args: {document: {}, categories: [{}]}
+      args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, categories: [{}]}
     },
     {
       name: :get,

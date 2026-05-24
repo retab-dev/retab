@@ -21,7 +21,13 @@ class EditTemplatesTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/edits/templates(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.edit_templates.create(name: "stub", document: {}, form_fields: [{}])
+    result = @client
+      .edit_templates
+      .create(
+        name: "stub",
+        document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="},
+        form_fields: [{}]
+      )
     refute_nil(result)
   end
 
@@ -53,7 +59,11 @@ class EditTemplatesTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/edits/templates(\?|\z)},
-      args: {name: "stub", document: {}, form_fields: [{}]}
+      args: {
+        name: "stub",
+        document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="},
+        form_fields: [{}]
+      }
     },
     {
       name: :get,

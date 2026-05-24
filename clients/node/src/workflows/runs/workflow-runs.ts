@@ -2,13 +2,12 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
+import { coerceMimeData, type DocumentInput } from '../../runtime/mime.js';
 import type {
   WorkflowRunsExcludeStatus,
   WorkflowRunsStatus,
   WorkflowRunsTriggerType,
 } from '../../common/interfaces/index.js';
-import type { FileRef } from '../../extractions/interfaces/index.js';
-import type { MimeDataInput } from '../../schemas/interfaces/index.js';
 import type {
   CancelWorkflowResponse,
   CancelWorkflowResponseResponse,
@@ -77,13 +76,14 @@ export class WorkflowRuns {
   /** Create Workflow Run Route */
   async create(
     workflowId: string,
-    documents?: Record<string, FileRef | MimeDataInput>,
+    documents?: DocumentInput,
     jsonInputs?: Record<string, unknown>,
     version?: string
   ): Promise<WorkflowRun> {
+    const documentsCoerced = documents === undefined ? undefined : await coerceMimeData(documents);
     const body = {
       workflow_id: workflowId,
-      documents: documents,
+      documents: documentsCoerced,
       json_inputs: jsonInputs,
       version: version,
     };

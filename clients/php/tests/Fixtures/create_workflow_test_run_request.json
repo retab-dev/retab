@@ -1,1 +1,7 @@
-{}
+{
+  "workflow_id": "workflow_id_01234",
+  "scope": {
+    "type": "single",
+    "test_id": "test_id_01234"
+  }
+}

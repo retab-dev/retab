@@ -11,18 +11,15 @@ import {
 } from '../../workflows/artifacts/interfaces/edit-config.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type {
-  MimeDataInput,
-  MimeDataInputResponse,
-} from '../../schemas/interfaces/mime-data-input.interface.js';
-import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
+import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
 
 /** Public create-edit request body. */
 export interface EditRequest {
   /** Instructions describing how to fill the form fields. */
   instructions: string;
   /** Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id. */
-  document?: (MimeDataInput | FileRef) | null;
+  document?: (MIMEData | FileRef) | null;
   /** EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document. */
   templateId?: string | null;
   /**
@@ -41,7 +38,7 @@ export interface EditRequest {
 
 export interface EditRequestResponse {
   instructions: string;
-  document?: (MimeDataInputResponse | FileRefResponse) | null;
+  document?: (MIMEDataResponse | FileRefResponse) | null;
   template_id?: string | null;
   model?: string;
   config?: EditConfigResponse;
@@ -50,7 +47,7 @@ export interface EditRequestResponse {
 
 export const ZEditRequest = z.object({
   instructions: z.string(),
-  document: z.union([ZMimeDataInput, ZFileRef]).nullable().optional(),
+  document: z.union([ZMIMEData, ZFileRef]).nullable().optional(),
   templateId: z.string().nullable().optional(),
   model: z.string().optional(),
   config: ZEditConfig.optional(),
@@ -65,7 +62,7 @@ export function deserializeEditRequest(wire: EditRequestResponse): EditRequest {
         ? (wire['document'] as undefined)
         : wire['document'] == null
           ? wire['document']
-          : (wire['document'] as unknown as MimeDataInput | FileRef),
+          : (wire['document'] as unknown as MIMEData | FileRef),
     templateId: wire['template_id'],
     model: wire['model'],
     config:

@@ -2,14 +2,13 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
+import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type {
   Extraction,
   ExtractionResponse,
-  FileRef,
   SourcesResponse,
   SourcesResponseResponse,
 } from '../extractions/interfaces/index.js';
-import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import {
   deserializeExtraction,
   deserializeSourcesResponse,
@@ -54,7 +53,7 @@ export class Extractions {
 
   /** Create Extraction */
   async create(
-    document: MimeDataInput | FileRef,
+    document: DocumentInput,
     jsonSchema: Record<string, unknown>,
     model?: string,
     imageResolutionDpi?: number,
@@ -66,8 +65,9 @@ export class Extractions {
     stream?: boolean,
     chunkingKeys?: Record<string, string> | null
   ): Promise<Extraction> {
+    const documentCoerced = await coerceMimeData(document);
     const body = {
-      document: document,
+      document: documentCoerced,
       json_schema: jsonSchema,
       model: model,
       image_resolution_dpi: imageResolutionDpi,

@@ -269,7 +269,7 @@ to ` + "`retab edits create`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		document, err := mimeDataInputFromDocument(doc)
+		document, err := mimeDataFromDocument(doc)
 		if err != nil {
 			return err
 		}

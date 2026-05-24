@@ -21,7 +21,9 @@ class ExtractionsTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/extractions(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.extractions.create(document: {}, json_schema: {})
+    result = @client
+      .extractions
+      .create(document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, json_schema: {})
     refute_nil(result)
   end
 
@@ -53,7 +55,7 @@ class ExtractionsTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/extractions(\?|\z)},
-      args: {document: {}, json_schema: {}}
+      args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, json_schema: {}}
     },
     {
       name: :get,

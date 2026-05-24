@@ -4,10 +4,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use futures_util::StreamExt;
 use retab::enums::{UpdateWorkflowBlockRequestConfigMode, WorkflowBlockCreateRequestType};
 use retab::models::{
-    CancelWorkflowRequest, CreateFreshWorkflowRunRequest, CreateWorkflowRequest,
-    CreateWorkflowRunRequest, DeclarativeWorkflowRequest, PublishWorkflowRequest,
-    UpdateWorkflowBlockRequest, UpdateWorkflowRequest, WorkflowBlockCreateRequest,
-    WorkflowEdgeCreateRequest, WorkflowGraphDiagnosisRequest,
+    CancelWorkflowRequest, CreateWorkflowRequest, CreateWorkflowRunRequest,
+    DeclarativeWorkflowRequest, PublishWorkflowRequest, UpdateWorkflowBlockRequest,
+    UpdateWorkflowRequest, WorkflowBlockCreateRequest, WorkflowEdgeCreateRequest,
 };
 use retab::resources;
 use retab::Retab;
@@ -167,14 +166,6 @@ async fn exercise_workflow_system_live() {
             }
         }
 
-        let _diagnosis = api!(
-            client.workflows().diagnose(
-                &workflow.id,
-                resources::workflows::DiagnoseParams::new(WorkflowGraphDiagnosisRequest::default()),
-            ),
-            "diagnose persisted workflow"
-        );
-
         let exported_spec = api!(
             client.workflow_specs().get(&workflow.id),
             "export workflow spec"
@@ -238,13 +229,11 @@ async fn exercise_workflow_system_live() {
             Err(err) => println!("publish returned API error, continuing: {err:?}"),
         }
 
-        let mut fresh_run = CreateFreshWorkflowRunRequest::new(&workflow.id);
+        let mut fresh_run = CreateWorkflowRunRequest::new(&workflow.id);
         fresh_run.version = Some("draft".to_string());
         match client
             .workflow_runs()
-            .create(resources::workflow_runs::CreateParams::new(
-                CreateWorkflowRunRequest::from(fresh_run),
-            ))
+            .create(resources::workflow_runs::CreateParams::new(fresh_run))
             .await
         {
             Ok(run) => {

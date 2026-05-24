@@ -4,7 +4,10 @@ import type { Retab } from '../../../retab.js';
 import { PaginatedList } from '../../../_pagination.js';
 import type {
   WorkflowTestRun,
+  WorkflowTestRunBlockScope,
   WorkflowTestRunResponse,
+  WorkflowTestRunSingleScope,
+  WorkflowTestRunWorkflowScope,
 } from '../../../workflows/tests/runs/interfaces/index.js';
 import { deserializeWorkflowTestRun } from '../../../workflows/tests/runs/interfaces/index.js';
 
@@ -54,7 +57,14 @@ export class WorkflowTestRuns {
   }
 
   /** Create Test Run */
-  async create(body: unknown): Promise<WorkflowTestRun> {
+  async create(
+    workflowId: string,
+    scope?: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope
+  ): Promise<WorkflowTestRun> {
+    const body = {
+      workflow_id: workflowId,
+      scope: scope,
+    };
     const __wire = await this.client.request<WorkflowTestRunResponse>({
       method: 'POST',
       path: '/v1/workflows/tests/runs',

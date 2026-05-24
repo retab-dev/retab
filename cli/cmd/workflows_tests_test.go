@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -79,6 +80,91 @@ func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	}
 	if !strings.Contains(stdout, `"id": "wfresult_123"`) {
 		t.Fatalf("expected stdout to contain result id, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsTestsRunsCreateSendsScopedBody(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	if err := os.WriteFile(targetPath, []byte(`{"type":"block","block_id":"extract_1"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name     string
+		flags    map[string]string
+		wantBody map[string]any
+	}{
+		{
+			name:  "workflow scope",
+			flags: map[string]string{},
+			wantBody: map[string]any{
+				"workflow_id": "wf_123",
+			},
+		},
+		{
+			name: "single scope",
+			flags: map[string]string{
+				"test-id": "wfnodetest_123",
+			},
+			wantBody: map[string]any{
+				"workflow_id": "wf_123",
+				"scope": map[string]any{
+					"type":    "single",
+					"test_id": "wfnodetest_123",
+				},
+			},
+		},
+		{
+			name: "block scope",
+			flags: map[string]string{
+				"target-file": targetPath,
+			},
+			wantBody: map[string]any{
+				"workflow_id": "wf_123",
+				"scope": map[string]any{
+					"type":     "block",
+					"block_id": "extract_1",
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotBody map[string]any
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests/runs" {
+					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+				}
+				if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+					t.Fatalf("decode body: %v", err)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"id":"wftestrun_123"}`))
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			for name, value := range tc.flags {
+				if err := workflowsTestsRunsCreateCmd.Flags().Set(name, value); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { _ = workflowsTestsRunsCreateCmd.Flags().Set(name, "") })
+			}
+
+			var err error
+			captureStd(t, func() {
+				err = workflowsTestsRunsCreateCmd.RunE(workflowsTestsRunsCreateCmd, []string{"wf_123"})
+			})
+			if err != nil {
+				t.Fatalf("runs create: %v", err)
+			}
+			if !reflect.DeepEqual(gotBody, tc.wantBody) {
+				t.Fatalf("body = %#v, want %#v", gotBody, tc.wantBody)
+			}
+		})
 	}
 }
 
@@ -255,15 +341,10 @@ func TestWorkflowsTestsCreateCmd_NoCobraAutoDeprecation(t *testing.T) {
 	cmd.Flags().Lookup("workflow-id").Changed = false
 }
 
-func TestWorkflowsTestsRunsCreateRejectsUnsupportedConsensusLocally(t *testing.T) {
-	err := workflowsTestsRunsCreateCmd.Flags().Set("n-consensus", "2")
-	if err == nil {
-		t.Fatal("expected local parse error for --n-consensus=2")
+func TestWorkflowsTestsRunsCreateDoesNotExposeConsensusOverride(t *testing.T) {
+	if flag := workflowsTestsRunsCreateCmd.Flags().Lookup("n-consensus"); flag != nil {
+		t.Fatalf("runs create should not expose unsupported --n-consensus flag")
 	}
-	if !strings.Contains(err.Error(), "3, 5, or 7") {
-		t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
-	}
-	resetConsensusFlag(t, workflowsTestsRunsCreateCmd)
 }
 
 // Regression for CLI probing 2026-05: `workflows tests runs list`

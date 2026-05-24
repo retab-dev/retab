@@ -31,15 +31,36 @@ type EditTemplatesCreateParams struct {
 	// Name is name of the template.
 	Name string `json:"name" url:"-"`
 	// Document is the PDF document to use as the empty template.
-	Document MIMEDataInput `json:"document" url:"-"`
+	Document any `json:"document" url:"-"`
 	// FormFields is form fields to attach to the template.
 	FormFields []*FormField `json:"form_fields" url:"-"`
 }
 
 // Create template
 func (s *EditTemplateService) Create(ctx context.Context, params *EditTemplatesCreateParams, opts ...RequestOption) (*EditTemplate, error) {
+	type createWireBody struct {
+		Name       string       `json:"name"`
+		Document   *MIMEData    `json:"document"`
+		FormFields []*FormField `json:"form_fields"`
+	}
+	if params == nil {
+		return nil, fmt.Errorf("retab: params is required")
+	}
+	var coercedDocument *MIMEData
+	if params.Document != nil {
+		mime, err := InferMIMEData(params.Document)
+		if err != nil {
+			return nil, fmt.Errorf("retab: invalid document: %w", err)
+		}
+		coercedDocument = &mime
+	}
+	body := createWireBody{
+		Name:       params.Name,
+		Document:   coercedDocument,
+		FormFields: params.FormFields,
+	}
 	var result EditTemplate
-	_, err := s.client.request(ctx, "POST", "/v1/edits/templates", nil, params, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/edits/templates", nil, body, &result, opts)
 	if err != nil {
 		return nil, err
 	}

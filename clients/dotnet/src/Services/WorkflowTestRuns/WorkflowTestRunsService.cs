@@ -46,8 +46,8 @@ namespace Retab
         /// <summary>Create Test Run</summary>
         /// <remarks>
         /// Create a workflow-scoped test run.
-        /// Scoping identity comes from the body — ``workflow_id`` and/or
-        /// ``test_id`` per ``CreateWorkflowTestRunRequest``.
+        /// ``workflow_id`` is the execution context. Optional ``scope`` narrows the
+        /// run to one saved test or one block; omitted scope runs all workflow tests.
         /// </remarks>
         /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>

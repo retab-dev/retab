@@ -35,7 +35,7 @@ module Retab
     sig do
       params(
         workflow_id: String,
-        documents: T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeDataInput)]),
+        documents: T.nilable(T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped])),
         json_inputs: T.nilable(T::Hash[String, T.untyped]),
         version: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]

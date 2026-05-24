@@ -275,13 +275,13 @@ impl From<CancelledWorkflowExperimentRun> for CancelWorkflowExperimentRunRespons
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ClassificationRequestDocumentOneOf {
-    MimeDataInput(Box<MimeDataInput>),
+    MimeData(Box<MimeData>),
     FileRef(Box<FileRef>),
 }
 
-impl From<MimeDataInput> for ClassificationRequestDocumentOneOf {
-    fn from(v: MimeDataInput) -> Self {
-        ClassificationRequestDocumentOneOf::MimeDataInput(Box::new(v))
+impl From<MimeData> for ClassificationRequestDocumentOneOf {
+    fn from(v: MimeData) -> Self {
+        ClassificationRequestDocumentOneOf::MimeData(Box::new(v))
     }
 }
 
@@ -295,7 +295,7 @@ impl From<FileRef> for ClassificationRequestDocumentOneOf {
 #[serde(untagged)]
 pub enum CreateWorkflowRunRequestDocumentsOneOf {
     FileRef(Box<FileRef>),
-    MimeDataInput(Box<MimeDataInput>),
+    MimeData(Box<MimeData>),
 }
 
 impl From<FileRef> for CreateWorkflowRunRequestDocumentsOneOf {
@@ -304,9 +304,9 @@ impl From<FileRef> for CreateWorkflowRunRequestDocumentsOneOf {
     }
 }
 
-impl From<MimeDataInput> for CreateWorkflowRunRequestDocumentsOneOf {
-    fn from(v: MimeDataInput) -> Self {
-        CreateWorkflowRunRequestDocumentsOneOf::MimeDataInput(Box::new(v))
+impl From<MimeData> for CreateWorkflowRunRequestDocumentsOneOf {
+    fn from(v: MimeData) -> Self {
+        CreateWorkflowRunRequestDocumentsOneOf::MimeData(Box::new(v))
     }
 }
 
@@ -328,6 +328,35 @@ impl From<ManualWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
 impl From<RunStepWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
     fn from(v: RunStepWorkflowTestSource) -> Self {
         CreateWorkflowTestRequestSourceOneOf::RunStepWorkflowTestSource(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CreateWorkflowTestRunRequestScopeOneOf {
+    #[serde(rename = "single")]
+    WorkflowTestRunSingleScope(Box<WorkflowTestRunSingleScope>),
+    #[serde(rename = "workflow")]
+    WorkflowTestRunWorkflowScope(Box<WorkflowTestRunWorkflowScope>),
+    #[serde(rename = "block")]
+    WorkflowTestRunBlockScope(Box<WorkflowTestRunBlockScope>),
+}
+
+impl From<WorkflowTestRunSingleScope> for CreateWorkflowTestRunRequestScopeOneOf {
+    fn from(v: WorkflowTestRunSingleScope) -> Self {
+        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunSingleScope(Box::new(v))
+    }
+}
+
+impl From<WorkflowTestRunWorkflowScope> for CreateWorkflowTestRunRequestScopeOneOf {
+    fn from(v: WorkflowTestRunWorkflowScope) -> Self {
+        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunWorkflowScope(Box::new(v))
+    }
+}
+
+impl From<WorkflowTestRunBlockScope> for CreateWorkflowTestRunRequestScopeOneOf {
+    fn from(v: WorkflowTestRunBlockScope) -> Self {
+        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunBlockScope(Box::new(v))
     }
 }
 

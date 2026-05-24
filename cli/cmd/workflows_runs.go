@@ -859,10 +859,11 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 		}
 		if sourceRun.Inputs != nil {
 			if sourceRun.Inputs.Documents != nil {
-				params.Documents = map[string]interface{}{}
+				documents := map[string]interface{}{}
 				for key, value := range sourceRun.Inputs.Documents {
-					params.Documents[key] = value
+					documents[key] = value
 				}
+				params.Documents = documents
 			}
 			if sourceRun.Inputs.JSONData != nil {
 				params.JSONInputs = sourceRun.Inputs.JSONData

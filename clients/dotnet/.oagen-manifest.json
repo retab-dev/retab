@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-24T13:18:25.722Z",
+  "generatedAt": "2026-05-24T14:18:02.129Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -208,7 +208,10 @@
     "src/Entities/WorkflowTestBlockTarget.cs",
     "src/Entities/WorkflowTestResult.cs",
     "src/Entities/WorkflowTestRun.cs",
+    "src/Entities/WorkflowTestRunBlockScope.cs",
+    "src/Entities/WorkflowTestRunSingleScope.cs",
     "src/Entities/WorkflowTestRunTiming.cs",
+    "src/Entities/WorkflowTestRunWorkflowScope.cs",
     "src/Enums/ActorKind.cs",
     "src/Enums/AssertionDriftStatus.cs",
     "src/Enums/AssertionOutcome.cs",

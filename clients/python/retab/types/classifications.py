@@ -4,8 +4,7 @@ from __future__ import annotations
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef
-from retab.types.schemas import MimeDataInput
+from retab.types.mime import FileRef, MIMEData
 
 
 class Category(BaseModel):
@@ -50,7 +49,7 @@ class ClassificationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    document: MimeDataInput | FileRef = Field(..., description="The document to classify")
+    document: MIMEData | FileRef = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str | None = Field(default="retab-small", description="The model to use for classification")
     first_n_pages: int | None = Field(

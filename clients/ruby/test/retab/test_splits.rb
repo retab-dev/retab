@@ -21,7 +21,9 @@ class SplitsTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/splits(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.splits.create(document: {}, subdocuments: [{}])
+    result = @client
+      .splits
+      .create(document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, subdocuments: [{}])
     refute_nil(result)
   end
 
@@ -46,7 +48,7 @@ class SplitsTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/splits(\?|\z)},
-      args: {document: {}, subdocuments: [{}]}
+      args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, subdocuments: [{}]}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
     {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}}

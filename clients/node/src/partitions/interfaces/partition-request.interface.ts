@@ -3,16 +3,13 @@
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type {
-  MimeDataInput,
-  MimeDataInputResponse,
-} from '../../schemas/interfaces/mime-data-input.interface.js';
-import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
+import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
 
 /** Public create-partition request body. */
 export interface PartitionRequest {
   /** The document to partition */
-  document: MimeDataInput | FileRef;
+  document: MIMEData | FileRef;
   /** The key to partition the document by */
   key: string;
   /** Instructions describing how the document should be partitioned */
@@ -40,7 +37,7 @@ export interface PartitionRequest {
 }
 
 export interface PartitionRequestResponse {
-  document: MimeDataInputResponse | FileRefResponse;
+  document: MIMEDataResponse | FileRefResponse;
   key: string;
   instructions: string;
   model?: string;
@@ -50,7 +47,7 @@ export interface PartitionRequestResponse {
 }
 
 export const ZPartitionRequest = z.object({
-  document: z.union([ZMimeDataInput, ZFileRef]),
+  document: z.union([ZMIMEData, ZFileRef]),
   key: z.string(),
   instructions: z.string(),
   model: z.string().optional(),
@@ -61,7 +58,7 @@ export const ZPartitionRequest = z.object({
 
 export function deserializePartitionRequest(wire: PartitionRequestResponse): PartitionRequest {
   return {
-    document: wire['document'] as unknown as MimeDataInput | FileRef,
+    document: wire['document'] as unknown as MIMEData | FileRef,
     key: wire['key'],
     instructions: wire['instructions'],
     model: wire['model'],

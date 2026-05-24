@@ -3,8 +3,11 @@
 import { z } from 'zod';
 import type { FormField, FormFieldResponse } from './form-field.interface.js';
 import { ZFormField, deserializeFormField } from './form-field.interface.js';
-import type { MIMEData, MIMEDataResponse } from '../../../files/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../../files/interfaces/mime-data.interface.js';
+import type {
+  MIMEData,
+  MIMEDataResponse,
+} from '../../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData, deserializeMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
 
 export interface EditResult {
   /** Filled form fields (positions, descriptions, and filled values). */

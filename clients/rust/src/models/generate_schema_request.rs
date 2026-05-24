@@ -7,7 +7,7 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerateSchemaRequest {
-    pub documents: Vec<MimeDataInput>,
+    pub documents: Vec<MimeData>,
     /// Defaults to `retab-small`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
@@ -28,7 +28,7 @@ pub struct GenerateSchemaRequest {
 impl GenerateSchemaRequest {
     /// Construct a new `GenerateSchemaRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(documents: Vec<MimeDataInput>) -> Self {
+    pub fn new(documents: Vec<MimeData>) -> Self {
         Self {
             documents,
             model: Default::default(),

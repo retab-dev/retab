@@ -5,21 +5,21 @@
 # typed: strong
 
 module Retab
-  class MimeDataInput
+  class WorkflowTestRunSingleScope
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
     sig { returns(String) }
-    def filename; end
+    def type; end
 
     sig { params(value: String).returns(String) }
-    def filename=(value); end
+    def type=(value); end
 
     sig { returns(String) }
-    def url; end
+    def test_id; end
 
     sig { params(value: String).returns(String) }
-    def url=(value); end
+    def test_id=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end

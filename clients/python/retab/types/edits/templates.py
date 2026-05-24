@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.mime import FileRef
-from retab.types.schemas import MimeDataInput
+from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.artifacts import FormField
 
 
@@ -14,7 +13,7 @@ class CreateEditTemplateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     name: str = Field(..., description="Name of the template.")
-    document: MimeDataInput = Field(..., description="The PDF document to use as the empty template.")
+    document: MIMEData = Field(..., description="The PDF document to use as the empty template.")
     form_fields: list[FormField] = Field(..., description="Form fields to attach to the template.")
 
 

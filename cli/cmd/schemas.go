@@ -77,7 +77,7 @@ alongside your code.
 		if format != "" && format != "schema" && format != "json" {
 			return fmt.Errorf("invalid --format value %q (want: schema | json)", format)
 		}
-		documents := []*retab.MIMEDataInput{}
+		documents := []retab.MIMEData{}
 		files, _ := cmd.Flags().GetStringArray("file")
 		urls, _ := cmd.Flags().GetStringArray("url")
 		fileIDs, _ := cmd.Flags().GetStringArray("file-id")
@@ -89,11 +89,11 @@ alongside your code.
 				return fmt.Errorf("--documents-file: %w", err)
 			}
 			for _, raw := range arr {
-				document, err := mimeDataInputFromDocument(raw)
+				document, err := mimeDataFromDocument(raw)
 				if err != nil {
 					return fmt.Errorf("--documents-file: %w", err)
 				}
-				documents = append(documents, &document)
+				documents = append(documents, document)
 			}
 		}
 		for _, path := range files {
@@ -101,7 +101,7 @@ alongside your code.
 			if err != nil {
 				return err
 			}
-			documents = append(documents, &retab.MIMEDataInput{
+			documents = append(documents, retab.MIMEData{
 				Filename: mime.Filename,
 				URL:      mime.URL,
 			})
@@ -113,7 +113,7 @@ alongside your code.
 			// Server requires `filename` on every doc descriptor — derive
 			// from the URL path, same shape as resolveDocument does in
 			// common.go for the single-document commands.
-			documents = append(documents, &retab.MIMEDataInput{
+			documents = append(documents, retab.MIMEData{
 				Filename: filenameFromURL(u),
 				URL:      u,
 			})
@@ -139,7 +139,7 @@ alongside your code.
 			if filename == "" {
 				filename = "document"
 			}
-			documents = append(documents, &retab.MIMEDataInput{
+			documents = append(documents, retab.MIMEData{
 				Filename: filename,
 				URL:      link.DownloadURL,
 			})

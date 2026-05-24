@@ -2,8 +2,8 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
+import { coerceMimeData, type DocumentInput } from '../../runtime/mime.js';
 import type { EditTemplate, EditTemplateResponse } from '../../edits/templates/interfaces/index.js';
-import type { MimeDataInput } from '../../schemas/interfaces/index.js';
 import type { FormField } from '../../workflows/artifacts/interfaces/index.js';
 import { deserializeEditTemplate } from '../../edits/templates/interfaces/index.js';
 
@@ -37,12 +37,13 @@ export class EditTemplates {
   /** Create Template */
   async create(
     name: string,
-    document: MimeDataInput,
+    document: DocumentInput,
     formFields: FormField[]
   ): Promise<EditTemplate> {
+    const documentCoerced = await coerceMimeData(document);
     const body = {
       name: name,
-      document: document,
+      document: documentCoerced,
       form_fields: formFields,
     };
     const __wire = await this.client.request<EditTemplateResponse>({

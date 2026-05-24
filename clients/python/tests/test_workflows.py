@@ -818,10 +818,10 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.method == "GET"
     assert request.url == "/v1/workflows/runs"
     assert request.params["workflow_id"] == "wf_1"
-    assert request.params["statuses"] == "completed,error"
-    assert request.params["trigger_types"] == "api,email"
-    assert request.params["from_date"] == "2026-01-01"
-    assert request.params["to_date"] == "2026-01-31"
+    assert request.params["statuses"] == ["completed", "error"]
+    assert request.params["trigger_types"] == ["api", "email"]
+    assert request.params["from_date"] == date(2026, 1, 1)
+    assert request.params["to_date"] == date(2026, 1, 31)
     assert "fields" not in request.params
     assert request.params["after"] == "run_after"
 
@@ -833,8 +833,6 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
     assert request.url == "/v1/workflows/runs"
     assert request.data == {
         "workflow_id": "wf_1",
-        "documents": {},
-        "json_inputs": {},
         "version": "production",
     }
 
@@ -861,7 +859,7 @@ def test_workflow_runs_create_passes_file_refs_without_content() -> None:
     assert "content" not in request.data["documents"]["start_1"]
 
 
-def test_workflow_runs_create_keeps_mime_data_content_for_new_documents() -> None:
+def test_workflow_runs_create_keeps_mime_data_url_for_new_documents() -> None:
     request = WorkflowRuns(client=MagicMock()).prepare_create(
         workflow_id="wf_1",
         documents={
@@ -875,8 +873,7 @@ def test_workflow_runs_create_keeps_mime_data_content_for_new_documents() -> Non
     assert request.data["documents"] == {
         "start_1": {
             "filename": "note.txt",
-            "content": "aGVsbG8=",
-            "mime_type": "text/plain",
+            "url": "data:text/plain;base64,aGVsbG8=",
         }
     }
 
@@ -947,6 +944,9 @@ def test_workflow_runs_export_route() -> None:
         "block_id": "extract-1",
         "export_source": "outputs",
         "preferred_columns": ["invoice_number", "total_amount"],
+        "delimiter": ";",
+        "quote": '"',
+        "line_delimiter": "\n",
         "selected_run_ids": ["run_1", "run_2"],
         "trigger_types": ["api"],
     }

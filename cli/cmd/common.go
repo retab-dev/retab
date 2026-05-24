@@ -1155,30 +1155,23 @@ func resolveOptionalDocument(cmd *cobra.Command) (any, error) {
 	return resolveDocument(cmd)
 }
 
-func mimeDataInputFromDocument(doc any) (retab.MIMEDataInput, error) {
+func mimeDataFromDocument(doc any) (retab.MIMEData, error) {
 	switch value := doc.(type) {
-	case retab.MIMEDataInput:
-		return value, nil
-	case *retab.MIMEDataInput:
-		if value == nil {
-			return retab.MIMEDataInput{}, fmt.Errorf("document is required")
-		}
-		return *value, nil
 	case retab.MIMEData:
-		return retab.MIMEDataInput{Filename: value.Filename, URL: value.URL}, nil
+		return retab.MIMEData{Filename: value.Filename, URL: value.URL}, nil
 	case *retab.MIMEData:
 		if value == nil {
-			return retab.MIMEDataInput{}, fmt.Errorf("document is required")
+			return retab.MIMEData{}, fmt.Errorf("document is required")
 		}
-		return retab.MIMEDataInput{Filename: value.Filename, URL: value.URL}, nil
+		return retab.MIMEData{Filename: value.Filename, URL: value.URL}, nil
 	}
 	body, err := json.Marshal(doc)
 	if err != nil {
-		return retab.MIMEDataInput{}, fmt.Errorf("encode document: %w", err)
+		return retab.MIMEData{}, fmt.Errorf("encode document: %w", err)
 	}
-	var result retab.MIMEDataInput
+	var result retab.MIMEData
 	if err := json.Unmarshal(body, &result); err != nil {
-		return retab.MIMEDataInput{}, fmt.Errorf("decode document: %w", err)
+		return retab.MIMEData{}, fmt.Errorf("decode document: %w", err)
 	}
 	return result, nil
 }

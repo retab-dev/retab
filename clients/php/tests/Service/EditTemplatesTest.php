@@ -35,7 +35,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->create(name: 'test_value', document: \Retab\Resource\MimeDataInput::fromArray($this->loadFixture('mime_data_input')), formFields: []);
+        $result = $client->editTemplates()->create(name: 'test_value', document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), formFields: []);
         $this->assertInstanceOf(\Retab\Resource\EditTemplate::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);

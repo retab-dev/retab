@@ -73,9 +73,30 @@ pub struct CreateParams {
 
 impl CreateParams {
     /// Construct a new `CreateParams` with the required fields set.
+    ///
+    /// Accepts ergonomic input for MimeData-typed fields via
+    /// [`Into<MimeData>`](crate::MimeData) — pass a `PathBuf`,
+    /// `Vec<u8>`, `&str` URL, or pre-built `MimeData`.
     #[allow(deprecated)]
-    pub fn new(body: ExtractionRequest) -> Self {
-        Self { body }
+    pub fn new<D: Into<crate::MimeData>>(
+        document: D,
+        json_schema: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            body: ExtractionRequest {
+                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                json_schema,
+                model: Default::default(),
+                image_resolution_dpi: Default::default(),
+                instructions: Default::default(),
+                n_consensus: Default::default(),
+                metadata: Default::default(),
+                additional_messages: Default::default(),
+                bust_cache: Default::default(),
+                stream: Default::default(),
+                chunking_keys: Default::default(),
+            },
+        }
     }
 }
 
