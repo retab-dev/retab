@@ -48,15 +48,7 @@ namespace Retab
 
         /// <summary>Create Workflow Run Route</summary>
         /// <remarks>
-        /// Create a workflow run.
-        /// Two creation paths, discriminated by ``restart_of``:
-        /// - ``restart_of`` is ``None``: fresh run. ``workflow_id`` is required;
-        /// ``documents``, ``json_inputs``, and ``version`` carry the run inputs.
-        /// - ``restart_of`` is set: restart of an existing run. The source run's
-        /// inputs are inherited; ``config_source`` selects ``draft`` vs
-        /// ``published`` config for the new run.
-        /// The shape of the request enforces these invariants — see
-        /// ``CreateWorkflowRunRequest``.
+        /// Create a fresh workflow run.
         /// </remarks>
         /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>

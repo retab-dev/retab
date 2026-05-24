@@ -7,6 +7,8 @@ import type {
   WorkflowRunsStatus,
   WorkflowRunsTriggerType,
 } from '../../common/interfaces/index.js';
+import type { FileRef } from '../../extractions/interfaces/index.js';
+import type { MimeDataInput } from '../../schemas/interfaces/index.js';
 import type {
   CancelWorkflowResponse,
   CancelWorkflowResponseResponse,
@@ -73,7 +75,18 @@ export class WorkflowRuns {
   }
 
   /** Create Workflow Run Route */
-  async create(body: unknown): Promise<WorkflowRun> {
+  async create(
+    workflowId: string,
+    documents?: Record<string, FileRef | MimeDataInput>,
+    jsonInputs?: Record<string, unknown>,
+    version?: string
+  ): Promise<WorkflowRun> {
+    const body = {
+      workflow_id: workflowId,
+      documents: documents,
+      json_inputs: jsonInputs,
+      version: version,
+    };
     const __wire = await this.client.request<WorkflowRunResponse>({
       method: 'POST',
       path: '/v1/workflows/runs',

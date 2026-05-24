@@ -292,6 +292,25 @@ impl From<FileRef> for ClassificationRequestDocumentOneOf {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CreateWorkflowRunRequestDocumentsOneOf {
+    FileRef(Box<FileRef>),
+    MimeDataInput(Box<MimeDataInput>),
+}
+
+impl From<FileRef> for CreateWorkflowRunRequestDocumentsOneOf {
+    fn from(v: FileRef) -> Self {
+        CreateWorkflowRunRequestDocumentsOneOf::FileRef(Box::new(v))
+    }
+}
+
+impl From<MimeDataInput> for CreateWorkflowRunRequestDocumentsOneOf {
+    fn from(v: MimeDataInput) -> Self {
+        CreateWorkflowRunRequestDocumentsOneOf::MimeDataInput(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CreateWorkflowTestRequestSourceOneOf {
     #[serde(rename = "manual")]
@@ -750,24 +769,5 @@ impl From<ErrorWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
 impl From<CancelledWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
     fn from(v: CancelledWorkflowTestRun) -> Self {
         WorkflowTestResultLifecycleOneOf::CancelledWorkflowTestRun(Box::new(v))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum CreateFreshWorkflowRunRequestDocumentsOneOf {
-    FileRef(Box<FileRef>),
-    MimeDataInput(Box<MimeDataInput>),
-}
-
-impl From<FileRef> for CreateFreshWorkflowRunRequestDocumentsOneOf {
-    fn from(v: FileRef) -> Self {
-        CreateFreshWorkflowRunRequestDocumentsOneOf::FileRef(Box::new(v))
-    }
-}
-
-impl From<MimeDataInput> for CreateFreshWorkflowRunRequestDocumentsOneOf {
-    fn from(v: MimeDataInput) -> Self {
-        CreateFreshWorkflowRunRequestDocumentsOneOf::MimeDataInput(Box::new(v))
     }
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-05-24T13:06:34.524Z",
+  "generatedAt": "2026-05-24T13:18:01.698Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -13,7 +13,6 @@
     "src/classifications/interfaces/index.ts",
     "src/common/exceptions.ts",
     "src/common/interfaces/classifications-order.interface.ts",
-    "src/common/interfaces/create-restart-workflow-run-request-config-source.interface.ts",
     "src/common/interfaces/edit-templates-order.interface.ts",
     "src/common/interfaces/edits-order.interface.ts",
     "src/common/interfaces/experiment-run-metrics-view.interface.ts",

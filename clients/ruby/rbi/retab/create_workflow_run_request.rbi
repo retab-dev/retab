@@ -9,6 +9,30 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
+    sig { returns(String) }
+    def workflow_id; end
+
+    sig { params(value: String).returns(String) }
+    def workflow_id=(value); end
+
+    sig { returns(T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeDataInput)])) }
+    def documents; end
+
+    sig { params(value: T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeDataInput)])).returns(T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeDataInput)])) }
+    def documents=(value); end
+
+    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
+    def json_inputs; end
+
+    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
+    def json_inputs=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def version; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def version=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

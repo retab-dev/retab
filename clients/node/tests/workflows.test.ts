@@ -906,22 +906,6 @@ describe('workflows client', () => {
     expect(result.cancellation_status).toBe('cancelled');
   });
 
-  test('runs.restart() sends POST to flat run creation route', async () => {
-    const mockClient = new MockClient(makeV2Run({ id: 'run_2', lifecycle: { status: 'running' } }));
-    const runsClient = new APIWorkflowRuns(mockClient);
-
-    const run = await runsClient.restart('run_1', { commandId: 'cmd_2' });
-
-    expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/runs',
-      method: 'POST',
-      body: { restart_of: 'run_1', command_id: 'cmd_2' },
-      params: undefined,
-      headers: undefined,
-    });
-    expect(run.id).toBe('run_2');
-  });
-
   test('runs.export() sends POST to /export', async () => {
     const mockClient = new MockClient({
       csv_data: 'a,b\n1,2\n',

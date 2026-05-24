@@ -1,1 +1,14 @@
-{}
+{
+  "workflow_id": "workflow_id_01234",
+  "documents": {
+    "key": {
+      "id": "01234",
+      "filename": "Test",
+      "mime_type": "test_mime_type"
+    }
+  },
+  "json_inputs": {
+    "key": {}
+  },
+  "version": "test_version"
+}

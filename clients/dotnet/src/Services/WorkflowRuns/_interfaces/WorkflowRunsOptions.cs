@@ -49,25 +49,16 @@ namespace Retab
     public class WorkflowRunsCreateOptions : BaseOptions
     {
         /// <summary>Workflow id for the fresh run.</summary>
-        public string? WorkflowId { get; set; }
+        public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Mapping of start_document block IDs to their input documents. Only valid for fresh-run creation (``restart_of`` is None).</summary>
+        /// <summary>Mapping of start_document block IDs to their input documents.</summary>
         public Dictionary<string, MimeData>? Documents { get; set; }
 
-        /// <summary>Mapping of start-json block IDs to their input JSON data. Only valid for fresh-run creation (``restart_of`` is None).</summary>
+        /// <summary>Mapping of start-json block IDs to their input JSON data.</summary>
         public Dictionary<string, object>? JsonInputs { get; set; }
 
         /// <summary>Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.</summary>
         public string? Version { get; set; }
-
-        /// <summary>When present, the new run is created as a restart of this source run id (the source run's inputs are inherited).</summary>
-        public string? RestartOf { get; set; }
-
-        /// <summary>Required when ``restart_of`` is set. Config source for the restarted run.</summary>
-        public string? ConfigSource { get; set; }
-
-        /// <summary>Optional idempotency key for deduplicating restart commands. Only valid when ``restart_of`` is set.</summary>
-        public string? CommandId { get; set; }
 
     }
 

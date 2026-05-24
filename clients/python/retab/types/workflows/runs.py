@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import FileRef
 from retab.types.schemas import MimeDataInput
@@ -13,11 +13,6 @@ class CancelWorkflowResponseCancellationStatus(str, Enum):
     CANCELLED = "cancelled"
     CANCELLATION_REQUESTED = "cancellation_requested"
     CANCELLATION_FAILED = "cancellation_failed"
-
-
-class CreateRestartWorkflowRunRequestConfigSource(str, Enum):
-    DRAFT = "draft"
-    PUBLISHED = "published"
 
 
 class ErrorTerminalStage(str, Enum):
@@ -118,36 +113,17 @@ class CompletedTerminal(BaseModel):
     status: Literal["completed"] = Field(default="completed")
 
 
-class CreateFreshWorkflowRunRequest(BaseModel):
-    """Create a fresh workflow run from a workflow id, optional draft/version selector, and optional inputs."""
+class CreateWorkflowRunRequest(BaseModel):
+    """Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow id for the fresh run.")
-    documents: dict[str, FileRef | MimeDataInput] | None = Field(
-        default=None, description="Mapping of start_document block IDs to their input documents. Only valid for fresh-run creation (``restart_of`` is None)."
-    )
-    json_inputs: dict[str, Any] | None = Field(
-        default=None, description="Mapping of start-json block IDs to their input JSON data. Only valid for fresh-run creation (``restart_of`` is None)."
-    )
+    documents: dict[str, FileRef | MimeDataInput] | None = Field(default=None, description="Mapping of start_document block IDs to their input documents.")
+    json_inputs: dict[str, Any] | None = Field(default=None, description="Mapping of start-json block IDs to their input JSON data.")
     version: str | None = Field(
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
     )
-
-
-class CreateRestartWorkflowRunRequest(BaseModel):
-    """Restart a workflow run from a previous run id. workflow_id may be supplied when the client already has it."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    restart_of: str = Field(..., description="When present, the new run is created as a restart of this source run id (the source run's inputs are inherited).")
-    config_source: CreateRestartWorkflowRunRequestConfigSource = Field(..., description="Required when ``restart_of`` is set. Config source for the restarted run.")
-    command_id: str | None = Field(default=None, description="Optional idempotency key for deduplicating restart commands. Only valid when ``restart_of`` is set.")
-    workflow_id: str | None = Field(default=None, description="Optional workflow id when the client already has it; otherwise inferred from restart_of.")
-
-
-# Request body for POST /v1/workflows/runs. Use the fresh-run shape or the restart shape.
-CreateWorkflowRunRequest: TypeAlias = CreateFreshWorkflowRunRequest | CreateRestartWorkflowRunRequest
 
 
 class ErrorDetails(BaseModel):
@@ -344,8 +320,7 @@ CancelWorkflowRequest.model_rebuild()
 CancelWorkflowResponse.model_rebuild()
 CancelledTerminal.model_rebuild()
 CompletedTerminal.model_rebuild()
-CreateFreshWorkflowRunRequest.model_rebuild()
-CreateRestartWorkflowRunRequest.model_rebuild()
+CreateWorkflowRunRequest.model_rebuild()
 ErrorDetails.model_rebuild()
 ErrorTerminal.model_rebuild()
 ManualTrigger.model_rebuild()

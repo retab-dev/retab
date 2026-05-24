@@ -442,9 +442,9 @@ func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
 	}
 }
 
-func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
+func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	var cancelBody map[string]any
-	var restartBody map[string]any
+	var createBody map[string]any
 	var exportBody map[string]any
 	var listQuery string
 
@@ -468,7 +468,7 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 				"cancellation_status": "cancelled",
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
-			if err := json.NewDecoder(r.Body).Decode(&restartBody); err != nil {
+			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
 				t.Fatal(err)
 			}
 			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_456", "wf_123", "running"))
@@ -531,16 +531,20 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 	if cancelled.CancellationStatus == nil || *cancelled.CancellationStatus != "cancelled" || cancelBody["command_id"] != "cmd_cancel" {
 		t.Fatalf("cancelled = %#v body = %#v", cancelled, cancelBody)
 	}
-	restarted, err := client.WorkflowRuns.Create(context.Background(), WithRequestBody(map[string]any{
-		"restart_of":    "run_123",
-		"command_id":    "cmd_restart",
-		"config_source": "published",
-	}))
+	version := "production"
+	created, err := client.WorkflowRuns.Create(context.Background(), &WorkflowRunsCreateParams{
+		WorkflowID: "wf_123",
+		Version:    &version,
+		JSONInputs: map[string]interface{}{"start": map[string]interface{}{"value": float64(1)}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if restarted.ID != "run_456" || restartBody["restart_of"] != "run_123" || restartBody["command_id"] != "cmd_restart" || restartBody["config_source"] != "published" {
-		t.Fatalf("restarted = %#v body = %#v", restarted, restartBody)
+	if created.ID != "run_456" || createBody["workflow_id"] != "wf_123" || createBody["version"] != "production" {
+		t.Fatalf("created = %#v body = %#v", created, createBody)
+	}
+	if _, ok := createBody["restart_of"]; ok {
+		t.Fatalf("restart_of leaked into create body: %#v", createBody)
 	}
 
 	exportSource := WorkflowExportPayloadRequestExportSourceOutputs
