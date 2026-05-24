@@ -850,22 +850,25 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 		if configSource == "draft" {
 			version = "draft"
 		}
-		body := map[string]any{
-			"workflow_id": sourceRun.Workflow.WorkflowID,
-			"version":     version,
+		params := &retab.WorkflowRunsCreateParams{
+			WorkflowID: sourceRun.Workflow.WorkflowID,
+			Version:    ptr(version),
 		}
-		if body["workflow_id"] == "" {
+		if params.WorkflowID == "" {
 			return fmt.Errorf("source run %s does not include workflow.workflow_id", args[0])
 		}
 		if sourceRun.Inputs != nil {
 			if sourceRun.Inputs.Documents != nil {
-				body["documents"] = sourceRun.Inputs.Documents
+				params.Documents = map[string]interface{}{}
+				for key, value := range sourceRun.Inputs.Documents {
+					params.Documents[key] = value
+				}
 			}
 			if sourceRun.Inputs.JSONData != nil {
-				body["json_inputs"] = sourceRun.Inputs.JSONData
+				params.JSONInputs = sourceRun.Inputs.JSONData
 			}
 		}
-		result, err := client.WorkflowRuns.Create(ctx, retab.WithRequestBody(body))
+		result, err := client.WorkflowRuns.Create(ctx, params)
 		if err != nil {
 			return err
 		}

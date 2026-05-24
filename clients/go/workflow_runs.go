@@ -48,19 +48,23 @@ func (s *WorkflowRunService) List(ctx context.Context, params *WorkflowRunsListP
 	return doPaginated[WorkflowRun](ctx, s.client, "GET", "/v1/workflows/runs", params, nil, opts...)
 }
 
+// WorkflowRunsCreateParams contains the parameters for Create.
+type WorkflowRunsCreateParams struct {
+	// WorkflowID is workflow id for the fresh run.
+	WorkflowID string `json:"workflow_id" url:"-"`
+	// Documents is mapping of start_document block IDs to their input documents.
+	Documents map[string]interface{} `json:"documents,omitempty" url:"-"`
+	// JSONInputs is mapping of start-json block IDs to their input JSON data.
+	JSONInputs map[string]interface{} `json:"json_inputs,omitempty" url:"-"`
+	// Version is workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
+	Version *string `json:"version,omitempty" url:"-"`
+}
+
 // Create workflow Run Route
-// Create a workflow run.
-// Two creation paths, discriminated by “restart_of“:
-// - “restart_of“ is “None“: fresh run. “workflow_id“ is required;
-// “documents“, “json_inputs“, and “version“ carry the run inputs.
-// - “restart_of“ is set: restart of an existing run. The source run's
-// inputs are inherited; “config_source“ selects “draft“ vs
-// “published“ config for the new run.
-// The shape of the request enforces these invariants — see
-// “CreateWorkflowRunRequest“.
-func (s *WorkflowRunService) Create(ctx context.Context, opts ...RequestOption) (*WorkflowRun, error) {
+// Create a fresh workflow run.
+func (s *WorkflowRunService) Create(ctx context.Context, params *WorkflowRunsCreateParams, opts ...RequestOption) (*WorkflowRun, error) {
 	var result WorkflowRun
-	_, err := s.client.request(ctx, "POST", "/v1/workflows/runs", nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/workflows/runs", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

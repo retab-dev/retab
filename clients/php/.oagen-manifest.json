@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-24T13:07:16.987Z",
+  "generatedAt": "2026-05-24T13:18:35.298Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -61,10 +61,7 @@
     "lib/Resource/CreateEditTemplateRequest.php",
     "lib/Resource/CreateExperimentRequest.php",
     "lib/Resource/CreateExperimentRunRequest.php",
-    "lib/Resource/CreateFreshWorkflowRunRequest.php",
     "lib/Resource/CreateJobRequest.php",
-    "lib/Resource/CreateRestartWorkflowRunRequest.php",
-    "lib/Resource/CreateRestartWorkflowRunRequestConfigSource.php",
     "lib/Resource/CreateReviewVersionRequest.php",
     "lib/Resource/CreateUploadResponse.php",
     "lib/Resource/CreateWorkflowRequest.php",

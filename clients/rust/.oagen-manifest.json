@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-24T13:06:38.751Z",
+  "generatedAt": "2026-05-24T13:18:06.411Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -16,7 +16,6 @@
     "src/enums/condition_evaluation_result_logical_operator.rs",
     "src/enums/create_experiment_request_n_consensus.rs",
     "src/enums/create_job_request_endpoint.rs",
-    "src/enums/create_restart_workflow_run_request_config_source.rs",
     "src/enums/declarative_apply_response_action.rs",
     "src/enums/declarative_plan_field_change_action.rs",
     "src/enums/declarative_plan_resource_change_actions.rs",
@@ -154,9 +153,7 @@
     "src/models/create_edit_template_request.rs",
     "src/models/create_experiment_request.rs",
     "src/models/create_experiment_run_request.rs",
-    "src/models/create_fresh_workflow_run_request.rs",
     "src/models/create_job_request.rs",
-    "src/models/create_restart_workflow_run_request.rs",
     "src/models/create_review_version_request.rs",
     "src/models/create_upload_response.rs",
     "src/models/create_workflow_request.rs",

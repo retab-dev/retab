@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-24T13:07:18.475Z",
+  "generatedAt": "2026-05-24T13:18:36.985Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -118,7 +118,6 @@
     "lib/retab/types/condition_evaluation_result_logical_operator.rb",
     "lib/retab/types/create_experiment_request_n_consensus.rb",
     "lib/retab/types/create_job_request_endpoint.rb",
-    "lib/retab/types/create_workflow_run_request_config_source.rb",
     "lib/retab/types/declarative_apply_response_action.rb",
     "lib/retab/types/declarative_plan_field_change_action.rb",
     "lib/retab/types/declarative_plan_resource_change_actions.rb",

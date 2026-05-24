@@ -922,19 +922,6 @@ def test_workflow_runs_cancel_route() -> None:
     assert result.run.id == "run_1"
 
 
-def test_workflow_runs_restart_route() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _v2_run_payload(id="run_2", lifecycle={"status": "running"})
-
-    run = WorkflowRuns(client=client).restart("run_1", command_id="cmd_2")
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/v1/workflows/runs"
-    assert request.data == {"restart_of": "run_1", "command_id": "cmd_2"}
-    assert run.id == "run_2"
-
-
 def test_workflow_runs_export_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {

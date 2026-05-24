@@ -5,20 +5,33 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Request body for POST /v1/workflows/runs. Use the fresh-run shape or the restart shape.
+/// Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum CreateWorkflowRunRequest {
-    CreateFreshWorkflowRunRequest(Box<CreateFreshWorkflowRunRequest>),
-    CreateRestartWorkflowRunRequest(Box<CreateRestartWorkflowRunRequest>),
+pub struct CreateWorkflowRunRequest {
+    /// Workflow id for the fresh run.
+    pub workflow_id: String,
+    /// Mapping of start_document block IDs to their input documents.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub documents:
+        Option<std::collections::HashMap<String, CreateWorkflowRunRequestDocumentsOneOf>>,
+    /// Mapping of start-json block IDs to their input JSON data.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub json_inputs: Option<std::collections::HashMap<String, serde_json::Value>>,
+    /// Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
+    ///
+    /// Defaults to `production`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub version: Option<String>,
 }
-impl From<CreateFreshWorkflowRunRequest> for CreateWorkflowRunRequest {
-    fn from(v: CreateFreshWorkflowRunRequest) -> Self {
-        CreateWorkflowRunRequest::CreateFreshWorkflowRunRequest(Box::new(v))
-    }
-}
-impl From<CreateRestartWorkflowRunRequest> for CreateWorkflowRunRequest {
-    fn from(v: CreateRestartWorkflowRunRequest) -> Self {
-        CreateWorkflowRunRequest::CreateRestartWorkflowRunRequest(Box::new(v))
+impl CreateWorkflowRunRequest {
+    /// Construct a new `CreateWorkflowRunRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            documents: Default::default(),
+            json_inputs: Default::default(),
+            version: Default::default(),
+        }
     }
 }

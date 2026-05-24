@@ -34,10 +34,14 @@ module Retab
 
     sig do
       params(
+        workflow_id: String,
+        documents: T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeDataInput)]),
+        json_inputs: T.nilable(T::Hash[String, T.untyped]),
+        version: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowRun)
     end
-    def create(request_options:); end
+    def create(workflow_id:, documents:, json_inputs:, version:, request_options:); end
 
     sig do
       params(

@@ -16,9 +16,7 @@ from retab.types.schemas import WorkflowRunsExcludeStatus, WorkflowRunsStatus, W
 from retab.types.workflows.runs import (
     CancelWorkflowRequest,
     CancelWorkflowResponse,
-    CreateFreshWorkflowRunRequest,
-    CreateRestartWorkflowRunRequest,
-    CreateRestartWorkflowRunRequestConfigSource,
+    CreateWorkflowRunRequest,
     WorkflowExportPayloadRequest,
     WorkflowExportPayloadRequestExcludeStatus,
     WorkflowExportPayloadRequestExportSource,
@@ -88,16 +86,13 @@ class WorkflowRunsMixin:
 
     def prepare_create(
         self,
-        workflow_id: str | None = None,
+        workflow_id: str,
         documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
-        version: str | None = None,
-        restart_of: str | None = None,
-        config_source: CreateRestartWorkflowRunRequestConfigSource | None = None,
-        command_id: str | None = None,
+        version: str = "production",
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Workflow Run Route Create a workflow run. Two creation paths, discriminated by ``restart_of``: - ``restart_of`` is ``None``: fresh run. ``workflow_id`` is required; ``documents``, ``json_inputs``, and ``version`` carry the run inputs. - ``restart_of`` is set: restart of an existing run. The source run's inputs are inherited; ``config_source`` selects ``draft`` vs ``published`` config for…"""
+        """Create Workflow Run Route Create a fresh workflow run."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -105,14 +100,9 @@ class WorkflowRunsMixin:
         documents_payload: Any = documents
         if documents_payload is not None:
             documents_payload = {__k: _coerce_mime_document_input(__v) for __k, __v in documents_payload.items()}
-        if restart_of is not None or config_source is not None:
-            payload = CreateRestartWorkflowRunRequest(
-                restart_of=cast(Any, restart_of), config_source=cast(Any, config_source), command_id=cast(Any, command_id), workflow_id=cast(Any, workflow_id)
-            )
-        else:
-            payload = CreateFreshWorkflowRunRequest(
-                workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version)
-            )
+        payload = CreateWorkflowRunRequest(
+            workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version)
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/runs", params=params or None, data=data)
 
@@ -234,26 +224,14 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
     def create(
         self,
-        workflow_id: str | None = None,
+        workflow_id: str,
         documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
-        version: str | None = None,
-        restart_of: str | None = None,
-        config_source: CreateRestartWorkflowRunRequestConfigSource | None = None,
-        command_id: str | None = None,
+        version: str = "production",
         **extra_params: Any,
     ) -> WorkflowRun:
-        """Create Workflow Run Route Create a workflow run. Two creation paths, discriminated by ``restart_of``: - ``restart_of`` is ``None``: fresh run. ``workflow_id`` is required; ``documents``, ``json_inputs``, and ``version`` carry the run inputs. - ``restart_of`` is set: restart of an existing run. The source run's inputs are inherited; ``config_source`` selects ``draft`` vs ``published`` config for…"""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            documents=documents,
-            json_inputs=json_inputs,
-            version=version,
-            restart_of=restart_of,
-            config_source=config_source,
-            command_id=command_id,
-            **extra_params,
-        )
+        """Create Workflow Run Route Create a fresh workflow run."""
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
@@ -362,26 +340,14 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
 
     async def create(
         self,
-        workflow_id: str | None = None,
+        workflow_id: str,
         documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
-        version: str | None = None,
-        restart_of: str | None = None,
-        config_source: CreateRestartWorkflowRunRequestConfigSource | None = None,
-        command_id: str | None = None,
+        version: str = "production",
         **extra_params: Any,
     ) -> WorkflowRun:
-        """Create Workflow Run Route Create a workflow run. Two creation paths, discriminated by ``restart_of``: - ``restart_of`` is ``None``: fresh run. ``workflow_id`` is required; ``documents``, ``json_inputs``, and ``version`` carry the run inputs. - ``restart_of`` is set: restart of an existing run. The source run's inputs are inherited; ``config_source`` selects ``draft`` vs ``published`` config for…"""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            documents=documents,
-            json_inputs=json_inputs,
-            version=version,
-            restart_of=restart_of,
-            config_source=config_source,
-            command_id=command_id,
-            **extra_params,
-        )
+        """Create Workflow Run Route Create a fresh workflow run."""
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
