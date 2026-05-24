@@ -498,9 +498,9 @@ var workflowsTestsRunsCreateCmd = &cobra.Command{
 ` + "`workflow-id`" + ` (NOT a test id) — by default the run executes
 every test attached to the workflow.
 
-To run a single test pass ` + "`--test-id`" + `; to override the inputs
-that target the workflow's start block pass ` + "`--target-file`" + ` (a
-JSON map of start-block handle id → handle payload).
+To run a single test pass ` + "`--test-id`" + `; to run every saved test
+for one block pass ` + "`--target-file`" + ` with a JSON target such as
+` + `{"type":"block","block_id":"extract_1"}` + `.
 
 Poll progress with ` + "`workflows tests runs get`" + ` and fetch per-test
 results with ` + "`workflows tests runs results list`" + `.`,
@@ -511,36 +511,45 @@ results with ` + "`workflows tests runs results list`" + `.`,
   retab workflows tests runs create wf_abc123 \
     --test-id wfnodetest_jkl012
 
-  # Override the start-block inputs
+  # Run every test for one block
   retab workflows tests runs create wf_abc123 \
-    --target-file ./inputs.json`,
+    --target-file ./target.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		body := map[string]any{}
-		if testID, _ := cmd.Flags().GetString("test-id"); testID != "" {
-			body["test_id"] = testID
+		params := &retab.WorkflowTestRunsCreateParams{
+			WorkflowID: args[0],
 		}
-		if nConsensus, _ := cmd.Flags().GetInt("n-consensus"); nConsensus != 0 {
-			body["n_consensus"] = nConsensus
-		}
+		testID, _ := cmd.Flags().GetString("test-id")
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
 			return err
+		}
+		if testID != "" && target != nil {
+			return fmt.Errorf("--test-id and --target-file are mutually exclusive")
+		}
+		if testID != "" {
+			params.Scope = &retab.WorkflowTestRunScope{
+				Type:   retab.WorkflowTestRunScopeTypeSingle,
+				TestID: ptr(testID),
+			}
 		}
 		if target != nil {
 			if err := validateWorkflowTestTarget(target); err != nil {
 				return fmt.Errorf("--target-file: %w", err)
 			}
-			body["target"] = target
+			blockID, _ := target["block_id"].(string)
+			params.Scope = &retab.WorkflowTestRunScope{
+				Type:    retab.WorkflowTestRunScopeTypeBlock,
+				BlockID: ptr(blockID),
+			}
 		}
-		body["workflow_id"] = args[0]
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowTestRuns.Create(ctx, retab.WithRequestBody(body))
+		result, err := client.WorkflowTestRuns.Create(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -782,7 +791,6 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
-	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
 	workflowsTestsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 

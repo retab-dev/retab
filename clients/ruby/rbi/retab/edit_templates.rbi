@@ -25,7 +25,7 @@ module Retab
     sig do
       params(
         name: String,
-        document: Retab::MimeDataInput,
+        document: T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped]),
         form_fields: T::Array[Retab::FormField],
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::EditTemplate)

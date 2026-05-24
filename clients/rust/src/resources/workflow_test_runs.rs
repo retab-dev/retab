@@ -112,8 +112,8 @@ impl<'a> WorkflowTestRunsApi<'a> {
     ///
     /// Create a workflow-scoped test run.
     ///
-    /// Scoping identity comes from the body — ``workflow_id`` and/or
-    /// ``test_id`` per ``CreateWorkflowTestRunRequest``.
+    /// ``workflow_id`` is the execution context. Optional ``scope`` narrows the
+    /// run to one saved test or one block; omitted scope runs all workflow tests.
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowTestRun, Error> {
         self.create_with_options(params, None).await
     }

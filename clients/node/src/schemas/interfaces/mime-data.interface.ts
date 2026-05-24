@@ -6,19 +6,19 @@ export interface MIMEData {
   filename: string;
   /** The URL of the file in base64 format */
   url: string;
-  mimeType: string;
+  mimeType?: string;
 }
 
 export interface MIMEDataResponse {
   filename: string;
   url: string;
-  mime_type: string;
+  mime_type?: string;
 }
 
 export const ZMIMEData = z.object({
   filename: z.string(),
   url: z.string(),
-  mimeType: z.string(),
+  mimeType: z.string().optional(),
 }) as z.ZodType<MIMEData>;
 
 export function deserializeMIMEData(wire: MIMEDataResponse): MIMEData {

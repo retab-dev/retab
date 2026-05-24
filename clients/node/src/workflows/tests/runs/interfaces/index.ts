@@ -12,4 +12,7 @@ export * from './queued-workflow-test-run.interface.js';
 export * from './running-workflow-test-run.interface.js';
 export * from './workflow-test-block-target.interface.js';
 export * from './workflow-test-run.interface.js';
+export * from './workflow-test-run-block-scope.interface.js';
+export * from './workflow-test-run-single-scope.interface.js';
 export * from './workflow-test-run-timing.interface.js';
+export * from './workflow-test-run-workflow-scope.interface.js';

@@ -42,13 +42,15 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->create();
+        $result = $client->workflowTestRuns()->create(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTestRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/tests/runs', $request->getUri()->getPath());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('test_value', $body['workflow_id']);
     }
 
     public function testGet(): void

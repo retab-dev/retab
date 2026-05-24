@@ -36,13 +36,20 @@ func (s *WorkflowTestRunService) List(ctx context.Context, params *WorkflowTestR
 	return doPaginated[WorkflowTestRun](ctx, s.client, "GET", "/v1/workflows/tests/runs", params, nil, opts...)
 }
 
+// WorkflowTestRunsCreateParams contains the parameters for Create.
+type WorkflowTestRunsCreateParams struct {
+	WorkflowID string `json:"workflow_id" url:"-"`
+	// Scope is optional execution scope. Omit to run every saved test in the workflow.
+	Scope *WorkflowTestRunScope `json:"scope,omitempty" url:"-"`
+}
+
 // Create test Run
 // Create a workflow-scoped test run.
-// Scoping identity comes from the body — “workflow_id“ and/or
-// “test_id“ per “CreateWorkflowTestRunRequest“.
-func (s *WorkflowTestRunService) Create(ctx context.Context, opts ...RequestOption) (*WorkflowTestRun, error) {
+// “workflow_id“ is the execution context. Optional “scope“ narrows the
+// run to one saved test or one block; omitted scope runs all workflow tests.
+func (s *WorkflowTestRunService) Create(ctx context.Context, params *WorkflowTestRunsCreateParams, opts ...RequestOption) (*WorkflowTestRun, error) {
 	var result WorkflowTestRun
-	_, err := s.client.request(ctx, "POST", "/v1/workflows/tests/runs", nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/workflows/tests/runs", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

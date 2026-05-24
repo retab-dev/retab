@@ -25,7 +25,7 @@ module Retab
 
     sig do
       params(
-        document: T.any(Retab::MimeDataInput, Retab::FileRef),
+        document: T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped]),
         model: T.nilable(String),
         table_parsing_format: T.nilable(String),
         image_resolution_dpi: T.nilable(Integer),

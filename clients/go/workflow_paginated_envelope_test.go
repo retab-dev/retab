@@ -239,7 +239,11 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatal(err)
 		}
-		if body["workflow_id"] != "wf_1" || body["test_id"] != "wfnodetest_1" {
+		scope, ok := body["scope"].(map[string]any)
+		if !ok {
+			t.Fatalf("scope = %#v", body["scope"])
+		}
+		if body["workflow_id"] != "wf_1" || scope["type"] != "single" || scope["test_id"] != "wfnodetest_1" {
 			t.Fatalf("unexpected request body %#v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -260,11 +264,14 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	result, err := client.WorkflowTestRuns.Create(context.Background(), WithRequestBody(map[string]any{
-		"workflow_id": "wf_1",
-		"test_id":     "wfnodetest_1",
-		"n_consensus": 3,
-	}))
+	testID := "wfnodetest_1"
+	result, err := client.WorkflowTestRuns.Create(context.Background(), &WorkflowTestRunsCreateParams{
+		WorkflowID: "wf_1",
+		Scope: &WorkflowTestRunScope{
+			Type:   WorkflowTestRunScopeTypeSingle,
+			TestID: &testID,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

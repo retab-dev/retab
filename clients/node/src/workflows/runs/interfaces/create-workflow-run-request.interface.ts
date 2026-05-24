@@ -7,17 +7,17 @@ import type {
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
-  MimeDataInput,
-  MimeDataInputResponse,
-} from '../../../schemas/interfaces/mime-data-input.interface.js';
-import { ZMimeDataInput } from '../../../schemas/interfaces/mime-data-input.interface.js';
+  MIMEData,
+  MIMEDataResponse,
+} from '../../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
 
 /** Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs. */
 export interface CreateWorkflowRunRequest {
   /** Workflow id for the fresh run. */
   workflowId: string;
   /** Mapping of start_document block IDs to their input documents. */
-  documents?: Record<string, FileRef | MimeDataInput>;
+  documents?: Record<string, FileRef | MIMEData>;
   /** Mapping of start-json block IDs to their input JSON data. */
   jsonInputs?: Record<string, unknown>;
   /**
@@ -29,14 +29,14 @@ export interface CreateWorkflowRunRequest {
 
 export interface CreateWorkflowRunRequestResponse {
   workflow_id: string;
-  documents?: Record<string, FileRefResponse | MimeDataInputResponse>;
+  documents?: Record<string, FileRefResponse | MIMEDataResponse>;
   json_inputs?: Record<string, unknown>;
   version?: string;
 }
 
 export const ZCreateWorkflowRunRequest = z.object({
   workflowId: z.string(),
-  documents: z.record(z.string(), z.union([ZFileRef, ZMimeDataInput])).optional(),
+  documents: z.record(z.string(), z.union([ZFileRef, ZMIMEData])).optional(),
   jsonInputs: z.record(z.string(), z.unknown()).optional(),
   version: z.string().optional(),
 }) as z.ZodType<CreateWorkflowRunRequest>;
@@ -52,7 +52,7 @@ export function deserializeCreateWorkflowRunRequest(
         : Object.fromEntries(
             Object.entries(wire['documents']).map(([__k, __v]) => [
               __k,
-              __v as unknown as FileRef | MimeDataInput,
+              __v as unknown as FileRef | MIMEData,
             ])
           ),
     jsonInputs: wire['json_inputs'],

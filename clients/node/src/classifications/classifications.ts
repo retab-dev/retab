@@ -2,13 +2,12 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
+import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type {
   Category,
   Classification,
   ClassificationResponse,
 } from '../classifications/interfaces/index.js';
-import type { FileRef } from '../extractions/interfaces/index.js';
-import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import { deserializeClassification } from '../classifications/interfaces/index.js';
 
 export class Classifications {
@@ -42,7 +41,7 @@ export class Classifications {
 
   /** Create Classification */
   async create(
-    document: MimeDataInput | FileRef,
+    document: DocumentInput,
     categories: Category[],
     model?: string,
     firstNPages?: number | null,
@@ -50,8 +49,9 @@ export class Classifications {
     nConsensus?: number,
     bustCache?: boolean
   ): Promise<Classification> {
+    const documentCoerced = await coerceMimeData(document);
     const body = {
-      document: document,
+      document: documentCoerced,
       categories: categories,
       model: model,
       first_n_pages: firstNPages,

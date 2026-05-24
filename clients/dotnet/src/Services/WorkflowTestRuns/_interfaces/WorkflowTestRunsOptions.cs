@@ -35,13 +35,10 @@ namespace Retab
     /// <summary>Request options for <see cref="WorkflowTestRunsService.CreateAsync"/>: Create Test Run</summary>
     public class WorkflowTestRunsCreateOptions : BaseOptions
     {
-        public string? TestId { get; set; }
+        public string WorkflowId { get; set; } = default!;
 
-        public string? WorkflowId { get; set; }
-
-        public long? NConsensus { get; set; }
-
-        public WorkflowTestBlockTarget? Target { get; set; }
+        /// <summary>Optional execution scope. Omit to run every saved test in the workflow.</summary>
+        public object? Scope { get; set; }
 
     }
 }

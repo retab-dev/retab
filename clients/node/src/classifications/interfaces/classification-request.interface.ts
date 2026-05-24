@@ -5,16 +5,13 @@ import type { Category, CategoryResponse } from './category.interface.js';
 import { ZCategory, deserializeCategory } from './category.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type {
-  MimeDataInput,
-  MimeDataInputResponse,
-} from '../../schemas/interfaces/mime-data-input.interface.js';
-import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
+import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
 
 /** Public create-classification request body. */
 export interface ClassificationRequest {
   /** The document to classify */
-  document: MimeDataInput | FileRef;
+  document: MIMEData | FileRef;
   /** The categories to classify the document into */
   categories: Category[];
   /**
@@ -39,7 +36,7 @@ export interface ClassificationRequest {
 }
 
 export interface ClassificationRequestResponse {
-  document: MimeDataInputResponse | FileRefResponse;
+  document: MIMEDataResponse | FileRefResponse;
   categories: CategoryResponse[];
   model?: string;
   first_n_pages?: number | null;
@@ -49,7 +46,7 @@ export interface ClassificationRequestResponse {
 }
 
 export const ZClassificationRequest = z.object({
-  document: z.union([ZMimeDataInput, ZFileRef]),
+  document: z.union([ZMIMEData, ZFileRef]),
   categories: ZCategory.array(),
   model: z.string().optional(),
   firstNPages: z.number().int().nullable().optional(),
@@ -62,7 +59,7 @@ export function deserializeClassificationRequest(
   wire: ClassificationRequestResponse
 ): ClassificationRequest {
   return {
-    document: wire['document'] as unknown as MimeDataInput | FileRef,
+    document: wire['document'] as unknown as MIMEData | FileRef,
     categories: wire['categories'].map((__i) => deserializeCategory(__i)),
     model: wire['model'],
     firstNPages: wire['first_n_pages'],

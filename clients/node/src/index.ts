@@ -4,7 +4,7 @@ export { Retab, type RetabOptions } from './retab.js';
 export { PaginatedList, type ListMetadata } from './_pagination.js';
 export {
   coerceMimeData,
-  type MIMEDataInput,
+  type DocumentInput,
   mimeToBlob,
   retabStorageFileIdFromUrl,
 } from './runtime/mime.js';

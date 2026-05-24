@@ -4,6 +4,7 @@ package retab
 
 import (
 	"context"
+	"fmt"
 )
 
 // SchemaService handles Schemas operations.
@@ -13,7 +14,7 @@ type SchemaService struct {
 
 // SchemasGenerateParams contains the parameters for Generate.
 type SchemasGenerateParams struct {
-	Documents       []*MIMEDataInput                      `json:"documents" url:"-"`
+	Documents       any                                   `json:"documents" url:"-"`
 	Model           *string                               `json:"model,omitempty" url:"-"`
 	ReasoningEffort *GenerateSchemaRequestReasoningEffort `json:"reasoning_effort,omitempty" url:"-"`
 	Instructions    *string                               `json:"instructions,omitempty" url:"-"`
@@ -25,8 +26,47 @@ type SchemasGenerateParams struct {
 // Generate schema From Examples
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
 func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*PartialSchema, error) {
+	type generateWireBody struct {
+		Documents          []MIMEData                            `json:"documents"`
+		Model              *string                               `json:"model,omitempty"`
+		ReasoningEffort    *GenerateSchemaRequestReasoningEffort `json:"reasoning_effort,omitempty"`
+		Instructions       *string                               `json:"instructions,omitempty"`
+		ImageResolutionDpi *int                                  `json:"image_resolution_dpi,omitempty"`
+		Stream             *bool                                 `json:"stream,omitempty"`
+	}
+	if params == nil {
+		return nil, fmt.Errorf("retab: params is required")
+	}
+	var coercedDocuments []MIMEData
+	if params.Documents != nil {
+		items, ok := params.Documents.([]any)
+		if !ok {
+			if typed, okTyped := params.Documents.([]MIMEData); okTyped {
+				coercedDocuments = typed
+			} else {
+				return nil, fmt.Errorf("retab: documents must be a slice")
+			}
+		} else {
+			coercedDocuments = make([]MIMEData, 0, len(items))
+			for i, raw := range items {
+				mime, err := InferMIMEData(raw)
+				if err != nil {
+					return nil, fmt.Errorf("retab: invalid documents[%d]: %w", i, err)
+				}
+				coercedDocuments = append(coercedDocuments, mime)
+			}
+		}
+	}
+	body := generateWireBody{
+		Documents:          coercedDocuments,
+		Model:              params.Model,
+		ReasoningEffort:    params.ReasoningEffort,
+		Instructions:       params.Instructions,
+		ImageResolutionDpi: params.ImageResolutionDpi,
+		Stream:             params.Stream,
+	}
 	var result PartialSchema
-	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, params, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)
 	if err != nil {
 		return nil, err
 	}

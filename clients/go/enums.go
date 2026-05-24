@@ -482,6 +482,15 @@ const (
 	SourcesResponseDocumentTypeTxt   SourcesResponseDocumentType = "txt"
 )
 
+// WorkflowTestRunScopeType represents workflow test run scope type values.
+type WorkflowTestRunScopeType string
+
+const (
+	WorkflowTestRunScopeTypeSingle   WorkflowTestRunScopeType = "single"
+	WorkflowTestRunScopeTypeWorkflow WorkflowTestRunScopeType = "workflow"
+	WorkflowTestRunScopeTypeBlock    WorkflowTestRunScopeType = "block"
+)
+
 // ExtractionsOrder is an alias for ClassificationsOrder.
 type ExtractionsOrder = ClassificationsOrder
 

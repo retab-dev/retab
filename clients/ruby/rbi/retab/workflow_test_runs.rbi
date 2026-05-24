@@ -33,10 +33,12 @@ module Retab
 
     sig do
       params(
+        workflow_id: String,
+        scope: T.nilable(T.any(Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope)),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowTestRun)
     end
-    def create(request_options:); end
+    def create(workflow_id:, scope:, request_options:); end
 
     sig do
       params(

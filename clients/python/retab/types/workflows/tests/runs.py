@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal, TypeAlias
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.runs import ApiTrigger, ErrorDetails, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger, WorkflowSnapshotRef
 
@@ -64,37 +64,15 @@ class CompletedWorkflowTestRun(BaseModel):
     status: Literal["completed"] = Field(default="completed")
 
 
-class CreateWorkflowTestRunAllRequest(BaseModel):
-    """Run every saved test in a workflow."""
+class CreateWorkflowTestRunRequest(BaseModel):
+    """Request body for POST /v1/workflows/tests/runs. Provide a workflow_id and optionally narrow execution with scope.type single or block. Omit scope, or pass scope.type workflow, to run every saved workflow test."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    workflow_id: str
-    n_consensus: int | None = None
-
-
-class CreateWorkflowTestRunForTargetRequest(BaseModel):
-    """Run every workflow test for one target in a workflow."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
-    target: WorkflowTestBlockTarget
-    n_consensus: int | None = None
-
-
-class CreateWorkflowTestRunForTestRequest(BaseModel):
-    """Run one saved workflow test by test id."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    test_id: str
-    workflow_id: str | None = None
-    n_consensus: int | None = None
-
-
-# Request body for POST /v1/workflows/tests/runs. Use exactly one of the single-test, target, or all-tests shapes.
-CreateWorkflowTestRunRequest: TypeAlias = CreateWorkflowTestRunForTestRequest | CreateWorkflowTestRunForTargetRequest | CreateWorkflowTestRunAllRequest
+    scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = Field(
+        default=None, description="Optional execution scope. Omit to run every saved test in the workflow.", discriminator="type"
+    )
 
 
 class ErrorWorkflowTestRun(BaseModel):
@@ -163,6 +141,24 @@ class WorkflowTestRun(BaseModel):
     counts: BlockTestBatchExecutionCounts | None = None
 
 
+class WorkflowTestRunBlockScope(BaseModel):
+    """Run every workflow test for one block in the workflow."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["block"]
+    block_id: str
+
+
+class WorkflowTestRunSingleScope(BaseModel):
+    """Run one saved workflow test in the workflow."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["single"]
+    test_id: str
+
+
 class WorkflowTestRunTiming(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -170,6 +166,14 @@ class WorkflowTestRunTiming(BaseModel):
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
+
+
+class WorkflowTestRunWorkflowScope(BaseModel):
+    """Run every saved test in the workflow."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["workflow"]
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -182,13 +186,14 @@ BlockTestLifecycleCounts.model_rebuild()
 BlockTestOutcomeCounts.model_rebuild()
 CancelledWorkflowTestRun.model_rebuild()
 CompletedWorkflowTestRun.model_rebuild()
-CreateWorkflowTestRunAllRequest.model_rebuild()
-CreateWorkflowTestRunForTargetRequest.model_rebuild()
-CreateWorkflowTestRunForTestRequest.model_rebuild()
+CreateWorkflowTestRunRequest.model_rebuild()
 ErrorWorkflowTestRun.model_rebuild()
 PendingWorkflowTestRun.model_rebuild()
 QueuedWorkflowTestRun.model_rebuild()
 RunningWorkflowTestRun.model_rebuild()
 WorkflowTestBlockTarget.model_rebuild()
 WorkflowTestRun.model_rebuild()
+WorkflowTestRunBlockScope.model_rebuild()
+WorkflowTestRunSingleScope.model_rebuild()
 WorkflowTestRunTiming.model_rebuild()
+WorkflowTestRunWorkflowScope.model_rebuild()

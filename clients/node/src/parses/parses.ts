@@ -2,13 +2,12 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import type { FileRef } from '../extractions/interfaces/index.js';
+import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type {
   Parse,
   ParseRequestTableParsingFormat,
   ParseResponse,
 } from '../parses/interfaces/index.js';
-import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import { deserializeParse } from '../parses/interfaces/index.js';
 
 export class Parses {
@@ -42,15 +41,16 @@ export class Parses {
 
   /** Create Parse */
   async create(
-    document: MimeDataInput | FileRef,
+    document: DocumentInput,
     model?: string,
     tableParsingFormat?: ParseRequestTableParsingFormat,
     imageResolutionDpi?: number,
     instructions?: string | null,
     bustCache?: boolean
   ): Promise<Parse> {
+    const documentCoerced = await coerceMimeData(document);
     const body = {
-      document: document,
+      document: documentCoerced,
       model: model,
       table_parsing_format: tableParsingFormat,
       image_resolution_dpi: imageResolutionDpi,

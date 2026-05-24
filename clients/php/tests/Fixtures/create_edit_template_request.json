@@ -2,7 +2,8 @@
   "name": "Test",
   "document": {
     "filename": "Test",
-    "url": "https://example.com"
+    "url": "https://example.com",
+    "mime_type": "test_mime_type"
   },
   "form_fields": [
     {

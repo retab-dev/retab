@@ -1249,14 +1249,6 @@ type LlmNotJudgedAsCondition struct {
 	ExpectedLabel *string `json:"expected_label,omitempty"`
 }
 
-// MIMEDataInput represents a mime data input.
-type MIMEDataInput struct {
-	// Filename is the filename of the file
-	Filename string `json:"filename"`
-	// URL is the URL of the file in base64 format
-	URL string `json:"url"`
-}
-
 // ManualTrigger manual run started by a user from the dashboard.
 type ManualTrigger struct {
 	Type *string `json:"type,omitempty"`
@@ -2280,6 +2272,18 @@ type WorkflowTestRun struct {
 	Counts     *BlockTestBatchExecutionCounts `json:"counts,omitempty"`
 }
 
+// WorkflowTestRunBlockScope run every workflow test for one block in the workflow.
+type WorkflowTestRunBlockScope struct {
+	Type    string `json:"type"`
+	BlockID string `json:"block_id"`
+}
+
+// WorkflowTestRunSingleScope run one saved workflow test in the workflow.
+type WorkflowTestRunSingleScope struct {
+	Type   string `json:"type"`
+	TestID string `json:"test_id"`
+}
+
 // WorkflowTestRunTiming represents a workflow test run timing.
 type WorkflowTestRunTiming struct {
 	// CreatedAt is when the workflow-test run was created.
@@ -2287,6 +2291,11 @@ type WorkflowTestRunTiming struct {
 	StartedAt   *time.Time `json:"started_at,omitempty"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 	DurationMs  *int       `json:"duration_ms,omitempty"`
+}
+
+// WorkflowTestRunWorkflowScope run every saved test in the workflow.
+type WorkflowTestRunWorkflowScope struct {
+	Type string `json:"type"`
 }
 
 // File represents a file.
@@ -2325,6 +2334,16 @@ type SourcesResponse struct {
 type JobResponse struct {
 	StatusCode int                    `json:"status_code"`
 	Body       map[string]interface{} `json:"body"`
+}
+
+// WorkflowTestRunScope execution scope for a workflow-test run. Omit scope to run every saved test in the workflow.
+type WorkflowTestRunScope struct {
+	// Type is single runs one saved test, workflow runs every saved test, and block runs every saved test for one block.
+	Type WorkflowTestRunScopeType `json:"type"`
+	// TestID is saved test id. Required when type is single.
+	TestID *string `json:"test_id,omitempty"`
+	// BlockID is workflow block id. Required when type is block.
+	BlockID *string `json:"block_id,omitempty"`
 }
 
 // PaginationParams contains common pagination parameters for list operations.

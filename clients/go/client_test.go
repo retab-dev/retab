@@ -607,6 +607,51 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	}
 }
 
+func TestWorkflowTestRunsCreateSendsTypedScopeBody(t *testing.T) {
+	var createBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests/runs" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"wftestrun_123"}`)
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testID := "wfnodetest_123"
+	created, err := client.WorkflowTestRuns.Create(context.Background(), &WorkflowTestRunsCreateParams{
+		WorkflowID: "wf_123",
+		Scope: &WorkflowTestRunScope{
+			Type:   WorkflowTestRunScopeTypeSingle,
+			TestID: &testID,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.ID != "wftestrun_123" {
+		t.Fatalf("created = %#v", created)
+	}
+	scope, ok := createBody["scope"].(map[string]any)
+	if !ok {
+		t.Fatalf("scope = %#v", createBody["scope"])
+	}
+	if createBody["workflow_id"] != "wf_123" || scope["type"] != "single" || scope["test_id"] != "wfnodetest_123" {
+		t.Fatalf("body = %#v", createBody)
+	}
+	if _, ok := createBody["n_consensus"]; ok {
+		t.Fatalf("n_consensus leaked into create body: %#v", createBody)
+	}
+}
+
 func TestWorkflowRunsDoNotExposeWaitHelpers(t *testing.T) {
 	runServiceType := reflect.TypeOf(&WorkflowRunService{})
 	for _, methodName := range []string{"WaitForCompletion", "Wait", "CreateAndWait"} {

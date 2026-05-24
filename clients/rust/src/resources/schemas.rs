@@ -23,9 +23,22 @@ pub struct GenerateParams {
 
 impl GenerateParams {
     /// Construct a new `GenerateParams` with the required fields set.
+    ///
+    /// Accepts ergonomic input for MimeData-typed fields via
+    /// [`Into<MimeData>`](crate::MimeData) — pass a `PathBuf`,
+    /// `Vec<u8>`, `&str` URL, or pre-built `MimeData`.
     #[allow(deprecated)]
-    pub fn new(body: GenerateSchemaRequest) -> Self {
-        Self { body }
+    pub fn new<D: Into<crate::MimeData>, I: IntoIterator<Item = D>>(documents: I) -> Self {
+        Self {
+            body: GenerateSchemaRequest {
+                documents: documents.into_iter().map(Into::into).collect(),
+                model: Default::default(),
+                reasoning_effort: Default::default(),
+                instructions: Default::default(),
+                image_resolution_dpi: Default::default(),
+                stream: Default::default(),
+            },
+        }
     }
 }
 

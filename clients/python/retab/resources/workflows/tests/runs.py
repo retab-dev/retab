@@ -7,13 +7,7 @@ import datetime
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows.tests.runs import (
-    CreateWorkflowTestRunAllRequest,
-    CreateWorkflowTestRunForTargetRequest,
-    CreateWorkflowTestRunForTestRequest,
-    WorkflowTestBlockTarget,
-    WorkflowTestRun,
-)
+from retab.types.workflows.tests.runs import CreateWorkflowTestRunRequest, WorkflowTestRun, WorkflowTestRunBlockScope, WorkflowTestRunSingleScope, WorkflowTestRunWorkflowScope
 
 
 class WorkflowTestRunsMixin:
@@ -61,19 +55,14 @@ class WorkflowTestRunsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/tests/runs", params=params or None, data=data)
 
     def prepare_create(
-        self, test_id: str | None = None, workflow_id: str | None = None, n_consensus: int | None = None, target: WorkflowTestBlockTarget | None = None, **extra_params: Any
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> PreparedRequest:
-        """Create Test Run Create a workflow-scoped test run. Scoping identity comes from the body — ``workflow_id`` and/or ``test_id`` per ``CreateWorkflowTestRunRequest``."""
+        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        if test_id is not None:
-            payload = CreateWorkflowTestRunForTestRequest(test_id=cast(Any, test_id), workflow_id=cast(Any, workflow_id), n_consensus=cast(Any, n_consensus))
-        elif target is not None:
-            payload = CreateWorkflowTestRunForTargetRequest(workflow_id=cast(Any, workflow_id), target=cast(Any, target), n_consensus=cast(Any, n_consensus))
-        else:
-            payload = CreateWorkflowTestRunAllRequest(workflow_id=cast(Any, workflow_id), n_consensus=cast(Any, n_consensus))
+        payload = CreateWorkflowTestRunRequest(workflow_id=cast(Any, workflow_id), scope=cast(Any, scope))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/tests/runs", params=params or None, data=data)
 
@@ -140,10 +129,10 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
         return self.request_page(prepared_request, model=WorkflowTestRun)
 
     def create(
-        self, test_id: str | None = None, workflow_id: str | None = None, n_consensus: int | None = None, target: WorkflowTestBlockTarget | None = None, **extra_params: Any
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> WorkflowTestRun:
-        """Create Test Run Create a workflow-scoped test run. Scoping identity comes from the body — ``workflow_id`` and/or ``test_id`` per ``CreateWorkflowTestRunRequest``."""
-        prepared_request = self.prepare_create(test_id=test_id, workflow_id=workflow_id, n_consensus=n_consensus, target=target, **extra_params)
+        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
+        prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 
@@ -204,10 +193,10 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
         return await self.request_page(prepared_request, model=WorkflowTestRun)
 
     async def create(
-        self, test_id: str | None = None, workflow_id: str | None = None, n_consensus: int | None = None, target: WorkflowTestBlockTarget | None = None, **extra_params: Any
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> WorkflowTestRun:
-        """Create Test Run Create a workflow-scoped test run. Scoping identity comes from the body — ``workflow_id`` and/or ``test_id`` per ``CreateWorkflowTestRunRequest``."""
-        prepared_request = self.prepare_create(test_id=test_id, workflow_id=workflow_id, n_consensus=n_consensus, target=target, **extra_params)
+        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
+        prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 

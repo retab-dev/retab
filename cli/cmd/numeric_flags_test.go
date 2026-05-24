@@ -27,7 +27,6 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 		{name: "files create-upload size", cmd: filesCreateUploadCmd, flag: "size-bytes"},
 		{name: "workflow tests limit", cmd: workflowsTestsListCmd, flag: "limit", reset: "1", wantError: "between"},
 		{name: "workflow test runs limit", cmd: workflowsTestsRunsListCmd, flag: "limit", reset: "1", wantError: "between"},
-		{name: "workflow tests consensus", cmd: workflowsTestsRunsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments create consensus", cmd: workflowsExperimentsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments update consensus", cmd: workflowsExperimentsUpdateCmd, flag: "n-consensus"},
 		{name: "workflow block width", cmd: workflowsBlocksUpdateCmd, flag: "width"},
@@ -152,12 +151,11 @@ func TestConsensusFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
 }
 
 func TestWorkflowConsensusFlagErrorMatchesHelp(t *testing.T) {
-	// The flag's help text on all three consumers reads "(3, 5, or 7)" — the
+	// The flag's help text on both workflow experiment consumers reads "(3, 5, or 7)" — the
 	// validator's error should match. Passing 0 explicitly should be rejected
 	// (Cobra's Changed() handles the "not provided" path without needing 0 as
 	// a sentinel inside Set).
 	for _, cmd := range []*cobra.Command{
-		workflowsTestsRunsCreateCmd,
 		workflowsExperimentsCreateCmd,
 		workflowsExperimentsUpdateCmd,
 	} {

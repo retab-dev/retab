@@ -401,9 +401,6 @@ __all__ = [
     "CompletedWorkflowTestRun",
     "ContainCondition",
     "CreateWorkflowTestRequest",
-    "CreateWorkflowTestRunAllRequest",
-    "CreateWorkflowTestRunForTargetRequest",
-    "CreateWorkflowTestRunForTestRequest",
     "CreateWorkflowTestRunRequest",
     "EndsWithCondition",
     "EqualCondition",
@@ -444,7 +441,10 @@ __all__ = [
     "WorkflowTestResult",
     "WorkflowTestResultVerdict",
     "WorkflowTestRun",
+    "WorkflowTestRunBlockScope",
+    "WorkflowTestRunSingleScope",
     "WorkflowTestRunTiming",
+    "WorkflowTestRunWorkflowScope",
     "WorkflowTestSchemaDrift",
 ]
 

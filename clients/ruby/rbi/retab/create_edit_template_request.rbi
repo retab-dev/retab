@@ -15,10 +15,10 @@ module Retab
     sig { params(value: String).returns(String) }
     def name=(value); end
 
-    sig { returns(Retab::MimeDataInput) }
+    sig { returns(Retab::MimeData) }
     def document; end
 
-    sig { params(value: Retab::MimeDataInput).returns(Retab::MimeDataInput) }
+    sig { params(value: Retab::MimeData).returns(Retab::MimeData) }
     def document=(value); end
 
     sig { returns(T::Array[Retab::FormField]) }

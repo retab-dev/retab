@@ -5,8 +5,7 @@ from __future__ import annotations
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef
-from retab.types.schemas import MimeDataInput
+from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.artifacts import EditConfig, EditResult
 
 
@@ -16,7 +15,7 @@ class EditRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     instructions: str = Field(..., description="Instructions describing how to fill the form fields.")
-    document: MimeDataInput | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
+    document: MIMEData | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
     template_id: str | None = Field(
         default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document."
     )

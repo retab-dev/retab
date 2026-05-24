@@ -9,15 +9,14 @@ import type {
   FileLink,
   FileLinkResponse,
   FileResponse,
-  MIMEData,
-  MIMEDataResponse,
 } from '../files/interfaces/index.js';
+import type { MIMEData, MIMEDataResponse } from '../schemas/interfaces/index.js';
 import {
   deserializeCreateUploadResponse,
   deserializeFile,
   deserializeFileLink,
-  deserializeMIMEData,
 } from '../files/interfaces/index.js';
+import { deserializeMIMEData } from '../schemas/interfaces/index.js';
 
 export class Files {
   constructor(private readonly client: Retab) {}

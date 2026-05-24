@@ -9,6 +9,18 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
+    sig { returns(String) }
+    def workflow_id; end
+
+    sig { params(value: String).returns(String) }
+    def workflow_id=(value); end
+
+    sig { returns(T.nilable(T.any(Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope))) }
+    def scope; end
+
+    sig { params(value: T.nilable(T.any(Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope))).returns(T.nilable(T.any(Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope))) }
+    def scope=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

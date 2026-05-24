@@ -14,7 +14,7 @@ class SchemasTest < Minitest::Test
   def test_generate_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/schemas/generate(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.schemas.generate(documents: [{}])
+    result = @client.schemas.generate(documents: [{filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}])
     refute_nil(result)
   end
 
@@ -24,7 +24,7 @@ class SchemasTest < Minitest::Test
       name: :generate,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/schemas/generate(\?|\z)},
-      args: {documents: [{}]}
+      args: {documents: [{filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}]}
     }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do

@@ -32,7 +32,7 @@ type EditsCreateParams struct {
 	// Instructions is instructions describing how to fill the form fields.
 	Instructions string `json:"instructions" url:"-"`
 	// Document is input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.
-	Document *interface{} `json:"document,omitempty" url:"-"`
+	Document any `json:"document,omitempty" url:"-"`
 	// TemplateID is editTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document.
 	TemplateID *string `json:"template_id,omitempty" url:"-"`
 	// Model is the model to use for edit inference.
@@ -51,8 +51,35 @@ func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opt
 	if params.Document == nil {
 		return nil, fmt.Errorf("retab: document is required")
 	}
+	type createWireBody struct {
+		Instructions string      `json:"instructions"`
+		Document     *MIMEData   `json:"document,omitempty"`
+		TemplateID   *string     `json:"template_id,omitempty"`
+		Model        *string     `json:"model,omitempty"`
+		Config       *EditConfig `json:"config,omitempty"`
+		BustCache    *bool       `json:"bust_cache,omitempty"`
+	}
+	if params == nil {
+		return nil, fmt.Errorf("retab: params is required")
+	}
+	var coercedDocument *MIMEData
+	if params.Document != nil {
+		mime, err := InferMIMEData(params.Document)
+		if err != nil {
+			return nil, fmt.Errorf("retab: invalid document: %w", err)
+		}
+		coercedDocument = &mime
+	}
+	body := createWireBody{
+		Instructions: params.Instructions,
+		Document:     coercedDocument,
+		TemplateID:   params.TemplateID,
+		Model:        params.Model,
+		Config:       params.Config,
+		BustCache:    params.BustCache,
+	}
 	var result Edit
-	_, err := s.client.request(ctx, "POST", "/v1/edits", nil, params, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/edits", nil, body, &result, opts)
 	if err != nil {
 		return nil, err
 	}

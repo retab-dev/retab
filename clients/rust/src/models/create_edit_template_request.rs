@@ -11,21 +11,21 @@ pub struct CreateEditTemplateRequest {
     /// Name of the template.
     pub name: String,
     /// The PDF document to use as the empty template.
-    pub document: MimeDataInput,
+    pub document: MimeData,
     /// Form fields to attach to the template.
     pub form_fields: Vec<FormField>,
 }
 impl CreateEditTemplateRequest {
     /// Construct a new `CreateEditTemplateRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
+    pub fn new<D: Into<crate::MimeData>>(
         name: impl Into<String>,
-        document: MimeDataInput,
+        document: D,
         form_fields: Vec<FormField>,
     ) -> Self {
         Self {
             name: name.into(),
-            document,
+            document: document.into(),
             form_fields,
         }
     }

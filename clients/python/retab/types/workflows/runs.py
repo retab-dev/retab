@@ -5,8 +5,7 @@ import datetime
 from enum import Enum
 from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.mime import FileRef
-from retab.types.schemas import MimeDataInput
+from retab.types.mime import FileRef, MIMEData
 
 
 class CancelWorkflowResponseCancellationStatus(str, Enum):
@@ -119,7 +118,7 @@ class CreateWorkflowRunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow id for the fresh run.")
-    documents: dict[str, FileRef | MimeDataInput] | None = Field(default=None, description="Mapping of start_document block IDs to their input documents.")
+    documents: dict[str, FileRef | MIMEData] | None = Field(default=None, description="Mapping of start_document block IDs to their input documents.")
     json_inputs: dict[str, Any] | None = Field(default=None, description="Mapping of start-json block IDs to their input JSON data.")
     version: str | None = Field(
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."

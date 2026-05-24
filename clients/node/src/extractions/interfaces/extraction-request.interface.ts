@@ -3,14 +3,11 @@
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from './file-ref.interface.js';
 import { ZFileRef } from './file-ref.interface.js';
-import type {
-  MimeDataInput,
-  MimeDataInputResponse,
-} from '../../schemas/interfaces/mime-data-input.interface.js';
-import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
+import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
 
 export interface ExtractionRequest {
-  document: MimeDataInput | FileRef;
+  document: MIMEData | FileRef;
   /** JSON schema describing the structured output */
   jsonSchema: Record<string, unknown>;
   /**
@@ -45,7 +42,7 @@ export interface ExtractionRequest {
 }
 
 export interface ExtractionRequestResponse {
-  document: MimeDataInputResponse | FileRefResponse;
+  document: MIMEDataResponse | FileRefResponse;
   json_schema: Record<string, unknown>;
   model?: string;
   image_resolution_dpi?: number;
@@ -59,7 +56,7 @@ export interface ExtractionRequestResponse {
 }
 
 export const ZExtractionRequest = z.object({
-  document: z.union([ZMimeDataInput, ZFileRef]),
+  document: z.union([ZMIMEData, ZFileRef]),
   jsonSchema: z.record(z.string(), z.unknown()),
   model: z.string().optional(),
   imageResolutionDpi: z.number().int().optional(),
@@ -74,7 +71,7 @@ export const ZExtractionRequest = z.object({
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
   return {
-    document: wire['document'] as unknown as MimeDataInput | FileRef,
+    document: wire['document'] as unknown as MIMEData | FileRef,
     jsonSchema: wire['json_schema'],
     model: wire['model'],
     imageResolutionDpi: wire['image_resolution_dpi'],

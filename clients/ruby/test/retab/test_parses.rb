@@ -21,7 +21,7 @@ class ParsesTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/parses(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.parses.create(document: {})
+    result = @client.parses.create(document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="})
     refute_nil(result)
   end
 
@@ -42,7 +42,12 @@ class ParsesTest < Minitest::Test
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/parses(\?|\z)}},
-    {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/parses(\?|\z)}, args: {document: {}}},
+    {
+      name: :create,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/parses(\?|\z)},
+      args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}}
+    },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}},
     {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}}
   ].each do |spec|
