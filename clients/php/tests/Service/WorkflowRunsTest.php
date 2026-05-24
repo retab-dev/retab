@@ -17,7 +17,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflows()->runs()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -45,7 +45,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->create(workflowId: 'test_value');
+        $result = $client->workflows()->runs()->create(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -60,7 +60,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_export_payload_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->export(workflowId: 'test_value', blockId: 'test_value');
+        $result = $client->workflows()->runs()->export(workflowId: 'test_value', blockId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowExportPayloadResponse::class, $result);
         $this->assertSame($fixture['csv_data'], $result->csvData);
         $this->assertIsArray($result->toArray());
@@ -76,7 +76,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->get('test_run_id');
+        $result = $client->workflows()->runs()->get('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -88,7 +88,7 @@ class WorkflowRunsTest extends TestCase
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->workflowRuns()->delete('test_run_id');
+        $client->workflows()->runs()->delete('test_run_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/runs/test_run_id', $request->getUri()->getPath());
@@ -98,12 +98,60 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('cancel_workflow_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->cancel('test_run_id');
+        $result = $client->workflows()->runs()->cancel('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\CancelWorkflowResponse::class, $result);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/runs/test_run_id/cancel', $request->getUri()->getPath());
+    }
+
+    public function testCreateCoercesDocumentInputsPerStartBlock(): void
+    {
+        $fixture = $this->loadFixture('workflow_run');
+        $fileRef = new \Retab\Resource\FileRef(id: 'fil_123', filename: 'stored.pdf', mimeType: 'application/pdf');
+        $mimeData = new \Retab\Resource\MimeData(filename: 'ready.txt', url: 'data:text/plain;base64,cmVhZHk=');
+        $path = tempnam(sys_get_temp_dir(), 'retab-php-doc-');
+        $this->assertIsString($path);
+        file_put_contents($path, 'from path');
+        $stream = fopen('php://temp', 'r+');
+        $this->assertIsResource($stream);
+        fwrite($stream, 'from stream');
+        rewind($stream);
+
+        try {
+            $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+            $client->workflows()->runs()->create(
+                workflowId: 'test_value',
+                documents: [
+                    'start_file' => $fileRef,
+                    'start_mime' => $mimeData,
+                    'start_path' => $path,
+                    'start_string' => 'raw text',
+                    'start_stream' => $stream,
+                ],
+            );
+        } finally {
+            fclose($stream);
+            unlink($path);
+        }
+
+        $body = json_decode((string) $this->getLastRequest()->getBody(), true);
+        $this->assertSame([
+            'id' => 'fil_123',
+            'filename' => 'stored.pdf',
+            'mime_type' => 'application/pdf',
+        ], $body['documents']['start_file']);
+        $this->assertSame([
+            'filename' => 'ready.txt',
+            'url' => 'data:text/plain;base64,cmVhZHk=',
+        ], $body['documents']['start_mime']);
+        $this->assertSame('retab-php-doc-', substr($body['documents']['start_path']['filename'], 0, 14));
+        $this->assertStringStartsWith('data:text/plain;base64,', $body['documents']['start_path']['url']);
+        $this->assertSame('document', $body['documents']['start_string']['filename']);
+        $this->assertSame('data:text/plain;base64,cmF3IHRleHQ=', $body['documents']['start_string']['url']);
+        $this->assertSame('document', $body['documents']['start_stream']['filename']);
+        $this->assertSame('data:application/octet-stream;base64,ZnJvbSBzdHJlYW0=', $body['documents']['start_stream']['url']);
     }
 
     public function testPaginationBoundary(): void
@@ -113,7 +161,7 @@ class WorkflowRunsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowRuns()->list();
+        $result = $client->workflows()->runs()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

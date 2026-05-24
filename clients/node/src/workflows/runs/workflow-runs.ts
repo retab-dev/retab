@@ -76,11 +76,18 @@ export class WorkflowRuns {
   /** Create Workflow Run Route */
   async create(
     workflowId: string,
-    documents?: DocumentInput,
+    documents?: Record<string, DocumentInput>,
     jsonInputs?: Record<string, unknown>,
     version?: string
   ): Promise<WorkflowRun> {
-    const documentsCoerced = documents === undefined ? undefined : await coerceMimeData(documents);
+    const documentsCoerced =
+      documents === undefined
+        ? undefined
+        : Object.fromEntries(
+            await Promise.all(
+              Object.entries(documents).map(async ([__k, __v]) => [__k, await coerceMimeData(__v)])
+            )
+          );
     const body = {
       workflow_id: workflowId,
       documents: documentsCoerced,

@@ -6,6 +6,8 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::workflow_test_run_results::WorkflowTestRunResultsApi;
+use crate::resources::workflow_test_runs::WorkflowTestRunsApi;
 use serde::Serialize;
 
 pub struct WorkflowTestsApi<'a> {
@@ -80,6 +82,20 @@ impl UpdateParams {
 }
 
 impl<'a> WorkflowTestsApi<'a> {
+    /// Access the `results` sub-resource.
+    pub fn results(&self) -> WorkflowTestRunResultsApi<'a> {
+        WorkflowTestRunResultsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `runs` sub-resource.
+    pub fn runs(&self) -> WorkflowTestRunsApi<'a> {
+        WorkflowTestRunsApi {
+            client: self.client,
+        }
+    }
+
     /// List Tests
     pub async fn list(&self, params: ListParams) -> Result<WorkflowTestList, Error> {
         self.list_with_options(params, None).await

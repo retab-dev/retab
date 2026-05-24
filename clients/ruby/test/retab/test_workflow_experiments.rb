@@ -14,41 +14,41 @@ class WorkflowExperimentsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_experiments.list(workflow_id: "stub")
+    result = @client.workflows.experiments.list(workflow_id: "stub")
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_list_requires_required_query_params
     assert_raises(ArgumentError) do
-      @client.workflow_experiments.list
+      @client.workflows.experiments.list
     end
   end
 
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_experiments.create(workflow_id: "stub")
+    result = @client.workflows.experiments.create(workflow_id: "stub")
     refute_nil(result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_experiments.get(experiment_id: "stub")
+    result = @client.workflows.experiments.get(experiment_id: "stub")
     refute_nil(result)
   end
 
   def test_update_returns_expected_result
     stub_request(:patch, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_experiments.update(experiment_id: "stub")
+    result = @client.workflows.experiments.update(experiment_id: "stub")
     refute_nil(result)
   end
 
   def test_delete_returns_expected_result
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_experiments.delete(experiment_id: "stub")
+    result = @client.workflows.experiments.delete(experiment_id: "stub")
     assert_nil(result)
   end
 
@@ -89,7 +89,7 @@ class WorkflowExperimentsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_experiments.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.experiments.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

@@ -138,7 +138,8 @@ pagination_case!(
     "/v1/edits/templates",
     |client| {
         client
-            .edit_templates()
+            .edits()
+            .templates()
             .list(retab::resources::edit_templates::ListParams::default())
             .await
     }
@@ -154,7 +155,9 @@ pagination_case!(
     "/v1/workflows/experiments/results",
     |client| {
         client
-            .experiment_run_results()
+            .workflows()
+            .experiments()
+            .results()
             .list(retab::resources::experiment_run_results::ListParams::new(
                 "run_x",
             ))
@@ -166,7 +169,9 @@ pagination_case!(
     "/v1/workflows/experiments/runs",
     |client| {
         client
-            .experiment_runs()
+            .workflows()
+            .experiments()
+            .runs()
             .list(retab::resources::experiment_runs::ListParams::default())
             .await
     }
@@ -212,7 +217,8 @@ pagination_case!(
     "/v1/workflows/artifacts",
     |client| {
         client
-            .workflow_artifacts()
+            .workflows()
+            .artifacts()
             .list(retab::resources::workflow_artifacts::ListParams::default())
             .await
     }
@@ -222,7 +228,9 @@ pagination_case!(
     "/v1/workflows/blocks/executions",
     |client| {
         client
-            .workflow_block_executions()
+            .workflows()
+            .blocks()
+            .executions()
             .list(retab::resources::workflow_block_executions::ListParams::new("run_x", "block_x"))
             .await
     }
@@ -232,7 +240,8 @@ pagination_case!(
     "/v1/workflows/blocks",
     |client| {
         client
-            .workflow_blocks()
+            .workflows()
+            .blocks()
             .list(retab::resources::workflow_blocks::ListParams::new("wf_x"))
             .await
     }
@@ -242,7 +251,8 @@ pagination_case!(
     "/v1/workflows/edges",
     |client| {
         client
-            .workflow_edges()
+            .workflows()
+            .edges()
             .list(retab::resources::workflow_edges::ListParams::new("wf_x"))
             .await
     }
@@ -252,7 +262,8 @@ pagination_case!(
     "/v1/workflows/experiments",
     |client| {
         client
-            .workflow_experiments()
+            .workflows()
+            .experiments()
             .list(retab::resources::workflow_experiments::ListParams::new(
                 "wf_x",
             ))
@@ -264,7 +275,9 @@ pagination_case!(
     "/v1/workflows/reviews/versions",
     |client| {
         client
-            .workflow_review_versions()
+            .workflows()
+            .reviews()
+            .versions()
             .list(retab::resources::workflow_review_versions::ListParams::new(
                 "rev_x",
             ))
@@ -276,7 +289,8 @@ pagination_case!(
     "/v1/workflows/reviews",
     |client| {
         client
-            .workflow_reviews()
+            .workflows()
+            .reviews()
             .list(retab::resources::workflow_reviews::ListParams::default())
             .await
     }
@@ -286,7 +300,8 @@ pagination_case!(
     "/v1/workflows/runs",
     |client| {
         client
-            .workflow_runs()
+            .workflows()
+            .runs()
             .list(retab::resources::workflow_runs::ListParams::default())
             .await
     }
@@ -296,7 +311,8 @@ pagination_case!(
     "/v1/workflows/steps",
     |client| {
         client
-            .workflow_steps()
+            .workflows()
+            .steps()
             .list(retab::resources::workflow_steps::ListParams::default())
             .await
     }
@@ -306,7 +322,9 @@ pagination_case!(
     "/v1/workflows/tests/results",
     |client| {
         client
-            .workflow_test_run_results()
+            .workflows()
+            .tests()
+            .results()
             .list(retab::resources::workflow_test_run_results::ListParams::new("run_x"))
             .await
     }
@@ -316,7 +334,9 @@ pagination_case!(
     "/v1/workflows/tests/runs",
     |client| {
         client
-            .workflow_test_runs()
+            .workflows()
+            .tests()
+            .runs()
             .list(retab::resources::workflow_test_runs::ListParams::default())
             .await
     }
@@ -326,7 +346,8 @@ pagination_case!(
     "/v1/workflows/tests",
     |client| {
         client
-            .workflow_tests()
+            .workflows()
+            .tests()
             .list(retab::resources::workflow_tests::ListParams::new("wf_x"))
             .await
     }

@@ -17,7 +17,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('list_edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, name: 'test_value', sortBy: 'test_value');
+        $result = $client->edits()->templates()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, name: 'test_value', sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -35,7 +35,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->create(name: 'test_value', document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), formFields: []);
+        $result = $client->edits()->templates()->create(name: 'test_value', document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), formFields: []);
         $this->assertInstanceOf(\Retab\Resource\EditTemplate::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
@@ -51,7 +51,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->get('test_template_id');
+        $result = $client->edits()->templates()->get('test_template_id');
         $this->assertInstanceOf(\Retab\Resource\EditTemplate::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
@@ -65,7 +65,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->update('test_template_id');
+        $result = $client->edits()->templates()->update('test_template_id');
         $this->assertInstanceOf(\Retab\Resource\EditTemplate::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
@@ -78,7 +78,7 @@ class EditTemplatesTest extends TestCase
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->editTemplates()->delete('test_template_id');
+        $client->edits()->templates()->delete('test_template_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/edits/templates/test_template_id', $request->getUri()->getPath());
@@ -91,7 +91,7 @@ class EditTemplatesTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->editTemplates()->list();
+        $result = $client->edits()->templates()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

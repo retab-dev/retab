@@ -13,7 +13,7 @@ Retab supports:
 - Workflows: saved multi-step pipelines that can combine primitives, custom logic, branches, loops, API calls, and review steps
 - review-based: workflow runs can pause at review steps and resume after a human decision
 - Consensus: run multiple passes and reconcile results when accuracy matters more than latency
-- SDKs and REST APIs for Python, Node, Go, Ruby, PHP, .NET, Rust, and direct HTTP usage
+- SDKs and REST APIs for Python, Node, Go, Ruby, PHP, .NET, Rust, Java, and direct HTTP usage
 - MCP access so AI agents can inspect and operate Retab through a tool server
 
 Before implementing, install the relevant Retab tools, then read the docs.
@@ -49,6 +49,12 @@ dotnet add package Retab
 
 # Rust SDK
 cargo add retab
+
+# Java SDK - Maven
+mvn dependency:get -Dartifact=com.retab:retab:0.0.1
+
+# Java SDK - Gradle
+# Add implementation("com.retab:retab:0.0.1") to build.gradle.kts
 ```
 
 MCP:

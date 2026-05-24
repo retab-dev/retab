@@ -659,7 +659,7 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
 			_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/partitions":
-			defer r.Body.Close()
+			defer func() { _ = r.Body.Close() }()
 			if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
 				t.Fatalf("decode request body: %v", err)
 			}
@@ -715,7 +715,7 @@ func TestPartitionCreateForwardsExplicitFalseAllowOverlapFlag(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
 			_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/partitions":
-			defer r.Body.Close()
+			defer func() { _ = r.Body.Close() }()
 			if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
 				t.Fatalf("decode request body: %v", err)
 			}

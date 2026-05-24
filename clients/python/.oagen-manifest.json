@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "python",
-  "generatedAt": "2026-05-24T14:17:55.487Z",
+  "generatedAt": "2026-05-24T19:40:36.232Z",
   "files": [
     "retab/resources/__init__.py",
     "retab/resources/classifications.py",
@@ -27,7 +27,6 @@
     "retab/resources/workflows/reviews/versions.py",
     "retab/resources/workflows/runs.py",
     "retab/resources/workflows/spec.py",
-    "retab/resources/workflows/specs.py",
     "retab/resources/workflows/steps.py",
     "retab/resources/workflows/tests/__init__.py",
     "retab/resources/workflows/tests/results.py",
@@ -62,7 +61,7 @@
     "retab/types/workflows/reviews/__init__.py",
     "retab/types/workflows/reviews/versions.py",
     "retab/types/workflows/runs.py",
-    "retab/types/workflows/specs.py",
+    "retab/types/workflows/spec.py",
     "retab/types/workflows/steps.py",
     "retab/types/workflows/tests/__init__.py",
     "retab/types/workflows/tests/results.py",

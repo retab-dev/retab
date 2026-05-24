@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the extractions API operations on <see cref="Retab"/>.</summary>
     public class ExtractionsService : Service
@@ -22,20 +23,19 @@ namespace Retab
         /// Returns a paginated list of extraction documents matching the filter criteria.
         /// The `metadata` parameter accepts a JSON string of key-value pairs to filter by.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="Extraction"/> results.</returns>
-        public virtual async Task<PaginatedList<Extraction>> ListAsync(string httpBearer, ExtractionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<Extraction>> ListAsync(ExtractionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<Extraction>("/v1/extractions", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<Extraction>("/v1/extractions", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<Extraction>> List(string httpBearer, ExtractionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<Extraction>> List(ExtractionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -49,52 +49,35 @@ namespace Retab
         }
 
         /// <summary>Create Extraction</summary>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Extraction"/> result.</returns>
-        public virtual async Task<Extraction> CreateAsync(string httpBearer, ExtractionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Extraction> CreateAsync(ExtractionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/extractions",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Extraction>(request, cancellationToken);
+            return await this.PostAsync<Extraction>("/v1/extractions", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<Extraction> Create(string httpBearer, ExtractionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Extraction> Create(ExtractionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Extraction</summary>
         /// <param name="extractionId">The extraction id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Extraction"/> result.</returns>
-        public virtual async Task<Extraction> GetAsync(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Extraction> GetAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/extractions/{Uri.EscapeDataString(extractionId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<Extraction>(request, cancellationToken);
+            return await this.GetAsync<Extraction>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Extraction> Get(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Extraction> Get(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(extractionId, httpBearer, requestOptions, cancellationToken);
+            return this.GetAsync(extractionId, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Extraction</summary>
@@ -102,25 +85,17 @@ namespace Retab
         /// Delete an extraction
         /// </remarks>
         /// <param name="extractionId">The extraction id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Delete,
-                Path = $"/v1/extractions/{Uri.EscapeDataString(extractionId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            await this.Client.MakeRawAPIRequest(request, cancellationToken);
+            await this.DeleteAsync($"/v1/extractions/{Uri.EscapeDataString(extractionId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task Delete(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.DeleteAsync(extractionId, httpBearer, requestOptions, cancellationToken);
+            return this.DeleteAsync(extractionId, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Extraction Sources</summary>
@@ -131,26 +106,18 @@ namespace Retab
         /// anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
         /// </remarks>
         /// <param name="extractionId">The extraction id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="SourcesResponse"/> result.</returns>
-        public virtual async Task<SourcesResponse> SourcesAsync(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<SourcesResponse> SourcesAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<SourcesResponse>(request, cancellationToken);
+            return await this.GetAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="SourcesAsync"/>.</summary>
-        public virtual Task<SourcesResponse> Sources(string extractionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<SourcesResponse> Sources(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.SourcesAsync(extractionId, httpBearer, requestOptions, cancellationToken);
+            return this.SourcesAsync(extractionId, requestOptions, cancellationToken);
         }
     }
 }

@@ -39,6 +39,7 @@ var sdkResourceCommandAliases = map[string]string{
 	"WorkflowReviewVersions":  "workflows reviews versions",
 	"WorkflowReviews":         "workflows reviews",
 	"WorkflowRuns":            "workflows runs",
+	"WorkflowSpec":            "workflows spec",
 	"WorkflowSpecs":           "workflows spec",
 	"WorkflowSteps":           "workflows steps",
 	"WorkflowTestRunResults":  "workflows tests results",

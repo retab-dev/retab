@@ -47,7 +47,7 @@ def test_workflow_blocks_list_returns_paginated_envelope() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/blocks"
-    assert request.params == {"workflow_id": "wf_aaa"}
+    assert request.params == {"workflow_id": "wf_aaa", "limit": 100}
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "extract-1"
@@ -75,7 +75,7 @@ def test_workflow_edges_list_returns_paginated_envelope() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/edges"
-    assert request.params == {"workflow_id": "wf_aaa"}
+    assert request.params == {"workflow_id": "wf_aaa", "limit": 100}
     assert isinstance(result, PaginatedList)
     assert len(result) == 1
     assert result[0].id == "edge-1"

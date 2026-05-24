@@ -17,7 +17,7 @@ class WorkflowArtifactsTest extends TestCase
     {
         $fixture = $this->loadFixture('extraction_workflow_artifact');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowArtifacts()->get('test_artifact_id');
+        $result = $client->workflows()->artifacts()->get('test_artifact_id');
         $this->assertInstanceOf(\Retab\Resource\ExtractionWorkflowArtifact::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
@@ -31,7 +31,7 @@ class WorkflowArtifactsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_artifact');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowArtifacts()->list(runId: 'test_value', operation: \Retab\Resource\StepArtifactRefOperation::Extraction, blockId: 'test_value', stepId: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->artifacts()->list(runId: 'test_value', operation: \Retab\Resource\StepArtifactRefOperation::Extraction, blockId: 'test_value', stepId: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -53,7 +53,7 @@ class WorkflowArtifactsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowArtifacts()->list();
+        $result = $client->workflows()->artifacts()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

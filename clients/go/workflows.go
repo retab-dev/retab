@@ -10,7 +10,16 @@ import (
 
 // WorkflowService handles Workflows operations.
 type WorkflowService struct {
-	client *Client
+	client      *Client
+	Artifacts   *WorkflowArtifactService
+	Blocks      *WorkflowBlockService
+	Edges       *WorkflowEdgeService
+	Experiments *WorkflowExperimentService
+	Reviews     *WorkflowReviewService
+	Runs        *WorkflowRunService
+	Spec        *WorkflowSpecService
+	Steps       *WorkflowStepService
+	Tests       *WorkflowTestService
 }
 
 // WorkflowsListParams contains the parameters for List.

@@ -38,7 +38,7 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
             },
         }
 
-    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+    with Retab(api_key="test", base_url="http://example.com") as client:
         monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
         result = client.parses.create(
             document=_sample_document(),

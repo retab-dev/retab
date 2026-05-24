@@ -17,7 +17,7 @@ class WorkflowTestsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_test');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->list(workflowId: 'test_value', targetBlockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->tests()->list(workflowId: 'test_value', targetBlockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -35,7 +35,7 @@ class WorkflowTestsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->create(workflowId: 'test_value', target: \Retab\Resource\WorkflowTestBlockTarget::fromArray($this->loadFixture('workflow_test_block_target')), source: \Retab\Resource\ManualWorkflowTestSource::fromArray($this->loadFixture('manual_workflow_test_source')), assertion: \Retab\Resource\AssertionSpec::fromArray($this->loadFixture('assertion_spec')));
+        $result = $client->workflows()->tests()->create(workflowId: 'test_value', target: \Retab\Resource\WorkflowTestBlockTarget::fromArray($this->loadFixture('workflow_test_block_target')), source: \Retab\Resource\ManualWorkflowTestSource::fromArray($this->loadFixture('manual_workflow_test_source')), assertion: \Retab\Resource\AssertionSpec::fromArray($this->loadFixture('assertion_spec')));
         $this->assertInstanceOf(\Retab\Resource\WorkflowTest::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -51,7 +51,7 @@ class WorkflowTestsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->get('test_test_id');
+        $result = $client->workflows()->tests()->get('test_test_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTest::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -65,7 +65,7 @@ class WorkflowTestsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->update('test_test_id');
+        $result = $client->workflows()->tests()->update('test_test_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTest::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -78,7 +78,7 @@ class WorkflowTestsTest extends TestCase
     public function testDelete(): void
     {
         $client = $this->createMockClient([['status' => 204]]);
-        $client->workflowTests()->delete('test_test_id');
+        $client->workflows()->tests()->delete('test_test_id');
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/tests/test_test_id', $request->getUri()->getPath());
@@ -91,7 +91,7 @@ class WorkflowTestsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTests()->list(workflowId: 'test_value');
+        $result = $client->workflows()->tests()->list(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

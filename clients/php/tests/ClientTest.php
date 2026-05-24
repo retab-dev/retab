@@ -6,7 +6,12 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 use Retab\Client;
 
 class ClientTest extends TestCase
@@ -15,5 +20,54 @@ class ClientTest extends TestCase
     {
         $client = new Client(apiKey: 'test-key');
         $this->assertNotNull($client);
+    }
+
+    public function testBaseUrlAcceptsVersionSuffix(): void
+    {
+        $requests = [];
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], '{"data":[],"list_metadata":{"before":null,"after":null}}'),
+        ]);
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::tap(function (RequestInterface $request) use (&$requests) {
+            $requests[] = $request;
+        }));
+
+        $client = new Client(
+            apiKey: 'test-key',
+            baseUrl: 'http://localhost:4000/v1',
+            maxRetries: 0,
+            handler: $stack,
+        );
+        $client->workflows()->list(limit: 1);
+
+        $this->assertCount(1, $requests);
+        $this->assertSame('/v1/workflows', $requests[0]->getUri()->getPath());
+    }
+
+    public function testWorkflowResourcesAreNested(): void
+    {
+        $requests = [];
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], '{"data":[],"list_metadata":{"before":null,"after":null}}'),
+            new Response(200, ['Content-Type' => 'application/json'], '{"data":[],"list_metadata":{"before":null,"after":null}}'),
+        ]);
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::tap(function (RequestInterface $request) use (&$requests) {
+            $requests[] = $request;
+        }));
+
+        $client = new Client(
+            apiKey: 'test-key',
+            baseUrl: 'http://localhost:4000',
+            maxRetries: 0,
+            handler: $stack,
+        );
+        $client->workflows()->blocks()->list('wrk_test');
+        $client->workflows()->runs()->list(workflowId: 'wrk_test');
+
+        $this->assertCount(2, $requests);
+        $this->assertSame('/v1/workflows/blocks', $requests[0]->getUri()->getPath());
+        $this->assertSame('/v1/workflows/runs', $requests[1]->getUri()->getPath());
     }
 }

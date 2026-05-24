@@ -72,7 +72,7 @@ from .reviews import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 from .runs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-from .specs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
+from .spec import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 from .steps import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
@@ -135,6 +135,7 @@ __all__ = [
     "EditConfig",
     "EditResult",
     "EditWorkflowArtifact",
+    "EmailTrigger",
     "EndsWithCondition",
     "EqualCondition",
     "ErrorDetails",

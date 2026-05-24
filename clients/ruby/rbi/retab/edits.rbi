@@ -9,6 +9,9 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::EditTemplates) }
+    def templates; end
+
     sig do
       params(
         before: T.nilable(String),

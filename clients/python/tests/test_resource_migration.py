@@ -1,14 +1,12 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportCallIssue=false
 import inspect
 import importlib
-from io import BytesIO
 from typing import cast
 
 import pytest
-import httpx
 
 from retab.resources.extractions import AsyncExtractions, Extractions
-from retab import AsyncRetab, Retab
+from retab import Retab
 from retab.types.extractions import ExtractionRequest
 from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
@@ -70,48 +68,24 @@ def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPa
     assert getattr(captured["request"], "url") == "/v1/extractions/extr_123"
 
 
-def test_extractions_create_has_no_stream_argument() -> None:
-    assert "stream" not in inspect.signature(Extractions.create).parameters
-    assert "stream" not in inspect.signature(AsyncExtractions.create).parameters
-    assert "stream" not in inspect.signature(Extractions.prepare_create).parameters
-    assert "stream" not in ExtractionRequest.model_fields
+def test_extractions_create_exposes_stream_argument() -> None:
+    assert "stream" in inspect.signature(Extractions.create).parameters
+    assert "stream" in inspect.signature(AsyncExtractions.create).parameters
+    assert "stream" in inspect.signature(Extractions.prepare_create).parameters
+    assert "stream" in ExtractionRequest.model_fields
 
-    with pytest.raises(TypeError, match="unexpected keyword argument 'stream'"):
-        Extractions(object()).create(
-            document=_sample_document(),
-            json_schema={"type": "object"},
-            stream=True,  # type: ignore[call-arg]
-        )
+    request = Extractions(object()).prepare_create(
+        document=_sample_document(),
+        json_schema={"type": "object"},
+        stream=True,
+    )
 
-    with pytest.raises(TypeError, match="unexpected keyword argument 'stream'"):
-        AsyncExtractions(object()).create(
-            document=_sample_document(),
-            json_schema={"type": "object"},
-            stream=True,  # type: ignore[call-arg]
-        )
+    assert request.data is not None
+    assert request.data["stream"] is True
 
 
-def test_files_upload_rejects_signed_bucket_url() -> None:
-    signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
-
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        with pytest.raises(ValueError, match="local file paths"):
-            client.files.upload(signed_url)
-
-
-def test_files_upload_rejects_http_url() -> None:
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        with pytest.raises(ValueError, match="local file paths"):
-            client.files.upload("http://example.com/invoice.pdf")
-
-
-def test_files_upload_uses_direct_storage_upload_for_local_paths(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
+def test_files_resource_exposes_generated_upload_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
-    document_path = tmp_path / "invoice.pdf"
-    document_path.write_bytes(b"%PDF-1.4")
 
     def fake_prepared_request(request: object) -> dict[str, object]:
         captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
@@ -129,23 +103,21 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
             "url": "https://storage.retab.com/org_1/file_123.pdf",
         }
 
-    class FakeUploadResponse:
-        def raise_for_status(self) -> None:
-            return None
-
-    def fake_put(*args: object, **kwargs: object) -> FakeUploadResponse:
-        captured["put_args"] = args
-        captured["put_kwargs"] = kwargs
-        return FakeUploadResponse()
-
     with Retab(api_key="test", base_url="http://example.com") as client:
         monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        monkeypatch.setattr(client.client, "put", fake_put)
-        result = client.files.upload(document_path)
+        upload = client.files.create_upload(
+            filename="invoice.pdf",
+            content_type="application/pdf",
+            size_bytes=8,
+            sha256="e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+        )
+        completed = client.files.complete_upload(
+            "file_123",
+            sha256="e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+        )
 
-    assert result.filename == "invoice.pdf"
-    assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
-    assert result.id == "file_123"
+    assert upload.file_id == "file_123"
+    assert completed.filename == "invoice.pdf"
     requests = _captured_requests(captured)
     assert [getattr(request, "url") for request in requests] == [
         "/v1/files/upload",
@@ -160,173 +132,6 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
     assert getattr(requests[1], "data") == {
         "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
     }
-    assert captured["put_args"] == ("https://storage.googleapis.com/signed-upload",)
-    put_kwargs = cast(dict[str, object], captured["put_kwargs"])
-    assert put_kwargs["headers"] == {"Content-Type": "application/pdf"}
-
-
-def test_files_upload_file_object_streams_from_start_and_uses_object_filename(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    captured: dict[str, object] = {}
-    file_obj = BytesIO(b"hello world")
-    file_obj.name = "/tmp/report.txt"  # type: ignore[attr-defined]
-    file_obj.seek(6)
-
-    def fake_prepared_request(request: object) -> dict[str, object]:
-        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
-        if getattr(request, "url") == "/v1/files/upload":
-            return {
-                "fileId": "file_123",
-                "uploadUrl": "https://storage.googleapis.com/signed-upload",
-                "uploadMethod": "PUT",
-                "uploadHeaders": {"Content-Type": "text/plain"},
-                "mimeData": {"filename": "report.txt", "url": "https://storage.retab.com/org_1/file_123.txt"},
-                "expiresAt": "2026-04-24T12:00:00Z",
-            }
-        return {
-            "filename": "report.txt",
-            "url": "https://storage.retab.com/org_1/file_123.txt",
-        }
-
-    class FakeUploadResponse:
-        def raise_for_status(self) -> None:
-            return None
-
-    def fake_put(*_args: object, **kwargs: object) -> FakeUploadResponse:
-        content = kwargs["content"]
-        captured["uploaded_bytes"] = content.read()  # type: ignore[attr-defined]
-        return FakeUploadResponse()
-
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        monkeypatch.setattr(client.client, "put", fake_put)
-        result = client.files.upload(file_obj)
-
-    assert result.filename == "report.txt"
-    requests = _captured_requests(captured)
-    assert getattr(requests[0], "data") == {
-        "filename": "report.txt",
-        "content_type": "text/plain",
-        "size_bytes": 11,
-        "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
-    }
-    assert getattr(requests[1], "data") == {
-        "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
-    }
-    assert captured["uploaded_bytes"] == b"hello world"
-
-
-@pytest.mark.asyncio
-async def test_async_files_upload_uses_direct_storage_upload_for_local_paths(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    captured: dict[str, object] = {}
-    document_path = tmp_path / "invoice.pdf"
-    document_path.write_bytes(b"%PDF-1.4")
-
-    async def fake_prepared_request(request: object) -> dict[str, object]:
-        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
-        if getattr(request, "url") == "/v1/files/upload":
-            return {
-                "fileId": "file_123",
-                "uploadUrl": "https://storage.googleapis.com/signed-upload",
-                "uploadMethod": "PUT",
-                "uploadHeaders": {"Content-Type": "application/pdf"},
-                "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/org_1/file_123.pdf"},
-                "expiresAt": "2026-04-24T12:00:00Z",
-            }
-        return {
-            "filename": "invoice.pdf",
-            "url": "https://storage.retab.com/org_1/file_123.pdf",
-        }
-
-    class FakeUploadResponse:
-        def raise_for_status(self) -> None:
-            return None
-
-    async def fake_put(*args: object, **kwargs: object) -> FakeUploadResponse:
-        chunks: list[bytes] = []
-        async for chunk in kwargs["content"]:  # type: ignore[index, union-attr]
-            chunks.append(chunk)
-        captured["put_args"] = args
-        captured["uploaded_bytes"] = b"".join(chunks)
-        captured["put_headers"] = kwargs["headers"]  # type: ignore[index]
-        return FakeUploadResponse()
-
-    async with AsyncRetab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        monkeypatch.setattr(client.client, "put", fake_put)
-        result = await client.files.upload(document_path)
-
-    requests = _captured_requests(captured)
-    assert result.filename == "invoice.pdf"
-    assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
-    assert [getattr(request, "url") for request in requests] == [
-        "/v1/files/upload",
-        "/v1/files/upload/file_123/complete",
-    ]
-    assert getattr(requests[0], "data") == {
-        "filename": "invoice.pdf",
-        "content_type": "application/pdf",
-        "size_bytes": 8,
-        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
-    }
-    assert getattr(requests[1], "data") == {
-        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
-    }
-    assert captured["put_args"] == ("https://storage.googleapis.com/signed-upload",)
-    assert captured["uploaded_bytes"] == b"%PDF-1.4"
-    assert captured["put_headers"] == {"Content-Type": "application/pdf"}
-
-
-def test_files_upload_does_not_complete_when_direct_upload_fails(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    captured: dict[str, object] = {}
-    document_path = tmp_path / "invoice.pdf"
-    document_path.write_bytes(b"%PDF-1.4")
-
-    def fake_prepared_request(request: object) -> dict[str, object]:
-        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
-        return {
-            "fileId": "file_123",
-            "uploadUrl": "https://storage.googleapis.com/signed-upload",
-            "uploadMethod": "PUT",
-            "uploadHeaders": {"Content-Type": "application/pdf"},
-            "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/org_1/file_123.pdf"},
-            "expiresAt": "2026-04-24T12:00:00Z",
-        }
-
-    class FakeUploadResponse:
-        def raise_for_status(self) -> None:
-            request = httpx.Request("PUT", "https://storage.googleapis.com/signed-upload")
-            response = httpx.Response(403, request=request, text="signature mismatch")
-            raise httpx.HTTPStatusError("upload failed", request=request, response=response)
-
-    def fake_put(*_args: object, **_kwargs: object) -> FakeUploadResponse:
-        return FakeUploadResponse()
-
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        monkeypatch.setattr(client.client, "put", fake_put)
-        with pytest.raises(httpx.HTTPStatusError):
-            client.files.upload(document_path)
-
-    requests = _captured_requests(captured)
-    assert [getattr(request, "url") for request in requests] == ["/v1/files/upload"]
-
-
-def test_files_upload_rejects_non_seekable_file_objects() -> None:
-    class NonSeekable(BytesIO):
-        def seekable(self) -> bool:
-            return False
-
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        with pytest.raises(ValueError, match="seekable"):
-            client.files.upload(NonSeekable(b"%PDF-1.4"))
 
 
 def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -381,7 +186,7 @@ def test_mime_data_id_extracts_file_id_from_canonical_retab_storage_url() -> Non
     [
         (
             "classifications",
-            "_prepare_create",
+            "prepare_create",
             {
                 "categories": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -389,14 +194,14 @@ def test_mime_data_id_extracts_file_id_from_canonical_retab_storage_url() -> Non
         ),
         (
             "parses",
-            "_prepare_create",
+            "prepare_create",
             {
                 "model": "retab-small",
             },
         ),
         (
             "splits",
-            "_prepare_create",
+            "prepare_create",
             {
                 "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -404,7 +209,7 @@ def test_mime_data_id_extracts_file_id_from_canonical_retab_storage_url() -> Non
         ),
         (
             "partitions",
-            "_prepare_create",
+            "prepare_create",
             {
                 "key": "invoice_number",
                 "instructions": "Split the document into one chunk per invoice number.",
@@ -443,7 +248,7 @@ def test_resource_create_builders_preserve_signed_bucket_urls(
     [
         (
             "classifications",
-            "_prepare_create",
+            "prepare_create",
             {
                 "categories": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -451,14 +256,14 @@ def test_resource_create_builders_preserve_signed_bucket_urls(
         ),
         (
             "parses",
-            "_prepare_create",
+            "prepare_create",
             {
                 "model": "retab-small",
             },
         ),
         (
             "splits",
-            "_prepare_create",
+            "prepare_create",
             {
                 "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -466,7 +271,7 @@ def test_resource_create_builders_preserve_signed_bucket_urls(
         ),
         (
             "partitions",
-            "_prepare_create",
+            "prepare_create",
             {
                 "key": "invoice_number",
                 "instructions": "Split the document into one chunk per invoice number.",
@@ -505,7 +310,7 @@ def test_resource_create_builders_accept_retab_storage_url_string(
     [
         (
             "classifications",
-            "_prepare_create",
+            "prepare_create",
             {
                 "categories": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -513,14 +318,14 @@ def test_resource_create_builders_accept_retab_storage_url_string(
         ),
         (
             "parses",
-            "_prepare_create",
+            "prepare_create",
             {
                 "model": "retab-small",
             },
         ),
         (
             "splits",
-            "_prepare_create",
+            "prepare_create",
             {
                 "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
                 "model": "retab-small",
@@ -528,7 +333,7 @@ def test_resource_create_builders_accept_retab_storage_url_string(
         ),
         (
             "partitions",
-            "_prepare_create",
+            "prepare_create",
             {
                 "key": "invoice_number",
                 "instructions": "Split the document into one chunk per invoice number.",
@@ -569,19 +374,19 @@ def test_resource_create_builders_include_supported_route_fields() -> None:
     signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
 
     with Retab(api_key="test", base_url="http://example.com") as client:
-        classification = client.classifications._prepare_create(
+        classification = client.classifications.prepare_create(
             document=signed_url,
             categories=[{"name": "invoice", "description": "Invoice documents"}],
             model="retab-small",
             first_n_pages=1,
             instructions="Use the cover page.",
         )
-        parse = client.parses._prepare_create(
+        parse = client.parses.prepare_create(
             document=signed_url,
             model="retab-small",
             instructions="Keep invoice sections separate.",
         )
-        split = client.splits._prepare_create(
+        split = client.splits.prepare_create(
             document=signed_url,
             subdocuments=[{"name": "invoice", "description": "Invoice documents"}],
             model="retab-small",
@@ -603,10 +408,10 @@ def test_resource_create_builders_include_supported_route_fields() -> None:
 
 def test_resource_list_builders_include_filename_filters() -> None:
     with Retab(api_key="test", base_url="http://example.com") as client:
-        assert _request_params(client.classifications._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
-        assert _request_params(client.parses._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
-        assert _request_params(client.splits._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
-        assert _request_params(client.partitions._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.classifications.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.parses.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.splits.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.partitions.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
         assert _request_params(client.extractions.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
 
 
@@ -755,6 +560,7 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
         "model": "retab-small",
         "n_consensus": 3,
         "allow_overlap": True,
+        "bust_cache": False,
     }
 
 

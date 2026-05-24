@@ -1207,6 +1207,18 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_email_trigger_round_trip
+    fixture = {
+      "type" => "email",
+      "sender" => "stub",
+      "subject" => nil
+    }
+    model = Retab::EmailTrigger.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_ends_with_condition_round_trip
     fixture = {
       "kind" => "ends_with",

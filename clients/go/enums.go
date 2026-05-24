@@ -428,6 +428,7 @@ const (
 	WorkflowExportPayloadRequestTriggerTypesAPI      WorkflowExportPayloadRequestTriggerTypes = "api"
 	WorkflowExportPayloadRequestTriggerTypesSchedule WorkflowExportPayloadRequestTriggerTypes = "schedule"
 	WorkflowExportPayloadRequestTriggerTypesWebhook  WorkflowExportPayloadRequestTriggerTypes = "webhook"
+	WorkflowExportPayloadRequestTriggerTypesEmail    WorkflowExportPayloadRequestTriggerTypes = "email"
 	WorkflowExportPayloadRequestTriggerTypesRestart  WorkflowExportPayloadRequestTriggerTypes = "restart"
 )
 

@@ -6,6 +6,7 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::workflow_review_versions::WorkflowReviewVersionsApi;
 use serde::Serialize;
 
 pub struct WorkflowReviewsApi<'a> {
@@ -92,6 +93,13 @@ impl RejectParams {
 }
 
 impl<'a> WorkflowReviewsApi<'a> {
+    /// Access the `versions` sub-resource.
+    pub fn versions(&self) -> WorkflowReviewVersionsApi<'a> {
+        WorkflowReviewVersionsApi {
+            client: self.client,
+        }
+    }
+
     /// List Reviews Route
     ///
     /// List reviews — the review queue, oldest first by ``created_at``.

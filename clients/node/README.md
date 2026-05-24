@@ -93,7 +93,7 @@ Use `client.workflows.spec` to validate, plan, apply, and export declarative wor
 const validation = await retab.workflows.spec.validate(yamlDefinition);
 const plan = await retab.workflows.spec.plan(yamlDefinition);
 const result = await retab.workflows.spec.apply(yamlDefinition);
-const exported = await retab.workflows.spec.export(result.workflow_id);
+const exported = await retab.workflows.spec.get(result.workflow_id);
 ```
 
 A declarative spec uses `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:

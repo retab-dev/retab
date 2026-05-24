@@ -54,7 +54,7 @@ func TestReadSpecYAML_FromStdin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	orig := os.Stdin
 	os.Stdin = f
@@ -612,12 +612,11 @@ func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.
 	}
 	t.Cleanup(func() { _ = workflowsSpecApplyCmd.Flags().Set("yes", "false") })
 
-	if _, _ = captureStd(t, func() {
+	captureStd(t, func() {
 		if err := workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path}); err != nil {
 			t.Fatalf("apply with --yes: %v", err)
 		}
-	}); false {
-	}
+	})
 	if planHits.Load() != 1 {
 		t.Fatalf("expected exactly 1 plan call, got %d", planHits.Load())
 	}

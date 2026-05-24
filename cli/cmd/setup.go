@@ -130,14 +130,20 @@ project-local config where supported.`,
 		}
 		for _, result := range results {
 			if result.SkillDir != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "installed %s skill: %s\n", result.Agent, result.SkillDir)
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "installed %s skill: %s\n", result.Agent, result.SkillDir); err != nil {
+					return err
+				}
 			}
 			if result.MCPPath != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "installed %s MCP:   %s\n", result.Agent, result.MCPPath)
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "installed %s MCP:   %s\n", result.Agent, result.MCPPath); err != nil {
+					return err
+				}
 			}
 		}
 		if apiKey == "" {
-			fmt.Fprintln(cmd.OutOrStdout(), "note: no API key was available, so MCP entries were written without an Api-Key header")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "note: no API key was available, so MCP entries were written without an Api-Key header"); err != nil {
+				return err
+			}
 		}
 		return nil
 	}),
@@ -161,8 +167,8 @@ var syncCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "refreshed Retab skills/MCP (%d setup item%s)\n", len(results), pluralS(len(results)))
-		return nil
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "refreshed Retab skills/MCP (%d setup item%s)\n", len(results), pluralS(len(results)))
+		return err
 	}),
 }
 
@@ -623,7 +629,7 @@ func tomlKey(key string) string {
 		return `""`
 	}
 	for _, r := range key {
-		if !(r == '_' || r == '-' || r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9') {
+		if r != '_' && r != '-' && (r < 'A' || r > 'Z') && (r < 'a' || r > 'z') && (r < '0' || r > '9') {
 			return `"` + escapeTomlString(key) + `"`
 		}
 	}
@@ -745,7 +751,7 @@ func copyFile(src string, dst string, perm os.FileMode) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
@@ -753,8 +759,8 @@ func copyFile(src string, dst string, perm os.FileMode) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
 		return err
 	}
 	return out.Close()

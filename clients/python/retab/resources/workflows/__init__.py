@@ -15,7 +15,7 @@ from .edges import WorkflowEdges, AsyncWorkflowEdges
 from .experiments import WorkflowExperiments, AsyncWorkflowExperiments
 from .reviews import WorkflowReviews, AsyncWorkflowReviews
 from .runs import WorkflowRuns, AsyncWorkflowRuns
-from .specs import WorkflowSpecs, AsyncWorkflowSpecs
+from .spec import WorkflowSpec, AsyncWorkflowSpec
 from .steps import WorkflowSteps, AsyncWorkflowSteps
 from .tests import WorkflowTests, AsyncWorkflowTests
 
@@ -104,8 +104,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.experiments = WorkflowExperiments(client=client)
         self.reviews = WorkflowReviews(client=client)
         self.runs = WorkflowRuns(client=client)
-        self.specs = WorkflowSpecs(client=client)
-        self.spec = self.specs
+        self.spec = WorkflowSpec(client=client)
         self.steps = WorkflowSteps(client=client)
         self.tests = WorkflowTests(client=client)
 
@@ -164,8 +163,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.experiments = AsyncWorkflowExperiments(client=client)
         self.reviews = AsyncWorkflowReviews(client=client)
         self.runs = AsyncWorkflowRuns(client=client)
-        self.specs = AsyncWorkflowSpecs(client=client)
-        self.spec = self.specs
+        self.spec = AsyncWorkflowSpec(client=client)
         self.steps = AsyncWorkflowSteps(client=client)
         self.tests = AsyncWorkflowTests(client=client)
 
@@ -221,7 +219,7 @@ from .blocks import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .edges import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .tests import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .experiments import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
-from .specs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
+from .spec import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
 __all__ = [
     "Workflows",
@@ -272,7 +270,7 @@ __all__ = [
     "ExperimentRunMetrics",
     "AsyncExperimentRunMetrics",
     "ExperimentRunMetricsMixin",
-    "WorkflowSpecs",
-    "AsyncWorkflowSpecs",
-    "WorkflowSpecsMixin",
+    "WorkflowSpec",
+    "AsyncWorkflowSpec",
+    "WorkflowSpecMixin",
 ]

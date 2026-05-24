@@ -18,6 +18,7 @@ pub mod query;
 pub mod resources;
 pub mod resources_api;
 pub mod secret;
+pub mod workflow_run_documents;
 
 pub use crate::client::{RequestOptions, Retab};
 pub use crate::error::Error;

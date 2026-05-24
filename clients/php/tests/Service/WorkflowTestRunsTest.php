@@ -17,7 +17,7 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->list(workflowId: 'test_value', testId: 'test_value', targetBlockId: 'test_value', status: 'test_value', statuses: [], excludeStatus: 'test_value', triggerType: 'test_value', triggerTypes: [], fromDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), toDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->tests()->runs()->list(workflowId: 'test_value', testId: 'test_value', targetBlockId: 'test_value', status: 'test_value', statuses: [], excludeStatus: 'test_value', triggerType: 'test_value', triggerTypes: [], fromDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), toDate: new \DateTimeImmutable('2026-01-02T03:04:05+00:00'), sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -42,7 +42,7 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->create(workflowId: 'test_value');
+        $result = $client->workflows()->tests()->runs()->create(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTestRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -57,7 +57,7 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->get('test_run_id');
+        $result = $client->workflows()->tests()->runs()->get('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTestRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -70,7 +70,7 @@ class WorkflowTestRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_test_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->cancel('test_run_id');
+        $result = $client->workflows()->tests()->runs()->cancel('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTestRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
@@ -86,7 +86,7 @@ class WorkflowTestRunsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowTestRuns()->list();
+        $result = $client->workflows()->tests()->runs()->list();
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

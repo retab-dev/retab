@@ -170,7 +170,7 @@ func TestBindLoopbackListenerUsesRegisteredPort(t *testing.T) {
 	if err != nil {
 		t.Fatalf("bindLoopbackListener: %v", err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	if slices.Contains(cliRedirectPorts, port) {
 		return
@@ -186,13 +186,13 @@ func TestBindLoopbackListenerFallsThroughOccupiedPort(t *testing.T) {
 	if err != nil {
 		t.Skipf("could not occupy port %d to set up the test: %v", cliRedirectPorts[0], err)
 	}
-	defer blocker.Close()
+	defer func() { _ = blocker.Close() }()
 
 	listener, port, err := bindLoopbackListener()
 	if err != nil {
 		t.Fatalf("bindLoopbackListener should fall through to a free port: %v", err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	if port == cliRedirectPorts[0] {
 		t.Errorf("expected a port other than the occupied %d", cliRedirectPorts[0])
@@ -404,7 +404,7 @@ func TestRefreshAccessTokenSwapsTokens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var tr tokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
 		t.Fatal(err)

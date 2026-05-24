@@ -6,6 +6,9 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::experiment_run_metrics::ExperimentRunMetricsApi;
+use crate::resources::experiment_run_results::ExperimentRunResultsApi;
+use crate::resources::experiment_runs::ExperimentRunsApi;
 use serde::Serialize;
 
 pub struct WorkflowExperimentsApi<'a> {
@@ -77,6 +80,27 @@ impl UpdateParams {
 }
 
 impl<'a> WorkflowExperimentsApi<'a> {
+    /// Access the `metrics` sub-resource.
+    pub fn metrics(&self) -> ExperimentRunMetricsApi<'a> {
+        ExperimentRunMetricsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `results` sub-resource.
+    pub fn results(&self) -> ExperimentRunResultsApi<'a> {
+        ExperimentRunResultsApi {
+            client: self.client,
+        }
+    }
+
+    /// Access the `runs` sub-resource.
+    pub fn runs(&self) -> ExperimentRunsApi<'a> {
+        ExperimentRunsApi {
+            client: self.client,
+        }
+    }
+
     /// List Experiments
     ///
     /// List experiments under one workflow with cursor pagination.

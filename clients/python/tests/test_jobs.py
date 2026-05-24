@@ -73,11 +73,11 @@ def _wait(client: Retab, job_id: str | None) -> Job:
 
     # First call: probe by polling for up to WORKER_PROBE_TIMEOUT. As soon as
     # the job leaves ``queued``, the worker is alive — fall through to the
-    # normal wait_for_completion call below.
+    # normal polling loop below.
     if _WORKER_RUNNING is None:
         deadline = time.monotonic() + WORKER_PROBE_TIMEOUT
         while time.monotonic() < deadline:
-            current = client.jobs.retrieve(job_id)
+            current = client.jobs.get(job_id)
             if current.status != "queued":
                 _WORKER_RUNNING = True
                 break
@@ -86,12 +86,14 @@ def _wait(client: Retab, job_id: str | None) -> Job:
             _WORKER_RUNNING = False
             pytest.skip(f"Local job worker hasn't picked up job {job_id} in {WORKER_PROBE_TIMEOUT}s; start the worker pool to run job-completion tests.")
 
-    return client.jobs.wait_for_completion(
-        job_id,
-        poll_interval_seconds=POLL_INTERVAL,
-        timeout_seconds=JOB_TIMEOUT,
-        include_response=True,
-    )
+    deadline = time.monotonic() + JOB_TIMEOUT
+    while time.monotonic() < deadline:
+        current = client.jobs.get(job_id, include_response=True)
+        if current.status in ("completed", "failed", "cancelled", "expired"):
+            return current
+        time.sleep(POLL_INTERVAL)
+
+    raise TimeoutError(f"Job {job_id} did not reach a terminal state within {JOB_TIMEOUT}s")
 
 
 def _assert_completed(job: Job) -> None:
@@ -242,8 +244,8 @@ def test_job_create_returns_queued(sync_client: Retab) -> None:
         _wait(client, job.id)
 
 
-def test_job_retrieve_without_payload(sync_client: Retab) -> None:
-    """Default retrieve omits request and response payloads."""
+def test_job_get_without_payload(sync_client: Retab) -> None:
+    """Default get omits request and response payloads."""
     with sync_client as client:
         job = client.jobs.create(
             endpoint="/v1/parses",
@@ -255,17 +257,17 @@ def test_job_retrieve_without_payload(sync_client: Retab) -> None:
         # Wait for completion first
         _wait(client, job.id)
 
-        # Retrieve without payloads (default)
+        # Get without payloads (default)
         assert job.id is not None
-        retrieved = client.jobs.retrieve(job.id)
-        assert retrieved.id == job.id
-        assert retrieved.status == "completed"
-        assert retrieved.request is None, "Default retrieve should not include request"
-        assert retrieved.response is None, "Default retrieve should not include response"
+        fetched = client.jobs.get(job.id)
+        assert fetched.id == job.id
+        assert fetched.status == "completed"
+        assert fetched.request is None, "Default get should not include request"
+        assert fetched.response is None, "Default get should not include response"
 
 
-def test_job_retrieve_with_payload(sync_client: Retab) -> None:
-    """retrieve can include both request and response."""
+def test_job_get_with_payload(sync_client: Retab) -> None:
+    """get can include both request and response."""
     with sync_client as client:
         job = client.jobs.create(
             endpoint="/v1/parses",
@@ -277,11 +279,11 @@ def test_job_retrieve_with_payload(sync_client: Retab) -> None:
         _wait(client, job.id)
 
         assert job.id is not None
-        full = client.jobs.retrieve(job.id, include_request=True, include_response=True)
+        full = client.jobs.get(job.id, include_request=True, include_response=True)
         assert full.id == job.id
         assert full.status == "completed"
-        assert full.request is not None, "retrieve with include_request should include request"
-        assert full.response is not None, "retrieve with include_response should include response"
+        assert full.request is not None, "get with include_request should include request"
+        assert full.response is not None, "get with include_response should include response"
         assert full.response.status_code == 200
 
 
@@ -316,7 +318,7 @@ def test_job_list_filters(sync_client: Retab) -> None:
 
 
 def test_job_metadata_roundtrip(sync_client: Retab) -> None:
-    """Metadata set at creation is returned in retrieve."""
+    """Metadata set at creation is returned in get."""
     with sync_client as client:
         metadata = {"test_key": "test_value", "source": "sdk_test"}
         job = client.jobs.create(
@@ -332,8 +334,8 @@ def test_job_metadata_roundtrip(sync_client: Retab) -> None:
         # Also verify after completion
         completed = _wait(client, job.id)
         assert completed.id is not None
-        retrieved = client.jobs.retrieve(completed.id)
-        assert retrieved.metadata == metadata
+        fetched = client.jobs.get(completed.id)
+        assert fetched.metadata == metadata
 
 
 def test_job_cancel(sync_client: Retab) -> None:

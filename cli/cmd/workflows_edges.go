@@ -79,7 +79,7 @@ func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workf
 	if !needsBlockLookup {
 		return nil
 	}
-	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ Paginate by passing the cursor from a previous response's
 		if v, _ := cmd.Flags().GetString("target-block"); v != "" {
 			params.TargetBlock = ptr(v)
 		}
-		result, err := client.WorkflowEdges.List(ctx, &params)
+		result, err := client.Workflows.Edges.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -278,7 +278,7 @@ var workflowsEdgesGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowEdges.Get(ctx, args[0])
+		result, err := client.Workflows.Edges.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -360,7 +360,7 @@ you may pass the friendly input name from the block config, such as
 			return err
 		}
 		ensureWorkflowEdgeID(&req)
-		result, err := client.WorkflowEdges.Create(ctx, &req)
+		result, err := client.Workflows.Edges.Create(ctx, &req)
 		if err != nil {
 			return rewrapAutoEdgeIDConflict(err, req, idWasExplicit)
 		}
@@ -431,7 +431,7 @@ is not a terminal.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.WorkflowEdges.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Edges.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("edge", args[0])

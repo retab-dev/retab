@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the workflow blocks API operations on <see cref="Retab"/>.</summary>
     public class WorkflowBlocksService : Service
@@ -16,6 +17,9 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public WorkflowBlocksService(Retab client) : base(client) { }
 
+        /// <summary>Gets the nested <see cref="WorkflowBlockExecutionsService"/> service.</summary>
+        public virtual WorkflowBlockExecutionsService Executions => new WorkflowBlockExecutionsService(this.Client);
+
         /// <summary>List Blocks</summary>
         /// <remarks>
         /// List blocks for a workflow with keyset cursor pagination.
@@ -24,20 +28,19 @@ namespace Retab
         /// page, ``before`` for the previous page. They are mutually exclusive; the
         /// 400 cleanly tells the caller which to drop.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="WorkflowBlock"/> results.</returns>
-        public virtual async Task<PaginatedList<WorkflowBlock>> ListAsync(string httpBearer, WorkflowBlocksListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<WorkflowBlock>> ListAsync(WorkflowBlocksListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<WorkflowBlock>("/v1/workflows/blocks", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<WorkflowBlock>("/v1/workflows/blocks", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<WorkflowBlock>> List(string httpBearer, WorkflowBlocksListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<WorkflowBlock>> List(WorkflowBlocksListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -55,28 +58,19 @@ namespace Retab
         /// Create a new block in a workflow.
         /// This creates a block in the live workflow_blocks collection.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowBlock"/> result.</returns>
-        public virtual async Task<WorkflowBlock> CreateAsync(string httpBearer, WorkflowBlocksCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowBlock> CreateAsync(WorkflowBlocksCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/workflows/blocks",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowBlock>(request, cancellationToken);
+            return await this.PostAsync<WorkflowBlock>("/v1/workflows/blocks", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<WorkflowBlock> Create(string httpBearer, WorkflowBlocksCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowBlock> Create(WorkflowBlocksCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Block</summary>
@@ -84,28 +78,19 @@ namespace Retab
         /// Get a single block by ID.
         /// </remarks>
         /// <param name="blockId">The block id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowBlock"/> result.</returns>
-        public virtual async Task<WorkflowBlock> GetAsync(string blockId, string httpBearer, WorkflowBlocksGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowBlock> GetAsync(string blockId, WorkflowBlocksGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowBlock>(request, cancellationToken);
+            return await this.GetAsync<WorkflowBlock>($"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<WorkflowBlock> Get(string blockId, string httpBearer, WorkflowBlocksGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowBlock> Get(string blockId, WorkflowBlocksGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(blockId, httpBearer, options, requestOptions, cancellationToken);
+            return this.GetAsync(blockId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Update Block</summary>
@@ -115,28 +100,63 @@ namespace Retab
         /// like position changes without affecting other block properties.
         /// </remarks>
         /// <param name="blockId">The block id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowBlock"/> result.</returns>
-        public virtual async Task<WorkflowBlock> UpdateAsync(string blockId, string httpBearer, WorkflowBlocksUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowBlock> UpdateAsync(string blockId, WorkflowBlocksUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             var request = new RetabRequest
             {
                 Method = HttpMethod.Patch,
                 Path = $"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}",
-                Options = options,
-                AccessToken = httpBearer,
                 RequestOptions = requestOptions,
             };
+
+            if (options.WorkflowId != null)
+            {
+                request.AddQueryParam("workflow_id", options.WorkflowId);
+            }
+            if (options.Label != null)
+            {
+                request.AddBodyParam("label", options.Label);
+            }
+            if (options.PositionX != null)
+            {
+                request.AddBodyParam("position_x", options.PositionX);
+            }
+            if (options.PositionY != null)
+            {
+                request.AddBodyParam("position_y", options.PositionY);
+            }
+            if (options.Width != null)
+            {
+                request.AddBodyParam("width", options.Width);
+            }
+            if (options.Height != null)
+            {
+                request.AddBodyParam("height", options.Height);
+            }
+            if (options.Config != null)
+            {
+                request.AddBodyParam("config", options.Config);
+            }
+            if (options.ParentId != null)
+            {
+                request.AddBodyParam("parent_id", options.ParentId);
+            }
+            if (options.ConfigMode != null)
+            {
+                request.AddBodyParam("config_mode", JsonConvert.SerializeObject(options.ConfigMode).Trim('"'));
+            }
+
             return await this.Client.MakeAPIRequest<WorkflowBlock>(request, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="UpdateAsync"/>.</summary>
-        public virtual Task<WorkflowBlock> Update(string blockId, string httpBearer, WorkflowBlocksUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowBlock> Update(string blockId, WorkflowBlocksUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.UpdateAsync(blockId, httpBearer, options, requestOptions, cancellationToken);
+            return this.UpdateAsync(blockId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Block</summary>
@@ -145,27 +165,18 @@ namespace Retab
         /// This also deletes any edges connected to this block.
         /// </remarks>
         /// <param name="blockId">The block id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string blockId, string httpBearer, WorkflowBlocksDeleteOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteAsync(string blockId, WorkflowBlocksDeleteOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Delete,
-                Path = $"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            await this.Client.MakeRawAPIRequest(request, cancellationToken);
+            await this.DeleteAsync($"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string blockId, string httpBearer, WorkflowBlocksDeleteOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task Delete(string blockId, WorkflowBlocksDeleteOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.DeleteAsync(blockId, httpBearer, options, requestOptions, cancellationToken);
+            return this.DeleteAsync(blockId, options, requestOptions, cancellationToken);
         }
     }
 }

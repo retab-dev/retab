@@ -838,7 +838,7 @@ func TestPrintJSONRoundTrip(t *testing.T) {
 
 	go func() {
 		_ = printJSON(map[string]any{"hello": "world"})
-		w.Close()
+		_ = w.Close()
 	}()
 	buf := make([]byte, 4096)
 	n, _ := r.Read(buf)

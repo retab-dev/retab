@@ -14,42 +14,73 @@ class WorkflowRunsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/runs(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_runs.list
+    result = @client.workflows.runs.list
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/runs(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_runs.create(workflow_id: "stub")
+    result = @client.workflows.runs.create(workflow_id: "stub")
+    refute_nil(result)
+  end
+
+  def test_create_coerces_documents_per_start_block
+    file_ref = Retab::FileRef.new({"id" => "file_123", "filename" => "invoice.pdf", "mime_type" => "application/pdf"})
+    explicit_mime = Retab::MimeData.new(filename: "explicit.pdf", url: "data:application/pdf;base64,ZXhwbGljaXQ=")
+    documents = {
+      "start_path" => Pathname.new(__FILE__),
+      "start_url" => "https://example.com/remote.pdf",
+      "start_io" => StringIO.new("hello"),
+      "start_mime" => explicit_mime,
+      "start_file_ref" => file_ref
+    }
+
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/runs(\?|\z)})
+      .with do |request|
+        body = JSON.parse(request.body)
+        sent_documents = body.fetch("documents")
+
+        assert_match(%r{\Adata:application/octet-stream;base64,}, sent_documents.fetch("start_path").fetch("url"))
+        assert_equal("https://example.com/remote.pdf", sent_documents.fetch("start_url").fetch("url"))
+        assert_match(%r{\Adata:application/octet-stream;base64,}, sent_documents.fetch("start_io").fetch("url"))
+        assert_equal("data:application/pdf;base64,ZXhwbGljaXQ=", sent_documents.fetch("start_mime").fetch("url"))
+        assert_equal(
+          {"id" => "file_123", "filename" => "invoice.pdf", "mime_type" => "application/pdf"},
+          sent_documents.fetch("start_file_ref")
+        )
+      end
+      .to_return(body: "{}", status: 200)
+
+    result = @client.workflows.runs.create(workflow_id: "workflow_123", documents: documents)
     refute_nil(result)
   end
 
   def test_export_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/runs/export(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_runs.export(workflow_id: "stub", block_id: "stub")
+    result = @client.workflows.runs.export(workflow_id: "stub", block_id: "stub")
     refute_nil(result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/runs/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_runs.get(run_id: "stub")
+    result = @client.workflows.runs.get(run_id: "stub")
     refute_nil(result)
   end
 
   def test_delete_returns_expected_result
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/workflows/runs/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_runs.delete(run_id: "stub")
+    result = @client.workflows.runs.delete(run_id: "stub")
     assert_nil(result)
   end
 
   def test_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/runs/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_runs.cancel(run_id: "stub")
+    result = @client.workflows.runs.cancel(run_id: "stub")
     refute_nil(result)
   end
 
@@ -86,7 +117,7 @@ class WorkflowRunsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_runs.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.runs.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

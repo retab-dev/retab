@@ -14,28 +14,28 @@ class WorkflowReviewsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/reviews(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_reviews.list
+    result = @client.workflows.reviews.list
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/reviews/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_reviews.get(review_id: "stub")
+    result = @client.workflows.reviews.get(review_id: "stub")
     refute_nil(result)
   end
 
   def test_approve_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/reviews/stub/approve(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_reviews.approve(review_id: "stub", version_id: "stub")
+    result = @client.workflows.reviews.approve(review_id: "stub", version_id: "stub")
     refute_nil(result)
   end
 
   def test_reject_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/reviews/stub/reject(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_reviews.reject(review_id: "stub", version_id: "stub", reason: "stub")
+    result = @client.workflows.reviews.reject(review_id: "stub", version_id: "stub", reason: "stub")
     refute_nil(result)
   end
 
@@ -65,7 +65,7 @@ class WorkflowReviewsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_reviews.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.reviews.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

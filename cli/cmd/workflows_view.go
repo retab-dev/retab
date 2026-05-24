@@ -69,11 +69,11 @@ map. This is a human-oriented view for terminal inspection.`,
 		if err != nil {
 			return err
 		}
-		blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: args[0]})
+		blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
-		edges, err := client.WorkflowEdges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: args[0]})
+		edges, err := client.Workflows.Edges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}

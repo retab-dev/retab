@@ -6,6 +6,7 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::edit_templates::EditTemplatesApi;
 use serde::Serialize;
 
 pub struct EditsApi<'a> {
@@ -81,6 +82,13 @@ impl CreateParams {
 }
 
 impl<'a> EditsApi<'a> {
+    /// Access the `templates` sub-resource.
+    pub fn templates(&self) -> EditTemplatesApi<'a> {
+        EditTemplatesApi {
+            client: self.client,
+        }
+    }
+
     /// List Edits
     pub async fn list(&self, params: ListParams) -> Result<EditList, Error> {
         self.list_with_options(params, None).await

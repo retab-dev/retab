@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_runs
+
 package cmd
 
 import (
@@ -6,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -46,7 +47,9 @@ func parseDocumentArgs(docs []string, docFiles []string, warnTo io.Writer) (map[
 	}
 	if len(docFiles) > 0 {
 		if warnTo != nil {
-			fmt.Fprintln(warnTo, "warning: --document-file is deprecated for workflows runs create; use --document <block-id>=<path>")
+			if _, err := fmt.Fprintln(warnTo, "warning: --document-file is deprecated for workflows runs create; use --document <block-id>=<path>"); err != nil {
+				return nil, err
+			}
 		}
 		if err := appendKVPairs(out, source, docFiles, "--document-file"); err != nil {
 			return nil, err
@@ -491,7 +494,7 @@ func resolveWorkflowRunDocumentAliases(
 	if _, ok := documents["start"]; !ok {
 		return documents, nil
 	}
-	blocks, err := client.WorkflowBlocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return nil, fmt.Errorf("resolve --document start alias: %w", err)
 	}
@@ -544,7 +547,7 @@ duration, cost, error info, final outputs. For per-block detail use
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.WorkflowRuns.Get(ctx, args[0])
+		result, err := client.Workflows.Runs.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -705,7 +708,7 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if minCost != nil && maxCost != nil && *minCost > *maxCost {
 			return fmt.Errorf("--min-cost (%g) cannot be greater than --max-cost (%g)", *minCost, *maxCost)
 		}
-		result, err := client.WorkflowRuns.List(ctx, &params)
+		result, err := client.Workflows.Runs.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -763,7 +766,7 @@ is not a terminal. Mirrors the contract of ` + "`workflows delete`" + `,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.WorkflowRuns.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Runs.Delete(ctx, args[0]); err != nil {
 			return err
 		}
 		confirmDeleted("run", args[0])
@@ -795,7 +798,7 @@ make the cancel idempotent if you may retry the request.`,
 		if commandID != "" {
 			cancelParams.Body = retab.CancelWorkflowRequest{CommandID: &commandID}
 		}
-		result, err := client.WorkflowRuns.Cancel(ctx, args[0], cancelParams)
+		result, err := client.Workflows.Runs.Cancel(ctx, args[0], cancelParams)
 		if err != nil {
 			return err
 		}
@@ -842,7 +845,7 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		sourceRun, err := client.WorkflowRuns.Get(ctx, args[0])
+		sourceRun, err := client.Workflows.Runs.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -869,7 +872,7 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 				params.JSONInputs = sourceRun.Inputs.JSONData
 			}
 		}
-		result, err := client.WorkflowRuns.Create(ctx, params)
+		result, err := client.Workflows.Runs.Create(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -992,7 +995,7 @@ also configurable.`,
 			}
 			req.Quote = &q
 		}
-		result, err := client.WorkflowRuns.Export(ctx, &req)
+		result, err := client.Workflows.Runs.Export(ctx, &req)
 		if err != nil {
 			return err
 		}
@@ -1028,127 +1031,6 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 		}
 	}
 	return values, nil
-}
-
-// ---- steps subgroup ----
-
-var workflowsStepsCmd = &cobra.Command{
-	Use:   "steps",
-	Short: "Inspect workflow run steps",
-	Long: `A step is the execution record of one block within a run —
-input it saw, output it produced, error if any, timing, cost. Steps are
-the entry point for debugging: when a run output looks wrong, list its
-steps and pull the offending one with ` + "`workflows steps get`" + `
-to see exactly what the block did.`,
-	Example: `  # List every step in a run
-  retab workflows steps list run_xyz789
-
-  # Pull the full execution record for one step
-  retab workflows steps get step_extract_1`,
-}
-
-var workflowsStepsListCmd = &cobra.Command{
-	Use:   "list <run-id>",
-	Short: "List run steps",
-	Long: `List every step in a run — one record per block execution.
-Includes status, timing, and a summary of input/output sizes. For the
-full input/output payload of one step use ` + "`steps get`" + `.
-
-Paginate by passing the cursor from a previous response's
-` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
-` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
-	Example: `  # List steps
-  retab workflows steps list run_xyz789
-
-  # First page of 100
-  retab workflows steps list run_xyz789 --limit 100
-
-  # Next page
-  retab workflows steps list run_xyz789 --limit 100 \
-    --after $(retab workflows steps list run_xyz789 --limit 100 --output json | jq -r '.list_metadata.after')
-
-  # Find the first failed step
-  retab workflows steps list run_xyz789 \
-    | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := validateBeforeAfterMutex(cmd); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		params, err := workflowStepsListParams(cmd, args[0])
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.WorkflowSteps.List(ctx, params)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-func workflowStepsListParams(cmd *cobra.Command, runID string) (*retab.WorkflowStepsListParams, error) {
-	params := &retab.WorkflowStepsListParams{}
-	if runID != "" {
-		params.RunID = ptr(runID)
-	}
-	before, _ := cmd.Flags().GetString("before")
-	after, _ := cmd.Flags().GetString("after")
-	if before != "" {
-		params.Before = ptr(before)
-	}
-	if after != "" {
-		params.After = ptr(after)
-	}
-	if f := cmd.Flags().Lookup("limit"); f != nil && f.Changed {
-		raw := f.Value.String()
-		parsed, err := strconv.Atoi(raw)
-		if err != nil {
-			return nil, fmt.Errorf("invalid --limit %q", raw)
-		}
-		if parsed > 0 {
-			params.Limit = ptr(parsed)
-		}
-	}
-	return params, nil
-}
-
-var workflowsStepsGetCmd = &cobra.Command{
-	Use:   "get <step-id>",
-	Short: "Get the full step execution record",
-	Long: `Return everything about one step execution in a run: the
-exact input payload, the produced output, any error, timing, cost, and
-model usage if applicable.
-
-This is the canonical entry point when debugging a run that produced
-the wrong output — find the offending step id, inspect its inputs, and
-correlate against the step's block config.`,
-	Example: `  # Pull the full record for a single step
-  retab workflows steps get step_extract_1
-
-  # Save the input payload for offline replay
-  retab workflows steps get step_extract_1 \
-    | jq '.handle_inputs' > inputs.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.WorkflowSteps.Get(ctx, args[0], nil)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
 }
 
 func init() {
@@ -1210,14 +1092,6 @@ func init() {
 	_ = workflowsRunsExportCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
-	workflowsStepsListCmd.Flags().String("before", "", "step id: return the page before this id (mutually exclusive with --after)")
-	workflowsStepsListCmd.Flags().String("after", "", "step id: return the page after this id (mutually exclusive with --before)")
-	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
-	// handwritten message; see workflowsListCmd for the rationale).
-	workflowsStepsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max items to return (1-1000)")
-
-	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd)
-	workflowsCmd.AddCommand(workflowsStepsCmd)
 	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsExportCmd)
 	workflowsCmd.AddCommand(workflowsRunsCmd)
 }

@@ -22,20 +22,19 @@ namespace Retab
         /// ``review_id`` is required by design — listing versions across all reviews
         /// has no product use and would expose a needlessly wide query surface.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="ReviewVersion"/> results.</returns>
-        public virtual async Task<PaginatedList<ReviewVersion>> ListAsync(string httpBearer, WorkflowReviewVersionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<ReviewVersion>> ListAsync(WorkflowReviewVersionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<ReviewVersion>("/v1/workflows/reviews/versions", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<ReviewVersion>("/v1/workflows/reviews/versions", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<ReviewVersion>> List(string httpBearer, WorkflowReviewVersionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<ReviewVersion>> List(WorkflowReviewVersionsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
@@ -52,28 +51,19 @@ namespace Retab
         /// <remarks>
         /// Create one immutable, content-addressed review version.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="ReviewVersion"/> result.</returns>
-        public virtual async Task<ReviewVersion> CreateAsync(string httpBearer, WorkflowReviewVersionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<ReviewVersion> CreateAsync(WorkflowReviewVersionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = "/v1/workflows/reviews/versions",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<ReviewVersion>(request, cancellationToken);
+            return await this.PostAsync<ReviewVersion>("/v1/workflows/reviews/versions", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<ReviewVersion> Create(string httpBearer, WorkflowReviewVersionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<ReviewVersion> Create(WorkflowReviewVersionsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.CreateAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Review Version Route</summary>
@@ -81,26 +71,18 @@ namespace Retab
         /// Read one review version by its content-addressed id.
         /// </remarks>
         /// <param name="versionId">The version id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="ReviewVersion"/> result.</returns>
-        public virtual async Task<ReviewVersion> GetAsync(string versionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<ReviewVersion> GetAsync(string versionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/workflows/reviews/versions/{Uri.EscapeDataString(versionId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<ReviewVersion>(request, cancellationToken);
+            return await this.GetAsync<ReviewVersion>($"/v1/workflows/reviews/versions/{Uri.EscapeDataString(versionId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<ReviewVersion> Get(string versionId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<ReviewVersion> Get(string versionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(versionId, httpBearer, requestOptions, cancellationToken);
+            return this.GetAsync(versionId, requestOptions, cancellationToken);
         }
     }
 }

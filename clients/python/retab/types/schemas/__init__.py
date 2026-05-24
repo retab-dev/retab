@@ -35,6 +35,7 @@ class WorkflowRunsTriggerType(str, Enum):
     API = "api"
     SCHEDULE = "schedule"
     WEBHOOK = "webhook"
+    EMAIL = "email"
     RESTART = "restart"
 
 

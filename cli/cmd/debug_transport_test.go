@@ -33,7 +33,7 @@ func TestDebugTransport_RedactsApiKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	_, _ = io.Copy(io.Discard, resp.Body)
 
 	got := stderr.read()
@@ -67,7 +67,7 @@ func TestDebugTransport_RedactsBearerTokenButKeepsScheme(t *testing.T) {
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	got := stderr.read()
 	if strings.Contains(got, "VERYSECRETACCESSTOKEN") {
@@ -98,7 +98,7 @@ func TestDebugTransport_NonSensitiveHeadersUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	got := stderr.read()
 	// Non-sensitive headers must still appear in full so debug output stays
@@ -132,7 +132,7 @@ func TestDebugTransport_OutgoingRequestStillAuthenticated(t *testing.T) {
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if sawAPIKey != "sk_retab_real_token_should_reach_server_abc123" {
 		t.Errorf("server received redacted Api-Key %q — CLI broke auth while trying to redact debug output", sawAPIKey)
@@ -162,7 +162,7 @@ func TestDebugTransport_PreservesRequestAndResponseBodies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("read response body: %v", err)

@@ -17,7 +17,7 @@ class WorkflowBlockExecutionsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_stored_block_execution');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlockExecutions()->list(runId: 'test_value', blockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->blocks()->executions()->list(runId: 'test_value', blockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -35,7 +35,7 @@ class WorkflowBlockExecutionsTest extends TestCase
     {
         $fixture = $this->loadFixture('stored_block_execution');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlockExecutions()->create(runId: 'test_value', blockId: 'test_value');
+        $result = $client->workflows()->blocks()->executions()->create(runId: 'test_value', blockId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\StoredBlockExecution::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -55,7 +55,7 @@ class WorkflowBlockExecutionsTest extends TestCase
         $fixture['list_metadata']['before'] = null;
         $fixture['list_metadata']['after'] = null;
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflowBlockExecutions()->list(runId: 'test_value', blockId: 'test_value');
+        $result = $client->workflows()->blocks()->executions()->list(runId: 'test_value', blockId: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         // Verify cursors are null on boundary page
         $this->assertNull($result->listMetadata['before']);

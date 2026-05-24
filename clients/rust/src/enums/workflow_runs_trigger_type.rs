@@ -11,6 +11,7 @@ pub enum WorkflowRunsTriggerType {
     Api,
     Schedule,
     Webhook,
+    Email,
     Restart,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
@@ -29,6 +30,7 @@ impl WorkflowRunsTriggerType {
             Self::Api => "api",
             Self::Schedule => "schedule",
             Self::Webhook => "webhook",
+            Self::Email => "email",
             Self::Restart => "restart",
             Self::Unknown(s) => s.as_str(),
         }
@@ -56,6 +58,7 @@ impl FromStr for WorkflowRunsTriggerType {
             "api" => Self::Api,
             "schedule" => Self::Schedule,
             "webhook" => Self::Webhook,
+            "email" => Self::Email,
             "restart" => Self::Restart,
             other => Self::Unknown(other.to_string()),
         })

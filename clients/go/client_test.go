@@ -12,6 +12,84 @@ import (
 	"testing"
 )
 
+const invoiceWorkflowYAML = `apiVersion: workflows.retab.com/v1alpha2
+kind: Workflow
+metadata:
+  id: wf_invoice_validation
+  name: Invoice Validation Workflow
+spec:
+  blocks:
+    start:
+      type: start_json
+      label: Invoice JSON
+      config:
+        json_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            line_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  amount:
+                    type: number
+                required:
+                  - description
+                  - amount
+            tax_rate:
+              type: number
+            stated_total:
+              type: number
+          required:
+            - invoice_id
+            - line_items
+            - tax_rate
+            - stated_total
+    validate_total:
+      type: function
+      label: Validate Invoice Total
+      config:
+        output_schema:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+            subtotal:
+              type: number
+            computed_total:
+              type: number
+            is_valid:
+              type: boolean
+          required:
+            - invoice_id
+            - subtotal
+            - computed_total
+            - is_valid
+        code: |
+          from models import Input, Output
+
+          def transform(input_data: Input) -> Output:
+              subtotal = sum(item.amount for item in input_data.line_items)
+              computed_total = round(subtotal + subtotal * input_data.tax_rate, 2)
+              return Output(
+                  invoice_id=input_data.invoice_id,
+                  subtotal=subtotal,
+                  computed_total=computed_total,
+                  is_valid=abs(computed_total - input_data.stated_total) <= 0.01,
+              )
+  edges:
+    - from:
+        block: start
+        handle: output-json-0
+      to:
+        block: validate_total
+        handle: input-json-0
+`
+
 func TestWorkflowsCreateUpdatePublishAndDelete(t *testing.T) {
 	var requests []string
 	var updateBody map[string]any
@@ -136,20 +214,20 @@ func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.WorkflowSpecs.Validate(context.Background(), &WorkflowSpecsValidateParams{YamlDefinition: "name: test"}); err != nil {
+	if _, err := client.Workflows.Spec.Validate(context.Background(), &WorkflowSpecValidateParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowSpecs.Plan(context.Background(), &WorkflowSpecsPlanParams{YamlDefinition: "name: test"}); err != nil {
+	if _, err := client.Workflows.Spec.Plan(context.Background(), &WorkflowSpecPlanParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowSpecs.Apply(context.Background(), &WorkflowSpecsApplyParams{YamlDefinition: "name: test"}); err != nil {
+	if _, err := client.Workflows.Spec.Apply(context.Background(), &WorkflowSpecApplyParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowSpecs.Get(context.Background(), "wf_123"); err != nil {
+	if _, err := client.Workflows.Spec.Get(context.Background(), "wf_123"); err != nil {
 		t.Fatal(err)
 	}
 
-	if validateBody["yaml_definition"] != "name: test" {
+	if validateBody["yaml_definition"] != invoiceWorkflowYAML {
 		t.Fatalf("validate body = %#v", validateBody)
 	}
 	expected := []string{
@@ -198,7 +276,7 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	runID := "run_123"
 	operation := WorkflowArtifactsOperation(StepArtifactRefOperationExtraction)
 	blockID := "extract-1"
-	artifacts, err := client.WorkflowArtifacts.List(context.Background(), &WorkflowArtifactsListParams{
+	artifacts, err := client.Workflows.Artifacts.List(context.Background(), &WorkflowArtifactsListParams{
 		RunID:     &runID,
 		Operation: &operation,
 		BlockID:   &blockID,
@@ -215,7 +293,7 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
 	}
-	artifact, err := client.WorkflowArtifacts.Get(context.Background(), "ext_123")
+	artifact, err := client.Workflows.Artifacts.Get(context.Background(), "ext_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +355,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.ExperimentRuns.Get(context.Background(), "exprun_123")
+	result, err := client.Workflows.Experiments.Runs.Get(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +363,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 		t.Fatalf("result = %#v", result)
 	}
 	limit := 25
-	results, err := client.ExperimentRunResults.List(context.Background(), &ExperimentRunResultsListParams{
+	results, err := client.Workflows.Experiments.Results.List(context.Background(), &ExperimentRunResultsListParams{
 		RunID:            "exprun_123",
 		PaginationParams: PaginationParams{Limit: &limit},
 	})
@@ -295,14 +373,14 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if len(results.Data) != 0 || rawQuery != "limit=25&run_id=exprun_123" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
-	runResult, err := client.ExperimentRunResults.Get(context.Background(), "expresult_123")
+	runResult, err := client.Workflows.Experiments.Results.Get(context.Background(), "expresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if runResult.ID != "expresult_123" || runResult.RunID != "exprun_123" {
 		t.Fatalf("runResult = %#v", runResult)
 	}
-	cancelled, err := client.ExperimentRuns.Cancel(context.Background(), "exprun_123")
+	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +394,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if strings.Contains(string(cancelledJSON), "experiment_id") || strings.Contains(string(cancelledJSON), "workflow") {
 		t.Fatalf("cancel response should only model id/lifecycle, got %s", cancelledJSON)
 	}
-	metrics, err := client.ExperimentRunMetrics.Get(context.Background(), &ExperimentRunMetricsGetParams{RunID: "exprun_123"})
+	metrics, err := client.Workflows.Experiments.Metrics.Get(context.Background(), &ExperimentRunMetricsGetParams{RunID: "exprun_123"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +436,7 @@ func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.WorkflowTestRunResults.Get(context.Background(), "wfresult_123")
+	result, err := client.Workflows.Tests.Results.Get(context.Background(), "wfresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +480,7 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 	}
 
 	workflowID := "wf_123"
-	if _, err := client.ExperimentRuns.Create(context.Background(), &ExperimentRunsCreateParams{
+	if _, err := client.Workflows.Experiments.Runs.Create(context.Background(), &ExperimentRunsCreateParams{
 		WorkflowID:   &workflowID,
 		ExperimentID: "exp_123",
 	}); err != nil {
@@ -499,7 +577,7 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	triggerTypes := "api,email"
 	limit := 5
 	order := "asc"
-	runs, err := client.WorkflowRuns.List(context.Background(), &WorkflowRunsListParams{
+	runs, err := client.Workflows.Runs.List(context.Background(), &WorkflowRunsListParams{
 		WorkflowID:   &workflowID,
 		Statuses:     &statuses,
 		TriggerTypes: &triggerTypes,
@@ -518,11 +596,11 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 		t.Fatalf("list query = %s", listQuery)
 	}
 
-	if err := client.WorkflowRuns.Delete(context.Background(), "run_123"); err != nil {
+	if err := client.Workflows.Runs.Delete(context.Background(), "run_123"); err != nil {
 		t.Fatal(err)
 	}
 	cancelCommandID := "cmd_cancel"
-	cancelled, err := client.WorkflowRuns.Cancel(context.Background(), "run_123", &WorkflowRunsCancelParams{
+	cancelled, err := client.Workflows.Runs.Cancel(context.Background(), "run_123", &WorkflowRunsCancelParams{
 		Body: CancelWorkflowRequest{CommandID: &cancelCommandID},
 	})
 	if err != nil {
@@ -532,7 +610,7 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 		t.Fatalf("cancelled = %#v body = %#v", cancelled, cancelBody)
 	}
 	version := "production"
-	created, err := client.WorkflowRuns.Create(context.Background(), &WorkflowRunsCreateParams{
+	created, err := client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
 		WorkflowID: "wf_123",
 		Version:    &version,
 		JSONInputs: map[string]interface{}{"start": map[string]interface{}{"value": float64(1)}},
@@ -548,7 +626,7 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	}
 
 	exportSource := WorkflowExportPayloadRequestExportSourceOutputs
-	exported, err := client.WorkflowRuns.Export(context.Background(), &WorkflowRunsExportParams{
+	exported, err := client.Workflows.Runs.Export(context.Background(), &WorkflowRunsExportParams{
 		WorkflowID:       "wf_123",
 		BlockID:          "extract-1",
 		ExportSource:     &exportSource,
@@ -563,6 +641,89 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	}
 	if _, ok := exportBody["trigger_types"]; ok {
 		t.Fatalf("export body should omit empty trigger_types filter, got %#v", exportBody["trigger_types"])
+	}
+}
+
+func TestWorkflowRunsCreateCoercesDocuments(t *testing.T) {
+	var createBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(workflowRunResponse("run_456", "wf_123", "running"))
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
+		WorkflowID: "wf_123",
+		Documents: map[string]interface{}{
+			"remote":   "https://example.com/invoice.pdf",
+			"uploaded": FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"},
+			"raw_ref":  map[string]any{"id": "file_456", "filename": "raw.pdf"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	documents, ok := createBody["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", createBody["documents"])
+	}
+	remote, ok := documents["remote"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents.remote = %#v", documents["remote"])
+	}
+	if remote["filename"] != "invoice.pdf" || remote["url"] != "https://example.com/invoice.pdf" {
+		t.Fatalf("documents.remote = %#v", remote)
+	}
+	uploaded, ok := documents["uploaded"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents.uploaded = %#v", documents["uploaded"])
+	}
+	if uploaded["id"] != "file_123" || uploaded["filename"] != "stored.pdf" || uploaded["mime_type"] != "application/pdf" {
+		t.Fatalf("documents.uploaded = %#v", uploaded)
+	}
+	rawRef, ok := documents["raw_ref"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents.raw_ref = %#v", documents["raw_ref"])
+	}
+	if rawRef["id"] != "file_456" || rawRef["filename"] != "raw.pdf" {
+		t.Fatalf("documents.raw_ref = %#v", rawRef)
+	}
+}
+
+func TestWorkflowRunDocumentsSetCoercesDocuments(t *testing.T) {
+	params := &WorkflowRunsCreateParams{WorkflowID: "wf_123"}
+	if err := params.SetDocument("remote", "https://example.com/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+	if err := params.SetDocument("uploaded", FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	remote, ok := params.Documents["remote"].(MIMEData)
+	if !ok {
+		t.Fatalf("remote = %#v", params.Documents["remote"])
+	}
+	if remote.Filename != "invoice.pdf" || remote.URL != "https://example.com/invoice.pdf" {
+		t.Fatalf("remote = %#v", remote)
+	}
+	uploaded, ok := params.Documents["uploaded"].(FileRef)
+	if !ok {
+		t.Fatalf("uploaded = %#v", params.Documents["uploaded"])
+	}
+	if uploaded.ID != "file_123" {
+		t.Fatalf("uploaded = %#v", uploaded)
 	}
 }
 
@@ -589,7 +750,7 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 	manualTrigger := WorkflowExportPayloadRequestTriggerTypesManual
-	_, err = client.WorkflowRuns.Export(context.Background(), &WorkflowRunsExportParams{
+	_, err = client.Workflows.Runs.Export(context.Background(), &WorkflowRunsExportParams{
 		WorkflowID:     "wf_123",
 		BlockID:        "block_1",
 		SelectedRunIDs: []string{},
@@ -627,7 +788,7 @@ func TestWorkflowTestRunsCreateSendsTypedScopeBody(t *testing.T) {
 	}
 
 	testID := "wfnodetest_123"
-	created, err := client.WorkflowTestRuns.Create(context.Background(), &WorkflowTestRunsCreateParams{
+	created, err := client.Workflows.Tests.Runs.Create(context.Background(), &WorkflowTestRunsCreateParams{
 		WorkflowID: "wf_123",
 		Scope: &WorkflowTestRunScope{
 			Type:   WorkflowTestRunScopeTypeSingle,
@@ -750,7 +911,7 @@ func TestWorkflowStepsGetRequiresStepID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.WorkflowSteps.Get(context.Background(), "", nil)
+	_, err = client.Workflows.Steps.Get(context.Background(), "", nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -801,7 +962,7 @@ func TestWorkflowStepsGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	step, err := client.WorkflowSteps.Get(context.Background(), "step_123", nil)
+	step, err := client.Workflows.Steps.Get(context.Background(), "step_123", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -880,7 +1041,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 	}
 
 	runID := "run_123"
-	steps, err := client.WorkflowSteps.List(context.Background(), &WorkflowStepsListParams{RunID: &runID})
+	steps, err := client.Workflows.Steps.List(context.Background(), &WorkflowStepsListParams{RunID: &runID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -918,7 +1079,7 @@ func TestAPIError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -956,7 +1117,7 @@ func TestAPIErrorUnwrappedEnvelope(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -1005,7 +1166,7 @@ func TestAPIErrorFlatValidationEnvelope(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.WorkflowRuns.Get(context.Background(), "run_123")
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
 	if err == nil {
 		t.Fatal("expected error")
 	}

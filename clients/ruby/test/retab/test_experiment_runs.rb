@@ -14,28 +14,28 @@ class ExperimentRunsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/runs(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.experiment_runs.list
+    result = @client.workflows.experiments.runs.list
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/runs(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.experiment_runs.create(experiment_id: "stub")
+    result = @client.workflows.experiments.runs.create(experiment_id: "stub")
     refute_nil(result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/runs/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.experiment_runs.get(run_id: "stub")
+    result = @client.workflows.experiments.runs.get(run_id: "stub")
     refute_nil(result)
   end
 
   def test_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/experiments/runs/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.experiment_runs.cancel(run_id: "stub")
+    result = @client.workflows.experiments.runs.cancel(run_id: "stub")
     refute_nil(result)
   end
 
@@ -65,7 +65,7 @@ class ExperimentRunsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.experiment_runs.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.experiments.runs.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

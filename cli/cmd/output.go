@@ -144,21 +144,33 @@ func renderTable(w io.Writer, v any, columns []TableColumn) error {
 	// Header row.
 	for i, col := range columns {
 		if i > 0 {
-			fmt.Fprint(tw, "\t")
+			if _, err := fmt.Fprint(tw, "\t"); err != nil {
+				return err
+			}
 		}
-		fmt.Fprint(tw, col.Header)
+		if _, err := fmt.Fprint(tw, col.Header); err != nil {
+			return err
+		}
 	}
-	fmt.Fprintln(tw)
+	if _, err := fmt.Fprintln(tw); err != nil {
+		return err
+	}
 
 	// Data rows.
 	for _, row := range rows {
 		for i, col := range columns {
 			if i > 0 {
-				fmt.Fprint(tw, "\t")
+				if _, err := fmt.Fprint(tw, "\t"); err != nil {
+					return err
+				}
 			}
-			fmt.Fprint(tw, col.Extract(row))
+			if _, err := fmt.Fprint(tw, col.Extract(row)); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintln(tw)
+		if _, err := fmt.Fprintln(tw); err != nil {
+			return err
+		}
 	}
 	if err := tw.Flush(); err != nil {
 		return err
@@ -724,7 +736,7 @@ func indexByte(s string, b byte) int {
 // row doesn't expose that key.
 func rowField(row any, key string) (any, bool) {
 	if strings.Contains(key, ".") {
-		var current any = row
+		current := row
 		for part := range strings.SplitSeq(key, ".") {
 			next, ok := rowFieldSingle(current, part)
 			if !ok {
@@ -840,19 +852,31 @@ func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for i, col := range columns {
 		if i > 0 {
-			fmt.Fprint(tw, "\t")
+			if _, err := fmt.Fprint(tw, "\t"); err != nil {
+				return err
+			}
 		}
-		fmt.Fprint(tw, col.Header)
+		if _, err := fmt.Fprint(tw, col.Header); err != nil {
+			return err
+		}
 	}
-	fmt.Fprintln(tw)
+	if _, err := fmt.Fprintln(tw); err != nil {
+		return err
+	}
 	for _, row := range rows {
 		for i, col := range columns {
 			if i > 0 {
-				fmt.Fprint(tw, "\t")
+				if _, err := fmt.Fprint(tw, "\t"); err != nil {
+					return err
+				}
 			}
-			fmt.Fprint(tw, col.Extract(row))
+			if _, err := fmt.Fprint(tw, col.Extract(row)); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintln(tw)
+		if _, err := fmt.Fprintln(tw); err != nil {
+			return err
+		}
 	}
 	if err := tw.Flush(); err != nil {
 		return err

@@ -5,7 +5,6 @@ import pkgutil
 from pydantic import BaseModel
 
 import retab.types
-from retab.types.base import RetabBaseModel
 
 
 def _iter_sdk_pydantic_models() -> list[type[BaseModel]]:
@@ -36,9 +35,5 @@ def test_sdk_pydantic_models_ignore_extra_fields() -> None:
     models = _iter_sdk_pydantic_models()
 
     assert models
-    violators = [
-        f"{model.__module__}.{model.__qualname__}"
-        for model in models
-        if not model.__qualname__.endswith("Request") and (not issubclass(model, RetabBaseModel) or model.model_config.get("extra") != "ignore")
-    ]
+    violators = [f"{model.__module__}.{model.__qualname__}" for model in models if not model.__qualname__.endswith("Request") and model.model_config.get("extra") != "ignore"]
     assert violators == [], violators

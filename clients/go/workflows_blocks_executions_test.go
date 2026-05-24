@@ -46,7 +46,7 @@ func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	checkEligibility := false
 	stepID := "step_iter_0_blk_extract"
 	nConsensus := 5
-	created, err := client.WorkflowBlockExecutions.Create(context.Background(), &WorkflowBlockExecutionsCreateParams{
+	created, err := client.Workflows.Blocks.Executions.Create(context.Background(), &WorkflowBlockExecutionsCreateParams{
 		RunID:            "run_123",
 		BlockID:          "blk_extract",
 		StepID:           &stepID,
@@ -70,7 +70,7 @@ func TestWorkflowBlockExecutionsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	}
 
 	limit := 10
-	list, err := client.WorkflowBlockExecutions.List(context.Background(), &WorkflowBlockExecutionsListParams{
+	list, err := client.Workflows.Blocks.Executions.List(context.Background(), &WorkflowBlockExecutionsListParams{
 		RunID:            "run_123",
 		BlockID:          "blk_extract",
 		PaginationParams: PaginationParams{Limit: &limit},
@@ -92,10 +92,10 @@ func TestWorkflowBlockExecutionsRequireRunAndBlockIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.WorkflowBlockExecutions.List(context.Background(), &WorkflowBlockExecutionsListParams{BlockID: "blk_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.List(context.Background(), &WorkflowBlockExecutionsListParams{BlockID: "blk_1"}); err == nil {
 		t.Fatal("expected list without run id to fail")
 	}
-	if _, err := client.WorkflowBlockExecutions.List(context.Background(), &WorkflowBlockExecutionsListParams{RunID: "run_1"}); err == nil {
+	if _, err := client.Workflows.Blocks.Executions.List(context.Background(), &WorkflowBlockExecutionsListParams{RunID: "run_1"}); err == nil {
 		t.Fatal("expected list without block id to fail")
 	}
 }

@@ -39,7 +39,7 @@ func TestWorkflowExperimentsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.WorkflowExperiments.List(context.Background(), &WorkflowExperimentsListParams{WorkflowID: "wf_1"})
+	page, err := client.Workflows.Experiments.List(context.Background(), &WorkflowExperimentsListParams{WorkflowID: "wf_1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	completedStatus := WorkflowExperimentsStatus(LatestBlockTestRunSummaryStatusCompleted)
 	cancelledStatus := WorkflowExperimentsExcludeStatus(LatestBlockTestRunSummaryStatusCancelled)
 	limit := 10
-	page, err := client.ExperimentRuns.List(context.Background(), &ExperimentRunsListParams{
+	page, err := client.Workflows.Experiments.Runs.List(context.Background(), &ExperimentRunsListParams{
 		WorkflowID:    ptrTo("wf_1"),
 		ExperimentID:  ptrTo("exp_1"),
 		BlockID:       ptrTo("block_1"),
@@ -147,7 +147,7 @@ func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.WorkflowTests.List(context.Background(), &WorkflowTestsListParams{WorkflowID: "wf_1"})
+	page, err := client.Workflows.Tests.List(context.Background(), &WorkflowTestsListParams{WorkflowID: "wf_1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	client := newTestClient(t, server)
 
 	limit := 10
-	page, err := client.WorkflowTestRuns.List(context.Background(), &WorkflowTestRunsListParams{
+	page, err := client.Workflows.Tests.Runs.List(context.Background(), &WorkflowTestRunsListParams{
 		WorkflowID:    ptrTo("wf_1"),
 		TestID:        ptrTo("wfnodetest_1"),
 		TargetBlockID: ptrTo("block_1"),
@@ -265,7 +265,7 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	client := newTestClient(t, server)
 
 	testID := "wfnodetest_1"
-	result, err := client.WorkflowTestRuns.Create(context.Background(), &WorkflowTestRunsCreateParams{
+	result, err := client.Workflows.Tests.Runs.Create(context.Background(), &WorkflowTestRunsCreateParams{
 		WorkflowID: "wf_1",
 		Scope: &WorkflowTestRunScope{
 			Type:   WorkflowTestRunScopeTypeSingle,

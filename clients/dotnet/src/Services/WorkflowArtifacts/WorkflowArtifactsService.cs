@@ -5,6 +5,7 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the workflow artifacts API operations on <see cref="Retab"/>.</summary>
     public class WorkflowArtifactsService : Service
@@ -25,26 +26,18 @@ namespace Retab
         /// backs the id.
         /// </remarks>
         /// <param name="artifactId">The artifact id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="ExtractionWorkflowArtifact"/> result.</returns>
-        public virtual async Task<ExtractionWorkflowArtifact> GetAsync(string artifactId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<ExtractionWorkflowArtifact> GetAsync(string artifactId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Get,
-                Path = $"/v1/workflows/artifacts/{Uri.EscapeDataString(artifactId)}",
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<ExtractionWorkflowArtifact>(request, cancellationToken);
+            return await this.GetAsync<ExtractionWorkflowArtifact>($"/v1/workflows/artifacts/{Uri.EscapeDataString(artifactId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<ExtractionWorkflowArtifact> Get(string artifactId, string httpBearer, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<ExtractionWorkflowArtifact> Get(string artifactId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(artifactId, httpBearer, requestOptions, cancellationToken);
+            return this.GetAsync(artifactId, requestOptions, cancellationToken);
         }
 
         /// <summary>List Workflow Artifacts</summary>
@@ -58,20 +51,19 @@ namespace Retab
         /// ``step_id`` (single-step lookup). When both are absent the request is
         /// rejected with 400.
         /// </remarks>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="StepArtifactRef"/> results.</returns>
-        public virtual async Task<PaginatedList<StepArtifactRef>> ListAsync(string httpBearer, WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<StepArtifactRef>> ListAsync(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<StepArtifactRef>("/v1/workflows/artifacts", options, httpBearer, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<StepArtifactRef>("/v1/workflows/artifacts", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<StepArtifactRef>> List(string httpBearer, WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<StepArtifactRef>> List(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(httpBearer, options, requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>

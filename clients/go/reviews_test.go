@@ -87,7 +87,7 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 	decisionStatus := ReviewDecisionStatusDecided
-	resp, err := client.WorkflowReviews.List(context.Background(), &WorkflowReviewsListParams{
+	resp, err := client.Workflows.Reviews.List(context.Background(), &WorkflowReviewsListParams{
 		WorkflowID:     ptrTo("wf_1"),
 		RunID:          ptrTo("run_1"),
 		BlockID:        ptrTo("blk_1"),
@@ -141,7 +141,7 @@ func TestWorkflowReviewsListOmitsDecisionStatusWhenUnset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowReviews.List(context.Background(), nil); err != nil {
+	if _, err := client.Workflows.Reviews.List(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(seenQuery, "decision_status=") {
@@ -154,7 +154,7 @@ func TestWorkflowReviewsListAcceptsPaginationParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.WorkflowReviews.List(context.Background(), &WorkflowReviewsListParams{
+	_, err = client.Workflows.Reviews.List(context.Background(), &WorkflowReviewsListParams{
 		PaginationParams: PaginationParams{Before: ptrTo("a"), After: ptrTo("b")},
 	})
 	if err == nil || !strings.Contains(err.Error(), "example.invalid") {
@@ -175,7 +175,7 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	review, err := client.WorkflowReviews.Get(context.Background(), reviewID)
+	review, err := client.Workflows.Reviews.Get(context.Background(), reviewID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestWorkflowReviewsGetRequiresReviewID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowReviews.Get(context.Background(), ""); err == nil {
+	if _, err := client.Workflows.Reviews.Get(context.Background(), ""); err == nil {
 		t.Fatal("expected error for empty reviewID")
 	}
 }
@@ -217,7 +217,7 @@ func TestWorkflowReviewsApproveSendsVersionIDToApproveEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.WorkflowReviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
+	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ func TestWorkflowReviewsApproveSurfacesPendingResume(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.WorkflowReviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
+	resp, err := client.Workflows.Reviews.Approve(context.Background(), reviewID, &WorkflowReviewsApproveParams{VersionID: reviewVersionID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestWorkflowReviewsRejectSendsVersionIDAndReasonToRejectEndpoint(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowReviews.Reject(context.Background(), reviewID, &WorkflowReviewsRejectParams{
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), reviewID, &WorkflowReviewsRejectParams{
 		VersionID: reviewVersionID, Reason: "wrong document",
 	}); err != nil {
 		t.Fatal(err)
@@ -294,7 +294,7 @@ func TestWorkflowReviewsRejectRequiresReviewID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.WorkflowReviews.Reject(context.Background(), "", &WorkflowReviewsRejectParams{
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), "", &WorkflowReviewsRejectParams{
 		VersionID: reviewVersionID,
 		Reason:    "wrong",
 	}); err == nil || !strings.Contains(err.Error(), "review_id is required") {
@@ -333,7 +333,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	list, err := client.WorkflowReviewVersions.List(context.Background(), &WorkflowReviewVersionsListParams{
+	list, err := client.Workflows.Reviews.Versions.List(context.Background(), &WorkflowReviewVersionsListParams{
 		ReviewID:         reviewID,
 		PaginationParams: PaginationParams{Limit: ptrTo(25)},
 	})
@@ -357,7 +357,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatalf("list = %#v", list)
 	}
 
-	version, err := client.WorkflowReviewVersions.Get(context.Background(), reviewChildVersionID)
+	version, err := client.Workflows.Reviews.Versions.Get(context.Background(), reviewChildVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestWorkflowReviewVersionsListGetAndCreate(t *testing.T) {
 		t.Fatalf("version = %#v", version)
 	}
 
-	created, err := client.WorkflowReviewVersions.Create(context.Background(), &WorkflowReviewVersionsCreateParams{
+	created, err := client.Workflows.Reviews.Versions.Create(context.Background(), &WorkflowReviewVersionsCreateParams{
 		ReviewID: reviewID, ParentID: reviewVersionID, Snapshot: map[string]interface{}{"category": "Invoice"}, Note: ptrTo("fixed category"),
 	})
 	if err != nil {
@@ -393,11 +393,11 @@ func TestWorkflowReviewVersionsRequiresInputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.WorkflowReviewVersions.List(context.Background(), nil)
+	_, err = client.Workflows.Reviews.Versions.List(context.Background(), nil)
 	if err == nil || !strings.Contains(err.Error(), "review_id is required") {
 		t.Fatalf("expected review_id required error, got %v", err)
 	}
-	_, err = client.WorkflowReviewVersions.Get(context.Background(), "")
+	_, err = client.Workflows.Reviews.Versions.Get(context.Background(), "")
 	if err == nil || !strings.Contains(err.Error(), "version_id is required") {
 		t.Fatalf("expected version_id required error, got %v", err)
 	}

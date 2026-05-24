@@ -14,14 +14,14 @@ class WorkflowStepsTest < Minitest::Test
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/steps(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflow_steps.list
+    result = @client.workflows.steps.list
     assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/steps/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflow_steps.get(step_id: "stub")
+    result = @client.workflows.steps.get(step_id: "stub")
     refute_nil(result)
   end
 
@@ -34,7 +34,7 @@ class WorkflowStepsTest < Minitest::Test
       stub_request(spec[:verb], spec[:url])
         .to_return(body: "{\"message\": \"Unauthorized\"}", status: 401)
       assert_raises(Retab::AuthenticationError) do
-        @client.workflow_steps.send(spec[:name], **(spec[:args] || {}))
+        @client.workflows.steps.send(spec[:name], **(spec[:args] || {}))
       end
     end
   end

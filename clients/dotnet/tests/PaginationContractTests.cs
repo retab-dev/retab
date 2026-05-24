@@ -52,25 +52,43 @@ namespace Retab.Tests
             // None today. Additions here must be documented in the SDK pagination blueprint.
         };
 
-        private static IEnumerable<(string ServiceName, PropertyInfo Accessor, MethodInfo ListAsync, Type ItemType)> DiscoverListMethods()
+        private static IEnumerable<(string ServiceName, PropertyInfo[] AccessPath, MethodInfo ListAsync, Type ItemType)> DiscoverListMethods()
         {
-            var clientType = typeof(RetabClient);
-            var accessors = clientType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => typeof(Service).IsAssignableFrom(p.PropertyType));
+            return DiscoverListMethods(typeof(RetabClient), Array.Empty<PropertyInfo>(), new HashSet<Type>());
+        }
 
+        private static IEnumerable<(string ServiceName, PropertyInfo[] AccessPath, MethodInfo ListAsync, Type ItemType)> DiscoverListMethods(
+            Type ownerType,
+            PropertyInfo[] path,
+            HashSet<Type> visited)
+        {
+            var accessors = ownerType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => typeof(Service).IsAssignableFrom(p.PropertyType) && p.GetIndexParameters().Length == 0);
             foreach (var accessor in accessors)
             {
                 var serviceType = accessor.PropertyType;
+                if (!visited.Add(serviceType)) continue;
+
+                var servicePath = path.Concat(new[] { accessor }).ToArray();
+                var serviceName = string.Join(".", servicePath.Select(p => p.Name));
                 var listAsync = serviceType.GetMethod("ListAsync", BindingFlags.Public | BindingFlags.Instance);
-                if (listAsync == null) continue;
+                if (listAsync != null)
+                {
+                    var returnType = listAsync.ReturnType;
+                    if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+                    {
+                        var inner = returnType.GenericTypeArguments[0];
+                        if (inner.IsGenericType && inner.GetGenericTypeDefinition() == typeof(PaginatedList<>))
+                        {
+                            yield return (serviceName, servicePath, listAsync, inner.GenericTypeArguments[0]);
+                        }
+                    }
+                }
 
-                var returnType = listAsync.ReturnType;
-                if (!returnType.IsGenericType || returnType.GetGenericTypeDefinition() != typeof(Task<>)) continue;
-
-                var inner = returnType.GenericTypeArguments[0];
-                if (!inner.IsGenericType || inner.GetGenericTypeDefinition() != typeof(PaginatedList<>)) continue;
-
-                yield return (accessor.Name, accessor, listAsync, inner.GenericTypeArguments[0]);
+                foreach (var nested in DiscoverListMethods(serviceType, servicePath, visited))
+                {
+                    yield return nested;
+                }
             }
         }
 
@@ -111,7 +129,11 @@ namespace Retab.Tests
                 HttpClient = http,
             });
 
-            var service = match.Accessor.GetValue(client);
+            object? service = client;
+            foreach (var accessor in match.AccessPath)
+            {
+                service = accessor.GetValue(service);
+            }
             Assert.NotNull(service);
 
             var parameters = match.ListAsync.GetParameters();

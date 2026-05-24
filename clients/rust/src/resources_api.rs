@@ -2,11 +2,7 @@
 
 use crate::client::Retab;
 use crate::resources::ClassificationsApi;
-use crate::resources::EditTemplatesApi;
 use crate::resources::EditsApi;
-use crate::resources::ExperimentRunMetricsApi;
-use crate::resources::ExperimentRunResultsApi;
-use crate::resources::ExperimentRunsApi;
 use crate::resources::ExtractionsApi;
 use crate::resources::FilesApi;
 use crate::resources::JobsApi;
@@ -14,19 +10,6 @@ use crate::resources::ParsesApi;
 use crate::resources::PartitionsApi;
 use crate::resources::SchemasApi;
 use crate::resources::SplitsApi;
-use crate::resources::WorkflowArtifactsApi;
-use crate::resources::WorkflowBlockExecutionsApi;
-use crate::resources::WorkflowBlocksApi;
-use crate::resources::WorkflowEdgesApi;
-use crate::resources::WorkflowExperimentsApi;
-use crate::resources::WorkflowReviewVersionsApi;
-use crate::resources::WorkflowReviewsApi;
-use crate::resources::WorkflowRunsApi;
-use crate::resources::WorkflowSpecsApi;
-use crate::resources::WorkflowStepsApi;
-use crate::resources::WorkflowTestRunResultsApi;
-use crate::resources::WorkflowTestRunsApi;
-use crate::resources::WorkflowTestsApi;
 use crate::resources::WorkflowsApi;
 
 impl Retab {
@@ -35,29 +18,9 @@ impl Retab {
         ClassificationsApi { client: self }
     }
 
-    /// Access the `edit_templates` resource.
-    pub fn edit_templates(&self) -> EditTemplatesApi<'_> {
-        EditTemplatesApi { client: self }
-    }
-
     /// Access the `edits` resource.
     pub fn edits(&self) -> EditsApi<'_> {
         EditsApi { client: self }
-    }
-
-    /// Access the `experiment_run_metrics` resource.
-    pub fn experiment_run_metrics(&self) -> ExperimentRunMetricsApi<'_> {
-        ExperimentRunMetricsApi { client: self }
-    }
-
-    /// Access the `experiment_run_results` resource.
-    pub fn experiment_run_results(&self) -> ExperimentRunResultsApi<'_> {
-        ExperimentRunResultsApi { client: self }
-    }
-
-    /// Access the `experiment_runs` resource.
-    pub fn experiment_runs(&self) -> ExperimentRunsApi<'_> {
-        ExperimentRunsApi { client: self }
     }
 
     /// Access the `extractions` resource.
@@ -93,71 +56,6 @@ impl Retab {
     /// Access the `splits` resource.
     pub fn splits(&self) -> SplitsApi<'_> {
         SplitsApi { client: self }
-    }
-
-    /// Access the `workflow_artifacts` resource.
-    pub fn workflow_artifacts(&self) -> WorkflowArtifactsApi<'_> {
-        WorkflowArtifactsApi { client: self }
-    }
-
-    /// Access the `workflow_block_executions` resource.
-    pub fn workflow_block_executions(&self) -> WorkflowBlockExecutionsApi<'_> {
-        WorkflowBlockExecutionsApi { client: self }
-    }
-
-    /// Access the `workflow_blocks` resource.
-    pub fn workflow_blocks(&self) -> WorkflowBlocksApi<'_> {
-        WorkflowBlocksApi { client: self }
-    }
-
-    /// Access the `workflow_edges` resource.
-    pub fn workflow_edges(&self) -> WorkflowEdgesApi<'_> {
-        WorkflowEdgesApi { client: self }
-    }
-
-    /// Access the `workflow_experiments` resource.
-    pub fn workflow_experiments(&self) -> WorkflowExperimentsApi<'_> {
-        WorkflowExperimentsApi { client: self }
-    }
-
-    /// Access the `workflow_review_versions` resource.
-    pub fn workflow_review_versions(&self) -> WorkflowReviewVersionsApi<'_> {
-        WorkflowReviewVersionsApi { client: self }
-    }
-
-    /// Access the `workflow_reviews` resource.
-    pub fn workflow_reviews(&self) -> WorkflowReviewsApi<'_> {
-        WorkflowReviewsApi { client: self }
-    }
-
-    /// Access the `workflow_runs` resource.
-    pub fn workflow_runs(&self) -> WorkflowRunsApi<'_> {
-        WorkflowRunsApi { client: self }
-    }
-
-    /// Access the `workflow_specs` resource.
-    pub fn workflow_specs(&self) -> WorkflowSpecsApi<'_> {
-        WorkflowSpecsApi { client: self }
-    }
-
-    /// Access the `workflow_steps` resource.
-    pub fn workflow_steps(&self) -> WorkflowStepsApi<'_> {
-        WorkflowStepsApi { client: self }
-    }
-
-    /// Access the `workflow_test_run_results` resource.
-    pub fn workflow_test_run_results(&self) -> WorkflowTestRunResultsApi<'_> {
-        WorkflowTestRunResultsApi { client: self }
-    }
-
-    /// Access the `workflow_test_runs` resource.
-    pub fn workflow_test_runs(&self) -> WorkflowTestRunsApi<'_> {
-        WorkflowTestRunsApi { client: self }
-    }
-
-    /// Access the `workflow_tests` resource.
-    pub fn workflow_tests(&self) -> WorkflowTestsApi<'_> {
-        WorkflowTestsApi { client: self }
     }
 
     /// Access the `workflows` resource.

@@ -10,7 +10,8 @@ import (
 
 // EditService handles Edits operations.
 type EditService struct {
-	client *Client
+	client    *Client
+	Templates *EditTemplateService
 }
 
 // EditsListParams contains the parameters for List.
