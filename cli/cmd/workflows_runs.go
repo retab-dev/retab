@@ -375,12 +375,10 @@ removed in a future release.`,
 }
 
 type workflowRunCreateParams struct {
-	WorkflowID   string
-	Documents    map[string]any
-	JSONInputs   map[string]any
-	Version      string
-	RestartOf    string
-	ConfigSource string
+	WorkflowID string
+	Documents  map[string]any
+	JSONInputs map[string]any
+	Version    string
 }
 
 func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]any, error) {
@@ -825,8 +823,7 @@ var workflowsRunsRestartCmd = &cobra.Command{
 	Short: "Restart a workflow run",
 	Long: `Re-execute a failed or cancelled run, reusing the original
 inputs. By default the restarted run uses the latest published workflow
-config. Use ` + "`--config-source draft`" + ` after tweaking draft block config,
-or ` + "`--command-id`" + ` for idempotency.`,
+config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
 	Example: `  # Restart a failed run
   retab workflows runs restart run_xyz789
 
@@ -834,20 +831,41 @@ or ` + "`--command-id`" + ` for idempotency.`,
   retab workflows runs restart run_xyz789 --config-source draft`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		commandID, _ := cmd.Flags().GetString("command-id")
 		configSourceValue, _ := cmd.Flags().GetString("config-source")
 		configSource, err := parseWorkflowRunConfigSource(configSourceValue)
 		if err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		sourceRun, err := client.WorkflowRuns.Get(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		version := "production"
+		if configSource == "draft" {
+			version = "draft"
+		}
 		body := map[string]any{
-			"restart_of":    args[0],
-			"config_source": configSource,
+			"workflow_id": sourceRun.Workflow.WorkflowID,
+			"version":     version,
 		}
-		if commandID != "" {
-			body["command_id"] = commandID
+		if body["workflow_id"] == "" {
+			return fmt.Errorf("source run %s does not include workflow.workflow_id", args[0])
 		}
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/v1/workflows/runs", nil, body)
+		if sourceRun.Inputs != nil {
+			if sourceRun.Inputs.Documents != nil {
+				body["documents"] = sourceRun.Inputs.Documents
+			}
+			if sourceRun.Inputs.JSONData != nil {
+				body["json_inputs"] = sourceRun.Inputs.JSONData
+			}
+		}
+		result, err := client.WorkflowRuns.Create(ctx, retab.WithRequestBody(body))
 		if err != nil {
 			return err
 		}
@@ -1163,7 +1181,6 @@ func init() {
 
 	workflowsRunsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	workflowsRunsCancelCmd.Flags().String("command-id", "", "idempotency command id")
-	workflowsRunsRestartCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
 
 	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")

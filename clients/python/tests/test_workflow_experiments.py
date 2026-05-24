@@ -20,7 +20,7 @@ from retab.resources.workflows.experiments import (
     WorkflowExperiments,
 )
 from retab.types.workflows.experiments import ExperimentByDocumentMetricsResponse
-from retab.types.workflows.model import FileHandleInput
+from retab.types.workflows.tests.results import FileHandleInput
 
 
 _NOW = "2026-05-01T14:30:00Z"
