@@ -21,7 +21,6 @@ var sdkMethodCommandAliases = map[string]string{
 	"CreateStream":      "stream",
 	"CreateUpload":      "create-upload",
 	"CompleteUpload":    "complete-upload",
-	"DiagnoseGraph":     "diagnose",
 	"GetDownloadLink":   "download-link",
 	"WaitForCompletion": "wait",
 }

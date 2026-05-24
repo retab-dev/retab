@@ -19,7 +19,6 @@ namespace Retab
             switch (discriminatorValue)
             {
                 case "api": return jObject.ToObject<ApiTrigger>(serializer);
-                case "email": return jObject.ToObject<EmailTrigger>(serializer);
                 case "manual": return jObject.ToObject<ManualTrigger>(serializer);
                 case "restart": return jObject.ToObject<RestartTrigger>(serializer);
                 case "schedule": return jObject.ToObject<ScheduleTrigger>(serializer);

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-23T21:14:10.206Z",
+  "generatedAt": "2026-05-24T13:06:38.751Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -79,8 +79,6 @@
     "src/enums/workflow_block_create_request_type.rs",
     "src/enums/workflow_block_executions_order.rs",
     "src/enums/workflow_block_type.rs",
-    "src/enums/workflow_config_block_type.rs",
-    "src/enums/workflow_diagnosis_issue_severity.rs",
     "src/enums/workflow_experiments_exclude_status.rs",
     "src/enums/workflow_experiments_order.rs",
     "src/enums/workflow_experiments_status.rs",
@@ -185,7 +183,6 @@
     "src/models/edit_template.rs",
     "src/models/edit_template_list.rs",
     "src/models/edit_workflow_artifact.rs",
-    "src/models/email_trigger.rs",
     "src/models/ends_with_condition.rs",
     "src/models/equal_condition.rs",
     "src/models/error_block_execution_lifecycle.rs",
@@ -348,23 +345,15 @@
     "src/models/workflow_block.rs",
     "src/models/workflow_block_create_request.rs",
     "src/models/workflow_block_list.rs",
-    "src/models/workflow_block_position.rs",
-    "src/models/workflow_config_block.rs",
-    "src/models/workflow_config_edge.rs",
-    "src/models/workflow_diagnosis_issue.rs",
-    "src/models/workflow_diagnosis_response.rs",
-    "src/models/workflow_diagnosis_stats.rs",
     "src/models/workflow_edge_create_request.rs",
     "src/models/workflow_edge_doc.rs",
     "src/models/workflow_edge_list.rs",
-    "src/models/workflow_email_trigger.rs",
     "src/models/workflow_experiment.rs",
     "src/models/workflow_experiment_list.rs",
     "src/models/workflow_experiment_result_list.rs",
     "src/models/workflow_experiment_run_list.rs",
     "src/models/workflow_export_payload_request.rs",
     "src/models/workflow_export_payload_response.rs",
-    "src/models/workflow_graph_diagnosis_request.rs",
     "src/models/workflow_list.rs",
     "src/models/workflow_published.rs",
     "src/models/workflow_review_list.rs",
@@ -747,10 +736,6 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
-      "sdkMethod": "diagnose",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

@@ -10,30 +10,33 @@ import {
   deserializeFormField,
 } from '../../../workflows/artifacts/interfaces/form-field.interface.js';
 import type {
-  MIMEData,
-  MIMEDataResponse,
-} from '../../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
+  MimeDataInput,
+  MimeDataInputResponse,
+} from '../../../schemas/interfaces/mime-data-input.interface.js';
+import {
+  ZMimeDataInput,
+  deserializeMimeDataInput,
+} from '../../../schemas/interfaces/mime-data-input.interface.js';
 
 /** Public create-edit-template request body. */
 export interface CreateEditTemplateRequest {
   /** Name of the template. */
   name: string;
   /** The PDF document to use as the empty template. */
-  document: MIMEData;
+  document: MimeDataInput;
   /** Form fields to attach to the template. */
   formFields: FormField[];
 }
 
 export interface CreateEditTemplateRequestResponse {
   name: string;
-  document: MIMEDataResponse;
+  document: MimeDataInputResponse;
   form_fields: FormFieldResponse[];
 }
 
 export const ZCreateEditTemplateRequest = z.object({
   name: z.string(),
-  document: ZMIMEData,
+  document: ZMimeDataInput,
   formFields: ZFormField.array(),
 }) as z.ZodType<CreateEditTemplateRequest>;
 
@@ -42,7 +45,7 @@ export function deserializeCreateEditTemplateRequest(
 ): CreateEditTemplateRequest {
   return {
     name: wire['name'],
-    document: deserializeMIMEData(wire['document']),
+    document: deserializeMimeDataInput(wire['document']),
     formFields: wire['form_fields'].map((__i) => deserializeFormField(__i)),
   };
 }

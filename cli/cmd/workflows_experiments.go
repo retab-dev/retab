@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -454,15 +451,20 @@ of being silently dropped.`,
 		// Without this, a typo in the workflow id slot was silently
 		// dropped (the experiment id alone determined which workflow ran).
 		experimentID := args[0]
-		body := map[string]any{
-			"experiment_id": experimentID,
-		}
+		params := retab.ExperimentRunsCreateParams{ExperimentID: experimentID}
 		if len(args) == 2 {
 			experimentID = args[1]
-			body["experiment_id"] = experimentID
-			body["workflow_id"] = args[0]
+			workflowID := args[0]
+			params.ExperimentID = experimentID
+			params.WorkflowID = &workflowID
 		}
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs", nil, body)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRuns.Create(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -524,21 +526,53 @@ positional, filters are flags — same convention as the rest of the
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
-		query := url.Values{}
+		params := retab.ExperimentRunsListParams{
+			PaginationParams: collectListParams(cmd),
+		}
 		if resolvedWorkflowID != "" {
-			query.Set("workflow_id", resolvedWorkflowID)
+			params.WorkflowID = &resolvedWorkflowID
 		}
 		if resolvedExperimentID != "" {
-			query.Set("experiment_id", resolvedExperimentID)
+			params.ExperimentID = &resolvedExperimentID
 		}
-		for _, name := range []string{"block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
-			if value, _ := cmd.Flags().GetString(name); value != "" {
-				query.Set(strings.ReplaceAll(name, "-", "_"), value)
-			}
+		if value, _ := cmd.Flags().GetString("block-id"); value != "" {
+			params.BlockID = &value
+		}
+		if value, _ := cmd.Flags().GetString("status"); value != "" {
+			status := retab.WorkflowExperimentsStatus(value)
+			params.Status = &status
+		}
+		if value, _ := cmd.Flags().GetString("statuses"); value != "" {
+			params.Statuses = &value
+		}
+		if value, _ := cmd.Flags().GetString("exclude-status"); value != "" {
+			status := retab.WorkflowExperimentsExcludeStatus(value)
+			params.ExcludeStatus = &status
+		}
+		if value, _ := cmd.Flags().GetString("trigger-type"); value != "" {
+			params.TriggerType = &value
+		}
+		if value, _ := cmd.Flags().GetString("trigger-types"); value != "" {
+			params.TriggerTypes = &value
+		}
+		if value, _ := cmd.Flags().GetString("from-date"); value != "" {
+			params.FromDate = &value
+		}
+		if value, _ := cmd.Flags().GetString("to-date"); value != "" {
+			params.ToDate = &value
+		}
+		if value, _ := cmd.Flags().GetString("sort-by"); value != "" {
+			params.SortBy = &value
 		}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
-		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs", query, nil)
+		params.PaginationParams.Limit = &limit
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRuns.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -554,7 +588,13 @@ var workflowsExperimentsRunsGetCmd = &cobra.Command{
   retab workflows experiments runs get exprun_aaa`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0]), nil, nil)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRuns.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -567,7 +607,13 @@ var workflowsExperimentsRunsCancelCmd = &cobra.Command{
 	Short: "Cancel an experiment run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/cancel", nil, map[string]any{})
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRuns.Cancel(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -585,11 +631,19 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	Short: "List per-document results for an experiment run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		query := url.Values{}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
-		query.Set("run_id", args[0])
-		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/results", query, nil)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRunResults.List(ctx, &retab.ExperimentRunResultsListParams{
+			RunID: args[0],
+			PaginationParams: retab.PaginationParams{
+				Limit: &limit,
+			},
+		})
 		if err != nil {
 			return err
 		}
@@ -603,7 +657,13 @@ var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
 	Long:  `Fetch one experiment result by flat result id.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/results/"+url.PathEscape(args[0]), nil, nil)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRunResults.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -648,21 +708,31 @@ numbers down to individual fields. Compare against a prior run with
 				return fmt.Errorf("--target-path is required when --view is by_target")
 			}
 		}
-		query := url.Values{}
-		query.Set("run_id", args[0])
-		query.Set("view", view)
+		params := retab.ExperimentRunMetricsGetParams{
+			RunID: args[0],
+		}
+		if view != "" {
+			typedView := retab.ExperimentRunMetricsView(view)
+			params.View = &typedView
+		}
 		if documentID != "" {
-			query.Set("document_id", documentID)
+			params.DocumentID = &documentID
 		}
 		if targetPath != "" {
-			query.Set("target_path", targetPath)
+			params.TargetPath = &targetPath
 		}
 		if value, _ := cmd.Flags().GetString("prior-run-id"); value != "" {
-			query.Set("prior_run_id", value)
+			params.PriorRunID = &value
 		}
 		includePrior, _ := cmd.Flags().GetBool("include-prior")
-		query.Set("include_prior", strconv.FormatBool(includePrior))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/metrics", query, nil)
+		params.IncludePrior = &includePrior
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.ExperimentRunMetrics.Get(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -703,7 +773,6 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")
-	workflowsExperimentsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")

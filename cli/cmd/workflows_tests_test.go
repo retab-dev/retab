@@ -53,7 +53,7 @@ func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/tests/results/wfresult_123" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/tests/results/wfresult_123" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -74,7 +74,7 @@ func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	if strings.Join(requests, ",") != "GET /workflows/tests/results/wfresult_123" {
+	if strings.Join(requests, ",") != "GET /v1/workflows/tests/results/wfresult_123" {
 		t.Fatalf("requests = %v", requests)
 	}
 	if !strings.Contains(stdout, `"id": "wfresult_123"`) {
@@ -387,24 +387,24 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 		{
 			name:     "test runs list",
 			cmd:      workflowsTestsRunsListCmd,
-			wantPath: "/workflows/tests/runs",
+			wantPath: "/v1/workflows/tests/runs",
 		},
 		{
 			name:     "test run results list",
 			cmd:      workflowsTestsRunsResultsListCmd,
 			args:     []string{"wftestrun_123"},
-			wantPath: "/workflows/tests/results",
+			wantPath: "/v1/workflows/tests/results",
 		},
 		{
 			name:     "experiment runs list",
 			cmd:      workflowsExperimentsRunsListCmd,
-			wantPath: "/workflows/experiments/runs",
+			wantPath: "/v1/workflows/experiments/runs",
 		},
 		{
 			name:     "experiment run results list",
 			cmd:      workflowsExperimentsRunsResultsListCmd,
 			args:     []string{"exprun_123"},
-			wantPath: "/workflows/experiments/results",
+			wantPath: "/v1/workflows/experiments/results",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -458,24 +458,24 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 		{
 			name:     "test runs list",
 			cmd:      workflowsTestsRunsListCmd,
-			wantPath: "/workflows/tests/runs",
+			wantPath: "/v1/workflows/tests/runs",
 		},
 		{
 			name:     "test run results list",
 			cmd:      workflowsTestsRunsResultsListCmd,
 			args:     []string{"wftestrun_123"},
-			wantPath: "/workflows/tests/results",
+			wantPath: "/v1/workflows/tests/results",
 		},
 		{
 			name:     "experiment runs list",
 			cmd:      workflowsExperimentsRunsListCmd,
-			wantPath: "/workflows/experiments/runs",
+			wantPath: "/v1/workflows/experiments/runs",
 		},
 		{
 			name:     "experiment run results list",
 			cmd:      workflowsExperimentsRunsResultsListCmd,
 			args:     []string{"exprun_123"},
-			wantPath: "/workflows/experiments/results",
+			wantPath: "/v1/workflows/experiments/results",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1170,7 +1170,7 @@ func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background())
-	t.Cleanup(func() { workflowsExperimentsRunsMetricsGetCmd.SetContext(nil) })
+	t.Cleanup(func() { workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background()) })
 	if err := workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "banana"); err != nil {
 		t.Fatal(err)
 	}
@@ -1355,7 +1355,7 @@ func TestWorkflowsTestsCreateHelpDocumentsSourceFileShape(t *testing.T) {
 // up by the trailing newline from fmt.Fprintln.
 func nonEmptyLines(s string) []string {
 	var out []string
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if line != "" {
 			out = append(out, line)
 		}

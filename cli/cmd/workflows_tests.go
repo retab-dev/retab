@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -469,6 +469,9 @@ is not a terminal. Run history is removed alongside the test definition.`,
 }
 
 // ---- test runs subgroup ----
+//
+// SDK-backed canonical routes: "/v1/workflows/tests/runs" and
+// "/v1/workflows/tests/results".
 
 var workflowsTestsRunsCmd = &cobra.Command{
 	Use:   "runs",
@@ -531,7 +534,13 @@ results with ` + "`workflows tests runs results list`" + `.`,
 			body["target"] = target
 		}
 		body["workflow_id"] = args[0]
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/tests/runs", nil, body)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRuns.Create(ctx, retab.WithRequestBody(body))
 		if err != nil {
 			return err
 		}
@@ -554,15 +563,65 @@ status, trigger, date, or cursor.`,
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
-		query := url.Values{}
-		for _, name := range []string{"workflow-id", "test-id", "target-block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
-			if value, _ := cmd.Flags().GetString(name); value != "" {
-				query.Set(strings.ReplaceAll(name, "-", "_"), value)
-			}
+		params := &retab.WorkflowTestRunsListParams{
+			PaginationParams: retab.PaginationParams{
+				Limit: ptr(getIntFlagOrDefault(cmd, "limit", 20)),
+			},
 		}
-		limit := getIntFlagOrDefault(cmd, "limit", 20)
-		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/runs", query, nil)
+		if v, _ := cmd.Flags().GetString("workflow-id"); v != "" {
+			params.WorkflowID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("test-id"); v != "" {
+			params.TestID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
+			params.TargetBlockID = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("status"); v != "" {
+			params.Status = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("statuses"); v != "" {
+			params.Statuses = []string{v}
+		}
+		if v, _ := cmd.Flags().GetString("exclude-status"); v != "" {
+			params.ExcludeStatus = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("trigger-type"); v != "" {
+			params.TriggerType = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("trigger-types"); v != "" {
+			params.TriggerTypes = []string{v}
+		}
+		dateQuery := url.Values{}
+		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
+			parsed, _ := time.Parse("2006-01-02", v)
+			params.FromDate = &parsed
+			dateQuery.Set("from_date", v)
+		}
+		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
+			parsed, _ := time.Parse("2006-01-02", v)
+			params.ToDate = &parsed
+			dateQuery.Set("to_date", v)
+		}
+		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
+			params.SortBy = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("before"); v != "" {
+			params.Before = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("after"); v != "" {
+			params.After = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("order"); v != "" {
+			params.Order = ptr(v)
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRuns.List(ctx, params, retab.WithRequestParams(dateQuery))
 		if err != nil {
 			return err
 		}
@@ -607,7 +666,13 @@ var workflowsTestsRunsGetCmd = &cobra.Command{
   retab workflows tests runs get wftestrun_mno345`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(args[0]), nil, nil)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRuns.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -620,7 +685,13 @@ var workflowsTestsRunsCancelCmd = &cobra.Command{
 	Short: "Cancel a workflow-test run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/tests/runs/"+url.PathEscape(args[0])+"/cancel", nil, map[string]any{})
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRuns.Cancel(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -638,11 +709,19 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 	Short: "List child results for a workflow-test run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		query := url.Values{}
-		limit := getIntFlagOrDefault(cmd, "limit", 20)
-		query.Set("run_id", args[0])
-		query.Set("limit", strconv.Itoa(limit))
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/results", query, nil)
+		params := &retab.WorkflowTestRunResultsListParams{
+			RunID: args[0],
+			PaginationParams: retab.PaginationParams{
+				Limit: ptr(getIntFlagOrDefault(cmd, "limit", 20)),
+			},
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRunResults.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -656,7 +735,13 @@ var workflowsTestsRunsResultsGetCmd = &cobra.Command{
 	Long:  `Fetch one workflow-test result by flat result id.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(args[0]), nil, nil)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.WorkflowTestRunResults.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -693,7 +778,6 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsTestsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsTestsRunsListCmd.Flags().String("sort-by", "", "sort field")
-	workflowsTestsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
 	workflowsTestsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")

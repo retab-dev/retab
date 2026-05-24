@@ -21,13 +21,7 @@ class PartitionsTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/partitions(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client
-      .partitions
-      .create(
-        document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="},
-        key: "stub",
-        instructions: "stub"
-      )
+    result = @client.partitions.create(document: {}, key: "stub", instructions: "stub")
     refute_nil(result)
   end
 
@@ -52,11 +46,7 @@ class PartitionsTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/partitions(\?|\z)},
-      args: {
-        document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="},
-        key: "stub",
-        instructions: "stub"
-      }
+      args: {document: {}, key: "stub", instructions: "stub"}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/partitions/stub(\?|\z)}, args: {partition_id: "stub"}},
     {

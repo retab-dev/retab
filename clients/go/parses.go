@@ -29,7 +29,7 @@ func (s *ParseService) List(ctx context.Context, params *ParsesListParams, opts 
 // ParsesCreateParams contains the parameters for Create.
 type ParsesCreateParams struct {
 	// Document is the document to parse
-	Document any `json:"document" url:"-"`
+	Document interface{} `json:"document" url:"-"`
 	// Model is the model to use for parsing
 	Model *string `json:"model,omitempty" url:"-"`
 	// TableParsingFormat is format used to render tables extracted from the document
@@ -53,35 +53,8 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 	if params.Model == nil {
 		return nil, fmt.Errorf("retab: model is required")
 	}
-	type createWireBody struct {
-		Document           *MIMEData                       `json:"document"`
-		Model              *string                         `json:"model,omitempty"`
-		TableParsingFormat *ParseRequestTableParsingFormat `json:"table_parsing_format,omitempty"`
-		ImageResolutionDpi *int                            `json:"image_resolution_dpi,omitempty"`
-		Instructions       *string                         `json:"instructions,omitempty"`
-		BustCache          *bool                           `json:"bust_cache,omitempty"`
-	}
-	if params == nil {
-		return nil, fmt.Errorf("retab: params is required")
-	}
-	var coercedDocument *MIMEData
-	if params.Document != nil {
-		mime, err := InferMIMEData(params.Document)
-		if err != nil {
-			return nil, fmt.Errorf("retab: invalid document: %w", err)
-		}
-		coercedDocument = &mime
-	}
-	body := createWireBody{
-		Document:           coercedDocument,
-		Model:              params.Model,
-		TableParsingFormat: params.TableParsingFormat,
-		ImageResolutionDpi: params.ImageResolutionDpi,
-		Instructions:       params.Instructions,
-		BustCache:          params.BustCache,
-	}
 	var result Parse
-	_, err := s.client.request(ctx, "POST", "/v1/parses", nil, body, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/parses", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

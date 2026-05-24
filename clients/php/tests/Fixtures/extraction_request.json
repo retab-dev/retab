@@ -19,5 +19,8 @@
     }
   ],
   "bust_cache": true,
-  "stream": true
+  "stream": true,
+  "chunking_keys": {
+    "key": "test_value"
+  }
 }

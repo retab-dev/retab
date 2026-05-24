@@ -17,7 +17,6 @@
     "api",
     "schedule",
     "webhook",
-    "email",
     "restart"
   ],
   "preferred_columns": [

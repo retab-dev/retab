@@ -3,37 +3,7 @@
 from __future__ import annotations
 
 import datetime
-from enum import Enum
-from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
-
-
-class WorkflowConfigBlockType(str, Enum):
-    START_DOCUMENT = "start_document"
-    START_JSON = "start_json"
-    NOTE = "note"
-    PARSE = "parse"
-    EDIT = "edit"
-    EXTRACT = "extract"
-    SPLIT = "split"
-    CLASSIFIER = "classifier"
-    CONDITIONAL = "conditional"
-    API_CALL = "api_call"
-    REVIEW = "review"
-    FUNCTION = "function"
-    WHILE_LOOP = "while_loop"
-    FOR_EACH = "for_each"
-    MERGE_DICTS = "merge_dicts"
-    WHILE_LOOP_SENTINEL_START = "while_loop_sentinel_start"
-    WHILE_LOOP_SENTINEL_END = "while_loop_sentinel_end"
-    FOR_EACH_SENTINEL_START = "for_each_sentinel_start"
-    FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
-
-
-class WorkflowDiagnosisIssueSeverity(str, Enum):
-    ERROR = "error"
-    WARNING = "warning"
-    INFO = "info"
 
 
 class CreateWorkflowRequest(BaseModel):
@@ -75,101 +45,8 @@ class Workflow(BaseModel):
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
-    email_trigger: WorkflowEmailTrigger | None = Field(default=None, description="Email trigger allowlist policy")
     created_at: datetime.datetime
     updated_at: datetime.datetime
-
-
-class WorkflowBlockPosition(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    x: float
-    y: float
-
-
-class WorkflowConfigBlock(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str | None = None
-    type: WorkflowConfigBlockType
-    position: WorkflowBlockPosition
-    label: str
-    config: dict[str, Any] | None = Field(
-        default=None,
-        description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.",
-    )
-    resolved_schemas: dict[str, Any] | None = Field(default=None, description="Derived schema transport sidecar for UI/runtime consumers. Not authored config.")
-    width: float | None = Field(default=None, description="Block width for resizable blocks")
-    height: float | None = Field(default=None, description="Block height for resizable blocks")
-    parent_id: str | None = Field(default=None, description="ID of parent container block (while_loop, for_each)")
-
-
-class WorkflowConfigEdge(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str | None = None
-    source: str = Field(..., description="ID of the source block")
-    target: str = Field(..., description="ID of the target block")
-    source_handle: str | None = None
-    target_handle: str | None = None
-    animated: bool | None = Field(default=True)
-
-
-class WorkflowDiagnosisIssue(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    severity: WorkflowDiagnosisIssueSeverity = Field(..., description="Issue severity level")
-    code: str = Field(..., description="Stable issue code")
-    message: str = Field(..., description="Human-readable issue description")
-    block_id: str | None = Field(default=None, description="Related workflow block when applicable")
-
-
-class WorkflowDiagnosisResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    is_valid: bool = Field(..., description="Whether the graph has no error-severity issues or blocking structural warnings that make it non-runnable")
-    issues: list[WorkflowDiagnosisIssue] | None = Field(default=None, description="Structured diagnosis issues")
-    suggestions: list[str] | None = Field(default=None, description="Optional remediation suggestions")
-    stats: WorkflowDiagnosisStats | None = Field(default=None, description="Workflow graph statistics")
-
-
-class WorkflowDiagnosisStats(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    total_blocks: int | None = Field(default=0, description="Total number of blocks diagnosed")
-    total_edges: int | None = Field(default=0, description="Total number of edges diagnosed")
-    block_types: dict[str, int] | None = Field(default=None, description="Counts by block type")
-    start_document_blocks: int | None = Field(default=0, description="Number of start_document blocks")
-
-
-class WorkflowEmailTrigger(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    allowed_senders: list[str] | None = Field(default=None, description="Allowed sender email addresses for workflow email triggers")
-    allowed_domains: list[str] | None = Field(default=None, description="Allowed sender email domains for workflow email triggers")
-
-
-class WorkflowGraphDiagnosisRequest(BaseModel):
-    """Request payload for ``POST /workflows/{id}/diagnose-graph``.
-
-    ``blocks`` and ``edges`` are both nullable so the route can tell apart
-    two intents:
-
-    * ``blocks`` / ``edges`` omitted (``None``): diagnose the persisted draft
-      — the route loads blocks and edges from MongoDB.
-    * ``blocks`` / ``edges`` provided (even as ``[]``): diagnose the in-memory
-      graph as-is — used by editor previews and ``workflows spec validate``
-      against a stub file.
-
-    Sending only one side (e.g. ``blocks=[]`` without ``edges``) is treated as
-    explicit-empty for the missing side too; the persisted-draft fallback only
-    kicks in when both are omitted."""
-
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
-
-    blocks: list[WorkflowConfigBlock] | None = Field(default=None, description="Blocks to diagnose; if omitted, the persisted draft is loaded server-side")
-    edges: list[WorkflowConfigEdge] | None = Field(default=None, description="Edges to diagnose; if omitted, the persisted draft is loaded server-side")
-    re_propagate: bool | None = Field(default=True, description="Recompute derived schemas before validating the graph")
 
 
 class WorkflowPublished(BaseModel):
@@ -261,7 +138,6 @@ __all__ = [
     "EditConfig",
     "EditResult",
     "EditWorkflowArtifact",
-    "EmailTrigger",
     "EndsWithCondition",
     "EqualCondition",
     "ErrorDetails",
@@ -363,18 +239,9 @@ __all__ = [
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",
-    "WorkflowBlockPosition",
     "WorkflowBlockType",
-    "WorkflowConfigBlock",
-    "WorkflowConfigBlockType",
-    "WorkflowConfigEdge",
-    "WorkflowDiagnosisIssue",
-    "WorkflowDiagnosisIssueSeverity",
-    "WorkflowDiagnosisResponse",
-    "WorkflowDiagnosisStats",
     "WorkflowEdgeCreateRequest",
     "WorkflowEdgeDoc",
-    "WorkflowEmailTrigger",
     "WorkflowExperiment",
     "WorkflowExportPayloadRequest",
     "WorkflowExportPayloadRequestExcludeStatus",
@@ -382,7 +249,6 @@ __all__ = [
     "WorkflowExportPayloadRequestStatus",
     "WorkflowExportPayloadRequestTriggerTypes",
     "WorkflowExportPayloadResponse",
-    "WorkflowGraphDiagnosisRequest",
     "WorkflowPublished",
     "WorkflowRun",
     "WorkflowRunStep",
@@ -402,12 +268,4 @@ CreateWorkflowRequest.model_rebuild()
 PublishWorkflowRequest.model_rebuild()
 UpdateWorkflowRequest.model_rebuild()
 Workflow.model_rebuild()
-WorkflowBlockPosition.model_rebuild()
-WorkflowConfigBlock.model_rebuild()
-WorkflowConfigEdge.model_rebuild()
-WorkflowDiagnosisIssue.model_rebuild()
-WorkflowDiagnosisResponse.model_rebuild()
-WorkflowDiagnosisStats.model_rebuild()
-WorkflowEmailTrigger.model_rebuild()
-WorkflowGraphDiagnosisRequest.model_rebuild()
 WorkflowPublished.model_rebuild()

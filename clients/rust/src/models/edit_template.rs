@@ -22,28 +22,24 @@ pub struct EditTemplate {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub field_count: Option<i64>,
     /// Timestamp of creation.
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
     /// Timestamp of last update.
-    pub updated_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub updated_at: Option<String>,
 }
 impl EditTemplate {
     /// Construct a new `EditTemplate` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        id: impl Into<String>,
-        name: impl Into<String>,
-        file: FileRef,
-        created_at: impl Into<String>,
-        updated_at: impl Into<String>,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, name: impl Into<String>, file: FileRef) -> Self {
         Self {
             id: id.into(),
             name: name.into(),
             file,
             form_fields: Default::default(),
             field_count: Default::default(),
-            created_at: created_at.into(),
-            updated_at: updated_at.into(),
+            created_at: Default::default(),
+            updated_at: Default::default(),
         }
     }
 }

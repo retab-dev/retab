@@ -9,10 +9,10 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(T.any(Retab::MimeData, Retab::FileRef)) }
+    sig { returns(T.any(Retab::MimeDataInput, Retab::FileRef)) }
     def document; end
 
-    sig { params(value: T.any(Retab::MimeData, Retab::FileRef)).returns(T.any(Retab::MimeData, Retab::FileRef)) }
+    sig { params(value: T.any(Retab::MimeDataInput, Retab::FileRef)).returns(T.any(Retab::MimeDataInput, Retab::FileRef)) }
     def document=(value); end
 
     sig { returns(T::Array[Retab::Category]) }

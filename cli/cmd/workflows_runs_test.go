@@ -182,7 +182,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 				},
 				"list_metadata": map[string]any{},
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode request body: %v", err)
@@ -239,7 +239,7 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		var body map[string]any
@@ -300,7 +300,7 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		var body map[string]any
@@ -377,7 +377,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 				},
 				"list_metadata": map[string]any{},
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs":
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode request body: %v", err)
@@ -772,78 +772,6 @@ func TestWorkflowsRunsListRejectsOverLimitLocally(t *testing.T) {
 	}
 }
 
-// TestWorkflowsRunsListRejectsUnknownFieldsLocally pins client-side
-// allowlist validation for `workflows runs list --fields`. The server
-// silently ignores unknown selectors (it projects what it knows and drops
-// the rest), so a typo would otherwise return rows with no projection
-// effect. Catch it before the HTTP call.
-func TestWorkflowsRunsListRejectsUnknownFieldsLocally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		t.Fatalf("server should not be reached for unknown fields flag, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsRunsListCmd.Flags().Set("fields", "bogus"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "fields") })
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
-	})
-	if err == nil {
-		t.Fatal("expected unknown fields error")
-	}
-	if !strings.Contains(stderr, "not a valid field") {
-		t.Fatalf("stderr %q does not mention not a valid field", stderr)
-	}
-	if !strings.Contains(stderr, "bogus") {
-		t.Fatalf("stderr %q does not quote the offending value", stderr)
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
-	}
-}
-
-func TestWorkflowsRunsListRejectsBlankFieldsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		t.Fatalf("server should not be reached for blank fields flag, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsRunsListCmd.Flags().Set("fields", "   "); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "fields") })
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
-	})
-	if err == nil {
-		t.Fatal("expected blank fields error")
-	}
-	if !strings.Contains(stderr, "--fields must not be blank") {
-		t.Fatalf("stderr %q does not mention blank fields", stderr)
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
-	}
-}
-
 func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -905,7 +833,7 @@ func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1307,7 +1235,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 
 	flags := map[string]string{
 		"block-id":      "blk_123",
-		"trigger-types": "api, email",
+		"trigger-types": "api, webhook",
 	}
 	for flag, value := range flags {
 		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
@@ -1330,7 +1258,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 	if !ok {
 		t.Fatalf("trigger_types = %#v", body["trigger_types"])
 	}
-	want := []string{"api", "email"}
+	want := []string{"api", "webhook"}
 	if len(triggerTypes) != len(want) {
 		t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
 	}
@@ -1867,7 +1795,6 @@ func newRunsListTestCmd() *cobra.Command {
 	cmd.Flags().String("to-date", "", "")
 	cmd.Flags().String("search", "", "")
 	cmd.Flags().String("sort-by", "", "")
-	cmd.Flags().String("fields", "", "")
 	cmd.Flags().String("before", "", "")
 	cmd.Flags().String("after", "", "")
 	cmd.Flags().Int("limit", 0, "")

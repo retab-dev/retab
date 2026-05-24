@@ -29,8 +29,14 @@
     ],
     "filled_document": {
       "filename": "Test",
-      "url": "https://example.com"
+      "url": "https://example.com",
+      "mime_type": "test_mime_type"
     }
+  },
+  "filled_document_ref": {
+    "id": "01234",
+    "filename": "Test",
+    "mime_type": "test_mime_type"
   },
   "usage": {
     "credits": 1

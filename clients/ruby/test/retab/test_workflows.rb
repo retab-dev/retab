@@ -46,13 +46,6 @@ class WorkflowsTest < Minitest::Test
     assert_nil(result)
   end
 
-  def test_diagnose_returns_expected_result
-    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/stub/diagnose-graph(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.workflows.diagnose(workflow_id: "stub")
-    refute_nil(result)
-  end
-
   def test_publish_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/stub/publish(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -75,12 +68,6 @@ class WorkflowsTest < Minitest::Test
       name: :delete,
       verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/workflows/stub(\?|\z)},
-      args: {workflow_id: "stub"}
-    },
-    {
-      name: :diagnose,
-      verb: :post,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/stub/diagnose-graph(\?|\z)},
       args: {workflow_id: "stub"}
     },
     {

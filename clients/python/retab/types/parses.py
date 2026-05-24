@@ -5,7 +5,8 @@ import datetime
 from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef, MIMEData
+from retab.types.mime import FileRef
+from retab.types.schemas import MimeDataInput
 
 
 TableParsingFormat: TypeAlias = Literal["markdown", "yaml", "html", "json"]
@@ -19,7 +20,7 @@ class ParseRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to parse")
+    document: MimeDataInput | FileRef = Field(..., description="The document to parse")
     model: str | None = Field(default="retab-small", description="The model to use for parsing")
     table_parsing_format: TableParsingFormat | None = Field(default=cast(TableParsingFormat, "html"), description="Format used to render tables extracted from the document")
     image_resolution_dpi: int | None = Field(default=192, description="DPI used when rasterizing pages for the parser")

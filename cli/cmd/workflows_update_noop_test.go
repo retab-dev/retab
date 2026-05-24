@@ -35,8 +35,6 @@ func TestWorkflowsUpdateCommandsRejectNoOpBeforeRequest(t *testing.T) {
 			registerFlags: func(c *cobra.Command) {
 				c.Flags().String("name", "", "")
 				c.Flags().String("description", "", "")
-				c.Flags().StringArray("allowed-sender", nil, "")
-				c.Flags().StringArray("allowed-domain", nil, "")
 			},
 		},
 		{

@@ -74,12 +74,13 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		document := doc
 		req := retab.EditsCreateParams{
 			Instructions: instructions,
-			Document:     doc,
+			Document:     &document,
 			TemplateID:   ptr(templateID),
 			Model:        ptr(model),
-			Config:       &retab.EditConfig{Color: color},
+			Config:       &retab.EditConfig{Color: ptr(color)},
 			BustCache:    ptr(bustCache),
 		}
 		result, err := client.Edits.Create(ctx, &req)
@@ -268,9 +269,13 @@ to ` + "`retab edits create`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		document, err := mimeDataInputFromDocument(doc)
+		if err != nil {
+			return err
+		}
 		result, err := client.EditTemplates.Create(ctx, &retab.EditTemplatesCreateParams{
 			Name:       name,
-			Document:   doc,
+			Document:   document,
 			FormFields: fields,
 		})
 		if err != nil {

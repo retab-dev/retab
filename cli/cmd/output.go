@@ -211,7 +211,7 @@ func extractDataSlice(v any) ([]any, error) {
 		if f.IsValid() && (f.Kind() == reflect.Slice || f.Kind() == reflect.Array) {
 			n := f.Len()
 			out := make([]any, n)
-			for i := 0; i < n; i++ {
+			for i := range n {
 				out[i] = f.Index(i).Interface()
 			}
 			return out, nil
@@ -476,7 +476,7 @@ func extractTabulableRows(v any) ([]any, error) {
 			return nil, nil
 		}
 		out := make([]any, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			out[i] = rv.Index(i).Interface()
 		}
 		return out, nil
@@ -688,89 +688,6 @@ func cellIsDisplayable(v any) bool {
 	}
 }
 
-// rowKeys returns the JSON-visible field names of a row. Struct rows are
-// inspected via reflect using the `json` tag; map rows return their keys
-// directly. Nested object keys are also exposed with dot paths so workflow
-// list tables can select fields like `lifecycle.status`.
-func rowKeys(row any) []string {
-	if row == nil {
-		return nil
-	}
-	var out []string
-	collectRowKeys("", reflect.ValueOf(row), &out)
-	return out
-}
-
-func collectRowKeys(prefix string, rv reflect.Value, out *[]string) {
-	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
-		if !rv.IsValid() || rv.IsNil() {
-			return
-		}
-		rv = rv.Elem()
-	}
-	switch rv.Kind() {
-	case reflect.Struct:
-		t := rv.Type()
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			if !f.IsExported() {
-				continue
-			}
-			key := jsonFieldName(f)
-			if key == "" {
-				continue
-			}
-			fullKey := prefixedKey(prefix, key)
-			*out = append(*out, fullKey)
-			fv := rv.Field(i)
-			if canDescendRowValue(fv) {
-				collectRowKeys(fullKey, fv, out)
-			}
-		}
-	case reflect.Map:
-		if rv.Type().Key().Kind() != reflect.String {
-			return
-		}
-		iter := rv.MapRange()
-		for iter.Next() {
-			key := iter.Key().String()
-			fullKey := prefixedKey(prefix, key)
-			*out = append(*out, fullKey)
-			mv := iter.Value()
-			if canDescendRowValue(mv) {
-				collectRowKeys(fullKey, mv, out)
-			}
-		}
-	}
-}
-
-func prefixedKey(prefix string, key string) string {
-	if prefix == "" {
-		return key
-	}
-	return prefix + "." + key
-}
-
-func canDescendRowValue(rv reflect.Value) bool {
-	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
-		if !rv.IsValid() || rv.IsNil() {
-			return false
-		}
-		rv = rv.Elem()
-	}
-	if rv.CanInterface() {
-		if _, ok := rv.Interface().(fmt.Stringer); ok {
-			return false
-		}
-	}
-	switch rv.Kind() {
-	case reflect.Struct, reflect.Map:
-		return true
-	default:
-		return false
-	}
-}
-
 // jsonFieldName extracts the JSON field name for a struct field,
 // matching encoding/json's resolution. Omitted (`json:"-"`) fields
 // return an empty string which the caller skips.
@@ -808,7 +725,7 @@ func indexByte(s string, b byte) int {
 func rowField(row any, key string) (any, bool) {
 	if strings.Contains(key, ".") {
 		var current any = row
-		for _, part := range strings.Split(key, ".") {
+		for part := range strings.SplitSeq(key, ".") {
 			next, ok := rowFieldSingle(current, part)
 			if !ok {
 				return nil, false

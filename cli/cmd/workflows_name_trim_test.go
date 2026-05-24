@@ -124,8 +124,6 @@ func TestWorkflowsUpdateTrimsNameInRequestBody(t *testing.T) {
 	cmd := &cobra.Command{Use: "update", RunE: workflowsUpdateCmd.RunE}
 	cmd.Flags().String("name", "", "")
 	cmd.Flags().String("description", "", "")
-	cmd.Flags().StringArray("allowed-sender", nil, "")
-	cmd.Flags().StringArray("allowed-domain", nil, "")
 	if err := cmd.Flags().Set("name", "  padded  "); err != nil {
 		t.Fatal(err)
 	}

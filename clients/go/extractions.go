@@ -38,7 +38,7 @@ func (s *ExtractionService) List(ctx context.Context, params *ExtractionsListPar
 
 // ExtractionsCreateParams contains the parameters for Create.
 type ExtractionsCreateParams struct {
-	Document any `json:"document" url:"-"`
+	Document interface{} `json:"document" url:"-"`
 	// JSONSchema is json schema describing the structured output
 	JSONSchema map[string]interface{} `json:"json_schema" url:"-"`
 	// Model is the model to use for the extraction
@@ -54,8 +54,9 @@ type ExtractionsCreateParams struct {
 	// AdditionalMessages is additional chat messages forwarded to the extraction model.
 	AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
-	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
-	Stream    *bool `json:"stream,omitempty" url:"-"`
+	BustCache    *bool             `json:"bust_cache,omitempty" url:"-"`
+	Stream       *bool             `json:"stream,omitempty" url:"-"`
+	ChunkingKeys map[string]string `json:"chunking_keys,omitempty" url:"-"`
 }
 
 // Create extraction
@@ -72,43 +73,8 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 	if params.Model == nil {
 		return nil, fmt.Errorf("retab: model is required")
 	}
-	type createWireBody struct {
-		Document           *MIMEData                `json:"document"`
-		JSONSchema         map[string]interface{}   `json:"json_schema"`
-		Model              *string                  `json:"model,omitempty"`
-		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
-		Instructions       *string                  `json:"instructions,omitempty"`
-		NConsensus         *int                     `json:"n_consensus,omitempty"`
-		Metadata           map[string]string        `json:"metadata,omitempty"`
-		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
-		BustCache          *bool                    `json:"bust_cache,omitempty"`
-		Stream             *bool                    `json:"stream,omitempty"`
-	}
-	if params == nil {
-		return nil, fmt.Errorf("retab: params is required")
-	}
-	var coercedDocument *MIMEData
-	if params.Document != nil {
-		mime, err := InferMIMEData(params.Document)
-		if err != nil {
-			return nil, fmt.Errorf("retab: invalid document: %w", err)
-		}
-		coercedDocument = &mime
-	}
-	body := createWireBody{
-		Document:           coercedDocument,
-		JSONSchema:         params.JSONSchema,
-		Model:              params.Model,
-		ImageResolutionDpi: params.ImageResolutionDpi,
-		Instructions:       params.Instructions,
-		NConsensus:         params.NConsensus,
-		Metadata:           params.Metadata,
-		AdditionalMessages: params.AdditionalMessages,
-		BustCache:          params.BustCache,
-		Stream:             params.Stream,
-	}
 	var result Extraction
-	_, err := s.client.request(ctx, "POST", "/v1/extractions", nil, body, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/extractions", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -23,9 +23,9 @@ namespace Retab
         public long? FieldCount { get; set; }
 
         /// <summary>Timestamp of creation.</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Timestamp of last update.</summary>
-        public DateTimeOffset UpdatedAt { get; set; }
+        public DateTimeOffset? UpdatedAt { get; set; }
     }
 }

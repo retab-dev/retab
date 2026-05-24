@@ -29,7 +29,7 @@ func (s *SplitService) List(ctx context.Context, params *SplitsListParams, opts 
 // SplitsCreateParams contains the parameters for Create.
 type SplitsCreateParams struct {
 	// Document is the document to split
-	Document any `json:"document" url:"-"`
+	Document interface{} `json:"document" url:"-"`
 	// Subdocuments is the subdocuments to split the document into
 	Subdocuments []*Subdocument `json:"subdocuments" url:"-"`
 	// Model is the model to use to split the document
@@ -53,35 +53,8 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 	if params.Model == nil {
 		return nil, fmt.Errorf("retab: model is required")
 	}
-	type createWireBody struct {
-		Document     *MIMEData      `json:"document"`
-		Subdocuments []*Subdocument `json:"subdocuments"`
-		Model        *string        `json:"model,omitempty"`
-		Instructions *string        `json:"instructions,omitempty"`
-		NConsensus   *int           `json:"n_consensus,omitempty"`
-		BustCache    *bool          `json:"bust_cache,omitempty"`
-	}
-	if params == nil {
-		return nil, fmt.Errorf("retab: params is required")
-	}
-	var coercedDocument *MIMEData
-	if params.Document != nil {
-		mime, err := InferMIMEData(params.Document)
-		if err != nil {
-			return nil, fmt.Errorf("retab: invalid document: %w", err)
-		}
-		coercedDocument = &mime
-	}
-	body := createWireBody{
-		Document:     coercedDocument,
-		Subdocuments: params.Subdocuments,
-		Model:        params.Model,
-		Instructions: params.Instructions,
-		NConsensus:   params.NConsensus,
-		BustCache:    params.BustCache,
-	}
 	var result Split
-	_, err := s.client.request(ctx, "POST", "/v1/splits", nil, body, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/splits", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 
@@ -14,7 +15,6 @@ import (
 const (
 	workflowASCIIBlockHeight = 4
 	workflowASCIIXScale      = 26.0 / 300.0
-	workflowASCIIYScale      = 4.0 / 220.0
 	workflowASCIIMaxBoxWidth = 28
 	workflowASCIIMinBoxWidth = 18
 	workflowASCIIMaxEdgeText = 24
@@ -380,10 +380,8 @@ func workflowASCIIClusters(blocks []retab.WorkflowBlock, positions map[string]wo
 
 func workflowASCIIClusterIndex(clusters []workflowASCIIAxisCluster, blockID string) int {
 	for i, cluster := range clusters {
-		for _, id := range cluster.items {
-			if id == blockID {
-				return i
-			}
+		if slices.Contains(cluster.items, blockID) {
+			return i
 		}
 	}
 	return 0
@@ -430,21 +428,6 @@ func workflowASCIISyntheticLevels(blocks []retab.WorkflowBlock, edges []retab.Wo
 		}
 	}
 	return levels
-}
-
-func workflowASCIIPositionBounds(blocks []retab.WorkflowBlock, positions map[string]workflowASCIIPosition) (float64, float64) {
-	minX := positions[blocks[0].ID].x
-	minY := positions[blocks[0].ID].y
-	for _, block := range blocks[1:] {
-		position := positions[block.ID]
-		if position.x < minX {
-			minX = position.x
-		}
-		if position.y < minY {
-			minY = position.y
-		}
-	}
-	return minX, minY
 }
 
 func workflowASCIIOverlapsAny(box workflowASCIIBox, placed []workflowASCIIBox) bool {
@@ -524,10 +507,7 @@ func (c *workflowASCIICanvas) drawEdge(source workflowASCIIBox, target workflowA
 	endY := workflowASCIITargetAnchorY(source, target)
 	if target.x >= source.x {
 		startX := source.x + source.w
-		endX := target.x - 1
-		if endX < startX {
-			endX = startX
-		}
+		endX := max(target.x-1, startX)
 		if startY == endY {
 			c.drawHorizontal(startX, endX, startY)
 			c.put(endX, endY, '>')
@@ -536,10 +516,7 @@ func (c *workflowASCIICanvas) drawEdge(source workflowASCIIBox, target workflowA
 			}
 			return
 		}
-		laneX := endX - 3
-		if laneX < startX {
-			laneX = startX
-		}
+		laneX := max(endX-3, startX)
 		c.drawHorizontal(startX, laneX, startY)
 		c.drawVertical(laneX, startY, endY)
 		c.drawHorizontal(laneX, endX, endY)
@@ -567,10 +544,7 @@ func (c *workflowASCIICanvas) drawEdge(source workflowASCIIBox, target workflowA
 		}
 		return
 	}
-	laneX := endX + 3
-	if laneX > startX {
-		laneX = startX
-	}
+	laneX := min(endX+3, startX)
 	c.drawHorizontal(startX, laneX, startY)
 	c.drawVertical(laneX, startY, endY)
 	c.drawHorizontal(laneX, endX, endY)
@@ -890,10 +864,7 @@ func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
 		// rather than the tail: a 4-char head of a nanoid collides
 		// across blocks at the same rate as random chance, whereas the
 		// suffix is what humans copy/paste to disambiguate.
-		suffixLen := idBudget - 3
-		if suffixLen > len(displayID) {
-			suffixLen = len(displayID)
-		}
+		suffixLen := min(idBudget-3, len(displayID))
 		return "..." + displayID[len(displayID)-suffixLen:] + typeTag
 	default:
 		// Type tag eats the whole budget; let the canvas truncate the tail.

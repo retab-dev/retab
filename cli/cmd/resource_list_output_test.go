@@ -61,7 +61,7 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 			}
 			t.Cleanup(func() { _ = tc.cmd.Flags().Set("limit", "0") })
 			tc.cmd.SetContext(context.Background())
-			t.Cleanup(func() { tc.cmd.SetContext(nil) })
+			t.Cleanup(func() { tc.cmd.SetContext(context.Background()) })
 
 			stdout, stderr := captureStd(t, func() {
 				if err := tc.cmd.RunE(tc.cmd, nil); err != nil {
@@ -119,7 +119,7 @@ func TestEditTemplatesListHonorsOutputTable(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = editsTemplatesListCmd.Flags().Set("limit", "0") })
 	editsTemplatesListCmd.SetContext(context.Background())
-	t.Cleanup(func() { editsTemplatesListCmd.SetContext(nil) })
+	t.Cleanup(func() { editsTemplatesListCmd.SetContext(context.Background()) })
 
 	stdout, stderr := captureStd(t, func() {
 		if err := editsTemplatesListCmd.RunE(editsTemplatesListCmd, nil); err != nil {

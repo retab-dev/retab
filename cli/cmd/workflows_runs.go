@@ -108,7 +108,6 @@ var allowedWorkflowRunTriggerTypes = map[string]bool{
 	"api":      true,
 	"schedule": true,
 	"webhook":  true,
-	"email":    true,
 	"restart":  true,
 }
 
@@ -118,7 +117,7 @@ var allowedWorkflowRunExportSources = map[string]bool{
 }
 
 const workflowRunStatusValues = "pending, running, completed, error, awaiting_review, cancelled"
-const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
+const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
@@ -183,7 +182,7 @@ func normalizeEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[str
 	rawValues, _ := cmd.Flags().GetStringArray(flagName)
 	values := make([]string, 0, len(rawValues))
 	for _, raw := range rawValues {
-		for _, value := range strings.Split(raw, ",") {
+		for value := range strings.SplitSeq(raw, ",") {
 			value = strings.TrimSpace(value)
 			if value == "" {
 				continue
@@ -367,7 +366,7 @@ removed in a future release.`,
 		if err != nil {
 			return err
 		}
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/runs", nil, body)
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/v1/workflows/runs", nil, body)
 		if err != nil {
 			return err
 		}
@@ -555,28 +554,6 @@ duration, cost, error info, final outputs. For per-block detail use
 	}),
 }
 
-// workflowsRunsListAllowedFields enumerates the top-level WorkflowRun
-// fields the server projects when `--fields` is set. Mirrors the JSON
-// shape of retab.WorkflowRun (clients/go/types.go). Dotted paths like
-// "lifecycle.status" are accepted because the validator only checks the
-// top-level prefix.
-var workflowsRunsListAllowedFields = []string{
-	"id",
-	"workflow_id",
-	"workflow",
-	"trigger",
-	"lifecycle",
-	"timing",
-	"inputs",
-	"outputs",
-	"cost",
-	"duration_ms",
-	"steps",
-	"error",
-	"created_at",
-	"updated_at",
-}
-
 var workflowsRunsListCmd = &cobra.Command{
 	Use:   "list [workflow-id]",
 	Short: "List workflow runs",
@@ -586,8 +563,7 @@ the result is scoped to that workflow. Passing both forms is accepted
 when they reference the same workflow id; an error is only raised when
 they disagree, so a real typo isn't silently masked. Other filters
 available: status, trigger type, date range, cost, and duration. Page by
-run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `)
-and ` + "`--fields`" + ` to keep responses small on busy projects.`,
+run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 	Example: `  # Scope to a single workflow (positional, matches the rest of workflows)
   retab workflows runs list wf_abc123 --limit 50
 
@@ -682,18 +658,6 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
 			params.SortBy = ptr(v)
 		}
-		// `--fields` sparse-field projection is currently unsupported via
-		// the typed ``WorkflowRuns.List`` path; the matching projection
-		// route landed on a sibling endpoint. Honour the allowlist for
-		// forward-compat error messages and ignore the value here.
-		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
-		if err != nil {
-			return err
-		}
-		if err := validateFieldsAgainstAllowlist(fields, workflowsRunsListAllowedFields); err != nil {
-			return err
-		}
-		_ = fields
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
@@ -883,7 +847,7 @@ or ` + "`--command-id`" + ` for idempotency.`,
 		if commandID != "" {
 			body["command_id"] = commandID
 		}
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/runs", nil, body)
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/v1/workflows/runs", nil, body)
 		if err != nil {
 			return err
 		}
@@ -1044,77 +1008,6 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 	return values, nil
 }
 
-// validateFieldsAgainstAllowlist rejects unknown --fields values
-// client-side so typos surface immediately instead of being silently
-// projected away by the server (the server treats unknown selectors as
-// "no such field" rather than returning an error).
-//
-// Dotted paths like "lifecycle.status" are accepted as long as the
-// top-level prefix ("lifecycle") is in the allowlist — the server's
-// projection traverses nested objects with the same rule. Empty/blank
-// pieces are caller-checked via nonBlankCommaSeparatedFlag before this
-// runs, so the slice handed in here only carries trimmed names.
-func validateFieldsAgainstAllowlist(fields []string, allowlist []string) error {
-	if len(fields) == 0 {
-		return nil
-	}
-	allowed := make(map[string]bool, len(allowlist))
-	for _, name := range allowlist {
-		allowed[name] = true
-	}
-	for _, field := range fields {
-		prefix := field
-		if i := strings.IndexByte(field, '.'); i >= 0 {
-			prefix = field[:i]
-		}
-		if !allowed[prefix] {
-			return fmt.Errorf("--fields %q is not a valid field (known: %s)", field, strings.Join(allowlist, ", "))
-		}
-	}
-	return nil
-}
-
-// nonBlankCommaSeparatedFlag reads a comma-separated string flag and
-// returns its trimmed pieces. An unset flag (empty string) returns nil
-// (no filtering). A whitespace-only flag value, or any piece that trims
-// to empty (e.g. "id,,name" or "id, "), returns an error so the
-// misconfiguration surfaces locally before any HTTP call.
-//
-// This is the shared `--fields` shape across list commands — the API
-// expects a comma-separated query string, so passing a single `String`
-// flag matches the wire shape exactly and avoids the prior surprise
-// where `workflows runs list --fields a,b` worked but
-// `workflows runs list --fields a --fields b` was the only documented
-// form (with the two flag shapes drifting across sibling commands).
-func nonBlankCommaSeparatedFlag(cmd *cobra.Command, flagName string) ([]string, error) {
-	raw, _ := cmd.Flags().GetString(flagName)
-	if raw == "" {
-		// Distinguish between "flag omitted" (silent, no filter) and the
-		// user explicitly typing ``--<flag> ""`` (typo guard). The latter
-		// almost certainly means the caller built the string from a
-		// variable that turned out empty — ``--%s "" reads as "no filter"
-		// but feels like a mistake. Reject it the same way other CLIs
-		// reject ``--limit ""`` / ``--status ""``.
-		if cmd.Flags().Changed(flagName) {
-			return nil, fmt.Errorf("--%s must not be blank", flagName)
-		}
-		return nil, nil
-	}
-	if strings.TrimSpace(raw) == "" {
-		return nil, fmt.Errorf("--%s must not be blank", flagName)
-	}
-	pieces := strings.Split(raw, ",")
-	out := make([]string, 0, len(pieces))
-	for _, p := range pieces {
-		trimmed := strings.TrimSpace(p)
-		if trimmed == "" {
-			return nil, fmt.Errorf("--%s must not be blank", flagName)
-		}
-		out = append(out, trimmed)
-	}
-	return out, nil
-}
-
 // ---- steps subgroup ----
 
 var workflowsStepsCmd = &cobra.Command{
@@ -1259,7 +1152,6 @@ func init() {
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().String("search", "", "search query")
 	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
-	workflowsRunsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
 	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")

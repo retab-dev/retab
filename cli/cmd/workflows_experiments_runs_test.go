@@ -11,7 +11,7 @@ import (
 
 // TestWorkflowsExperimentsRunsCreateSingleArg pins the new single-argument
 // form: `retab workflows experiments runs create exp_abc` should POST to
-// /workflows/experiments/runs with `experiment_id=exp_abc` in the body and
+// /v1/workflows/experiments/runs with `experiment_id=exp_abc` in the body and
 // no `workflow_id` (the server derives it from the experiment record).
 func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
@@ -20,7 +20,7 @@ func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -64,7 +64,7 @@ func TestWorkflowsExperimentsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/experiments/results/expresult_123" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments/results/expresult_123" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -86,7 +86,7 @@ func TestWorkflowsExperimentsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	if strings.Join(requests, ",") != "GET /workflows/experiments/results/expresult_123" {
+	if strings.Join(requests, ",") != "GET /v1/workflows/experiments/results/expresult_123" {
 		t.Fatalf("requests = %v", requests)
 	}
 	if !strings.Contains(stdout, `"id": "expresult_123"`) {
@@ -101,7 +101,7 @@ func TestWorkflowsExperimentsRunsCancelPrintsCompactResponse(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs/exprun_123/cancel" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments/runs/exprun_123/cancel" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -121,7 +121,7 @@ func TestWorkflowsExperimentsRunsCancelPrintsCompactResponse(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	if strings.Join(requests, ",") != "POST /workflows/experiments/runs/exprun_123/cancel" {
+	if strings.Join(requests, ",") != "POST /v1/workflows/experiments/runs/exprun_123/cancel" {
 		t.Fatalf("requests = %v", requests)
 	}
 	if !strings.Contains(stdout, `"id": "exprun_123"`) || !strings.Contains(stdout, `"status": "cancelled"`) {
@@ -143,7 +143,7 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsBackwardCompat(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -182,7 +182,7 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

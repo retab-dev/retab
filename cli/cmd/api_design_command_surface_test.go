@@ -16,7 +16,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
 		"apply": true, "approve": true, "artifacts": true, "auth": true,
 		"blocks": true, "cancel": true, "classifications": true, "complete-upload": true,
-		"create": true, "create-upload": true, "delete": true, "diagnose": true,
+		"create": true, "create-upload": true, "delete": true,
 		"download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"generate": true, "get": true, "jobs": true,
@@ -71,9 +71,10 @@ func TestAPICommandSurfaceFlagsUseCanonicalKebabCase(t *testing.T) {
 	})
 }
 
-func TestRemovedWorkflowCommandSurfaceIsAbsent(t *testing.T) {
+func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 	commandPaths := apiDesignAllCommandPaths(rootCmd)
 	removedPaths := []string{
+		"files delete",
 		"workflows append-version",
 		"workflows reviews append",
 		"workflows reviews append-version",
@@ -107,13 +108,13 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"edits":                         {"create", "get", "list", "delete", "templates"},
 		"edits templates":               {"create", "get", "list", "update", "delete"},
 		"extractions":                   {"create", "stream", "list", "get", "sources", "delete"},
-		"files":                         {"list", "get", "upload", "delete", "download-link", "download", "create-upload", "complete-upload"},
+		"files":                         {"list", "get", "upload", "download-link", "download", "create-upload", "complete-upload"},
 		"jobs":                          {"create", "get", "wait", "cancel", "retry", "list"},
 		"parses":                        {"create", "get", "list", "delete"},
 		"partitions":                    {"create", "get", "list", "delete"},
 		"schemas":                       {"generate"},
 		"splits":                        {"create", "get", "list", "delete"},
-		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "diagnose", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec"},
+		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec"},
 		"workflows artifacts":           {"get", "list"},
 		"workflows blocks":              {"list", "get", "create", "update", "delete", "executions"},
 		"workflows edges":               {"list", "get", "create", "delete"},

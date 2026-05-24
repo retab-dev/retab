@@ -4,7 +4,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.mime import MIMEData
 
 
 class GenerateSchemaRequestReasoningEffort(str, Enum):
@@ -35,7 +34,6 @@ class WorkflowRunsTriggerType(str, Enum):
     API = "api"
     SCHEDULE = "schedule"
     WEBHOOK = "webhook"
-    EMAIL = "email"
     RESTART = "restart"
 
 
@@ -98,7 +96,7 @@ class JobsSource(str, Enum):
 class GenerateSchemaRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    documents: list[MIMEData]
+    documents: list[MimeDataInput]
     model: str | None = Field(default="retab-small")
     reasoning_effort: GenerateSchemaRequestReasoningEffort | None = Field(default=cast(GenerateSchemaRequestReasoningEffort, "minimal"))
     instructions: str | None = None
@@ -113,16 +111,10 @@ class HttpValidationError(BaseModel):
 
 
 class MimeDataInput(BaseModel):
-    """Input format for documents from the frontend.
-
-    This accepts either inline base64 content or a URL-backed MIMEData reference."""
-
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     filename: str = Field(..., description="The filename of the file")
-    content: str | None = Field(default=None, description="Base64 encoded content")
-    url: str | None = Field(default=None, description="URL-backed document reference")
-    mime_type: str | None = Field(default=None, description="MIME type of the file")
+    url: str = Field(..., description="The URL of the file in base64 format")
 
 
 class PartialSchema(BaseModel):

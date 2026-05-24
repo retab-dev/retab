@@ -393,7 +393,7 @@ func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	filesListCmd.SetContext(context.Background())
-	t.Cleanup(func() { filesListCmd.SetContext(nil) })
+	t.Cleanup(func() { filesListCmd.SetContext(context.Background()) })
 	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
 		t.Fatal(err)
 	}

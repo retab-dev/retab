@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.classifications import Category, ClassificationConsensus, ClassificationDecision
 from retab.types.documents.usage import RetabUsage
@@ -205,7 +205,7 @@ class ConditionalEvaluation(BaseModel):
 class EditConfig(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    color: str | None = Field(default="#000080", description="Hex code of the color to use for the filled text.")
+    color: str | None = Field(default=cast(str, "#000080"), description="Hex code of the color to use for the filled text.")
 
 
 class EditResult(BaseModel):
@@ -225,6 +225,7 @@ class EditWorkflowArtifact(BaseModel):
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
     output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
+    filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
     operation: Literal["edit"] = Field(default="edit", description="Artifact operation that determines the backing record type")

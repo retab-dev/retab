@@ -13,11 +13,14 @@ namespace Retab
         /// <summary>The name of the file</summary>
         public string Filename { get; set; } = default!;
 
+        /// <summary>The MIME type of the file</summary>
+        public string? MimeType { get; set; }
+
         /// <summary>When the file was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>When the file was last updated</summary>
-        public DateTimeOffset UpdatedAt { get; set; }
+        public DateTimeOffset? UpdatedAt { get; set; }
 
         /// <summary>Number of pages in the file</summary>
         public long? PageCount { get; set; }

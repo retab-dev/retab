@@ -275,13 +275,13 @@ impl From<CancelledWorkflowExperimentRun> for CancelWorkflowExperimentRunRespons
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ClassificationRequestDocumentOneOf {
-    MimeData(Box<MimeData>),
+    MimeDataInput(Box<MimeDataInput>),
     FileRef(Box<FileRef>),
 }
 
-impl From<MimeData> for ClassificationRequestDocumentOneOf {
-    fn from(v: MimeData) -> Self {
-        ClassificationRequestDocumentOneOf::MimeData(Box::new(v))
+impl From<MimeDataInput> for ClassificationRequestDocumentOneOf {
+    fn from(v: MimeDataInput) -> Self {
+        ClassificationRequestDocumentOneOf::MimeDataInput(Box::new(v))
     }
 }
 
@@ -544,8 +544,6 @@ pub enum WorkflowRunTriggerOneOf {
     ScheduleTrigger(Box<ScheduleTrigger>),
     #[serde(rename = "webhook")]
     WebhookTrigger(Box<WebhookTrigger>),
-    #[serde(rename = "email")]
-    EmailTrigger(Box<EmailTrigger>),
     #[serde(rename = "restart")]
     RestartTrigger(Box<RestartTrigger>),
 }
@@ -571,12 +569,6 @@ impl From<ScheduleTrigger> for WorkflowRunTriggerOneOf {
 impl From<WebhookTrigger> for WorkflowRunTriggerOneOf {
     fn from(v: WebhookTrigger) -> Self {
         WorkflowRunTriggerOneOf::WebhookTrigger(Box::new(v))
-    }
-}
-
-impl From<EmailTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: EmailTrigger) -> Self {
-        WorkflowRunTriggerOneOf::EmailTrigger(Box::new(v))
     }
 }
 

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-23T21:07:04.614Z",
+  "generatedAt": "2026-05-24T13:07:08.105Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -78,7 +78,6 @@
     "src/Entities/EditResult.cs",
     "src/Entities/EditTemplate.cs",
     "src/Entities/EditWorkflowArtifact.cs",
-    "src/Entities/EmailTrigger.cs",
     "src/Entities/EndsWithCondition.cs",
     "src/Entities/EqualCondition.cs",
     "src/Entities/ErrorBlockExecutionLifecycle.cs",
@@ -198,14 +197,7 @@
     "src/Entities/WhileLoopTermination.cs",
     "src/Entities/Workflow.cs",
     "src/Entities/WorkflowBlock.cs",
-    "src/Entities/WorkflowBlockPosition.cs",
-    "src/Entities/WorkflowConfigBlock.cs",
-    "src/Entities/WorkflowConfigEdge.cs",
-    "src/Entities/WorkflowDiagnosisIssue.cs",
-    "src/Entities/WorkflowDiagnosisResponse.cs",
-    "src/Entities/WorkflowDiagnosisStats.cs",
     "src/Entities/WorkflowEdgeDoc.cs",
-    "src/Entities/WorkflowEmailTrigger.cs",
     "src/Entities/WorkflowExperiment.cs",
     "src/Entities/WorkflowExportPayloadResponse.cs",
     "src/Entities/WorkflowPublished.cs",
@@ -254,7 +246,6 @@
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
-    "src/Enums/WorkflowDiagnosisIssueSeverity.cs",
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
     "src/Enums/WorkflowExportPayloadRequestTriggerTypes.cs",
@@ -650,10 +641,6 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "DeleteAsync",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
-      "sdkMethod": "DiagnoseAsync",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

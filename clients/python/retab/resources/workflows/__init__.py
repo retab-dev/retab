@@ -7,16 +7,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows import (
-    CreateWorkflowRequest,
-    PublishWorkflowRequest,
-    UpdateWorkflowRequest,
-    Workflow,
-    WorkflowConfigBlock,
-    WorkflowConfigEdge,
-    WorkflowDiagnosisResponse,
-    WorkflowGraphDiagnosisRequest,
-)
+from retab.types.workflows import CreateWorkflowRequest, PublishWorkflowRequest, UpdateWorkflowRequest, Workflow
 
 from .artifacts import WorkflowArtifacts, AsyncWorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
@@ -91,18 +82,6 @@ class WorkflowsMixin:
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/workflows/{workflow_id}", params=params or None, data=data)
 
-    def prepare_diagnose(
-        self, workflow_id: str, blocks: list[WorkflowConfigBlock] | None = None, edges: list[WorkflowConfigEdge] | None = None, re_propagate: bool = True, **extra_params: Any
-    ) -> PreparedRequest:
-        """Diagnose Workflow Graph Diagnose a workflow graph payload for the given workflow. When the request omits ``blocks`` and ``edges`` (both ``None``) the route loads the persisted draft from MongoDB. When either is provided (including an explicit empty list) the request body is diagnosed as-is."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = WorkflowGraphDiagnosisRequest(blocks=cast(Any, blocks), edges=cast(Any, edges), re_propagate=cast(Any, re_propagate))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/diagnose-graph", params=params or None, data=data)
-
     def prepare_publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> PreparedRequest:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
         params: dict[str, Any] = {}
@@ -167,14 +146,6 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self._client._prepared_request(prepared_request)
         return None
 
-    def diagnose(
-        self, workflow_id: str, blocks: list[WorkflowConfigBlock] | None = None, edges: list[WorkflowConfigEdge] | None = None, re_propagate: bool = True, **extra_params: Any
-    ) -> WorkflowDiagnosisResponse:
-        """Diagnose Workflow Graph Diagnose a workflow graph payload for the given workflow. When the request omits ``blocks`` and ``edges`` (both ``None``) the route loads the persisted draft from MongoDB. When either is provided (including an explicit empty list) the request body is diagnosed as-is."""
-        prepared_request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return WorkflowDiagnosisResponse.model_validate(response)
-
     def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
         prepared_request = self.prepare_publish(workflow_id, description=description, **extra_params)
@@ -234,14 +205,6 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         prepared_request = self.prepare_delete(workflow_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
-
-    async def diagnose(
-        self, workflow_id: str, blocks: list[WorkflowConfigBlock] | None = None, edges: list[WorkflowConfigEdge] | None = None, re_propagate: bool = True, **extra_params: Any
-    ) -> WorkflowDiagnosisResponse:
-        """Diagnose Workflow Graph Diagnose a workflow graph payload for the given workflow. When the request omits ``blocks`` and ``edges`` (both ``None``) the route loads the persisted draft from MongoDB. When either is provided (including an explicit empty list) the request body is diagnosed as-is."""
-        prepared_request = self.prepare_diagnose(workflow_id, blocks=blocks, edges=edges, re_propagate=re_propagate, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return WorkflowDiagnosisResponse.model_validate(response)
 
     async def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""

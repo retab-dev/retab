@@ -2,18 +2,8 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import type {
-  Workflow,
-  WorkflowConfigBlock,
-  WorkflowConfigEdge,
-  WorkflowDiagnosisResponse,
-  WorkflowDiagnosisResponseResponse,
-  WorkflowResponse,
-} from '../workflows/interfaces/index.js';
-import {
-  deserializeWorkflow,
-  deserializeWorkflowDiagnosisResponse,
-} from '../workflows/interfaces/index.js';
+import type { Workflow, WorkflowResponse } from '../workflows/interfaces/index.js';
+import { deserializeWorkflow } from '../workflows/interfaces/index.js';
 import { WorkflowArtifacts } from './artifacts/workflow-artifacts.js';
 import { WorkflowBlocks } from './blocks/workflow-blocks.js';
 import { WorkflowEdges } from './edges/workflow-edges.js';
@@ -122,27 +112,6 @@ export class Workflows {
       query: undefined,
       body: undefined,
     });
-  }
-
-  /** Diagnose Workflow Graph */
-  async diagnose(
-    workflowId: string,
-    blocks?: WorkflowConfigBlock[] | null,
-    edges?: WorkflowConfigEdge[] | null,
-    rePropagate?: boolean
-  ): Promise<WorkflowDiagnosisResponse> {
-    const body = {
-      blocks: blocks,
-      edges: edges,
-      re_propagate: rePropagate,
-    };
-    const __wire = await this.client.request<WorkflowDiagnosisResponseResponse>({
-      method: 'POST',
-      path: `/v1/workflows/${workflowId}/diagnose-graph`,
-      query: undefined,
-      body: body,
-    });
-    return deserializeWorkflowDiagnosisResponse(__wire);
   }
 
   /** Publish Workflow */

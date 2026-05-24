@@ -10,65 +10,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Bug 8: --fields used `StringArray` on `workflows runs list` but plain
-// `String` on every sibling list command (`workflows list`, `workflows
-// experiments runs list`, `workflows tests runs list`). The two shapes
-// have different invocation patterns:
-//
-//   - StringArray: --fields a --fields b   (repeatable)
-//   - String:      --fields a,b           (comma-separated)
-//
-// The wire format is comma-separated, so the `String` shape mirrors the
-// API and is the majority. Normalize to `String` on `workflows runs
-// list` so users can run the same `--fields a,b` syntax everywhere.
-func TestWorkflowRunsListFieldsFlagIsCommaSeparatedString(t *testing.T) {
-	flag := workflowsRunsListCmd.Flag("fields")
-	if flag == nil {
-		t.Fatal("workflows runs list missing --fields flag")
+func TestWorkflowListCommandsDoNotExposeFieldsFlag(t *testing.T) {
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{"workflows list", workflowsListCmd},
+		{"workflows runs list", workflowsRunsListCmd},
+		{"workflows experiments runs list", workflowsExperimentsRunsListCmd},
+		{"workflows tests runs list", workflowsTestsRunsListCmd},
 	}
-	if flag.Value.Type() != "string" {
-		t.Fatalf("workflows runs list --fields type = %q, want \"string\" (comma-separated). "+
-			"Sibling commands use String; keep the wire shape consistent.",
-			flag.Value.Type())
-	}
-}
-
-// Pin that the comma-separated --fields value is accepted by the CLI but
-// not sent through the regenerated typed runs-list endpoint, which no
-// longer exposes a fields query parameter. Local allowlist validation
-// still catches typos before the request.
-func TestWorkflowRunsListFieldsCommaSeparatedIsValidatedLocallyOnly(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var seenQuery string
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		seenQuery = r.URL.RawQuery
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null}}`))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsRunsListCmd.Flags().Set("fields", "id,workflow.workflow_id"); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "fields") })
-
-	if _, stderr := captureStd(t, func() {
-		if err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil); err != nil {
-			t.Fatalf("runs list: %v", err)
-		}
-	}); stderr != "" {
-		t.Fatalf("unexpected stderr: %q", stderr)
-	}
-	if got := hits.Load(); got != 1 {
-		t.Fatalf("expected exactly 1 HTTP call, got %d", got)
-	}
-	if strings.Contains(seenQuery, "fields=") {
-		t.Fatalf("did not expect fields= on regenerated typed list request, got %q", seenQuery)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if flag := tc.cmd.Flag("fields"); flag != nil {
+				t.Fatalf("%s exposes unsupported --fields flag", tc.name)
+			}
+		})
 	}
 }
 

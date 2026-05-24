@@ -4,7 +4,8 @@ from __future__ import annotations
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef, MIMEData
+from retab.types.mime import FileRef
+from retab.types.schemas import MimeDataInput
 
 
 class Category(BaseModel):
@@ -34,7 +35,7 @@ class ClassificationConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     choices: list[ClassificationDecision] | None = Field(default=None, description="Alternative classification vote outputs used to build the consolidated result.")
-    likelihoods: float | None = Field(default=None, description="Consensus likelihood score (0.0-1.0) of the winning classification.")
+    likelihoods: float | None = Field(default=0, description="Consensus likelihood score (0.0-1.0) of the winning classification.")
 
 
 class ClassificationDecision(BaseModel):
@@ -49,7 +50,7 @@ class ClassificationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to classify")
+    document: MimeDataInput | FileRef = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str | None = Field(default="retab-small", description="The model to use for classification")
     first_n_pages: int | None = Field(

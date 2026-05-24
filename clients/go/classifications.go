@@ -29,7 +29,7 @@ func (s *ClassificationService) List(ctx context.Context, params *Classification
 // ClassificationsCreateParams contains the parameters for Create.
 type ClassificationsCreateParams struct {
 	// Document is the document to classify
-	Document any `json:"document" url:"-"`
+	Document interface{} `json:"document" url:"-"`
 	// Categories is the categories to classify the document into
 	Categories []*Category `json:"categories" url:"-"`
 	// Model is the model to use for classification
@@ -58,37 +58,8 @@ func (s *ClassificationService) Create(ctx context.Context, params *Classificati
 	if params.Model == nil {
 		return nil, fmt.Errorf("retab: model is required")
 	}
-	type createWireBody struct {
-		Document     *MIMEData   `json:"document"`
-		Categories   []*Category `json:"categories"`
-		Model        *string     `json:"model,omitempty"`
-		FirstNPages  *int        `json:"first_n_pages,omitempty"`
-		Instructions *string     `json:"instructions,omitempty"`
-		NConsensus   *int        `json:"n_consensus,omitempty"`
-		BustCache    *bool       `json:"bust_cache,omitempty"`
-	}
-	if params == nil {
-		return nil, fmt.Errorf("retab: params is required")
-	}
-	var coercedDocument *MIMEData
-	if params.Document != nil {
-		mime, err := InferMIMEData(params.Document)
-		if err != nil {
-			return nil, fmt.Errorf("retab: invalid document: %w", err)
-		}
-		coercedDocument = &mime
-	}
-	body := createWireBody{
-		Document:     coercedDocument,
-		Categories:   params.Categories,
-		Model:        params.Model,
-		FirstNPages:  params.FirstNPages,
-		Instructions: params.Instructions,
-		NConsensus:   params.NConsensus,
-		BustCache:    params.BustCache,
-	}
 	var result Classification
-	_, err := s.client.request(ctx, "POST", "/v1/classifications", nil, body, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/classifications", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

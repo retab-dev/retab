@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -99,9 +100,7 @@ func rejectLegacyReviewConfig(config map[string]any) error {
 
 func mergeWorkflowBlockConfig(existing map[string]any, patch map[string]any) map[string]any {
 	merged := make(map[string]any, len(existing)+len(patch))
-	for key, value := range existing {
-		merged[key] = value
-	}
+	maps.Copy(merged, existing)
 	for key, patchValue := range patch {
 		existingChild, existingIsMap := merged[key].(map[string]any)
 		patchChild, patchIsMap := patchValue.(map[string]any)

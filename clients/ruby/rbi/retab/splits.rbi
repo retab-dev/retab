@@ -25,7 +25,7 @@ module Retab
 
     sig do
       params(
-        document: T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped]),
+        document: T.any(Retab::MimeDataInput, Retab::FileRef),
         subdocuments: T::Array[Retab::Subdocument],
         model: T.nilable(String),
         instructions: T.nilable(String),

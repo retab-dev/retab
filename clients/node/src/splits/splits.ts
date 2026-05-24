@@ -2,7 +2,8 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import { coerceMimeData, type MIMEDataInput } from '../runtime/mime.js';
+import type { FileRef } from '../extractions/interfaces/index.js';
+import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import type { Split, SplitResponse, Subdocument } from '../splits/interfaces/index.js';
 import { deserializeSplit } from '../splits/interfaces/index.js';
 
@@ -37,16 +38,15 @@ export class Splits {
 
   /** Create Split */
   async create(
-    document: MIMEDataInput,
+    document: MimeDataInput | FileRef,
     subdocuments: Subdocument[],
     model?: string,
     instructions?: string | null,
     nConsensus?: number,
     bustCache?: boolean
   ): Promise<Split> {
-    const documentCoerced = await coerceMimeData(document);
     const body = {
-      document: documentCoerced,
+      document: document,
       subdocuments: subdocuments,
       model: model,
       instructions: instructions,

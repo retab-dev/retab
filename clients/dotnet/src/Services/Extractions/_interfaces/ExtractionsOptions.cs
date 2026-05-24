@@ -58,5 +58,7 @@ namespace Retab
 
         public bool? Stream { get; set; }
 
+        public Dictionary<string, string>? ChunkingKeys { get; set; }
+
     }
 }

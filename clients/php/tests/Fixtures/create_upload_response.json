@@ -7,7 +7,8 @@
   },
   "mimeData": {
     "filename": "Test",
-    "url": "https://example.com"
+    "url": "https://example.com",
+    "mime_type": "test_mime_type"
   },
   "expiresAt": "2023-01-01T00:00:00.000Z"
 }

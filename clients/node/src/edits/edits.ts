@@ -2,8 +2,9 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import { coerceMimeData, type MIMEDataInput } from '../runtime/mime.js';
 import type { Edit, EditResponse } from '../edits/interfaces/index.js';
+import type { FileRef } from '../extractions/interfaces/index.js';
+import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import type { EditConfig } from '../workflows/artifacts/interfaces/index.js';
 import { deserializeEdit } from '../edits/interfaces/index.js';
 import { EditTemplates } from './templates/edit-templates.js';
@@ -46,16 +47,15 @@ export class Edits {
   /** Create Edit */
   async create(
     instructions: string,
-    document?: MIMEDataInput,
+    document?: (MimeDataInput | FileRef) | null,
     templateId?: string | null,
     model?: string,
     config?: EditConfig,
     bustCache?: boolean
   ): Promise<Edit> {
-    const documentCoerced = document === undefined ? undefined : await coerceMimeData(document);
     const body = {
       instructions: instructions,
-      document: documentCoerced,
+      document: document,
       template_id: templateId,
       model: model,
       config: config,

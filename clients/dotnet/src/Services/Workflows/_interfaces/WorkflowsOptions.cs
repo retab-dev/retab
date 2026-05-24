@@ -34,20 +34,6 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.DiagnoseAsync"/>: Diagnose Workflow Graph</summary>
-    public class WorkflowsDiagnoseOptions : BaseOptions
-    {
-        /// <summary>Blocks to diagnose; if omitted, the persisted draft is loaded server-side</summary>
-        public List<WorkflowConfigBlock>? Blocks { get; set; }
-
-        /// <summary>Edges to diagnose; if omitted, the persisted draft is loaded server-side</summary>
-        public List<WorkflowConfigEdge>? Edges { get; set; }
-
-        /// <summary>Recompute derived schemas before validating the graph</summary>
-        public bool? RePropagate { get; set; }
-
-    }
-
     /// <summary>Request options for <see cref="WorkflowsService.PublishAsync"/>: Publish Workflow</summary>
     public class WorkflowsPublishOptions : BaseOptions
     {

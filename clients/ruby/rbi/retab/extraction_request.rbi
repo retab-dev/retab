@@ -9,10 +9,10 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(T.any(Retab::MimeData, Retab::FileRef)) }
+    sig { returns(T.any(Retab::MimeDataInput, Retab::FileRef)) }
     def document; end
 
-    sig { params(value: T.any(Retab::MimeData, Retab::FileRef)).returns(T.any(Retab::MimeData, Retab::FileRef)) }
+    sig { params(value: T.any(Retab::MimeDataInput, Retab::FileRef)).returns(T.any(Retab::MimeDataInput, Retab::FileRef)) }
     def document=(value); end
 
     sig { returns(T::Hash[String, T.untyped]) }
@@ -68,6 +68,12 @@ module Retab
 
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def stream=(value); end
+
+    sig { returns(T.nilable(T::Hash[String, String])) }
+    def chunking_keys; end
+
+    sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
+    def chunking_keys=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end

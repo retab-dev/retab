@@ -16,17 +16,17 @@ export interface PartitionConsensus {
   /** Alternative partition vote outputs used to build the consolidated result. */
   choices?: PartitionChunk[][];
   /** Consensus likelihoods aligned with the partition output. */
-  likelihoods?: PartitionChunkLikelihood[] | null;
+  likelihoods?: PartitionChunkLikelihood[];
 }
 
 export interface PartitionConsensusResponse {
   choices?: PartitionChunkResponse[][];
-  likelihoods?: PartitionChunkLikelihoodResponse[] | null;
+  likelihoods?: PartitionChunkLikelihoodResponse[];
 }
 
 export const ZPartitionConsensus = z.object({
   choices: ZPartitionChunk.array().array().optional(),
-  likelihoods: ZPartitionChunkLikelihood.array().nullable().optional(),
+  likelihoods: ZPartitionChunkLikelihood.array().optional(),
 }) as z.ZodType<PartitionConsensus>;
 
 export function deserializePartitionConsensus(
@@ -40,8 +40,6 @@ export function deserializePartitionConsensus(
     likelihoods:
       wire['likelihoods'] == null
         ? (wire['likelihoods'] as undefined)
-        : wire['likelihoods'] == null
-          ? wire['likelihoods']
-          : wire['likelihoods'].map((__i) => deserializePartitionChunkLikelihood(__i)),
+        : wire['likelihoods'].map((__i) => deserializePartitionChunkLikelihood(__i)),
   };
 }

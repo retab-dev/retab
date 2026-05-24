@@ -74,6 +74,7 @@ class ExtractionsMixin:
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction"""
@@ -95,6 +96,7 @@ class ExtractionsMixin:
             additional_messages=cast(Any, additional_messages),
             bust_cache=cast(Any, bust_cache),
             stream=cast(Any, stream),
+            chunking_keys=cast(Any, chunking_keys),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
@@ -174,6 +176,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction"""
@@ -188,6 +191,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             additional_messages=additional_messages,
             bust_cache=bust_cache,
             stream=stream,
+            chunking_keys=chunking_keys,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -259,6 +263,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction"""
@@ -273,6 +278,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             additional_messages=additional_messages,
             bust_cache=bust_cache,
             stream=stream,
+            chunking_keys=chunking_keys,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)

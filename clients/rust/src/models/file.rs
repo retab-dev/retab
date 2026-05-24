@@ -14,10 +14,15 @@ pub struct File {
     pub id: String,
     /// The name of the file
     pub filename: String,
+    /// The MIME type of the file
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mime_type: Option<String>,
     /// When the file was created
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
     /// When the file was last updated
-    pub updated_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub updated_at: Option<String>,
     /// Number of pages in the file
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub page_count: Option<i64>,
@@ -25,18 +30,14 @@ pub struct File {
 impl File {
     /// Construct a new `File` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        id: impl Into<String>,
-        filename: impl Into<String>,
-        created_at: impl Into<String>,
-        updated_at: impl Into<String>,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, filename: impl Into<String>) -> Self {
         Self {
             object: Default::default(),
             id: id.into(),
             filename: filename.into(),
-            created_at: created_at.into(),
-            updated_at: updated_at.into(),
+            mime_type: Default::default(),
+            created_at: Default::default(),
+            updated_at: Default::default(),
             page_count: Default::default(),
         }
     }

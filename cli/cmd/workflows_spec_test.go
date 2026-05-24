@@ -532,7 +532,7 @@ func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	workflowsSpecExportCmd.SetContext(context.Background())
-	t.Cleanup(func() { workflowsSpecExportCmd.SetContext(nil) })
+	t.Cleanup(func() { workflowsSpecExportCmd.SetContext(context.Background()) })
 	if err := workflowsSpecExportCmd.Flags().Set("format", "yml"); err != nil {
 		t.Fatal(err)
 	}

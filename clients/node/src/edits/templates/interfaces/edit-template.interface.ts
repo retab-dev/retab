@@ -26,36 +26,36 @@ export interface EditTemplate {
   /** File information for the empty PDF template. */
   file: FileRef;
   /** Form fields attached to the template. */
-  formFields?: FormField[];
+  formFields?: FormField[] | null;
   /**
    * Number of form fields in the template.
    * @default 0
    */
-  fieldCount?: number;
+  fieldCount?: number | null;
   /** Timestamp of creation. */
-  createdAt: Date;
+  createdAt?: Date | null;
   /** Timestamp of last update. */
-  updatedAt: Date;
+  updatedAt?: Date | null;
 }
 
 export interface EditTemplateResponse {
   id: string;
   name: string;
   file: FileRefResponse;
-  form_fields?: FormFieldResponse[];
-  field_count?: number;
-  created_at: string;
-  updated_at: string;
+  form_fields?: FormFieldResponse[] | null;
+  field_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export const ZEditTemplate = z.object({
   id: z.string(),
   name: z.string(),
   file: ZFileRef,
-  formFields: ZFormField.array().optional(),
-  fieldCount: z.number().int().optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  formFields: ZFormField.array().nullable().optional(),
+  fieldCount: z.number().int().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
+  updatedAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<EditTemplate>;
 
 export function deserializeEditTemplate(wire: EditTemplateResponse): EditTemplate {
@@ -66,9 +66,21 @@ export function deserializeEditTemplate(wire: EditTemplateResponse): EditTemplat
     formFields:
       wire['form_fields'] == null
         ? (wire['form_fields'] as undefined)
-        : wire['form_fields'].map((__i) => deserializeFormField(__i)),
+        : wire['form_fields'] == null
+          ? wire['form_fields']
+          : wire['form_fields'].map((__i) => deserializeFormField(__i)),
     fieldCount: wire['field_count'],
-    createdAt: new Date(wire['created_at']),
-    updatedAt: new Date(wire['updated_at']),
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
+    updatedAt:
+      wire['updated_at'] == null
+        ? (wire['updated_at'] as undefined)
+        : wire['updated_at'] == null
+          ? wire['updated_at']
+          : new Date(wire['updated_at']),
   };
 }

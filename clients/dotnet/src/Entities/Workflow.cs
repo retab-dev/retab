@@ -26,9 +26,6 @@ namespace Retab
 
         /// <summary>Published workflow metadata when a published version exists</summary>
         public WorkflowPublished? Published { get; set; }
-
-        /// <summary>Email trigger allowlist policy</summary>
-        public WorkflowEmailTrigger? EmailTrigger { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
     }

@@ -3,11 +3,14 @@
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from './file-ref.interface.js';
 import { ZFileRef } from './file-ref.interface.js';
-import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
+import type {
+  MimeDataInput,
+  MimeDataInputResponse,
+} from '../../schemas/interfaces/mime-data-input.interface.js';
+import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
 
 export interface ExtractionRequest {
-  document: MIMEData | FileRef;
+  document: MimeDataInput | FileRef;
   /** JSON schema describing the structured output */
   jsonSchema: Record<string, unknown>;
   /**
@@ -28,7 +31,7 @@ export interface ExtractionRequest {
    */
   nConsensus?: number;
   /** User-defined metadata to associate with this extraction */
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
   /** Additional chat messages forwarded to the extraction model. */
   additionalMessages?: Record<string, unknown>[] | null;
   /**
@@ -38,37 +41,40 @@ export interface ExtractionRequest {
   bustCache?: boolean;
   /** @default false */
   stream?: boolean;
+  chunkingKeys?: Record<string, string> | null;
 }
 
 export interface ExtractionRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MimeDataInputResponse | FileRefResponse;
   json_schema: Record<string, unknown>;
   model?: string;
   image_resolution_dpi?: number;
   instructions?: string | null;
   n_consensus?: number;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
   additional_messages?: Record<string, unknown>[] | null;
   bust_cache?: boolean;
   stream?: boolean;
+  chunking_keys?: Record<string, string> | null;
 }
 
 export const ZExtractionRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: z.union([ZMimeDataInput, ZFileRef]),
   jsonSchema: z.record(z.string(), z.unknown()),
   model: z.string().optional(),
   imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   nConsensus: z.number().int().optional(),
-  metadata: z.record(z.string(), z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
   additionalMessages: z.record(z.string(), z.unknown()).array().nullable().optional(),
   bustCache: z.boolean().optional(),
   stream: z.boolean().optional(),
+  chunkingKeys: z.record(z.string(), z.string()).nullable().optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: wire['document'] as unknown as MimeDataInput | FileRef,
     jsonSchema: wire['json_schema'],
     model: wire['model'],
     imageResolutionDpi: wire['image_resolution_dpi'],
@@ -78,5 +84,6 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     additionalMessages: wire['additional_messages'],
     bustCache: wire['bust_cache'],
     stream: wire['stream'],
+    chunkingKeys: wire['chunking_keys'],
   };
 }

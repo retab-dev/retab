@@ -392,7 +392,7 @@ func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 		{ID: "end", Type: "function", Label: ptr("End"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
 	}
 	var edges []retab.WorkflowEdgeDoc
-	for i := 0; i < 25; i++ {
+	for range 25 {
 		edges = append(edges, retab.WorkflowEdgeDoc{
 			ID:           "edge",
 			SourceBlock:  "start",

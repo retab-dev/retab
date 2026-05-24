@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-23T21:24:19.281Z",
+  "generatedAt": "2026-05-24T13:06:38.022Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
@@ -370,10 +370,6 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "Delete",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/diagnose-graph": {
-      "sdkMethod": "Diagnose",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

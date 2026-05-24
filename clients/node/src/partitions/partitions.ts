@@ -2,8 +2,9 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import { coerceMimeData, type MIMEDataInput } from '../runtime/mime.js';
+import type { FileRef } from '../extractions/interfaces/index.js';
 import type { Partition, PartitionResponse } from '../partitions/interfaces/index.js';
+import type { MimeDataInput } from '../schemas/interfaces/index.js';
 import { deserializePartition } from '../partitions/interfaces/index.js';
 
 export class Partitions {
@@ -37,7 +38,7 @@ export class Partitions {
 
   /** Create Partitions */
   async create(
-    document: MIMEDataInput,
+    document: MimeDataInput | FileRef,
     key: string,
     instructions: string,
     model?: string,
@@ -45,9 +46,8 @@ export class Partitions {
     allowOverlap?: boolean,
     bustCache?: boolean
   ): Promise<Partition> {
-    const documentCoerced = await coerceMimeData(document);
     const body = {
-      document: documentCoerced,
+      document: document,
       key: key,
       instructions: instructions,
       model: model,

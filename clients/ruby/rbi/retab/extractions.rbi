@@ -29,7 +29,7 @@ module Retab
 
     sig do
       params(
-        document: T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped]),
+        document: T.any(Retab::MimeDataInput, Retab::FileRef),
         json_schema: T::Hash[String, T.untyped],
         model: T.nilable(String),
         image_resolution_dpi: T.nilable(Integer),
@@ -39,10 +39,11 @@ module Retab
         additional_messages: T.nilable(T::Array[T::Hash[String, T.untyped]]),
         bust_cache: T.nilable(T::Boolean),
         stream: T.nilable(T::Boolean),
+        chunking_keys: T.nilable(T::Hash[String, String]),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def create(document:, json_schema:, model:, image_resolution_dpi:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, request_options:); end
+    def create(document:, json_schema:, model:, image_resolution_dpi:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, chunking_keys:, request_options:); end
 
     sig do
       params(

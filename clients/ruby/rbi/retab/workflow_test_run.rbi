@@ -21,10 +21,10 @@ module Retab
     sig { params(value: Retab::WorkflowSnapshotRef).returns(Retab::WorkflowSnapshotRef) }
     def workflow=(value); end
 
-    sig { returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)) }
+    sig { returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::RestartTrigger)) }
     def trigger; end
 
-    sig { params(value: T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)).returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)) }
+    sig { params(value: T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::RestartTrigger)).returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::RestartTrigger)) }
     def trigger=(value); end
 
     sig { returns(T.any(Retab::PendingWorkflowTestRun, Retab::QueuedWorkflowTestRun, Retab::RunningWorkflowTestRun, Retab::CompletedWorkflowTestRun, Retab::ErrorWorkflowTestRun, Retab::CancelledWorkflowTestRun)) }

@@ -8,10 +8,12 @@ export interface File {
   id: string;
   /** The name of the file */
   filename: string;
+  /** The MIME type of the file */
+  mimeType?: string | null;
   /** When the file was created */
-  createdAt: Date;
+  createdAt?: Date | null;
   /** When the file was last updated */
-  updatedAt: Date;
+  updatedAt?: Date | null;
   /** Number of pages in the file */
   pageCount?: number | null;
 }
@@ -20,8 +22,9 @@ export interface FileResponse {
   object: 'file';
   id: string;
   filename: string;
-  created_at: string;
-  updated_at: string;
+  mime_type?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   page_count?: number | null;
 }
 
@@ -29,8 +32,9 @@ export const ZFile = z.object({
   object: z.literal('file'),
   id: z.string(),
   filename: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  mimeType: z.string().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
+  updatedAt: z.coerce.date().nullable().optional(),
   pageCount: z.number().int().nullable().optional(),
 }) as z.ZodType<File>;
 
@@ -39,8 +43,19 @@ export function deserializeFile(wire: FileResponse): File {
     object: wire['object'],
     id: wire['id'],
     filename: wire['filename'],
-    createdAt: new Date(wire['created_at']),
-    updatedAt: new Date(wire['updated_at']),
+    mimeType: wire['mime_type'],
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
+    updatedAt:
+      wire['updated_at'] == null
+        ? (wire['updated_at'] as undefined)
+        : wire['updated_at'] == null
+          ? wire['updated_at']
+          : new Date(wire['updated_at']),
     pageCount: wire['page_count'],
   };
 }
