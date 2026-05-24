@@ -3513,7 +3513,8 @@ class ModelRoundTripTest < Minitest::Test
   def test_mime_data_round_trip
     fixture = {
       "filename" => "stub",
-      "url" => "stub"
+      "url" => "stub",
+      "mime_type" => "stub"
     }
     model = Retab::MimeData.new(fixture.to_json)
     json = model.to_h
