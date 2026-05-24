@@ -298,7 +298,7 @@ func TestRenderAPIErrorForCLIFormatsFlatValidationEnvelope(t *testing.T) {
 		StatusCode: http.StatusUnprocessableEntity,
 		Message:    `[{"type":"missing","loc":["body","blocks",0,"label"],"msg":"Field required"},{"type":"missing","loc":["body","edges",1,"source_block"],"msg":"Field required"}]`,
 		Method:     http.MethodPost,
-		URL:        "http://localhost:4000/v1/workflows/wf_1/diagnose-graph",
+		URL:        "http://localhost:4000/v1/workflows/blocks",
 		Body:       `{"status_code":10422,"message":"[...]","data":null}`,
 	}
 

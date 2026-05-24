@@ -7,7 +7,6 @@ export type WorkflowExportPayloadRequestTriggerTypes =
   | 'api'
   | 'schedule'
   | 'webhook'
-  | 'email'
   | 'restart';
 
 export const ZWorkflowExportPayloadRequestTriggerTypes = z.enum([
@@ -15,6 +14,5 @@ export const ZWorkflowExportPayloadRequestTriggerTypes = z.enum([
   'api',
   'schedule',
   'webhook',
-  'email',
   'restart',
 ] as const);

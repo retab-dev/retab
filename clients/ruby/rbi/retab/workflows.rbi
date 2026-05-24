@@ -59,17 +59,6 @@ module Retab
     sig do
       params(
         workflow_id: String,
-        blocks: T.nilable(T::Array[Retab::WorkflowConfigBlock]),
-        edges: T.nilable(T::Array[Retab::WorkflowConfigEdge]),
-        re_propagate: T.nilable(T::Boolean),
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::WorkflowDiagnosisResponse)
-    end
-    def diagnose(workflow_id:, blocks:, edges:, re_propagate:, request_options:); end
-
-    sig do
-      params(
-        workflow_id: String,
         description: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Workflow)

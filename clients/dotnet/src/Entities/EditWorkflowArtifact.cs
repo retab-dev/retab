@@ -27,6 +27,9 @@ namespace Retab
         /// <summary>The edit result: filled form fields and the rendered PDF.</summary>
         public EditResult Output { get; set; } = default!;
 
+        /// <summary>Durable file reference for the filled document, when materialized.</summary>
+        public FileRef? FilledDocumentRef { get; set; }
+
         /// <summary>Usage information for the edit operation.</summary>
         public RetabUsage? Usage { get; set; }
 

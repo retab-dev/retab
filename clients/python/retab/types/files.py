@@ -48,8 +48,9 @@ class File(BaseModel):
     object: Literal["file"] = Field(default="file")
     id: str = Field(..., description="The unique identifier of the file")
     filename: str = Field(..., description="The name of the file")
-    created_at: datetime.datetime = Field(..., description="When the file was created")
-    updated_at: datetime.datetime = Field(..., description="When the file was last updated")
+    mime_type: str | None = Field(default=None, description="The MIME type of the file")
+    created_at: datetime.datetime | None = Field(default=None, description="When the file was created")
+    updated_at: datetime.datetime | None = Field(default=None, description="When the file was last updated")
     page_count: int | None = Field(default=None, description="Number of pages in the file")
 
 

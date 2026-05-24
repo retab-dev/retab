@@ -11,6 +11,8 @@ pub struct ClassificationConsensus {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub choices: Option<Vec<ClassificationDecision>>,
     /// Consensus likelihood score (0.0-1.0) of the winning classification.
+    ///
+    /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub likelihoods: Option<f64>,
 }

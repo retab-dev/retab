@@ -42,6 +42,8 @@ pub struct ExtractionRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stream: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub chunking_keys: Option<std::collections::HashMap<String, String>>,
 }
 impl ExtractionRequest {
     /// Construct a new `ExtractionRequest` with the required fields set.
@@ -61,6 +63,7 @@ impl ExtractionRequest {
             additional_messages: Default::default(),
             bust_cache: Default::default(),
             stream: Default::default(),
+            chunking_keys: Default::default(),
         }
     }
 }

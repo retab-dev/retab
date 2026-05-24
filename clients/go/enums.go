@@ -352,18 +352,6 @@ const (
 	WorkflowBlockTypeForEachSentinelEnd     WorkflowBlockType = "for_each_sentinel_end"
 )
 
-// WorkflowConfigBlockType is an alias for WorkflowBlockType.
-type WorkflowConfigBlockType = WorkflowBlockType
-
-// WorkflowDiagnosisIssueSeverity represents workflow diagnosis issue severity values.
-type WorkflowDiagnosisIssueSeverity string
-
-const (
-	WorkflowDiagnosisIssueSeverityError   WorkflowDiagnosisIssueSeverity = "error"
-	WorkflowDiagnosisIssueSeverityWarning WorkflowDiagnosisIssueSeverity = "warning"
-	WorkflowDiagnosisIssueSeverityInfo    WorkflowDiagnosisIssueSeverity = "info"
-)
-
 // NConsensusValue is an alias for CreateExperimentRequestNConsensus.
 type NConsensusValue = CreateExperimentRequestNConsensus
 
@@ -440,7 +428,6 @@ const (
 	WorkflowExportPayloadRequestTriggerTypesAPI      WorkflowExportPayloadRequestTriggerTypes = "api"
 	WorkflowExportPayloadRequestTriggerTypesSchedule WorkflowExportPayloadRequestTriggerTypes = "schedule"
 	WorkflowExportPayloadRequestTriggerTypesWebhook  WorkflowExportPayloadRequestTriggerTypes = "webhook"
-	WorkflowExportPayloadRequestTriggerTypesEmail    WorkflowExportPayloadRequestTriggerTypes = "email"
 	WorkflowExportPayloadRequestTriggerTypesRestart  WorkflowExportPayloadRequestTriggerTypes = "restart"
 )
 

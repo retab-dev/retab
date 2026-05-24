@@ -14,18 +14,18 @@ import {
 
 export interface SplitConsensus {
   /** Consensus likelihood tree mirroring the split output */
-  likelihoods?: SplitSubdocumentLikelihood[] | null;
+  likelihoods?: SplitSubdocumentLikelihood[];
   /** Alternative split vote outputs used to build the consolidated result */
   choices?: SplitResult[][];
 }
 
 export interface SplitConsensusResponse {
-  likelihoods?: SplitSubdocumentLikelihoodResponse[] | null;
+  likelihoods?: SplitSubdocumentLikelihoodResponse[];
   choices?: SplitResultResponse[][];
 }
 
 export const ZSplitConsensus = z.object({
-  likelihoods: ZSplitSubdocumentLikelihood.array().nullable().optional(),
+  likelihoods: ZSplitSubdocumentLikelihood.array().optional(),
   choices: ZSplitResult.array().array().optional(),
 }) as z.ZodType<SplitConsensus>;
 
@@ -34,9 +34,7 @@ export function deserializeSplitConsensus(wire: SplitConsensusResponse): SplitCo
     likelihoods:
       wire['likelihoods'] == null
         ? (wire['likelihoods'] as undefined)
-        : wire['likelihoods'] == null
-          ? wire['likelihoods']
-          : wire['likelihoods'].map((__i) => deserializeSplitSubdocumentLikelihood(__i)),
+        : wire['likelihoods'].map((__i) => deserializeSplitSubdocumentLikelihood(__i)),
     choices:
       wire['choices'] == null
         ? (wire['choices'] as undefined)

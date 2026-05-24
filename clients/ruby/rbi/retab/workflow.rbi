@@ -33,12 +33,6 @@ module Retab
     sig { params(value: T.nilable(Retab::WorkflowPublished)).returns(T.nilable(Retab::WorkflowPublished)) }
     def published=(value); end
 
-    sig { returns(T.nilable(Retab::WorkflowEmailTrigger)) }
-    def email_trigger; end
-
-    sig { params(value: T.nilable(Retab::WorkflowEmailTrigger)).returns(T.nilable(Retab::WorkflowEmailTrigger)) }
-    def email_trigger=(value); end
-
     sig { returns(String) }
     def created_at; end
 

@@ -5,7 +5,8 @@ from __future__ import annotations
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef, MIMEData
+from retab.types.mime import FileRef
+from retab.types.schemas import MimeDataInput
 from retab.types.workflows.artifacts import EditConfig, EditResult
 
 
@@ -15,7 +16,7 @@ class EditRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     instructions: str = Field(..., description="Instructions describing how to fill the form fields.")
-    document: MIMEData | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
+    document: MimeDataInput | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
     template_id: str | None = Field(
         default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document."
     )
@@ -34,6 +35,7 @@ class Edit(BaseModel):
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
     output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
+    filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = None
 

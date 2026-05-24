@@ -27,7 +27,7 @@ module Retab
     sig do
       params(
         instructions: String,
-        document: T.nilable(T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped])),
+        document: T.nilable(T.any(Retab::MimeDataInput, Retab::FileRef)),
         template_id: T.nilable(String),
         model: T.nilable(String),
         config: T.nilable(Retab::EditConfig),

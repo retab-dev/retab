@@ -2,14 +2,6 @@
 
 import { z } from 'zod';
 import type {
-  WorkflowEmailTrigger,
-  WorkflowEmailTriggerResponse,
-} from './workflow-email-trigger.interface.js';
-import {
-  ZWorkflowEmailTrigger,
-  deserializeWorkflowEmailTrigger,
-} from './workflow-email-trigger.interface.js';
-import type {
   WorkflowPublished,
   WorkflowPublishedResponse,
 } from './workflow-published.interface.js';
@@ -34,8 +26,6 @@ export interface Workflow {
   description?: string;
   /** Published workflow metadata when a published version exists */
   published?: WorkflowPublished | null;
-  /** Email trigger allowlist policy */
-  emailTrigger?: WorkflowEmailTrigger;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +35,6 @@ export interface WorkflowResponse {
   name?: string;
   description?: string;
   published?: WorkflowPublishedResponse | null;
-  email_trigger?: WorkflowEmailTriggerResponse;
   created_at: string;
   updated_at: string;
 }
@@ -55,7 +44,6 @@ export const ZWorkflow = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   published: ZWorkflowPublished.nullable().optional(),
-  emailTrigger: ZWorkflowEmailTrigger.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 }) as z.ZodType<Workflow>;
@@ -71,10 +59,6 @@ export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
         : wire['published'] == null
           ? wire['published']
           : deserializeWorkflowPublished(wire['published']),
-    emailTrigger:
-      wire['email_trigger'] == null
-        ? (wire['email_trigger'] as undefined)
-        : deserializeWorkflowEmailTrigger(wire['email_trigger']),
     createdAt: new Date(wire['created_at']),
     updatedAt: new Date(wire['updated_at']),
   };

@@ -87,7 +87,7 @@ func TestSchemasGenerateFileMissingReportsClearError(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	schemasGenerateCmd.SetContext(context.Background())
-	t.Cleanup(func() { schemasGenerateCmd.SetContext(nil) })
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
 
 	missing := "/definitely/does/not/exist.pdf"
 	if err := schemasGenerateCmd.Flags().Set("file", missing); err != nil {
@@ -159,7 +159,7 @@ func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	schemasGenerateCmd.SetContext(context.Background())
-	t.Cleanup(func() { schemasGenerateCmd.SetContext(nil) })
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
 	if err := schemasGenerateCmd.Flags().Set("url", "https://example.com/sample.pdf"); err != nil {
 		t.Fatal(err)
 	}

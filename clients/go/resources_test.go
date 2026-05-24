@@ -46,6 +46,7 @@ func newTestClient(t *testing.T, server *httptest.Server) *Client {
 
 func TestResourceCreateRequestShapes(t *testing.T) {
 	document := MIMEData{Filename: "invoice.pdf", Content: "data", MIMEType: "application/pdf"}
+	documentInterface := any(document)
 	tests := []struct {
 		name       string
 		call       func(context.Context, *Client) error
@@ -165,9 +166,9 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 			call: func(ctx context.Context, client *Client) error {
 				_, err := client.Edits.Create(ctx, &EditsCreateParams{
 					Instructions: "fill the form",
-					Document:     document,
+					Document:     &documentInterface,
 					Model:        ptrTo("retab-small"),
-					Config:       &EditConfig{Color: "#000080"},
+					Config:       &EditConfig{Color: ptrTo("#000080")},
 					BustCache:    ptrTo(true),
 				})
 				return err
@@ -183,8 +184,11 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 			name: "schemas generate",
 			call: func(ctx context.Context, client *Client) error {
 				_, err := client.Schemas.Generate(ctx, &SchemasGenerateParams{
-					Documents: []any{document},
-					Model:     ptrTo("retab-small"),
+					Documents: []*MIMEDataInput{{
+						Filename: document.Filename,
+						URL:      document.Content,
+					}},
+					Model: ptrTo("retab-small"),
 				})
 				return err
 			},

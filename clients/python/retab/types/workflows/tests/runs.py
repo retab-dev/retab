@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime
 from typing import Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.runs import ApiTrigger, EmailTrigger, ErrorDetails, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger, WorkflowSnapshotRef
+from retab.types.workflows.runs import ApiTrigger, ErrorDetails, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger, WorkflowSnapshotRef
 
 
 class BlockTestBatchExecutionCounts(BaseModel):
@@ -152,7 +152,7 @@ class WorkflowTestRun(BaseModel):
 
     id: str
     workflow: WorkflowSnapshotRef
-    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., discriminator="type")
+    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | RestartTrigger = Field(..., discriminator="type")
     lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun = Field(
         ..., discriminator="status"
     )

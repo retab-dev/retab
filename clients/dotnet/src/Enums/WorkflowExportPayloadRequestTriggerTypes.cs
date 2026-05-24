@@ -20,8 +20,6 @@ namespace Retab
         Schedule,
         [EnumMember(Value = "webhook")]
         Webhook,
-        [EnumMember(Value = "email")]
-        Email,
         [EnumMember(Value = "restart")]
         Restart,
     }

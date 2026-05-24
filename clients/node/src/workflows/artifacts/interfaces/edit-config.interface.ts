@@ -6,15 +6,15 @@ export interface EditConfig {
    * Hex code of the color to use for the filled text.
    * @default "#000080"
    */
-  color?: string;
+  color?: string | null;
 }
 
 export interface EditConfigResponse {
-  color?: string;
+  color?: string | null;
 }
 
 export const ZEditConfig = z.object({
-  color: z.string().optional(),
+  color: z.string().nullable().optional(),
 }) as z.ZodType<EditConfig>;
 
 export function deserializeEditConfig(wire: EditConfigResponse): EditConfig {

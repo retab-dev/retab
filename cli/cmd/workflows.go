@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -54,74 +52,6 @@ func isStartDocumentBlock(block retab.WorkflowBlock) bool {
 	return block.Type == "start_document"
 }
 
-func workflowGraphObjects(body map[string]any, key string) ([]map[string]any, error) {
-	raw, ok := body[key]
-	if !ok {
-		return nil, nil
-	}
-	arr, ok := raw.([]any)
-	if !ok {
-		return nil, fmt.Errorf("--graph-file: %s must be an array", key)
-	}
-	out := make([]map[string]any, 0, len(arr))
-	for i, item := range arr {
-		obj, ok := item.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("--graph-file: %s[%d] must be an object", key, i)
-		}
-		out = append(out, normalizeWorkflowGraphObject(key, obj))
-	}
-	return out, nil
-}
-
-func normalizeWorkflowGraphObject(key string, obj map[string]any) map[string]any {
-	switch key {
-	case "blocks":
-		out := map[string]any{}
-		copyWorkflowGraphField(out, obj, "id")
-		copyWorkflowGraphField(out, obj, "type")
-		copyWorkflowGraphField(out, obj, "label")
-		copyWorkflowGraphField(out, obj, "config")
-		copyWorkflowGraphField(out, obj, "width")
-		copyWorkflowGraphField(out, obj, "height")
-		copyWorkflowGraphField(out, obj, "parent_id")
-		if _, ok := obj["position"]; ok {
-			copyWorkflowGraphField(out, obj, "position")
-		} else if _, hasX := obj["position_x"]; hasX {
-			out["position"] = map[string]any{"x": obj["position_x"], "y": obj["position_y"]}
-		} else if _, hasY := obj["position_y"]; hasY {
-			out["position"] = map[string]any{"x": obj["position_x"], "y": obj["position_y"]}
-		}
-		return out
-	case "edges":
-		out := map[string]any{}
-		copyWorkflowGraphField(out, obj, "id")
-		copyWorkflowGraphEndpoint(out, obj, "source", "source_block")
-		copyWorkflowGraphEndpoint(out, obj, "target", "target_block")
-		copyWorkflowGraphField(out, obj, "source_handle")
-		copyWorkflowGraphField(out, obj, "target_handle")
-		return out
-	default:
-		return obj
-	}
-}
-
-func copyWorkflowGraphField(dst map[string]any, src map[string]any, key string) {
-	if value, ok := src[key]; ok {
-		dst[key] = value
-	}
-}
-
-func copyWorkflowGraphEndpoint(dst map[string]any, src map[string]any, key string, fallbackKey string) {
-	if value, ok := src[key]; ok {
-		dst[key] = value
-		return
-	}
-	if value, ok := src[fallbackKey]; ok {
-		dst[key] = value
-	}
-}
-
 var workflowsCmd = &cobra.Command{
 	Use:   "workflows",
 	Short: "Manage workflows",
@@ -166,41 +96,17 @@ Typical lifecycle:
   retab workflows publish wf_abc123 --description "v1: invoice extraction"`,
 }
 
-// workflowsListAllowedFields enumerates the top-level workflow fields the
-// server projects when `--fields` is set. Validation is client-side so
-// typos surface immediately instead of being silently dropped (the server
-// ignores unknown selectors rather than returning an error).
-var workflowsListAllowedFields = []string{
-	"id", "name", "description", "published", "email_trigger", "created_at", "updated_at",
-}
-
 var workflowsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workflows",
-	Long: `List workflows in your project, with id pagination and field
-selection. Use ` + "`--fields`" + ` to trim large list payloads, and
-` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
+	Long: `List workflows in your project, with id pagination.
+Use ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 	Example: `  # First page
   retab workflows list --limit 20
 
   # Next page (use the last workflow id from the previous response)
-  retab workflows list --after wf_abc123 --limit 20
-
-  # Project just the fields you need
-  retab workflows list --fields id,name,updated_at`,
+  retab workflows list --after wf_abc123 --limit 20`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		// `--fields` sparse-field projection requires the server's
-		// on-the-wire shape to reach stdout untouched. Re-marshaling the
-		// typed Workflow struct would re-inflate zero-valued fields
-		// (`name`, `description`, `email_trigger`) and defeat the flag.
-		// Drop to the raw JSON helper so the trimmed payload survives.
-		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
-		if err != nil {
-			return err
-		}
-		if err := validateFieldsAgainstAllowlist(fields, workflowsListAllowedFields); err != nil {
-			return err
-		}
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
@@ -210,26 +116,29 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		order, _ := cmd.Flags().GetString("order")
 		sortBy, _ := cmd.Flags().GetString("sort-by")
 
-		query := url.Values{}
+		params := &retab.WorkflowsListParams{}
 		if before != "" {
-			query.Set("before", before)
+			params.Before = ptr(before)
 		}
 		if after != "" {
-			query.Set("after", after)
+			params.After = ptr(after)
 		}
 		if limit > 0 {
-			query.Set("limit", fmt.Sprintf("%d", limit))
+			params.Limit = ptr(limit)
 		}
 		if order != "" {
-			query.Set("order", order)
+			params.Order = ptr(order)
 		}
 		if sortBy != "" {
-			query.Set("sort_by", sortBy)
+			params.SortBy = ptr(sortBy)
 		}
-		if len(fields) > 0 {
-			query.Set("fields", strings.Join(fields, ","))
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
 		}
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows", query, nil)
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -248,7 +157,7 @@ var workflowsGetCmd = &cobra.Command{
 	Use:   "get <workflow-id>",
 	Short: "Get a workflow",
 	Long: `Fetch the workflow envelope: name, description, current draft and
-published versions, email-trigger settings, timestamps.
+published versions, timestamps.
 
 For a graph-shaped view, use ` + "`workflows view`" + `.
 For blocks and edges as JSON, use ` + "`workflows blocks list`" + ` and ` + "`workflows edges list`" + `.`,
@@ -320,26 +229,19 @@ functional.`,
 var workflowsUpdateCmd = &cobra.Command{
 	Use:   "update <workflow-id>",
 	Short: "Update a workflow",
-	Long: `Patch the workflow envelope. Use this to rename, re-describe, or
-configure the email trigger (allowlist of sender addresses or domains that
-can drop a document into the workflow by email).
+	Long: `Patch the workflow envelope. Use this to rename or re-describe the
+workflow.
 
 This does NOT modify the graph — for that see ` + "`workflows blocks`" + `
 and ` + "`workflows edges`" + `.`,
 	Example: `  # Rename
-  retab workflows update wf_abc123 --name "Invoice extraction v2"
-
-  # Configure the email trigger allowlist
-  retab workflows update wf_abc123 \
-    --allowed-domain acme.com \
-    --allowed-sender ops@vendor.io`,
+  retab workflows update wf_abc123 --name "Invoice extraction v2"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
-		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("description") &&
-			!cmd.Flags().Changed("allowed-sender") && !cmd.Flags().Changed("allowed-domain") {
-			return fmt.Errorf("nothing to update: pass at least one of --name, --description, --allowed-sender, or --allowed-domain")
+		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("description") {
+			return fmt.Errorf("nothing to update: pass at least one of --name or --description")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -363,60 +265,7 @@ and ` + "`workflows edges`" + `.`,
 			req.Description = &v
 			body["description"] = v
 		}
-		senders, _ := cmd.Flags().GetStringArray("allowed-sender")
-		domains, _ := cmd.Flags().GetStringArray("allowed-domain")
-		senderChanged := cmd.Flags().Changed("allowed-sender")
-		domainChanged := cmd.Flags().Changed("allowed-domain")
-		if senderChanged || domainChanged {
-			// pflag's ``StringArray.Set`` drops a single empty argument from
-			// the resulting slice but still records the flag as ``Changed``.
-			// Without this guard, ``--allowed-sender ""`` would skip the
-			// per-entry validator entirely (zero iterations) and flow through
-			// to a full-replace ``EmailTrigger`` patch with ``[]`` — silently
-			// wiping the persisted allowlist. Reject the shape here, matching
-			// how ``--allowed-sender "   "`` already errors out.
-			if senderChanged && len(senders) == 0 {
-				return fmt.Errorf("--allowed-sender must not be blank")
-			}
-			if domainChanged && len(domains) == 0 {
-				return fmt.Errorf("--allowed-domain must not be blank")
-			}
-			if err := validateWorkflowEmailAllowlistValues("--allowed-sender", senders); err != nil {
-				return err
-			}
-			if err := validateWorkflowEmailAllowlistValues("--allowed-domain", domains); err != nil {
-				return err
-			}
-			// `WorkflowEmailTrigger` is full-replace on the server. Patch
-			// semantics expect omitting a flag to leave that list alone,
-			// so pull the current state and merge anything the user did
-			// not explicitly set. The fetch is one extra round-trip but
-			// keeps the CLI's behaviour intuitive for ops-style updates
-			// (e.g. `update --allowed-domain new.com` adding a domain
-			// without nuking the configured senders).
-			if !senderChanged || !domainChanged {
-				current, err := client.Workflows.Get(ctx, args[0])
-				if err != nil {
-					return err
-				}
-				if !senderChanged && current.EmailTrigger != nil {
-					senders = current.EmailTrigger.AllowedSenders
-				}
-				if !domainChanged && current.EmailTrigger != nil {
-					domains = current.EmailTrigger.AllowedDomains
-				}
-			}
-			body["email_trigger"] = map[string]any{
-				"allowed_senders": senders,
-				"allowed_domains": domains,
-			}
-		}
-		var result any
-		if senderChanged || domainChanged {
-			result, err = cliJSONRequest(cmd, http.MethodPatch, "/workflows/"+url.PathEscape(args[0]), nil, body)
-		} else {
-			result, err = client.Workflows.Update(ctx, args[0], &req)
-		}
+		result, err := client.Workflows.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
 		}
@@ -435,67 +284,6 @@ func validateWorkflowName(name string) (string, error) {
 		return "", fmt.Errorf("workflow name must not be blank")
 	}
 	return trimmed, nil
-}
-
-func validateWorkflowEmailAllowlistValues(flagName string, values []string) error {
-	for _, value := range values {
-		if err := validateWorkflowEmailAllowlistValue(flagName, value); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// validateWorkflowEmailAllowlistValue rejects shapes that cannot match any
-// real inbound email. The server stores values verbatim, so a malformed
-// entry silently breaks the allowlist (no email ever matches) — the CLI
-// is the only opportunity to catch this before the user thinks they
-// locked down their workflow.
-//
-// Rules are intentionally loose (no RFC 5321 validator here): catch the
-// obviously-wrong shapes, leave plausible-looking values alone.
-func validateWorkflowEmailAllowlistValue(flagName, value string) error {
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return fmt.Errorf("%s must not be blank", flagName)
-	}
-
-	switch flagName {
-	case "--allowed-sender":
-		at := strings.IndexByte(trimmed, '@')
-		if at <= 0 || at == len(trimmed)-1 || strings.Count(trimmed, "@") != 1 {
-			return fmt.Errorf("%s %q is not a valid email address (expected local@domain)", flagName, value)
-		}
-		if !strings.Contains(trimmed[at+1:], ".") {
-			return fmt.Errorf("%s %q is not a valid email address (domain must contain a dot)", flagName, value)
-		}
-	case "--allowed-domain":
-		if strings.ContainsAny(trimmed, "@ ") {
-			return fmt.Errorf("%s %q is not a valid domain (must not contain '@' or whitespace; pass the domain only)", flagName, value)
-		}
-		if !strings.Contains(trimmed, ".") {
-			return fmt.Errorf("%s %q is not a valid domain (must contain a dot)", flagName, value)
-		}
-		if strings.HasPrefix(trimmed, ".") || strings.HasSuffix(trimmed, ".") {
-			return fmt.Errorf("%s %q is not a valid domain (must not start or end with '.')", flagName, value)
-		}
-		if strings.Contains(trimmed, "..") {
-			return fmt.Errorf("%s %q is not a valid domain (must not contain consecutive dots)", flagName, value)
-		}
-		for _, r := range trimmed {
-			isLetter := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
-			isDigit := r >= '0' && r <= '9'
-			isAllowedPunct := r == '.' || r == '-'
-			if !isLetter && !isDigit && !isAllowedPunct {
-				return fmt.Errorf(
-					"%s %q is not a valid domain (allowed characters are letters, digits, '.' and '-')",
-					flagName,
-					value,
-				)
-			}
-		}
-	}
-	return nil
 }
 
 var workflowsDeleteCmd = &cobra.Command{
@@ -542,16 +330,9 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 The draft remains editable after publishing; iterate freely, then publish
 again to cut a new version.
 
-Before publishing, the CLI runs ` + "`workflows diagnose`" + ` against the
-draft graph:
-
-  * Any issue with ` + "`severity=\"error\"`" + ` aborts the publish — fix
-    the issue or pass ` + "`--force`" + ` to publish anyway.
-  * Warnings are printed to stderr but do not block.
-
-The empty-workflow check still runs (a draft with only the auto-added
+Before publishing, the CLI warns when the draft appears empty (a draft with only the auto-added
 ` + "`start_document`" + ` block produces a no-op published version);
-` + "`--force`" + ` suppresses that warning too.`,
+` + "`--force`" + ` suppresses that warning.`,
 	Example: `  # Publish with a release note
   retab workflows publish wf_abc123 \
     --description "v3: tighter line-item schema"
@@ -560,7 +341,7 @@ The empty-workflow check still runs (a draft with only the auto-added
   retab workflows runs create wf_abc123 \
     --version ver_xxx --document start=./invoice.pdf
 
-  # Skip diagnose errors and the empty-workflow warning (use with care)
+  # Skip the empty-workflow warning
   retab workflows publish wf_abc123 --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -572,141 +353,12 @@ The empty-workflow check still runs (a draft with only the auto-added
 		defer cancel()
 		description, _ := cmd.Flags().GetString("description")
 		force, _ := cmd.Flags().GetBool("force")
-		// Pre-flight diagnose. Without this, publish happily snapshots
-		// graphs with disconnected blocks / missing inputs and the user
-		// only discovers the problem at run time as a silently `skipped`
-		// step. Errors abort the publish; warnings print to stderr.
-		// --force bypasses the check entirely for the CI-stub case
-		// (and for the rare "I know what I'm doing" moment).
 		if !force {
-			// stderr is the warning sink: it doesn't pollute the JSON
-			// payload on stdout that callers pipe into `jq`.
 			warnIfEmptyWorkflowOnPublish(ctx, client, args[0], cmd.ErrOrStderr())
-			if err := abortPublishOnDiagnoseErrors(ctx, client, args[0], cmd.ErrOrStderr()); err != nil {
-				return err
-			}
 		}
 		result, err := client.Workflows.Publish(ctx, args[0], &retab.WorkflowsPublishParams{
 			Body: retab.PublishWorkflowRequest{Description: ptr(description)},
 		})
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-// abortPublishOnDiagnoseErrors runs the same diagnose the user would have
-// run by hand and refuses to publish when there are “severity="error"“
-// issues. Warnings are surfaced to stderr but never block (mirrors the
-// existing empty-workflow warning policy: cautious, not paternalistic).
-//
-// A failure to run diagnose itself does NOT block the publish — diagnose
-// is a UX safety net, not a precondition. A flaky server or a CLI/server
-// version drift that breaks the diagnose contract must not keep users
-// from shipping. The publish call will still surface real auth/server
-// failures with its own error.
-func abortPublishOnDiagnoseErrors(ctx context.Context, client *retab.Client, workflowID string, warnTo io.Writer) error {
-	diagnosis, err := client.Workflows.Diagnose(ctx, workflowID, nil)
-	if err != nil {
-		// Diagnose failure is non-fatal — see function doc.
-		fmt.Fprintf(warnTo, "note: skipping pre-publish diagnose (%v)\n", err)
-		return nil
-	}
-	if diagnosis == nil {
-		return nil
-	}
-	var errs []*retab.WorkflowDiagnosisIssue
-	var warns []*retab.WorkflowDiagnosisIssue
-	for _, issue := range diagnosis.Issues {
-		switch strings.ToLower(string(issue.Severity)) {
-		case "error":
-			errs = append(errs, issue)
-		case "warning":
-			warns = append(warns, issue)
-		}
-	}
-	for _, w := range warns {
-		fmt.Fprintf(warnTo, "warning: diagnose: %s (%s)\n", w.Message, w.Code)
-	}
-	if len(errs) == 0 {
-		return nil
-	}
-	for _, e := range errs {
-		fmt.Fprintf(warnTo, "error: diagnose: %s (%s)\n", e.Message, e.Code)
-	}
-	return fmt.Errorf("diagnose reported %d error(s); fix them or pass --force to publish anyway", len(errs))
-}
-
-var workflowsDiagnoseCmd = &cobra.Command{
-	Use:   "diagnose <workflow-id>",
-	Short: "Diagnose the persisted draft graph (use --graph-file to send an in-memory graph)",
-	Long: `Validate a workflow's draft graph and report structural/config issues:
-disconnected blocks, type mismatches across edges, incomplete configs,
-review configuration warnings, unreachable paths.
-
-By default diagnoses the persisted draft. Pass ` + "`--graph-file`" + ` to
-diagnose an in-memory graph (e.g. before persisting changes) — the file
-must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
-` + "`re_propagate`" + ` fields.`,
-	Example: `  # Diagnose the persisted draft
-  retab workflows diagnose wf_abc123
-
-  # Diagnose a proposed graph before persisting
-  retab workflows diagnose wf_abc123 --graph-file ./graph.json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		graphFile, _ := cmd.Flags().GetString("graph-file")
-		var graphReq map[string]any
-		if graphFile != "" {
-			body, err := readJSONMap(graphFile)
-			if err != nil {
-				return err
-			}
-			req := map[string]any{"re_propagate": true}
-			blocks, err := workflowGraphObjects(body, "blocks")
-			if err != nil {
-				return err
-			}
-			// `--graph-file` is the user telling us "diagnose THIS graph".
-			// `workflowGraphObjects` returns `nil` when the file omits the
-			// key (e.g. `{}`), and the server then falls back to the
-			// persisted draft — silently switching the meaning of the
-			// command from "diagnose my proposed graph" to "diagnose the
-			// stored one". Coerce nil to an empty slice so the server sees
-			// an explicit zero-block / zero-edge graph and returns
-			// `total_blocks: 0` instead of `total_blocks: <persisted>`.
-			if blocks == nil {
-				blocks = []map[string]any{}
-			}
-			req["blocks"] = blocks
-			edges, err := workflowGraphObjects(body, "edges")
-			if err != nil {
-				return err
-			}
-			if edges == nil {
-				edges = []map[string]any{}
-			}
-			req["edges"] = edges
-			if v, ok := body["re_propagate"].(bool); ok {
-				req["re_propagate"] = v
-			}
-			graphReq = req
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if graphReq != nil {
-			result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/"+url.PathEscape(args[0])+"/diagnose-graph", nil, graphReq)
-			if err != nil {
-				return err
-			}
-			return printResult(cmd, result)
-		}
-		result, err := client.Workflows.Diagnose(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -720,23 +372,18 @@ func init() {
 	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")
-	workflowsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 
 	workflowsCreateCmd.Flags().String("name", "", "workflow name")
 	workflowsCreateCmd.Flags().String("description", "", "workflow description")
 
 	workflowsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsUpdateCmd.Flags().String("description", "", "new description")
-	workflowsUpdateCmd.Flags().StringArray("allowed-sender", nil, "email trigger allowed sender (repeatable)")
-	workflowsUpdateCmd.Flags().StringArray("allowed-domain", nil, "email trigger allowed domain (repeatable)")
 
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
 	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
-	workflowsDiagnoseCmd.Flags().String("graph-file", "", "JSON file with {blocks, edges, re_propagate} to diagnose without persisting")
-
 	workflowsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDiagnoseCmd)
+	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd)
 	rootCmd.AddCommand(workflowsCmd)
 }

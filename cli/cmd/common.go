@@ -212,8 +212,10 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 		baseURL = os.Getenv("RETAB_BASE_URL")
 	}
 	// Validate only user-supplied values (flag/env). An empty string here
-	// means the default ("https://api.retab.com/v1") will be used by the
-	// SDK or the config-file fallback below — both are trusted.
+	// means the default ("https://api.retab.com") will be used by the
+	// SDK or the config-file fallback below — both are trusted. The
+	// "/v1" API version prefix now lives in individual request paths
+	// rather than the base URL.
 	if err := validateBaseURL(baseURL); err != nil {
 		return nil, err
 	}
@@ -222,6 +224,7 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	if baseURL == "" {
 		baseURL = cfg.BaseURL
 	}
+	baseURL = stripLegacyV1Suffix(baseURL)
 
 	var opts []retab.Option
 	if baseURL != "" {
@@ -288,8 +291,9 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		baseURL = cfg.BaseURL
 	}
 	if baseURL == "" {
-		baseURL = "https://api.retab.com/v1"
+		baseURL = "https://api.retab.com"
 	}
+	baseURL = stripLegacyV1Suffix(baseURL)
 
 	var bearerToken string
 	if apiKey == "" {
@@ -513,19 +517,6 @@ func readJSON(path string) (any, error) {
 	return value, nil
 }
 
-// readJSONAs reads JSON and decodes into out.
-func readJSONAs(path string, out any) error {
-	value, err := readJSON(path)
-	if err != nil {
-		return err
-	}
-	raw, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(raw, out)
-}
-
 // readJSONMap decodes JSON into a map[string]any.
 func readJSONMap(path string) (map[string]any, error) {
 	value, err := readJSON(path)
@@ -610,6 +601,23 @@ func validateBaseURL(raw string) error {
 		return fmt.Errorf("--base-url %q is not a valid http(s) URL: missing host", raw)
 	}
 	return nil
+}
+
+// stripLegacyV1Suffix removes a trailing "/v1" (with or without trailing
+// slash) from baseURL. The SDK used to default baseURL to
+// "https://api.retab.com/v1" with paths sent without a version prefix;
+// after the WorkOS-pattern regen the default is "https://api.retab.com"
+// and every path includes "/v1/..." explicitly. Stored configs and shell
+// env vars from before that migration still carry the "/v1" suffix —
+// stripping it here keeps those configs working without forcing the user
+// to re-run `retab auth login`. New paths like ".../v1/v2" or
+// "/v1/anything-but-empty-segment" are left alone.
+func stripLegacyV1Suffix(baseURL string) string {
+	trimmed := strings.TrimRight(baseURL, "/")
+	if strings.HasSuffix(trimmed, "/v1") {
+		return strings.TrimSuffix(trimmed, "/v1")
+	}
+	return baseURL
 }
 
 func requireNonBlankFlag(cmd *cobra.Command, name string) (string, error) {
@@ -1145,6 +1153,34 @@ func resolveOptionalDocument(cmd *cobra.Command) (any, error) {
 		return nil, nil
 	}
 	return resolveDocument(cmd)
+}
+
+func mimeDataInputFromDocument(doc any) (retab.MIMEDataInput, error) {
+	switch value := doc.(type) {
+	case retab.MIMEDataInput:
+		return value, nil
+	case *retab.MIMEDataInput:
+		if value == nil {
+			return retab.MIMEDataInput{}, fmt.Errorf("document is required")
+		}
+		return *value, nil
+	case retab.MIMEData:
+		return retab.MIMEDataInput{Filename: value.Filename, URL: value.URL}, nil
+	case *retab.MIMEData:
+		if value == nil {
+			return retab.MIMEDataInput{}, fmt.Errorf("document is required")
+		}
+		return retab.MIMEDataInput{Filename: value.Filename, URL: value.URL}, nil
+	}
+	body, err := json.Marshal(doc)
+	if err != nil {
+		return retab.MIMEDataInput{}, fmt.Errorf("encode document: %w", err)
+	}
+	var result retab.MIMEDataInput
+	if err := json.Unmarshal(body, &result); err != nil {
+		return retab.MIMEDataInput{}, fmt.Errorf("decode document: %w", err)
+	}
+	return result, nil
 }
 
 // resolveSchema reads a JSON schema from --json-schema (JSON literal) or

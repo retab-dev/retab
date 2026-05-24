@@ -43,6 +43,8 @@ export interface Edit {
   templateId?: string | null;
   /** The edit result: filled form fields and the rendered PDF. */
   output: EditResult;
+  /** Durable file reference for the filled document, when materialized. */
+  filledDocumentRef?: FileRef | null;
   /** Usage information for the edit operation. */
   usage?: RetabUsage | null;
   createdAt?: Date | null;
@@ -56,6 +58,7 @@ export interface EditResponse {
   config: EditConfigResponse;
   template_id?: string | null;
   output: EditResultResponse;
+  filled_document_ref?: FileRefResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
 }
@@ -68,6 +71,7 @@ export const ZEdit = z.object({
   config: ZEditConfig,
   templateId: z.string().nullable().optional(),
   output: ZEditResult,
+  filledDocumentRef: ZFileRef.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Edit>;
@@ -81,6 +85,12 @@ export function deserializeEdit(wire: EditResponse): Edit {
     config: deserializeEditConfig(wire['config']),
     templateId: wire['template_id'],
     output: deserializeEditResult(wire['output']),
+    filledDocumentRef:
+      wire['filled_document_ref'] == null
+        ? (wire['filled_document_ref'] as undefined)
+        : wire['filled_document_ref'] == null
+          ? wire['filled_document_ref']
+          : deserializeFileRef(wire['filled_document_ref']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)

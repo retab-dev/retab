@@ -51,6 +51,12 @@ module Retab
     sig { params(value: Retab::EditResult).returns(Retab::EditResult) }
     def output=(value); end
 
+    sig { returns(T.nilable(Retab::FileRef)) }
+    def filled_document_ref; end
+
+    sig { params(value: T.nilable(Retab::FileRef)).returns(T.nilable(Retab::FileRef)) }
+    def filled_document_ref=(value); end
+
     sig { returns(T.nilable(Retab::RetabUsage)) }
     def usage; end
 

@@ -39,7 +39,7 @@ class ExtractionsTest extends TestCase
     {
         $fixture = $this->loadFixture('extraction');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->create(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), jsonSchema: []);
+        $result = $client->extractions()->create(document: \Retab\Resource\MimeDataInput::fromArray($this->loadFixture('mime_data_input')), jsonSchema: []);
         $this->assertInstanceOf(\Retab\Resource\Extraction::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);

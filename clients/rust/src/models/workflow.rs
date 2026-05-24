@@ -30,9 +30,6 @@ pub struct Workflow {
     /// Published workflow metadata when a published version exists
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub published: Option<WorkflowPublished>,
-    /// Email trigger allowlist policy
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub email_trigger: Option<WorkflowEmailTrigger>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -49,7 +46,6 @@ impl Workflow {
             name: Default::default(),
             description: Default::default(),
             published: Default::default(),
-            email_trigger: Default::default(),
             created_at: created_at.into(),
             updated_at: updated_at.into(),
         }

@@ -36,7 +36,7 @@ class ParsesTest extends TestCase
     {
         $fixture = $this->loadFixture('parse');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->parses()->create(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')));
+        $result = $client->parses()->create(document: \Retab\Resource\MimeDataInput::fromArray($this->loadFixture('mime_data_input')));
         $this->assertInstanceOf(\Retab\Resource\Parse::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);

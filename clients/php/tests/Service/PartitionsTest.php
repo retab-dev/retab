@@ -36,7 +36,7 @@ class PartitionsTest extends TestCase
     {
         $fixture = $this->loadFixture('partition');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->partitions()->create(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), key: 'test_value', instructions: 'test_value');
+        $result = $client->partitions()->create(document: \Retab\Resource\MimeDataInput::fromArray($this->loadFixture('mime_data_input')), key: 'test_value', instructions: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\Partition::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);

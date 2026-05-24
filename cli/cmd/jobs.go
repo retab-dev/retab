@@ -421,7 +421,7 @@ func normalizeJobDocumentTypes(rawValues []string) ([]string, error) {
 	documentTypes := make([]string, 0, len(rawValues))
 	seen := map[string]bool{}
 	for _, rawValue := range rawValues {
-		for _, rawDocumentType := range strings.Split(rawValue, ",") {
+		for rawDocumentType := range strings.SplitSeq(rawValue, ",") {
 			documentType := strings.ToLower(strings.TrimSpace(rawDocumentType))
 			if documentType == "" || seen[documentType] {
 				continue
@@ -521,7 +521,7 @@ func validateJobFilenameRegexFlag(raw string) error {
 	if hasUnescapedJobRegexQuantifier(normalized) {
 		return fmt.Errorf("invalid --filename-regex: quantified patterns are unsupported")
 	}
-	if idx := strings.Index(normalized, "$"); idx >= 0 && !strings.HasSuffix(normalized, "$") {
+	if strings.Contains(normalized, "$") && !strings.HasSuffix(normalized, "$") {
 		return fmt.Errorf("invalid --filename-regex: '$' is only allowed as an end anchor")
 	}
 	return nil

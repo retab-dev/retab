@@ -6,7 +6,8 @@ from enum import Enum
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
-from retab.types.mime import FileRef, MIMEData
+from retab.types.mime import FileRef
+from retab.types.schemas import MimeDataInput
 
 
 class SourcesResponseDocumentType(str, Enum):
@@ -21,7 +22,7 @@ class SourcesResponseDocumentType(str, Enum):
 class ExtractionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef
+    document: MimeDataInput | FileRef
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
     model: str | None = Field(default="retab-small", description="The model to use for the extraction")
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
@@ -31,6 +32,7 @@ class ExtractionRequest(BaseModel):
     additional_messages: list[dict[str, Any]] | None = Field(default=None, description="Additional chat messages forwarded to the extraction model.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
     stream: bool | None = Field(default=False)
+    chunking_keys: dict[str, str] | None = None
 
 
 class Extraction(BaseModel):

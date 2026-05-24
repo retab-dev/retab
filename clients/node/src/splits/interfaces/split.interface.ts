@@ -37,7 +37,7 @@ export interface Split {
   /** The list of document splits with their assigned pages */
   output: SplitResult[];
   /** Consensus metadata for multi-vote split runs */
-  consensus?: SplitConsensus | null;
+  consensus?: SplitConsensus;
   /** Usage information for the split operation */
   usage?: RetabUsage | null;
   createdAt?: Date | null;
@@ -51,7 +51,7 @@ export interface SplitResponse {
   n_consensus?: number;
   instructions?: string | null;
   output: SplitResultResponse[];
-  consensus?: SplitConsensusResponse | null;
+  consensus?: SplitConsensusResponse;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
 }
@@ -64,7 +64,7 @@ export const ZSplit = z.object({
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: ZSplitResult.array(),
-  consensus: ZSplitConsensus.nullable().optional(),
+  consensus: ZSplitConsensus.optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Split>;
@@ -81,9 +81,7 @@ export function deserializeSplit(wire: SplitResponse): Split {
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : wire['consensus'] == null
-          ? wire['consensus']
-          : deserializeSplitConsensus(wire['consensus']),
+        : deserializeSplitConsensus(wire['consensus']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)

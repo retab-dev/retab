@@ -77,8 +77,8 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 
 	source := readCLISource(t)
 	for _, required := range []string{
-		`"/workflows/tests/runs"`,
-		`"/workflows/tests/results"`,
+		`"/v1/workflows/tests/runs"`,
+		`"/v1/workflows/tests/results"`,
 	} {
 		if !strings.Contains(source, required) {
 			t.Fatalf("CLI source is missing canonical route string %s", required)
@@ -138,9 +138,16 @@ func extractDirectCLIJSONRequestRoutes(source string) []cliRouteContract {
 	callPattern := regexp.MustCompile(`cliJSONRequest\(\s*cmd,\s*http\.Method([A-Za-z]+),\s*([^,\n]+),`)
 	seen := map[string]cliRouteContract{}
 	for _, match := range callPattern.FindAllStringSubmatch(source, -1) {
+		path := normalizeDirectCLIJSONRequestPath(match[2])
+		// CLI sources now pass paths with the explicit "/v1" version
+		// prefix (the SDK's default baseURL no longer includes it). All
+		// other route contracts in this file omit "/v1" because
+		// assertCLIOpenAPIRoute prepends it before lookup — strip here
+		// so the format matches.
+		path = strings.TrimPrefix(path, "/v1")
 		route := cliRouteContract{
 			method: strings.ToUpper(match[1]),
-			path:   normalizeDirectCLIJSONRequestPath(match[2]),
+			path:   path,
 		}
 		if route.path == "" {
 			continue

@@ -78,18 +78,6 @@ class WorkflowsTest extends TestCase
         $this->assertStringEndsWith('v1/workflows/test_workflow_id', $request->getUri()->getPath());
     }
 
-    public function testDiagnose(): void
-    {
-        $fixture = $this->loadFixture('workflow_diagnosis_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->diagnose('test_workflow_id');
-        $this->assertInstanceOf(\Retab\Resource\WorkflowDiagnosisResponse::class, $result);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/test_workflow_id/diagnose-graph', $request->getUri()->getPath());
-    }
-
     public function testPublish(): void
     {
         $fixture = $this->loadFixture('workflow');

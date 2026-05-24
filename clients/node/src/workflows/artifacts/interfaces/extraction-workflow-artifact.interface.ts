@@ -51,7 +51,7 @@ export interface ExtractionWorkflowArtifact {
   output: Record<string, unknown>;
   /** Consensus metadata for multi-vote extraction runs */
   consensus?: ExtractionConsensus;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
   /** Usage information for the extraction */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
@@ -73,7 +73,7 @@ export interface ExtractionWorkflowArtifactResponse {
   instructions?: string | null;
   output: Record<string, unknown>;
   consensus?: ExtractionConsensusResponse;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
   usage?: RetabUsageResponse | null;
   created_at: string;
   operation: 'extraction';
@@ -89,7 +89,7 @@ export const ZExtractionWorkflowArtifact = z.object({
   instructions: z.string().nullable().optional(),
   output: z.record(z.string(), z.unknown()),
   consensus: ZExtractionConsensus.optional(),
-  metadata: z.record(z.string(), z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date(),
   operation: z.literal('extraction'),

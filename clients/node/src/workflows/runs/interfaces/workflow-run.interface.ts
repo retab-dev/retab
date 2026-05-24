@@ -27,8 +27,6 @@ import {
   ZCompletedTerminal,
   deserializeCompletedTerminal,
 } from './completed-terminal.interface.js';
-import type { EmailTrigger, EmailTriggerResponse } from './email-trigger.interface.js';
-import { ZEmailTrigger, deserializeEmailTrigger } from './email-trigger.interface.js';
 import type { ErrorTerminal, ErrorTerminalResponse } from './error-terminal.interface.js';
 import { ZErrorTerminal, deserializeErrorTerminal } from './error-terminal.interface.js';
 import type { ManualTrigger, ManualTriggerResponse } from './manual-trigger.interface.js';
@@ -63,13 +61,7 @@ export interface WorkflowRun {
   /** Workflow + version reference */
   workflow: WorkflowSnapshotRef;
   /** What started this run */
-  trigger:
-    | ManualTrigger
-    | ApiTrigger
-    | ScheduleTrigger
-    | WebhookTrigger
-    | EmailTrigger
-    | RestartTrigger;
+  trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | RestartTrigger;
   /** Discriminated lifecycle state. */
   lifecycle?:
     | PendingRun
@@ -92,7 +84,6 @@ export interface WorkflowRunResponse {
     | ApiTriggerResponse
     | ScheduleTriggerResponse
     | WebhookTriggerResponse
-    | EmailTriggerResponse
     | RestartTriggerResponse;
   lifecycle?:
     | PendingRunResponse
@@ -113,7 +104,6 @@ export const ZWorkflowRun = z.object({
     ZApiTrigger,
     ZScheduleTrigger,
     ZWebhookTrigger,
-    ZEmailTrigger,
     ZRestartTrigger,
   ]),
   lifecycle: z
@@ -138,20 +128,13 @@ export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
       (
         {
           api: () => deserializeApiTrigger(wire['trigger'] as ApiTriggerResponse),
-          email: () => deserializeEmailTrigger(wire['trigger'] as EmailTriggerResponse),
           manual: () => deserializeManualTrigger(wire['trigger'] as ManualTriggerResponse),
           restart: () => deserializeRestartTrigger(wire['trigger'] as RestartTriggerResponse),
           schedule: () => deserializeScheduleTrigger(wire['trigger'] as ScheduleTriggerResponse),
           webhook: () => deserializeWebhookTrigger(wire['trigger'] as WebhookTriggerResponse),
         } as Record<
           string,
-          () =>
-            | ManualTrigger
-            | ApiTrigger
-            | ScheduleTrigger
-            | WebhookTrigger
-            | EmailTrigger
-            | RestartTrigger
+          () => ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | RestartTrigger
         >
       )[(wire['trigger'] as unknown as Record<string, string>)['type']]?.() ??
       (wire['trigger'] as unknown as
@@ -159,7 +142,6 @@ export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
         | ApiTrigger
         | ScheduleTrigger
         | WebhookTrigger
-        | EmailTrigger
         | RestartTrigger),
     lifecycle:
       wire['lifecycle'] == null

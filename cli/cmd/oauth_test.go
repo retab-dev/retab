@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -171,10 +172,8 @@ func TestBindLoopbackListenerUsesRegisteredPort(t *testing.T) {
 	}
 	defer listener.Close()
 
-	for _, p := range cliRedirectPorts {
-		if p == port {
-			return
-		}
+	if slices.Contains(cliRedirectPorts, port) {
+		return
 	}
 	t.Errorf("bound port %d is not in the registered set %v", port, cliRedirectPorts)
 }
@@ -390,10 +389,6 @@ func TestRefreshAccessTokenSwapsTokens(t *testing.T) {
 	// the default one. We can't easily do that without exposing more
 	// internals, so instead we round-trip through postTokenEndpoint
 	// directly with the test server's URL.
-	disc := &cliOAuthDiscovery{
-		AuthKitDomain: strings.TrimPrefix(srv.URL, "https://"),
-		ClientID:      "c",
-	}
 	form := url.Values{}
 	form.Set("grant_type", "refresh_token")
 	form.Set("refresh_token", "old_refresh")
@@ -417,9 +412,6 @@ func TestRefreshAccessTokenSwapsTokens(t *testing.T) {
 	if tr.AccessToken != "new_access" || tr.RefreshToken != "new_refresh" {
 		t.Errorf("unexpected token response: %+v", tr)
 	}
-	// And verify the wiring: refreshAccessToken would set
-	// AuthKitDomain/ClientID on the returned struct from `disc`.
-	_ = disc
 }
 
 // TestHtmlEscape pins basic XSS hygiene on the failure page. If we ever

@@ -13,18 +13,21 @@ import {
 export interface ClassificationConsensus {
   /** Alternative classification vote outputs used to build the consolidated result. */
   choices?: ClassificationDecision[];
-  /** Consensus likelihood score (0.0-1.0) of the winning classification. */
-  likelihoods?: number | null;
+  /**
+   * Consensus likelihood score (0.0-1.0) of the winning classification.
+   * @default 0
+   */
+  likelihoods?: number;
 }
 
 export interface ClassificationConsensusResponse {
   choices?: ClassificationDecisionResponse[];
-  likelihoods?: number | null;
+  likelihoods?: number;
 }
 
 export const ZClassificationConsensus = z.object({
   choices: ZClassificationDecision.array().optional(),
-  likelihoods: z.number().nullable().optional(),
+  likelihoods: z.number().optional(),
 }) as z.ZodType<ClassificationConsensus>;
 
 export function deserializeClassificationConsensus(

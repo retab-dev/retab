@@ -78,23 +78,6 @@ impl UpdateParams {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct DiagnoseParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: WorkflowGraphDiagnosisRequest,
-}
-
-impl DiagnoseParams {
-    /// Construct a new `DiagnoseParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: WorkflowGraphDiagnosisRequest) -> Self {
-        Self { body }
-    }
-}
-
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct PublishParams {
     /// Request body sent with this call.
@@ -215,36 +198,6 @@ impl<'a> WorkflowsApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
-            .await
-    }
-
-    /// Diagnose Workflow Graph
-    ///
-    /// Diagnose a workflow graph payload for the given workflow.
-    ///
-    /// When the request omits ``blocks`` and ``edges`` (both ``None``) the route
-    /// loads the persisted draft from MongoDB. When either is provided (including
-    /// an explicit empty list) the request body is diagnosed as-is.
-    pub async fn diagnose(
-        &self,
-        workflow_id: &str,
-        params: DiagnoseParams,
-    ) -> Result<WorkflowDiagnosisResponse, Error> {
-        self.diagnose_with_options(workflow_id, params, None).await
-    }
-
-    /// Variant of [`Self::diagnose`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn diagnose_with_options(
-        &self,
-        workflow_id: &str,
-        params: DiagnoseParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<WorkflowDiagnosisResponse, Error> {
-        let workflow_id = crate::client::path_segment(workflow_id);
-        let path = format!("/v1/workflows/{workflow_id}/diagnose-graph");
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 

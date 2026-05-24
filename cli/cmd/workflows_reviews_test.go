@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -147,7 +149,7 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
-	workflowsReviewsListCmd.SetContext(nil)
+	workflowsReviewsListCmd.SetContext(context.Background())
 
 	stdout, stderr := captureStd(t, func() {
 		if err := workflowsReviewsListCmd.RunE(workflowsReviewsListCmd, nil); err != nil {
@@ -1029,10 +1031,5 @@ func TestReviewEnumFlagsShowAllowedValues(t *testing.T) {
 }
 
 func containsString(values []string, target string) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(values, target)
 }

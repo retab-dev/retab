@@ -23,7 +23,7 @@ namespace Retab
         /// <summary>Filter by single trigger type (deprecated, use 'trigger_types')</summary>
         public WorkflowExportPayloadRequestTriggerTypes? TriggerType { get; set; }
 
-        /// <summary>Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)</summary>
+        /// <summary>Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,restart)</summary>
         public string? TriggerTypes { get; set; }
 
         /// <summary>Filter runs created on or after this date (YYYY-MM-DD)</summary>

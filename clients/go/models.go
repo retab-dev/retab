@@ -670,6 +670,8 @@ type Edit struct {
 	TemplateID *string `json:"template_id,omitempty"`
 	// Output is the edit result: filled form fields and the rendered PDF.
 	Output EditResult `json:"output"`
+	// FilledDocumentRef is durable file reference for the filled document, when materialized.
+	FilledDocumentRef *FileRef `json:"filled_document_ref,omitempty"`
 	// Usage is usage information for the edit operation.
 	Usage     *RetabUsage `json:"usage,omitempty"`
 	CreatedAt *time.Time  `json:"created_at,omitempty"`
@@ -678,16 +680,7 @@ type Edit struct {
 // EditConfig represents an edit config.
 type EditConfig struct {
 	// Color is hex code of the color to use for the filled text.
-	Color string `json:"color,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *EditConfig) UnmarshalJSON(data []byte) error {
-	r.Color = "#000080"
-	type alias EditConfig
-	return json.Unmarshal(data, (*alias)(r))
+	Color *string `json:"color,omitempty"`
 }
 
 // EditResult represents an edit result.
@@ -711,9 +704,9 @@ type EditTemplate struct {
 	// FieldCount is number of form fields in the template.
 	FieldCount *int `json:"field_count,omitempty"`
 	// CreatedAt is timestamp of creation.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// UpdatedAt is timestamp of last update.
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 // EditWorkflowArtifact represents an edit workflow artifact.
@@ -732,21 +725,14 @@ type EditWorkflowArtifact struct {
 	TemplateID *string `json:"template_id,omitempty"`
 	// Output is the edit result: filled form fields and the rendered PDF.
 	Output EditResult `json:"output"`
+	// FilledDocumentRef is durable file reference for the filled document, when materialized.
+	FilledDocumentRef *FileRef `json:"filled_document_ref,omitempty"`
 	// Usage is usage information for the edit operation.
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
 	CreatedAt time.Time `json:"created_at"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
-}
-
-// EmailTrigger run started by an inbound email message.
-type EmailTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// Sender is sender email address
-	Sender string `json:"sender"`
-	// Subject is email subject line
-	Subject *string `json:"subject,omitempty"`
 }
 
 // EndsWithCondition represents an ends with condition.
@@ -1261,6 +1247,14 @@ type LlmNotJudgedAsCondition struct {
 	Kind          *string `json:"kind,omitempty"`
 	Rubric        string  `json:"rubric"`
 	ExpectedLabel *string `json:"expected_label,omitempty"`
+}
+
+// MIMEDataInput represents a mime data input.
+type MIMEDataInput struct {
+	// Filename is the filename of the file
+	Filename string `json:"filename"`
+	// URL is the URL of the file in base64 format
+	URL string `json:"url"`
 }
 
 // ManualTrigger manual run started by a user from the dashboard.
@@ -1946,10 +1940,8 @@ type Workflow struct {
 	Description *string `json:"description,omitempty"`
 	// Published is published workflow metadata when a published version exists
 	Published *WorkflowPublished `json:"published,omitempty"`
-	// EmailTrigger is email trigger allowlist policy
-	EmailTrigger *WorkflowEmailTrigger `json:"email_trigger,omitempty"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
+	CreatedAt time.Time          `json:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -1995,87 +1987,6 @@ type WorkflowBlock struct {
 	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
 }
 
-// WorkflowBlockPosition represents a workflow block position.
-type WorkflowBlockPosition struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-}
-
-// WorkflowConfigBlock represents a workflow config block.
-type WorkflowConfigBlock struct {
-	ID       *string                 `json:"id,omitempty"`
-	Type     WorkflowConfigBlockType `json:"type"`
-	Position WorkflowBlockPosition   `json:"position"`
-	Label    string                  `json:"label"`
-	// Config is block-specific configuration
-	Config map[string]interface{} `json:"config,omitempty"`
-	// ResolvedSchemas is derived schema transport sidecar for UI/runtime consumers. Not authored config.
-	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
-	// Width is block width for resizable blocks
-	Width *float64 `json:"width,omitempty"`
-	// Height is block height for resizable blocks
-	Height *float64 `json:"height,omitempty"`
-	// ParentID is id of parent container block (while_loop, for_each)
-	ParentID *string `json:"parent_id,omitempty"`
-}
-
-// WorkflowConfigEdge represents a workflow config edge.
-type WorkflowConfigEdge struct {
-	ID *string `json:"id,omitempty"`
-	// Source is id of the source block
-	Source string `json:"source"`
-	// Target is id of the target block
-	Target       string  `json:"target"`
-	SourceHandle *string `json:"source_handle,omitempty"`
-	TargetHandle *string `json:"target_handle,omitempty"`
-	Animated     bool    `json:"animated,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *WorkflowConfigEdge) UnmarshalJSON(data []byte) error {
-	r.Animated = true
-	type alias WorkflowConfigEdge
-	return json.Unmarshal(data, (*alias)(r))
-}
-
-// WorkflowDiagnosisIssue represents a workflow diagnosis issue.
-type WorkflowDiagnosisIssue struct {
-	// Severity is issue severity level
-	Severity WorkflowDiagnosisIssueSeverity `json:"severity"`
-	// Code is stable issue code
-	Code string `json:"code"`
-	// Message is human-readable issue description
-	Message string `json:"message"`
-	// BlockID is related workflow block when applicable
-	BlockID *string `json:"block_id,omitempty"`
-}
-
-// WorkflowDiagnosisResponse represents a workflow diagnosis response.
-type WorkflowDiagnosisResponse struct {
-	// IsValid is whether the graph has no error-severity issues or blocking structural warnings that make it non-runnable
-	IsValid bool `json:"is_valid"`
-	// Issues is structured diagnosis issues
-	Issues []*WorkflowDiagnosisIssue `json:"issues,omitempty"`
-	// Suggestions is optional remediation suggestions
-	Suggestions []string `json:"suggestions,omitempty"`
-	// Stats is workflow graph statistics
-	Stats *WorkflowDiagnosisStats `json:"stats,omitempty"`
-}
-
-// WorkflowDiagnosisStats represents a workflow diagnosis stats.
-type WorkflowDiagnosisStats struct {
-	// TotalBlocks is total number of blocks diagnosed
-	TotalBlocks *int `json:"total_blocks,omitempty"`
-	// TotalEdges is total number of edges diagnosed
-	TotalEdges *int `json:"total_edges,omitempty"`
-	// BlockTypes is counts by block type
-	BlockTypes map[string]int `json:"block_types,omitempty"`
-	// StartDocumentBlocks is number of start_document blocks
-	StartDocumentBlocks *int `json:"start_document_blocks,omitempty"`
-}
-
 // WorkflowEdgeDoc public live workflow edge object.
 type WorkflowEdgeDoc struct {
 	ID string `json:"id"`
@@ -2090,14 +2001,6 @@ type WorkflowEdgeDoc struct {
 	// TargetHandle is input handle on target block
 	TargetHandle *string   `json:"target_handle,omitempty"`
 	UpdatedAt    time.Time `json:"updated_at"`
-}
-
-// WorkflowEmailTrigger represents a workflow email trigger.
-type WorkflowEmailTrigger struct {
-	// AllowedSenders is allowed sender email addresses for workflow email triggers
-	AllowedSenders []string `json:"allowed_senders,omitempty"`
-	// AllowedDomains is allowed sender email domains for workflow email triggers
-	AllowedDomains []string `json:"allowed_domains,omitempty"`
 }
 
 // WorkflowExperiment represents a workflow experiment.
@@ -2393,10 +2296,12 @@ type File struct {
 	ID string `json:"id"`
 	// Filename is the name of the file
 	Filename string `json:"filename"`
+	// MIMEType is the MIME type of the file
+	MIMEType *string `json:"mime_type,omitempty"`
 	// CreatedAt is when the file was created
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// UpdatedAt is when the file was last updated
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 	// PageCount is number of pages in the file
 	PageCount *int `json:"page_count,omitempty"`
 }

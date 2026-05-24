@@ -4,4 +4,5 @@ export * from './complete-file-upload-request.interface.js';
 export * from './create-upload-response.interface.js';
 export * from './file.interface.js';
 export * from './file-link.interface.js';
+export * from './mime-data.interface.js';
 export * from './upload-file-request.interface.js';

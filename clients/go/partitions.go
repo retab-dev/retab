@@ -29,7 +29,7 @@ func (s *PartitionService) List(ctx context.Context, params *PartitionsListParam
 // PartitionsCreateParams contains the parameters for Create.
 type PartitionsCreateParams struct {
 	// Document is the document to partition
-	Document any `json:"document" url:"-"`
+	Document interface{} `json:"document" url:"-"`
 	// Key is the key to partition the document by
 	Key string `json:"key" url:"-"`
 	// Instructions is instructions describing how the document should be partitioned
@@ -58,37 +58,8 @@ func (s *PartitionService) Create(ctx context.Context, params *PartitionsCreateP
 	if params.Model == nil {
 		return nil, fmt.Errorf("retab: model is required")
 	}
-	type createWireBody struct {
-		Document     *MIMEData `json:"document"`
-		Key          string    `json:"key"`
-		Instructions string    `json:"instructions"`
-		Model        *string   `json:"model,omitempty"`
-		NConsensus   *int      `json:"n_consensus,omitempty"`
-		AllowOverlap *bool     `json:"allow_overlap,omitempty"`
-		BustCache    *bool     `json:"bust_cache,omitempty"`
-	}
-	if params == nil {
-		return nil, fmt.Errorf("retab: params is required")
-	}
-	var coercedDocument *MIMEData
-	if params.Document != nil {
-		mime, err := InferMIMEData(params.Document)
-		if err != nil {
-			return nil, fmt.Errorf("retab: invalid document: %w", err)
-		}
-		coercedDocument = &mime
-	}
-	body := createWireBody{
-		Document:     coercedDocument,
-		Key:          params.Key,
-		Instructions: params.Instructions,
-		Model:        params.Model,
-		NConsensus:   params.NConsensus,
-		AllowOverlap: params.AllowOverlap,
-		BustCache:    params.BustCache,
-	}
 	var result Partition
-	_, err := s.client.request(ctx, "POST", "/v1/partitions", nil, body, &result, opts)
+	_, err := s.client.request(ctx, "POST", "/v1/partitions", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

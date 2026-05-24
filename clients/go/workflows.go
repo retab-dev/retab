@@ -99,33 +99,6 @@ func (s *WorkflowService) Delete(ctx context.Context, workflowID string, opts ..
 	return err
 }
 
-// WorkflowsDiagnoseParams contains the parameters for Diagnose.
-type WorkflowsDiagnoseParams struct {
-	// Blocks is blocks to diagnose; if omitted, the persisted draft is loaded server-side
-	Blocks []*WorkflowConfigBlock `json:"blocks,omitempty" url:"-"`
-	// Edges is edges to diagnose; if omitted, the persisted draft is loaded server-side
-	Edges []*WorkflowConfigEdge `json:"edges,omitempty" url:"-"`
-	// RePropagate is recompute derived schemas before validating the graph
-	RePropagate *bool `json:"re_propagate,omitempty" url:"-"`
-}
-
-// Diagnose workflow Graph
-// Diagnose a workflow graph payload for the given workflow.
-// When the request omits “blocks“ and “edges“ (both “None“) the route
-// loads the persisted draft from MongoDB. When either is provided (including
-// an explicit empty list) the request body is diagnosed as-is.
-func (s *WorkflowService) Diagnose(ctx context.Context, workflowID string, params *WorkflowsDiagnoseParams, opts ...RequestOption) (*WorkflowDiagnosisResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflow_id is required")
-	}
-	var result WorkflowDiagnosisResponse
-	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/diagnose-graph", url.PathEscape(workflowID)), nil, params, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 // WorkflowsPublishParams contains the parameters for Publish.
 type WorkflowsPublishParams struct {
 	Body interface{} `json:"-"`

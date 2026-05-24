@@ -23,6 +23,9 @@ pub struct EditWorkflowArtifact {
     pub template_id: Option<String>,
     /// The edit result: filled form fields and the rendered PDF.
     pub output: EditResult,
+    /// Durable file reference for the filled document, when materialized.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub filled_document_ref: Option<FileRef>,
     /// Usage information for the edit operation.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
@@ -53,6 +56,7 @@ impl EditWorkflowArtifact {
             config,
             template_id: Default::default(),
             output,
+            filled_document_ref: Default::default(),
             usage: Default::default(),
             created_at: created_at.into(),
             operation: Default::default(),

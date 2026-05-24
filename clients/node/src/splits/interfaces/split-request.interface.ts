@@ -3,15 +3,18 @@
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
+import type {
+  MimeDataInput,
+  MimeDataInputResponse,
+} from '../../schemas/interfaces/mime-data-input.interface.js';
+import { ZMimeDataInput } from '../../schemas/interfaces/mime-data-input.interface.js';
 import type { Subdocument, SubdocumentResponse } from './subdocument.interface.js';
 import { ZSubdocument, deserializeSubdocument } from './subdocument.interface.js';
 
 /** Canonical split request. */
 export interface SplitRequest {
   /** The document to split */
-  document: MIMEData | FileRef;
+  document: MimeDataInput | FileRef;
   /** The subdocuments to split the document into */
   subdocuments: Subdocument[];
   /**
@@ -34,7 +37,7 @@ export interface SplitRequest {
 }
 
 export interface SplitRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MimeDataInputResponse | FileRefResponse;
   subdocuments: SubdocumentResponse[];
   model?: string;
   instructions?: string | null;
@@ -43,7 +46,7 @@ export interface SplitRequestResponse {
 }
 
 export const ZSplitRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: z.union([ZMimeDataInput, ZFileRef]),
   subdocuments: ZSubdocument.array(),
   model: z.string().optional(),
   instructions: z.string().nullable().optional(),
@@ -53,7 +56,7 @@ export const ZSplitRequest = z.object({
 
 export function deserializeSplitRequest(wire: SplitRequestResponse): SplitRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: wire['document'] as unknown as MimeDataInput | FileRef,
     subdocuments: wire['subdocuments'].map((__i) => deserializeSubdocument(__i)),
     model: wire['model'],
     instructions: wire['instructions'],

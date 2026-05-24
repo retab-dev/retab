@@ -169,42 +169,6 @@ other workspace-level fields — but NOT the file bytes. Use
 	}),
 }
 
-var filesDeleteCmd = &cobra.Command{
-	Use:   "delete <file-id>",
-	Short: "Delete a file from the workspace",
-	Long: `Permanently delete a file from the workspace. The underlying blob is
-removed from storage; downstream artefacts (extractions, parses, runs)
-that reference the file id keep their snapshots but the original blob
-can no longer be downloaded.
-
-This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
-in scripts and CI — otherwise the command refuses to delete when stdin
-is not a terminal.
-
-For bulk cleanup of test or stale files, pipe ` + "`files list`" + ` IDs
-through ` + "`xargs`" + `.`,
-	Example: `  # Delete a single file (interactive, asks to confirm)
-  retab files delete file_abc123
-  # => { "id": "file_abc123", "deleted": true }
-
-  # Skip the prompt in scripts
-  retab files delete file_abc123 --yes
-
-  # Bulk-delete every file matching a pattern (be careful)
-  retab files list --limit 100 | jq -r '.data[] | select(.filename | test("^stress_")) | .id' \
-    | xargs -n1 retab files delete --yes`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "file", args[0]); err != nil {
-			return err
-		}
-		if _, err := cliJSONRequest(cmd, http.MethodDelete, "/files/"+url.PathEscape(args[0]), nil, nil); err != nil {
-			return err
-		}
-		return printJSON(map[string]any{"id": args[0], "deleted": true})
-	}),
-}
-
 var filesUploadCmd = &cobra.Command{
 	Use:   "upload <path>",
 	Short: "Upload a local file (or - to read from stdin)",
@@ -769,8 +733,6 @@ func init() {
 
 	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
-	filesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
-
 	filesUploadCmd.Flags().String("filename", "", "filename to record on the server (required when reading from stdin)")
 
 	filesCreateUploadCmd.Flags().String("filename", "", "filename (required)")
@@ -783,6 +745,6 @@ func init() {
 
 	filesCompleteUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
 
-	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDeleteCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
+	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
 	rootCmd.AddCommand(filesCmd)
 }

@@ -164,38 +164,6 @@ namespace Retab
             return this.DeleteAsync(workflowId, httpBearer, requestOptions, cancellationToken);
         }
 
-        /// <summary>Diagnose Workflow Graph</summary>
-        /// <remarks>
-        /// Diagnose a workflow graph payload for the given workflow.
-        /// When the request omits ``blocks`` and ``edges`` (both ``None``) the route
-        /// loads the persisted draft from MongoDB. When either is provided (including
-        /// an explicit empty list) the request body is diagnosed as-is.
-        /// </remarks>
-        /// <param name="workflowId">The workflow id.</param>
-        /// <param name="httpBearer">The bearer token for authentication.</param>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="WorkflowDiagnosisResponse"/> result.</returns>
-        public virtual async Task<WorkflowDiagnosisResponse> DiagnoseAsync(string workflowId, string httpBearer, WorkflowsDiagnoseOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            var request = new RetabRequest
-            {
-                Method = HttpMethod.Post,
-                Path = $"/v1/workflows/{Uri.EscapeDataString(workflowId)}/diagnose-graph",
-                Options = options,
-                AccessToken = httpBearer,
-                RequestOptions = requestOptions,
-            };
-            return await this.Client.MakeAPIRequest<WorkflowDiagnosisResponse>(request, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DiagnoseAsync"/>.</summary>
-        public virtual Task<WorkflowDiagnosisResponse> Diagnose(string workflowId, string httpBearer, WorkflowsDiagnoseOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DiagnoseAsync(workflowId, httpBearer, options, requestOptions, cancellationToken);
-        }
-
         /// <summary>Publish Workflow</summary>
         /// <remarks>
         /// Publish a workflow.
