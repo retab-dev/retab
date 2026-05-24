@@ -86,7 +86,7 @@ func (s *WorkflowSpecService) Get(ctx context.Context, workflowID string, opts .
 		return nil, fmt.Errorf("retab: workflow_id is required")
 	}
 	var result DeclarativeExportResponse
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/%s/spec", url.PathEscape(workflowID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/spec/%s", url.PathEscape(workflowID)), nil, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}

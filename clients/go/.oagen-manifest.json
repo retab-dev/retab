@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-24T14:18:00.184Z",
+  "generatedAt": "2026-05-24T17:48:12.133Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
@@ -388,7 +388,7 @@
       "sdkMethod": "Apply",
       "service": "workflow_specs"
     },
-    "GET /v1/workflows/{workflow_id}/spec": {
+    "GET /v1/workflows/spec/{workflow_id}": {
       "sdkMethod": "Get",
       "service": "workflow_specs"
     },
