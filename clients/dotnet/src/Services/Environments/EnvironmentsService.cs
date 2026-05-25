@@ -18,18 +18,29 @@ namespace Retab
         public EnvironmentsService(Retab client) : base(client) { }
 
         /// <summary>List Organization Environments</summary>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A page of <see cref="Environment"/> results.</returns>
-        public virtual async Task<PaginatedList<Environment>> ListAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PaginatedList<Environment>> ListAsync(EnvironmentsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<Environment>("/v1/environments", null, null, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<Environment>("/v1/environments", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<Environment>> List(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<Environment>> List(EnvironmentsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An async sequence of <see cref="Environment"/> items.</returns>
+        public virtual IAsyncEnumerable<Environment> ListAutoPagingAsync(EnvironmentsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return base.ListAutoPagingAsync<Environment>("/v1/environments", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Create Organization Environment</summary>

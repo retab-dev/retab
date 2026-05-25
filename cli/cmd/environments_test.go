@@ -58,7 +58,7 @@ func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 			t.Fatalf("path = %q, want /v1/environments", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"environments":[{"id":"env_staging","name":"Staging","type":"non_production"}]}`))
+		_, _ = w.Write([]byte(`{"data":[{"id":"env_staging","name":"Staging","type":"non_production"}],"list_metadata":{"before":null,"after":null}}`))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)

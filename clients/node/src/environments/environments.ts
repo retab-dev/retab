@@ -13,11 +13,21 @@ export class Environments {
   constructor(private readonly client: Retab) {}
 
   /** List Organization Environments */
-  async list_environments(): Promise<PaginatedList<Environment>> {
+  async list_environments(options?: {
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<Environment>> {
     return this.client._fetchPage(deserializeEnvironment, {
       method: 'GET',
       path: '/v1/environments',
-      query: undefined,
+      query: {
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
       body: undefined,
     });
   }

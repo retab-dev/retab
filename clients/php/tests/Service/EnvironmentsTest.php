@@ -17,11 +17,15 @@ class EnvironmentsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_environment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->environments()->listEnvironments();
+        $result = $client->environments()->listEnvironments(before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/environments', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['before']);
+        $this->assertSame('test_value', $query['after']);
+        $this->assertArrayHasKey('limit', $query);
     }
 
     public function testCreateEnvironment(): void
@@ -75,5 +79,24 @@ class EnvironmentsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/environments/test_environment_id', $request->getUri()->getPath());
+    }
+
+    public function testPaginationBoundary(): void
+    {
+        $fixture = $this->loadFixture('list_environment');
+        // Ensure cursors are null (first/last page boundary)
+        $fixture['list_metadata']['before'] = null;
+        $fixture['list_metadata']['after'] = null;
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->environments()->listEnvironments();
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
+        // Verify cursors are null on boundary page
+        $this->assertNull($result->listMetadata['before']);
+        $this->assertNull($result->listMetadata['after']);
+        // Iterating should not throw on null cursors
+        foreach ($result as $item) {
+            $this->assertNotNull($item);
+            break;
+        }
     }
 }

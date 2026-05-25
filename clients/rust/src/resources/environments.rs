@@ -14,6 +14,28 @@ pub struct EnvironmentsApi<'a> {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct ListEnvironmentsParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// Defaults to `100`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
+impl Default for ListEnvironmentsParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            before: Default::default(),
+            after: Default::default(),
+            limit: Some(100),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct CreateEnvironmentParams {
     /// Request body sent with this call.
     ///
@@ -49,19 +71,23 @@ impl UpdateEnvironmentParams {
 
 impl<'a> EnvironmentsApi<'a> {
     /// List Organization Environments
-    pub async fn list_environments(&self) -> Result<EnvironmentList, Error> {
-        self.list_environments_with_options(None).await
+    pub async fn list_environments(
+        &self,
+        params: ListEnvironmentsParams,
+    ) -> Result<EnvironmentList, Error> {
+        self.list_environments_with_options(params, None).await
     }
 
     /// Variant of [`Self::list_environments`] that accepts per-request [`crate::RequestOptions`].
     pub async fn list_environments_with_options(
         &self,
+        params: ListEnvironmentsParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<EnvironmentList, Error> {
         let path = "/v1/environments".to_string();
         let method = http::Method::GET;
         self.client
-            .request_page(method, &path, &(), "after", options)
+            .request_page(method, &path, &params, "after", options)
             .await
     }
 

@@ -10,9 +10,13 @@ from retab.types.environments import Environment, EnvironmentCreateRequest, Envi
 
 
 class EnvironmentsMixin:
-    def prepare_list_environments(self, **extra_params: Any) -> PreparedRequest:
+    def prepare_list_environments(self, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PreparedRequest:
         """List Organization Environments"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "before": before,
+            "after": after,
+            "limit": limit,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -63,9 +67,9 @@ class EnvironmentsMixin:
 class Environments(SyncAPIResource, EnvironmentsMixin):
     """Environments API wrapper."""
 
-    def list_environments(self, **extra_params: Any) -> PaginatedList[Environment]:
+    def list_environments(self, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PaginatedList[Environment]:
         """List Organization Environments"""
-        prepared_request = self.prepare_list_environments(**extra_params)
+        prepared_request = self.prepare_list_environments(before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=Environment)
 
     def create_environment(self, name: str, type: EnvironmentCreateRequestType = cast(EnvironmentCreateRequestType, "non_production"), **extra_params: Any) -> Environment:
@@ -96,9 +100,9 @@ class Environments(SyncAPIResource, EnvironmentsMixin):
 class AsyncEnvironments(AsyncAPIResource, EnvironmentsMixin):
     """Async Environments API wrapper."""
 
-    async def list_environments(self, **extra_params: Any) -> AsyncPaginatedList[Environment]:
+    async def list_environments(self, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> AsyncPaginatedList[Environment]:
         """List Organization Environments"""
-        prepared_request = self.prepare_list_environments(**extra_params)
+        prepared_request = self.prepare_list_environments(before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=Environment)
 
     async def create_environment(self, name: str, type: EnvironmentCreateRequestType = cast(EnvironmentCreateRequestType, "non_production"), **extra_params: Any) -> Environment:
