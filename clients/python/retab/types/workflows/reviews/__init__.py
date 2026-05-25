@@ -19,7 +19,7 @@ ReviewBlockType: TypeAlias = Literal["extract", "split", "classifier", "for_each
 SubmissionStatus: TypeAlias = Literal["accepted", "already_applied", "conflict"]
 
 
-ResumeStatus: TypeAlias = Literal["resumed", "pending", "failed", "skipped"]
+ResumeStatus: TypeAlias = Literal["resumed", "pending", "skipped"]
 
 
 ReviewDecisionStatus: TypeAlias = Literal["pending", "approved", "rejected", "decided", "all"]
