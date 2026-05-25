@@ -1,0 +1,37 @@
+load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "generation_inputs",
+    srcs = glob([
+        "clients/**",
+    ]) + [
+        "//.scripts:sdk_generation_scripts",
+        "//open-source/docs/api-reference:checked_openapi_json",
+        "//open-source/sdk/cli:sources",
+    ],
+)
+
+sh_test(
+    name = "check_python",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["python"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_node",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["node"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_all",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
