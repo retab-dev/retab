@@ -15,10 +15,10 @@ class AuthTest extends TestCase
 
     public function testListStatus(): void
     {
-        $fixture = $this->loadFixture('auth_status_response');
+        $fixture = $this->loadFixture('auth_status');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->auth()->listStatus();
-        $this->assertInstanceOf(\Retab\Resource\AuthStatusResponse::class, $result);
+        $this->assertInstanceOf(\Retab\Resource\AuthStatus::class, $result);
         $this->assertSame($fixture['auth_method'], $result->authMethod);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();

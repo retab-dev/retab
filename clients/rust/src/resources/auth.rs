@@ -15,7 +15,7 @@ pub struct AuthApi<'a> {
 
 impl<'a> AuthApi<'a> {
     /// Get Auth Status
-    pub async fn list_status(&self) -> Result<AuthStatusResponse, Error> {
+    pub async fn list_status(&self) -> Result<AuthStatus, Error> {
         self.list_status_with_options(None).await
     }
 
@@ -23,7 +23,7 @@ impl<'a> AuthApi<'a> {
     pub async fn list_status_with_options(
         &self,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<AuthStatusResponse, Error> {
+    ) -> Result<AuthStatus, Error> {
         let path = "/v1/auth/status".to_string();
         let method = http::Method::GET;
         self.client

@@ -5,7 +5,7 @@ from typing import Any
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.auth import AuthStatusResponse
+from retab.types.auth import AuthStatus
 
 
 class AuthMixin:
@@ -22,21 +22,21 @@ class AuthMixin:
 class Auth(SyncAPIResource, AuthMixin):
     """Auth API wrapper."""
 
-    def list_status(self, **extra_params: Any) -> AuthStatusResponse:
+    def list_status(self, **extra_params: Any) -> AuthStatus:
         """Get Auth Status"""
         prepared_request = self.prepare_list_status(**extra_params)
         response = self._client._prepared_request(prepared_request)
-        return AuthStatusResponse.model_validate(response)
+        return AuthStatus.model_validate(response)
 
 
 class AsyncAuth(AsyncAPIResource, AuthMixin):
     """Async Auth API wrapper."""
 
-    async def list_status(self, **extra_params: Any) -> AuthStatusResponse:
+    async def list_status(self, **extra_params: Any) -> AuthStatus:
         """Get Auth Status"""
         prepared_request = self.prepare_list_status(**extra_params)
         response = await self._client._prepared_request(prepared_request)
-        return AuthStatusResponse.model_validate(response)
+        return AuthStatus.model_validate(response)
 
 
 __all__ = ["Auth", "AsyncAuth", "AuthMixin"]

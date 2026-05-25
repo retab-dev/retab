@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum EnvironmentResponseType {
+pub enum EnvironmentType {
     Production,
     NonProduction,
     /// Wire value not recognized by this SDK version. The original
@@ -16,7 +16,7 @@ pub enum EnvironmentResponseType {
     Unknown(String),
 }
 
-impl EnvironmentResponseType {
+impl EnvironmentType {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
@@ -29,19 +29,19 @@ impl EnvironmentResponseType {
     }
 }
 
-impl fmt::Display for EnvironmentResponseType {
+impl fmt::Display for EnvironmentType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for EnvironmentResponseType {
+impl AsRef<str> for EnvironmentType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for EnvironmentResponseType {
+impl FromStr for EnvironmentType {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -53,7 +53,7 @@ impl FromStr for EnvironmentResponseType {
     }
 }
 
-impl From<String> for EnvironmentResponseType {
+impl From<String> for EnvironmentType {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -63,19 +63,19 @@ impl From<String> for EnvironmentResponseType {
     }
 }
 
-impl From<&str> for EnvironmentResponseType {
+impl From<&str> for EnvironmentType {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for EnvironmentResponseType {
+impl Serialize for EnvironmentType {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for EnvironmentResponseType {
+impl<'de> Deserialize<'de> for EnvironmentType {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

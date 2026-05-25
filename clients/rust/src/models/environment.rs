@@ -6,11 +6,11 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EnvironmentResponse {
+pub struct Environment {
     pub id: String,
     pub name: String,
     #[serde(rename = "type")]
-    pub type_: EnvironmentResponseType,
+    pub type_: EnvironmentType,
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub is_default: Option<bool>,
@@ -19,14 +19,10 @@ pub struct EnvironmentResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub updated_at: Option<String>,
 }
-impl EnvironmentResponse {
-    /// Construct a new `EnvironmentResponse` with the required fields set.
+impl Environment {
+    /// Construct a new `Environment` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        id: impl Into<String>,
-        name: impl Into<String>,
-        type_: EnvironmentResponseType,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, name: impl Into<String>, type_: EnvironmentType) -> Self {
         Self {
             id: id.into(),
             name: name.into(),

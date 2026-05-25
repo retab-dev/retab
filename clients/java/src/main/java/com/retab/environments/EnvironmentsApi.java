@@ -2,11 +2,12 @@
 
 package com.retab.environments;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.models.Environment;
 import com.retab.models.EnvironmentCreateRequest;
-import com.retab.models.EnvironmentListResponse;
-import com.retab.models.EnvironmentResponse;
-import com.retab.models.EnvironmentUpdateRequest;
+import com.retab.models.UpdateEnvironmentRequest;
 import com.retab.types.EnvironmentCreateRequestType;
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class EnvironmentsApi {
@@ -28,7 +30,7 @@ public final class EnvironmentsApi {
     return client;
   }
 
-  public EnvironmentListResponse list() throws IOException, InterruptedException {
+  public List<Environment> list() throws IOException, InterruptedException {
     String path = "/v1/environments";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -46,16 +48,24 @@ public final class EnvironmentsApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), EnvironmentListResponse.class);
+    JsonNode root = client.getObjectMapper().readTree(response.body());
+    JsonNode data = root.isArray() ? root : root.get("data");
+    if (data == null || data.isNull()) {
+      return List.of();
+    }
+    return client
+        .getObjectMapper()
+        .readValue(
+            data.traverse(client.getObjectMapper()), new TypeReference<List<Environment>>() {});
   }
 
-  public EnvironmentResponse create(EnvironmentCreateRequest request)
+  public Environment create(EnvironmentCreateRequest request)
       throws IOException, InterruptedException {
     return create(
         request == null ? null : request.getName(), request == null ? null : request.getType());
   }
 
-  public EnvironmentResponse create(String name, EnvironmentCreateRequestType type)
+  public Environment create(String name, EnvironmentCreateRequestType type)
       throws IOException, InterruptedException {
     String path = "/v1/environments";
     StringBuilder query = new StringBuilder();
@@ -81,10 +91,10 @@ public final class EnvironmentsApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), EnvironmentResponse.class);
+    return client.getObjectMapper().readValue(response.body(), Environment.class);
   }
 
-  public EnvironmentResponse get(String environmentId) throws IOException, InterruptedException {
+  public Environment get(String environmentId) throws IOException, InterruptedException {
     String path = "/v1/environments/" + encodePathSegment(environmentId);
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -102,15 +112,15 @@ public final class EnvironmentsApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), EnvironmentResponse.class);
+    return client.getObjectMapper().readValue(response.body(), Environment.class);
   }
 
-  public EnvironmentResponse update(String environmentId, EnvironmentUpdateRequest request)
+  public Environment update(String environmentId, UpdateEnvironmentRequest request)
       throws IOException, InterruptedException {
     return update(environmentId, request == null ? null : request.getName());
   }
 
-  public EnvironmentResponse update(String environmentId, String name)
+  public Environment update(String environmentId, String name)
       throws IOException, InterruptedException {
     String path = "/v1/environments/" + encodePathSegment(environmentId);
     StringBuilder query = new StringBuilder();
@@ -135,7 +145,7 @@ public final class EnvironmentsApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), EnvironmentResponse.class);
+    return client.getObjectMapper().readValue(response.body(), Environment.class);
   }
 
   public Object delete(String environmentId) throws IOException, InterruptedException {

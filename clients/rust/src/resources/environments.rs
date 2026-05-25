@@ -36,20 +36,20 @@ pub struct UpdateEnvironmentParams {
     ///
     /// Required.
     #[serde(skip)]
-    pub body: EnvironmentUpdateRequest,
+    pub body: UpdateEnvironmentRequest,
 }
 
 impl UpdateEnvironmentParams {
     /// Construct a new `UpdateEnvironmentParams` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(body: EnvironmentUpdateRequest) -> Self {
+    pub fn new(body: UpdateEnvironmentRequest) -> Self {
         Self { body }
     }
 }
 
 impl<'a> EnvironmentsApi<'a> {
     /// List Organization Environments
-    pub async fn list_environments(&self) -> Result<EnvironmentListResponse, Error> {
+    pub async fn list_environments(&self) -> Result<EnvironmentList, Error> {
         self.list_environments_with_options(None).await
     }
 
@@ -57,11 +57,11 @@ impl<'a> EnvironmentsApi<'a> {
     pub async fn list_environments_with_options(
         &self,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<EnvironmentListResponse, Error> {
+    ) -> Result<EnvironmentList, Error> {
         let path = "/v1/environments".to_string();
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_page(method, &path, &(), "after", options)
             .await
     }
 
@@ -69,7 +69,7 @@ impl<'a> EnvironmentsApi<'a> {
     pub async fn create_environment(
         &self,
         params: CreateEnvironmentParams,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<Environment, Error> {
         self.create_environment_with_options(params, None).await
     }
 
@@ -78,7 +78,7 @@ impl<'a> EnvironmentsApi<'a> {
         &self,
         params: CreateEnvironmentParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<Environment, Error> {
         let path = "/v1/environments".to_string();
         let method = http::Method::POST;
         self.client
@@ -87,10 +87,7 @@ impl<'a> EnvironmentsApi<'a> {
     }
 
     /// Get Organization Environment
-    pub async fn get_environment(
-        &self,
-        environment_id: &str,
-    ) -> Result<EnvironmentResponse, Error> {
+    pub async fn get_environment(&self, environment_id: &str) -> Result<Environment, Error> {
         self.get_environment_with_options(environment_id, None)
             .await
     }
@@ -100,7 +97,7 @@ impl<'a> EnvironmentsApi<'a> {
         &self,
         environment_id: &str,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<Environment, Error> {
         let environment_id = crate::client::path_segment(environment_id);
         let path = format!("/v1/environments/{environment_id}");
         let method = http::Method::GET;
@@ -114,7 +111,7 @@ impl<'a> EnvironmentsApi<'a> {
         &self,
         environment_id: &str,
         params: UpdateEnvironmentParams,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<Environment, Error> {
         self.update_environment_with_options(environment_id, params, None)
             .await
     }
@@ -125,7 +122,7 @@ impl<'a> EnvironmentsApi<'a> {
         environment_id: &str,
         params: UpdateEnvironmentParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<Environment, Error> {
         let environment_id = crate::client::path_segment(environment_id);
         let path = format!("/v1/environments/{environment_id}");
         let method = http::Method::PATCH;
@@ -135,10 +132,7 @@ impl<'a> EnvironmentsApi<'a> {
     }
 
     /// Archive Organization Environment
-    pub async fn delete_environment(
-        &self,
-        environment_id: &str,
-    ) -> Result<EnvironmentResponse, Error> {
+    pub async fn delete_environment(&self, environment_id: &str) -> Result<(), Error> {
         self.delete_environment_with_options(environment_id, None)
             .await
     }
@@ -148,12 +142,12 @@ impl<'a> EnvironmentsApi<'a> {
         &self,
         environment_id: &str,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<EnvironmentResponse, Error> {
+    ) -> Result<(), Error> {
         let environment_id = crate::client::path_segment(environment_id);
         let path = format!("/v1/environments/{environment_id}");
         let method = http::Method::DELETE;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts_empty(method, &path, &(), options)
             .await
     }
 }

@@ -175,11 +175,11 @@ type DeclarativePlanResourceChangeActions = DeclarativePlanFieldChangeAction
 // DeclarativePlanResponseAction is an alias for DeclarativeApplyResponseAction.
 type DeclarativePlanResponseAction = DeclarativeApplyResponseAction
 
+// EnvironmentType is an alias for AuthStatusEnvironmentType.
+type EnvironmentType = AuthStatusEnvironmentType
+
 // EnvironmentCreateRequestType is an alias for AuthStatusEnvironmentType.
 type EnvironmentCreateRequestType = AuthStatusEnvironmentType
-
-// EnvironmentResponseType is an alias for AuthStatusEnvironmentType.
-type EnvironmentResponseType = AuthStatusEnvironmentType
 
 // ErrorStepLifecycleStage represents error step lifecycle stage values.
 type ErrorStepLifecycleStage string

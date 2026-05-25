@@ -15,11 +15,10 @@ class EnvironmentsTest extends TestCase
 
     public function testListEnvironments(): void
     {
-        $fixture = $this->loadFixture('environment_list_response');
+        $fixture = $this->loadFixture('list_environment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->environments()->listEnvironments();
-        $this->assertInstanceOf(\Retab\Resource\EnvironmentListResponse::class, $result);
-        $this->assertIsArray($result->toArray());
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/environments', $request->getUri()->getPath());
@@ -27,10 +26,10 @@ class EnvironmentsTest extends TestCase
 
     public function testCreateEnvironment(): void
     {
-        $fixture = $this->loadFixture('environment_response');
+        $fixture = $this->loadFixture('environment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->environments()->createEnvironment(name: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\EnvironmentResponse::class, $result);
+        $this->assertInstanceOf(\Retab\Resource\Environment::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
         $this->assertIsArray($result->toArray());
@@ -43,10 +42,10 @@ class EnvironmentsTest extends TestCase
 
     public function testGetEnvironment(): void
     {
-        $fixture = $this->loadFixture('environment_response');
+        $fixture = $this->loadFixture('environment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->environments()->getEnvironment('test_environment_id');
-        $this->assertInstanceOf(\Retab\Resource\EnvironmentResponse::class, $result);
+        $this->assertInstanceOf(\Retab\Resource\Environment::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
         $this->assertIsArray($result->toArray());
@@ -57,10 +56,10 @@ class EnvironmentsTest extends TestCase
 
     public function testUpdateEnvironment(): void
     {
-        $fixture = $this->loadFixture('environment_response');
+        $fixture = $this->loadFixture('environment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->environments()->updateEnvironment('test_environment_id');
-        $this->assertInstanceOf(\Retab\Resource\EnvironmentResponse::class, $result);
+        $this->assertInstanceOf(\Retab\Resource\Environment::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['name'], $result->name);
         $this->assertIsArray($result->toArray());

@@ -182,6 +182,20 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_auth_status_round_trip
+    fixture = {
+      "authenticated" => true,
+      "auth_method" => "stub",
+      "environment" => nil,
+      "key" => nil
+    }
+    model = Retab::AuthStatus.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["auth_method"], json[:auth_method])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_auth_status_environment_round_trip
     fixture = {
       "id" => "stub",
@@ -203,21 +217,6 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::AuthStatusKey.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_auth_status_response_round_trip
-    fixture = {
-      "authenticated" => true,
-      "auth_method" => "stub",
-      "organization_id" => nil,
-      "environment" => nil,
-      "key" => nil
-    }
-    model = Retab::AuthStatusResponse.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["auth_method"], json[:auth_method])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1270,6 +1269,23 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_environment_round_trip
+    fixture = {
+      "id" => "stub",
+      "name" => "stub",
+      "type" => "stub",
+      "is_default" => true,
+      "created_at" => "stub",
+      "updated_at" => "stub"
+    }
+    model = Retab::Environment.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["name"], json[:name])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_environment_create_request_round_trip
     fixture = {
       "name" => "stub",
@@ -1279,43 +1295,6 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["name"], json[:name])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_environment_list_response_round_trip
-    fixture = {
-      "environments" => []
-    }
-    model = Retab::EnvironmentListResponse.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_environment_response_round_trip
-    fixture = {
-      "id" => "stub",
-      "name" => "stub",
-      "type" => "stub",
-      "is_default" => true,
-      "created_at" => "stub",
-      "updated_at" => "stub"
-    }
-    model = Retab::EnvironmentResponse.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["name"], json[:name])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_environment_update_request_round_trip
-    fixture = {
-      "name" => nil
-    }
-    model = Retab::EnvironmentUpdateRequest.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2959,6 +2938,16 @@ class ModelRoundTripTest < Minitest::Test
       "form_fields" => nil
     }
     model = Retab::UpdateEditTemplateRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_update_environment_request_round_trip
+    fixture = {
+      "name" => nil
+    }
+    model = Retab::UpdateEnvironmentRequest.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }

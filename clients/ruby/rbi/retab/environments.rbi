@@ -12,7 +12,7 @@ module Retab
     sig do
       params(
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::EnvironmentListResponse)
+      ).returns(Retab::PaginatedList[Retab::Environment])
     end
     def list_environments(request_options:); end
 
@@ -21,7 +21,7 @@ module Retab
         name: String,
         type: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::EnvironmentResponse)
+      ).returns(Retab::Environment)
     end
     def create_environment(name:, type:, request_options:); end
 
@@ -29,7 +29,7 @@ module Retab
       params(
         environment_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::EnvironmentResponse)
+      ).returns(Retab::Environment)
     end
     def get_environment(environment_id:, request_options:); end
 
@@ -38,7 +38,7 @@ module Retab
         environment_id: String,
         name: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::EnvironmentResponse)
+      ).returns(Retab::Environment)
     end
     def update_environment(environment_id:, name:, request_options:); end
 
@@ -46,7 +46,7 @@ module Retab
       params(
         environment_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::EnvironmentResponse)
+      ).returns(NilClass)
     end
     def delete_environment(environment_id:, request_options:); end
 

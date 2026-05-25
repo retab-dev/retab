@@ -90,6 +90,15 @@ WorkflowRunsExcludeStatus = WorkflowRunsStatus
 WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
 
 
+class AuthStatus(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    authenticated: bool | None = Field(default=True)
+    auth_method: str
+    environment: AuthStatusEnvironment | None = None
+    key: AuthStatusKey | None = None
+
+
 class AuthStatusEnvironment(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -103,16 +112,6 @@ class AuthStatusKey(BaseModel):
 
     prefix: str | None = None
     name: str | None = None
-
-
-class AuthStatusResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    authenticated: bool | None = Field(default=True)
-    auth_method: str
-    organization_id: str | None = None
-    environment: AuthStatusEnvironment | None = None
-    key: AuthStatusKey | None = None
 
 
 class HttpValidationError(BaseModel):
@@ -136,8 +135,8 @@ class ValidationError(BaseModel):
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
+AuthStatus.model_rebuild()
 AuthStatusEnvironment.model_rebuild()
 AuthStatusKey.model_rebuild()
-AuthStatusResponse.model_rebuild()
 HttpValidationError.model_rebuild()
 ValidationError.model_rebuild()

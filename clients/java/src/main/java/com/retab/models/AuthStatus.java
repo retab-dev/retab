@@ -7,23 +7,20 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class AuthStatusResponse {
+public final class AuthStatus {
   private final Boolean authenticated;
   private final String authMethod;
-  private final String organizationId;
   private final AuthStatusEnvironment environment;
   private final AuthStatusKey key;
 
   @JsonCreator
-  public AuthStatusResponse(
+  public AuthStatus(
       @JsonProperty(value = "authenticated", required = false) Boolean authenticated,
       @JsonProperty(value = "auth_method", required = true) String authMethod,
-      @JsonProperty(value = "organization_id", required = false) String organizationId,
       @JsonProperty(value = "environment", required = false) AuthStatusEnvironment environment,
       @JsonProperty(value = "key", required = false) AuthStatusKey key) {
     this.authenticated = authenticated;
     this.authMethod = authMethod;
-    this.organizationId = organizationId;
     this.environment = environment;
     this.key = key;
   }
@@ -36,11 +33,6 @@ public final class AuthStatusResponse {
   @JsonProperty("auth_method")
   public String getAuthMethod() {
     return authMethod;
-  }
-
-  @JsonProperty("organization_id")
-  public String getOrganizationId() {
-    return organizationId;
   }
 
   @JsonProperty("environment")

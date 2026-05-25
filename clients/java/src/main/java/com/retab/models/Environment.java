@@ -5,23 +5,23 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.EnvironmentResponseType;
+import com.retab.types.EnvironmentType;
 import java.time.OffsetDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class EnvironmentResponse {
+public final class Environment {
   private final String id;
   private final String name;
-  private final EnvironmentResponseType type;
+  private final EnvironmentType type;
   private final Boolean isDefault;
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
 
   @JsonCreator
-  public EnvironmentResponse(
+  public Environment(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "name", required = true) String name,
-      @JsonProperty(value = "type", required = true) EnvironmentResponseType type,
+      @JsonProperty(value = "type", required = true) EnvironmentType type,
       @JsonProperty(value = "is_default", required = false) Boolean isDefault,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = false) OffsetDateTime updatedAt) {
@@ -44,7 +44,7 @@ public final class EnvironmentResponse {
   }
 
   @JsonProperty("type")
-  public EnvironmentResponseType getType() {
+  public EnvironmentType getType() {
     return type;
   }
 

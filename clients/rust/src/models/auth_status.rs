@@ -6,26 +6,23 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthStatusResponse {
+pub struct AuthStatus {
     /// Defaults to `true`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub authenticated: Option<bool>,
     pub auth_method: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub organization_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub environment: Option<AuthStatusEnvironment>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub key: Option<AuthStatusKey>,
 }
-impl AuthStatusResponse {
-    /// Construct a new `AuthStatusResponse` with the required fields set.
+impl AuthStatus {
+    /// Construct a new `AuthStatus` with the required fields set.
     #[allow(deprecated)]
     pub fn new(auth_method: impl Into<String>) -> Self {
         Self {
             authenticated: Default::default(),
             auth_method: auth_method.into(),
-            organization_id: Default::default(),
             environment: Default::default(),
             key: Default::default(),
         }

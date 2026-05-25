@@ -19,14 +19,14 @@ namespace Retab
         /// <summary>Get Auth Status</summary>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="AuthStatusResponse"/> result.</returns>
-        public virtual async Task<AuthStatusResponse> ListStatusAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>The <see cref="AuthStatus"/> result.</returns>
+        public virtual async Task<AuthStatus> ListStatusAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<AuthStatusResponse>("/v1/auth/status", null, requestOptions, cancellationToken);
+            return await this.GetAsync<AuthStatus>("/v1/auth/status", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListStatusAsync"/>.</summary>
-        public virtual Task<AuthStatusResponse> ListStatus(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<AuthStatus> ListStatus(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.ListStatusAsync(requestOptions, cancellationToken);
         }

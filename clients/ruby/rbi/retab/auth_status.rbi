@@ -5,7 +5,7 @@
 # typed: strong
 
 module Retab
-  class AuthStatusResponse
+  class AuthStatus
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
@@ -20,12 +20,6 @@ module Retab
 
     sig { params(value: String).returns(String) }
     def auth_method=(value); end
-
-    sig { returns(T.nilable(String)) }
-    def organization_id; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def organization_id=(value); end
 
     sig { returns(T.nilable(Retab::AuthStatusEnvironment)) }
     def environment; end
