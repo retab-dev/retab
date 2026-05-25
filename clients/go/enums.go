@@ -464,6 +464,7 @@ type ResumeStatus string
 const (
 	ResumeStatusResumed ResumeStatus = "resumed"
 	ResumeStatusPending ResumeStatus = "pending"
+	ResumeStatusFailed  ResumeStatus = "failed"
 	ResumeStatusSkipped ResumeStatus = "skipped"
 )
 

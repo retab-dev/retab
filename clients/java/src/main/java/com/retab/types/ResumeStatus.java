@@ -11,6 +11,7 @@ public enum ResumeStatus {
   UNKNOWN("unknown"),
   RESUMED("resumed"),
   PENDING("pending"),
+  FAILED("failed"),
   SKIPPED("skipped");
 
   private final String value;

@@ -9,6 +9,7 @@ use std::str::FromStr;
 pub enum ResumeStatus {
     Resumed,
     Pending,
+    Failed,
     Skipped,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
@@ -25,6 +26,7 @@ impl ResumeStatus {
         match self {
             Self::Resumed => "resumed",
             Self::Pending => "pending",
+            Self::Failed => "failed",
             Self::Skipped => "skipped",
             Self::Unknown(s) => s.as_str(),
         }
@@ -50,6 +52,7 @@ impl FromStr for ResumeStatus {
         Ok(match s {
             "resumed" => Self::Resumed,
             "pending" => Self::Pending,
+            "failed" => Self::Failed,
             "skipped" => Self::Skipped,
             other => Self::Unknown(other.to_string()),
         })
