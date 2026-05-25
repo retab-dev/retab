@@ -18,3 +18,7 @@ lib/Exception/*
 !lib/PaginatedResponse.php
 !lib/RequestOptions.php
 !lib/TestHelper.php
+!lib/Resource/
+!lib/Resource/**
+!lib/Service/
+!lib/Service/**
