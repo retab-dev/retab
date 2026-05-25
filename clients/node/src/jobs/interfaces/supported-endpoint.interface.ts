@@ -10,7 +10,6 @@ export type SupportedEndpoint =
   | '/v1/classifications'
   | '/v1/schemas/generate'
   | '/v1/edits'
-  | '/v1/edits/templates'
   | '/v1/edits/templates/generate'
   | '/v1/evals/extract/process'
   | '/v1/evals/extract/extract'
@@ -24,7 +23,6 @@ export const ZSupportedEndpoint = z.enum([
   '/v1/classifications',
   '/v1/schemas/generate',
   '/v1/edits',
-  '/v1/edits/templates',
   '/v1/edits/templates/generate',
   '/v1/evals/extract/process',
   '/v1/evals/extract/extract',
