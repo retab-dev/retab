@@ -30,6 +30,65 @@ sh_test(
 )
 
 sh_test(
+    name = "check_go",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["go"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_rust",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["rust"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_dotnet",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["dotnet"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_php",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["php"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_ruby",
+    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    args = ["ruby"],
+    data = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+test_suite(
+    name = "generated_sdks",
+    tests = [
+        ":check_python",
+        ":check_node",
+        ":check_go",
+        ":check_rust",
+        ":check_php",
+        ":check_ruby",
+    ],
+)
+
+test_suite(
+    name = "experimental_generated_sdks",
+    tests = [
+        ":check_dotnet",
+    ],
+)
+
+sh_test(
     name = "check_all",
     srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
     data = [":generation_inputs"],
