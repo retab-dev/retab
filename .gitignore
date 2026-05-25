@@ -77,3 +77,7 @@
 # .NET
 **/bin/
 **/obj/
+
+# Generated Ruby SDK package sources are stable artifacts.
+!clients/ruby/lib/
+!clients/ruby/lib/**
