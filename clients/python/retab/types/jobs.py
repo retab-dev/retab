@@ -16,6 +16,7 @@ SupportedEndpoint: TypeAlias = Literal[
     "/v1/classifications",
     "/v1/schemas/generate",
     "/v1/edits",
+    "/v1/edits/templates",
     "/v1/edits/templates/generate",
     "/v1/evals/extract/process",
     "/v1/evals/extract/extract",
