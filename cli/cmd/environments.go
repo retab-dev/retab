@@ -222,25 +222,40 @@ func environmentTableColumns(activeEnvironmentID string) []TableColumn {
 }
 
 func environmentCell(row any, field string) string {
+	if environment, ok := row.(retab.Environment); ok {
+		return environmentStructCell(environment, field)
+	}
 	if environment, ok := row.(*retab.Environment); ok && environment != nil {
-		switch field {
-		case "id":
-			return environment.ID
-		case "name":
-			return environment.Name
-		case "type":
-			return string(environment.Type)
-		case "is_default":
-			if environment.IsDefault != nil && *environment.IsDefault {
+		return environmentStructCell(*environment, field)
+	}
+	if value, ok := rowField(row, field); ok {
+		if field == "is_default" {
+			if isDefault, ok := value.(bool); ok && isDefault {
 				return "true"
 			}
 			return ""
 		}
-	}
-	if value, ok := rowField(row, field); ok {
 		return stringifyCell(value)
 	}
 	return ""
+}
+
+func environmentStructCell(environment retab.Environment, field string) string {
+	switch field {
+	case "id":
+		return environment.ID
+	case "name":
+		return environment.Name
+	case "type":
+		return string(environment.Type)
+	case "is_default":
+		if environment.IsDefault != nil && *environment.IsDefault {
+			return "true"
+		}
+		return ""
+	default:
+		return ""
+	}
 }
 
 func resolveEnvironmentSelection(raw string, list *retab.PaginatedList[retab.Environment]) (*retab.Environment, error) {

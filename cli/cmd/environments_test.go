@@ -138,6 +138,21 @@ func TestEnvironmentListJSONShape(t *testing.T) {
 	}
 }
 
+func TestEnvironmentTableDefaultCellHidesFalseForTypedRows(t *testing.T) {
+	isDefault := true
+	notDefault := false
+
+	if got := environmentCell(retab.Environment{IsDefault: &isDefault}, "is_default"); got != "true" {
+		t.Fatalf("default cell = %q, want true", got)
+	}
+	if got := environmentCell(retab.Environment{IsDefault: &notDefault}, "is_default"); got != "" {
+		t.Fatalf("non-default cell = %q, want blank", got)
+	}
+	if got := environmentCell(map[string]any{"is_default": false}, "is_default"); got != "" {
+		t.Fatalf("map non-default cell = %q, want blank", got)
+	}
+}
+
 func resetEnvironmentCommandPersistentFlags(t *testing.T) {
 	t.Helper()
 	for _, name := range []string{"api-key", "base-url", "environment-id"} {
