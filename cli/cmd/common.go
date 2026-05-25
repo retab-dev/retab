@@ -230,6 +230,9 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	if baseURL != "" {
 		opts = append(opts, retab.WithBaseURL(baseURL))
 	}
+	if environmentID := selectedEnvironmentHeaderID(cmd, cfg); environmentID != "" {
+		opts = append(opts, retab.WithHeader("X-Retab-Environment-Id", environmentID))
+	}
 
 	// --debug wires a logging RoundTripper into the SDK's HTTP client so
 	// every wire-level request/response is dumped to stderr. The dump
@@ -262,6 +265,36 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	}
 
 	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+}
+
+func selectedEnvironmentID(cmd *cobra.Command, cfg retabConfig) string {
+	flagValue := ""
+	if cmd != nil && cmd.Root() != nil {
+		flagValue, _ = cmd.Root().PersistentFlags().GetString("environment-id")
+	}
+	if strings.TrimSpace(flagValue) != "" {
+		return strings.TrimSpace(flagValue)
+	}
+	if envValue := strings.TrimSpace(os.Getenv("RETAB_ENVIRONMENT_ID")); envValue != "" {
+		return envValue
+	}
+	return strings.TrimSpace(cfg.EnvironmentID)
+}
+
+func selectedEnvironmentHeaderID(cmd *cobra.Command, cfg retabConfig) string {
+	if isEnvironmentManagementCommand(cmd) {
+		return ""
+	}
+	return selectedEnvironmentID(cmd, cfg)
+}
+
+func isEnvironmentManagementCommand(cmd *cobra.Command) bool {
+	for current := cmd; current != nil; current = current.Parent() {
+		if current.Name() == "env" {
+			return true
+		}
+	}
+	return false
 }
 
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
@@ -350,6 +383,9 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	} else {
 		req.Header.Set("Api-Key", apiKey)
+	}
+	if environmentID := selectedEnvironmentHeaderID(cmd, cfg); environmentID != "" {
+		req.Header.Set("X-Retab-Environment-Id", environmentID)
 	}
 
 	httpClient := http.DefaultClient

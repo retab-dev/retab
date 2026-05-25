@@ -21,6 +21,11 @@ type retabConfig struct {
 	// BaseURL overrides the default API endpoint. Useful for staging.
 	BaseURL string `json:"base_url,omitempty"`
 
+	// EnvironmentID is the dashboard/API environment selected for OAuth
+	// sessions. API keys are already environment-scoped server-side, so this
+	// is primarily for user sessions and local development workflows.
+	EnvironmentID string `json:"environment_id,omitempty"`
+
 	// OAuth holds tokens issued by WorkOS via `retab auth login`. Optional.
 	OAuth *oauthTokens `json:"oauth,omitempty"`
 }

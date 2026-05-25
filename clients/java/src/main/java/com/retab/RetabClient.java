@@ -4,8 +4,10 @@ package com.retab;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.retab.auth.AuthApi;
 import com.retab.classifications.ClassificationsApi;
 import com.retab.edits.EditsApi;
+import com.retab.environments.EnvironmentsApi;
 import com.retab.extractions.ExtractionsApi;
 import com.retab.files.FilesApi;
 import com.retab.jobs.JobsApi;
@@ -23,8 +25,10 @@ public final class RetabClient {
   private final String baseUrl;
   private final HttpClient httpClient;
   private final ObjectMapper objectMapper;
+  private final AuthApi auth;
   private final ClassificationsApi classifications;
   private final EditsApi edits;
+  private final EnvironmentsApi environments;
   private final ExtractionsApi extractions;
   private final FilesApi files;
   private final JobsApi jobs;
@@ -48,8 +52,10 @@ public final class RetabClient {
     this.baseUrl = baseUrl;
     this.httpClient = httpClient;
     this.objectMapper = objectMapper;
+    this.auth = new AuthApi(this);
     this.classifications = new ClassificationsApi(this);
     this.edits = new EditsApi(this);
+    this.environments = new EnvironmentsApi(this);
     this.extractions = new ExtractionsApi(this);
     this.files = new FilesApi(this);
     this.jobs = new JobsApi(this);
@@ -76,12 +82,20 @@ public final class RetabClient {
     return objectMapper;
   }
 
+  public AuthApi auth() {
+    return auth;
+  }
+
   public ClassificationsApi classifications() {
     return classifications;
   }
 
   public EditsApi edits() {
     return edits;
+  }
+
+  public EnvironmentsApi environments() {
+    return environments;
   }
 
   public ExtractionsApi extractions() {

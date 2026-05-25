@@ -58,7 +58,7 @@ var commandGroups = []commandGroup{
 	},
 	{
 		title:    "Account",
-		commands: []string{"auth", "version"},
+		commands: []string{"auth", "env", "version"},
 	},
 }
 
@@ -271,6 +271,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	}{
 		{"--api-key", "KEY", "Retab API key", "RETAB_API_KEY"},
 		{"--base-url", "URL", "Retab API base URL", "RETAB_API_BASE_URL"},
+		{"--environment-id", "ID", "Retab environment id", "RETAB_ENVIRONMENT_ID"},
 		{"--debug", "", "verbose debug output", ""},
 		{"--output", "FORMAT", "output format: json | table (default: auto)", ""},
 		{"-h, --help", "", "show this help", ""},

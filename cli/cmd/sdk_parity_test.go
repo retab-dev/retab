@@ -27,6 +27,7 @@ var sdkMethodCommandAliases = map[string]string{
 
 var sdkResourceCommandAliases = map[string]string{
 	"EditTemplates":           "edits templates",
+	"Environments":            "env",
 	"ExperimentRunMetrics":    "workflows experiments metrics",
 	"ExperimentRunResults":    "workflows experiments results",
 	"ExperimentRuns":          "workflows experiments runs",

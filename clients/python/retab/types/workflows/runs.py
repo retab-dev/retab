@@ -46,9 +46,6 @@ class WorkflowExportPayloadRequestStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-WorkflowExportPayloadRequestExcludeStatus = WorkflowExportPayloadRequestStatus
-
-
 class WorkflowExportPayloadRequestTriggerTypes(str, Enum):
     MANUAL = "manual"
     API = "api"
@@ -56,6 +53,9 @@ class WorkflowExportPayloadRequestTriggerTypes(str, Enum):
     WEBHOOK = "webhook"
     EMAIL = "email"
     RESTART = "restart"
+
+
+WorkflowExportPayloadRequestExcludeStatus = WorkflowExportPayloadRequestStatus
 
 
 class ApiTrigger(BaseModel):

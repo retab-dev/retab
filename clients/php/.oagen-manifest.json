@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-25T00:15:21.394Z",
+  "generatedAt": "2026-05-25T19:28:21.372Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -20,6 +20,9 @@
     "lib/Resource/AssertionResult.php",
     "lib/Resource/AssertionSchemaDep.php",
     "lib/Resource/AssertionSpec.php",
+    "lib/Resource/AuthStatusEnvironment.php",
+    "lib/Resource/AuthStatusKey.php",
+    "lib/Resource/AuthStatusResponse.php",
     "lib/Resource/AwaitingReviewRun.php",
     "lib/Resource/AwaitingReviewStepLifecycle.php",
     "lib/Resource/BBox.php",
@@ -89,6 +92,11 @@
     "lib/Resource/EditWorkflowArtifact.php",
     "lib/Resource/EmailTrigger.php",
     "lib/Resource/EndsWithCondition.php",
+    "lib/Resource/EnvironmentCreateRequest.php",
+    "lib/Resource/EnvironmentListResponse.php",
+    "lib/Resource/EnvironmentResponse.php",
+    "lib/Resource/EnvironmentResponseType.php",
+    "lib/Resource/EnvironmentUpdateRequest.php",
     "lib/Resource/EqualCondition.php",
     "lib/Resource/ErrorBlockExecutionLifecycle.php",
     "lib/Resource/ErrorDetails.php",
@@ -289,9 +297,11 @@
     "lib/Resource/WorkflowTestRunTiming.php",
     "lib/Resource/WorkflowTestRunWorkflowScope.php",
     "lib/Resource/WorkflowTestSchemaDrift.php",
+    "lib/Service/Auth.php",
     "lib/Service/Classifications.php",
     "lib/Service/EditTemplates.php",
     "lib/Service/Edits.php",
+    "lib/Service/Environments.php",
     "lib/Service/ExperimentRunMetrics.php",
     "lib/Service/ExperimentRunResults.php",
     "lib/Service/ExperimentRuns.php",
@@ -329,6 +339,9 @@
     "tests/Fixtures/assertion_result.json",
     "tests/Fixtures/assertion_schema_dep.json",
     "tests/Fixtures/assertion_spec.json",
+    "tests/Fixtures/auth_status_environment.json",
+    "tests/Fixtures/auth_status_key.json",
+    "tests/Fixtures/auth_status_response.json",
     "tests/Fixtures/awaiting_review_run.json",
     "tests/Fixtures/awaiting_review_step_lifecycle.json",
     "tests/Fixtures/b_box.json",
@@ -392,6 +405,10 @@
     "tests/Fixtures/edit_workflow_artifact.json",
     "tests/Fixtures/email_trigger.json",
     "tests/Fixtures/ends_with_condition.json",
+    "tests/Fixtures/environment_create_request.json",
+    "tests/Fixtures/environment_list_response.json",
+    "tests/Fixtures/environment_response.json",
+    "tests/Fixtures/environment_update_request.json",
     "tests/Fixtures/equal_condition.json",
     "tests/Fixtures/error_block_execution_lifecycle.json",
     "tests/Fixtures/error_details.json",
@@ -583,9 +600,11 @@
     "tests/Fixtures/workflow_test_run_single_scope.json",
     "tests/Fixtures/workflow_test_run_timing.json",
     "tests/Fixtures/workflow_test_run_workflow_scope.json",
+    "tests/Service/AuthTest.php",
     "tests/Service/ClassificationsTest.php",
     "tests/Service/EditTemplatesTest.php",
     "tests/Service/EditsTest.php",
+    "tests/Service/EnvironmentsTest.php",
     "tests/Service/ExperimentRunMetricsTest.php",
     "tests/Service/ExperimentRunResultsTest.php",
     "tests/Service/ExperimentRunsTest.php",
@@ -612,6 +631,30 @@
     "tests/Service/WorkflowsTest.php"
   ],
   "operations": {
+    "GET /v1/auth/status": {
+      "sdkMethod": "listStatus",
+      "service": "auth"
+    },
+    "GET /v1/environments": {
+      "sdkMethod": "listEnvironments",
+      "service": "environments"
+    },
+    "POST /v1/environments": {
+      "sdkMethod": "createEnvironment",
+      "service": "environments"
+    },
+    "GET /v1/environments/{environment_id}": {
+      "sdkMethod": "getEnvironment",
+      "service": "environments"
+    },
+    "PATCH /v1/environments/{environment_id}": {
+      "sdkMethod": "updateEnvironment",
+      "service": "environments"
+    },
+    "DELETE /v1/environments/{environment_id}": {
+      "sdkMethod": "deleteEnvironment",
+      "service": "environments"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"

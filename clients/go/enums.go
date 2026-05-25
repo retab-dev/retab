@@ -28,6 +28,14 @@ const (
 	AssertionOutcomeBlocked AssertionOutcome = "blocked"
 )
 
+// AuthStatusEnvironmentType represents auth status environment type values.
+type AuthStatusEnvironmentType string
+
+const (
+	AuthStatusEnvironmentTypeProduction    AuthStatusEnvironmentType = "production"
+	AuthStatusEnvironmentTypeNonProduction AuthStatusEnvironmentType = "non_production"
+)
+
 // CancelWorkflowResponseCancellationStatus represents cancel workflow response cancellation status values.
 type CancelWorkflowResponseCancellationStatus string
 
@@ -166,6 +174,12 @@ type DeclarativePlanResourceChangeActions = DeclarativePlanFieldChangeAction
 
 // DeclarativePlanResponseAction is an alias for DeclarativeApplyResponseAction.
 type DeclarativePlanResponseAction = DeclarativeApplyResponseAction
+
+// EnvironmentCreateRequestType is an alias for AuthStatusEnvironmentType.
+type EnvironmentCreateRequestType = AuthStatusEnvironmentType
+
+// EnvironmentResponseType is an alias for AuthStatusEnvironmentType.
+type EnvironmentResponseType = AuthStatusEnvironmentType
 
 // ErrorStepLifecycleStage represents error step lifecycle stage values.
 type ErrorStepLifecycleStage string

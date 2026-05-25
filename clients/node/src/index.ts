@@ -9,6 +9,8 @@ export {
   retabStorageFileIdFromUrl,
 } from './runtime/mime.js';
 
+export * from './auth/interfaces/index.js';
+export * from './environments/interfaces/index.js';
 export * from './schemas/interfaces/index.js';
 export * from './extractions/interfaces/index.js';
 export * from './classifications/interfaces/index.js';

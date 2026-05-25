@@ -1,0 +1,14 @@
+{
+  "authenticated": true,
+  "auth_method": "test_auth_method",
+  "organization_id": "organization_id_01234",
+  "environment": {
+    "id": "01234",
+    "name": "Test",
+    "type": "production"
+  },
+  "key": {
+    "prefix": "test_prefix",
+    "name": "Test"
+  }
+}

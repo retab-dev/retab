@@ -28,6 +28,8 @@ type Client struct {
 	// implement transparent refresh without rebuilding the Client.
 	tokenProvider func(context.Context) (string, error)
 
+	Auth            *AuthService
+	Environments    *EnvironmentService
 	Schemas         *SchemaService
 	Extractions     *ExtractionService
 	Classifications *ClassificationService
@@ -125,6 +127,8 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	if c.apiKey == "" && c.tokenProvider == nil {
 		return nil, fmt.Errorf("retab: no credentials; pass an API key, set RETAB_API_KEY, or use WithBearerToken/WithBearerTokenProvider")
 	}
+	c.Auth = &AuthService{client: c}
+	c.Environments = &EnvironmentService{client: c}
 	c.Schemas = &SchemaService{client: c}
 	c.Extractions = &ExtractionService{client: c}
 	c.Classifications = &ClassificationService{client: c}
