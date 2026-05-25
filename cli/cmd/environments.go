@@ -45,7 +45,7 @@ var envListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Environments.List(ctx)
+		result, err := client.Environments.List(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ var envSwitchCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		list, err := client.Environments.List(ctx)
+		list, err := client.Environments.List(ctx, nil)
 		if err != nil {
 			return err
 		}

@@ -30,9 +30,13 @@ public final class EnvironmentsApi {
     return client;
   }
 
-  public List<Environment> list() throws IOException, InterruptedException {
+  public List<Environment> list(String before, String after, Long limit)
+      throws IOException, InterruptedException {
     String path = "/v1/environments";
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "before", before);
+    appendQueryParam(query, "after", after);
+    appendQueryParam(query, "limit", limit);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =

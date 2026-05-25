@@ -13,9 +13,14 @@ type EnvironmentService struct {
 	client *Client
 }
 
+// EnvironmentsListParams contains the parameters for List.
+type EnvironmentsListParams struct {
+	PaginationParams
+}
+
 // List organization Environments
-func (s *EnvironmentService) List(ctx context.Context, opts ...RequestOption) (*PaginatedList[Environment], error) {
-	return doPaginated[Environment](ctx, s.client, "GET", "/v1/environments", nil, nil, opts...)
+func (s *EnvironmentService) List(ctx context.Context, params *EnvironmentsListParams, opts ...RequestOption) (*PaginatedList[Environment], error) {
+	return doPaginated[Environment](ctx, s.client, "GET", "/v1/environments", params, nil, opts...)
 }
 
 // EnvironmentsCreateParams contains the parameters for Create.

@@ -11,10 +11,13 @@ module Retab
 
     sig do
       params(
+        before: T.nilable(String),
+        after: T.nilable(String),
+        limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Environment])
     end
-    def list_environments(request_options:); end
+    def list_environments(before:, after:, limit:, request_options:); end
 
     sig do
       params(
