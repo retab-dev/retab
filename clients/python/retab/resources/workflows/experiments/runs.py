@@ -6,7 +6,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.schemas import WorkflowExperimentsExcludeStatus, WorkflowExperimentsStatus
+from retab.types.auth import WorkflowExperimentsExcludeStatus, WorkflowExperimentsStatus
 from retab.types.workflows.experiments.runs import CancelWorkflowExperimentRunResponse, CreateExperimentRunRequest, ExperimentRun
 
 

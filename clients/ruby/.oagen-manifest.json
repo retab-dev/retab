@@ -1,10 +1,14 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-25T00:15:23.194Z",
+  "generatedAt": "2026-05-25T19:28:22.855Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
+    "lib/retab/auth.rb",
+    "lib/retab/auth/auth_status_environment.rb",
+    "lib/retab/auth/auth_status_key.rb",
+    "lib/retab/auth/auth_status_response.rb",
     "lib/retab/base_client.rb",
     "lib/retab/classifications.rb",
     "lib/retab/classifications/category.rb",
@@ -21,6 +25,11 @@
     "lib/retab/edits.rb",
     "lib/retab/edits/edit.rb",
     "lib/retab/edits/edit_request.rb",
+    "lib/retab/environments.rb",
+    "lib/retab/environments/environment_create_request.rb",
+    "lib/retab/environments/environment_list_response.rb",
+    "lib/retab/environments/environment_response.rb",
+    "lib/retab/environments/environment_update_request.rb",
     "lib/retab/errors.rb",
     "lib/retab/experiment_run_metrics.rb",
     "lib/retab/experiment_run_metrics/experiment_by_document_metrics_response.rb",
@@ -110,6 +119,7 @@
     "lib/retab/types/api_response.rb",
     "lib/retab/types/assertion_drift_status.rb",
     "lib/retab/types/assertion_outcome.rb",
+    "lib/retab/types/auth_status_environment_type.rb",
     "lib/retab/types/base_model.rb",
     "lib/retab/types/cancel_workflow_response_cancellation_status.rb",
     "lib/retab/types/classifications_order.rb",
@@ -125,6 +135,8 @@
     "lib/retab/types/declarative_plan_response_action.rb",
     "lib/retab/types/edit_templates_order.rb",
     "lib/retab/types/edits_order.rb",
+    "lib/retab/types/environment_create_request_type.rb",
+    "lib/retab/types/environment_response_type.rb",
     "lib/retab/types/error_step_lifecycle_category.rb",
     "lib/retab/types/error_step_lifecycle_stage.rb",
     "lib/retab/types/error_terminal_category.rb",
@@ -386,6 +398,10 @@
     "rbi/retab/assertion_result.rbi",
     "rbi/retab/assertion_schema_dep.rbi",
     "rbi/retab/assertion_spec.rbi",
+    "rbi/retab/auth.rbi",
+    "rbi/retab/auth_status_environment.rbi",
+    "rbi/retab/auth_status_key.rbi",
+    "rbi/retab/auth_status_response.rbi",
     "rbi/retab/awaiting_review_run.rbi",
     "rbi/retab/awaiting_review_step_lifecycle.rbi",
     "rbi/retab/b_box.rbi",
@@ -453,6 +469,11 @@
     "rbi/retab/edits.rbi",
     "rbi/retab/email_trigger.rbi",
     "rbi/retab/ends_with_condition.rbi",
+    "rbi/retab/environment_create_request.rbi",
+    "rbi/retab/environment_list_response.rbi",
+    "rbi/retab/environment_response.rbi",
+    "rbi/retab/environment_update_request.rbi",
+    "rbi/retab/environments.rbi",
     "rbi/retab/equal_condition.rbi",
     "rbi/retab/error_block_execution_lifecycle.rbi",
     "rbi/retab/error_details.rbi",
@@ -644,9 +665,11 @@
     "rbi/retab/workflow_tests.rbi",
     "rbi/retab/workflows.rbi",
     "retab.gemspec",
+    "test/retab/test_auth.rb",
     "test/retab/test_classifications.rb",
     "test/retab/test_edit_templates.rb",
     "test/retab/test_edits.rb",
+    "test/retab/test_environments.rb",
     "test/retab/test_experiment_run_metrics.rb",
     "test/retab/test_experiment_run_results.rb",
     "test/retab/test_experiment_runs.rb",
@@ -677,6 +700,30 @@
     "test/test_mime_smoke.rb"
   ],
   "operations": {
+    "GET /v1/auth/status": {
+      "sdkMethod": "list_status",
+      "service": "auth"
+    },
+    "GET /v1/environments": {
+      "sdkMethod": "list_environments",
+      "service": "environments"
+    },
+    "POST /v1/environments": {
+      "sdkMethod": "create_environment",
+      "service": "environments"
+    },
+    "GET /v1/environments/{environment_id}": {
+      "sdkMethod": "get_environment",
+      "service": "environments"
+    },
+    "PATCH /v1/environments/{environment_id}": {
+      "sdkMethod": "update_environment",
+      "service": "environments"
+    },
+    "DELETE /v1/environments/{environment_id}": {
+      "sdkMethod": "delete_environment",
+      "service": "environments"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"

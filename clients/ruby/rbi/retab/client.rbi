@@ -6,6 +6,12 @@
 
 module Retab
   class Client < BaseClient
+    sig { returns(Retab::Auth) }
+    def auth; end
+
+    sig { returns(Retab::Environments) }
+    def environments; end
+
     sig { returns(Retab::Schemas) }
     def schemas; end
 

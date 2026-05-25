@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-25T00:15:24.609Z",
+  "generatedAt": "2026-05-25T19:28:23.619Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -10,6 +10,7 @@
     "src/enums/actor_kind.rs",
     "src/enums/assertion_drift_status.rs",
     "src/enums/assertion_outcome.rs",
+    "src/enums/auth_status_environment_type.rs",
     "src/enums/cancel_workflow_response_cancellation_status.rs",
     "src/enums/classifications_order.rs",
     "src/enums/condition_evaluation_details_logical_operator.rs",
@@ -24,6 +25,8 @@
     "src/enums/declarative_plan_response_action.rs",
     "src/enums/edit_templates_order.rs",
     "src/enums/edits_order.rs",
+    "src/enums/environment_create_request_type.rs",
+    "src/enums/environment_response_type.rs",
     "src/enums/error_step_lifecycle_category.rs",
     "src/enums/error_step_lifecycle_stage.rs",
     "src/enums/error_terminal_category.rs",
@@ -112,6 +115,9 @@
     "src/models/assertion_result.rs",
     "src/models/assertion_schema_dep.rs",
     "src/models/assertion_spec.rs",
+    "src/models/auth_status_environment.rs",
+    "src/models/auth_status_key.rs",
+    "src/models/auth_status_response.rs",
     "src/models/awaiting_review_run.rs",
     "src/models/awaiting_review_step_lifecycle.rs",
     "src/models/b_box.rs",
@@ -179,6 +185,10 @@
     "src/models/edit_workflow_artifact.rs",
     "src/models/email_trigger.rs",
     "src/models/ends_with_condition.rs",
+    "src/models/environment_create_request.rs",
+    "src/models/environment_list_response.rs",
+    "src/models/environment_response.rs",
+    "src/models/environment_update_request.rs",
     "src/models/equal_condition.rs",
     "src/models/error_block_execution_lifecycle.rs",
     "src/models/error_details.rs",
@@ -370,9 +380,11 @@
     "src/models/workflow_test_run_workflow_scope.rs",
     "src/pagination.rs",
     "src/query.rs",
+    "src/resources/auth.rs",
     "src/resources/classifications.rs",
     "src/resources/edit_templates.rs",
     "src/resources/edits.rs",
+    "src/resources/environments.rs",
     "src/resources/experiment_run_metrics.rs",
     "src/resources/experiment_run_results.rs",
     "src/resources/experiment_runs.rs",
@@ -404,6 +416,30 @@
     "tests/mime_smoke.rs"
   ],
   "operations": {
+    "GET /v1/auth/status": {
+      "sdkMethod": "list_status",
+      "service": "auth"
+    },
+    "GET /v1/environments": {
+      "sdkMethod": "list_environments",
+      "service": "environments"
+    },
+    "POST /v1/environments": {
+      "sdkMethod": "create_environment",
+      "service": "environments"
+    },
+    "GET /v1/environments/{environment_id}": {
+      "sdkMethod": "get_environment",
+      "service": "environments"
+    },
+    "PATCH /v1/environments/{environment_id}": {
+      "sdkMethod": "update_environment",
+      "service": "environments"
+    },
+    "DELETE /v1/environments/{environment_id}": {
+      "sdkMethod": "delete_environment",
+      "service": "environments"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"

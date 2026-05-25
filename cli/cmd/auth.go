@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -270,17 +271,10 @@ compact human block for interactive terminals).`,
 			return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 		}
 
-		// Best-effort verification — list workflows with limit=1.
-		client, err := newClient(cmd)
-		if err != nil {
-			out["valid"] = false
-			out["error"] = err.Error()
-			return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		_, err = client.Workflows.List(ctx, nil)
-		if err != nil {
+		// Best-effort verification. Use the auth status endpoint instead
+		// of a workflow route so fresh OAuth logins do not need an
+		// environment selection just to prove the credential works.
+		if err := probeAuthStatus(cmd); err != nil {
 			out["valid"] = false
 			out["error"] = err.Error()
 		} else {
@@ -288,6 +282,11 @@ compact human block for interactive terminals).`,
 		}
 		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
+}
+
+func probeAuthStatus(cmd *cobra.Command) error {
+	_, err := cliJSONRequest(cmd, http.MethodGet, "/v1/auth/status", nil, nil)
+	return err
 }
 
 // resolveAuthOutputFormat reads the global --output persistent flag.
@@ -381,12 +380,16 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 
 	preview, _ := out["api_key_preview"].(string)
 	source, _ := out["source"].(string)
+	authenticated, _ := out["authenticated"].(bool)
 
-	// First line — "Logged in as <preview>" when we have any credential to
-	// preview, otherwise "Not logged in" (matches the JSON's empty-source
-	// case, where api_key_preview is absent because there's no key).
+	// First line — API keys have a redacted preview; OAuth credentials do
+	// not, so fall back to the explicit authenticated/source fields.
 	if preview != "" {
 		if _, err := fmt.Fprintf(w, "Logged in as %s%s%s\n", s.brand, preview, s.reset); err != nil {
+			return err
+		}
+	} else if authenticated && source != "" {
+		if _, err := fmt.Fprintln(w, "Logged in with OAuth"); err != nil {
 			return err
 		}
 	} else {

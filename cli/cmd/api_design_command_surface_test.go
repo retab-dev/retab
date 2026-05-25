@@ -14,19 +14,19 @@ var apiDesignKebabNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+
 
 func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
-		"apply": true, "approve": true, "artifacts": true, "auth": true,
-		"blocks": true, "cancel": true, "classifications": true, "complete-upload": true,
+		"add": true, "apply": true, "approve": true, "artifacts": true, "auth": true,
+		"blocks": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "env": true,
 		"create": true, "create-upload": true, "delete": true,
 		"download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"generate": true, "get": true, "jobs": true,
 		"list": true, "login": true, "logout": true, "metrics": true,
 		"parses": true, "partitions": true, "plan": true, "publish": true,
-		"reject": true, "restart": true, "results": true, "retry": true, "retrieve": true,
+		"reject": true, "remove": true, "restart": true, "results": true, "retry": true, "retrieve": true,
 		"reviews": true, "runs": true, "schema": true, "schemas": true,
 		"setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "status": true, "steps": true, "stream": true,
-		"sync": true, "templates": true, "tests": true, "update": true,
+		"switch": true, "sync": true, "templates": true, "tests": true, "update": true,
 		"upload": true, "validate": true, "versions": true, "version": true,
 		"view": true, "wait": true, "workflows": true,
 	}
@@ -102,8 +102,9 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "classifications", "edits", "extractions", "files", "jobs", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
+		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "jobs", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
+		"env":                           {"add", "remove", "switch", "claim", "list"},
 		"classifications":               {"create", "get", "list", "delete"},
 		"edits":                         {"create", "get", "list", "delete", "templates"},
 		"edits templates":               {"create", "get", "list", "update", "delete"},

@@ -7,6 +7,16 @@ namespace Retab
     /// </summary>
     public partial class Retab
     {
+        private AuthService? auth;
+
+        /// <summary>Gets the <see cref="AuthService"/> for auth API operations.</summary>
+        public virtual AuthService Auth => this.auth ??= new AuthService(this);
+
+        private EnvironmentsService? environments;
+
+        /// <summary>Gets the <see cref="EnvironmentsService"/> for environments API operations.</summary>
+        public virtual EnvironmentsService Environments => this.environments ??= new EnvironmentsService(this);
+
         private SchemasService? schemas;
 
         /// <summary>Gets the <see cref="SchemasService"/> for schemas API operations.</summary>

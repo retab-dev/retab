@@ -37,9 +37,6 @@ class LengthCompareConditionOp(str, Enum):
     NEQ = "neq"
 
 
-NumberCompareConditionOp = LengthCompareConditionOp
-
-
 class SimilarityGteConditionMethod(str, Enum):
     LEVENSHTEIN = "levenshtein"
     EMBEDDINGS = "embeddings"
@@ -50,6 +47,9 @@ class WorkflowTestSchemaDrift(str, Enum):
     PARTIAL = "partial"
     DRIFTED = "drifted"
     UNKNOWN = "unknown"
+
+
+NumberCompareConditionOp = LengthCompareConditionOp
 
 
 class AllItemsMatchCondition(BaseModel):

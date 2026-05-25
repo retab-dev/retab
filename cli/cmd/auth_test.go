@@ -3,9 +3,13 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 // `auth status` is the single most common script-and-eyeball straddle in
@@ -169,6 +173,97 @@ func TestWriteAuthStatusHuman_NotLoggedIn(t *testing.T) {
 	// No half-rendered "Logged in as " line with a missing preview.
 	if strings.Contains(out, "Logged in as \n") || strings.Contains(out, "Logged in as <") {
 		t.Errorf("rendered a malformed 'Logged in as' line for empty preview:\n%s", out)
+	}
+}
+
+// OAuth credentials do not have an api_key_preview. The human renderer
+// must use the explicit authenticated/source fields rather than treating
+// the missing preview as "not logged in".
+func TestWriteAuthStatusHuman_AuthenticatedOAuth(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"valid":         true,
+		"oauth": map[string]any{
+			"authkit_domain": "meaningful-awakening-88-staging.authkit.app",
+			"expires_at":     "2026-05-21T23:45:46Z",
+			"has_refresh":    true,
+		},
+	}
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if strings.Contains(out, "Not logged in") {
+		t.Fatalf("OAuth status should not render as not logged in:\n%s", out)
+	}
+	if !strings.Contains(out, "Logged in with OAuth") {
+		t.Fatalf("OAuth status should render an OAuth login header:\n%s", out)
+	}
+	if !strings.Contains(out, "valid") {
+		t.Fatalf("OAuth status should report valid probe result:\n%s", out)
+	}
+}
+
+func TestProbeAuthStatus_UsesAuthStatusEndpointForOAuth(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	var seenPath string
+	var seenAuth string
+	var seenAPIKey string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
+		seenAuth = r.Header.Get("Authorization")
+		seenAPIKey = r.Header.Get("Api-Key")
+		if r.URL.Path != "/v1/auth/status" {
+			t.Errorf("probe path = %q, want /v1/auth/status", r.URL.Path)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"authenticated": true,
+			"auth_method": "bearer_token",
+			"organization_id": "org_123",
+			"environment": null,
+			"key": null
+		}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		OAuth: &oauthTokens{
+			AccessToken:   "at_probe",
+			RefreshToken:  "rt_probe",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			AuthKitDomain: "auth.example.com",
+			ClientID:      "client_123",
+		},
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	cmd.PersistentFlags().Bool("debug", false, "")
+
+	if err := probeAuthStatus(cmd); err != nil {
+		t.Fatalf("probeAuthStatus: %v", err)
+	}
+	if seenPath != "/v1/auth/status" {
+		t.Fatalf("probe path = %q, want /v1/auth/status", seenPath)
+	}
+	if seenAuth != "Bearer at_probe" {
+		t.Fatalf("Authorization header = %q, want Bearer at_probe", seenAuth)
+	}
+	if seenAPIKey != "" {
+		t.Fatalf("Api-Key header should be empty for OAuth probe, got %q", seenAPIKey)
 	}
 }
 
