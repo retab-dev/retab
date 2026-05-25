@@ -1,5 +1,5 @@
 {
-  "environments": [
+  "data": [
     {
       "id": "01234",
       "name": "Test",
@@ -8,5 +8,9 @@
       "created_at": "2023-01-01T00:00:00.000Z",
       "updated_at": "2023-01-01T00:00:00.000Z"
     }
-  ]
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
 }

@@ -3,7 +3,7 @@
 package com.retab.auth;
 
 import com.retab.RetabClient;
-import com.retab.models.AuthStatusResponse;
+import com.retab.models.AuthStatus;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -22,7 +22,7 @@ public final class AuthApi {
     return client;
   }
 
-  public AuthStatusResponse listStatus() throws IOException, InterruptedException {
+  public AuthStatus listStatus() throws IOException, InterruptedException {
     String path = "/v1/auth/status";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -40,7 +40,7 @@ public final class AuthApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), AuthStatusResponse.class);
+    return client.getObjectMapper().readValue(response.body(), AuthStatus.class);
   }
 
   private static String encodePathSegment(Object value) {

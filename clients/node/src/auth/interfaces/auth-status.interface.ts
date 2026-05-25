@@ -12,38 +12,32 @@ import {
 import type { AuthStatusKey, AuthStatusKeyResponse } from './auth-status-key.interface.js';
 import { ZAuthStatusKey, deserializeAuthStatusKey } from './auth-status-key.interface.js';
 
-export interface AuthStatusResponse {
+export interface AuthStatus {
   /** @default true */
   authenticated?: boolean;
   authMethod: string;
-  organizationId?: string | null;
   environment?: AuthStatusEnvironment | null;
   key?: AuthStatusKey | null;
 }
 
-export interface AuthStatusResponseResponse {
+export interface AuthStatusResponse {
   authenticated?: boolean;
   auth_method: string;
-  organization_id?: string | null;
   environment?: AuthStatusEnvironmentResponse | null;
   key?: AuthStatusKeyResponse | null;
 }
 
-export const ZAuthStatusResponse = z.object({
+export const ZAuthStatus = z.object({
   authenticated: z.boolean().optional(),
   authMethod: z.string(),
-  organizationId: z.string().nullable().optional(),
   environment: ZAuthStatusEnvironment.nullable().optional(),
   key: ZAuthStatusKey.nullable().optional(),
-}) as z.ZodType<AuthStatusResponse>;
+}) as z.ZodType<AuthStatus>;
 
-export function deserializeAuthStatusResponse(
-  wire: AuthStatusResponseResponse
-): AuthStatusResponse {
+export function deserializeAuthStatus(wire: AuthStatusResponse): AuthStatus {
   return {
     authenticated: wire['authenticated'],
     authMethod: wire['auth_method'],
-    organizationId: wire['organization_id'],
     environment:
       wire['environment'] == null
         ? (wire['environment'] as undefined)

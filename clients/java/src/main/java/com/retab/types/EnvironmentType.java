@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum EnvironmentResponseType {
+public enum EnvironmentType {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
   PRODUCTION("production"),
@@ -14,7 +14,7 @@ public enum EnvironmentResponseType {
 
   private final String value;
 
-  EnvironmentResponseType(String value) {
+  EnvironmentType(String value) {
     this.value = value;
   }
 
@@ -24,8 +24,8 @@ public enum EnvironmentResponseType {
   }
 
   @JsonCreator
-  public static EnvironmentResponseType fromValue(String value) {
-    for (EnvironmentResponseType item : values()) {
+  public static EnvironmentType fromValue(String value) {
+    for (EnvironmentType item : values()) {
       if (item.value.equals(value)) {
         return item;
       }

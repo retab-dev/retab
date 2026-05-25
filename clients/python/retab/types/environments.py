@@ -7,39 +7,33 @@ from typing import cast
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class EnvironmentResponseType(str, Enum):
+class EnvironmentType(str, Enum):
     PRODUCTION = "production"
     NON_PRODUCTION = "non_production"
 
 
-EnvironmentCreateRequestType = EnvironmentResponseType
+EnvironmentCreateRequestType = EnvironmentType
+
+
+class Environment(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    id: str
+    name: str
+    type: EnvironmentType
+    is_default: bool | None = Field(default=False)
+    created_at: datetime.datetime | None = None
+    updated_at: datetime.datetime | None = None
 
 
 class EnvironmentCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     name: str
-    type: EnvironmentResponseType | None = Field(default=cast(EnvironmentResponseType, "non_production"))
+    type: EnvironmentType | None = Field(default=cast(EnvironmentType, "non_production"))
 
 
-class EnvironmentListResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    environments: list[EnvironmentResponse] | None = None
-
-
-class EnvironmentResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str
-    name: str
-    type: EnvironmentResponseType
-    is_default: bool | None = Field(default=False)
-    created_at: datetime.datetime | None = None
-    updated_at: datetime.datetime | None = None
-
-
-class EnvironmentUpdateRequest(BaseModel):
+class UpdateEnvironmentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
 
     name: str | None = None
@@ -50,7 +44,6 @@ class EnvironmentUpdateRequest(BaseModel):
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
+Environment.model_rebuild()
 EnvironmentCreateRequest.model_rebuild()
-EnvironmentListResponse.model_rebuild()
-EnvironmentResponse.model_rebuild()
-EnvironmentUpdateRequest.model_rebuild()
+UpdateEnvironmentRequest.model_rebuild()

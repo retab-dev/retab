@@ -12,7 +12,7 @@ module Retab
     sig do
       params(
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::AuthStatusResponse)
+      ).returns(Retab::AuthStatus)
     end
     def list_status(request_options:); end
 

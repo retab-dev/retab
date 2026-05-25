@@ -14,13 +14,8 @@ type EnvironmentService struct {
 }
 
 // List organization Environments
-func (s *EnvironmentService) List(ctx context.Context, opts ...RequestOption) (*EnvironmentListResponse, error) {
-	var result EnvironmentListResponse
-	_, err := s.client.request(ctx, "GET", "/v1/environments", nil, nil, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+func (s *EnvironmentService) List(ctx context.Context, opts ...RequestOption) (*PaginatedList[Environment], error) {
+	return doPaginated[Environment](ctx, s.client, "GET", "/v1/environments", nil, nil, opts...)
 }
 
 // EnvironmentsCreateParams contains the parameters for Create.
@@ -30,8 +25,8 @@ type EnvironmentsCreateParams struct {
 }
 
 // Create organization Environment
-func (s *EnvironmentService) Create(ctx context.Context, params *EnvironmentsCreateParams, opts ...RequestOption) (*EnvironmentResponse, error) {
-	var result EnvironmentResponse
+func (s *EnvironmentService) Create(ctx context.Context, params *EnvironmentsCreateParams, opts ...RequestOption) (*Environment, error) {
+	var result Environment
 	_, err := s.client.request(ctx, "POST", "/v1/environments", nil, params, &result, opts)
 	if err != nil {
 		return nil, err
@@ -40,11 +35,11 @@ func (s *EnvironmentService) Create(ctx context.Context, params *EnvironmentsCre
 }
 
 // Get organization Environment
-func (s *EnvironmentService) Get(ctx context.Context, environmentID string, opts ...RequestOption) (*EnvironmentResponse, error) {
+func (s *EnvironmentService) Get(ctx context.Context, environmentID string, opts ...RequestOption) (*Environment, error) {
 	if environmentID == "" {
 		return nil, fmt.Errorf("retab: environment_id is required")
 	}
-	var result EnvironmentResponse
+	var result Environment
 	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/environments/%s", url.PathEscape(environmentID)), nil, nil, &result, opts)
 	if err != nil {
 		return nil, err
@@ -58,11 +53,11 @@ type EnvironmentsUpdateParams struct {
 }
 
 // Update organization Environment
-func (s *EnvironmentService) Update(ctx context.Context, environmentID string, params *EnvironmentsUpdateParams, opts ...RequestOption) (*EnvironmentResponse, error) {
+func (s *EnvironmentService) Update(ctx context.Context, environmentID string, params *EnvironmentsUpdateParams, opts ...RequestOption) (*Environment, error) {
 	if environmentID == "" {
 		return nil, fmt.Errorf("retab: environment_id is required")
 	}
-	var result EnvironmentResponse
+	var result Environment
 	_, err := s.client.request(ctx, "PATCH", fmt.Sprintf("/v1/environments/%s", url.PathEscape(environmentID)), nil, params, &result, opts)
 	if err != nil {
 		return nil, err

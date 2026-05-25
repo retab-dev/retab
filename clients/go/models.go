@@ -115,6 +115,23 @@ type AssertionSpec struct {
 	Label     *string         `json:"label,omitempty"`
 }
 
+// AuthStatus represents an auth status.
+type AuthStatus struct {
+	Authenticated bool                   `json:"authenticated,omitempty"`
+	AuthMethod    string                 `json:"auth_method"`
+	Environment   *AuthStatusEnvironment `json:"environment,omitempty"`
+	Key           *AuthStatusKey         `json:"key,omitempty"`
+}
+
+// UnmarshalJSON applies spec-declared defaults to optional fields the
+// server may omit, so callers can read them directly without
+// nil-checks or zero-value second-guessing.
+func (r *AuthStatus) UnmarshalJSON(data []byte) error {
+	r.Authenticated = true
+	type alias AuthStatus
+	return json.Unmarshal(data, (*alias)(r))
+}
+
 // AuthStatusEnvironment represents an auth status environment.
 type AuthStatusEnvironment struct {
 	ID   string                     `json:"id"`
@@ -126,24 +143,6 @@ type AuthStatusEnvironment struct {
 type AuthStatusKey struct {
 	Prefix *string `json:"prefix,omitempty"`
 	Name   *string `json:"name,omitempty"`
-}
-
-// AuthStatusResponse represents an auth status response.
-type AuthStatusResponse struct {
-	Authenticated  bool                   `json:"authenticated,omitempty"`
-	AuthMethod     string                 `json:"auth_method"`
-	OrganizationID *string                `json:"organization_id,omitempty"`
-	Environment    *AuthStatusEnvironment `json:"environment,omitempty"`
-	Key            *AuthStatusKey         `json:"key,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *AuthStatusResponse) UnmarshalJSON(data []byte) error {
-	r.Authenticated = true
-	type alias AuthStatusResponse
-	return json.Unmarshal(data, (*alias)(r))
 }
 
 // AwaitingReviewRun the run is paused on at least one gated block.
@@ -781,19 +780,14 @@ type EndsWithCondition struct {
 	Expected string  `json:"expected"`
 }
 
-// EnvironmentListResponse represents an environment list response.
-type EnvironmentListResponse struct {
-	Environments []*EnvironmentResponse `json:"environments,omitempty"`
-}
-
-// EnvironmentResponse represents an environment response.
-type EnvironmentResponse struct {
-	ID        string                  `json:"id"`
-	Name      string                  `json:"name"`
-	Type      EnvironmentResponseType `json:"type"`
-	IsDefault *bool                   `json:"is_default,omitempty"`
-	CreatedAt *time.Time              `json:"created_at,omitempty"`
-	UpdatedAt *time.Time              `json:"updated_at,omitempty"`
+// Environment represents an environment.
+type Environment struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Type      EnvironmentType `json:"type"`
+	IsDefault *bool           `json:"is_default,omitempty"`
+	CreatedAt *time.Time      `json:"created_at,omitempty"`
+	UpdatedAt *time.Time      `json:"updated_at,omitempty"`
 }
 
 // EqualCondition represents an equal condition.

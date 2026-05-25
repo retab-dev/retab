@@ -7,11 +7,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class EnvironmentUpdateRequest {
+public final class UpdateEnvironmentRequest {
   private final String name;
 
   @JsonCreator
-  public EnvironmentUpdateRequest(@JsonProperty(value = "name", required = false) String name) {
+  public UpdateEnvironmentRequest(@JsonProperty(value = "name", required = false) String name) {
     this.name = name;
   }
 

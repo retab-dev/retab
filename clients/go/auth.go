@@ -12,8 +12,8 @@ type AuthService struct {
 }
 
 // ListStatus get Auth Status
-func (s *AuthService) ListStatus(ctx context.Context, opts ...RequestOption) (*AuthStatusResponse, error) {
-	var result AuthStatusResponse
+func (s *AuthService) ListStatus(ctx context.Context, opts ...RequestOption) (*AuthStatus, error) {
+	var result AuthStatus
 	_, err := s.client.request(ctx, "GET", "/v1/auth/status", nil, nil, &result, opts)
 	if err != nil {
 		return nil, err

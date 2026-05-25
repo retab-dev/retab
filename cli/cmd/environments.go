@@ -194,14 +194,14 @@ var envUpdateCmd = &cobra.Command{
 	}),
 }
 
-func printEnvironmentList(cmd *cobra.Command, result *retab.EnvironmentListResponse) error {
+func printEnvironmentList(cmd *cobra.Command, result *retab.PaginatedList[retab.Environment]) error {
 	format, err := ResolveOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
 	}
 	if format == OutputTable {
 		cfg, _ := loadConfig()
-		return RenderList(os.Stdout, format, map[string]any{"data": result.Environments}, environmentTableColumns(selectedEnvironmentID(cmd, cfg)))
+		return RenderList(os.Stdout, format, map[string]any{"data": result.Data}, environmentTableColumns(selectedEnvironmentID(cmd, cfg)))
 	}
 	return printResult(cmd, result)
 }
@@ -222,7 +222,7 @@ func environmentTableColumns(activeEnvironmentID string) []TableColumn {
 }
 
 func environmentCell(row any, field string) string {
-	if environment, ok := row.(*retab.EnvironmentResponse); ok && environment != nil {
+	if environment, ok := row.(*retab.Environment); ok && environment != nil {
 		switch field {
 		case "id":
 			return environment.ID
@@ -243,16 +243,14 @@ func environmentCell(row any, field string) string {
 	return ""
 }
 
-func resolveEnvironmentSelection(raw string, list *retab.EnvironmentListResponse) (*retab.EnvironmentResponse, error) {
+func resolveEnvironmentSelection(raw string, list *retab.PaginatedList[retab.Environment]) (*retab.Environment, error) {
 	needle := strings.TrimSpace(raw)
 	if needle == "" {
 		return nil, fmt.Errorf("environment id or name is required")
 	}
-	var nameMatches []*retab.EnvironmentResponse
-	for _, environment := range list.Environments {
-		if environment == nil {
-			continue
-		}
+	var nameMatches []*retab.Environment
+	for i := range list.Data {
+		environment := &list.Data[i]
 		if environment.ID == needle {
 			return environment, nil
 		}

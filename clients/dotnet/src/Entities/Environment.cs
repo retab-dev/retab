@@ -4,8 +4,8 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents an environment response.</summary>
-    public class EnvironmentResponse
+    /// <summary>Represents an environment.</summary>
+    public class Environment
     {
         public string Id { get; set; } = default!;
         public string Name { get; set; } = default!;

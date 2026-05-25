@@ -20,14 +20,14 @@ namespace Retab
         /// <summary>List Organization Environments</summary>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="EnvironmentListResponse"/> result.</returns>
-        public virtual async Task<EnvironmentListResponse> ListAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>A page of <see cref="Environment"/> results.</returns>
+        public virtual async Task<PaginatedList<Environment>> ListAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<EnvironmentListResponse>("/v1/environments", null, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<Environment>("/v1/environments", null, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<EnvironmentListResponse> List(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<Environment>> List(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.ListAsync(requestOptions, cancellationToken);
         }
@@ -36,14 +36,14 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="EnvironmentResponse"/> result.</returns>
-        public virtual async Task<EnvironmentResponse> CreateAsync(EnvironmentsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>The <see cref="Environment"/> result.</returns>
+        public virtual async Task<Environment> CreateAsync(EnvironmentsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.PostAsync<EnvironmentResponse>("/v1/environments", options, requestOptions, cancellationToken);
+            return await this.PostAsync<Environment>("/v1/environments", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
-        public virtual Task<EnvironmentResponse> Create(EnvironmentsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Environment> Create(EnvironmentsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
@@ -52,14 +52,14 @@ namespace Retab
         /// <param name="environmentId">The environment id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="EnvironmentResponse"/> result.</returns>
-        public virtual async Task<EnvironmentResponse> GetAsync(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>The <see cref="Environment"/> result.</returns>
+        public virtual async Task<Environment> GetAsync(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<EnvironmentResponse>($"/v1/environments/{Uri.EscapeDataString(environmentId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Environment>($"/v1/environments/{Uri.EscapeDataString(environmentId)}", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<EnvironmentResponse> Get(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Environment> Get(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.GetAsync(environmentId, requestOptions, cancellationToken);
         }
@@ -69,14 +69,14 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="EnvironmentResponse"/> result.</returns>
-        public virtual async Task<EnvironmentResponse> UpdateAsync(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>The <see cref="Environment"/> result.</returns>
+        public virtual async Task<Environment> UpdateAsync(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.PatchAsync<EnvironmentResponse>($"/v1/environments/{Uri.EscapeDataString(environmentId)}", options, requestOptions, cancellationToken);
+            return await this.PatchAsync<Environment>($"/v1/environments/{Uri.EscapeDataString(environmentId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="UpdateAsync"/>.</summary>
-        public virtual Task<EnvironmentResponse> Update(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Environment> Update(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.UpdateAsync(environmentId, options, requestOptions, cancellationToken);
         }

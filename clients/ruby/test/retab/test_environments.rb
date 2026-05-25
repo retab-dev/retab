@@ -13,9 +13,9 @@ class EnvironmentsTest < Minitest::Test
 
   def test_list_environments_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/environments(\?|\z)})
-      .to_return(body: "{}", status: 200)
+      .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
     result = @client.environments.list_environments
-    refute_nil(result)
+    assert_kind_of(Retab::PaginatedList, result)
   end
 
   def test_create_environment_returns_expected_result
@@ -43,7 +43,7 @@ class EnvironmentsTest < Minitest::Test
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
     result = @client.environments.delete_environment(environment_id: "stub")
-    refute_nil(result)
+    assert_nil(result)
   end
 
   # Parameterized authentication error tests (one per endpoint).

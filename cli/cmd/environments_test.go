@@ -13,9 +13,9 @@ import (
 )
 
 func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
-	list := &retab.EnvironmentListResponse{Environments: []*retab.EnvironmentResponse{
-		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentResponseType("production")},
-		{ID: "Production", Name: "Shadow", Type: retab.EnvironmentResponseType("non_production")},
+	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
+		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
+		{ID: "Production", Name: "Shadow", Type: retab.EnvironmentType("non_production")},
 	}}
 
 	got, err := resolveEnvironmentSelection("Production", list)
@@ -28,9 +28,9 @@ func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
 }
 
 func TestResolveEnvironmentSelectionRejectsAmbiguousName(t *testing.T) {
-	list := &retab.EnvironmentListResponse{Environments: []*retab.EnvironmentResponse{
-		{ID: "env_1", Name: "Staging", Type: retab.EnvironmentResponseType("non_production")},
-		{ID: "env_2", Name: "Staging", Type: retab.EnvironmentResponseType("non_production")},
+	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
+		{ID: "env_1", Name: "Staging", Type: retab.EnvironmentType("non_production")},
+		{ID: "env_2", Name: "Staging", Type: retab.EnvironmentType("non_production")},
 	}}
 
 	_, err := resolveEnvironmentSelection("Staging", list)
@@ -126,15 +126,15 @@ func TestEnvAddValidatesType(t *testing.T) {
 }
 
 func TestEnvironmentListJSONShape(t *testing.T) {
-	result := &retab.EnvironmentListResponse{Environments: []*retab.EnvironmentResponse{
-		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentResponseType("production")},
+	result := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
+		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
 	}}
 	raw, err := json.Marshal(result)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	if !strings.Contains(string(raw), `"environments"`) {
-		t.Fatalf("environment list should preserve generated envelope, got %s", raw)
+	if !strings.Contains(string(raw), `"data"`) {
+		t.Fatalf("environment list should use pagination envelope, got %s", raw)
 	}
 }
 

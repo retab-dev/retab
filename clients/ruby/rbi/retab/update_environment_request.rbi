@@ -5,15 +5,15 @@
 # typed: strong
 
 module Retab
-  class EnvironmentListResponse
+  class UpdateEnvironmentRequest
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(T.nilable(T::Array[Retab::EnvironmentResponse])) }
-    def environments; end
+    sig { returns(T.nilable(String)) }
+    def name; end
 
-    sig { params(value: T.nilable(T::Array[Retab::EnvironmentResponse])).returns(T.nilable(T::Array[Retab::EnvironmentResponse])) }
-    def environments=(value); end
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def name=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
