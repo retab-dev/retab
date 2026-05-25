@@ -16,6 +16,8 @@ namespace Retab
         Resumed,
         [EnumMember(Value = "pending")]
         Pending,
+        [EnumMember(Value = "failed")]
+        Failed,
         [EnumMember(Value = "skipped")]
         Skipped,
     }

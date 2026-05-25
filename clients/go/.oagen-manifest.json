@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-25T21:38:25.381Z",
+  "generatedAt": "2026-05-25T22:12:28.607Z",
   "files": [
     "auth.go",
     "classifications.go",
