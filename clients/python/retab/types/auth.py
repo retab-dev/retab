@@ -72,6 +72,7 @@ class JobsEndpoint(str, Enum):
     V_1_CLASSIFICATIONS = "/v1/classifications"
     V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
     V_1_EDITS = "/v1/edits"
+    V_1_EDITS_TEMPLATES = "/v1/edits/templates"
     V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
     V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
     V_1_EVALS_EXTRACT_EXTRACT = "/v1/evals/extract/extract"
