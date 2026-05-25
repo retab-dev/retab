@@ -2,6 +2,6 @@
 
 import { z } from 'zod';
 
-export type ResumeStatus = 'resumed' | 'pending' | 'skipped';
+export type ResumeStatus = 'resumed' | 'pending' | 'failed' | 'skipped';
 
-export const ZResumeStatus = z.enum(['resumed', 'pending', 'skipped'] as const);
+export const ZResumeStatus = z.enum(['resumed', 'pending', 'failed', 'skipped'] as const);
