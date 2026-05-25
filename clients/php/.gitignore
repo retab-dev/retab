@@ -14,6 +14,7 @@ lib/*
 !lib/Exception/
 lib/Exception/*
 !lib/Exception/RetabException.php
+!lib/Client.php
 !lib/HttpClient.php
 !lib/PaginatedResponse.php
 !lib/RequestOptions.php
