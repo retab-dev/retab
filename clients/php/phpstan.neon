@@ -5,6 +5,7 @@ parameters:
     level: 6
     paths:
         - lib
+    reportUnmatchedIgnoredErrors: false
     excludePaths:
         # Generated PHPUnit tests reference hand-maintained helpers and
         # fixture JSON files; analyzing them under level 6 trips false
