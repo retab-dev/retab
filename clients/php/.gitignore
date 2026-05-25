@@ -7,3 +7,14 @@ composer.lock
 .DS_Store
 .idea/
 .vscode/
+
+# Hand-maintained runtime files that support generated services.
+!lib/
+lib/*
+!lib/Exception/
+lib/Exception/*
+!lib/Exception/RetabException.php
+!lib/HttpClient.php
+!lib/PaginatedResponse.php
+!lib/RequestOptions.php
+!lib/TestHelper.php
