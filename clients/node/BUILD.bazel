@@ -1,0 +1,38 @@
+load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "bun.lock",
+        "package.json",
+        "tsconfig.json",
+    ]),
+)
+
+sh_test(
+    name = "format_check",
+    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    args = ["format_check"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS,
+)
+
+sh_test(
+    name = "lint",
+    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    args = ["lint"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS,
+)
+
+sh_test(
+    name = "test",
+    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    args = ["test"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS,
+)
