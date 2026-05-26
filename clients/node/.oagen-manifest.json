@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-05-25T22:51:16.982Z",
+  "generatedAt": "2026-05-26T08:53:13.098Z",
   "files": [
     "src/_pagination.ts",
     "src/auth/auth.ts",
@@ -66,7 +66,6 @@
     "src/environments/interfaces/environment-type.interface.ts",
     "src/environments/interfaces/environment.interface.ts",
     "src/environments/interfaces/index.ts",
-    "src/environments/interfaces/update-environment-request.interface.ts",
     "src/extractions/extractions.ts",
     "src/extractions/interfaces/extraction-consensus.interface.ts",
     "src/extractions/interfaces/extraction-request.interface.ts",

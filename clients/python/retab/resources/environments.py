@@ -6,7 +6,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
-from retab.types.environments import Environment, EnvironmentCreateRequest, EnvironmentCreateRequestType, UpdateEnvironmentRequest
+from retab.types.environments import Environment, EnvironmentCreateRequest, EnvironmentCreateRequestType
 
 
 class EnvironmentsMixin:
@@ -44,16 +44,6 @@ class EnvironmentsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/environments/{environment_id}", params=params or None, data=data)
 
-    def prepare_update_environment(self, environment_id: str, name: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Update Organization Environment"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = UpdateEnvironmentRequest(name=cast(Any, name))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="PATCH", url=f"/v1/environments/{environment_id}", params=params or None, data=data)
-
     def prepare_delete_environment(self, environment_id: str, **extra_params: Any) -> PreparedRequest:
         """Archive Organization Environment"""
         params: dict[str, Any] = {}
@@ -84,12 +74,6 @@ class Environments(SyncAPIResource, EnvironmentsMixin):
         response = self._client._prepared_request(prepared_request)
         return Environment.model_validate(response)
 
-    def update_environment(self, environment_id: str, name: str | None = None, **extra_params: Any) -> Environment:
-        """Update Organization Environment"""
-        prepared_request = self.prepare_update_environment(environment_id, name=name, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return Environment.model_validate(response)
-
     def delete_environment(self, environment_id: str, **extra_params: Any) -> None:
         """Archive Organization Environment"""
         prepared_request = self.prepare_delete_environment(environment_id, **extra_params)
@@ -114,12 +98,6 @@ class AsyncEnvironments(AsyncAPIResource, EnvironmentsMixin):
     async def get_environment(self, environment_id: str, **extra_params: Any) -> Environment:
         """Get Organization Environment"""
         prepared_request = self.prepare_get_environment(environment_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return Environment.model_validate(response)
-
-    async def update_environment(self, environment_id: str, name: str | None = None, **extra_params: Any) -> Environment:
-        """Update Organization Environment"""
-        prepared_request = self.prepare_update_environment(environment_id, name=name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Environment.model_validate(response)
 

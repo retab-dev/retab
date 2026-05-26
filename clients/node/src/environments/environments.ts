@@ -61,20 +61,6 @@ export class Environments {
     return deserializeEnvironment(__wire);
   }
 
-  /** Update Organization Environment */
-  async update_environment(environmentId: string, name?: string | null): Promise<Environment> {
-    const body = {
-      name: name,
-    };
-    const __wire = await this.client.request<EnvironmentResponse>({
-      method: 'PATCH',
-      path: `/v1/environments/${environmentId}`,
-      query: undefined,
-      body: body,
-    });
-    return deserializeEnvironment(__wire);
-  }
-
   /** Archive Organization Environment */
   async delete_environment(environmentId: string): Promise<void> {
     await this.client.request<unknown>({

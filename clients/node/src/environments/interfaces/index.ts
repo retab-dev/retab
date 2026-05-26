@@ -4,4 +4,3 @@ export * from './environment.interface.js';
 export * from './environment-create-request.interface.js';
 export * from './environment-create-request-type.interface.js';
 export * from './environment-type.interface.js';
-export * from './update-environment-request.interface.js';
