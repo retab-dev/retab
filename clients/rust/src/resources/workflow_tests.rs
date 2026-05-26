@@ -8,6 +8,7 @@ use crate::error::Error;
 use crate::models::*;
 use crate::resources::workflow_test_run_results::WorkflowTestRunResultsApi;
 use crate::resources::workflow_test_runs::WorkflowTestRunsApi;
+#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct WorkflowTestsApi<'a> {

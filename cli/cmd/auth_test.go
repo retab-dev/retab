@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -312,10 +311,10 @@ func TestAddSelectedEnvironmentStatusIncludesSelectedEnvironment(t *testing.T) {
 			t.Fatalf("path = %q, want /v1/environments/env_prod", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(retab.Environment{
+		_ = json.NewEncoder(w).Encode(cliEnvironment{
 			ID:        "env_prod",
 			Name:      "Production",
-			Type:      retab.AuthStatusEnvironmentTypeProduction,
+			Type:      cliEnvironmentTypeProduction,
 			IsDefault: &isDefault,
 		})
 	}))
@@ -374,10 +373,10 @@ func TestSelectOAuthLoginEnvironmentUsesRawOAuthAndPicksDefault(t *testing.T) {
 			t.Fatalf("path = %q, want /v1/environments", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(retab.PaginatedList[retab.Environment]{
-			Data: []retab.Environment{
-				{ID: "env_staging", Name: "Staging", Type: retab.AuthStatusEnvironmentTypeNonProduction},
-				{ID: "env_prod", Name: "Production", Type: retab.AuthStatusEnvironmentTypeProduction, IsDefault: &isDefault},
+		_ = json.NewEncoder(w).Encode(cliPaginatedList[cliEnvironment]{
+			Data: []cliEnvironment{
+				{ID: "env_staging", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+				{ID: "env_prod", Name: "Production", Type: cliEnvironmentTypeProduction, IsDefault: &isDefault},
 			},
 		})
 	}))
@@ -405,10 +404,10 @@ func TestSelectOAuthLoginEnvironmentUsesRawOAuthAndPicksDefault(t *testing.T) {
 
 func TestChooseLoginEnvironmentPreservesExistingSelection(t *testing.T) {
 	isDefault := true
-	list := &retab.PaginatedList[retab.Environment]{
-		Data: []retab.Environment{
-			{ID: "env_staging", Name: "Staging", Type: retab.AuthStatusEnvironmentTypeNonProduction},
-			{ID: "env_prod", Name: "Production", Type: retab.AuthStatusEnvironmentTypeProduction, IsDefault: &isDefault},
+	list := &cliPaginatedList[cliEnvironment]{
+		Data: []cliEnvironment{
+			{ID: "env_staging", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+			{ID: "env_prod", Name: "Production", Type: cliEnvironmentTypeProduction, IsDefault: &isDefault},
 		},
 	}
 

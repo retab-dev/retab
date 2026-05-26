@@ -20,6 +20,8 @@ def test_removed_surfaces_are_not_exposed() -> None:
         assert not hasattr(client, "models")
         assert not hasattr(client, "projects")
         assert not hasattr(client, "evals")
+        assert not hasattr(client, "auth")
+        assert not hasattr(client, "environments")
 
 
 @pytest.mark.parametrize(
@@ -29,8 +31,12 @@ def test_removed_surfaces_are_not_exposed() -> None:
         "retab.resources.models",
         "retab.resources.projects",
         "retab.resources.evals",
+        "retab.resources.auth",
+        "retab.resources.environments",
         "retab.types.projects",
         "retab.types.evals",
+        "retab.types.auth",
+        "retab.types.environments",
     ],
 )
 def test_projects_and_evals_modules_are_removed(module_name: str) -> None:
