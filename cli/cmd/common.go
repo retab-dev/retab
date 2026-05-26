@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -178,6 +179,8 @@ func isGenericAPIErrorMessage(message string) bool {
 // errSilent signals that an API error was already rendered to stderr.
 var errSilent = errors.New("")
 
+const defaultAPIBaseURL = "https://api.retab.com"
+
 type renderedError struct {
 	err error
 }
@@ -230,20 +233,19 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	if baseURL != "" {
 		opts = append(opts, retab.WithBaseURL(baseURL))
 	}
-	if environmentID := selectedEnvironmentHeaderID(cmd, cfg); environmentID != "" {
-		opts = append(opts, retab.WithHeader("X-Retab-Environment-Id", environmentID))
-	}
 
 	// --debug wires a logging RoundTripper into the SDK's HTTP client so
 	// every wire-level request/response is dumped to stderr. The dump
 	// uses httputil so headers + body land in a copy-pasteable format
 	// (curl-equivalent). Bodies stay in memory; for large uploads this
 	// adds RAM pressure — that's fine for a debugging flag.
+	authHTTPClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		opts = append(opts, retab.WithHTTPClient(&http.Client{
+		authHTTPClient = &http.Client{
 			Timeout:   60 * time.Second,
 			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}))
+		}
+		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
 	}
 
 	// Flag/env API key wins outright — the documented CI escape hatch.
@@ -255,7 +257,10 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	// a command that straddles token expiry still gets a fresh token
 	// without rebuilding the Client.
 	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-		opts = append(opts, retab.WithBearerTokenProvider(makeOAuthTokenProvider(cfg.OAuth)))
+		rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
+		opts = append(opts, retab.WithBearerTokenProvider(
+			makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, authHTTPClient),
+		))
 		return retab.NewClient("", opts...)
 	}
 
@@ -281,7 +286,7 @@ func selectedEnvironmentID(cmd *cobra.Command, cfg retabConfig) string {
 	return strings.TrimSpace(cfg.EnvironmentID)
 }
 
-func selectedEnvironmentHeaderID(cmd *cobra.Command, cfg retabConfig) string {
+func selectedEnvironmentContextID(cmd *cobra.Command, cfg retabConfig) string {
 	if isEnvironmentManagementCommand(cmd) {
 		return ""
 	}
@@ -295,6 +300,155 @@ func isEnvironmentManagementCommand(cmd *cobra.Command) bool {
 		}
 	}
 	return false
+}
+
+func makeCLIAuthTokenProvider(
+	cmd *cobra.Command,
+	cfg retabConfig,
+	baseURL string,
+	rawOAuthProvider func(context.Context) (string, error),
+	httpClient *http.Client,
+) func(context.Context) (string, error) {
+	environmentID := selectedEnvironmentContextID(cmd, cfg)
+	if environmentID == "" {
+		return rawOAuthProvider
+	}
+	provider := &dashboardContextTokenProvider{
+		baseURL:          canonicalAPIBaseURL(baseURL),
+		environmentID:    environmentID,
+		rawOAuthProvider: rawOAuthProvider,
+		httpClient:       httpClient,
+	}
+	return provider.Token
+}
+
+func canonicalAPIBaseURL(baseURL string) string {
+	trimmed := strings.TrimSpace(stripLegacyV1Suffix(baseURL))
+	if trimmed == "" {
+		return defaultAPIBaseURL
+	}
+	return trimmed
+}
+
+type dashboardContextTokenProvider struct {
+	baseURL          string
+	environmentID    string
+	rawOAuthProvider func(context.Context) (string, error)
+	httpClient       *http.Client
+
+	mu        sync.Mutex
+	token     string
+	expiresAt time.Time
+}
+
+type dashboardContextTokenResponse struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+	TokenType string    `json:"token_type"`
+}
+
+func (p *dashboardContextTokenProvider) Token(ctx context.Context) (string, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.token != "" && time.Now().Before(p.expiresAt.Add(-refreshLeeway)) {
+		return p.token, nil
+	}
+	rawOAuthToken, err := p.rawOAuthProvider(ctx)
+	if err != nil {
+		return "", err
+	}
+	token, expiresAt, err := mintDashboardContextToken(
+		ctx,
+		p.httpClient,
+		p.baseURL,
+		rawOAuthToken,
+		p.environmentID,
+	)
+	if err != nil {
+		return "", err
+	}
+	p.token = token
+	p.expiresAt = expiresAt
+	return p.token, nil
+}
+
+func mintDashboardContextToken(
+	ctx context.Context,
+	httpClient *http.Client,
+	baseURL string,
+	rawOAuthToken string,
+	environmentID string,
+) (string, time.Time, error) {
+	if strings.TrimSpace(rawOAuthToken) == "" {
+		return "", time.Time{}, fmt.Errorf("OAuth access token is empty")
+	}
+	if strings.TrimSpace(environmentID) == "" {
+		return "", time.Time{}, fmt.Errorf("environment id is required")
+	}
+	requestURL, err := buildCLIRequestURL(baseURL, "/v1/auth/dashboard-context", nil)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	bodyBytes, err := json.Marshal(map[string]any{
+		"environment_id": environmentID,
+	})
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("encode dashboard context request: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL.String(), bytes.NewReader(bodyBytes))
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+rawOAuthToken)
+
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", time.Time{}, retab.ParseAPIError(resp, respBody)
+	}
+	var result dashboardContextTokenResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return "", time.Time{}, fmt.Errorf("decode dashboard context response: %w", err)
+	}
+	if result.Token == "" {
+		return "", time.Time{}, fmt.Errorf("dashboard context response did not include a token")
+	}
+	if result.TokenType != "" && !strings.EqualFold(result.TokenType, "Bearer") {
+		return "", time.Time{}, fmt.Errorf("dashboard context token type %q is not supported", result.TokenType)
+	}
+	if result.ExpiresAt.IsZero() {
+		return "", time.Time{}, fmt.Errorf("dashboard context response did not include expires_at")
+	}
+	return result.Token, result.ExpiresAt, nil
+}
+
+func buildCLIRequestURL(baseURL string, requestPath string, query url.Values) (*url.URL, error) {
+	base, err := url.Parse(strings.TrimRight(canonicalAPIBaseURL(baseURL), "/") + "/")
+	if err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
+	}
+	relative, err := url.Parse(strings.TrimLeft(requestPath, "/"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid request path: %w", err)
+	}
+	requestURL := base.ResolveReference(relative)
+	if query != nil {
+		requestURL.RawQuery = query.Encode()
+	}
+	return requestURL, nil
 }
 
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
@@ -324,14 +478,26 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		baseURL = cfg.BaseURL
 	}
 	if baseURL == "" {
-		baseURL = "https://api.retab.com"
+		baseURL = defaultAPIBaseURL
 	}
 	baseURL = stripLegacyV1Suffix(baseURL)
+
+	httpClient := http.DefaultClient
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		httpClient = &http.Client{
+			Timeout:   60 * time.Second,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
 
 	var bearerToken string
 	if apiKey == "" {
 		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-			token, err := makeOAuthTokenProvider(cfg.OAuth)(cmd.Context())
+			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
+			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -356,21 +522,11 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		reader = bytes.NewReader(bodyBytes)
 	}
 
-	base, err := url.Parse(strings.TrimRight(baseURL, "/") + "/")
+	requestURL, err := buildCLIRequestURL(baseURL, requestPath, query)
 	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-	relative, err := url.Parse(strings.TrimLeft(requestPath, "/"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid request path: %w", err)
-	}
-	requestURL := base.ResolveReference(relative)
-	if query != nil {
-		requestURL.RawQuery = query.Encode()
+		return nil, err
 	}
 
-	ctx, cancel := ctxFor(cmd)
-	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, method, requestURL.String(), reader)
 	if err != nil {
 		return nil, err
@@ -383,17 +539,6 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	} else {
 		req.Header.Set("Api-Key", apiKey)
-	}
-	if environmentID := selectedEnvironmentHeaderID(cmd, cfg); environmentID != "" {
-		req.Header.Set("X-Retab-Environment-Id", environmentID)
-	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {

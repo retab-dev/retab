@@ -22,8 +22,10 @@ type retabConfig struct {
 	BaseURL string `json:"base_url,omitempty"`
 
 	// EnvironmentID is the dashboard/API environment selected for OAuth
-	// sessions. API keys are already environment-scoped server-side, so this
-	// is primarily for user sessions and local development workflows.
+	// sessions. OAuth-backed API requests mint a short-lived Retab dashboard
+	// context token for this environment. API keys are already
+	// environment-scoped server-side, so this is primarily for user sessions
+	// and local development workflows.
 	EnvironmentID string `json:"environment_id,omitempty"`
 
 	// OAuth holds tokens issued by WorkOS via `retab auth login`. Optional.
