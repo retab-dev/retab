@@ -32,20 +32,6 @@ class EnvironmentsTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_update_environment_returns_expected_result
-    stub_request(:patch, %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.environments.update_environment(environment_id: "stub")
-    refute_nil(result)
-  end
-
-  def test_delete_environment_returns_expected_result
-    stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.environments.delete_environment(environment_id: "stub")
-    assert_nil(result)
-  end
-
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list_environments, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/environments(\?|\z)}},
@@ -58,18 +44,6 @@ class EnvironmentsTest < Minitest::Test
     {
       name: :get_environment,
       verb: :get,
-      url: %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)},
-      args: {environment_id: "stub"}
-    },
-    {
-      name: :update_environment,
-      verb: :patch,
-      url: %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)},
-      args: {environment_id: "stub"}
-    },
-    {
-      name: :delete_environment,
-      verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/environments/stub(\?|\z)},
       args: {environment_id: "stub"}
     }

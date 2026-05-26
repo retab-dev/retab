@@ -52,23 +52,6 @@ impl CreateEnvironmentParams {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct UpdateEnvironmentParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: UpdateEnvironmentRequest,
-}
-
-impl UpdateEnvironmentParams {
-    /// Construct a new `UpdateEnvironmentParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: UpdateEnvironmentRequest) -> Self {
-        Self { body }
-    }
-}
-
 impl<'a> EnvironmentsApi<'a> {
     /// List Organization Environments
     pub async fn list_environments(
@@ -129,51 +112,6 @@ impl<'a> EnvironmentsApi<'a> {
         let method = http::Method::GET;
         self.client
             .request_with_query_opts(method, &path, &(), options)
-            .await
-    }
-
-    /// Update Organization Environment
-    pub async fn update_environment(
-        &self,
-        environment_id: &str,
-        params: UpdateEnvironmentParams,
-    ) -> Result<Environment, Error> {
-        self.update_environment_with_options(environment_id, params, None)
-            .await
-    }
-
-    /// Variant of [`Self::update_environment`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn update_environment_with_options(
-        &self,
-        environment_id: &str,
-        params: UpdateEnvironmentParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<Environment, Error> {
-        let environment_id = crate::client::path_segment(environment_id);
-        let path = format!("/v1/environments/{environment_id}");
-        let method = http::Method::PATCH;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
-            .await
-    }
-
-    /// Archive Organization Environment
-    pub async fn delete_environment(&self, environment_id: &str) -> Result<(), Error> {
-        self.delete_environment_with_options(environment_id, None)
-            .await
-    }
-
-    /// Variant of [`Self::delete_environment`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn delete_environment_with_options(
-        &self,
-        environment_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
-        let environment_id = crate::client::path_segment(environment_id);
-        let path = format!("/v1/environments/{environment_id}");
-        let method = http::Method::DELETE;
-        self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
             .await
     }
 }

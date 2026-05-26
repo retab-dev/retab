@@ -2943,16 +2943,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_update_environment_request_round_trip
-    fixture = {
-      "name" => nil
-    }
-    model = Retab::UpdateEnvironmentRequest.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_update_experiment_request_round_trip
     fixture = {
       "document_captures" => nil,

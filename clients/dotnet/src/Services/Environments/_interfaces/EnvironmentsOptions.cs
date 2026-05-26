@@ -18,11 +18,4 @@ namespace Retab
         public AuthStatusEnvironmentType? Type { get; set; }
 
     }
-
-    /// <summary>Request options for <see cref="EnvironmentsService.UpdateAsync"/>: Update Organization Environment</summary>
-    public class EnvironmentsUpdateOptions : BaseOptions
-    {
-        public string? Name { get; set; }
-
-    }
 }

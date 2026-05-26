@@ -22,6 +22,9 @@ remain scoped by the server-side key record.`,
 	Example: `  # List environments and see the active local selection
   retab env list
 
+  # Show the selected local environment
+  retab env which
+
   # Create a non-production environment
   retab env add --name Staging --type non_production
 
@@ -29,10 +32,7 @@ remain scoped by the server-side key record.`,
   retab env switch Staging
 
   # WorkOS-style synonym for selecting a local environment
-  retab env claim environment_staging
-
-  # Archive an environment
-  retab env remove environment_abc123 --yes`,
+  retab env claim env_staging`,
 }
 
 var envListCmd = &cobra.Command{
@@ -87,34 +87,6 @@ var envAddCmd = &cobra.Command{
 	}),
 }
 
-var envRemoveCmd = &cobra.Command{
-	Use:   "remove <environment-id>",
-	Short: "Archive an environment",
-	Args:  cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "environment", args[0]); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Environments.Delete(ctx, args[0]); err != nil {
-			return err
-		}
-		cfg, _ := loadConfig()
-		if cfg.EnvironmentID == args[0] {
-			cfg.EnvironmentID = ""
-			if err := saveConfig(cfg); err != nil {
-				return err
-			}
-		}
-		return nil
-	}),
-}
-
 var envSwitchCmd = &cobra.Command{
 	Use:   "switch <environment-id-or-name>",
 	Short: "Select the environment used by CLI requests",
@@ -144,6 +116,39 @@ var envSwitchCmd = &cobra.Command{
 	}),
 }
 
+type selectedEnvironment struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	IsDefault bool   `json:"is_default"`
+	Source    string `json:"source"`
+}
+
+var envWhichCmd = &cobra.Command{
+	Use:   "which",
+	Short: "Show the selected environment",
+	Args:  cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		cfg, _ := loadConfig()
+		environmentID, source := selectedEnvironmentIDWithSource(cmd, cfg)
+		if environmentID == "" {
+			return fmt.Errorf("no environment selected. Run `retab env switch <environment-id-or-name>`")
+		}
+
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		environment, err := client.Environments.Get(ctx, environmentID)
+		if err != nil {
+			return err
+		}
+		return printSelectedEnvironment(cmd, environment, source)
+	}),
+}
+
 var envClaimCmd = &cobra.Command{
 	Use:   "claim <environment-id-or-name>",
 	Short: "Claim an environment for this local CLI config",
@@ -164,30 +169,6 @@ var envGetCmd = &cobra.Command{
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		result, err := client.Environments.Get(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
-var envUpdateCmd = &cobra.Command{
-	Use:    "update <environment-id>",
-	Short:  "Update an environment",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		name, err := requireNonBlankFlag(cmd, "name")
-		if err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Environments.Update(ctx, args[0], &retab.EnvironmentsUpdateParams{Name: &name})
 		if err != nil {
 			return err
 		}
@@ -259,6 +240,82 @@ func environmentStructCell(environment retab.Environment, field string) string {
 	}
 }
 
+func printSelectedEnvironment(cmd *cobra.Command, environment *retab.Environment, source string) error {
+	format, err := ResolveOutputFormat(cmd, cmd.OutOrStdout())
+	if err != nil {
+		return err
+	}
+	isDefault := false
+	if environment.IsDefault != nil {
+		isDefault = *environment.IsDefault
+	}
+	selection := selectedEnvironment{
+		ID:        environment.ID,
+		Name:      environment.Name,
+		Type:      string(environment.Type),
+		IsDefault: isDefault,
+		Source:    source,
+	}
+	if format == OutputTable {
+		return RenderList(
+			cmd.OutOrStdout(),
+			format,
+			map[string]any{"data": []selectedEnvironment{selection}},
+			selectedEnvironmentTableColumns(),
+		)
+	}
+	return renderJSON(cmd.OutOrStdout(), selection)
+}
+
+func selectedEnvironmentTableColumns() []TableColumn {
+	return []TableColumn{
+		{Header: "ID", Extract: func(row any) string { return selectedEnvironmentCell(row, "id") }},
+		{Header: "NAME", Extract: func(row any) string { return selectedEnvironmentCell(row, "name") }},
+		{Header: "TYPE", Extract: func(row any) string { return selectedEnvironmentCell(row, "type") }},
+		{Header: "DEFAULT", Extract: func(row any) string { return selectedEnvironmentCell(row, "is_default") }},
+		{Header: "SOURCE", Extract: func(row any) string { return selectedEnvironmentCell(row, "source") }},
+	}
+}
+
+func selectedEnvironmentCell(row any, field string) string {
+	if selection, ok := row.(selectedEnvironment); ok {
+		return selectedEnvironmentStructCell(selection, field)
+	}
+	if selection, ok := row.(*selectedEnvironment); ok && selection != nil {
+		return selectedEnvironmentStructCell(*selection, field)
+	}
+	if value, ok := rowField(row, field); ok {
+		if field == "is_default" {
+			if isDefault, ok := value.(bool); ok && isDefault {
+				return "true"
+			}
+			return ""
+		}
+		return stringifyCell(value)
+	}
+	return ""
+}
+
+func selectedEnvironmentStructCell(selection selectedEnvironment, field string) string {
+	switch field {
+	case "id":
+		return selection.ID
+	case "name":
+		return selection.Name
+	case "type":
+		return selection.Type
+	case "is_default":
+		if selection.IsDefault {
+			return "true"
+		}
+		return ""
+	case "source":
+		return selection.Source
+	default:
+		return ""
+	}
+}
+
 func resolveEnvironmentSelection(raw string, list *retab.PaginatedList[retab.Environment]) (*retab.Environment, error) {
 	needle := strings.TrimSpace(raw)
 	if needle == "" {
@@ -286,8 +343,6 @@ func resolveEnvironmentSelection(raw string, list *retab.PaginatedList[retab.Env
 func init() {
 	envAddCmd.Flags().String("name", "", "environment name")
 	envAddCmd.Flags().String("type", "non_production", "environment type: production | non_production")
-	envRemoveCmd.Flags().Bool("yes", false, "confirm deletion without prompting")
-	envUpdateCmd.Flags().String("name", "", "environment name")
 
 	envCreateAliasCmd := &cobra.Command{
 		Use:    "create",
@@ -299,15 +354,6 @@ func init() {
 	envCreateAliasCmd.Flags().String("name", "", "environment name")
 	envCreateAliasCmd.Flags().String("type", "non_production", "environment type: production | non_production")
 
-	envDeleteAliasCmd := &cobra.Command{
-		Use:    "delete <environment-id>",
-		Short:  envRemoveCmd.Short,
-		Hidden: true,
-		Args:   envRemoveCmd.Args,
-		RunE:   envRemoveCmd.RunE,
-	}
-	envDeleteAliasCmd.Flags().Bool("yes", false, "confirm deletion without prompting")
-
-	envCmd.AddCommand(envListCmd, envAddCmd, envRemoveCmd, envSwitchCmd, envClaimCmd, envGetCmd, envUpdateCmd, envCreateAliasCmd, envDeleteAliasCmd)
+	envCmd.AddCommand(envListCmd, envAddCmd, envSwitchCmd, envWhichCmd, envClaimCmd, envGetCmd, envCreateAliasCmd)
 	rootCmd.AddCommand(envCmd)
 }

@@ -273,17 +273,25 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 }
 
 func selectedEnvironmentID(cmd *cobra.Command, cfg retabConfig) string {
+	environmentID, _ := selectedEnvironmentIDWithSource(cmd, cfg)
+	return environmentID
+}
+
+func selectedEnvironmentIDWithSource(cmd *cobra.Command, cfg retabConfig) (string, string) {
 	flagValue := ""
 	if cmd != nil && cmd.Root() != nil {
 		flagValue, _ = cmd.Root().PersistentFlags().GetString("environment-id")
 	}
 	if strings.TrimSpace(flagValue) != "" {
-		return strings.TrimSpace(flagValue)
+		return strings.TrimSpace(flagValue), "--environment-id flag"
 	}
 	if envValue := strings.TrimSpace(os.Getenv("RETAB_ENVIRONMENT_ID")); envValue != "" {
-		return envValue
+		return envValue, "RETAB_ENVIRONMENT_ID env"
 	}
-	return strings.TrimSpace(cfg.EnvironmentID)
+	if strings.TrimSpace(cfg.EnvironmentID) != "" {
+		return strings.TrimSpace(cfg.EnvironmentID), "~/.retab/config.json"
+	}
+	return "", ""
 }
 
 func selectedEnvironmentContextID(cmd *cobra.Command, cfg retabConfig) string {

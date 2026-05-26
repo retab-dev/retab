@@ -60,14 +60,4 @@ export class Environments {
     });
     return deserializeEnvironment(__wire);
   }
-
-  /** Archive Organization Environment */
-  async delete_environment(environmentId: string): Promise<void> {
-    await this.client.request<unknown>({
-      method: 'DELETE',
-      path: `/v1/environments/${environmentId}`,
-      query: undefined,
-      body: undefined,
-    });
-  }
 }

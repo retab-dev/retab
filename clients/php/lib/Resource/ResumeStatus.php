@@ -10,5 +10,6 @@ enum ResumeStatus: string
 {
     case Resumed = 'resumed';
     case Pending = 'pending';
+    case Failed = 'failed';
     case Skipped = 'skipped';
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-25T22:12:28.607Z",
+  "generatedAt": "2026-05-26T15:30:53.317Z",
   "files": [
     "auth.go",
     "classifications.go",
@@ -57,14 +57,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "Get",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "Update",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "Delete",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {

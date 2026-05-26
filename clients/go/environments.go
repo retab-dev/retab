@@ -51,30 +51,3 @@ func (s *EnvironmentService) Get(ctx context.Context, environmentID string, opts
 	}
 	return &result, nil
 }
-
-// EnvironmentsUpdateParams contains the parameters for Update.
-type EnvironmentsUpdateParams struct {
-	Name *string `json:"name,omitempty" url:"-"`
-}
-
-// Update organization Environment
-func (s *EnvironmentService) Update(ctx context.Context, environmentID string, params *EnvironmentsUpdateParams, opts ...RequestOption) (*Environment, error) {
-	if environmentID == "" {
-		return nil, fmt.Errorf("retab: environment_id is required")
-	}
-	var result Environment
-	_, err := s.client.request(ctx, "PATCH", fmt.Sprintf("/v1/environments/%s", url.PathEscape(environmentID)), nil, params, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// Delete archive Organization Environment
-func (s *EnvironmentService) Delete(ctx context.Context, environmentID string, opts ...RequestOption) error {
-	if environmentID == "" {
-		return fmt.Errorf("retab: environment_id is required")
-	}
-	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/environments/%s", url.PathEscape(environmentID)), nil, nil, nil, opts)
-	return err
-}

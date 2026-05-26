@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-25T22:12:39.704Z",
+  "generatedAt": "2026-05-26T15:31:00.513Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -338,14 +338,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "GetAsync",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "DeleteAsync",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {

@@ -28,7 +28,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"splits": true, "status": true, "steps": true, "stream": true,
 		"switch": true, "sync": true, "templates": true, "tests": true, "update": true,
 		"upload": true, "validate": true, "versions": true, "version": true,
-		"view": true, "wait": true, "workflows": true,
+		"view": true, "wait": true, "which": true, "workflows": true,
 	}
 
 	apiDesignWalkCommands(rootCmd, func(cmd *cobra.Command) {
@@ -74,6 +74,8 @@ func TestAPICommandSurfaceFlagsUseCanonicalKebabCase(t *testing.T) {
 func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 	commandPaths := apiDesignAllCommandPaths(rootCmd)
 	removedPaths := []string{
+		"env delete",
+		"env remove",
 		"files delete",
 		"workflows append-version",
 		"workflows reviews append",
@@ -104,7 +106,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
 		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "jobs", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
-		"env":                           {"add", "remove", "switch", "claim", "list"},
+		"env":                           {"add", "switch", "which", "claim", "list"},
 		"classifications":               {"create", "get", "list", "delete"},
 		"edits":                         {"create", "get", "list", "delete", "templates"},
 		"edits templates":               {"create", "get", "list", "update", "delete"},

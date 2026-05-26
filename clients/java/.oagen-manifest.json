@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-25T22:10:58.233Z",
+  "generatedAt": "2026-05-26T13:20:21.707Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -236,7 +236,6 @@
     "src/main/java/com/retab/models/Subdocument.java",
     "src/main/java/com/retab/models/SubmitDecisionResponse.java",
     "src/main/java/com/retab/models/UpdateEditTemplateRequest.java",
-    "src/main/java/com/retab/models/UpdateEnvironmentRequest.java",
     "src/main/java/com/retab/models/UpdateExperimentRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowBlockRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowRequest.java",
@@ -376,14 +375,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "get",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "update",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "delete",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {
