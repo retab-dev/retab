@@ -269,6 +269,9 @@ test_suite(
         ":client_tests",
         ":format_check",
         ":lint",
+        ":smoke",
+        ":test_unit",
+        ":typecheck",
     ],
 )
 
