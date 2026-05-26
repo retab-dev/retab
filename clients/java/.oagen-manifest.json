@@ -1,18 +1,16 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-26T13:20:21.707Z",
+  "generatedAt": "2026-05-26T16:16:00.627Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
     "pom.xml",
     "settings.gradle.kts",
     "src/main/java/com/retab/RetabClient.java",
-    "src/main/java/com/retab/auth/AuthApi.java",
     "src/main/java/com/retab/classifications/ClassificationsApi.java",
     "src/main/java/com/retab/edits/EditsApi.java",
     "src/main/java/com/retab/edittemplates/EditTemplatesApi.java",
-    "src/main/java/com/retab/environments/EnvironmentsApi.java",
     "src/main/java/com/retab/experimentrunmetrics/ExperimentRunMetricsApi.java",
     "src/main/java/com/retab/experimentrunresults/ExperimentRunResultsApi.java",
     "src/main/java/com/retab/experimentruns/ExperimentRunsApi.java",
@@ -31,9 +29,6 @@
     "src/main/java/com/retab/models/AssertionResult.java",
     "src/main/java/com/retab/models/AssertionSchemaDep.java",
     "src/main/java/com/retab/models/AssertionSpec.java",
-    "src/main/java/com/retab/models/AuthStatus.java",
-    "src/main/java/com/retab/models/AuthStatusEnvironment.java",
-    "src/main/java/com/retab/models/AuthStatusKey.java",
     "src/main/java/com/retab/models/AwaitingReviewRun.java",
     "src/main/java/com/retab/models/AwaitingReviewStepLifecycle.java",
     "src/main/java/com/retab/models/BBox.java",
@@ -97,8 +92,6 @@
     "src/main/java/com/retab/models/EditWorkflowArtifact.java",
     "src/main/java/com/retab/models/EmailTrigger.java",
     "src/main/java/com/retab/models/EndsWithCondition.java",
-    "src/main/java/com/retab/models/Environment.java",
-    "src/main/java/com/retab/models/EnvironmentCreateRequest.java",
     "src/main/java/com/retab/models/EqualCondition.java",
     "src/main/java/com/retab/models/ErrorBlockExecutionLifecycle.java",
     "src/main/java/com/retab/models/ErrorDetails.java",
@@ -273,7 +266,6 @@
     "src/main/java/com/retab/types/ActorKind.java",
     "src/main/java/com/retab/types/AssertionDriftStatus.java",
     "src/main/java/com/retab/types/AssertionOutcome.java",
-    "src/main/java/com/retab/types/AuthStatusEnvironmentType.java",
     "src/main/java/com/retab/types/CancelWorkflowResponseCancellationStatus.java",
     "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
     "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
@@ -285,8 +277,6 @@
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeTarget.java",
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeType.java",
     "src/main/java/com/retab/types/DeclarativePlanResponseAction.java",
-    "src/main/java/com/retab/types/EnvironmentCreateRequestType.java",
-    "src/main/java/com/retab/types/EnvironmentType.java",
     "src/main/java/com/retab/types/ErrorStepLifecycleCategory.java",
     "src/main/java/com/retab/types/ErrorStepLifecycleStage.java",
     "src/main/java/com/retab/types/ErrorTerminalCategory.java",
@@ -361,22 +351,6 @@
     "src/test/java/com/retab/GeneratedSdkSmokeTest.java"
   ],
   "operations": {
-    "GET /v1/auth/status": {
-      "sdkMethod": "listStatus",
-      "service": "auth"
-    },
-    "GET /v1/environments": {
-      "sdkMethod": "list",
-      "service": "environments"
-    },
-    "POST /v1/environments": {
-      "sdkMethod": "create",
-      "service": "environments"
-    },
-    "GET /v1/environments/{environment_id}": {
-      "sdkMethod": "get",
-      "service": "environments"
-    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"

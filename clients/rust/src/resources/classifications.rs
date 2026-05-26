@@ -6,7 +6,6 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
-#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct ClassificationsApi<'a> {

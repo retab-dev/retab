@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
-from retab.types.auth import WorkflowArtifactsOperation
+from retab.types.schemas import WorkflowArtifactsOperation
 from retab.types.workflows.artifacts import (
     ApiCallInvocation,
     ClassificationWorkflowArtifact,

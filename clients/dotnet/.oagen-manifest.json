@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-26T15:31:00.513Z",
+  "generatedAt": "2026-05-26T16:16:08.191Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -39,9 +39,6 @@
     "src/Entities/AssertionResult.cs",
     "src/Entities/AssertionSchemaDep.cs",
     "src/Entities/AssertionSpec.cs",
-    "src/Entities/AuthStatus.cs",
-    "src/Entities/AuthStatusEnvironment.cs",
-    "src/Entities/AuthStatusKey.cs",
     "src/Entities/AwaitingReviewRun.cs",
     "src/Entities/AwaitingReviewStepLifecycle.cs",
     "src/Entities/BBox.cs",
@@ -83,7 +80,6 @@
     "src/Entities/EditWorkflowArtifact.cs",
     "src/Entities/EmailTrigger.cs",
     "src/Entities/EndsWithCondition.cs",
-    "src/Entities/Environment.cs",
     "src/Entities/EqualCondition.cs",
     "src/Entities/ErrorBlockExecutionLifecycle.cs",
     "src/Entities/ErrorDetails.cs",
@@ -220,7 +216,6 @@
     "src/Enums/ActorKind.cs",
     "src/Enums/AssertionDriftStatus.cs",
     "src/Enums/AssertionOutcome.cs",
-    "src/Enums/AuthStatusEnvironmentType.cs",
     "src/Enums/CancelWorkflowResponseCancellationStatus.cs",
     "src/Enums/ClassificationsOrder.cs",
     "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
@@ -262,15 +257,12 @@
     "src/Retab.Generated.cs",
     "src/Retab.cs",
     "src/RetabOptions.cs",
-    "src/Services/Auth/AuthService.cs",
     "src/Services/Classifications/ClassificationsService.cs",
     "src/Services/Classifications/_interfaces/ClassificationsOptions.cs",
     "src/Services/EditTemplates/EditTemplatesService.cs",
     "src/Services/EditTemplates/_interfaces/EditTemplatesOptions.cs",
     "src/Services/Edits/EditsService.cs",
     "src/Services/Edits/_interfaces/EditsOptions.cs",
-    "src/Services/Environments/EnvironmentsService.cs",
-    "src/Services/Environments/_interfaces/EnvironmentsOptions.cs",
     "src/Services/ExperimentRunMetrics/ExperimentRunMetricsService.cs",
     "src/Services/ExperimentRunMetrics/_interfaces/ExperimentRunMetricsOptions.cs",
     "src/Services/ExperimentRunResults/ExperimentRunResultsService.cs",
@@ -324,22 +316,6 @@
     "tests/SmokeTests.cs"
   ],
   "operations": {
-    "GET /v1/auth/status": {
-      "sdkMethod": "ListStatusAsync",
-      "service": "auth"
-    },
-    "GET /v1/environments": {
-      "sdkMethod": "ListAsync",
-      "service": "environments"
-    },
-    "POST /v1/environments": {
-      "sdkMethod": "CreateAsync",
-      "service": "environments"
-    },
-    "GET /v1/environments/{environment_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "environments"
-    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "GenerateAsync",
       "service": "schemas"

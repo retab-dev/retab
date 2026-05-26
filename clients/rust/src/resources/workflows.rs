@@ -15,7 +15,6 @@ use crate::resources::workflow_runs::WorkflowRunsApi;
 use crate::resources::workflow_spec::WorkflowSpecApi;
 use crate::resources::workflow_steps::WorkflowStepsApi;
 use crate::resources::workflow_tests::WorkflowTestsApi;
-#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct WorkflowsApi<'a> {

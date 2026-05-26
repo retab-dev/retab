@@ -5,14 +5,6 @@
 module Retab
   class Client < BaseClient
 
-    def auth
-      @auth ||= Retab::Auth.new(self)
-    end
-
-    def environments
-      @environments ||= Retab::Environments.new(self)
-    end
-
     def schemas
       @schemas ||= Retab::Schemas.new(self)
     end

@@ -9,7 +9,6 @@ use crate::models::*;
 use crate::resources::experiment_run_metrics::ExperimentRunMetricsApi;
 use crate::resources::experiment_run_results::ExperimentRunResultsApi;
 use crate::resources::experiment_runs::ExperimentRunsApi;
-#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct WorkflowExperimentsApi<'a> {
