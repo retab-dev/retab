@@ -198,6 +198,85 @@ sdk_generation_tree(
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
+SDK_UPDATE_SPECS = [
+    {
+        "check": ":check_python",
+        "client": "open-source/sdk/clients/python",
+        "generated": ":generated_python_sdk",
+        "language": "python",
+        "snippet": "//open-source/docs:snippet_lint_python",
+    },
+    {
+        "check": ":check_node",
+        "client": "open-source/sdk/clients/node",
+        "generated": ":generated_node_sdk",
+        "language": "node",
+        "snippet": "//open-source/docs:snippet_lint_typescript",
+    },
+    {
+        "check": ":check_go",
+        "client": "open-source/sdk/clients/go",
+        "generated": ":generated_go_sdk",
+        "language": "go",
+        "snippet": "//open-source/docs:snippet_lint_go",
+    },
+    {
+        "check": ":check_rust",
+        "client": "open-source/sdk/clients/rust",
+        "generated": ":generated_rust_sdk",
+        "language": "rust",
+        "snippet": "//open-source/docs:snippet_lint_rust",
+    },
+    {
+        "check": ":check_dotnet",
+        "client": "open-source/sdk/clients/dotnet",
+        "generated": ":generated_dotnet_sdk",
+        "language": "dotnet",
+        "snippet": "//open-source/docs:snippet_lint_dotnet",
+    },
+    {
+        "check": ":check_php",
+        "client": "open-source/sdk/clients/php",
+        "generated": ":generated_php_sdk",
+        "language": "php",
+        "snippet": "//open-source/docs:snippet_lint_php",
+    },
+    {
+        "check": ":check_ruby",
+        "client": "open-source/sdk/clients/ruby",
+        "generated": ":generated_ruby_sdk",
+        "language": "ruby",
+        "snippet": "//open-source/docs:snippet_lint_ruby",
+    },
+    {
+        "check": ":check_java",
+        "client": "open-source/sdk/clients/java",
+        "generated": ":generated_java_sdk",
+        "language": "java",
+        "snippet": "//open-source/docs:snippet_lint_java",
+    },
+]
+
+[
+    sh_binary(
+        name = "generated_%s_sdk_update" % spec["language"],
+        srcs = ["//tools/bazel:update_generated_sdk_tree.sh"],
+        args = [
+            spec["language"],
+            "$(location %s)" % spec["generated"],
+            spec["client"],
+            "//open-source/sdk:check_%s" % spec["language"],
+            spec["snippet"],
+        ],
+        data = [
+            spec["generated"],
+            ":generation_inputs",
+        ],
+        tags = MANUAL_LOCAL_TAGS + ["generated-update"],
+    )
+    for spec in SDK_UPDATE_SPECS
+]
+
 test_suite(
     name = "generated_sdks",
     tests = [
