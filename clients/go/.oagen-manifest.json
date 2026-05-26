@@ -1,14 +1,12 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-26T15:30:53.317Z",
+  "generatedAt": "2026-05-26T16:15:55.576Z",
   "files": [
-    "auth.go",
     "classifications.go",
     "edit_templates.go",
     "edits.go",
     "enums.go",
-    "environments.go",
     "errors.go",
     "experiment_run_metrics.go",
     "experiment_run_results.go",
@@ -43,22 +41,6 @@
     "workflows.go"
   ],
   "operations": {
-    "GET /v1/auth/status": {
-      "sdkMethod": "ListStatus",
-      "service": "auth"
-    },
-    "GET /v1/environments": {
-      "sdkMethod": "List",
-      "service": "environments"
-    },
-    "POST /v1/environments": {
-      "sdkMethod": "Create",
-      "service": "environments"
-    },
-    "GET /v1/environments/{environment_id}": {
-      "sdkMethod": "Get",
-      "service": "environments"
-    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "Generate",
       "service": "schemas"

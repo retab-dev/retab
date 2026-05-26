@@ -38,6 +38,9 @@ class FieldType(str, Enum):
     CHECKBOX = "checkbox"
 
 
+ConditionEvaluationResultLogicalOperator = ConditionEvaluationDetailsLogicalOperator
+
+
 class ParseWorkflowArtifactTableParsingFormat(str, Enum):
     MARKDOWN = "markdown"
     YAML = "yaml"
@@ -54,9 +57,6 @@ class WhileLoopTerminationTerminationReason(str, Enum):
     MAX_ITERATIONS_REACHED = "max_iterations_reached"
     CONDITION_MATCHED = "condition_matched"
     ERROR = "error"
-
-
-ConditionEvaluationResultLogicalOperator = ConditionEvaluationDetailsLogicalOperator
 
 
 class ApiCallAttempt(BaseModel):

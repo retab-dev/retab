@@ -115,36 +115,6 @@ type AssertionSpec struct {
 	Label     *string         `json:"label,omitempty"`
 }
 
-// AuthStatus represents an auth status.
-type AuthStatus struct {
-	Authenticated bool                   `json:"authenticated,omitempty"`
-	AuthMethod    string                 `json:"auth_method"`
-	Environment   *AuthStatusEnvironment `json:"environment,omitempty"`
-	Key           *AuthStatusKey         `json:"key,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *AuthStatus) UnmarshalJSON(data []byte) error {
-	r.Authenticated = true
-	type alias AuthStatus
-	return json.Unmarshal(data, (*alias)(r))
-}
-
-// AuthStatusEnvironment represents an auth status environment.
-type AuthStatusEnvironment struct {
-	ID   string                     `json:"id"`
-	Name *string                    `json:"name,omitempty"`
-	Type *AuthStatusEnvironmentType `json:"type,omitempty"`
-}
-
-// AuthStatusKey represents an auth status key.
-type AuthStatusKey struct {
-	Prefix *string `json:"prefix,omitempty"`
-	Name   *string `json:"name,omitempty"`
-}
-
 // AwaitingReviewRun the run is paused on at least one gated block.
 type AwaitingReviewRun struct {
 	Status *string `json:"status,omitempty"`
@@ -778,16 +748,6 @@ type EmailTrigger struct {
 type EndsWithCondition struct {
 	Kind     *string `json:"kind,omitempty"`
 	Expected string  `json:"expected"`
-}
-
-// Environment represents an environment.
-type Environment struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Type      EnvironmentType `json:"type"`
-	IsDefault *bool           `json:"is_default,omitempty"`
-	CreatedAt *time.Time      `json:"created_at,omitempty"`
-	UpdatedAt *time.Time      `json:"updated_at,omitempty"`
 }
 
 // EqualCondition represents an equal condition.

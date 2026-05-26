@@ -6,8 +6,8 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.auth import JobsEndpoint, JobsSource, JobsStatus
 from retab.types.jobs import CreateJobRequest, CreateJobRequestEndpoint, Job
+from retab.types.schemas import JobsEndpoint, JobsSource, JobsStatus
 
 
 class JobsMixin:

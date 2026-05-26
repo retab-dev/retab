@@ -7,7 +7,6 @@ use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
 use crate::resources::workflow_review_versions::WorkflowReviewVersionsApi;
-#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct WorkflowReviewsApi<'a> {
