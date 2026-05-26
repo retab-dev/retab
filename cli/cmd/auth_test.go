@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +24,7 @@ import (
 //     working.
 //  2. --json flag → JSON. Even on a TTY, scripts that want JSON should
 //     get JSON by setting the flag (and never have to spoof a non-TTY).
-//  3. Human output → 3-line block with the expected labels.
+//  3. Human output → compact block with the expected labels.
 //  4. ANSI escapes NEVER leak into a non-TTY destination. `bytes.Buffer`
 //     is the prototypical non-TTY case — a stray `\x1b[` there means
 //     `auth status > status.txt` would corrupt the file with control
@@ -106,8 +108,8 @@ func TestWriteAuthStatusJSON_ShapeIsByteEquivalent(t *testing.T) {
 }
 
 // Human mode (forced by calling writeAuthStatusHuman directly) must
-// render the three expected lines. We don't pin exact wording beyond
-// these labels so the prose can be tweaked without breaking the test.
+// render the expected lines. We don't pin exact wording beyond these
+// labels so the prose can be tweaked without breaking the test.
 func TestWriteAuthStatusHuman_Has3LineBlock(t *testing.T) {
 	var buf bytes.Buffer
 	if err := writeAuthStatusHuman(&buf, sampleAuthStatus()); err != nil {
@@ -190,6 +192,12 @@ func TestWriteAuthStatusHuman_AuthenticatedOAuth(t *testing.T) {
 			"expires_at":     "2026-05-21T23:45:46Z",
 			"has_refresh":    true,
 		},
+		"environment": map[string]any{
+			"id":     "env_prod",
+			"name":   "Production",
+			"type":   "production",
+			"source": "~/.retab/config.json",
+		},
 	}
 	if err := writeAuthStatusHuman(&buf, payload); err != nil {
 		t.Fatalf("writeAuthStatusHuman: %v", err)
@@ -201,8 +209,28 @@ func TestWriteAuthStatusHuman_AuthenticatedOAuth(t *testing.T) {
 	if !strings.Contains(out, "Logged in with OAuth") {
 		t.Fatalf("OAuth status should render an OAuth login header:\n%s", out)
 	}
+	if !strings.Contains(out, "Environment:") || !strings.Contains(out, "Production (env_prod)") {
+		t.Fatalf("OAuth status should render the selected environment:\n%s", out)
+	}
 	if !strings.Contains(out, "valid") {
 		t.Fatalf("OAuth status should report valid probe result:\n%s", out)
+	}
+}
+
+func TestWriteAuthStatusHuman_AuthenticatedOAuthNoEnvironment(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"valid":         true,
+		"environment":   nil,
+	}
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Environment:") || !strings.Contains(out, "none selected") {
+		t.Fatalf("OAuth status should render missing environment selection:\n%s", out)
 	}
 }
 
@@ -267,6 +295,132 @@ func TestProbeAuthStatus_UsesAuthStatusEndpointForOAuth(t *testing.T) {
 	}
 }
 
+func TestAddSelectedEnvironmentStatusIncludesSelectedEnvironment(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	isDefault := true
+	var seenAuth string
+	var seenAPIKey string
+	var seenEnvironmentHeader string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenAuth = r.Header.Get("Authorization")
+		seenAPIKey = r.Header.Get("Api-Key")
+		seenEnvironmentHeader = r.Header.Get(legacyEnvironmentHeaderNameForTest())
+		if r.URL.Path != "/v1/environments/env_prod" {
+			t.Fatalf("path = %q, want /v1/environments/env_prod", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(retab.Environment{
+			ID:        "env_prod",
+			Name:      "Production",
+			Type:      retab.AuthStatusEnvironmentTypeProduction,
+			IsDefault: &isDefault,
+		})
+	}))
+	defer server.Close()
+
+	out := map[string]any{}
+	addSelectedEnvironmentStatus(
+		rootCmd,
+		retabConfig{
+			EnvironmentID: "env_prod",
+			OAuth: &oauthTokens{
+				AccessToken:   "at_status",
+				RefreshToken:  "rt_status",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				AuthKitDomain: "auth.example.com",
+				ClientID:      "client_123",
+			},
+		},
+		server.URL,
+		out,
+	)
+	if seenAuth != "Bearer at_status" {
+		t.Fatalf("Authorization = %q, want raw OAuth bearer", seenAuth)
+	}
+	if seenAPIKey != "" {
+		t.Fatalf("Api-Key should be empty for OAuth environment lookup, got %q", seenAPIKey)
+	}
+	if seenEnvironmentHeader != "" {
+		t.Fatalf("environment lookup sent forbidden environment header %q", seenEnvironmentHeader)
+	}
+	environment, ok := out["environment"].(map[string]any)
+	if !ok {
+		t.Fatalf("environment = %#v, want map", out["environment"])
+	}
+	if environment["id"] != "env_prod" || environment["name"] != "Production" || environment["type"] != "production" {
+		t.Fatalf("environment = %#v", environment)
+	}
+	if environment["source"] != "~/.retab/config.json" {
+		t.Fatalf("source = %q, want config", environment["source"])
+	}
+	if environment["is_default"] != true {
+		t.Fatalf("is_default = %#v, want true", environment["is_default"])
+	}
+}
+
+func TestSelectOAuthLoginEnvironmentUsesRawOAuthAndPicksDefault(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+
+	isDefault := true
+	var seenAuth string
+	var seenEnvironmentHeader string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenAuth = r.Header.Get("Authorization")
+		seenEnvironmentHeader = r.Header.Get(legacyEnvironmentHeaderNameForTest())
+		if r.URL.Path != "/v1/environments" {
+			t.Fatalf("path = %q, want /v1/environments", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(retab.PaginatedList[retab.Environment]{
+			Data: []retab.Environment{
+				{ID: "env_staging", Name: "Staging", Type: retab.AuthStatusEnvironmentTypeNonProduction},
+				{ID: "env_prod", Name: "Production", Type: retab.AuthStatusEnvironmentTypeProduction, IsDefault: &isDefault},
+			},
+		})
+	}))
+	defer server.Close()
+
+	environment, err := selectOAuthLoginEnvironment(
+		context.Background(),
+		server.URL,
+		&oauthTokens{AccessToken: "at_login"},
+		"",
+	)
+	if err != nil {
+		t.Fatalf("selectOAuthLoginEnvironment: %v", err)
+	}
+	if seenAuth != "Bearer at_login" {
+		t.Fatalf("Authorization = %q, want raw OAuth bearer", seenAuth)
+	}
+	if seenEnvironmentHeader != "" {
+		t.Fatalf("login env resolution sent forbidden environment header %q", seenEnvironmentHeader)
+	}
+	if environment.ID != "env_prod" {
+		t.Fatalf("selected environment = %s, want default production", environment.ID)
+	}
+}
+
+func TestChooseLoginEnvironmentPreservesExistingSelection(t *testing.T) {
+	isDefault := true
+	list := &retab.PaginatedList[retab.Environment]{
+		Data: []retab.Environment{
+			{ID: "env_staging", Name: "Staging", Type: retab.AuthStatusEnvironmentTypeNonProduction},
+			{ID: "env_prod", Name: "Production", Type: retab.AuthStatusEnvironmentTypeProduction, IsDefault: &isDefault},
+		},
+	}
+
+	environment := chooseLoginEnvironment("env_staging", list)
+	if environment == nil {
+		t.Fatal("expected selected environment")
+	}
+	if environment.ID != "env_staging" {
+		t.Fatalf("selected environment = %s, want existing selection", environment.ID)
+	}
+}
+
 // `auth status --output table` (the global formatting flag every other
 // command honours) must render a key/value table, NOT silently fall
 // through to JSON. The bug was that writeAuthStatus only knew about the
@@ -285,6 +439,12 @@ func TestWriteAuthStatusTable_AuthenticatedOAuth(t *testing.T) {
 			"expires_at":     "2026-05-21T23:45:46Z",
 			"has_refresh":    true,
 		},
+		"environment": map[string]any{
+			"id":     "env_prod",
+			"name":   "Production",
+			"type":   "production",
+			"source": "~/.retab/config.json",
+		},
 	}
 	if err := writeAuthStatusTable(&buf, payload); err != nil {
 		t.Fatalf("writeAuthStatusTable: %v", err)
@@ -302,6 +462,10 @@ func TestWriteAuthStatusTable_AuthenticatedOAuth(t *testing.T) {
 		"EXPIRES_AT",
 		"2026-05-21T23:45:46Z",
 		"HAS_REFRESH",
+		"ENVIRONMENT",
+		"Production (env_prod)",
+		"ENVIRONMENT_SOURCE",
+		"~/.retab/config.json",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("table output missing %q:\n%s", want, out)

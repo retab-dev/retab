@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-25T22:12:42.648Z",
+  "generatedAt": "2026-05-26T15:31:02.142Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -256,7 +256,6 @@
     "lib/Resource/SubmitDecisionResponse.php",
     "lib/Resource/TableParsingFormat.php",
     "lib/Resource/UpdateEditTemplateRequest.php",
-    "lib/Resource/UpdateEnvironmentRequest.php",
     "lib/Resource/UpdateExperimentRequest.php",
     "lib/Resource/UpdateWorkflowBlockRequest.php",
     "lib/Resource/UpdateWorkflowBlockRequestConfigMode.php",
@@ -568,7 +567,6 @@
     "tests/Fixtures/subdocument.json",
     "tests/Fixtures/submit_decision_response.json",
     "tests/Fixtures/update_edit_template_request.json",
-    "tests/Fixtures/update_environment_request.json",
     "tests/Fixtures/update_experiment_request.json",
     "tests/Fixtures/update_workflow_block_request.json",
     "tests/Fixtures/update_workflow_request.json",
@@ -644,14 +642,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "getEnvironment",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "updateEnvironment",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "deleteEnvironment",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {

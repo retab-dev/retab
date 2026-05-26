@@ -44,15 +44,6 @@ class EnvironmentsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/environments/{environment_id}", params=params or None, data=data)
 
-    def prepare_delete_environment(self, environment_id: str, **extra_params: Any) -> PreparedRequest:
-        """Archive Organization Environment"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="DELETE", url=f"/v1/environments/{environment_id}", params=params or None, data=data)
-
 
 class Environments(SyncAPIResource, EnvironmentsMixin):
     """Environments API wrapper."""
@@ -74,12 +65,6 @@ class Environments(SyncAPIResource, EnvironmentsMixin):
         response = self._client._prepared_request(prepared_request)
         return Environment.model_validate(response)
 
-    def delete_environment(self, environment_id: str, **extra_params: Any) -> None:
-        """Archive Organization Environment"""
-        prepared_request = self.prepare_delete_environment(environment_id, **extra_params)
-        self._client._prepared_request(prepared_request)
-        return None
-
 
 class AsyncEnvironments(AsyncAPIResource, EnvironmentsMixin):
     """Async Environments API wrapper."""
@@ -100,12 +85,6 @@ class AsyncEnvironments(AsyncAPIResource, EnvironmentsMixin):
         prepared_request = self.prepare_get_environment(environment_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Environment.model_validate(response)
-
-    async def delete_environment(self, environment_id: str, **extra_params: Any) -> None:
-        """Archive Organization Environment"""
-        prepared_request = self.prepare_delete_environment(environment_id, **extra_params)
-        await self._client._prepared_request(prepared_request)
-        return None
 
 
 __all__ = ["Environments", "AsyncEnvironments", "EnvironmentsMixin"]

@@ -74,37 +74,5 @@ namespace Retab
         {
             return this.GetAsync(environmentId, requestOptions, cancellationToken);
         }
-
-        /// <summary>Update Organization Environment</summary>
-        /// <param name="environmentId">The environment id.</param>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="Environment"/> result.</returns>
-        public virtual async Task<Environment> UpdateAsync(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.PatchAsync<Environment>($"/v1/environments/{Uri.EscapeDataString(environmentId)}", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="UpdateAsync"/>.</summary>
-        public virtual Task<Environment> Update(string environmentId, EnvironmentsUpdateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.UpdateAsync(environmentId, options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Archive Organization Environment</summary>
-        /// <param name="environmentId">The environment id.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            await this.DeleteAsync($"/v1/environments/{Uri.EscapeDataString(environmentId)}", null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string environmentId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DeleteAsync(environmentId, requestOptions, cancellationToken);
-        }
     }
 }

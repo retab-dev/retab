@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-25T22:12:44.353Z",
+  "generatedAt": "2026-05-26T15:31:03.952Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -28,7 +28,6 @@
     "lib/retab/environments.rb",
     "lib/retab/environments/environment.rb",
     "lib/retab/environments/environment_create_request.rb",
-    "lib/retab/environments/update_environment_request.rb",
     "lib/retab/errors.rb",
     "lib/retab/experiment_run_metrics.rb",
     "lib/retab/experiment_run_metrics/experiment_by_document_metrics_response.rb",
@@ -617,7 +616,6 @@
     "rbi/retab/subdocument.rbi",
     "rbi/retab/submit_decision_response.rbi",
     "rbi/retab/update_edit_template_request.rbi",
-    "rbi/retab/update_environment_request.rbi",
     "rbi/retab/update_experiment_request.rbi",
     "rbi/retab/update_workflow_block_request.rbi",
     "rbi/retab/update_workflow_request.rbi",
@@ -712,14 +710,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "get_environment",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "update_environment",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "delete_environment",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {

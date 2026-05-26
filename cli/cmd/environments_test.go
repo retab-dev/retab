@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
 	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "environment_prod", Name: "Production", Type: retab.EnvironmentType("production")},
+		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
 		{ID: "Production", Name: "Shadow", Type: retab.EnvironmentType("non_production")},
 	}}
 
@@ -30,8 +31,8 @@ func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
 
 func TestResolveEnvironmentSelectionRejectsAmbiguousName(t *testing.T) {
 	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "environment_1", Name: "Staging", Type: retab.EnvironmentType("non_production")},
-		{ID: "environment_2", Name: "Staging", Type: retab.EnvironmentType("non_production")},
+		{ID: "env_1", Name: "Staging", Type: retab.EnvironmentType("non_production")},
+		{ID: "env_2", Name: "Staging", Type: retab.EnvironmentType("non_production")},
 	}}
 
 	_, err := resolveEnvironmentSelection("Staging", list)
@@ -48,7 +49,7 @@ func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "test-key")
 
-	if err := saveConfig(retabConfig{EnvironmentID: "environment_stale"}); err != nil {
+	if err := saveConfig(retabConfig{EnvironmentID: "env_stale"}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
 	}
 
@@ -59,7 +60,7 @@ func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 			t.Fatalf("path = %q, want /v1/environments", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":[{"id":"environment_staging","name":"Staging","type":"non_production"}],"list_metadata":{"before":null,"after":null}}`))
+		_, _ = w.Write([]byte(`{"data":[{"id":"env_staging","name":"Staging","type":"non_production"}],"list_metadata":{"before":null,"after":null}}`))
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -74,8 +75,8 @@ func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadConfig: %v", err)
 	}
-	if cfg.EnvironmentID != "environment_staging" {
-		t.Fatalf("EnvironmentID = %q, want environment_staging", cfg.EnvironmentID)
+	if cfg.EnvironmentID != "env_staging" {
+		t.Fatalf("EnvironmentID = %q, want env_staging", cfg.EnvironmentID)
 	}
 }
 
@@ -84,7 +85,7 @@ func TestNewClientDoesNotUseSelectedEnvironmentForAPIKeyAuth(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "test-key")
 
-	if err := saveConfig(retabConfig{EnvironmentID: "environment_staging"}); err != nil {
+	if err := saveConfig(retabConfig{EnvironmentID: "env_staging"}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
 	}
 
@@ -132,7 +133,7 @@ func TestNewClientUsesDashboardContextTokenForSelectedOAuthEnvironment(t *testin
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")
 
-	const environmentID = "environment_staging"
+	const environmentID = "env_staging"
 	var contextCalls int
 	var workflowCalls int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +158,7 @@ func TestNewClientUsesDashboardContextTokenForSelectedOAuthEnvironment(t *testin
 				"token": "ctx_cli",
 				"expires_at": "2035-01-01T00:00:00Z",
 				"token_type": "Bearer",
-				"environment": {"id": "environment_staging", "name": "Staging", "type": "non_production"},
+				"environment": {"id": "env_staging", "name": "Staging", "type": "non_production"},
 				"region": "eu",
 				"ws_path": ""
 			}`))
@@ -214,7 +215,7 @@ func TestCLIJSONRequestUsesDashboardContextTokenForSelectedOAuthEnvironment(t *t
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")
 
-	const environmentID = "environment_staging"
+	const environmentID = "env_staging"
 	var contextCalls int
 	var probeCalls int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -239,7 +240,7 @@ func TestCLIJSONRequestUsesDashboardContextTokenForSelectedOAuthEnvironment(t *t
 				"token": "ctx_raw_json",
 				"expires_at": "2035-01-01T00:00:00Z",
 				"token_type": "Bearer",
-				"environment": {"id": "environment_staging", "name": "Staging", "type": "non_production"},
+				"environment": {"id": "env_staging", "name": "Staging", "type": "non_production"},
 				"region": "eu",
 				"ws_path": ""
 			}`))
@@ -310,13 +311,13 @@ func TestEnvSwitchUsesRawOAuthAndDoesNotMintDashboardContext(t *testing.T) {
 			t.Fatalf("path = %q, want /v1/environments", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":[{"id":"environment_staging","name":"Staging","type":"non_production"}],"list_metadata":{"before":null,"after":null}}`))
+		_, _ = w.Write([]byte(`{"data":[{"id":"env_staging","name":"Staging","type":"non_production"}],"list_metadata":{"before":null,"after":null}}`))
 	}))
 	defer server.Close()
 
 	if err := saveConfig(retabConfig{
 		BaseURL:       server.URL,
-		EnvironmentID: "environment_stale",
+		EnvironmentID: "env_stale",
 		OAuth: &oauthTokens{
 			AccessToken:   "at_env",
 			RefreshToken:  "rt_env",
@@ -336,8 +337,60 @@ func TestEnvSwitchUsesRawOAuthAndDoesNotMintDashboardContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadConfig: %v", err)
 	}
-	if cfg.EnvironmentID != "environment_staging" {
-		t.Fatalf("EnvironmentID = %q, want environment_staging", cfg.EnvironmentID)
+	if cfg.EnvironmentID != "env_staging" {
+		t.Fatalf("EnvironmentID = %q, want env_staging", cfg.EnvironmentID)
+	}
+}
+
+func TestEnvWhichShowsSelectedEnvironment(t *testing.T) {
+	resetEnvironmentCommandPersistentFlags(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	isDefault := true
+	var seenEnvironmentHeader string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenEnvironmentHeader = r.Header.Get(legacyEnvironmentHeaderNameForTest())
+		if r.URL.Path != "/v1/environments/env_prod" {
+			t.Fatalf("path = %q, want /v1/environments/env_prod", r.URL.Path)
+		}
+		if r.Header.Get("Api-Key") != "test-key" {
+			t.Fatalf("Api-Key = %q, want test-key", r.Header.Get("Api-Key"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(retab.Environment{
+			ID:        "env_prod",
+			Name:      "Production",
+			Type:      retab.AuthStatusEnvironmentTypeProduction,
+			IsDefault: &isDefault,
+		})
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{BaseURL: server.URL, EnvironmentID: "env_prod"}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	var out bytes.Buffer
+	envWhichCmd.SetOut(&out)
+	t.Cleanup(func() { envWhichCmd.SetOut(nil) })
+	if err := envWhichCmd.RunE(envWhichCmd, nil); err != nil {
+		t.Fatalf("env which: %v", err)
+	}
+	if seenEnvironmentHeader != "" {
+		t.Fatalf("env which sent forbidden environment header %q", seenEnvironmentHeader)
+	}
+	var decoded selectedEnvironment
+	if err := json.Unmarshal(out.Bytes(), &decoded); err != nil {
+		t.Fatalf("env which output should be JSON for non-TTY writer: %v\n%s", err, out.String())
+	}
+	if decoded.ID != "env_prod" || decoded.Name != "Production" || decoded.Type != "production" || !decoded.IsDefault {
+		t.Fatalf("selected environment = %#v", decoded)
+	}
+	if decoded.Source != "~/.retab/config.json" {
+		t.Fatalf("source = %q, want config", decoded.Source)
 	}
 }
 
@@ -357,7 +410,7 @@ func TestEnvAddValidatesType(t *testing.T) {
 
 func TestEnvironmentListJSONShape(t *testing.T) {
 	result := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "environment_prod", Name: "Production", Type: retab.EnvironmentType("production")},
+		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
 	}}
 	raw, err := json.Marshal(result)
 	if err != nil {
@@ -385,13 +438,13 @@ func TestEnvironmentTableDefaultCellHidesFalseForTypedRows(t *testing.T) {
 
 func resetEnvironmentCommandPersistentFlags(t *testing.T) {
 	t.Helper()
-	for _, name := range []string{"api-key", "base-url", "environment-id"} {
+	for _, name := range []string{"api-key", "base-url", "environment-id", "output"} {
 		if err := rootCmd.PersistentFlags().Set(name, ""); err != nil {
 			t.Fatalf("reset --%s: %v", name, err)
 		}
 	}
 	t.Cleanup(func() {
-		for _, name := range []string{"api-key", "base-url", "environment-id"} {
+		for _, name := range []string{"api-key", "base-url", "environment-id", "output"} {
 			_ = rootCmd.PersistentFlags().Set(name, "")
 		}
 	})

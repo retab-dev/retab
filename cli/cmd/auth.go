@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -113,13 +115,97 @@ override and takes precedence over anything written to disk.`,
 		if baseURL != "" {
 			cfg.BaseURL = baseURL
 		}
+		environment, envErr := selectOAuthLoginEnvironment(ctx, configuredLoginBaseURL(baseURL, cfg), tokens, cfg.EnvironmentID)
+		if environment != nil {
+			cfg.EnvironmentID = environment.ID
+		}
 		if err := saveConfig(cfg); err != nil {
 			return err
 		}
 		path, _ := configPath()
 		fmt.Fprintf(os.Stderr, "Logged in. Saved OAuth tokens to %s\n", path)
+		if envErr != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not resolve environments after login: %v\n", envErr)
+			fmt.Fprintln(os.Stderr, "  Run `retab env list` and `retab env switch <environment-id-or-name>` before environment-scoped commands.")
+			return nil
+		}
+		if environment != nil {
+			fmt.Fprintf(os.Stderr, "Environment: %s (%s)\n", environment.Name, environment.ID)
+		}
 		return nil
 	}),
+}
+
+func configuredLoginBaseURL(flagBaseURL string, cfg retabConfig) string {
+	if flagBaseURL != "" {
+		return flagBaseURL
+	}
+	if envBaseURL := os.Getenv("RETAB_API_BASE_URL"); envBaseURL != "" {
+		return envBaseURL
+	}
+	if envBaseURL := os.Getenv("RETAB_BASE_URL"); envBaseURL != "" {
+		return envBaseURL
+	}
+	return cfg.BaseURL
+}
+
+func selectOAuthLoginEnvironment(
+	ctx context.Context,
+	baseURL string,
+	tokens *oauthTokens,
+	currentEnvironmentID string,
+) (*retab.Environment, error) {
+	if tokens == nil || strings.TrimSpace(tokens.AccessToken) == "" {
+		return nil, fmt.Errorf("OAuth access token is empty")
+	}
+	opts := []retab.Option{
+		retab.WithBearerTokenProvider(func(context.Context) (string, error) {
+			return tokens.AccessToken, nil
+		}),
+	}
+	if strings.TrimSpace(baseURL) != "" {
+		opts = append(opts, retab.WithBaseURL(baseURL))
+	}
+	client, err := retab.NewClient("", opts...)
+	if err != nil {
+		return nil, err
+	}
+	environments, err := client.Environments.List(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	environment := chooseLoginEnvironment(currentEnvironmentID, environments)
+	if environment == nil {
+		return nil, fmt.Errorf("no environments are available for this organization")
+	}
+	return environment, nil
+}
+
+func chooseLoginEnvironment(currentEnvironmentID string, list *retab.PaginatedList[retab.Environment]) *retab.Environment {
+	if list == nil {
+		return nil
+	}
+	if strings.TrimSpace(currentEnvironmentID) != "" {
+		for i := range list.Data {
+			if list.Data[i].ID == currentEnvironmentID {
+				return &list.Data[i]
+			}
+		}
+	}
+	for i := range list.Data {
+		if list.Data[i].IsDefault != nil && *list.Data[i].IsDefault {
+			return &list.Data[i]
+		}
+	}
+	for i := range list.Data {
+		if list.Data[i].Type == retab.AuthStatusEnvironmentTypeProduction {
+			return &list.Data[i]
+		}
+	}
+	if len(list.Data) > 0 {
+		return &list.Data[0]
+	}
+	return nil
 }
 
 // runAPIKeyLogin persists an API key — the legacy auth path. Kept first-
@@ -243,6 +329,9 @@ compact human block for interactive terminals).`,
 				"has_refresh":    cfg.OAuth.RefreshToken != "",
 			}
 		}
+		if source == "~/.retab/config.json (oauth)" {
+			addSelectedEnvironmentStatus(cmd, cfg, baseURL, out)
+		}
 		if flagKey != "" || envKey != "" || cfg.APIKey != "" {
 			key := flagKey
 			if key == "" {
@@ -282,6 +371,55 @@ compact human block for interactive terminals).`,
 		}
 		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
+}
+
+func addSelectedEnvironmentStatus(cmd *cobra.Command, cfg retabConfig, baseURL string, out map[string]any) {
+	environmentID, source := selectedEnvironmentIDWithSource(cmd, cfg)
+	if environmentID == "" {
+		out["environment"] = nil
+		return
+	}
+
+	environmentOut := map[string]any{
+		"id":     environmentID,
+		"source": source,
+	}
+	environment, err := getSelectedEnvironmentForAuthStatus(cmd, cfg, baseURL, environmentID)
+	if err != nil {
+		environmentOut["error"] = err.Error()
+		out["environment"] = environmentOut
+		return
+	}
+	environmentOut["name"] = environment.Name
+	environmentOut["type"] = string(environment.Type)
+	if environment.IsDefault != nil {
+		environmentOut["is_default"] = *environment.IsDefault
+	}
+	out["environment"] = environmentOut
+}
+
+func getSelectedEnvironmentForAuthStatus(
+	cmd *cobra.Command,
+	cfg retabConfig,
+	baseURL string,
+	environmentID string,
+) (*retab.Environment, error) {
+	if cfg.OAuth == nil || strings.TrimSpace(cfg.OAuth.AccessToken) == "" {
+		return nil, fmt.Errorf("OAuth access token is empty")
+	}
+	opts := []retab.Option{
+		retab.WithBearerTokenProvider(makeOAuthTokenProvider(cfg.OAuth)),
+	}
+	if strings.TrimSpace(baseURL) != "" {
+		opts = append(opts, retab.WithBaseURL(baseURL))
+	}
+	client, err := retab.NewClient("", opts...)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	return client.Environments.Get(ctx, environmentID)
 }
 
 func probeAuthStatus(cmd *cobra.Command) error {
@@ -363,7 +501,7 @@ func writeAuthStatusJSON(w io.Writer, out map[string]any) error {
 	return enc.Encode(out)
 }
 
-// writeAuthStatusHuman renders the three-line status block. Colour is
+// writeAuthStatusHuman renders the human status block. Colour is
 // applied only when the destination is a real TTY and NO_COLOR is unset,
 // reusing paletteFor's discipline so the rules match `retab --help`.
 //
@@ -371,10 +509,11 @@ func writeAuthStatusJSON(w io.Writer, out map[string]any) error {
 //
 //	Logged in as <preview>
 //	Source:  <source>
+//	Environment:  <selected environment>  (OAuth, when available)
 //	Status:  <valid|invalid|not authenticated>
 //
-// "Source" / "Status" labels are dim; the api-key preview is bold magenta
-// (matching the Retab wordmark elsewhere in the CLI).
+// "Source" / "Environment" / "Status" labels are dim; the api-key preview
+// is bold magenta (matching the Retab wordmark elsewhere in the CLI).
 func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	s := paletteFor(w)
 
@@ -406,7 +545,13 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 		return err
 	}
 
-	// Third line — verification result. The `valid` key is absent when
+	if environmentLine := authStatusEnvironmentDisplay(out); environmentLine != "" {
+		if _, err := fmt.Fprintf(w, "%sEnvironment:%s  %s\n", s.dim, s.reset, environmentLine); err != nil {
+			return err
+		}
+	}
+
+	// Final line — verification result. The `valid` key is absent when
 	// we never got far enough to probe (no creds, or hint path); treat
 	// that as "not authenticated" so the user gets a definite answer.
 	var status string
@@ -427,6 +572,32 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	return err
 }
 
+func authStatusEnvironmentDisplay(out map[string]any) string {
+	environmentAny, ok := out["environment"]
+	if !ok {
+		return ""
+	}
+	if environmentAny == nil {
+		return "none selected"
+	}
+	environment, ok := environmentAny.(map[string]any)
+	if !ok {
+		return ""
+	}
+	id, _ := environment["id"].(string)
+	name, _ := environment["name"].(string)
+	if name != "" && id != "" {
+		return fmt.Sprintf("%s (%s)", name, id)
+	}
+	if id != "" {
+		if _, hasError := environment["error"].(string); hasError {
+			return fmt.Sprintf("%s (unverified)", id)
+		}
+		return id
+	}
+	return "none selected"
+}
+
 // writeAuthStatusTable renders the auth payload as a KEY  VALUE
 // two-column table. The shape is small and flat (6 well-known rows at
 // most), so the generic list-table renderer in output.go is the wrong
@@ -438,8 +609,9 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 // Row order is fixed (not map iteration order) so the output is
 // deterministic across runs and easy to scan visually. Optional rows
 // (BASE_URL, OAUTH_DOMAIN, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
-// VALID, ERROR, HINT) are only emitted when present in the payload —
-// rendering an empty value would just be noise.
+// ENVIRONMENT, ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID, ERROR, HINT)
+// are only emitted when present in the payload — rendering an empty value
+// would just be noise.
 func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
@@ -484,6 +656,19 @@ func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 			}
 			if hr, ok := oauth["has_refresh"]; ok {
 				row("HAS_REFRESH", hr)
+			}
+		}
+	}
+	if environmentLine := authStatusEnvironmentDisplay(out); environmentLine != "" {
+		row("ENVIRONMENT", environmentLine)
+	}
+	if environmentAny, ok := out["environment"]; ok && environmentAny != nil {
+		if environment, ok := environmentAny.(map[string]any); ok {
+			if s, _ := environment["source"].(string); s != "" {
+				row("ENVIRONMENT_SOURCE", s)
+			}
+			if s, _ := environment["error"].(string); s != "" {
+				row("ENVIRONMENT_ERROR", s)
 			}
 		}
 	}

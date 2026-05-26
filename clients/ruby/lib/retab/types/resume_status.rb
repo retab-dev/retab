@@ -7,8 +7,9 @@ module Retab
     class ResumeStatus
       RESUMED = "resumed"
       PENDING = "pending"
+      FAILED = "failed"
       SKIPPED = "skipped"
-      ALL = [RESUMED, PENDING, SKIPPED].freeze
+      ALL = [RESUMED, PENDING, FAILED, SKIPPED].freeze
     end
   end
 end

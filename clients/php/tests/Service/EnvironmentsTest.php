@@ -58,29 +58,6 @@ class EnvironmentsTest extends TestCase
         $this->assertStringEndsWith('v1/environments/test_environment_id', $request->getUri()->getPath());
     }
 
-    public function testUpdateEnvironment(): void
-    {
-        $fixture = $this->loadFixture('environment');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->environments()->updateEnvironment('test_environment_id');
-        $this->assertInstanceOf(\Retab\Resource\Environment::class, $result);
-        $this->assertSame($fixture['id'], $result->id);
-        $this->assertSame($fixture['name'], $result->name);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('PATCH', $request->getMethod());
-        $this->assertStringEndsWith('v1/environments/test_environment_id', $request->getUri()->getPath());
-    }
-
-    public function testDeleteEnvironment(): void
-    {
-        $client = $this->createMockClient([['status' => 204]]);
-        $client->environments()->deleteEnvironment('test_environment_id');
-        $request = $this->getLastRequest();
-        $this->assertSame('DELETE', $request->getMethod());
-        $this->assertStringEndsWith('v1/environments/test_environment_id', $request->getUri()->getPath());
-    }
-
     public function testPaginationBoundary(): void
     {
         $fixture = $this->loadFixture('list_environment');

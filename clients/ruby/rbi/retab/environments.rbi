@@ -36,22 +36,5 @@ module Retab
     end
     def get_environment(environment_id:, request_options:); end
 
-    sig do
-      params(
-        environment_id: String,
-        name: T.nilable(String),
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::Environment)
-    end
-    def update_environment(environment_id:, name:, request_options:); end
-
-    sig do
-      params(
-        environment_id: String,
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(NilClass)
-    end
-    def delete_environment(environment_id:, request_options:); end
-
   end
 end

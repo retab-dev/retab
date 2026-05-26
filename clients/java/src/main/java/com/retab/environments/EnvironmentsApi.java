@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.Environment;
 import com.retab.models.EnvironmentCreateRequest;
-import com.retab.models.UpdateEnvironmentRequest;
 import com.retab.types.EnvironmentCreateRequestType;
 import java.io.IOException;
 import java.net.URI;
@@ -117,60 +116,6 @@ public final class EnvironmentsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Environment.class);
-  }
-
-  public Environment update(String environmentId, UpdateEnvironmentRequest request)
-      throws IOException, InterruptedException {
-    return update(environmentId, request == null ? null : request.getName());
-  }
-
-  public Environment update(String environmentId, String name)
-      throws IOException, InterruptedException {
-    String path = "/v1/environments/" + encodePathSegment(environmentId);
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    if (name != null) {
-      body.put("name", name);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("PATCH", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), Environment.class);
-  }
-
-  public Object delete(String environmentId) throws IOException, InterruptedException {
-    String path = "/v1/environments/" + encodePathSegment(environmentId);
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("DELETE", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), Object.class);
   }
 
   private static String encodePathSegment(Object value) {

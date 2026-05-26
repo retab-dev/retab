@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-25T22:12:46.314Z",
+  "generatedAt": "2026-05-26T15:31:04.831Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -333,7 +333,6 @@
     "src/models/subdocument.rs",
     "src/models/submit_decision_response.rs",
     "src/models/update_edit_template_request.rs",
-    "src/models/update_environment_request.rs",
     "src/models/update_experiment_request.rs",
     "src/models/update_workflow_block_request.rs",
     "src/models/update_workflow_request.rs",
@@ -430,14 +429,6 @@
     },
     "GET /v1/environments/{environment_id}": {
       "sdkMethod": "get_environment",
-      "service": "environments"
-    },
-    "PATCH /v1/environments/{environment_id}": {
-      "sdkMethod": "update_environment",
-      "service": "environments"
-    },
-    "DELETE /v1/environments/{environment_id}": {
-      "sdkMethod": "delete_environment",
       "service": "environments"
     },
     "POST /v1/schemas/generate": {
