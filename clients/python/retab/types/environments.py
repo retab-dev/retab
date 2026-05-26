@@ -33,12 +33,6 @@ class EnvironmentCreateRequest(BaseModel):
     type: EnvironmentType | None = Field(default=cast(EnvironmentType, "non_production"))
 
 
-class UpdateEnvironmentRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
-
-    name: str | None = None
-
-
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -46,4 +40,3 @@ class UpdateEnvironmentRequest(BaseModel):
 # generated module via a TYPE_CHECKING-guarded import.
 Environment.model_rebuild()
 EnvironmentCreateRequest.model_rebuild()
-UpdateEnvironmentRequest.model_rebuild()
