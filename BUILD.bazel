@@ -88,6 +88,30 @@ test_suite(
     ],
 )
 
+test_suite(
+    name = "lint",
+    tests = [
+        "//open-source/sdk/clients/node:lint",
+        "//open-source/sdk/clients/python:lint",
+    ],
+)
+
+test_suite(
+    name = "format_check",
+    tests = [
+        "//open-source/sdk/clients/node:format_check",
+        "//open-source/sdk/clients/python:format_check",
+    ],
+)
+
+test_suite(
+    name = "client_tests",
+    tests = [
+        "//open-source/sdk/clients/node:test",
+        "//open-source/sdk/clients/python:test",
+    ],
+)
+
 sh_test(
     name = "check_all",
     srcs = ["//tools/bazel:run_sdk_generation_check.sh"],

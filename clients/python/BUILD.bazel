@@ -1,0 +1,47 @@
+load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS", "PYTHON_VENV_TAGS")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "retab/**/*.py",
+        "tests/**/*.py",
+        "requirements.txt",
+        "pyproject.toml",
+    ]),
+)
+
+sh_test(
+    name = "format_check",
+    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    args = ["format_check"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
+)
+
+sh_test(
+    name = "lint",
+    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    args = ["lint"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
+)
+
+sh_test(
+    name = "test",
+    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    args = ["test"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
+    timeout = "long",
+)
+
+sh_test(
+    name = "test_local",
+    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    args = ["test_local"],
+    data = [":sources"],
+    tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
+    timeout = "long",
+)
