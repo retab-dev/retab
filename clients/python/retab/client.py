@@ -21,7 +21,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import auth, environments, files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
+from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
 from .types.standards import PreparedRequest
 
 logger = logging.getLogger("retab")
@@ -229,8 +229,6 @@ class Retab(BaseRetab):
         )
 
         self.client = httpx.Client(timeout=self.timeout)
-        self.auth = auth.Auth(client=self)
-        self.environments = environments.Environments(client=self)
         self.files = files.Files(client=self)
         self.extractions = extractions.Extractions(client=self)
         self.classifications = classifications.Classifications(client=self)
@@ -500,8 +498,6 @@ class AsyncRetab(BaseRetab):
 
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
-        self.auth = auth.AsyncAuth(client=self)
-        self.environments = environments.AsyncEnvironments(client=self)
         self.files = files.AsyncFiles(client=self)
         self.extractions = extractions.AsyncExtractions(client=self)
         self.classifications = classifications.AsyncClassifications(client=self)
