@@ -15,9 +15,10 @@ var envCmd = &cobra.Command{
 	Long: `Manage the Retab environment selected for CLI calls.
 
 Environment names are user-facing labels and can change. The CLI stores the
-durable environment id in ~/.retab/config.json and sends it as
-X-Retab-Environment-Id on subsequent OAuth-backed API calls. Per-environment
-API keys remain scoped by the server-side key record.`,
+durable environment id in ~/.retab/config.json. OAuth-backed API calls resolve
+that selection by minting a short-lived Retab dashboard context token; the
+environment is never sent as a public request header. Per-environment API keys
+remain scoped by the server-side key record.`,
 	Example: `  # List environments and see the active local selection
   retab env list
 
@@ -28,10 +29,10 @@ API keys remain scoped by the server-side key record.`,
   retab env switch Staging
 
   # WorkOS-style synonym for selecting a local environment
-  retab env claim env_staging
+  retab env claim environment_staging
 
   # Archive an environment
-  retab env remove env_abc123 --yes`,
+  retab env remove environment_abc123 --yes`,
 }
 
 var envListCmd = &cobra.Command{
