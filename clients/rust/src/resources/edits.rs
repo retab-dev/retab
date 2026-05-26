@@ -7,6 +7,7 @@ use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
 use crate::resources::edit_templates::EditTemplatesApi;
+#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct EditsApi<'a> {

@@ -15,9 +15,9 @@ import (
 )
 
 func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
-	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
-		{ID: "Production", Name: "Shadow", Type: retab.EnvironmentType("non_production")},
+	list := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_prod", Name: "Production", Type: cliEnvironmentTypeProduction},
+		{ID: "Production", Name: "Shadow", Type: cliEnvironmentTypeNonProduction},
 	}}
 
 	got, err := resolveEnvironmentSelection("Production", list)
@@ -30,9 +30,9 @@ func TestResolveEnvironmentSelectionUsesIDBeforeName(t *testing.T) {
 }
 
 func TestResolveEnvironmentSelectionRejectsAmbiguousName(t *testing.T) {
-	list := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "env_1", Name: "Staging", Type: retab.EnvironmentType("non_production")},
-		{ID: "env_2", Name: "Staging", Type: retab.EnvironmentType("non_production")},
+	list := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_1", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+		{ID: "env_2", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
 	}}
 
 	_, err := resolveEnvironmentSelection("Staging", list)
@@ -360,10 +360,10 @@ func TestEnvWhichShowsSelectedEnvironment(t *testing.T) {
 			t.Fatalf("Api-Key = %q, want test-key", r.Header.Get("Api-Key"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(retab.Environment{
+		_ = json.NewEncoder(w).Encode(cliEnvironment{
 			ID:        "env_prod",
 			Name:      "Production",
-			Type:      retab.AuthStatusEnvironmentTypeProduction,
+			Type:      cliEnvironmentTypeProduction,
 			IsDefault: &isDefault,
 		})
 	}))
@@ -409,8 +409,8 @@ func TestEnvAddValidatesType(t *testing.T) {
 }
 
 func TestEnvironmentListJSONShape(t *testing.T) {
-	result := &retab.PaginatedList[retab.Environment]{Data: []retab.Environment{
-		{ID: "env_prod", Name: "Production", Type: retab.EnvironmentType("production")},
+	result := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_prod", Name: "Production", Type: cliEnvironmentTypeProduction},
 	}}
 	raw, err := json.Marshal(result)
 	if err != nil {
@@ -425,10 +425,10 @@ func TestEnvironmentTableDefaultCellHidesFalseForTypedRows(t *testing.T) {
 	isDefault := true
 	notDefault := false
 
-	if got := environmentCell(retab.Environment{IsDefault: &isDefault}, "is_default"); got != "true" {
+	if got := environmentCell(cliEnvironment{IsDefault: &isDefault}, "is_default"); got != "true" {
 		t.Fatalf("default cell = %q, want true", got)
 	}
-	if got := environmentCell(retab.Environment{IsDefault: &notDefault}, "is_default"); got != "" {
+	if got := environmentCell(cliEnvironment{IsDefault: &notDefault}, "is_default"); got != "" {
 		t.Fatalf("non-default cell = %q, want blank", got)
 	}
 	if got := environmentCell(map[string]any{"is_default": false}, "is_default"); got != "" {

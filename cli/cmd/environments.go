@@ -2,12 +2,37 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
-	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+type cliPaginatedList[T any] struct {
+	Data         []T `json:"data"`
+	ListMetadata any `json:"list_metadata,omitempty"`
+}
+
+type cliEnvironmentType string
+
+const (
+	cliEnvironmentTypeProduction    cliEnvironmentType = "production"
+	cliEnvironmentTypeNonProduction cliEnvironmentType = "non_production"
+)
+
+type cliEnvironment struct {
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	Type      cliEnvironmentType `json:"type"`
+	IsDefault *bool              `json:"is_default,omitempty"`
+}
+
+type cliCreateEnvironmentRequest struct {
+	Name string              `json:"name"`
+	Type *cliEnvironmentType `json:"type,omitempty"`
+}
 
 var envCmd = &cobra.Command{
 	Use:   "env",
@@ -40,13 +65,7 @@ var envListCmd = &cobra.Command{
 	Short: "List organization environments",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Environments.List(ctx, nil)
+		result, err := listCLIEnvironments(cmd)
 		if err != nil {
 			return err
 		}
@@ -67,19 +86,13 @@ var envAddCmd = &cobra.Command{
 		if rawType != "" && rawType != "production" && rawType != "non_production" {
 			return fmt.Errorf("invalid --type %q (want: production | non_production)", rawType)
 		}
-		params := &retab.EnvironmentsCreateParams{Name: name}
+		params := &cliCreateEnvironmentRequest{Name: name}
 		if rawType != "" {
-			environmentType := retab.EnvironmentCreateRequestType(rawType)
+			environmentType := cliEnvironmentType(rawType)
 			params.Type = &environmentType
 		}
 
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Environments.Create(ctx, params)
+		result, err := createCLIEnvironment(cmd, params)
 		if err != nil {
 			return err
 		}
@@ -92,13 +105,7 @@ var envSwitchCmd = &cobra.Command{
 	Short: "Select the environment used by CLI requests",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		list, err := client.Environments.List(ctx, nil)
+		list, err := listCLIEnvironments(cmd)
 		if err != nil {
 			return err
 		}
@@ -135,13 +142,7 @@ var envWhichCmd = &cobra.Command{
 			return fmt.Errorf("no environment selected. Run `retab env switch <environment-id-or-name>`")
 		}
 
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		environment, err := client.Environments.Get(ctx, environmentID)
+		environment, err := getCLIEnvironment(cmd, environmentID)
 		if err != nil {
 			return err
 		}
@@ -162,13 +163,7 @@ var envGetCmd = &cobra.Command{
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Environments.Get(ctx, args[0])
+		result, err := getCLIEnvironment(cmd, args[0])
 		if err != nil {
 			return err
 		}
@@ -176,7 +171,34 @@ var envGetCmd = &cobra.Command{
 	}),
 }
 
-func printEnvironmentList(cmd *cobra.Command, result *retab.PaginatedList[retab.Environment]) error {
+func listCLIEnvironments(cmd *cobra.Command) (*cliPaginatedList[cliEnvironment], error) {
+	var result cliPaginatedList[cliEnvironment]
+	err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/environments", nil, nil, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func createCLIEnvironment(cmd *cobra.Command, request *cliCreateEnvironmentRequest) (*cliEnvironment, error) {
+	var result cliEnvironment
+	err := cliJSONRequestInto(cmd, http.MethodPost, "/v1/environments", nil, request, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func getCLIEnvironment(cmd *cobra.Command, environmentID string) (*cliEnvironment, error) {
+	var result cliEnvironment
+	err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/environments/"+url.PathEscape(environmentID), nil, nil, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func printEnvironmentList(cmd *cobra.Command, result *cliPaginatedList[cliEnvironment]) error {
 	format, err := ResolveOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
@@ -204,10 +226,10 @@ func environmentTableColumns(activeEnvironmentID string) []TableColumn {
 }
 
 func environmentCell(row any, field string) string {
-	if environment, ok := row.(retab.Environment); ok {
+	if environment, ok := row.(cliEnvironment); ok {
 		return environmentStructCell(environment, field)
 	}
-	if environment, ok := row.(*retab.Environment); ok && environment != nil {
+	if environment, ok := row.(*cliEnvironment); ok && environment != nil {
 		return environmentStructCell(*environment, field)
 	}
 	if value, ok := rowField(row, field); ok {
@@ -222,7 +244,7 @@ func environmentCell(row any, field string) string {
 	return ""
 }
 
-func environmentStructCell(environment retab.Environment, field string) string {
+func environmentStructCell(environment cliEnvironment, field string) string {
 	switch field {
 	case "id":
 		return environment.ID
@@ -240,7 +262,7 @@ func environmentStructCell(environment retab.Environment, field string) string {
 	}
 }
 
-func printSelectedEnvironment(cmd *cobra.Command, environment *retab.Environment, source string) error {
+func printSelectedEnvironment(cmd *cobra.Command, environment *cliEnvironment, source string) error {
 	format, err := ResolveOutputFormat(cmd, cmd.OutOrStdout())
 	if err != nil {
 		return err
@@ -316,12 +338,12 @@ func selectedEnvironmentStructCell(selection selectedEnvironment, field string) 
 	}
 }
 
-func resolveEnvironmentSelection(raw string, list *retab.PaginatedList[retab.Environment]) (*retab.Environment, error) {
+func resolveEnvironmentSelection(raw string, list *cliPaginatedList[cliEnvironment]) (*cliEnvironment, error) {
 	needle := strings.TrimSpace(raw)
 	if needle == "" {
 		return nil, fmt.Errorf("environment id or name is required")
 	}
-	var nameMatches []*retab.Environment
+	var nameMatches []*cliEnvironment
 	for i := range list.Data {
 		environment := &list.Data[i]
 		if environment.ID == needle {

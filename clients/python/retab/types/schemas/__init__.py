@@ -27,9 +27,6 @@ class WorkflowRunsStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-WorkflowRunsExcludeStatus = WorkflowRunsStatus
-
-
 class WorkflowRunsTriggerType(str, Enum):
     MANUAL = "manual"
     API = "api"
@@ -62,9 +59,6 @@ class WorkflowExperimentsStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
-
-
 class JobsStatus(str, Enum):
     VALIDATING = "validating"
     QUEUED = "queued"
@@ -93,6 +87,12 @@ class JobsSource(str, Enum):
     API = "api"
     PROJECT = "project"
     WORKFLOW = "workflow"
+
+
+WorkflowRunsExcludeStatus = WorkflowRunsStatus
+
+
+WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
 
 
 class GenerateSchemaRequest(BaseModel):

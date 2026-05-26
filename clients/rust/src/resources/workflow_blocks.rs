@@ -7,6 +7,7 @@ use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
 use crate::resources::workflow_block_executions::WorkflowBlockExecutionsApi;
+#[allow(unused_imports)]
 use serde::Serialize;
 
 pub struct WorkflowBlocksApi<'a> {

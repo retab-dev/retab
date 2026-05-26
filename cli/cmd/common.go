@@ -460,6 +460,14 @@ func buildCLIRequestURL(baseURL string, requestPath string, query url.Values) (*
 }
 
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
+	var result any
+	if err := cliJSONRequestInto(cmd, method, requestPath, query, body, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, query url.Values, body any, result any) error {
 	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
 
@@ -478,7 +486,7 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	// HTTP attempt. Empty string flows through to the config file or the
 	// default, both of which are trusted.
 	if err := validateBaseURL(baseURL); err != nil {
-		return nil, err
+		return err
 	}
 
 	cfg, _ := loadConfig()
@@ -507,7 +515,7 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
 			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			bearerToken = token
 		} else if cfg.APIKey != "" {
@@ -515,9 +523,24 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		}
 	}
 	if apiKey == "" && bearerToken == "" {
-		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
 	}
 
+	return doCLIJSONRequest(ctx, httpClient, baseURL, method, requestPath, query, body, apiKey, bearerToken, result)
+}
+
+func doCLIJSONRequest(
+	ctx context.Context,
+	httpClient *http.Client,
+	baseURL string,
+	method string,
+	requestPath string,
+	query url.Values,
+	body any,
+	apiKey string,
+	bearerToken string,
+	result any,
+) error {
 	if body == nil && method != http.MethodGet {
 		body = map[string]any{}
 	}
@@ -525,19 +548,19 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
-			return nil, fmt.Errorf("encode request body: %w", err)
+			return fmt.Errorf("encode request body: %w", err)
 		}
 		reader = bytes.NewReader(bodyBytes)
 	}
 
 	requestURL, err := buildCLIRequestURL(baseURL, requestPath, query)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, requestURL.String(), reader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -548,14 +571,17 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	} else {
 		req.Header.Set("Api-Key", apiKey)
 	}
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		// Surface the same `APIError` shape the SDK clients return so
@@ -564,16 +590,15 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		// runs restart, …) used to dump the raw HTTP envelope here while
 		// SDK-backed commands rendered "404 — Workflow not found"; that
 		// inconsistency confused users probing the CLI for status codes.
-		return nil, retab.ParseAPIError(resp, respBody)
+		return retab.ParseAPIError(resp, respBody)
 	}
-	if len(strings.TrimSpace(string(respBody))) == 0 {
-		return nil, nil
+	if len(strings.TrimSpace(string(respBody))) == 0 || result == nil {
+		return nil
 	}
-	var result any
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
+	if err := json.Unmarshal(respBody, result); err != nil {
+		return fmt.Errorf("decode response: %w", err)
 	}
-	return result, nil
+	return nil
 }
 
 // makeOAuthTokenProvider returns a closure that yields a current access

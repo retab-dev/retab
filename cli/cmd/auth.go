@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"text/tabwriter"
 	"time"
 
-	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -154,34 +154,34 @@ func selectOAuthLoginEnvironment(
 	baseURL string,
 	tokens *oauthTokens,
 	currentEnvironmentID string,
-) (*retab.Environment, error) {
+) (*cliEnvironment, error) {
 	if tokens == nil || strings.TrimSpace(tokens.AccessToken) == "" {
 		return nil, fmt.Errorf("OAuth access token is empty")
 	}
-	opts := []retab.Option{
-		retab.WithBearerTokenProvider(func(context.Context) (string, error) {
-			return tokens.AccessToken, nil
-		}),
-	}
-	if strings.TrimSpace(baseURL) != "" {
-		opts = append(opts, retab.WithBaseURL(baseURL))
-	}
-	client, err := retab.NewClient("", opts...)
+	var environments cliPaginatedList[cliEnvironment]
+	err := doCLIJSONRequest(
+		ctx,
+		http.DefaultClient,
+		canonicalAPIBaseURL(baseURL),
+		http.MethodGet,
+		"/v1/environments",
+		nil,
+		nil,
+		"",
+		tokens.AccessToken,
+		&environments,
+	)
 	if err != nil {
 		return nil, err
 	}
-	environments, err := client.Environments.List(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	environment := chooseLoginEnvironment(currentEnvironmentID, environments)
+	environment := chooseLoginEnvironment(currentEnvironmentID, &environments)
 	if environment == nil {
 		return nil, fmt.Errorf("no environments are available for this organization")
 	}
 	return environment, nil
 }
 
-func chooseLoginEnvironment(currentEnvironmentID string, list *retab.PaginatedList[retab.Environment]) *retab.Environment {
+func chooseLoginEnvironment(currentEnvironmentID string, list *cliPaginatedList[cliEnvironment]) *cliEnvironment {
 	if list == nil {
 		return nil
 	}
@@ -198,7 +198,7 @@ func chooseLoginEnvironment(currentEnvironmentID string, list *retab.PaginatedLi
 		}
 	}
 	for i := range list.Data {
-		if list.Data[i].Type == retab.AuthStatusEnvironmentTypeProduction {
+		if list.Data[i].Type == cliEnvironmentTypeProduction {
 			return &list.Data[i]
 		}
 	}
@@ -403,28 +403,37 @@ func getSelectedEnvironmentForAuthStatus(
 	cfg retabConfig,
 	baseURL string,
 	environmentID string,
-) (*retab.Environment, error) {
+) (*cliEnvironment, error) {
 	if cfg.OAuth == nil || strings.TrimSpace(cfg.OAuth.AccessToken) == "" {
 		return nil, fmt.Errorf("OAuth access token is empty")
 	}
-	opts := []retab.Option{
-		retab.WithBearerTokenProvider(makeOAuthTokenProvider(cfg.OAuth)),
-	}
-	if strings.TrimSpace(baseURL) != "" {
-		opts = append(opts, retab.WithBaseURL(baseURL))
-	}
-	client, err := retab.NewClient("", opts...)
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	token, err := makeOAuthTokenProvider(cfg.OAuth)(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := ctxFor(cmd)
-	defer cancel()
-	return client.Environments.Get(ctx, environmentID)
+	var environment cliEnvironment
+	err = doCLIJSONRequest(
+		ctx,
+		http.DefaultClient,
+		canonicalAPIBaseURL(baseURL),
+		http.MethodGet,
+		"/v1/environments/"+url.PathEscape(environmentID),
+		nil,
+		nil,
+		"",
+		token,
+		&environment,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &environment, nil
 }
 
 func probeAuthStatus(cmd *cobra.Command) error {
-	_, err := cliJSONRequest(cmd, http.MethodGet, "/v1/auth/status", nil, nil)
-	return err
+	return cliJSONRequestInto(cmd, http.MethodGet, "/v1/auth/status", nil, nil, nil)
 }
 
 // resolveAuthOutputFormat reads the global --output persistent flag.
