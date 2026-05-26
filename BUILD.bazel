@@ -1,4 +1,5 @@
 load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
+load("//tools/bazel:sdk_generation.bzl", "sdk_generation_tree")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -15,58 +16,186 @@ filegroup(
 
 sh_test(
     name = "check_python",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["python"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "python",
+        "$(location :generated_python_sdk)",
+        "open-source/sdk/clients/python",
+    ],
+    data = [
+        ":generated_python_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
 sh_test(
     name = "check_node",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["node"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "node",
+        "$(location :generated_node_sdk)",
+        "open-source/sdk/clients/node",
+    ],
+    data = [
+        ":generated_node_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sdk_generation_tree(
+    name = "generated_python_sdk",
+    language = "python",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_node_sdk",
+    language = "node",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
 sh_test(
     name = "check_go",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["go"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "go",
+        "$(location :generated_go_sdk)",
+        "open-source/sdk/clients/go",
+    ],
+    data = [
+        ":generated_go_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
 sh_test(
     name = "check_rust",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["rust"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "rust",
+        "$(location :generated_rust_sdk)",
+        "open-source/sdk/clients/rust",
+    ],
+    data = [
+        ":generated_rust_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
 sh_test(
     name = "check_dotnet",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["dotnet"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "dotnet",
+        "$(location :generated_dotnet_sdk)",
+        "open-source/sdk/clients/dotnet",
+    ],
+    data = [
+        ":generated_dotnet_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
 sh_test(
     name = "check_php",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["php"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "php",
+        "$(location :generated_php_sdk)",
+        "open-source/sdk/clients/php",
+    ],
+    data = [
+        ":generated_php_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
 sh_test(
     name = "check_ruby",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
-    args = ["ruby"],
-    data = [":generation_inputs"],
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "ruby",
+        "$(location :generated_ruby_sdk)",
+        "open-source/sdk/clients/ruby",
+    ],
+    data = [
+        ":generated_ruby_sdk",
+        ":generation_inputs",
+    ],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sh_test(
+    name = "check_java",
+    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    args = [
+        "java",
+        "$(location :generated_java_sdk)",
+        "open-source/sdk/clients/java",
+    ],
+    data = [
+        ":generated_java_sdk",
+        ":generation_inputs",
+    ],
+    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+)
+
+sdk_generation_tree(
+    name = "generated_go_sdk",
+    language = "go",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_rust_sdk",
+    language = "rust",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_dotnet_sdk",
+    language = "dotnet",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_php_sdk",
+    language = "php",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_ruby_sdk",
+    language = "ruby",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+)
+
+sdk_generation_tree(
+    name = "generated_java_sdk",
+    language = "java",
+    openapi = "//open-source/docs/api-reference:openapi_json",
+    srcs = [":generation_inputs"],
+    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
 test_suite(
@@ -76,16 +205,16 @@ test_suite(
         ":check_node",
         ":check_go",
         ":check_rust",
+        ":check_dotnet",
         ":check_php",
         ":check_ruby",
+        ":check_java",
     ],
 )
 
 test_suite(
     name = "experimental_generated_sdks",
-    tests = [
-        ":check_dotnet",
-    ],
+    tests = [],
 )
 
 test_suite(
@@ -109,6 +238,37 @@ test_suite(
     tests = [
         "//open-source/sdk/clients/node:test",
         "//open-source/sdk/clients/python:test",
+    ],
+)
+
+test_suite(
+    name = "test_unit",
+    tests = [
+        ":client_tests",
+    ],
+)
+
+test_suite(
+    name = "typecheck",
+    tests = [
+        ":lint",
+    ],
+)
+
+test_suite(
+    name = "smoke",
+    tests = [
+        ":format_check",
+        ":lint",
+    ],
+)
+
+test_suite(
+    name = "quality",
+    tests = [
+        ":client_tests",
+        ":format_check",
+        ":lint",
     ],
 )
 
