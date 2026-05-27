@@ -4,7 +4,60 @@ filegroup(
     name = "sources",
     srcs = glob([
         "**/*.go",
+        "api-overlay-inventory.json",
         "go.mod",
         "go.sum",
     ]),
+)
+
+filegroup(
+    name = "api_overlay_inventory",
+    srcs = ["api-overlay-inventory.json"],
+)
+
+sh_test(
+    name = "api_overlay_inventory_check",
+    srcs = ["//tools/bazel:run_api_surface_check.sh"],
+    args = [
+        "cli-overlay",
+        "open-source/docs/api-reference/openapi.json",
+        "open-source/sdk/cli/api-overlay-inventory.json",
+    ],
+    data = [
+        ":sources",
+        "//open-source/docs/api-reference:checked_openapi_json",
+        "//tools/bazel:api_surface.py",
+    ],
+    tags = [
+        "local",
+        "no-sandbox",
+        "requires-venv",
+    ],
+)
+
+sh_binary(
+    name = "api_overlay_inventory_update",
+    srcs = ["//tools/bazel:update_checked_contract_artifact.sh"],
+    args = [
+        "cli-api-overlay-inventory",
+        "open-source/sdk/cli/api-overlay-inventory.json",
+        "//open-source/sdk/cli:api_overlay_inventory_check",
+        "//open-source/sdk/cli:api_overlay_contract_check",
+        "//:api_surface_checks",
+    ],
+    data = [":api_overlay_inventory"],
+    tags = [
+        "local",
+        "manual",
+        "no-sandbox",
+        "requires-venv",
+        "generated-update",
+    ],
+)
+
+test_suite(
+    name = "api_overlay_contract_check",
+    tests = [
+        ":api_overlay_inventory_check",
+    ],
 )
