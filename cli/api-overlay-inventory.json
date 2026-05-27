@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "openapi": "open-source/docs/api-reference/openapi.json",
+  "default_decision": "deferred",
+  "baseline_operation_ids": [
+    "apply_workflow_spec",
+    "approve_review",
+    "cancel_experiment_run",
+    "cancel_job",
+    "cancel_test_execution_run",
+    "cancel_workflow_run",
+    "complete_upload_file",
+    "create_block",
+    "create_block_execution",
+    "create_classification",
+    "create_edge",
+    "create_edit",
+    "create_experiment",
+    "create_experiment_run",
+    "create_extraction",
+    "create_job",
+    "create_parse",
+    "create_partitions",
+    "create_review_version",
+    "create_split",
+    "create_template",
+    "create_test",
+    "create_test_run",
+    "create_workflow",
+    "create_workflow_run",
+    "delete_block",
+    "delete_classification",
+    "delete_edge",
+    "delete_edit",
+    "delete_experiment",
+    "delete_extraction",
+    "delete_parse",
+    "delete_partition",
+    "delete_split",
+    "delete_template",
+    "delete_test",
+    "delete_workflow",
+    "delete_workflow_run",
+    "download_link",
+    "export_workflow_spec",
+    "generate_schema_from_examples",
+    "get_block",
+    "get_classification",
+    "get_edge",
+    "get_edit",
+    "get_experiment",
+    "get_experiment_metrics_for_run",
+    "get_experiment_result",
+    "get_experiment_run",
+    "get_extraction",
+    "get_extraction_sources",
+    "get_file",
+    "get_parse",
+    "get_partition",
+    "get_review",
+    "get_review_version",
+    "get_split",
+    "get_template",
+    "get_test",
+    "get_test_execution_result",
+    "get_test_execution_run",
+    "get_workflow",
+    "get_workflow_artifact_by_id",
+    "get_workflow_export_payload",
+    "get_workflow_run",
+    "get_workflow_step",
+    "list_block_executions",
+    "list_blocks",
+    "list_classifications",
+    "list_edges",
+    "list_edits",
+    "list_experiment_results",
+    "list_experiment_runs",
+    "list_experiments",
+    "list_extractions",
+    "list_files",
+    "list_jobs",
+    "list_parses",
+    "list_partitions",
+    "list_review_versions",
+    "list_reviews",
+    "list_splits",
+    "list_templates",
+    "list_test_execution_results",
+    "list_test_execution_runs",
+    "list_tests",
+    "list_workflow_artifacts",
+    "list_workflow_run_steps",
+    "list_workflow_runs",
+    "list_workflows",
+    "plan_workflow_spec",
+    "publish_workflow",
+    "reject_review",
+    "retrieve_job",
+    "retry_job",
+    "update_block",
+    "update_experiment",
+    "update_template",
+    "update_test",
+    "update_workflow",
+    "upload_file",
+    "validate_workflow_spec"
+  ],
+  "exposed_operations": {
+    "apply_workflow_spec": {
+      "command": "retab workflows spec apply",
+      "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]
+    },
+    "cancel_job": {
+      "command": "retab jobs cancel",
+      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    },
+    "create_classification": {
+      "command": "retab classifications create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_classifications.go"]
+    },
+    "create_edit": {
+      "command": "retab edits create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits.go"]
+    },
+    "create_extraction": {
+      "command": "retab extractions create",
+      "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "create_job": {
+      "command": "retab jobs create",
+      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    },
+    "create_parse": {
+      "command": "retab parses create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_parses.go"]
+    },
+    "create_partitions": {
+      "command": "retab partitions create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_partitions.go"]
+    },
+    "create_split": {
+      "command": "retab splits create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_splits.go"]
+    },
+    "create_template": {
+      "command": "retab edits templates create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits_templates.go"]
+    },
+    "create_workflow": {
+      "command": "retab workflows create",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "delete_classification": {
+      "command": "retab classifications delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_classifications.go"]
+    },
+    "delete_edit": {
+      "command": "retab edits delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits.go"]
+    },
+    "delete_extraction": {
+      "command": "retab extractions delete",
+      "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "delete_parse": {
+      "command": "retab parses delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_parses.go"]
+    },
+    "delete_partition": {
+      "command": "retab partitions delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_partitions.go"]
+    },
+    "delete_split": {
+      "command": "retab splits delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_splits.go"]
+    },
+    "delete_template": {
+      "command": "retab edits templates delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits_templates.go"]
+    },
+    "delete_workflow": {
+      "command": "retab workflows delete",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "download_link": {
+      "command": "retab files download",
+      "source_files": ["open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"]
+    },
+    "export_workflow_spec": {
+      "command": "retab workflows spec get",
+      "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]
+    },
+    "generate_schema_from_examples": {
+      "command": "retab schemas generate",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_schemas.go"]
+    },
+    "get_classification": {
+      "command": "retab classifications get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_classifications.go"]
+    },
+    "get_edit": {
+      "command": "retab edits get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits.go"]
+    },
+    "get_extraction": {
+      "command": "retab extractions get",
+      "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "get_extraction_sources": {
+      "command": "retab extractions sources",
+      "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "get_file": {
+      "command": "retab files get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_files.go"]
+    },
+    "get_parse": {
+      "command": "retab parses get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_parses.go"]
+    },
+    "get_partition": {
+      "command": "retab partitions get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_partitions.go"]
+    },
+    "get_split": {
+      "command": "retab splits get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_splits.go"]
+    },
+    "get_template": {
+      "command": "retab edits templates get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits_templates.go"]
+    },
+    "get_workflow": {
+      "command": "retab workflows get",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "list_classifications": {
+      "command": "retab classifications list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_classifications.go"]
+    },
+    "list_edits": {
+      "command": "retab edits list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits.go"]
+    },
+    "list_extractions": {
+      "command": "retab extractions list",
+      "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "list_files": {
+      "command": "retab files list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_files.go"]
+    },
+    "list_jobs": {
+      "command": "retab jobs list",
+      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    },
+    "list_parses": {
+      "command": "retab parses list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_parses.go"]
+    },
+    "list_partitions": {
+      "command": "retab partitions list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_partitions.go"]
+    },
+    "list_splits": {
+      "command": "retab splits list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_splits.go"]
+    },
+    "list_templates": {
+      "command": "retab edits templates list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits_templates.go"]
+    },
+    "list_workflows": {
+      "command": "retab workflows list",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "plan_workflow_spec": {
+      "command": "retab workflows spec plan",
+      "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]
+    },
+    "publish_workflow": {
+      "command": "retab workflows publish",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "retrieve_job": {
+      "command": "retab jobs get",
+      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    },
+    "retry_job": {
+      "command": "retab jobs retry",
+      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    },
+    "update_template": {
+      "command": "retab edits templates update",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_edits_templates.go"]
+    },
+    "update_workflow": {
+      "command": "retab workflows update",
+      "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
+    },
+    "upload_file": {
+      "command": "retab files upload",
+      "source_files": ["open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"]
+    },
+    "validate_workflow_spec": {
+      "command": "retab workflows spec validate",
+      "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]
+    }
+  },
+  "not_cli_visible_operations": {},
+  "deferred_operations": {}
+}

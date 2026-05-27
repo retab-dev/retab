@@ -277,6 +277,40 @@ SDK_UPDATE_SPECS = [
     for spec in SDK_UPDATE_SPECS
 ]
 
+sh_binary(
+    name = "generated_sdks_update",
+    srcs = ["//tools/bazel:update_generated_sdks.sh"],
+    args = [
+        "$(location //tools/bazel:update_generated_sdk_tree.sh)",
+    ] + [
+        item
+        for spec in SDK_UPDATE_SPECS
+        for item in [
+            spec["language"],
+            "$(location %s)" % spec["generated"],
+            spec["client"],
+            "//open-source/sdk:check_%s" % spec["language"],
+            spec["snippet"],
+        ]
+    ],
+    data = [
+        "//tools/bazel:update_generated_sdk_tree.sh",
+        ":generation_inputs",
+    ] + [
+        spec["generated"]
+        for spec in SDK_UPDATE_SPECS
+    ],
+    tags = MANUAL_LOCAL_TAGS + ["generated-update"],
+)
+
+[
+    test_suite(
+        name = "generated_%s_sdk_check" % spec["language"],
+        tests = [spec["check"]],
+    )
+    for spec in SDK_UPDATE_SPECS
+]
+
 test_suite(
     name = "generated_sdks",
     tests = [
@@ -288,6 +322,13 @@ test_suite(
         ":check_php",
         ":check_ruby",
         ":check_java",
+    ],
+)
+
+test_suite(
+    name = "generated_sdks_check",
+    tests = [
+        ":generated_sdks",
     ],
 )
 
