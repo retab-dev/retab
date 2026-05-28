@@ -275,7 +275,7 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Lifecycle == nil || result.Lifecycle.Status == nil || *result.Lifecycle.Status != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID == nil || *result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
+	if result.Lifecycle.Status() != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID == nil || *result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
 		t.Fatalf("create response lost fields: %#v", result)
 	}
 	if result.ID != "wftestrun_1" {

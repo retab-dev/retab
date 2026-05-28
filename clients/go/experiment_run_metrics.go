@@ -25,14 +25,14 @@ type ExperimentRunMetricsGetParams struct {
 }
 
 // Get experiment Metrics For Run
-func (s *ExperimentRunMetricService) Get(ctx context.Context, params *ExperimentRunMetricsGetParams, opts ...RequestOption) (*ExperimentSummaryMetricsResponse, error) {
+func (s *ExperimentRunMetricService) Get(ctx context.Context, params *ExperimentRunMetricsGetParams, opts ...RequestOption) (*Experiment, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: run_id is required")
 	}
 	if params.RunID == "" {
 		return nil, fmt.Errorf("retab: run_id is required")
 	}
-	var result ExperimentSummaryMetricsResponse
+	var result Experiment
 	_, err := s.client.request(ctx, "GET", "/v1/workflows/experiments/metrics", params, nil, &result, opts)
 	if err != nil {
 		return nil, err

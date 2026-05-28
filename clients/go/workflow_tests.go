@@ -35,11 +35,11 @@ func (s *WorkflowTestService) List(ctx context.Context, params *WorkflowTestsLis
 
 // WorkflowTestsCreateParams contains the parameters for Create.
 type WorkflowTestsCreateParams struct {
-	WorkflowID string                    `json:"workflow_id" url:"-"`
-	Target     WorkflowTestBlockTarget   `json:"target" url:"-"`
-	Source     *ManualWorkflowTestSource `json:"source" url:"-"`
-	Name       *string                   `json:"name,omitempty" url:"-"`
-	Assertion  AssertionSpec             `json:"assertion" url:"-"`
+	WorkflowID string                  `json:"workflow_id" url:"-"`
+	Target     WorkflowTestBlockTarget `json:"target" url:"-"`
+	Source     WorkflowTestSource      `json:"source" url:"-"`
+	Name       *string                 `json:"name,omitempty" url:"-"`
+	Assertion  AssertionSpec           `json:"assertion" url:"-"`
 }
 
 // Create test
@@ -67,9 +67,9 @@ func (s *WorkflowTestService) Get(ctx context.Context, testID string, opts ...Re
 
 // WorkflowTestsUpdateParams contains the parameters for Update.
 type WorkflowTestsUpdateParams struct {
-	Name      *string                   `json:"name,omitempty" url:"-"`
-	Assertion *AssertionSpec            `json:"assertion,omitempty" url:"-"`
-	Source    *ManualWorkflowTestSource `json:"source,omitempty" url:"-"`
+	Name      *string             `json:"name,omitempty" url:"-"`
+	Assertion *AssertionSpec      `json:"assertion,omitempty" url:"-"`
+	Source    *WorkflowTestSource `json:"source,omitempty" url:"-"`
 }
 
 // Update test

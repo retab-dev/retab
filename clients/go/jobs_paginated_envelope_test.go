@@ -35,7 +35,7 @@ func TestJobsListUsesListMetadataEnvelope(t *testing.T) {
 	if got := len(page.Data); got != 2 {
 		t.Fatalf("page.Data length = %d, want 2", got)
 	}
-	if page.Data[0].ID == nil || *page.Data[0].ID != "job_1" || page.Data[1].ID == nil || *page.Data[1].ID != "job_2" {
+	if page.Data[0].ID != "job_1" || page.Data[1].ID != "job_2" {
 		t.Fatalf("page.Data ids = [%v, %v]", page.Data[0].ID, page.Data[1].ID)
 	}
 	if page.ListMetadata.Before != "job_1" || page.ListMetadata.After != "job_2" {

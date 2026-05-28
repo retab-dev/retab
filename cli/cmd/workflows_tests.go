@@ -288,13 +288,7 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		if err := decodeJSONInto("target-file", target, &req.Target); err != nil {
 			return err
 		}
-		// `--source-file` only accepts the manual shape via the typed SDK
-		// surface; the legacy `{type: run_step, ...}` body is still
-		// supported on the wire but no longer matches the typed param.
-		// Keep accepting it but route through json.Unmarshal so the field
-		// drops cleanly when unset.
-		req.Source = &retab.ManualWorkflowTestSource{}
-		if err := decodeJSONInto("source-file", source, req.Source); err != nil {
+		if err := decodeJSONInto("source-file", source, &req.Source); err != nil {
 			return err
 		}
 		if err := decodeJSONInto("assertion-file", assertion, &req.Assertion); err != nil {
@@ -423,7 +417,7 @@ flaky runs.`,
 			if err := validateWorkflowTestSource(source); err != nil {
 				return fmt.Errorf("--source-file: %w", err)
 			}
-			req.Source = &retab.ManualWorkflowTestSource{}
+			req.Source = &retab.WorkflowTestSource{}
 			if err := decodeJSONInto("source-file", source, req.Source); err != nil {
 				return err
 			}

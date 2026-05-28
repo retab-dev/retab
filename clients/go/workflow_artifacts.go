@@ -19,16 +19,16 @@ type WorkflowArtifactService struct {
 // (“extr_…“ → extraction, “clss_…“ → classification, etc.). This is
 // the flat-resource shape — callers do not need to know which collection
 // backs the id.
-func (s *WorkflowArtifactService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (*ExtractionWorkflowArtifact, error) {
+func (s *WorkflowArtifactService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (interface{}, error) {
 	if artifactID == "" {
 		return nil, fmt.Errorf("retab: artifact_id is required")
 	}
-	var result ExtractionWorkflowArtifact
+	var result interface{}
 	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/artifacts/%s", url.PathEscape(artifactID)), nil, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return result, nil
 }
 
 // WorkflowArtifactsListParams contains the parameters for List.

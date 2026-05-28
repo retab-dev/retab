@@ -772,7 +772,12 @@ func rowFieldSingle(row any, key string) (any, bool) {
 				return rv.Field(i).Interface(), true
 			}
 		}
-		return nil, false
+		// Discriminated-union envelopes keep their payload in an unexported
+		// `raw json.RawMessage` field, reachable only through MarshalJSON.
+		// When no exported field matches `key`, marshal the value and look the
+		// key up in the resulting object so envelope fields (e.g.
+		// `triggered_by.kind`) stay navigable by dotted path.
+		return jsonObjectField(row, key)
 	case reflect.Map:
 		if rv.Type().Key().Kind() != reflect.String {
 			return nil, false
@@ -785,6 +790,22 @@ func rowFieldSingle(row any, key string) (any, bool) {
 	default:
 		return nil, false
 	}
+}
+
+// jsonObjectField marshals v to JSON and, when the result is an object,
+// returns the value at `key`. Used as the path-navigation fallback for union
+// envelopes whose payload is exposed only via MarshalJSON.
+func jsonObjectField(v any, key string) (any, bool) {
+	encoded, err := json.Marshal(v)
+	if err != nil {
+		return nil, false
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(encoded, &obj); err != nil {
+		return nil, false
+	}
+	val, ok := obj[key]
+	return val, ok
 }
 
 // stringifyCell renders a single cell value as plain text. Strings

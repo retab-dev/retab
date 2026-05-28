@@ -1431,6 +1431,175 @@ func TestWorkflowsTestsCreateHelpDocumentsSourceFileShape(t *testing.T) {
 	}
 }
 
+// TestWorkflowsTestsCreatePreservesRunStepAndExpectedFields is the
+// regression guard for the silent field-dropping bug: `workflows tests
+// create` decoded the source into the manual-only SDK struct (dropping
+// run_step's run_id/step_id) and the assertion into a Condition type that
+// collapses to the kind-only ExistCondition (dropping `expected`). The
+// server then 422'd on `source.run_step.run_id` and
+// `assertion.condition.equals.expected`. The fix splices the validated
+// raw source/assertion into the request body, so the wire payload must
+// carry both fields.
+func TestWorkflowsTestsCreatePreservesRunStepAndExpectedFields(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	sourcePath := filepath.Join(dir, "source.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	for path, body := range map[string]string{
+		targetPath:    `{"type":"block","block_id":"block_jT"}`,
+		sourcePath:    `{"type":"run_step","run_id":"run_f_nrFkuN2Uvh","step_id":"step_abc"}`,
+		assertionPath: `{"target":{"output_handle_id":"output-json-0","path":"bank_name"},"condition":{"kind":"equals","expected":"Commerce Bank"}}`,
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"wfnodetest_123"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"name":           "Invoice baseline",
+		"target-file":    targetPath,
+		"source-file":    sourcePath,
+		"assertion-file": assertionPath,
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+		flagName := flag
+		t.Cleanup(func() {
+			_ = workflowsTestsCreateCmd.Flags().Set(flagName, "")
+			if f := workflowsTestsCreateCmd.Flags().Lookup(flagName); f != nil {
+				f.Changed = false
+			}
+		})
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	})
+	if err != nil {
+		t.Fatalf("tests create: %v", err)
+	}
+
+	source, ok := gotBody["source"].(map[string]any)
+	if !ok {
+		t.Fatalf("source missing or wrong type in body: %#v", gotBody["source"])
+	}
+	if source["type"] != "run_step" {
+		t.Fatalf("source.type = %v, want run_step", source["type"])
+	}
+	if source["run_id"] != "run_f_nrFkuN2Uvh" {
+		t.Fatalf("source.run_id = %v, want run_f_nrFkuN2Uvh (was dropped before fix)", source["run_id"])
+	}
+	if source["step_id"] != "step_abc" {
+		t.Fatalf("source.step_id = %v, want step_abc (was dropped before fix)", source["step_id"])
+	}
+
+	assertion, ok := gotBody["assertion"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion missing or wrong type in body: %#v", gotBody["assertion"])
+	}
+	condition, ok := assertion["condition"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion.condition missing or wrong type: %#v", assertion["condition"])
+	}
+	if condition["kind"] != "equals" {
+		t.Fatalf("condition.kind = %v, want equals", condition["kind"])
+	}
+	if condition["expected"] != "Commerce Bank" {
+		t.Fatalf("condition.expected = %v, want \"Commerce Bank\" (was dropped before fix)", condition["expected"])
+	}
+}
+
+// TestWorkflowsTestsUpdatePreservesRunStepAndExpectedFields mirrors the
+// create regression for the update path, which shared the same lossy
+// decode into manual-only / kind-only SDK structs.
+func TestWorkflowsTestsUpdatePreservesRunStepAndExpectedFields(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	dir := t.TempDir()
+	sourcePath := filepath.Join(dir, "source.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	if err := os.WriteFile(sourcePath, []byte(`{"type":"run_step","run_id":"run_xyz"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(assertionPath, []byte(`{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"equals","expected":42}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"wfnodetest_123"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsTestsUpdateCmd.Flags().Set("source-file", sourcePath); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsTestsUpdateCmd.Flags().Set("assertion-file", assertionPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsTestsUpdateCmd.Flags().Set("source-file", "")
+		_ = workflowsTestsUpdateCmd.Flags().Set("assertion-file", "")
+		for _, name := range []string{"source-file", "assertion-file", "name"} {
+			if f := workflowsTestsUpdateCmd.Flags().Lookup(name); f != nil {
+				f.Changed = false
+			}
+		}
+	})
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"wfnodetest_123"})
+	})
+	if err != nil {
+		t.Fatalf("tests update: %v", err)
+	}
+
+	source, ok := gotBody["source"].(map[string]any)
+	if !ok {
+		t.Fatalf("source missing or wrong type: %#v", gotBody["source"])
+	}
+	if source["run_id"] != "run_xyz" {
+		t.Fatalf("source.run_id = %v, want run_xyz (was dropped before fix)", source["run_id"])
+	}
+	assertion, ok := gotBody["assertion"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion missing or wrong type: %#v", gotBody["assertion"])
+	}
+	condition, ok := assertion["condition"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion.condition missing: %#v", assertion["condition"])
+	}
+	if condition["expected"] != float64(42) {
+		t.Fatalf("condition.expected = %v, want 42 (was dropped before fix)", condition["expected"])
+	}
+}
+
 // nonEmptyLines splits s on "\n" and returns the non-empty entries. We use
 // this to assert exact line counts on warning output without being tripped
 // up by the trailing newline from fmt.Fprintln.

@@ -560,7 +560,7 @@ func TestJobWaitTerminalErrorStatuses(t *testing.T) {
 	} {
 		t.Run(tc.status, func(t *testing.T) {
 			status := retab.JobStatus(tc.status)
-			job := retab.Job{ID: ptr("job_123"), Status: &status}
+			job := retab.Job{ID: "job_123", Status: &status}
 			err := jobWaitTerminalError(&job)
 			if tc.wantErr && err == nil {
 				t.Fatalf("expected error for status %q", tc.status)
