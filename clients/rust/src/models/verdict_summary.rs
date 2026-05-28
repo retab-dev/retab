@@ -17,6 +17,7 @@ pub struct VerdictSummary {
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub blocked_assertions: Option<i64>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failed_assertion_ids: Option<Vec<String>>,
 }

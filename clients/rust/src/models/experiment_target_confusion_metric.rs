@@ -11,8 +11,10 @@ pub struct ExperimentTargetConfusionMetric {
     #[serde(rename = "self")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub self_: Option<f64>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub flow_from: Option<std::collections::HashMap<String, f64>>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub flow_to: Option<std::collections::HashMap<String, f64>>,
 }

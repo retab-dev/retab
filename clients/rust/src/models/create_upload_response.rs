@@ -20,6 +20,8 @@ pub struct CreateUploadResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub upload_method: Option<String>,
     /// Headers required by the signed upload URL
+    ///
+    /// Defaults to `{}`.
     #[serde(rename = "uploadHeaders")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub upload_headers: Option<std::collections::HashMap<String, String>>,

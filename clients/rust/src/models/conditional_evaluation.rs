@@ -15,12 +15,15 @@ pub struct ConditionalEvaluation {
     pub id: String,
     pub workflow_run_id: String,
     pub step_id: String,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub evaluations: Option<Vec<ConditionEvaluationResult>>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub selected_handles: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub matched_branch_id: Option<String>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub matched_condition_ids: Option<Vec<String>>,
     /// When this artifact was written by the orchestrator.

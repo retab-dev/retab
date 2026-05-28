@@ -22,6 +22,8 @@ pub struct EditRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
     /// Edit configuration (rendering options).
+    ///
+    /// Defaults to `{"color":"#000080"}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub config: Option<EditConfig>,
     /// If true, skip the LLM cache and force a fresh completion.

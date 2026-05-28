@@ -40,8 +40,8 @@ pub struct StoredBlockExecution {
     /// Duration of the block execution in milliseconds
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
+    /// When the block execution record was created
+    pub created_at: String,
     /// The draft block config used for this block execution
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config: Option<std::collections::HashMap<String, serde_json::Value>>,
@@ -62,6 +62,7 @@ impl StoredBlockExecution {
         block_id: impl Into<String>,
         block_type: impl Into<String>,
         lifecycle: StoredBlockExecutionLifecycleOneOf,
+        created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -75,7 +76,7 @@ impl StoredBlockExecution {
             handle_outputs: Default::default(),
             routing_decision: Default::default(),
             duration_ms: Default::default(),
-            created_at: Default::default(),
+            created_at: created_at.into(),
             block_config: Default::default(),
             step_id: Default::default(),
             available_iterations: Default::default(),

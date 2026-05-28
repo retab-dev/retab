@@ -21,6 +21,7 @@ pub struct ExperimentVotesMetricsResponse {
     pub score: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub prior_score: Option<f64>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub rows: Option<Vec<ExperimentVoteRow>>,
 }

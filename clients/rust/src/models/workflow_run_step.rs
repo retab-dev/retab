@@ -28,6 +28,8 @@ pub struct WorkflowRunStep {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
     /// Container hierarchy from outermost to innermost. Empty when not inside any container.
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub loop_containers: Option<Vec<ContainerContextData>>,
     /// Parent workflow run ID
@@ -36,9 +38,13 @@ pub struct WorkflowRunStep {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
     /// Handle input payloads consumed by this step
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs: Option<std::collections::HashMap<String, PublicHandlePayload>>,
     /// Handle output payloads produced by this step
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_outputs: Option<std::collections::HashMap<String, PublicHandlePayload>>,
     /// Canonical persisted result of this step

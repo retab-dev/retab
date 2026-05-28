@@ -17,6 +17,7 @@ pub struct ExperimentMetricsStaleError {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub error: Option<String>,
     pub experiment_id: String,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stale_reasons: Option<Vec<String>>,
     pub last_run: MetricsStaleErrorLastRun,

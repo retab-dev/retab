@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWorkflowTestRunRequest {
     pub workflow_id: String,
-    /// Optional execution scope. Omit to run every saved test in the workflow.
+    /// Optional execution scope. Omit (or pass null) to run every saved test in the workflow.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub scope: Option<CreateWorkflowTestRunRequestScopeOneOf>,
 }

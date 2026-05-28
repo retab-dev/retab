@@ -16,7 +16,7 @@ readonly class WorkflowBlockCreateRequest implements \JsonSerializable
         public string $workflowId,
         /** Block type */
         public WorkflowBlockCreateRequestType $type,
-        /** Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability. */
+        /** If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability. */
         public ?string $id = null,
         /** Display label */
         public ?string $label = null,

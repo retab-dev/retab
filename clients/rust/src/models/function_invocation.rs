@@ -15,6 +15,7 @@ pub struct FunctionInvocation {
     pub id: String,
     pub workflow_run_id: String,
     pub step_id: String,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inputs: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

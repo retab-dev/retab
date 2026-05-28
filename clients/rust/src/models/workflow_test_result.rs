@@ -37,6 +37,7 @@ pub struct WorkflowTestResult {
     pub outputs: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub routing_decision: Option<Vec<String>>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub warnings: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

@@ -26,6 +26,8 @@ pub struct WorkflowRun {
     /// All timing information
     pub timing: RunTiming,
     /// Input payloads supplied at run creation time
+    ///
+    /// Defaults to `{"documents":{},"json_data":{}}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inputs: Option<RunInputs>,
 }

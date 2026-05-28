@@ -5,14 +5,26 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentRunTiming {
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
+    /// When the experiment run record was created
+    pub created_at: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub started_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub completed_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
+}
+impl ExperimentRunTiming {
+    /// Construct a new `ExperimentRunTiming` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(created_at: impl Into<String>) -> Self {
+        Self {
+            created_at: created_at.into(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            duration_ms: Default::default(),
+        }
+    }
 }

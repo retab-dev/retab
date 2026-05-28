@@ -8,9 +8,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PartitionConsensus {
     /// Alternative partition vote outputs used to build the consolidated result.
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub choices: Option<Vec<Vec<PartitionChunk>>>,
     /// Consensus likelihoods aligned with the partition output.
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub likelihoods: Option<Vec<PartitionChunkLikelihood>>,
 }

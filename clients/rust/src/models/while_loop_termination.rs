@@ -17,6 +17,7 @@ pub struct WhileLoopTermination {
     pub step_id: String,
     /// Why the while-loop terminated
     pub termination_reason: WhileLoopTerminationTerminationReason,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub evaluations: Option<Vec<ConditionEvaluationResult>>,
     /// When this artifact was written by the orchestrator.

@@ -5,6 +5,7 @@ package com.retab.workflows;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.RetabException;
 import com.retab.models.CreateWorkflowRequest;
 import com.retab.models.UpdateWorkflowRequest;
 import com.retab.models.Workflow;
@@ -95,7 +96,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -138,7 +142,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -159,7 +166,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -198,7 +208,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -219,7 +232,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -240,7 +256,10 @@ public final class WorkflowsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

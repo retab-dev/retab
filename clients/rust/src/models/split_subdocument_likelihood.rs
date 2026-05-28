@@ -11,6 +11,8 @@ pub struct SplitSubdocumentLikelihood {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub name: Option<f64>,
     /// Confidence for each page in the corresponding split.pages array
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub pages: Option<Vec<f64>>,
 }

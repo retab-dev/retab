@@ -11,20 +11,24 @@ pub struct ReviewDecision {
     pub verdict: ReviewVerdict,
     pub version_id: String,
     pub author: Actor,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub decided_at: Option<String>,
+    pub decided_at: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reason: Option<String>,
 }
 impl ReviewDecision {
     /// Construct a new `ReviewDecision` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(verdict: ReviewVerdict, version_id: impl Into<String>, author: Actor) -> Self {
+    pub fn new(
+        verdict: ReviewVerdict,
+        version_id: impl Into<String>,
+        author: Actor,
+        decided_at: impl Into<String>,
+    ) -> Self {
         Self {
             verdict,
             version_id: version_id.into(),
             author,
-            decided_at: Default::default(),
+            decided_at: decided_at.into(),
             reason: Default::default(),
         }
     }

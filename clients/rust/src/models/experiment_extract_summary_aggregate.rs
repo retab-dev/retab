@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Extract-only diagnostics attached to the summary response.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentExtractSummaryAggregate {
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub likelihoods: Option<std::collections::HashMap<String, f64>>,
 }

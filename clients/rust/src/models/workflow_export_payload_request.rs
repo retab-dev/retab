@@ -38,6 +38,8 @@ pub struct WorkflowExportPayloadRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub trigger_types: Option<Vec<WorkflowExportPayloadRequestTriggerTypes>>,
     /// Preferred data column order
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub preferred_columns: Option<Vec<String>>,
     /// CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct WorkflowEdgeCreateRequest {
     /// Workflow to create the edge in.
     pub workflow_id: String,
-    /// Opaque edge ID. Omit to let the server generate one.
+    /// If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub id: Option<String>,
     /// Source block ID

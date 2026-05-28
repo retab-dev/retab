@@ -13,7 +13,7 @@ readonly class CreateWorkflowTestRunRequest implements \JsonSerializable
 
     public function __construct(
         public string $workflowId,
-        /** Optional execution scope. Omit to run every saved test in the workflow. */
+        /** Optional execution scope. Omit (or pass null) to run every saved test in the workflow. */
         public WorkflowTestRunSingleScope|WorkflowTestRunWorkflowScope|WorkflowTestRunBlockScope|null $scope = null,
     ) {}
 

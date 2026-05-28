@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct ExperimentVoteRow {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<serde_json::Value>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub votes: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

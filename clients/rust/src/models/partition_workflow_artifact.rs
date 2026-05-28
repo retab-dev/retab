@@ -29,6 +29,8 @@ pub struct PartitionWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub allow_overlap: Option<bool>,
     /// The list of partition chunks with their assigned pages
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub output: Option<Vec<PartitionChunk>>,
     /// Consensus metadata for multi-vote partition runs

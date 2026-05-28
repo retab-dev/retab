@@ -9,9 +9,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunInputs {
     /// start_document block ID -> input document reference
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub documents: Option<std::collections::HashMap<String, FileRef>>,
     /// start-json block ID -> input JSON data
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub json_data: Option<std::collections::HashMap<String, serde_json::Value>>,
 }

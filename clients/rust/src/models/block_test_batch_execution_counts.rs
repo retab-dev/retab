@@ -14,8 +14,10 @@ use serde::{Deserialize, Serialize};
 /// typed states). This field is a counts subdocument, not a union.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlockTestBatchExecutionCounts {
+    /// Defaults to `{"pending":0,"queued":0,"running":0,"completed":0,"error":0,"cancelled":0}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub lifecycle_counts: Option<BlockTestLifecycleCounts>,
+    /// Defaults to `{"passed":0,"failed":0,"blocked":0}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub outcome: Option<BlockTestOutcomeCounts>,
 }

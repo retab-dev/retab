@@ -15,6 +15,7 @@ pub struct DeclarativePlanChange {
     pub before_sensitive: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub after_sensitive: Option<serde_json::Value>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub field_changes: Option<Vec<DeclarativePlanFieldChange>>,
 }

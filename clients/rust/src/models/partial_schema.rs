@@ -13,6 +13,7 @@ pub struct PartialSchema {
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub json_schema: Option<std::collections::HashMap<String, serde_json::Value>>,
     /// Defaults to `true`.

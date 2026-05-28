@@ -13,6 +13,7 @@ pub struct ValidationError {
     pub type_: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub input: Option<serde_json::Value>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub ctx: Option<std::collections::HashMap<String, serde_json::Value>>,
 }

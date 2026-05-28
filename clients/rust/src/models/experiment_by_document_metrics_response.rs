@@ -22,6 +22,7 @@ pub struct ExperimentByDocumentMetricsResponse {
     pub prior_score: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub confusion: Option<ExperimentDocumentConfusionMetric>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub targets: Option<Vec<ExperimentByDocumentTargetMetric>>,
 }

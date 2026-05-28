@@ -15,7 +15,7 @@ readonly class ReviewDecision implements \JsonSerializable
         public ReviewVerdict $verdict,
         public string $versionId,
         public Actor $author,
-        public ?\DateTimeImmutable $decidedAt = null,
+        public \DateTimeImmutable $decidedAt,
         public ?string $reason = null,
     ) {}
 
@@ -26,6 +26,7 @@ readonly class ReviewDecision implements \JsonSerializable
             'verdict',
             'version_id',
             'author',
+            'decided_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for ReviewDecision::fromArray()");
@@ -35,7 +36,7 @@ readonly class ReviewDecision implements \JsonSerializable
             verdict: ReviewVerdict::from($data['verdict']),
             versionId: $data['version_id'],
             author: Actor::fromArray($data['author']),
-            decidedAt: isset($data['decided_at']) ? new \DateTimeImmutable($data['decided_at']) : null,
+            decidedAt: new \DateTimeImmutable($data['decided_at']),
             reason: $data['reason'] ?? null,
         );
     }
@@ -47,7 +48,7 @@ readonly class ReviewDecision implements \JsonSerializable
             'verdict' => $this->verdict->value,
             'version_id' => $this->versionId,
             'author' => $this->author->toArray(),
-            'decided_at' => $this->decidedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'decided_at' => $this->decidedAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'reason' => $this->reason,
         ];
     }

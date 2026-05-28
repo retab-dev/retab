@@ -17,6 +17,7 @@ pub struct ExperimentResult {
     pub lifecycle: ExperimentResultLifecycleOneOf,
     pub timing: ExperimentResultTiming,
     pub block_type: ExperimentResultBlockType,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs: Option<
         std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,
