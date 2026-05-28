@@ -29,9 +29,9 @@ readonly class WorkflowRun implements \JsonSerializable
         /** What started this run */
         public ManualTrigger|ApiTrigger|ScheduleTrigger|WebhookTrigger|EmailTrigger|RestartTrigger $trigger,
         /** Discriminated lifecycle state. */
-        public PendingRun|RunningRun|AwaitingReviewRun|CompletedTerminal|ErrorTerminal|CancelledTerminal|null $lifecycle = null,
+        public PendingRun|RunningRun|AwaitingReviewRun|CompletedTerminal|ErrorTerminal|CancelledTerminal $lifecycle,
         /** All timing information */
-        public ?RunTiming $timing = null,
+        public RunTiming $timing,
         /** Input payloads supplied at run creation time */
         public ?RunInputs $inputs = null,
     ) {}
@@ -43,6 +43,8 @@ readonly class WorkflowRun implements \JsonSerializable
             'id',
             'workflow',
             'trigger',
+            'lifecycle',
+            'timing',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowRun::fromArray()");
@@ -54,10 +56,10 @@ readonly class WorkflowRun implements \JsonSerializable
             trigger: match ($data['trigger']['type'] ?? null) {
                 'api' => ApiTrigger::fromArray($data['trigger']), 'email' => EmailTrigger::fromArray($data['trigger']), 'manual' => ManualTrigger::fromArray($data['trigger']), 'restart' => RestartTrigger::fromArray($data['trigger']), 'schedule' => ScheduleTrigger::fromArray($data['trigger']), 'webhook' => WebhookTrigger::fromArray($data['trigger']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['trigger']['type'] ?? null))),
             },
-            lifecycle: isset($data['lifecycle']) ? match ($data['lifecycle']['status'] ?? null) {
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
                 'awaiting_review' => AwaitingReviewRun::fromArray($data['lifecycle']), 'cancelled' => CancelledTerminal::fromArray($data['lifecycle']), 'completed' => CompletedTerminal::fromArray($data['lifecycle']), 'error' => ErrorTerminal::fromArray($data['lifecycle']), 'pending' => PendingRun::fromArray($data['lifecycle']), 'running' => RunningRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
-            } : null,
-            timing: isset($data['timing']) ? RunTiming::fromArray($data['timing']) : null,
+            },
+            timing: RunTiming::fromArray($data['timing']),
             inputs: isset($data['inputs']) ? RunInputs::fromArray($data['inputs']) : null,
         );
     }
@@ -69,8 +71,8 @@ readonly class WorkflowRun implements \JsonSerializable
             'id' => $this->id,
             'workflow' => $this->workflow->toArray(),
             'trigger' => $this->trigger->toArray(),
-            'lifecycle' => $this->lifecycle?->toArray(),
-            'timing' => $this->timing?->toArray(),
+            'lifecycle' => $this->lifecycle->toArray(),
+            'timing' => $this->timing->toArray(),
             'inputs' => $this->inputs?->toArray(),
         ];
     }

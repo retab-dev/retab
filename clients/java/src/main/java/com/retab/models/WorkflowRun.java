@@ -20,8 +20,8 @@ public final class WorkflowRun {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
       @JsonProperty(value = "trigger", required = true) ManualTrigger trigger,
-      @JsonProperty(value = "lifecycle", required = false) PendingRun lifecycle,
-      @JsonProperty(value = "timing", required = false) RunTiming timing,
+      @JsonProperty(value = "lifecycle", required = true) PendingRun lifecycle,
+      @JsonProperty(value = "timing", required = true) RunTiming timing,
       @JsonProperty(value = "inputs", required = false) RunInputs inputs) {
     this.id = id;
     this.workflow = workflow;

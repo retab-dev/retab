@@ -27,16 +27,16 @@ module Retab
     sig { params(value: T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)).returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)) }
     def trigger=(value); end
 
-    sig { returns(T.nilable(T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal))) }
+    sig { returns(T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal)) }
     def lifecycle; end
 
-    sig { params(value: T.nilable(T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal))).returns(T.nilable(T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal))) }
+    sig { params(value: T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal)).returns(T.any(Retab::PendingRun, Retab::RunningRun, Retab::AwaitingReviewRun, Retab::CompletedTerminal, Retab::ErrorTerminal, Retab::CancelledTerminal)) }
     def lifecycle=(value); end
 
-    sig { returns(T.nilable(Retab::RunTiming)) }
+    sig { returns(Retab::RunTiming) }
     def timing; end
 
-    sig { params(value: T.nilable(Retab::RunTiming)).returns(T.nilable(Retab::RunTiming)) }
+    sig { params(value: Retab::RunTiming).returns(Retab::RunTiming) }
     def timing=(value); end
 
     sig { returns(T.nilable(Retab::RunInputs)) }
