@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -449,6 +450,43 @@ func TestPrintResultTableWorkflowRunNestedColumns(t *testing.T) {
 	for _, want := range []string{"ID", "NAME", "TYPE", "CREATED_AT", "run_1", "Invoice workflow", "completed", "2026-05-15"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in workflow run table, got:\n%s", want, stdout)
+		}
+	}
+}
+
+// TestPrintResultTableEnvelopeFieldNavigable pins the table renderer against
+// a *typed* row whose `lifecycle` is a discriminated-union envelope, not a
+// map[string]any. The envelope keeps its payload in an unexported
+// `raw json.RawMessage` reachable only through MarshalJSON, so the dotted-path
+// alias `lifecycle.status` can only resolve if rowFieldSingle falls back to
+// marshalling the value and looking the key up in the JSON object. Without that
+// fallback the TYPE column would silently go blank for every list endpoint
+// whose rows carry a union field — exactly the regression this guards.
+func TestPrintResultTableEnvelopeFieldNavigable(t *testing.T) {
+	status := "completed"
+	type runRow struct {
+		ID        string                     `json:"id"`
+		Lifecycle retab.WorkflowRunLifecycle `json:"lifecycle"`
+	}
+	type runList struct {
+		Data []runRow `json:"data"`
+	}
+	runs := runList{Data: []runRow{{
+		ID:        "run_1",
+		Lifecycle: retab.WorkflowRunLifecycleFromPendingRun(retab.PendingRun{Status: &status}),
+	}}}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(runs); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for typed envelope run list: %q", stderr)
+	}
+	for _, want := range []string{"ID", "TYPE", "run_1", "completed"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in typed-envelope run table, got:\n%s", want, stdout)
 		}
 	}
 }
