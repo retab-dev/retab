@@ -89,7 +89,11 @@ describe('generated SDK smoke coverage', () => {
           filename: 'remote.pdf',
           url: 'https://example.com/remote.pdf?download=1',
         },
-        start_document_2: fileRef,
+        start_document_2: {
+          id: 'file_existing',
+          filename: 'stored.pdf',
+          mime_type: 'application/pdf',
+        },
       },
       json_inputs: {
         start_json_1: {

@@ -25,6 +25,12 @@ export interface FileRefDocumentInput {
   mime_type?: string;
 }
 
+export interface FileRefDocumentWire {
+  id: string;
+  filename: string;
+  mime_type: string;
+}
+
 export type DocumentInput =
   | MIMEData
   | FileRefDocumentInput
@@ -100,6 +106,14 @@ function isFileRefDocumentInput(input: unknown): input is FileRefDocumentInput {
   );
 }
 
+function serializeFileRefDocument(input: FileRefDocumentInput): FileRefDocumentWire {
+  return {
+    id: input.id,
+    filename: input.filename,
+    mime_type: input.mime_type ?? input.mimeType ?? 'application/octet-stream',
+  };
+}
+
 function detectMimeFromBuffer(buf: Buffer): string {
   // Lightweight magic-byte sniffing for the formats the Retab API accepts.
   // Returns 'application/octet-stream' on no match so the backend can re-derive.
@@ -132,14 +146,14 @@ function extFromMime(mime: string): string {
 
 export async function coerceMimeData(
   input: DocumentInput
-): Promise<MIMEData | FileRefDocumentInput> {
+): Promise<MIMEData | FileRefDocumentWire> {
   // Already shaped — pass through.
   if (typeof input === 'object' && input !== null && 'filename' in input && 'url' in input) {
     return input as MIMEData;
   }
-  // Stored file reference — pass through so the backend resolves the file.
+  // Stored file reference — normalize SDK camelCase input to backend wire shape.
   if (isFileRefDocumentInput(input)) {
-    return input;
+    return serializeFileRefDocument(input);
   }
   // FileRefInput — backend resolves a remote URL.
   if (
