@@ -71,7 +71,7 @@ export interface WorkflowRun {
     | EmailTrigger
     | RestartTrigger;
   /** Discriminated lifecycle state. */
-  lifecycle?:
+  lifecycle:
     | PendingRun
     | RunningRun
     | AwaitingReviewRun
@@ -79,7 +79,7 @@ export interface WorkflowRun {
     | ErrorTerminal
     | CancelledTerminal;
   /** All timing information */
-  timing?: RunTiming;
+  timing: RunTiming;
   /** Input payloads supplied at run creation time */
   inputs?: RunInputs;
 }
@@ -94,14 +94,14 @@ export interface WorkflowRunResponse {
     | WebhookTriggerResponse
     | EmailTriggerResponse
     | RestartTriggerResponse;
-  lifecycle?:
+  lifecycle:
     | PendingRunResponse
     | RunningRunResponse
     | AwaitingReviewRunResponse
     | CompletedTerminalResponse
     | ErrorTerminalResponse
     | CancelledTerminalResponse;
-  timing?: RunTimingResponse;
+  timing: RunTimingResponse;
   inputs?: RunInputsResponse;
 }
 
@@ -116,17 +116,15 @@ export const ZWorkflowRun = z.object({
     ZEmailTrigger,
     ZRestartTrigger,
   ]),
-  lifecycle: z
-    .union([
-      ZPendingRun,
-      ZRunningRun,
-      ZAwaitingReviewRun,
-      ZCompletedTerminal,
-      ZErrorTerminal,
-      ZCancelledTerminal,
-    ])
-    .optional(),
-  timing: ZRunTiming.optional(),
+  lifecycle: z.union([
+    ZPendingRun,
+    ZRunningRun,
+    ZAwaitingReviewRun,
+    ZCompletedTerminal,
+    ZErrorTerminal,
+    ZCancelledTerminal,
+  ]),
+  timing: ZRunTiming,
   inputs: ZRunInputs.optional(),
 }) as z.ZodType<WorkflowRun>;
 
@@ -162,39 +160,36 @@ export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
         | EmailTrigger
         | RestartTrigger),
     lifecycle:
-      wire['lifecycle'] == null
-        ? (wire['lifecycle'] as undefined)
-        : ((
-            {
-              awaiting_review: () =>
-                deserializeAwaitingReviewRun(wire['lifecycle'] as AwaitingReviewRunResponse),
-              cancelled: () =>
-                deserializeCancelledTerminal(wire['lifecycle'] as CancelledTerminalResponse),
-              completed: () =>
-                deserializeCompletedTerminal(wire['lifecycle'] as CompletedTerminalResponse),
-              error: () => deserializeErrorTerminal(wire['lifecycle'] as ErrorTerminalResponse),
-              pending: () => deserializePendingRun(wire['lifecycle'] as PendingRunResponse),
-              running: () => deserializeRunningRun(wire['lifecycle'] as RunningRunResponse),
-            } as Record<
-              string,
-              () =>
-                | PendingRun
-                | RunningRun
-                | AwaitingReviewRun
-                | CompletedTerminal
-                | ErrorTerminal
-                | CancelledTerminal
-            >
-          )[(wire['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
-          (wire['lifecycle'] as unknown as
+      (
+        {
+          awaiting_review: () =>
+            deserializeAwaitingReviewRun(wire['lifecycle'] as AwaitingReviewRunResponse),
+          cancelled: () =>
+            deserializeCancelledTerminal(wire['lifecycle'] as CancelledTerminalResponse),
+          completed: () =>
+            deserializeCompletedTerminal(wire['lifecycle'] as CompletedTerminalResponse),
+          error: () => deserializeErrorTerminal(wire['lifecycle'] as ErrorTerminalResponse),
+          pending: () => deserializePendingRun(wire['lifecycle'] as PendingRunResponse),
+          running: () => deserializeRunningRun(wire['lifecycle'] as RunningRunResponse),
+        } as Record<
+          string,
+          () =>
             | PendingRun
             | RunningRun
             | AwaitingReviewRun
             | CompletedTerminal
             | ErrorTerminal
-            | CancelledTerminal)),
-    timing:
-      wire['timing'] == null ? (wire['timing'] as undefined) : deserializeRunTiming(wire['timing']),
+            | CancelledTerminal
+        >
+      )[(wire['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (wire['lifecycle'] as unknown as
+        | PendingRun
+        | RunningRun
+        | AwaitingReviewRun
+        | CompletedTerminal
+        | ErrorTerminal
+        | CancelledTerminal),
+    timing: deserializeRunTiming(wire['timing']),
     inputs:
       wire['inputs'] == null ? (wire['inputs'] as undefined) : deserializeRunInputs(wire['inputs']),
   };

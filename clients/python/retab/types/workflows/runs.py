@@ -297,10 +297,10 @@ class WorkflowRun(BaseModel):
     id: str = Field(..., description="Unique ID for this run")
     workflow: WorkflowSnapshotRef = Field(..., description="Workflow + version reference")
     trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., description="What started this run", discriminator="type")
-    lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal | None = Field(
-        default=None, description="Discriminated lifecycle state.", discriminator="status"
+    lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal = Field(
+        ..., description="Discriminated lifecycle state.", discriminator="status"
     )
-    timing: RunTiming | None = Field(default=None, description="All timing information")
+    timing: RunTiming = Field(..., description="All timing information")
     inputs: RunInputs | None = Field(default=None, description="Input payloads supplied at run creation time")
 
 
