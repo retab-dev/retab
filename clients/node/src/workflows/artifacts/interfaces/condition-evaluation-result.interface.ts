@@ -45,9 +45,15 @@ export interface ConditionEvaluationResult {
    * @default ""
    */
   operator?: string;
-  /** Expected value */
+  /**
+   * Expected value
+   * @default null
+   */
   expected?: unknown;
-  /** Actual value found */
+  /**
+   * Actual value found
+   * @default null
+   */
   actual?: unknown;
   /**
    * Whether the condition matched

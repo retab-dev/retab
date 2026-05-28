@@ -18,6 +18,7 @@ export interface ExperimentMetricsStaleError {
   /** @default "stale_metrics" */
   error: 'stale_metrics';
   experimentId: string;
+  /** @default [] */
   staleReasons?: string[];
   lastRun: _MetricsStaleErrorLastRun;
   currentConfigFingerprint?: string | null;

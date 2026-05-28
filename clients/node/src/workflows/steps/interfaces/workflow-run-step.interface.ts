@@ -126,15 +126,24 @@ export interface WorkflowRunStep {
   completedAt?: Date | null;
   /** LLM model used by this step, when applicable */
   model?: string | null;
-  /** Container hierarchy from outermost to innermost. Empty when not inside any container. */
+  /**
+   * Container hierarchy from outermost to innermost. Empty when not inside any container.
+   * @default []
+   */
   loopContainers?: ContainerContextData[];
   /** Parent workflow run ID */
   runId: string;
   /** When the step doc was first persisted */
   createdAt?: Date | null;
-  /** Handle input payloads consumed by this step */
+  /**
+   * Handle input payloads consumed by this step
+   * @default {}
+   */
   handleInputs?: Record<string, PublicHandlePayload>;
-  /** Handle output payloads produced by this step */
+  /**
+   * Handle output payloads produced by this step
+   * @default {}
+   */
   handleOutputs?: Record<string, PublicHandlePayload>;
   /** Canonical persisted result of this step */
   artifact?: StepArtifactRef | null;

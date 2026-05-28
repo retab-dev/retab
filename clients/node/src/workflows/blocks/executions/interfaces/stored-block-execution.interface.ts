@@ -65,7 +65,8 @@ export interface StoredBlockExecution {
   routingDecision?: string[] | null;
   /** Duration of the block execution in milliseconds */
   durationMs?: number | null;
-  createdAt?: Date;
+  /** When the block execution record was created */
+  createdAt: Date;
   /** The draft block config used for this block execution */
   blockConfig?: Record<string, unknown> | null;
   /** The step ID that was used for inputs (includes iteration prefix if applicable) */
@@ -89,7 +90,7 @@ export interface StoredBlockExecutionResponse {
   handle_outputs?: Record<string, unknown> | null;
   routing_decision?: string[] | null;
   duration_ms?: number | null;
-  created_at?: string;
+  created_at: string;
   block_config?: Record<string, unknown> | null;
   step_id?: string | null;
   available_iterations?: Record<string, unknown>[] | null;
@@ -111,7 +112,7 @@ export const ZStoredBlockExecution = z.object({
   handleOutputs: z.record(z.string(), z.unknown()).nullable().optional(),
   routingDecision: z.string().array().nullable().optional(),
   durationMs: z.number().nullable().optional(),
-  createdAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date(),
   blockConfig: z.record(z.string(), z.unknown()).nullable().optional(),
   stepId: z.string().nullable().optional(),
   availableIterations: z.record(z.string(), z.unknown()).array().nullable().optional(),
@@ -163,8 +164,7 @@ export function deserializeStoredBlockExecution(
     handleOutputs: wire['handle_outputs'],
     routingDecision: wire['routing_decision'],
     durationMs: wire['duration_ms'],
-    createdAt:
-      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    createdAt: new Date(wire['created_at']),
     blockConfig: wire['block_config'],
     stepId: wire['step_id'],
     availableIterations: wire['available_iterations'],
@@ -217,10 +217,7 @@ export function serializeStoredBlockExecution(
     handle_outputs: domain['handleOutputs'],
     routing_decision: domain['routingDecision'],
     duration_ms: domain['durationMs'],
-    created_at:
-      domain['createdAt'] == null
-        ? (domain['createdAt'] as undefined)
-        : domain['createdAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
     block_config: domain['blockConfig'],
     step_id: domain['stepId'],
     available_iterations: domain['availableIterations'],

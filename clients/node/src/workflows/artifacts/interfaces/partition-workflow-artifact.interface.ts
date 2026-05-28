@@ -59,10 +59,13 @@ export interface PartitionWorkflowArtifact {
    * @default true
    */
   allowOverlap?: boolean;
-  /** The list of partition chunks with their assigned pages */
+  /**
+   * The list of partition chunks with their assigned pages
+   * @default []
+   */
   output?: PartitionChunk[];
   /** Consensus metadata for multi-vote partition runs */
-  consensus?: PartitionConsensus;
+  consensus?: PartitionConsensus | null;
   /** Usage information for the partition operation */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
@@ -83,7 +86,7 @@ export interface PartitionWorkflowArtifactResponse {
   n_consensus?: number;
   allow_overlap?: boolean;
   output?: PartitionChunkResponse[];
-  consensus?: PartitionConsensusResponse;
+  consensus?: PartitionConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at: string;
   operation: 'partition';
@@ -98,7 +101,7 @@ export const ZPartitionWorkflowArtifact = z.object({
   nConsensus: z.number().int().optional(),
   allowOverlap: z.boolean().optional(),
   output: ZPartitionChunk.array().optional(),
-  consensus: ZPartitionConsensus.optional(),
+  consensus: ZPartitionConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date(),
   operation: z.literal('partition'),
@@ -122,7 +125,9 @@ export function deserializePartitionWorkflowArtifact(
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : deserializePartitionConsensus(wire['consensus']),
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializePartitionConsensus(wire['consensus']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)
@@ -152,7 +157,9 @@ export function serializePartitionWorkflowArtifact(
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
-        : serializePartitionConsensus(domain['consensus']),
+        : domain['consensus'] == null
+          ? domain['consensus']
+          : serializePartitionConsensus(domain['consensus']),
     usage:
       domain['usage'] == null
         ? (domain['usage'] as undefined)

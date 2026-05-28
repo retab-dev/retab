@@ -44,7 +44,7 @@ export class WorkflowBlocks {
   async create(
     workflowId: string,
     type: WorkflowBlockCreateRequestType,
-    id?: string,
+    id?: string | null,
     label?: string,
     positionX?: number,
     positionY?: number,

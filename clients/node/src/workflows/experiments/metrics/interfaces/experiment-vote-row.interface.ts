@@ -4,6 +4,7 @@ import { z } from 'zod';
 /** Consensus and flat voter values for one selected target row. */
 export interface ExperimentVoteRow {
   consensus?: unknown | null;
+  /** @default [] */
   votes?: unknown[];
   score?: number | null;
   rowPresenceScore?: number | null;

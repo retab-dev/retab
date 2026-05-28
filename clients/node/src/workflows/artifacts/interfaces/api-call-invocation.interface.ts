@@ -26,6 +26,7 @@ export interface ApiCallInvocation {
   id: string;
   workflowRunId: string;
   stepId: string;
+  /** @default [] */
   attempts?: ApiCallAttempt[];
   error?: ErrorDetails | null;
   /** When this artifact was written by the orchestrator. */

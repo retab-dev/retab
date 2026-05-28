@@ -18,7 +18,10 @@ export interface CreateUploadResponse {
    * @default "PUT"
    */
   uploadMethod?: string;
-  /** Headers required by the signed upload URL */
+  /**
+   * Headers required by the signed upload URL
+   * @default {}
+   */
   uploadHeaders?: Record<string, string>;
   /** Durable Retab MIMEData reference */
   mimeData: MIMEData;

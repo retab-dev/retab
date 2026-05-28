@@ -14,8 +14,11 @@ import {
 export interface DeclarativePlanChange {
   before?: unknown | null;
   after?: unknown | null;
+  /** @default null */
   beforeSensitive?: unknown;
+  /** @default null */
   afterSensitive?: unknown;
+  /** @default [] */
   fieldChanges?: DeclarativePlanFieldChange[];
 }
 

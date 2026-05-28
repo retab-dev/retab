@@ -167,6 +167,7 @@ export interface WorkflowTestRun {
   target?: WorkflowTestBlockTarget | null;
   testId?: string | null;
   totalTests: number;
+  /** @default {"lifecycle_counts":{"cancelled":0,"completed":0,"error":0,"pending":0,"queued":0,"running":0},"outcome":{"blocked":0,"failed":0,"passed":0}} */
   counts?: BlockTestBatchExecutionCounts;
 }
 

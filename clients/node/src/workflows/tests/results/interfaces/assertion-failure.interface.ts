@@ -4,6 +4,7 @@ import { z } from 'zod';
 export interface AssertionFailure {
   code: string;
   message: string;
+  /** @default {} */
   details?: Record<string, unknown>;
 }
 

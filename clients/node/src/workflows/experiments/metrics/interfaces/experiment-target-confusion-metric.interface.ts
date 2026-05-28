@@ -4,7 +4,9 @@ import { z } from 'zod';
 /** Directional confusion slice for one split/classifier target. */
 export interface ExperimentTargetConfusionMetric {
   self?: number | null;
+  /** @default {} */
   flowFrom?: Record<string, number>;
+  /** @default {} */
   flowTo?: Record<string, number>;
 }
 

@@ -66,7 +66,7 @@ export interface ClassificationWorkflowArtifact {
   /** The classification result with reasoning */
   output: ClassificationDecision;
   /** Consensus metadata for multi-vote classification runs */
-  consensus?: ClassificationConsensus;
+  consensus?: ClassificationConsensus | null;
   /** Usage information for the classification */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
@@ -86,7 +86,7 @@ export interface ClassificationWorkflowArtifactResponse {
   n_consensus?: number;
   instructions?: string | null;
   output: ClassificationDecisionResponse;
-  consensus?: ClassificationConsensusResponse;
+  consensus?: ClassificationConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at: string;
   operation: 'classification';
@@ -100,7 +100,7 @@ export const ZClassificationWorkflowArtifact = z.object({
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: ZClassificationDecision,
-  consensus: ZClassificationConsensus.optional(),
+  consensus: ZClassificationConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date(),
   operation: z.literal('classification'),
@@ -120,7 +120,9 @@ export function deserializeClassificationWorkflowArtifact(
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : deserializeClassificationConsensus(wire['consensus']),
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializeClassificationConsensus(wire['consensus']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)
@@ -146,7 +148,9 @@ export function serializeClassificationWorkflowArtifact(
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
-        : serializeClassificationConsensus(domain['consensus']),
+        : domain['consensus'] == null
+          ? domain['consensus']
+          : serializeClassificationConsensus(domain['consensus']),
     usage:
       domain['usage'] == null
         ? (domain['usage'] as undefined)

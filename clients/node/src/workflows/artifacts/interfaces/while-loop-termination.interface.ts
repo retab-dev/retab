@@ -24,6 +24,7 @@ export interface WhileLoopTermination {
   stepId: string;
   /** Why the while-loop terminated */
   terminationReason: WhileLoopTerminationTerminationReason;
+  /** @default [] */
   evaluations?: ConditionEvaluationResult[];
   /** When this artifact was written by the orchestrator. */
   createdAt: Date;

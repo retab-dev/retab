@@ -11,7 +11,7 @@ export interface ReviewDecision {
   verdict: ReviewVerdict;
   versionId: string;
   author: Actor;
-  decidedAt?: Date;
+  decidedAt: Date;
   reason?: string | null;
 }
 
@@ -19,7 +19,7 @@ export interface ReviewDecisionResponse {
   verdict: ReviewVerdict;
   version_id: string;
   author: ActorResponse;
-  decided_at?: string;
+  decided_at: string;
   reason?: string | null;
 }
 
@@ -27,7 +27,7 @@ export const ZReviewDecision = z.object({
   verdict: ZReviewVerdict,
   versionId: z.string(),
   author: ZActor,
-  decidedAt: z.coerce.date().optional(),
+  decidedAt: z.coerce.date(),
   reason: z.string().nullable().optional(),
 }) as z.ZodType<ReviewDecision>;
 
@@ -36,8 +36,7 @@ export function deserializeReviewDecision(wire: ReviewDecisionResponse): ReviewD
     verdict: wire['verdict'],
     versionId: wire['version_id'],
     author: deserializeActor(wire['author']),
-    decidedAt:
-      wire['decided_at'] == null ? (wire['decided_at'] as undefined) : new Date(wire['decided_at']),
+    decidedAt: new Date(wire['decided_at']),
     reason: wire['reason'],
   };
 }
@@ -47,10 +46,7 @@ export function serializeReviewDecision(domain: ReviewDecision): ReviewDecisionR
     verdict: domain['verdict'],
     version_id: domain['versionId'],
     author: serializeActor(domain['author']),
-    decided_at:
-      domain['decidedAt'] == null
-        ? (domain['decidedAt'] as undefined)
-        : domain['decidedAt'].toISOString(),
+    decided_at: domain['decidedAt'].toISOString(),
     reason: domain['reason'],
   };
 }

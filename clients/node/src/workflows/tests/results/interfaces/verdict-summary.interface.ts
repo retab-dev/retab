@@ -9,6 +9,7 @@ export interface VerdictSummary {
   assertionsFailed?: number;
   /** @default 0 */
   blockedAssertions?: number;
+  /** @default [] */
   failedAssertionIds?: string[];
 }
 

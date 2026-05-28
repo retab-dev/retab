@@ -40,6 +40,7 @@ export interface ExperimentByDocumentMetricsResponse {
   score?: number | null;
   priorScore?: number | null;
   confusion?: ExperimentDocumentConfusionMetric | null;
+  /** @default [] */
   targets?: ExperimentByDocumentTargetMetric[];
 }
 

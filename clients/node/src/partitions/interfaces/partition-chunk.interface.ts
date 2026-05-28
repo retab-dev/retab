@@ -4,7 +4,10 @@ import { z } from 'zod';
 export interface PartitionChunk {
   /** The partition key value for this chunk */
   key: string;
-  /** The pages assigned to this partition chunk (1-indexed) */
+  /**
+   * The pages assigned to this partition chunk (1-indexed)
+   * @default []
+   */
   pages?: number[];
 }
 

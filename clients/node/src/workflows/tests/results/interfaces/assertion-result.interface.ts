@@ -15,7 +15,9 @@ export interface AssertionResult {
   assertionId: string;
   conditionKind: string;
   outcome: AssertionOutcome;
+  /** @default null */
   actualValue?: unknown;
+  /** @default null */
   expectedValue?: unknown;
   score?: number | null;
   threshold?: number | null;

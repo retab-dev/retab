@@ -13,7 +13,9 @@ import {
 
 /** Split/classifier diagnostics attached to the summary response. */
 export interface ExperimentConfusionSummaryAggregate {
+  /** @default {} */
   diag?: Record<string, number>;
+  /** @default [] */
   flows?: ExperimentConfusionFlowMetric[];
 }
 

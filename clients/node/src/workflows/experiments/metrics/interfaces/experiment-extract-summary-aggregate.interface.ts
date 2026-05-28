@@ -3,6 +3,7 @@
 import { z } from 'zod';
 /** Extract-only diagnostics attached to the summary response. */
 export interface ExperimentExtractSummaryAggregate {
+  /** @default {} */
   likelihoods?: Record<string, number>;
 }
 

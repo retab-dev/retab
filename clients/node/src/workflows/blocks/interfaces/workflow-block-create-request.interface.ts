@@ -8,8 +8,8 @@ import { ZWorkflowBlockCreateRequestType } from './workflow-block-create-request
 export interface WorkflowBlockCreateRequest {
   /** Workflow to create the block in. */
   workflowId: string;
-  /** Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability. */
-  id?: string;
+  /** If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability. */
+  id?: string | null;
   /** Block type */
   type: WorkflowBlockCreateRequestType;
   /**
@@ -39,7 +39,7 @@ export interface WorkflowBlockCreateRequest {
 
 export interface WorkflowBlockCreateRequestResponse {
   workflow_id: string;
-  id?: string;
+  id?: string | null;
   type: WorkflowBlockCreateRequestType;
   label?: string;
   position_x?: number;
@@ -52,7 +52,7 @@ export interface WorkflowBlockCreateRequestResponse {
 
 export const ZWorkflowBlockCreateRequest = z.object({
   workflowId: z.string(),
-  id: z.string().optional(),
+  id: z.string().nullable().optional(),
   type: ZWorkflowBlockCreateRequestType,
   label: z.string().optional(),
   positionX: z.number().optional(),

@@ -12,7 +12,10 @@ import {
 } from './classification-decision.interface.js';
 
 export interface ClassificationConsensus {
-  /** Alternative classification vote outputs used to build the consolidated result. */
+  /**
+   * Alternative classification vote outputs used to build the consolidated result.
+   * @default []
+   */
   choices?: ClassificationDecision[];
   /**
    * Consensus likelihood score (0.0-1.0) of the winning classification.

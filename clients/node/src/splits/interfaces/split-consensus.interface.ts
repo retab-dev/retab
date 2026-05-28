@@ -18,9 +18,15 @@ import {
 } from './split-subdocument-likelihood.interface.js';
 
 export interface SplitConsensus {
-  /** Consensus likelihood tree mirroring the split output */
+  /**
+   * Consensus likelihood tree mirroring the split output
+   * @default []
+   */
   likelihoods?: SplitSubdocumentLikelihood[];
-  /** Alternative split vote outputs used to build the consolidated result */
+  /**
+   * Alternative split vote outputs used to build the consolidated result
+   * @default []
+   */
   choices?: SplitResult[][];
 }
 

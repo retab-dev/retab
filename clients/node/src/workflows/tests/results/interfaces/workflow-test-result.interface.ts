@@ -145,6 +145,7 @@ export interface WorkflowTestResult {
   source: ManualWorkflowTestSource | RunStepWorkflowTestSource;
   outputs?: Record<string, unknown> | null;
   routingDecision?: string[] | null;
+  /** @default [] */
   warnings?: string[];
   error?: ErrorDetails | null;
   /** @default false */

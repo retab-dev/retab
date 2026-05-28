@@ -5,9 +5,15 @@ import { z } from 'zod';
 export interface ConditionEvaluationPerItem {
   /** Index of this item in the array */
   index: number;
-  /** Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1]) */
+  /**
+   * Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])
+   * @default []
+   */
   indices?: number[];
-  /** Actual value at this index */
+  /**
+   * Actual value at this index
+   * @default null
+   */
   actual?: unknown;
   /**
    * Whether this item matched the condition

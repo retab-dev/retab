@@ -4,7 +4,7 @@ import { z } from 'zod';
 /** All timing information for a run. */
 export interface RunTiming {
   /** When the run record was created */
-  createdAt?: Date;
+  createdAt: Date;
   /** When the run started executing */
   startedAt?: Date | null;
   /** When the run finished executing */
@@ -21,7 +21,7 @@ export interface RunTiming {
 }
 
 export interface RunTimingResponse {
-  created_at?: string;
+  created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
   review_waiting_started_at?: string | null;
@@ -30,7 +30,7 @@ export interface RunTimingResponse {
 }
 
 export const ZRunTiming = z.object({
-  createdAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date(),
   startedAt: z.coerce.date().nullable().optional(),
   completedAt: z.coerce.date().nullable().optional(),
   reviewWaitingStartedAt: z.coerce.date().nullable().optional(),
@@ -40,8 +40,7 @@ export const ZRunTiming = z.object({
 
 export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
   return {
-    createdAt:
-      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    createdAt: new Date(wire['created_at']),
     startedAt:
       wire['started_at'] == null
         ? (wire['started_at'] as undefined)
@@ -67,10 +66,7 @@ export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
 
 export function serializeRunTiming(domain: RunTiming): RunTimingResponse {
   return {
-    created_at:
-      domain['createdAt'] == null
-        ? (domain['createdAt'] as undefined)
-        : domain['createdAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
     started_at:
       domain['startedAt'] == null
         ? (domain['startedAt'] as undefined)

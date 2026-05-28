@@ -18,9 +18,15 @@ import {
 } from './partition-chunk-likelihood.interface.js';
 
 export interface PartitionConsensus {
-  /** Alternative partition vote outputs used to build the consolidated result. */
+  /**
+   * Alternative partition vote outputs used to build the consolidated result.
+   * @default []
+   */
   choices?: PartitionChunk[][];
-  /** Consensus likelihoods aligned with the partition output. */
+  /**
+   * Consensus likelihoods aligned with the partition output.
+   * @default []
+   */
   likelihoods?: PartitionChunkLikelihood[];
 }
 

@@ -4,7 +4,10 @@ import { z } from 'zod';
 export interface PartitionChunkLikelihood {
   /** Confidence that this partition key value is correct */
   key?: number | null;
-  /** Confidence for each page in the corresponding partition chunk.pages array */
+  /**
+   * Confidence for each page in the corresponding partition chunk.pages array
+   * @default []
+   */
   pages?: number[];
 }
 

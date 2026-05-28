@@ -16,9 +16,15 @@ import { ZMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
 export interface CreateWorkflowRunRequest {
   /** Workflow id for the fresh run. */
   workflowId: string;
-  /** Mapping of start_document block IDs to their input documents. */
+  /**
+   * Mapping of start_document block IDs to their input documents.
+   * @default {}
+   */
   documents?: Record<string, FileRef | MIMEData>;
-  /** Mapping of start-json block IDs to their input JSON data. */
+  /**
+   * Mapping of start-json block IDs to their input JSON data.
+   * @default {}
+   */
   jsonInputs?: Record<string, unknown>;
   /**
    * Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.

@@ -22,9 +22,12 @@ export interface ReviewEvaluation {
   id: string;
   workflowRunId: string;
   stepId: string;
+  /** @default [] */
   evaluations?: ConditionEvaluationResult[];
+  /** @default [] */
   selectedHandles?: string[];
   matchedBranchId?: string | null;
+  /** @default [] */
   matchedConditionIds?: string[];
   /** @default false */
   requiresHumanReview?: boolean;

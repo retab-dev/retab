@@ -2,21 +2,22 @@
 
 import { z } from 'zod';
 export interface ExperimentRunTiming {
-  createdAt?: Date;
+  /** When the experiment run record was created */
+  createdAt: Date;
   startedAt?: Date | null;
   completedAt?: Date | null;
   durationMs?: number | null;
 }
 
 export interface ExperimentRunTimingResponse {
-  created_at?: string;
+  created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
   duration_ms?: number | null;
 }
 
 export const ZExperimentRunTiming = z.object({
-  createdAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date(),
   startedAt: z.coerce.date().nullable().optional(),
   completedAt: z.coerce.date().nullable().optional(),
   durationMs: z.number().int().nullable().optional(),
@@ -26,8 +27,7 @@ export function deserializeExperimentRunTiming(
   wire: ExperimentRunTimingResponse
 ): ExperimentRunTiming {
   return {
-    createdAt:
-      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    createdAt: new Date(wire['created_at']),
     startedAt:
       wire['started_at'] == null
         ? (wire['started_at'] as undefined)
@@ -48,10 +48,7 @@ export function serializeExperimentRunTiming(
   domain: ExperimentRunTiming
 ): ExperimentRunTimingResponse {
   return {
-    created_at:
-      domain['createdAt'] == null
-        ? (domain['createdAt'] as undefined)
-        : domain['createdAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
     started_at:
       domain['startedAt'] == null
         ? (domain['startedAt'] as undefined)

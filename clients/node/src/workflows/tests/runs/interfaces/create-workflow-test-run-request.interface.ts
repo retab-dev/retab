@@ -32,22 +32,28 @@ import {
 /** Request body for POST /v1/workflows/tests/runs. Provide a workflow_id and optionally narrow execution with scope.type single or block. Omit scope, or pass scope.type workflow, to run every saved workflow test. */
 export interface CreateWorkflowTestRunRequest {
   workflowId: string;
-  /** Optional execution scope. Omit to run every saved test in the workflow. */
-  scope?: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope;
+  /** Optional execution scope. Omit (or pass null) to run every saved test in the workflow. */
+  scope?:
+    | (WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope)
+    | null;
 }
 
 export interface CreateWorkflowTestRunRequestResponse {
   workflow_id: string;
   scope?:
-    | WorkflowTestRunSingleScopeResponse
-    | WorkflowTestRunWorkflowScopeResponse
-    | WorkflowTestRunBlockScopeResponse;
+    | (
+        | WorkflowTestRunSingleScopeResponse
+        | WorkflowTestRunWorkflowScopeResponse
+        | WorkflowTestRunBlockScopeResponse
+      )
+    | null;
 }
 
 export const ZCreateWorkflowTestRunRequest = z.object({
   workflowId: z.string(),
   scope: z
     .union([ZWorkflowTestRunSingleScope, ZWorkflowTestRunWorkflowScope, ZWorkflowTestRunBlockScope])
+    .nullable()
     .optional(),
 }) as z.ZodType<CreateWorkflowTestRunRequest>;
 
@@ -59,32 +65,34 @@ export function deserializeCreateWorkflowTestRunRequest(
     scope:
       wire['scope'] == null
         ? (wire['scope'] as undefined)
-        : ((
-            {
-              block: () =>
-                deserializeWorkflowTestRunBlockScope(
-                  wire['scope'] as WorkflowTestRunBlockScopeResponse
-                ),
-              single: () =>
-                deserializeWorkflowTestRunSingleScope(
-                  wire['scope'] as WorkflowTestRunSingleScopeResponse
-                ),
-              workflow: () =>
-                deserializeWorkflowTestRunWorkflowScope(
-                  wire['scope'] as WorkflowTestRunWorkflowScopeResponse
-                ),
-            } as Record<
-              string,
-              () =>
-                | WorkflowTestRunSingleScope
-                | WorkflowTestRunWorkflowScope
-                | WorkflowTestRunBlockScope
-            >
-          )[(wire['scope'] as unknown as Record<string, string>)['type']]?.() ??
-          (wire['scope'] as unknown as
-            | WorkflowTestRunSingleScope
-            | WorkflowTestRunWorkflowScope
-            | WorkflowTestRunBlockScope)),
+        : wire['scope'] == null
+          ? wire['scope']
+          : ((
+              {
+                block: () =>
+                  deserializeWorkflowTestRunBlockScope(
+                    wire['scope'] as WorkflowTestRunBlockScopeResponse
+                  ),
+                single: () =>
+                  deserializeWorkflowTestRunSingleScope(
+                    wire['scope'] as WorkflowTestRunSingleScopeResponse
+                  ),
+                workflow: () =>
+                  deserializeWorkflowTestRunWorkflowScope(
+                    wire['scope'] as WorkflowTestRunWorkflowScopeResponse
+                  ),
+              } as Record<
+                string,
+                () =>
+                  | WorkflowTestRunSingleScope
+                  | WorkflowTestRunWorkflowScope
+                  | WorkflowTestRunBlockScope
+              >
+            )[(wire['scope'] as unknown as Record<string, string>)['type']]?.() ??
+            (wire['scope'] as unknown as
+              | WorkflowTestRunSingleScope
+              | WorkflowTestRunWorkflowScope
+              | WorkflowTestRunBlockScope)),
   };
 }
 
@@ -96,27 +104,31 @@ export function serializeCreateWorkflowTestRunRequest(
     scope:
       domain['scope'] == null
         ? (domain['scope'] as undefined)
-        : ((
-            {
-              block: () =>
-                serializeWorkflowTestRunBlockScope(domain['scope'] as WorkflowTestRunBlockScope),
-              single: () =>
-                serializeWorkflowTestRunSingleScope(domain['scope'] as WorkflowTestRunSingleScope),
-              workflow: () =>
-                serializeWorkflowTestRunWorkflowScope(
-                  domain['scope'] as WorkflowTestRunWorkflowScope
-                ),
-            } as Record<
-              string,
-              () =>
-                | WorkflowTestRunSingleScopeResponse
-                | WorkflowTestRunWorkflowScopeResponse
-                | WorkflowTestRunBlockScopeResponse
-            >
-          )[(domain['scope'] as unknown as Record<string, string>)['type']]?.() ??
-          (domain['scope'] as unknown as
-            | WorkflowTestRunSingleScopeResponse
-            | WorkflowTestRunWorkflowScopeResponse
-            | WorkflowTestRunBlockScopeResponse)),
+        : domain['scope'] == null
+          ? domain['scope']
+          : ((
+              {
+                block: () =>
+                  serializeWorkflowTestRunBlockScope(domain['scope'] as WorkflowTestRunBlockScope),
+                single: () =>
+                  serializeWorkflowTestRunSingleScope(
+                    domain['scope'] as WorkflowTestRunSingleScope
+                  ),
+                workflow: () =>
+                  serializeWorkflowTestRunWorkflowScope(
+                    domain['scope'] as WorkflowTestRunWorkflowScope
+                  ),
+              } as Record<
+                string,
+                () =>
+                  | WorkflowTestRunSingleScopeResponse
+                  | WorkflowTestRunWorkflowScopeResponse
+                  | WorkflowTestRunBlockScopeResponse
+              >
+            )[(domain['scope'] as unknown as Record<string, string>)['type']]?.() ??
+            (domain['scope'] as unknown as
+              | WorkflowTestRunSingleScopeResponse
+              | WorkflowTestRunWorkflowScopeResponse
+              | WorkflowTestRunBlockScopeResponse)),
   };
 }

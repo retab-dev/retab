@@ -71,12 +71,15 @@ export interface WorkflowTest {
   schemaDriftDetail?: string | null;
   /** @default "valid" */
   validationStatus?: string;
+  /** @default [] */
   validationIssues?: unknown[];
   latestRunSummary?: LatestBlockTestRunSummary | null;
   latestPassingRunSummary?: LatestBlockTestRunSummary | null;
   latestFailingRunSummary?: LatestBlockTestRunSummary | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  /** When the workflow test was created */
+  createdAt: Date;
+  /** When the workflow test was last updated */
+  updatedAt: Date;
 }
 
 export interface WorkflowTestResponse {
@@ -95,8 +98,8 @@ export interface WorkflowTestResponse {
   latest_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_passing_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_failing_run_summary?: LatestBlockTestRunSummaryResponse | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const ZWorkflowTest = z.object({
@@ -115,8 +118,8 @@ export const ZWorkflowTest = z.object({
   latestRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestPassingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestFailingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
-  createdAt: z.coerce.date().optional(),
-  updatedAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }) as z.ZodType<WorkflowTest>;
 
 export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTest {
@@ -172,10 +175,8 @@ export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTes
         : wire['latest_failing_run_summary'] == null
           ? wire['latest_failing_run_summary']
           : deserializeLatestBlockTestRunSummary(wire['latest_failing_run_summary']),
-    createdAt:
-      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
-    updatedAt:
-      wire['updated_at'] == null ? (wire['updated_at'] as undefined) : new Date(wire['updated_at']),
+    createdAt: new Date(wire['created_at']),
+    updatedAt: new Date(wire['updated_at']),
   };
 }
 
@@ -235,13 +236,7 @@ export function serializeWorkflowTest(domain: WorkflowTest): WorkflowTestRespons
         : domain['latestFailingRunSummary'] == null
           ? domain['latestFailingRunSummary']
           : serializeLatestBlockTestRunSummary(domain['latestFailingRunSummary']),
-    created_at:
-      domain['createdAt'] == null
-        ? (domain['createdAt'] as undefined)
-        : domain['createdAt'].toISOString(),
-    updated_at:
-      domain['updatedAt'] == null
-        ? (domain['updatedAt'] as undefined)
-        : domain['updatedAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
+    updated_at: domain['updatedAt'].toISOString(),
   };
 }
