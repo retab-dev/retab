@@ -25,10 +25,9 @@ class ErrorStepLifecycleCategory(str, Enum):
     QUOTA = "quota"
 
 
-class HandlePayloadType(str, Enum):
+class PublicHandlePayloadType(str, Enum):
     FILE = "file"
     JSON = "json"
-    JSON_REF = "json_ref"
 
 
 class StepArtifactRefOperation(str, Enum):
@@ -115,24 +114,22 @@ class ErrorStepLifecycle(BaseModel):
     details: ErrorDetails | None = None
 
 
-class HandlePayload(BaseModel):
-    """Payload for a single block output handle."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: HandlePayloadType = Field(..., description="Type of payload")
-    document: FileRef | None = Field(default=None, description="For file handles: document reference")
-    data: Any | None = Field(default=None, description="For JSON handles: structured data")
-    artifact_ref: dict[str, Any] | None = Field(default=None, description="For json_ref handles: pointer to artifact-storage JSON body")
-    preview: dict[str, Any] | None = Field(default=None, description="For json_ref handles: lightweight preview of the body")
-
-
 class PendingStepLifecycle(BaseModel):
     """The step has been created but execution has not started."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     status: Literal["pending"] = Field(default="pending")
+
+
+class PublicHandlePayload(BaseModel):
+    """Public handle payload exposed by workflow step APIs."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: PublicHandlePayloadType = Field(..., description="Type of payload")
+    document: FileRef | None = Field(default=None, description="For file handles: document reference")
+    data: Any | None = Field(default=None, description="For JSON handles: structured data")
 
 
 class QueuedStepLifecycle(BaseModel):
@@ -198,8 +195,8 @@ class WorkflowRunStep(BaseModel):
     loop_containers: list[ContainerContextData] | None = Field(default=None, description="Container hierarchy from outermost to innermost. Empty when not inside any container.")
     run_id: str = Field(..., description="Parent workflow run ID")
     created_at: datetime.datetime | None = Field(default=None, description="When the step doc was first persisted")
-    handle_inputs: dict[str, HandlePayload] | None = Field(default=None, description="Handle input payloads consumed by this step")
-    handle_outputs: dict[str, HandlePayload] | None = Field(default=None, description="Handle output payloads produced by this step")
+    handle_inputs: dict[str, PublicHandlePayload] | None = Field(default=None, description="Handle input payloads consumed by this step")
+    handle_outputs: dict[str, PublicHandlePayload] | None = Field(default=None, description="Handle output payloads produced by this step")
     artifact: StepArtifactRef | None = Field(default=None, description="Canonical persisted result of this step")
     retry_count: int | None = Field(default=0, description="Number of retry attempts")
 
@@ -214,8 +211,8 @@ CancelledStepLifecycle.model_rebuild()
 CompletedStepLifecycle.model_rebuild()
 ContainerContextData.model_rebuild()
 ErrorStepLifecycle.model_rebuild()
-HandlePayload.model_rebuild()
 PendingStepLifecycle.model_rebuild()
+PublicHandlePayload.model_rebuild()
 QueuedStepLifecycle.model_rebuild()
 RunningStepLifecycle.model_rebuild()
 SkippedStepLifecycle.model_rebuild()

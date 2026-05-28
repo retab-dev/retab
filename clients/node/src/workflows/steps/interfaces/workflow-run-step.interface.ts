@@ -41,8 +41,6 @@ import {
   ZErrorStepLifecycle,
   deserializeErrorStepLifecycle,
 } from './error-step-lifecycle.interface.js';
-import type { HandlePayload, HandlePayloadResponse } from './handle-payload.interface.js';
-import { ZHandlePayload, deserializeHandlePayload } from './handle-payload.interface.js';
 import type {
   PendingStepLifecycle,
   PendingStepLifecycleResponse,
@@ -51,6 +49,14 @@ import {
   ZPendingStepLifecycle,
   deserializePendingStepLifecycle,
 } from './pending-step-lifecycle.interface.js';
+import type {
+  PublicHandlePayload,
+  PublicHandlePayloadResponse,
+} from './public-handle-payload.interface.js';
+import {
+  ZPublicHandlePayload,
+  deserializePublicHandlePayload,
+} from './public-handle-payload.interface.js';
 import type {
   QueuedStepLifecycle,
   QueuedStepLifecycleResponse,
@@ -113,9 +119,9 @@ export interface WorkflowRunStep {
   /** When the step doc was first persisted */
   createdAt?: Date | null;
   /** Handle input payloads consumed by this step */
-  handleInputs?: Record<string, HandlePayload>;
+  handleInputs?: Record<string, PublicHandlePayload>;
   /** Handle output payloads produced by this step */
-  handleOutputs?: Record<string, HandlePayload>;
+  handleOutputs?: Record<string, PublicHandlePayload>;
   /** Canonical persisted result of this step */
   artifact?: StepArtifactRef | null;
   /**
@@ -145,8 +151,8 @@ export interface WorkflowRunStepResponse {
   loop_containers?: ContainerContextDataResponse[];
   run_id: string;
   created_at?: string | null;
-  handle_inputs?: Record<string, HandlePayloadResponse>;
-  handle_outputs?: Record<string, HandlePayloadResponse>;
+  handle_inputs?: Record<string, PublicHandlePayloadResponse>;
+  handle_outputs?: Record<string, PublicHandlePayloadResponse>;
   artifact?: StepArtifactRefResponse | null;
   retry_count?: number;
 }
@@ -172,8 +178,8 @@ export const ZWorkflowRunStep = z.object({
   loopContainers: ZContainerContextData.array().optional(),
   runId: z.string(),
   createdAt: z.coerce.date().nullable().optional(),
-  handleInputs: z.record(z.string(), ZHandlePayload).optional(),
-  handleOutputs: z.record(z.string(), ZHandlePayload).optional(),
+  handleInputs: z.record(z.string(), ZPublicHandlePayload).optional(),
+  handleOutputs: z.record(z.string(), ZPublicHandlePayload).optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
   retryCount: z.number().int().optional(),
 }) as z.ZodType<WorkflowRunStep>;
@@ -257,7 +263,7 @@ export function deserializeWorkflowRunStep(wire: WorkflowRunStepResponse): Workf
         : Object.fromEntries(
             Object.entries(wire['handle_inputs']).map(([__k, __v]) => [
               __k,
-              deserializeHandlePayload(__v),
+              deserializePublicHandlePayload(__v),
             ])
           ),
     handleOutputs:
@@ -266,7 +272,7 @@ export function deserializeWorkflowRunStep(wire: WorkflowRunStepResponse): Workf
         : Object.fromEntries(
             Object.entries(wire['handle_outputs']).map(([__k, __v]) => [
               __k,
-              deserializeHandlePayload(__v),
+              deserializePublicHandlePayload(__v),
             ])
           ),
     artifact:
