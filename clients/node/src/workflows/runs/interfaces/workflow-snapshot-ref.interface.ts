@@ -7,27 +7,16 @@ export interface WorkflowSnapshotRef {
   workflowId: string;
   /** Content-addressed workflow version used for this run. */
   versionId: string;
-  /** Workflow name as it was at run-creation time (denormalized for display). */
-  nameAtRunTime: string;
-  /**
-   * Raw version selector requested when this run was created
-   * @default "production"
-   */
-  requestedVersion?: string;
 }
 
 export interface WorkflowSnapshotRefResponse {
   workflow_id: string;
   version_id: string;
-  name_at_run_time: string;
-  requested_version?: string;
 }
 
 export const ZWorkflowSnapshotRef = z.object({
   workflowId: z.string(),
   versionId: z.string(),
-  nameAtRunTime: z.string(),
-  requestedVersion: z.string().optional(),
 }) as z.ZodType<WorkflowSnapshotRef>;
 
 export function deserializeWorkflowSnapshotRef(
@@ -36,7 +25,5 @@ export function deserializeWorkflowSnapshotRef(
   return {
     workflowId: wire['workflow_id'],
     versionId: wire['version_id'],
-    nameAtRunTime: wire['name_at_run_time'],
-    requestedVersion: wire['requested_version'],
   };
 }

@@ -513,7 +513,6 @@ def _minimal_run_payload(**overrides) -> dict:
         "workflow": {
             "workflow_id": "wf_1",
             "version_id": "wv_1",
-            "name_at_run_time": "Test",
         },
         "trigger": {"type": "manual"},
         "lifecycle": overrides.pop("lifecycle", lifecycle),

@@ -37,10 +37,10 @@ pub struct WorkflowRunStep {
     pub created_at: Option<String>,
     /// Handle input payloads consumed by this step
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub handle_inputs: Option<std::collections::HashMap<String, HandlePayload>>,
+    pub handle_inputs: Option<std::collections::HashMap<String, PublicHandlePayload>>,
     /// Handle output payloads produced by this step
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub handle_outputs: Option<std::collections::HashMap<String, HandlePayload>>,
+    pub handle_outputs: Option<std::collections::HashMap<String, PublicHandlePayload>>,
     /// Canonical persisted result of this step
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub artifact: Option<StepArtifactRef>,

@@ -15,27 +15,14 @@ pub struct WorkflowSnapshotRef {
     pub workflow_id: String,
     /// Content-addressed workflow version used for this run.
     pub version_id: String,
-    /// Workflow name as it was at run-creation time (denormalized for display).
-    pub name_at_run_time: String,
-    /// Raw version selector requested when this run was created
-    ///
-    /// Defaults to `production`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub requested_version: Option<String>,
 }
 impl WorkflowSnapshotRef {
     /// Construct a new `WorkflowSnapshotRef` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        workflow_id: impl Into<String>,
-        version_id: impl Into<String>,
-        name_at_run_time: impl Into<String>,
-    ) -> Self {
+    pub fn new(workflow_id: impl Into<String>, version_id: impl Into<String>) -> Self {
         Self {
             workflow_id: workflow_id.into(),
             version_id: version_id.into(),
-            name_at_run_time: name_at_run_time.into(),
-            requested_version: Default::default(),
         }
     }
 }

@@ -75,16 +75,16 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def created_at=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, Retab::HandlePayload])) }
+    sig { returns(T.nilable(T::Hash[String, Retab::PublicHandlePayload])) }
     def handle_inputs; end
 
-    sig { params(value: T.nilable(T::Hash[String, Retab::HandlePayload])).returns(T.nilable(T::Hash[String, Retab::HandlePayload])) }
+    sig { params(value: T.nilable(T::Hash[String, Retab::PublicHandlePayload])).returns(T.nilable(T::Hash[String, Retab::PublicHandlePayload])) }
     def handle_inputs=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, Retab::HandlePayload])) }
+    sig { returns(T.nilable(T::Hash[String, Retab::PublicHandlePayload])) }
     def handle_outputs; end
 
-    sig { params(value: T.nilable(T::Hash[String, Retab::HandlePayload])).returns(T.nilable(T::Hash[String, Retab::HandlePayload])) }
+    sig { params(value: T.nilable(T::Hash[String, Retab::PublicHandlePayload])).returns(T.nilable(T::Hash[String, Retab::PublicHandlePayload])) }
     def handle_outputs=(value); end
 
     sig { returns(T.nilable(Retab::StepArtifactRef)) }

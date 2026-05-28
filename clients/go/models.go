@@ -1155,20 +1155,6 @@ type HTTPValidationError struct {
 	Detail []*ValidationError `json:"detail,omitempty"`
 }
 
-// HandlePayload payload for a single block output handle.
-type HandlePayload struct {
-	// Type is type of payload
-	Type HandlePayloadType `json:"type"`
-	// Document is for file handles: document reference
-	Document *FileRef `json:"document,omitempty"`
-	// Data is for JSON handles: structured data
-	Data *interface{} `json:"data,omitempty"`
-	// ArtifactRef is for json_ref handles: pointer to artifact-storage JSON body
-	ArtifactRef map[string]interface{} `json:"artifact_ref,omitempty"`
-	// Preview is for json_ref handles: lightweight preview of the body
-	Preview map[string]interface{} `json:"preview,omitempty"`
-}
-
 // Job core Job object following OpenAI-style specification.
 // Represents a single asynchronous job that can be polled for status
 // and result retrieval.
@@ -1515,6 +1501,16 @@ type PendingWorkflowExperimentRun = PendingRun
 
 // PendingWorkflowTestRun is an alias for PendingRun.
 type PendingWorkflowTestRun = PendingRun
+
+// PublicHandlePayload public handle payload exposed by workflow step APIs.
+type PublicHandlePayload struct {
+	// Type is type of payload
+	Type PublicHandlePayloadType `json:"type"`
+	// Document is for file handles: document reference
+	Document *FileRef `json:"document,omitempty"`
+	// Data is for JSON handles: structured data
+	Data *interface{} `json:"data,omitempty"`
+}
 
 // PublishWorkflowRequest optional request body for publishing a workflow.
 type PublishWorkflowRequest struct {
@@ -2140,9 +2136,9 @@ type WorkflowRun struct {
 	// Trigger is what started this run
 	Trigger *ManualTrigger `json:"trigger"`
 	// Lifecycle is discriminated lifecycle state.
-	Lifecycle *PendingRun `json:"lifecycle,omitempty"`
+	Lifecycle *PendingRun `json:"lifecycle"`
 	// Timing is all timing information
-	Timing *RunTiming `json:"timing,omitempty"`
+	Timing RunTiming `json:"timing"`
 	// Inputs is input payloads supplied at run creation time
 	Inputs *RunInputs `json:"inputs,omitempty"`
 }
@@ -2156,19 +2152,6 @@ type WorkflowSnapshotRef struct {
 	WorkflowID string `json:"workflow_id"`
 	// VersionID is content-addressed workflow version used for this run.
 	VersionID string `json:"version_id"`
-	// NameAtRunTime is workflow name as it was at run-creation time (denormalized for display).
-	NameAtRunTime string `json:"name_at_run_time"`
-	// RequestedVersion is raw version selector requested when this run was created
-	RequestedVersion string `json:"requested_version,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *WorkflowSnapshotRef) UnmarshalJSON(data []byte) error {
-	r.RequestedVersion = "production"
-	type alias WorkflowSnapshotRef
-	return json.Unmarshal(data, (*alias)(r))
 }
 
 // WorkflowRunStep public step status object.
@@ -2196,9 +2179,9 @@ type WorkflowRunStep struct {
 	// CreatedAt is when the step doc was first persisted
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// HandleInputs is handle input payloads consumed by this step
-	HandleInputs map[string]*HandlePayload `json:"handle_inputs,omitempty"`
+	HandleInputs map[string]*PublicHandlePayload `json:"handle_inputs,omitempty"`
 	// HandleOutputs is handle output payloads produced by this step
-	HandleOutputs map[string]*HandlePayload `json:"handle_outputs,omitempty"`
+	HandleOutputs map[string]*PublicHandlePayload `json:"handle_outputs,omitempty"`
 	// Artifact is canonical persisted result of this step
 	Artifact *StepArtifactRef `json:"artifact,omitempty"`
 	// RetryCount is number of retry attempts

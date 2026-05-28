@@ -296,7 +296,7 @@ spec:
         var handler = new CapturingHandler(
             "{" +
             "\"id\":\"run_123\"," +
-            "\"workflow\":{\"workflow_id\":\"wrk_123\",\"version_id\":\"ver_123\",\"name_at_run_time\":\"Test\"}," +
+            "\"workflow\":{\"workflow_id\":\"wrk_123\",\"version_id\":\"ver_123\"}," +
             "\"trigger\":{\"type\":\"api\"}," +
             "\"lifecycle\":{\"status\":\"completed\"}" +
             "}"

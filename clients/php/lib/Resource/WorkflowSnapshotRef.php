@@ -22,10 +22,6 @@ readonly class WorkflowSnapshotRef implements \JsonSerializable
         public string $workflowId,
         /** Content-addressed workflow version used for this run. */
         public string $versionId,
-        /** Workflow name as it was at run-creation time (denormalized for display). */
-        public string $nameAtRunTime,
-        /** Raw version selector requested when this run was created */
-        public ?string $requestedVersion = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,7 +30,6 @@ readonly class WorkflowSnapshotRef implements \JsonSerializable
         foreach ([
             'workflow_id',
             'version_id',
-            'name_at_run_time',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowSnapshotRef::fromArray()");
@@ -43,8 +38,6 @@ readonly class WorkflowSnapshotRef implements \JsonSerializable
         return new self(
             workflowId: $data['workflow_id'],
             versionId: $data['version_id'],
-            nameAtRunTime: $data['name_at_run_time'],
-            requestedVersion: $data['requested_version'] ?? null,
         );
     }
 
@@ -54,8 +47,6 @@ readonly class WorkflowSnapshotRef implements \JsonSerializable
         return [
             'workflow_id' => $this->workflowId,
             'version_id' => $this->versionId,
-            'name_at_run_time' => $this->nameAtRunTime,
-            'requested_version' => $this->requestedVersion,
         ];
     }
 }

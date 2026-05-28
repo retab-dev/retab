@@ -46,10 +46,10 @@ namespace Retab
         public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Handle input payloads consumed by this step</summary>
-        public Dictionary<string, HandlePayload>? HandleInputs { get; set; }
+        public Dictionary<string, PublicHandlePayload>? HandleInputs { get; set; }
 
         /// <summary>Handle output payloads produced by this step</summary>
-        public Dictionary<string, HandlePayload>? HandleOutputs { get; set; }
+        public Dictionary<string, PublicHandlePayload>? HandleOutputs { get; set; }
 
         /// <summary>Canonical persisted result of this step</summary>
         public StepArtifactRef? Artifact { get; set; }

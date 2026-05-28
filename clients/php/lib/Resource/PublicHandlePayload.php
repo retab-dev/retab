@@ -6,28 +6,18 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Payload for a single block output handle. */
-readonly class HandlePayload implements \JsonSerializable
+/** Public handle payload exposed by workflow step APIs. */
+readonly class PublicHandlePayload implements \JsonSerializable
 {
     use JsonSerializableTrait;
 
     public function __construct(
         /** Type of payload */
-        public HandlePayloadType $type,
+        public PublicHandlePayloadType $type,
         /** For file handles: document reference */
         public ?FileRef $document = null,
         /** For JSON handles: structured data */
         public mixed $data = null,
-        /**
-         * For json_ref handles: pointer to artifact-storage JSON body
-         * @var array<string, mixed>|null
-         */
-        public ?array $artifactRef = null,
-        /**
-         * For json_ref handles: lightweight preview of the body
-         * @var array<string, mixed>|null
-         */
-        public ?array $preview = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -37,15 +27,13 @@ readonly class HandlePayload implements \JsonSerializable
             'type',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
-                throw new \UnexpectedValueException("Missing required field '$__required' for HandlePayload::fromArray()");
+                throw new \UnexpectedValueException("Missing required field '$__required' for PublicHandlePayload::fromArray()");
             }
         }
         return new self(
-            type: HandlePayloadType::from($data['type']),
+            type: PublicHandlePayloadType::from($data['type']),
             document: isset($data['document']) ? FileRef::fromArray($data['document']) : null,
             data: $data['data'] ?? null,
-            artifactRef: $data['artifact_ref'] ?? null,
-            preview: $data['preview'] ?? null,
         );
     }
 
@@ -56,8 +44,6 @@ readonly class HandlePayload implements \JsonSerializable
             'type' => $this->type->value,
             'document' => $this->document?->toArray(),
             'data' => $this->data,
-            'artifact_ref' => $this->artifactRef,
-            'preview' => $this->preview,
         ];
     }
 }

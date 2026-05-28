@@ -7,16 +7,12 @@ module Retab
 
     HASH_ATTRS = {
       workflow_id: :workflow_id,
-      version_id: :version_id,
-      name_at_run_time: :name_at_run_time,
-      requested_version: :requested_version
+      version_id: :version_id
     }.freeze
 
     attr_accessor(
       :workflow_id,
-      :version_id,
-      :name_at_run_time,
-      :requested_version
+      :version_id
     )
 
     def initialize(json)
@@ -24,8 +20,6 @@ module Retab
       hash = self.class.normalize(json)
       @workflow_id = hash[:workflow_id]
       @version_id = hash[:version_id]
-      @name_at_run_time = hash[:name_at_run_time]
-      @requested_version = hash[:requested_version]
     end
   end
 end

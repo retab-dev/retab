@@ -10,19 +10,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class WorkflowSnapshotRef {
   private final String workflowId;
   private final String versionId;
-  private final String nameAtRunTime;
-  private final String requestedVersion;
 
   @JsonCreator
   public WorkflowSnapshotRef(
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "version_id", required = true) String versionId,
-      @JsonProperty(value = "name_at_run_time", required = true) String nameAtRunTime,
-      @JsonProperty(value = "requested_version", required = false) String requestedVersion) {
+      @JsonProperty(value = "version_id", required = true) String versionId) {
     this.workflowId = workflowId;
     this.versionId = versionId;
-    this.nameAtRunTime = nameAtRunTime;
-    this.requestedVersion = requestedVersion;
   }
 
   @JsonProperty("workflow_id")
@@ -33,15 +27,5 @@ public final class WorkflowSnapshotRef {
   @JsonProperty("version_id")
   public String getVersionId() {
     return versionId;
-  }
-
-  @JsonProperty("name_at_run_time")
-  public String getNameAtRunTime() {
-    return nameAtRunTime;
-  }
-
-  @JsonProperty("requested_version")
-  public String getRequestedVersion() {
-    return requestedVersion;
   }
 }
