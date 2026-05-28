@@ -90,15 +90,12 @@ override and takes precedence over anything written to disk.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 
-		// Discovery + browser OAuth flow.
-		effectiveBaseURL := baseURL
-		if effectiveBaseURL == "" {
-			effectiveBaseURL = os.Getenv("RETAB_API_BASE_URL")
-		}
-		if effectiveBaseURL == "" {
-			effectiveBaseURL = os.Getenv("RETAB_BASE_URL")
-		}
-		disc, err := fetchOAuthDiscovery(ctx, effectiveBaseURL)
+		// Discovery + browser OAuth flow. A fresh login without an
+		// explicit override should reset the CLI back to production,
+		// not inherit a stale local/staging base_url from a previous
+		// account or dev session.
+		loginBaseURL := configuredLoginBaseURL(baseURL)
+		disc, err := fetchOAuthDiscovery(ctx, loginBaseURL)
 		if err != nil {
 			return fmt.Errorf("OAuth discovery failed: %w", err)
 		}
@@ -112,10 +109,8 @@ override and takes precedence over anything written to disk.`,
 		// Switching to OAuth wipes the legacy API key; users who want
 		// both can re-run `retab auth login --api-key …` afterward.
 		cfg.APIKey = ""
-		if baseURL != "" {
-			cfg.BaseURL = baseURL
-		}
-		environment, envErr := selectOAuthLoginEnvironment(ctx, configuredLoginBaseURL(baseURL, cfg), tokens, cfg.EnvironmentID)
+		cfg.BaseURL = stripLegacyV1Suffix(loginBaseURL)
+		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, cfg.EnvironmentID)
 		if environment != nil {
 			cfg.EnvironmentID = environment.ID
 		}
@@ -136,7 +131,7 @@ override and takes precedence over anything written to disk.`,
 	}),
 }
 
-func configuredLoginBaseURL(flagBaseURL string, cfg retabConfig) string {
+func configuredLoginBaseURL(flagBaseURL string) string {
 	if flagBaseURL != "" {
 		return flagBaseURL
 	}
@@ -146,7 +141,7 @@ func configuredLoginBaseURL(flagBaseURL string, cfg retabConfig) string {
 	if envBaseURL := os.Getenv("RETAB_BASE_URL"); envBaseURL != "" {
 		return envBaseURL
 	}
-	return cfg.BaseURL
+	return defaultAPIBaseURL
 }
 
 func selectOAuthLoginEnvironment(
@@ -228,9 +223,7 @@ func runAPIKeyLogin(apiKey, baseURL string) error {
 	cfg.APIKey = apiKey
 	// Wipe stale OAuth state — explicit key login is the user's intent.
 	cfg.OAuth = nil
-	if baseURL != "" {
-		cfg.BaseURL = baseURL
-	}
+	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err
 	}

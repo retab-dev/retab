@@ -4,12 +4,87 @@ load("//tools/bazel:sdk_generation.bzl", "sdk_generation_tree")
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-    name = "generation_inputs",
-    srcs = glob([
-        "clients/**",
-    ]) + [
+    name = "sdk_generation_common_inputs",
+    srcs = [
         "//.scripts:sdk_generation_scripts",
+        "//:oagen_generation_inputs",
         "//open-source/docs/api-reference:checked_openapi_json",
+    ],
+)
+
+SDK_CLIENT_INPUT_EXCLUDES = [
+    "clients/*/.bundle/**",
+    "clients/*/.gradle/**",
+    "clients/*/.phpunit.cache/**",
+    "clients/*/.ruff_cache/**",
+    "clients/*/.pytest_cache/**",
+    "clients/*/__pycache__/**",
+    "clients/*/artifacts/**",
+    "clients/*/bin/**",
+    "clients/*/build/**",
+    "clients/*/dist/**",
+    "clients/*/node_modules/**",
+    "clients/*/nupkg/**",
+    "clients/*/obj/**",
+    "clients/*/retab.egg-info/**",
+    "clients/*/target/**",
+    "clients/*/test_venv/**",
+    "clients/*/vendor/**",
+]
+
+SDK_LANGUAGE_SPECS = [
+    {
+        "language": "python",
+        "target": "snippet_python_sdk",
+    },
+    {
+        "language": "node",
+        "target": "snippet_node_sdk",
+    },
+    {
+        "language": "go",
+        "target": "snippet_go_sdk",
+    },
+    {
+        "language": "rust",
+        "target": "snippet_rust_sdk",
+    },
+    {
+        "language": "dotnet",
+        "target": "snippet_dotnet_sdk",
+    },
+    {
+        "language": "php",
+        "target": "snippet_php_sdk",
+    },
+    {
+        "language": "ruby",
+        "target": "snippet_ruby_sdk",
+    },
+    {
+        "language": "java",
+        "target": "snippet_java_sdk",
+    },
+]
+
+[
+    filegroup(
+        name = "%s_sdk_seed_inputs" % spec["language"],
+        srcs = glob(
+            ["clients/%s/**" % spec["language"]],
+            exclude = SDK_CLIENT_INPUT_EXCLUDES,
+        ),
+    )
+    for spec in SDK_LANGUAGE_SPECS
+]
+
+filegroup(
+    name = "generation_inputs",
+    srcs = glob(
+        ["clients/**"],
+        exclude = SDK_CLIENT_INPUT_EXCLUDES,
+    ) + [
+        ":sdk_generation_common_inputs",
         "//open-source/sdk/cli:sources",
     ],
 )
@@ -198,6 +273,23 @@ sdk_generation_tree(
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
+[
+    sdk_generation_tree(
+        name = spec["target"],
+        language = spec["language"],
+        # Snippet lint is downstream of the checked generated artifact. The
+        # dedicated openapi_check target owns backend -> openapi freshness.
+        openapi = "//open-source/docs/api-reference:checked_openapi_json",
+        srcs = [
+            ":sdk_generation_common_inputs",
+            ":%s_sdk_seed_inputs" % spec["language"],
+        ],
+        format = False,
+        tags = MANUAL_LOCAL_TAGS + ["generated-artifact", "snippet-sdk"],
+    )
+    for spec in SDK_LANGUAGE_SPECS
+]
+
 SDK_UPDATE_SPECS = [
     {
         "check": ":check_python",
@@ -314,6 +406,7 @@ sh_binary(
 test_suite(
     name = "generated_sdks",
     tests = [
+        "//tools/bazel:oagen_core_dist_freshness",
         ":check_python",
         ":check_node",
         ":check_go",

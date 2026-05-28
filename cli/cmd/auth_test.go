@@ -420,6 +420,44 @@ func TestChooseLoginEnvironmentPreservesExistingSelection(t *testing.T) {
 	}
 }
 
+func TestConfiguredLoginBaseURLDefaultsToProductionInsteadOfStoredLocalhost(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	if err := saveConfig(retabConfig{BaseURL: "http://localhost:4000"}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	got := configuredLoginBaseURL("")
+	if got != defaultAPIBaseURL {
+		t.Fatalf("login base URL = %q, want %q", got, defaultAPIBaseURL)
+	}
+}
+
+func TestAPIKeyLoginDefaultsToProductionInsteadOfStoredLocalhost(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := saveConfig(retabConfig{BaseURL: "http://localhost:4000"}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	if err := runAPIKeyLogin("sk_live_test", ""); err != nil {
+		t.Fatalf("runAPIKeyLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.BaseURL != defaultAPIBaseURL {
+		t.Fatalf("BaseURL = %q, want %q", cfg.BaseURL, defaultAPIBaseURL)
+	}
+	if cfg.APIKey != "sk_live_test" {
+		t.Fatalf("APIKey = %q, want sk_live_test", cfg.APIKey)
+	}
+}
+
 // `auth status --output table` (the global formatting flag every other
 // command honours) must render a key/value table, NOT silently fall
 // through to JSON. The bug was that writeAuthStatus only knew about the
