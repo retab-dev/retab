@@ -40,7 +40,7 @@ func (s *WorkflowBlockService) List(ctx context.Context, params *WorkflowBlocksL
 type WorkflowBlocksCreateParams struct {
 	// WorkflowID is workflow to create the block in.
 	WorkflowID string `json:"workflow_id" url:"-"`
-	// ID is opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+	// ID is if omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
 	ID *string `json:"id,omitempty" url:"-"`
 	// Type is block type
 	Type WorkflowBlockCreateRequestType `json:"type" url:"-"`

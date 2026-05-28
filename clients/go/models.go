@@ -16,14 +16,14 @@ type Actor struct {
 
 // AllItemsMatchCondition represents an all items match condition.
 type AllItemsMatchCondition struct {
-	Kind      *string         `json:"kind,omitempty"`
-	Condition *ExistCondition `json:"condition"`
+	Kind      *string   `json:"kind,omitempty"`
+	Condition Condition `json:"condition"`
 }
 
 // AnyItemMatchesCondition represents an any item matches condition.
 type AnyItemMatchesCondition struct {
-	Kind      *string         `json:"kind,omitempty"`
-	Condition *ExistCondition `json:"condition"`
+	Kind      *string   `json:"kind,omitempty"`
+	Condition Condition `json:"condition"`
 }
 
 // APICallAttempt one attempt of an api_call (initial + retries).
@@ -109,10 +109,10 @@ type AssertionSchemaDep struct {
 // “target“ is the only supported shape: an output handle id and an
 // optional relative path inside that handle's payload.
 type AssertionSpec struct {
-	ID        *string         `json:"id,omitempty"`
-	Target    OutputTarget    `json:"target"`
-	Condition *ExistCondition `json:"condition"`
-	Label     *string         `json:"label,omitempty"`
+	ID        *string      `json:"id,omitempty"`
+	Target    OutputTarget `json:"target"`
+	Condition Condition    `json:"condition"`
+	Label     *string      `json:"label,omitempty"`
 }
 
 // AwaitingReviewRun the run is paused on at least one gated block.
@@ -176,7 +176,7 @@ type StoredBlockExecution struct {
 	// BlockType is type of the block
 	BlockType string `json:"block_type"`
 	// Lifecycle is terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``.
-	Lifecycle *CompletedBlockExecutionLifecycle `json:"lifecycle"`
+	Lifecycle BlockExecutionLifecycle `json:"lifecycle"`
 	// HandleInputs is input payloads keyed by handle ID (file metadata for files, data for json)
 	HandleInputs map[string]interface{} `json:"handle_inputs,omitempty"`
 	// Artifact is canonical persisted-ref artifact for this block execution (operation + id), if any
@@ -186,8 +186,9 @@ type StoredBlockExecution struct {
 	// RoutingDecision is active output handles for routing decisions
 	RoutingDecision []string `json:"routing_decision,omitempty"`
 	// DurationMs is duration of the block execution in milliseconds
-	DurationMs *float64   `json:"duration_ms,omitempty"`
-	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	DurationMs *float64 `json:"duration_ms,omitempty"`
+	// CreatedAt is when the block execution record was created
+	CreatedAt time.Time `json:"created_at"`
 	// BlockConfig is the draft block config used for this block execution
 	BlockConfig map[string]interface{} `json:"block_config,omitempty"`
 	// StepID is the step ID that was used for inputs (includes iteration prefix if applicable)
@@ -227,8 +228,8 @@ type BlockTestOutcomeCounts struct {
 
 // CancelWorkflowExperimentRunResponse represents a cancel workflow experiment run response.
 type CancelWorkflowExperimentRunResponse struct {
-	ID        string                        `json:"id"`
-	Lifecycle *PendingWorkflowExperimentRun `json:"lifecycle"`
+	ID        string                `json:"id"`
+	Lifecycle WorkflowExperimentRun `json:"lifecycle"`
 }
 
 // CancelWorkflowRequest optional request payload for cancel workflow command idempotency.
@@ -542,7 +543,7 @@ type ReviewDecision struct {
 	Verdict   ReviewVerdict `json:"verdict"`
 	VersionID string        `json:"version_id"`
 	Author    Actor         `json:"author"`
-	DecidedAt *time.Time    `json:"decided_at,omitempty"`
+	DecidedAt time.Time     `json:"decided_at"`
 	Reason    *string       `json:"reason,omitempty"`
 }
 
@@ -946,7 +947,8 @@ type ExperimentResultTiming struct {
 
 // ExperimentRunTiming represents an experiment run timing.
 type ExperimentRunTiming struct {
-	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	// CreatedAt is when the experiment run record was created
+	CreatedAt   time.Time  `json:"created_at"`
 	StartedAt   *time.Time `json:"started_at,omitempty"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 	DurationMs  *int       `json:"duration_ms,omitempty"`
@@ -1016,7 +1018,7 @@ type ExperimentVotesMetricsResponse struct {
 
 // ExplicitExperimentDocumentRequest represents an explicit experiment document request.
 type ExplicitExperimentDocumentRequest struct {
-	HandleInputs map[string]*JSONHandleInput   `json:"handle_inputs"`
+	HandleInputs map[string]HandleInput        `json:"handle_inputs"`
 	Provenance   *ExperimentDocumentProvenance `json:"provenance,omitempty"`
 }
 
@@ -1159,7 +1161,8 @@ type HTTPValidationError struct {
 // Represents a single asynchronous job that can be polled for status
 // and result retrieval.
 type Job struct {
-	ID              *string                `json:"id,omitempty"`
+	// ID is opaque job id (server-generated ``job_<nanoid>``).
+	ID              string                 `json:"id"`
 	Object          *string                `json:"object,omitempty"`
 	Status          *JobStatus             `json:"status,omitempty"`
 	Endpoint        SupportedEndpoint      `json:"endpoint"`
@@ -1253,8 +1256,8 @@ type ManualTrigger struct {
 
 // ManualWorkflowTestSource represents a manual workflow test source.
 type ManualWorkflowTestSource struct {
-	Type         *string                     `json:"type,omitempty"`
-	HandleInputs map[string]*JSONHandleInput `json:"handle_inputs,omitempty"`
+	Type         *string                `json:"type,omitempty"`
+	HandleInputs map[string]HandleInput `json:"handle_inputs,omitempty"`
 }
 
 // MatcheRegexCondition represents a matche regex condition.
@@ -1547,8 +1550,8 @@ type RetabUsage struct {
 
 // ReviewAllOf gate fires only if ALL child predicates fire.
 type ReviewAllOf struct {
-	Kind       *string         `json:"kind,omitempty"`
-	Predicates []*ReviewAlways `json:"predicates"`
+	Kind       *string      `json:"kind,omitempty"`
+	Predicates []ReviewKind `json:"predicates"`
 }
 
 // ReviewAlways gate every run.
@@ -1559,8 +1562,8 @@ type ReviewAlways struct {
 // ReviewAnyOf gate fires if ANY child predicate fires. Evaluated in list order;
 // `triggered_by` reports the first match (decision: first-match wins).
 type ReviewAnyOf struct {
-	Kind       *string         `json:"kind,omitempty"`
-	Predicates []*ReviewAlways `json:"predicates"`
+	Kind       *string      `json:"kind,omitempty"`
+	Predicates []ReviewKind `json:"predicates"`
 }
 
 // ReviewAnyRequiredFieldNull gate when any required field in the extract schema is null/missing.
@@ -1680,7 +1683,7 @@ type RunStepWorkflowTestSource struct {
 // RunTiming all timing information for a run.
 // “duration_ms“ is backfilled at read time from
 // “completed_at - started_at“ when both timestamps are present and the
-// stored value is “None“. The field is “init=False“ so producers cannot
+// stored value is “None“. The field is ```` so producers cannot
 // pass it through “__init__“ — they must round-trip through
 // “model_validate“ (or persist via the Mongo projection helpers in
 // “run_duration.py“). Records that already store “duration_ms“ are left
@@ -1688,7 +1691,7 @@ type RunStepWorkflowTestSource struct {
 // written by the projection.
 type RunTiming struct {
 	// CreatedAt is when the run record was created
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 	// StartedAt is when the run started executing
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// CompletedAt is when the run finished executing
@@ -2002,15 +2005,17 @@ type WorkflowEdgeDoc struct {
 
 // WorkflowExperiment represents a workflow experiment.
 type WorkflowExperiment struct {
-	ID                string                       `json:"id"`
-	WorkflowID        string                       `json:"workflow_id"`
-	BlockID           string                       `json:"block_id"`
-	NConsensus        NConsensusValue              `json:"n_consensus"`
-	DocumentCount     *int                         `json:"document_count,omitempty"`
-	Name              string                       `json:"name"`
-	LastRunID         *string                      `json:"last_run_id,omitempty"`
-	CreatedAt         *time.Time                   `json:"created_at,omitempty"`
-	UpdatedAt         *time.Time                   `json:"updated_at,omitempty"`
+	ID            string          `json:"id"`
+	WorkflowID    string          `json:"workflow_id"`
+	BlockID       string          `json:"block_id"`
+	NConsensus    NConsensusValue `json:"n_consensus"`
+	DocumentCount *int            `json:"document_count,omitempty"`
+	Name          string          `json:"name"`
+	LastRunID     *string         `json:"last_run_id,omitempty"`
+	// CreatedAt is when the experiment was created
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt is when the experiment was last updated
+	UpdatedAt         time.Time                    `json:"updated_at"`
 	Status            *ExperimentPublicStatus      `json:"status,omitempty"`
 	BlockType         ExperimentBlockType          `json:"block_type"`
 	Score             *float64                     `json:"score,omitempty"`
@@ -2023,40 +2028,40 @@ type WorkflowExperiment struct {
 // The storage row is still named “experiment_jobs“ internally, but the
 // public contract is a result row addressed by “run_id“ + “document_id“.
 type ExperimentResult struct {
-	ID            string                           `json:"id"`
-	RunID         string                           `json:"run_id"`
-	ExperimentID  string                           `json:"experiment_id"`
-	DocumentID    string                           `json:"document_id"`
-	Lifecycle     *PendingWorkflowExperimentResult `json:"lifecycle"`
-	Timing        ExperimentResultTiming           `json:"timing"`
-	BlockType     ExperimentResultBlockType        `json:"block_type"`
-	HandleInputs  map[string]*JSONHandleInput      `json:"handle_inputs,omitempty"`
-	Artifact      *StepArtifactRef                 `json:"artifact,omitempty"`
-	Attempt       *int                             `json:"attempt,omitempty"`
-	IsPlaceholder *bool                            `json:"is_placeholder,omitempty"`
+	ID            string                    `json:"id"`
+	RunID         string                    `json:"run_id"`
+	ExperimentID  string                    `json:"experiment_id"`
+	DocumentID    string                    `json:"document_id"`
+	Lifecycle     WorkflowExperimentResult  `json:"lifecycle"`
+	Timing        ExperimentResultTiming    `json:"timing"`
+	BlockType     ExperimentResultBlockType `json:"block_type"`
+	HandleInputs  map[string]HandleInput    `json:"handle_inputs,omitempty"`
+	Artifact      *StepArtifactRef          `json:"artifact,omitempty"`
+	Attempt       *int                      `json:"attempt,omitempty"`
+	IsPlaceholder *bool                     `json:"is_placeholder,omitempty"`
 }
 
 // ExperimentRun run-id-first public experiment run shape.
 // The canonical identity is “id“. Internal queue handles and duplicate
 // identity aliases are intentionally absent.
 type ExperimentRun struct {
-	ID                     string                        `json:"id"`
-	Workflow               WorkflowSnapshotRef           `json:"workflow"`
-	Trigger                ExperimentRunTrigger          `json:"trigger"`
-	ExperimentID           string                        `json:"experiment_id"`
-	BlockID                string                        `json:"block_id"`
-	BlockType              ExperimentRunBlockType        `json:"block_type"`
-	NConsensus             ExperimentRunNConsensus       `json:"n_consensus"`
-	Lifecycle              *PendingWorkflowExperimentRun `json:"lifecycle"`
-	Timing                 ExperimentRunTiming           `json:"timing"`
-	ParentRunID            *string                       `json:"parent_run_id,omitempty"`
-	DefinitionFingerprint  string                        `json:"definition_fingerprint"`
-	DocumentsFingerprint   string                        `json:"documents_fingerprint"`
-	Score                  *float64                      `json:"score,omitempty"`
-	TotalDocumentCount     *int                          `json:"total_document_count,omitempty"`
-	CompletedDocumentCount *int                          `json:"completed_document_count,omitempty"`
-	DocumentCount          *int                          `json:"document_count,omitempty"`
-	ErrorCount             *int                          `json:"error_count,omitempty"`
+	ID                     string                  `json:"id"`
+	Workflow               WorkflowSnapshotRef     `json:"workflow"`
+	Trigger                ExperimentRunTrigger    `json:"trigger"`
+	ExperimentID           string                  `json:"experiment_id"`
+	BlockID                string                  `json:"block_id"`
+	BlockType              ExperimentRunBlockType  `json:"block_type"`
+	NConsensus             ExperimentRunNConsensus `json:"n_consensus"`
+	Lifecycle              WorkflowExperimentRun   `json:"lifecycle"`
+	Timing                 ExperimentRunTiming     `json:"timing"`
+	ParentRunID            *string                 `json:"parent_run_id,omitempty"`
+	DefinitionFingerprint  string                  `json:"definition_fingerprint"`
+	DocumentsFingerprint   string                  `json:"documents_fingerprint"`
+	Score                  *float64                `json:"score,omitempty"`
+	TotalDocumentCount     *int                    `json:"total_document_count,omitempty"`
+	CompletedDocumentCount *int                    `json:"completed_document_count,omitempty"`
+	DocumentCount          *int                    `json:"document_count,omitempty"`
+	ErrorCount             *int                    `json:"error_count,omitempty"`
 }
 
 // WorkflowExportPayloadResponse represents a workflow export payload response.
@@ -2090,7 +2095,7 @@ type Review struct {
 	ParentStepID      *string         `json:"parent_step_id,omitempty"`
 	IterationKey      *string         `json:"iteration_key,omitempty"`
 	BlockType         ReviewBlockType `json:"block_type"`
-	TriggeredBy       *ReviewAlways   `json:"triggered_by"`
+	TriggeredBy       ReviewKind      `json:"triggered_by"`
 	// CreatedAt is when the review was created.
 	CreatedAt time.Time       `json:"created_at"`
 	Decision  *ReviewDecision `json:"decision,omitempty"`
@@ -2134,9 +2139,9 @@ type WorkflowRun struct {
 	// Workflow is workflow + version reference
 	Workflow WorkflowSnapshotRef `json:"workflow"`
 	// Trigger is what started this run
-	Trigger *ManualTrigger `json:"trigger"`
+	Trigger Trigger `json:"trigger"`
 	// Lifecycle is discriminated lifecycle state.
-	Lifecycle *PendingRun `json:"lifecycle"`
+	Lifecycle WorkflowRunLifecycle `json:"lifecycle"`
 	// Timing is all timing information
 	Timing RunTiming `json:"timing"`
 	// Inputs is input payloads supplied at run creation time
@@ -2165,7 +2170,7 @@ type WorkflowRunStep struct {
 	// BlockLabel is label of the block
 	BlockLabel string `json:"block_label"`
 	// Lifecycle is current step lifecycle
-	Lifecycle *PendingStepLifecycle `json:"lifecycle"`
+	Lifecycle StepLifecycle `json:"lifecycle"`
 	// StartedAt is when the step started executing
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// CompletedAt is when the step finished executing
@@ -2193,7 +2198,7 @@ type WorkflowTest struct {
 	ID                      string                     `json:"id"`
 	WorkflowID              string                     `json:"workflow_id"`
 	Target                  WorkflowTestBlockTarget    `json:"target"`
-	Source                  *ManualWorkflowTestSource  `json:"source"`
+	Source                  WorkflowTestSource         `json:"source"`
 	Name                    *string                    `json:"name,omitempty"`
 	Assertion               *AssertionSpec             `json:"assertion,omitempty"`
 	AssertionSchemaDep      *AssertionSchemaDep        `json:"assertion_schema_dep,omitempty"`
@@ -2205,8 +2210,10 @@ type WorkflowTest struct {
 	LatestRunSummary        *LatestBlockTestRunSummary `json:"latest_run_summary,omitempty"`
 	LatestPassingRunSummary *LatestBlockTestRunSummary `json:"latest_passing_run_summary,omitempty"`
 	LatestFailingRunSummary *LatestBlockTestRunSummary `json:"latest_failing_run_summary,omitempty"`
-	CreatedAt               *time.Time                 `json:"created_at,omitempty"`
-	UpdatedAt               *time.Time                 `json:"updated_at,omitempty"`
+	// CreatedAt is when the workflow test was created
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt is when the workflow test was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2228,11 +2235,11 @@ type WorkflowTestBlockTarget struct {
 
 // WorkflowTestResult represents a workflow test result.
 type WorkflowTestResult struct {
-	ID        string                  `json:"id"`
-	RunID     *string                 `json:"run_id,omitempty"`
-	TestID    string                  `json:"test_id"`
-	Lifecycle *PendingWorkflowTestRun `json:"lifecycle,omitempty"`
-	Timing    *WorkflowTestRunTiming  `json:"timing,omitempty"`
+	ID        string                 `json:"id"`
+	RunID     *string                `json:"run_id,omitempty"`
+	TestID    string                 `json:"test_id"`
+	Lifecycle *WorkflowTestRunStatus `json:"lifecycle,omitempty"`
+	Timing    *WorkflowTestRunTiming `json:"timing,omitempty"`
 	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.
 	Verdict                  *WorkflowTestResultVerdict `json:"verdict,omitempty"`
 	WorkflowID               string                     `json:"workflow_id"`
@@ -2241,7 +2248,7 @@ type WorkflowTestResult struct {
 	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
 	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
 	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
-	Source                   *ManualWorkflowTestSource  `json:"source"`
+	Source                   WorkflowTestSource         `json:"source"`
 	Outputs                  map[string]interface{}     `json:"outputs,omitempty"`
 	RoutingDecision          []string                   `json:"routing_decision,omitempty"`
 	Warnings                 []string                   `json:"warnings,omitempty"`
@@ -2255,8 +2262,8 @@ type WorkflowTestResult struct {
 type WorkflowTestRun struct {
 	ID         string                         `json:"id"`
 	Workflow   WorkflowSnapshotRef            `json:"workflow"`
-	Trigger    *ManualTrigger                 `json:"trigger"`
-	Lifecycle  *PendingWorkflowTestRun        `json:"lifecycle"`
+	Trigger    Trigger                        `json:"trigger"`
+	Lifecycle  WorkflowTestRunStatus          `json:"lifecycle"`
 	Timing     WorkflowTestRunTiming          `json:"timing"`
 	Target     *WorkflowTestBlockTarget       `json:"target,omitempty"`
 	TestID     *string                        `json:"test_id,omitempty"`
@@ -2276,14 +2283,8 @@ type WorkflowTestRunSingleScope struct {
 	TestID string `json:"test_id"`
 }
 
-// WorkflowTestRunTiming represents a workflow test run timing.
-type WorkflowTestRunTiming struct {
-	// CreatedAt is when the workflow-test run was created.
-	CreatedAt   time.Time  `json:"created_at"`
-	StartedAt   *time.Time `json:"started_at,omitempty"`
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
-	DurationMs  *int       `json:"duration_ms,omitempty"`
-}
+// WorkflowTestRunTiming is an alias for ExperimentRunTiming.
+type WorkflowTestRunTiming = ExperimentRunTiming
 
 // WorkflowTestRunWorkflowScope run every saved test in the workflow.
 type WorkflowTestRunWorkflowScope struct {
@@ -2336,6 +2337,1960 @@ type WorkflowTestRunScope struct {
 	TestID *string `json:"test_id,omitempty"`
 	// BlockID is workflow block id. Required when type is block.
 	BlockID *string `json:"block_id,omitempty"`
+}
+
+// unionDiscriminator reads a string discriminator property from a raw JSON
+// object payload, returning "" when the payload is empty, not an object, or
+// missing the property.
+func unionDiscriminator(raw json.RawMessage, prop string) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return ""
+	}
+	value, ok := fields[prop]
+	if !ok {
+		return ""
+	}
+	var s string
+	if err := json.Unmarshal(value, &s); err != nil {
+		return ""
+	}
+	return s
+}
+
+// BlockExecutionLifecycle is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with BlockExecutionLifecycleFrom*().
+// Variants: CompletedBlockExecutionLifecycle, ErrorBlockExecutionLifecycle, SkippedBlockExecutionLifecycle.
+type BlockExecutionLifecycle struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u BlockExecutionLifecycle) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *BlockExecutionLifecycle) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u BlockExecutionLifecycle) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u BlockExecutionLifecycle) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCompletedBlockExecutionLifecycle decodes the union payload as CompletedBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsCompletedBlockExecutionLifecycle() (*CompletedBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromCompletedBlockExecutionLifecycle builds a BlockExecutionLifecycle from a CompletedBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromCompletedBlockExecutionLifecycle(v CompletedBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// AsErrorBlockExecutionLifecycle decodes the union payload as ErrorBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsErrorBlockExecutionLifecycle() (*ErrorBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromErrorBlockExecutionLifecycle builds a BlockExecutionLifecycle from a ErrorBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromErrorBlockExecutionLifecycle(v ErrorBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// AsSkippedBlockExecutionLifecycle decodes the union payload as SkippedBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsSkippedBlockExecutionLifecycle() (*SkippedBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v SkippedBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromSkippedBlockExecutionLifecycle builds a BlockExecutionLifecycle from a SkippedBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromSkippedBlockExecutionLifecycle(v SkippedBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// Condition is a discriminated union keyed by the "kind" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Kind()/As*() and build one with ConditionFrom*().
+// Variants: AllItemsMatchCondition, AnyItemMatchesCondition, ArrayContainsCondition, BetweenCondition, ContainCondition, EndsWithCondition, EqualCondition, ExistCondition, JSONSchemaValidCondition, LengthCompareCondition, LlmJudgedAsCondition, LlmNotJudgedAsCondition, MatcheRegexCondition, NotContainsCondition, NotEqualsCondition, NotExistsCondition, NumberCompareCondition, ObjectContainsCondition, SimilarityGteCondition, SplitIouCondition, StartWithCondition.
+type Condition struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u Condition) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *Condition) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u Condition) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Kind returns the discriminator value, or "" when the union is unset.
+func (u Condition) Kind() string {
+	return unionDiscriminator(u.raw, "kind")
+}
+
+// AsAllItemsMatchCondition decodes the union payload as AllItemsMatchCondition.
+func (u Condition) AsAllItemsMatchCondition() (*AllItemsMatchCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v AllItemsMatchCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromAllItemsMatchCondition builds a Condition from a AllItemsMatchCondition.
+func ConditionFromAllItemsMatchCondition(v AllItemsMatchCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsAnyItemMatchesCondition decodes the union payload as AnyItemMatchesCondition.
+func (u Condition) AsAnyItemMatchesCondition() (*AnyItemMatchesCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v AnyItemMatchesCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromAnyItemMatchesCondition builds a Condition from a AnyItemMatchesCondition.
+func ConditionFromAnyItemMatchesCondition(v AnyItemMatchesCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsArrayContainsCondition decodes the union payload as ArrayContainsCondition.
+func (u Condition) AsArrayContainsCondition() (*ArrayContainsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ArrayContainsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromArrayContainsCondition builds a Condition from a ArrayContainsCondition.
+func ConditionFromArrayContainsCondition(v ArrayContainsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsBetweenCondition decodes the union payload as BetweenCondition.
+func (u Condition) AsBetweenCondition() (*BetweenCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v BetweenCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromBetweenCondition builds a Condition from a BetweenCondition.
+func ConditionFromBetweenCondition(v BetweenCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsContainCondition decodes the union payload as ContainCondition.
+func (u Condition) AsContainCondition() (*ContainCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ContainCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromContainCondition builds a Condition from a ContainCondition.
+func ConditionFromContainCondition(v ContainCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsEndsWithCondition decodes the union payload as EndsWithCondition.
+func (u Condition) AsEndsWithCondition() (*EndsWithCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v EndsWithCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromEndsWithCondition builds a Condition from a EndsWithCondition.
+func ConditionFromEndsWithCondition(v EndsWithCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsEqualCondition decodes the union payload as EqualCondition.
+func (u Condition) AsEqualCondition() (*EqualCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v EqualCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromEqualCondition builds a Condition from a EqualCondition.
+func ConditionFromEqualCondition(v EqualCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsExistCondition decodes the union payload as ExistCondition.
+func (u Condition) AsExistCondition() (*ExistCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExistCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromExistCondition builds a Condition from a ExistCondition.
+func ConditionFromExistCondition(v ExistCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsJSONSchemaValidCondition decodes the union payload as JSONSchemaValidCondition.
+func (u Condition) AsJSONSchemaValidCondition() (*JSONSchemaValidCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v JSONSchemaValidCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromJSONSchemaValidCondition builds a Condition from a JSONSchemaValidCondition.
+func ConditionFromJSONSchemaValidCondition(v JSONSchemaValidCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsLengthCompareCondition decodes the union payload as LengthCompareCondition.
+func (u Condition) AsLengthCompareCondition() (*LengthCompareCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v LengthCompareCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromLengthCompareCondition builds a Condition from a LengthCompareCondition.
+func ConditionFromLengthCompareCondition(v LengthCompareCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsLlmJudgedAsCondition decodes the union payload as LlmJudgedAsCondition.
+func (u Condition) AsLlmJudgedAsCondition() (*LlmJudgedAsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v LlmJudgedAsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromLlmJudgedAsCondition builds a Condition from a LlmJudgedAsCondition.
+func ConditionFromLlmJudgedAsCondition(v LlmJudgedAsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsLlmNotJudgedAsCondition decodes the union payload as LlmNotJudgedAsCondition.
+func (u Condition) AsLlmNotJudgedAsCondition() (*LlmNotJudgedAsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v LlmNotJudgedAsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromLlmNotJudgedAsCondition builds a Condition from a LlmNotJudgedAsCondition.
+func ConditionFromLlmNotJudgedAsCondition(v LlmNotJudgedAsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsMatcheRegexCondition decodes the union payload as MatcheRegexCondition.
+func (u Condition) AsMatcheRegexCondition() (*MatcheRegexCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v MatcheRegexCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromMatcheRegexCondition builds a Condition from a MatcheRegexCondition.
+func ConditionFromMatcheRegexCondition(v MatcheRegexCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsNotContainsCondition decodes the union payload as NotContainsCondition.
+func (u Condition) AsNotContainsCondition() (*NotContainsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v NotContainsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromNotContainsCondition builds a Condition from a NotContainsCondition.
+func ConditionFromNotContainsCondition(v NotContainsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsNotEqualsCondition decodes the union payload as NotEqualsCondition.
+func (u Condition) AsNotEqualsCondition() (*NotEqualsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v NotEqualsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromNotEqualsCondition builds a Condition from a NotEqualsCondition.
+func ConditionFromNotEqualsCondition(v NotEqualsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsNotExistsCondition decodes the union payload as NotExistsCondition.
+func (u Condition) AsNotExistsCondition() (*NotExistsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v NotExistsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromNotExistsCondition builds a Condition from a NotExistsCondition.
+func ConditionFromNotExistsCondition(v NotExistsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsNumberCompareCondition decodes the union payload as NumberCompareCondition.
+func (u Condition) AsNumberCompareCondition() (*NumberCompareCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v NumberCompareCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromNumberCompareCondition builds a Condition from a NumberCompareCondition.
+func ConditionFromNumberCompareCondition(v NumberCompareCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsObjectContainsCondition decodes the union payload as ObjectContainsCondition.
+func (u Condition) AsObjectContainsCondition() (*ObjectContainsCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ObjectContainsCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromObjectContainsCondition builds a Condition from a ObjectContainsCondition.
+func ConditionFromObjectContainsCondition(v ObjectContainsCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsSimilarityGteCondition decodes the union payload as SimilarityGteCondition.
+func (u Condition) AsSimilarityGteCondition() (*SimilarityGteCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v SimilarityGteCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromSimilarityGteCondition builds a Condition from a SimilarityGteCondition.
+func ConditionFromSimilarityGteCondition(v SimilarityGteCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsSplitIouCondition decodes the union payload as SplitIouCondition.
+func (u Condition) AsSplitIouCondition() (*SplitIouCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v SplitIouCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromSplitIouCondition builds a Condition from a SplitIouCondition.
+func ConditionFromSplitIouCondition(v SplitIouCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// AsStartWithCondition decodes the union payload as StartWithCondition.
+func (u Condition) AsStartWithCondition() (*StartWithCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v StartWithCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ConditionFromStartWithCondition builds a Condition from a StartWithCondition.
+func ConditionFromStartWithCondition(v StartWithCondition) Condition {
+	data, _ := json.Marshal(v)
+	return Condition{raw: data}
+}
+
+// Experiment is a discriminated union keyed by the "kind" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Kind()/As*() and build one with ExperimentFrom*().
+// Variants: ExperimentByDocumentMetricsResponse, ExperimentByTargetMetricsResponse, ExperimentMetricsMissingError, ExperimentMetricsStaleError, ExperimentSummaryMetricsResponse, ExperimentVotesMetricsResponse.
+type Experiment struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u Experiment) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *Experiment) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u Experiment) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Kind returns the discriminator value, or "" when the union is unset.
+func (u Experiment) Kind() string {
+	return unionDiscriminator(u.raw, "kind")
+}
+
+// AsExperimentByDocumentMetricsResponse decodes the union payload as ExperimentByDocumentMetricsResponse.
+func (u Experiment) AsExperimentByDocumentMetricsResponse() (*ExperimentByDocumentMetricsResponse, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentByDocumentMetricsResponse
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentByDocumentMetricsResponse builds a Experiment from a ExperimentByDocumentMetricsResponse.
+func ExperimentFromExperimentByDocumentMetricsResponse(v ExperimentByDocumentMetricsResponse) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// AsExperimentByTargetMetricsResponse decodes the union payload as ExperimentByTargetMetricsResponse.
+func (u Experiment) AsExperimentByTargetMetricsResponse() (*ExperimentByTargetMetricsResponse, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentByTargetMetricsResponse
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentByTargetMetricsResponse builds a Experiment from a ExperimentByTargetMetricsResponse.
+func ExperimentFromExperimentByTargetMetricsResponse(v ExperimentByTargetMetricsResponse) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// AsExperimentMetricsMissingError decodes the union payload as ExperimentMetricsMissingError.
+func (u Experiment) AsExperimentMetricsMissingError() (*ExperimentMetricsMissingError, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentMetricsMissingError
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentMetricsMissingError builds a Experiment from a ExperimentMetricsMissingError.
+func ExperimentFromExperimentMetricsMissingError(v ExperimentMetricsMissingError) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// AsExperimentMetricsStaleError decodes the union payload as ExperimentMetricsStaleError.
+func (u Experiment) AsExperimentMetricsStaleError() (*ExperimentMetricsStaleError, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentMetricsStaleError
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentMetricsStaleError builds a Experiment from a ExperimentMetricsStaleError.
+func ExperimentFromExperimentMetricsStaleError(v ExperimentMetricsStaleError) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// AsExperimentSummaryMetricsResponse decodes the union payload as ExperimentSummaryMetricsResponse.
+func (u Experiment) AsExperimentSummaryMetricsResponse() (*ExperimentSummaryMetricsResponse, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentSummaryMetricsResponse
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentSummaryMetricsResponse builds a Experiment from a ExperimentSummaryMetricsResponse.
+func ExperimentFromExperimentSummaryMetricsResponse(v ExperimentSummaryMetricsResponse) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// AsExperimentVotesMetricsResponse decodes the union payload as ExperimentVotesMetricsResponse.
+func (u Experiment) AsExperimentVotesMetricsResponse() (*ExperimentVotesMetricsResponse, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ExperimentVotesMetricsResponse
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ExperimentFromExperimentVotesMetricsResponse builds a Experiment from a ExperimentVotesMetricsResponse.
+func ExperimentFromExperimentVotesMetricsResponse(v ExperimentVotesMetricsResponse) Experiment {
+	data, _ := json.Marshal(v)
+	return Experiment{raw: data}
+}
+
+// HandleInput is a discriminated union keyed by the "type" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Type()/As*() and build one with HandleInputFrom*().
+// Variants: FileHandleInput, JSONHandleInput.
+type HandleInput struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u HandleInput) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *HandleInput) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u HandleInput) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Type returns the discriminator value, or "" when the union is unset.
+func (u HandleInput) Type() string {
+	return unionDiscriminator(u.raw, "type")
+}
+
+// AsFileHandleInput decodes the union payload as FileHandleInput.
+func (u HandleInput) AsFileHandleInput() (*FileHandleInput, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v FileHandleInput
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// HandleInputFromFileHandleInput builds a HandleInput from a FileHandleInput.
+func HandleInputFromFileHandleInput(v FileHandleInput) HandleInput {
+	data, _ := json.Marshal(v)
+	return HandleInput{raw: data}
+}
+
+// AsJSONHandleInput decodes the union payload as JSONHandleInput.
+func (u HandleInput) AsJSONHandleInput() (*JSONHandleInput, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v JSONHandleInput
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// HandleInputFromJSONHandleInput builds a HandleInput from a JSONHandleInput.
+func HandleInputFromJSONHandleInput(v JSONHandleInput) HandleInput {
+	data, _ := json.Marshal(v)
+	return HandleInput{raw: data}
+}
+
+// ReviewKind is a discriminated union keyed by the "kind" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Kind()/As*() and build one with ReviewKindFrom*().
+// Variants: ReviewAllOf, ReviewAlways, ReviewAnyOf, ReviewAnyRequiredFieldNull, ReviewAnySplitPagesLt, ReviewBoundaryConfidenceLt, ReviewBranchIn, ReviewCategoryIn, ReviewConfidenceLt, ReviewFieldConfidenceLt, ReviewJSONCondition, ReviewSplitCountNeq, ReviewTopMarginLt, ReviewValidationFailed.
+type ReviewKind struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u ReviewKind) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *ReviewKind) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u ReviewKind) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Kind returns the discriminator value, or "" when the union is unset.
+func (u ReviewKind) Kind() string {
+	return unionDiscriminator(u.raw, "kind")
+}
+
+// AsReviewAllOf decodes the union payload as ReviewAllOf.
+func (u ReviewKind) AsReviewAllOf() (*ReviewAllOf, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAllOf
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAllOf builds a ReviewKind from a ReviewAllOf.
+func ReviewKindFromReviewAllOf(v ReviewAllOf) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewAlways decodes the union payload as ReviewAlways.
+func (u ReviewKind) AsReviewAlways() (*ReviewAlways, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAlways
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAlways builds a ReviewKind from a ReviewAlways.
+func ReviewKindFromReviewAlways(v ReviewAlways) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewAnyOf decodes the union payload as ReviewAnyOf.
+func (u ReviewKind) AsReviewAnyOf() (*ReviewAnyOf, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAnyOf
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAnyOf builds a ReviewKind from a ReviewAnyOf.
+func ReviewKindFromReviewAnyOf(v ReviewAnyOf) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewAnyRequiredFieldNull decodes the union payload as ReviewAnyRequiredFieldNull.
+func (u ReviewKind) AsReviewAnyRequiredFieldNull() (*ReviewAnyRequiredFieldNull, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAnyRequiredFieldNull
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAnyRequiredFieldNull builds a ReviewKind from a ReviewAnyRequiredFieldNull.
+func ReviewKindFromReviewAnyRequiredFieldNull(v ReviewAnyRequiredFieldNull) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewAnySplitPagesLt decodes the union payload as ReviewAnySplitPagesLt.
+func (u ReviewKind) AsReviewAnySplitPagesLt() (*ReviewAnySplitPagesLt, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAnySplitPagesLt
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAnySplitPagesLt builds a ReviewKind from a ReviewAnySplitPagesLt.
+func ReviewKindFromReviewAnySplitPagesLt(v ReviewAnySplitPagesLt) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewBoundaryConfidenceLt decodes the union payload as ReviewBoundaryConfidenceLt.
+func (u ReviewKind) AsReviewBoundaryConfidenceLt() (*ReviewBoundaryConfidenceLt, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewBoundaryConfidenceLt
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewBoundaryConfidenceLt builds a ReviewKind from a ReviewBoundaryConfidenceLt.
+func ReviewKindFromReviewBoundaryConfidenceLt(v ReviewBoundaryConfidenceLt) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewBranchIn decodes the union payload as ReviewBranchIn.
+func (u ReviewKind) AsReviewBranchIn() (*ReviewBranchIn, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewBranchIn
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewBranchIn builds a ReviewKind from a ReviewBranchIn.
+func ReviewKindFromReviewBranchIn(v ReviewBranchIn) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewCategoryIn decodes the union payload as ReviewCategoryIn.
+func (u ReviewKind) AsReviewCategoryIn() (*ReviewCategoryIn, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewCategoryIn
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewCategoryIn builds a ReviewKind from a ReviewCategoryIn.
+func ReviewKindFromReviewCategoryIn(v ReviewCategoryIn) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewConfidenceLt decodes the union payload as ReviewConfidenceLt.
+func (u ReviewKind) AsReviewConfidenceLt() (*ReviewConfidenceLt, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewConfidenceLt
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewConfidenceLt builds a ReviewKind from a ReviewConfidenceLt.
+func ReviewKindFromReviewConfidenceLt(v ReviewConfidenceLt) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewFieldConfidenceLt decodes the union payload as ReviewFieldConfidenceLt.
+func (u ReviewKind) AsReviewFieldConfidenceLt() (*ReviewFieldConfidenceLt, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewFieldConfidenceLt
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewFieldConfidenceLt builds a ReviewKind from a ReviewFieldConfidenceLt.
+func ReviewKindFromReviewFieldConfidenceLt(v ReviewFieldConfidenceLt) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewJSONCondition decodes the union payload as ReviewJSONCondition.
+func (u ReviewKind) AsReviewJSONCondition() (*ReviewJSONCondition, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewJSONCondition
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewJSONCondition builds a ReviewKind from a ReviewJSONCondition.
+func ReviewKindFromReviewJSONCondition(v ReviewJSONCondition) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewSplitCountNeq decodes the union payload as ReviewSplitCountNeq.
+func (u ReviewKind) AsReviewSplitCountNeq() (*ReviewSplitCountNeq, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewSplitCountNeq
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewSplitCountNeq builds a ReviewKind from a ReviewSplitCountNeq.
+func ReviewKindFromReviewSplitCountNeq(v ReviewSplitCountNeq) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewTopMarginLt decodes the union payload as ReviewTopMarginLt.
+func (u ReviewKind) AsReviewTopMarginLt() (*ReviewTopMarginLt, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewTopMarginLt
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewTopMarginLt builds a ReviewKind from a ReviewTopMarginLt.
+func ReviewKindFromReviewTopMarginLt(v ReviewTopMarginLt) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// AsReviewValidationFailed decodes the union payload as ReviewValidationFailed.
+func (u ReviewKind) AsReviewValidationFailed() (*ReviewValidationFailed, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewValidationFailed
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewValidationFailed builds a ReviewKind from a ReviewValidationFailed.
+func ReviewKindFromReviewValidationFailed(v ReviewValidationFailed) ReviewKind {
+	data, _ := json.Marshal(v)
+	return ReviewKind{raw: data}
+}
+
+// StepLifecycle is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with StepLifecycleFrom*().
+// Variants: AwaitingReviewStepLifecycle, CancelledStepLifecycle, CompletedStepLifecycle, ErrorStepLifecycle, PendingStepLifecycle, QueuedStepLifecycle, RunningStepLifecycle, SkippedStepLifecycle.
+type StepLifecycle struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u StepLifecycle) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *StepLifecycle) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u StepLifecycle) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u StepLifecycle) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsAwaitingReviewStepLifecycle decodes the union payload as AwaitingReviewStepLifecycle.
+func (u StepLifecycle) AsAwaitingReviewStepLifecycle() (*AwaitingReviewStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v AwaitingReviewStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromAwaitingReviewStepLifecycle builds a StepLifecycle from a AwaitingReviewStepLifecycle.
+func StepLifecycleFromAwaitingReviewStepLifecycle(v AwaitingReviewStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsCancelledStepLifecycle decodes the union payload as CancelledStepLifecycle.
+func (u StepLifecycle) AsCancelledStepLifecycle() (*CancelledStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromCancelledStepLifecycle builds a StepLifecycle from a CancelledStepLifecycle.
+func StepLifecycleFromCancelledStepLifecycle(v CancelledStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsCompletedStepLifecycle decodes the union payload as CompletedStepLifecycle.
+func (u StepLifecycle) AsCompletedStepLifecycle() (*CompletedStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromCompletedStepLifecycle builds a StepLifecycle from a CompletedStepLifecycle.
+func StepLifecycleFromCompletedStepLifecycle(v CompletedStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsErrorStepLifecycle decodes the union payload as ErrorStepLifecycle.
+func (u StepLifecycle) AsErrorStepLifecycle() (*ErrorStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromErrorStepLifecycle builds a StepLifecycle from a ErrorStepLifecycle.
+func StepLifecycleFromErrorStepLifecycle(v ErrorStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsPendingStepLifecycle decodes the union payload as PendingStepLifecycle.
+func (u StepLifecycle) AsPendingStepLifecycle() (*PendingStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromPendingStepLifecycle builds a StepLifecycle from a PendingStepLifecycle.
+func StepLifecycleFromPendingStepLifecycle(v PendingStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsQueuedStepLifecycle decodes the union payload as QueuedStepLifecycle.
+func (u StepLifecycle) AsQueuedStepLifecycle() (*QueuedStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromQueuedStepLifecycle builds a StepLifecycle from a QueuedStepLifecycle.
+func StepLifecycleFromQueuedStepLifecycle(v QueuedStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsRunningStepLifecycle decodes the union payload as RunningStepLifecycle.
+func (u StepLifecycle) AsRunningStepLifecycle() (*RunningStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromRunningStepLifecycle builds a StepLifecycle from a RunningStepLifecycle.
+func StepLifecycleFromRunningStepLifecycle(v RunningStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// AsSkippedStepLifecycle decodes the union payload as SkippedStepLifecycle.
+func (u StepLifecycle) AsSkippedStepLifecycle() (*SkippedStepLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v SkippedStepLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// StepLifecycleFromSkippedStepLifecycle builds a StepLifecycle from a SkippedStepLifecycle.
+func StepLifecycleFromSkippedStepLifecycle(v SkippedStepLifecycle) StepLifecycle {
+	data, _ := json.Marshal(v)
+	return StepLifecycle{raw: data}
+}
+
+// Trigger is a discriminated union keyed by the "type" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Type()/As*() and build one with TriggerFrom*().
+// Variants: APITrigger, EmailTrigger, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger.
+type Trigger struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u Trigger) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *Trigger) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u Trigger) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Type returns the discriminator value, or "" when the union is unset.
+func (u Trigger) Type() string {
+	return unionDiscriminator(u.raw, "type")
+}
+
+// AsAPITrigger decodes the union payload as APITrigger.
+func (u Trigger) AsAPITrigger() (*APITrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v APITrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromAPITrigger builds a Trigger from a APITrigger.
+func TriggerFromAPITrigger(v APITrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// AsEmailTrigger decodes the union payload as EmailTrigger.
+func (u Trigger) AsEmailTrigger() (*EmailTrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v EmailTrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromEmailTrigger builds a Trigger from a EmailTrigger.
+func TriggerFromEmailTrigger(v EmailTrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// AsManualTrigger decodes the union payload as ManualTrigger.
+func (u Trigger) AsManualTrigger() (*ManualTrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ManualTrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromManualTrigger builds a Trigger from a ManualTrigger.
+func TriggerFromManualTrigger(v ManualTrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// AsRestartTrigger decodes the union payload as RestartTrigger.
+func (u Trigger) AsRestartTrigger() (*RestartTrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RestartTrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromRestartTrigger builds a Trigger from a RestartTrigger.
+func TriggerFromRestartTrigger(v RestartTrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// AsScheduleTrigger decodes the union payload as ScheduleTrigger.
+func (u Trigger) AsScheduleTrigger() (*ScheduleTrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ScheduleTrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromScheduleTrigger builds a Trigger from a ScheduleTrigger.
+func TriggerFromScheduleTrigger(v ScheduleTrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// AsWebhookTrigger decodes the union payload as WebhookTrigger.
+func (u Trigger) AsWebhookTrigger() (*WebhookTrigger, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v WebhookTrigger
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// TriggerFromWebhookTrigger builds a Trigger from a WebhookTrigger.
+func TriggerFromWebhookTrigger(v WebhookTrigger) Trigger {
+	data, _ := json.Marshal(v)
+	return Trigger{raw: data}
+}
+
+// WorkflowExperimentResult is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with WorkflowExperimentResultFrom*().
+// Variants: CancelledWorkflowExperimentResult, CompletedWorkflowExperimentResult, ErrorWorkflowExperimentResult, PendingWorkflowExperimentResult, QueuedWorkflowExperimentResult, RunningWorkflowExperimentResult.
+type WorkflowExperimentResult struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowExperimentResult) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowExperimentResult) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowExperimentResult) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u WorkflowExperimentResult) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCancelledWorkflowExperimentResult decodes the union payload as CancelledWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsCancelledWorkflowExperimentResult() (*CancelledWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromCancelledWorkflowExperimentResult builds a WorkflowExperimentResult from a CancelledWorkflowExperimentResult.
+func WorkflowExperimentResultFromCancelledWorkflowExperimentResult(v CancelledWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// AsCompletedWorkflowExperimentResult decodes the union payload as CompletedWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsCompletedWorkflowExperimentResult() (*CompletedWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromCompletedWorkflowExperimentResult builds a WorkflowExperimentResult from a CompletedWorkflowExperimentResult.
+func WorkflowExperimentResultFromCompletedWorkflowExperimentResult(v CompletedWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// AsErrorWorkflowExperimentResult decodes the union payload as ErrorWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsErrorWorkflowExperimentResult() (*ErrorWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromErrorWorkflowExperimentResult builds a WorkflowExperimentResult from a ErrorWorkflowExperimentResult.
+func WorkflowExperimentResultFromErrorWorkflowExperimentResult(v ErrorWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// AsPendingWorkflowExperimentResult decodes the union payload as PendingWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsPendingWorkflowExperimentResult() (*PendingWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromPendingWorkflowExperimentResult builds a WorkflowExperimentResult from a PendingWorkflowExperimentResult.
+func WorkflowExperimentResultFromPendingWorkflowExperimentResult(v PendingWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// AsQueuedWorkflowExperimentResult decodes the union payload as QueuedWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsQueuedWorkflowExperimentResult() (*QueuedWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromQueuedWorkflowExperimentResult builds a WorkflowExperimentResult from a QueuedWorkflowExperimentResult.
+func WorkflowExperimentResultFromQueuedWorkflowExperimentResult(v QueuedWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// AsRunningWorkflowExperimentResult decodes the union payload as RunningWorkflowExperimentResult.
+func (u WorkflowExperimentResult) AsRunningWorkflowExperimentResult() (*RunningWorkflowExperimentResult, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningWorkflowExperimentResult
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentResultFromRunningWorkflowExperimentResult builds a WorkflowExperimentResult from a RunningWorkflowExperimentResult.
+func WorkflowExperimentResultFromRunningWorkflowExperimentResult(v RunningWorkflowExperimentResult) WorkflowExperimentResult {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentResult{raw: data}
+}
+
+// WorkflowExperimentRun is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with WorkflowExperimentRunFrom*().
+// Variants: CancelledWorkflowExperimentRun, CompletedWorkflowExperimentRun, ErrorWorkflowExperimentRun, PendingWorkflowExperimentRun, QueuedWorkflowExperimentRun, RunningWorkflowExperimentRun.
+type WorkflowExperimentRun struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowExperimentRun) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowExperimentRun) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowExperimentRun) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u WorkflowExperimentRun) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCancelledWorkflowExperimentRun decodes the union payload as CancelledWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsCancelledWorkflowExperimentRun() (*CancelledWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromCancelledWorkflowExperimentRun builds a WorkflowExperimentRun from a CancelledWorkflowExperimentRun.
+func WorkflowExperimentRunFromCancelledWorkflowExperimentRun(v CancelledWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// AsCompletedWorkflowExperimentRun decodes the union payload as CompletedWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsCompletedWorkflowExperimentRun() (*CompletedWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromCompletedWorkflowExperimentRun builds a WorkflowExperimentRun from a CompletedWorkflowExperimentRun.
+func WorkflowExperimentRunFromCompletedWorkflowExperimentRun(v CompletedWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// AsErrorWorkflowExperimentRun decodes the union payload as ErrorWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsErrorWorkflowExperimentRun() (*ErrorWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromErrorWorkflowExperimentRun builds a WorkflowExperimentRun from a ErrorWorkflowExperimentRun.
+func WorkflowExperimentRunFromErrorWorkflowExperimentRun(v ErrorWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// AsPendingWorkflowExperimentRun decodes the union payload as PendingWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsPendingWorkflowExperimentRun() (*PendingWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromPendingWorkflowExperimentRun builds a WorkflowExperimentRun from a PendingWorkflowExperimentRun.
+func WorkflowExperimentRunFromPendingWorkflowExperimentRun(v PendingWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// AsQueuedWorkflowExperimentRun decodes the union payload as QueuedWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsQueuedWorkflowExperimentRun() (*QueuedWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromQueuedWorkflowExperimentRun builds a WorkflowExperimentRun from a QueuedWorkflowExperimentRun.
+func WorkflowExperimentRunFromQueuedWorkflowExperimentRun(v QueuedWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// AsRunningWorkflowExperimentRun decodes the union payload as RunningWorkflowExperimentRun.
+func (u WorkflowExperimentRun) AsRunningWorkflowExperimentRun() (*RunningWorkflowExperimentRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningWorkflowExperimentRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowExperimentRunFromRunningWorkflowExperimentRun builds a WorkflowExperimentRun from a RunningWorkflowExperimentRun.
+func WorkflowExperimentRunFromRunningWorkflowExperimentRun(v RunningWorkflowExperimentRun) WorkflowExperimentRun {
+	data, _ := json.Marshal(v)
+	return WorkflowExperimentRun{raw: data}
+}
+
+// WorkflowRunLifecycle is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with WorkflowRunLifecycleFrom*().
+// Variants: AwaitingReviewRun, CancelledTerminal, CompletedTerminal, ErrorTerminal, PendingRun, RunningRun.
+type WorkflowRunLifecycle struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowRunLifecycle) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowRunLifecycle) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowRunLifecycle) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u WorkflowRunLifecycle) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsAwaitingReviewRun decodes the union payload as AwaitingReviewRun.
+func (u WorkflowRunLifecycle) AsAwaitingReviewRun() (*AwaitingReviewRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v AwaitingReviewRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromAwaitingReviewRun builds a WorkflowRunLifecycle from a AwaitingReviewRun.
+func WorkflowRunLifecycleFromAwaitingReviewRun(v AwaitingReviewRun) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// AsCancelledTerminal decodes the union payload as CancelledTerminal.
+func (u WorkflowRunLifecycle) AsCancelledTerminal() (*CancelledTerminal, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledTerminal
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromCancelledTerminal builds a WorkflowRunLifecycle from a CancelledTerminal.
+func WorkflowRunLifecycleFromCancelledTerminal(v CancelledTerminal) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// AsCompletedTerminal decodes the union payload as CompletedTerminal.
+func (u WorkflowRunLifecycle) AsCompletedTerminal() (*CompletedTerminal, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedTerminal
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromCompletedTerminal builds a WorkflowRunLifecycle from a CompletedTerminal.
+func WorkflowRunLifecycleFromCompletedTerminal(v CompletedTerminal) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// AsErrorTerminal decodes the union payload as ErrorTerminal.
+func (u WorkflowRunLifecycle) AsErrorTerminal() (*ErrorTerminal, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorTerminal
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromErrorTerminal builds a WorkflowRunLifecycle from a ErrorTerminal.
+func WorkflowRunLifecycleFromErrorTerminal(v ErrorTerminal) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// AsPendingRun decodes the union payload as PendingRun.
+func (u WorkflowRunLifecycle) AsPendingRun() (*PendingRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromPendingRun builds a WorkflowRunLifecycle from a PendingRun.
+func WorkflowRunLifecycleFromPendingRun(v PendingRun) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// AsRunningRun decodes the union payload as RunningRun.
+func (u WorkflowRunLifecycle) AsRunningRun() (*RunningRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowRunLifecycleFromRunningRun builds a WorkflowRunLifecycle from a RunningRun.
+func WorkflowRunLifecycleFromRunningRun(v RunningRun) WorkflowRunLifecycle {
+	data, _ := json.Marshal(v)
+	return WorkflowRunLifecycle{raw: data}
+}
+
+// WorkflowTestRunStatus is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with WorkflowTestRunStatusFrom*().
+// Variants: CancelledWorkflowTestRun, CompletedWorkflowTestRun, ErrorWorkflowTestRun, PendingWorkflowTestRun, QueuedWorkflowTestRun, RunningWorkflowTestRun.
+type WorkflowTestRunStatus struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowTestRunStatus) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowTestRunStatus) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowTestRunStatus) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u WorkflowTestRunStatus) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCancelledWorkflowTestRun decodes the union payload as CancelledWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsCancelledWorkflowTestRun() (*CancelledWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromCancelledWorkflowTestRun builds a WorkflowTestRunStatus from a CancelledWorkflowTestRun.
+func WorkflowTestRunStatusFromCancelledWorkflowTestRun(v CancelledWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// AsCompletedWorkflowTestRun decodes the union payload as CompletedWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsCompletedWorkflowTestRun() (*CompletedWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromCompletedWorkflowTestRun builds a WorkflowTestRunStatus from a CompletedWorkflowTestRun.
+func WorkflowTestRunStatusFromCompletedWorkflowTestRun(v CompletedWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// AsErrorWorkflowTestRun decodes the union payload as ErrorWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsErrorWorkflowTestRun() (*ErrorWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromErrorWorkflowTestRun builds a WorkflowTestRunStatus from a ErrorWorkflowTestRun.
+func WorkflowTestRunStatusFromErrorWorkflowTestRun(v ErrorWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// AsPendingWorkflowTestRun decodes the union payload as PendingWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsPendingWorkflowTestRun() (*PendingWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromPendingWorkflowTestRun builds a WorkflowTestRunStatus from a PendingWorkflowTestRun.
+func WorkflowTestRunStatusFromPendingWorkflowTestRun(v PendingWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// AsQueuedWorkflowTestRun decodes the union payload as QueuedWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsQueuedWorkflowTestRun() (*QueuedWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromQueuedWorkflowTestRun builds a WorkflowTestRunStatus from a QueuedWorkflowTestRun.
+func WorkflowTestRunStatusFromQueuedWorkflowTestRun(v QueuedWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// AsRunningWorkflowTestRun decodes the union payload as RunningWorkflowTestRun.
+func (u WorkflowTestRunStatus) AsRunningWorkflowTestRun() (*RunningWorkflowTestRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningWorkflowTestRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestRunStatusFromRunningWorkflowTestRun builds a WorkflowTestRunStatus from a RunningWorkflowTestRun.
+func WorkflowTestRunStatusFromRunningWorkflowTestRun(v RunningWorkflowTestRun) WorkflowTestRunStatus {
+	data, _ := json.Marshal(v)
+	return WorkflowTestRunStatus{raw: data}
+}
+
+// WorkflowTestSource is a discriminated union keyed by the "type" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Type()/As*() and build one with WorkflowTestSourceFrom*().
+// Variants: ManualWorkflowTestSource, RunStepWorkflowTestSource.
+type WorkflowTestSource struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowTestSource) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowTestSource) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowTestSource) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Type returns the discriminator value, or "" when the union is unset.
+func (u WorkflowTestSource) Type() string {
+	return unionDiscriminator(u.raw, "type")
+}
+
+// AsManualWorkflowTestSource decodes the union payload as ManualWorkflowTestSource.
+func (u WorkflowTestSource) AsManualWorkflowTestSource() (*ManualWorkflowTestSource, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ManualWorkflowTestSource
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestSourceFromManualWorkflowTestSource builds a WorkflowTestSource from a ManualWorkflowTestSource.
+func WorkflowTestSourceFromManualWorkflowTestSource(v ManualWorkflowTestSource) WorkflowTestSource {
+	data, _ := json.Marshal(v)
+	return WorkflowTestSource{raw: data}
+}
+
+// AsRunStepWorkflowTestSource decodes the union payload as RunStepWorkflowTestSource.
+func (u WorkflowTestSource) AsRunStepWorkflowTestSource() (*RunStepWorkflowTestSource, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunStepWorkflowTestSource
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowTestSourceFromRunStepWorkflowTestSource builds a WorkflowTestSource from a RunStepWorkflowTestSource.
+func WorkflowTestSourceFromRunStepWorkflowTestSource(v RunStepWorkflowTestSource) WorkflowTestSource {
+	data, _ := json.Marshal(v)
+	return WorkflowTestSource{raw: data}
 }
 
 // PaginationParams contains common pagination parameters for list operations.

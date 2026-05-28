@@ -109,13 +109,13 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 // The wire shape carries an optional `type` discriminator on each value, but
 // the CLI's JSON descriptors have historically used the raw value form; both
 // shapes are normalized here so legacy descriptor files keep working.
-func experimentHandleInputsFromMap(raw map[string]any) map[string]*retab.JSONHandleInput {
+func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInput {
 	if raw == nil {
 		return nil
 	}
-	out := make(map[string]*retab.JSONHandleInput, len(raw))
+	out := make(map[string]retab.HandleInput, len(raw))
 	for key, value := range raw {
-		input := &retab.JSONHandleInput{}
+		input := retab.JSONHandleInput{}
 		if obj, ok := value.(map[string]any); ok {
 			if t, ok := obj["type"].(string); ok && t != "" {
 				typeCopy := t
@@ -124,13 +124,13 @@ func experimentHandleInputsFromMap(raw map[string]any) map[string]*retab.JSONHan
 					dataCopy := data
 					input.Data = &dataCopy
 				}
-				out[key] = input
+				out[key] = retab.HandleInputFromJSONHandleInput(input)
 				continue
 			}
 		}
 		dataCopy := value
 		input.Data = &dataCopy
-		out[key] = input
+		out[key] = retab.HandleInputFromJSONHandleInput(input)
 	}
 	return out
 }

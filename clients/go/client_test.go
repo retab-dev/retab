@@ -297,7 +297,11 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if artifact.ID != "ext_123" {
+	// Get returns the polymorphic artifact union losslessly as interface{}
+	// (the union's only natural name, WorkflowArtifact, is taken by the flat
+	// list-summary model). A JSON object decodes to map[string]any intact.
+	artifactMap, ok := artifact.(map[string]any)
+	if !ok || artifactMap["id"] != "ext_123" || artifactMap["operation"] != "extraction" {
 		t.Fatalf("artifact = %#v", artifact)
 	}
 	if strings.Join(requests, ",") != "GET /v1/workflows/artifacts,GET /v1/workflows/artifacts/ext_123" {
@@ -343,7 +347,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 				"lifecycle":     map[string]any{"status": "cancelled"},
 			})
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/experiments/metrics":
-			_ = json.NewEncoder(w).Encode(map[string]any{"view": "summary"})
+			_ = json.NewEncoder(w).Encode(map[string]any{"kind": "summary", "view": "summary"})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
@@ -384,7 +388,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cancelled.ID != "exprun_123" || cancelled.Lifecycle == nil || cancelled.Lifecycle.Status == nil || *cancelled.Lifecycle.Status != "cancelled" {
+	if cancelled.ID != "exprun_123" || cancelled.Lifecycle.Status() != "cancelled" {
 		t.Fatalf("cancelled = %#v", cancelled)
 	}
 	cancelledJSON, err := json.Marshal(cancelled)
@@ -398,8 +402,11 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if metrics.View == nil || *metrics.View != "summary" {
-		t.Fatalf("result = %#v rawQuery = %q", result, rawQuery)
+	if metrics.Kind() != "summary" {
+		t.Fatalf("metrics kind = %q rawQuery = %q", metrics.Kind(), rawQuery)
+	}
+	if _, err := metrics.AsExperimentSummaryMetricsResponse(); err != nil {
+		t.Fatalf("metrics as summary: %v", err)
 	}
 	expected := []string{
 		"GET /v1/workflows/experiments/runs/exprun_123",
@@ -495,7 +502,7 @@ func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
 	completedStatus := "completed"
 	testRunJSON, err := json.Marshal(WorkflowTestRun{
 		ID:        "wftestrun_123",
-		Lifecycle: &PendingWorkflowTestRun{Status: &completedStatus},
+		Lifecycle: WorkflowTestRunStatusFromPendingWorkflowTestRun(PendingWorkflowTestRun{Status: &completedStatus}),
 		Timing:    WorkflowTestRunTiming{},
 	})
 	if err != nil {
@@ -508,7 +515,7 @@ func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
 
 	experimentRunJSON, err := json.Marshal(ExperimentRun{
 		ID:        "exprun_123",
-		Lifecycle: &PendingWorkflowExperimentRun{Status: &completedStatus},
+		Lifecycle: WorkflowExperimentRunFromPendingWorkflowExperimentRun(PendingWorkflowExperimentRun{Status: &completedStatus}),
 		Timing:    ExperimentRunTiming{},
 	})
 	if err != nil {
@@ -972,7 +979,7 @@ func TestWorkflowStepsGet(t *testing.T) {
 	if step.BlockID != "extract-1" {
 		t.Fatalf("block id = %s", step.BlockID)
 	}
-	if step.Lifecycle == nil || step.Lifecycle.Status == nil || *step.Lifecycle.Status != "completed" {
+	if step.Lifecycle.Status() != "completed" {
 		t.Fatalf("lifecycle = %#v", step.Lifecycle)
 	}
 	if len(step.HandleInputs) != 1 {
@@ -1028,7 +1035,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 	if steps.Data[0].HandleInputs != nil || steps.Data[0].HandleOutputs != nil {
 		t.Fatalf("null handle maps should remain nil: %#v", steps.Data[0])
 	}
-	if steps.Data[0].Lifecycle == nil || steps.Data[0].Lifecycle.Status == nil || *steps.Data[0].Lifecycle.Status != "completed" {
+	if steps.Data[0].Lifecycle.Status() != "completed" {
 		t.Fatalf("lifecycle = %#v", steps.Data[0].Lifecycle)
 	}
 	if steps.ListMetadata.Before != "" || steps.ListMetadata.After != "" {
