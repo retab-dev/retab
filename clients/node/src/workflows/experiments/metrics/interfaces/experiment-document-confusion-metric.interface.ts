@@ -13,7 +13,9 @@ import {
 
 /** Document-local confusion summary for split/classifier blocks. */
 export interface ExperimentDocumentConfusionMetric {
+  /** @default {} */
   diag?: Record<string, number>;
+  /** @default [] */
   flows?: ExperimentConfusionFlowMetric[];
 }
 

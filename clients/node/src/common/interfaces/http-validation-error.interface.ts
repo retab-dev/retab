@@ -9,6 +9,7 @@ import {
 } from './validation-error.interface.js';
 
 export interface HttpValidationError {
+  /** @default [] */
   detail?: ValidationError[];
 }
 

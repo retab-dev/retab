@@ -5,7 +5,10 @@ import { z } from 'zod';
 export interface AwaitingReviewRun {
   /** @default "awaiting_review" */
   status: 'awaiting_review';
-  /** Block IDs that are waiting for review */
+  /**
+   * Block IDs that are waiting for review
+   * @default []
+   */
   waitingForBlockIds?: string[];
 }
 

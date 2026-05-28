@@ -67,32 +67,37 @@ export class WorkflowTestRuns {
   /** Create Test Run */
   async create(
     workflowId: string,
-    scope?: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope
+    scope?:
+      | (WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope)
+      | null
   ): Promise<WorkflowTestRun> {
     const body = {
       workflow_id: workflowId,
       scope:
         scope === undefined
           ? undefined
-          : ((
-              {
-                block: () => serializeWorkflowTestRunBlockScope(scope as WorkflowTestRunBlockScope),
-                single: () =>
-                  serializeWorkflowTestRunSingleScope(scope as WorkflowTestRunSingleScope),
-                workflow: () =>
-                  serializeWorkflowTestRunWorkflowScope(scope as WorkflowTestRunWorkflowScope),
-              } as Record<
-                string,
-                () =>
-                  | WorkflowTestRunSingleScopeResponse
-                  | WorkflowTestRunWorkflowScopeResponse
-                  | WorkflowTestRunBlockScopeResponse
-              >
-            )[(scope as unknown as Record<string, string>)['type']]?.() ??
-            (scope as unknown as
-              | WorkflowTestRunSingleScopeResponse
-              | WorkflowTestRunWorkflowScopeResponse
-              | WorkflowTestRunBlockScopeResponse)),
+          : scope == null
+            ? scope
+            : ((
+                {
+                  block: () =>
+                    serializeWorkflowTestRunBlockScope(scope as WorkflowTestRunBlockScope),
+                  single: () =>
+                    serializeWorkflowTestRunSingleScope(scope as WorkflowTestRunSingleScope),
+                  workflow: () =>
+                    serializeWorkflowTestRunWorkflowScope(scope as WorkflowTestRunWorkflowScope),
+                } as Record<
+                  string,
+                  () =>
+                    | WorkflowTestRunSingleScopeResponse
+                    | WorkflowTestRunWorkflowScopeResponse
+                    | WorkflowTestRunBlockScopeResponse
+                >
+              )[(scope as unknown as Record<string, string>)['type']]?.() ??
+              (scope as unknown as
+                | WorkflowTestRunSingleScopeResponse
+                | WorkflowTestRunWorkflowScopeResponse
+                | WorkflowTestRunBlockScopeResponse)),
     };
     const __wire = await this.client.request<WorkflowTestRunResponse>({
       method: 'POST',

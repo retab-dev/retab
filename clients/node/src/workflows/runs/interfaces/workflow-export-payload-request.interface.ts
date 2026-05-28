@@ -34,7 +34,10 @@ export interface WorkflowExportPayloadRequest {
   toDate?: string | null;
   /** Optional trigger type filters */
   triggerTypes?: WorkflowExportPayloadRequestTriggerTypes[] | null;
-  /** Preferred data column order */
+  /**
+   * Preferred data column order
+   * @default []
+   */
   preferredColumns?: string[];
   /**
    * CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.

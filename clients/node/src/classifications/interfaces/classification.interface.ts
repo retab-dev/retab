@@ -56,7 +56,7 @@ export interface Classification {
   /** The classification result with reasoning */
   output: ClassificationDecision;
   /** Consensus metadata for multi-vote classification runs */
-  consensus?: ClassificationConsensus;
+  consensus?: ClassificationConsensus | null;
   /** Usage information for the classification */
   usage?: RetabUsage | null;
   createdAt?: Date | null;
@@ -70,7 +70,7 @@ export interface ClassificationResponse {
   n_consensus?: number;
   instructions?: string | null;
   output: ClassificationDecisionResponse;
-  consensus?: ClassificationConsensusResponse;
+  consensus?: ClassificationConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
 }
@@ -83,7 +83,7 @@ export const ZClassification = z.object({
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: ZClassificationDecision,
-  consensus: ZClassificationConsensus.optional(),
+  consensus: ZClassificationConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Classification>;
@@ -100,7 +100,9 @@ export function deserializeClassification(wire: ClassificationResponse): Classif
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : deserializeClassificationConsensus(wire['consensus']),
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializeClassificationConsensus(wire['consensus']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)
@@ -128,7 +130,9 @@ export function serializeClassification(domain: Classification): ClassificationR
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
-        : serializeClassificationConsensus(domain['consensus']),
+        : domain['consensus'] == null
+          ? domain['consensus']
+          : serializeClassificationConsensus(domain['consensus']),
     usage:
       domain['usage'] == null
         ? (domain['usage'] as undefined)

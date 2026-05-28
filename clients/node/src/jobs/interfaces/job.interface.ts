@@ -22,7 +22,8 @@ import { ZSupportedEndpoint } from './supported-endpoint.interface.js';
 
 /** Core Job object following OpenAI-style specification. */
 export interface Job {
-  id?: string;
+  /** Opaque job id (server-generated ``job_<nanoid>``). */
+  id: string;
   /** @default "job" */
   object: 'job';
   /** @default "validating" */
@@ -46,7 +47,7 @@ export interface Job {
 }
 
 export interface JobWire {
-  id?: string;
+  id: string;
   object: 'job';
   status?: JobStatus;
   endpoint: SupportedEndpoint;
@@ -66,7 +67,7 @@ export interface JobWire {
 }
 
 export const ZJob = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   object: z.literal('job'),
   status: ZJobStatus.optional(),
   endpoint: ZSupportedEndpoint,

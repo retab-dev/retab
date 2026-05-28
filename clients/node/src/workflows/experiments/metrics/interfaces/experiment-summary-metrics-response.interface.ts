@@ -35,6 +35,7 @@ export interface ExperimentSummaryMetricsResponse {
   blockType: ExperimentSummaryMetricsResponseBlockType;
   score?: number | null;
   priorScore?: number | null;
+  /** @default [] */
   documents?: ExperimentSummaryMetricDocument[];
   aggregate?: (ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate) | null;
   priorRunId?: string | null;

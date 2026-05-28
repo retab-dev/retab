@@ -120,7 +120,10 @@ export interface WorkflowRun {
     | CancelledTerminal;
   /** All timing information */
   timing: RunTiming;
-  /** Input payloads supplied at run creation time */
+  /**
+   * Input payloads supplied at run creation time
+   * @default {"documents":{},"json_data":{}}
+   */
   inputs?: RunInputs;
 }
 

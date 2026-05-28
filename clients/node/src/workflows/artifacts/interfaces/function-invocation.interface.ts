@@ -20,6 +20,7 @@ export interface FunctionInvocation {
   id: string;
   workflowRunId: string;
   stepId: string;
+  /** @default {} */
   inputs?: Record<string, unknown>;
   output?: unknown | null;
   durationMs?: number | null;

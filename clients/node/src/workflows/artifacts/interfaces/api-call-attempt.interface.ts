@@ -17,9 +17,11 @@ export interface ApiCallAttempt {
   attemptNumber: number;
   requestMethod: string;
   requestUrl: string;
+  /** @default {} */
   requestHeaders?: Record<string, string>;
   requestBody?: unknown | null;
   responseStatus?: number | null;
+  /** @default {} */
   responseHeaders?: Record<string, string>;
   responseBody?: unknown | null;
   durationMs?: number | null;

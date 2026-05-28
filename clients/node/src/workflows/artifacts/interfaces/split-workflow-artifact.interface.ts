@@ -66,7 +66,7 @@ export interface SplitWorkflowArtifact {
   /** The list of document splits with their assigned pages */
   output: SplitResult[];
   /** Consensus metadata for multi-vote split runs */
-  consensus?: SplitConsensus;
+  consensus?: SplitConsensus | null;
   /** Usage information for the split operation */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
@@ -86,7 +86,7 @@ export interface SplitWorkflowArtifactResponse {
   n_consensus?: number;
   instructions?: string | null;
   output: SplitResultResponse[];
-  consensus?: SplitConsensusResponse;
+  consensus?: SplitConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at: string;
   operation: 'split';
@@ -100,7 +100,7 @@ export const ZSplitWorkflowArtifact = z.object({
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: ZSplitResult.array(),
-  consensus: ZSplitConsensus.optional(),
+  consensus: ZSplitConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date(),
   operation: z.literal('split'),
@@ -120,7 +120,9 @@ export function deserializeSplitWorkflowArtifact(
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : deserializeSplitConsensus(wire['consensus']),
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializeSplitConsensus(wire['consensus']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)
@@ -146,7 +148,9 @@ export function serializeSplitWorkflowArtifact(
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
-        : serializeSplitConsensus(domain['consensus']),
+        : domain['consensus'] == null
+          ? domain['consensus']
+          : serializeSplitConsensus(domain['consensus']),
     usage:
       domain['usage'] == null
         ? (domain['usage'] as undefined)

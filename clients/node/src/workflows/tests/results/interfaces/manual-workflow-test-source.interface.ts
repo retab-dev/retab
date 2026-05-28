@@ -17,6 +17,7 @@ import {
 export interface ManualWorkflowTestSource {
   /** @default "manual" */
   type: 'manual';
+  /** @default {} */
   handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
 }
 

@@ -28,7 +28,10 @@ export interface EditRequest {
    * @default "retab-small"
    */
   model?: string;
-  /** Edit configuration (rendering options). */
+  /**
+   * Edit configuration (rendering options).
+   * @default {"color":"#000080"}
+   */
   config?: EditConfig;
   /**
    * If true, skip the LLM cache and force a fresh completion.

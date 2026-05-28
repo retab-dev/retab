@@ -20,9 +20,12 @@ export interface ConditionalEvaluation {
   id: string;
   workflowRunId: string;
   stepId: string;
+  /** @default [] */
   evaluations?: ConditionEvaluationResult[];
+  /** @default [] */
   selectedHandles?: string[];
   matchedBranchId?: string | null;
+  /** @default [] */
   matchedConditionIds?: string[];
   /** When this artifact was written by the orchestrator. */
   createdAt: Date;

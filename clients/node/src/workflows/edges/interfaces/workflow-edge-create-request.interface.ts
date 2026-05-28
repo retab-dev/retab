@@ -5,8 +5,8 @@ import { z } from 'zod';
 export interface WorkflowEdgeCreateRequest {
   /** Workflow to create the edge in. */
   workflowId: string;
-  /** Opaque edge ID. Omit to let the server generate one. */
-  id?: string;
+  /** If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one. */
+  id?: string | null;
   /** Source block ID */
   sourceBlock: string;
   /** Target block ID */
@@ -19,7 +19,7 @@ export interface WorkflowEdgeCreateRequest {
 
 export interface WorkflowEdgeCreateRequestResponse {
   workflow_id: string;
-  id?: string;
+  id?: string | null;
   source_block: string;
   target_block: string;
   source_handle?: string | null;
@@ -28,7 +28,7 @@ export interface WorkflowEdgeCreateRequestResponse {
 
 export const ZWorkflowEdgeCreateRequest = z.object({
   workflowId: z.string(),
-  id: z.string().optional(),
+  id: z.string().nullable().optional(),
   sourceBlock: z.string(),
   targetBlock: z.string(),
   sourceHandle: z.string().nullable().optional(),

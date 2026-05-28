@@ -30,7 +30,9 @@ export interface DeclarativePlanResponse {
   diagnostics: Record<string, unknown>;
   /** @default "workflows-plan/v1" */
   formatVersion?: string;
+  /** @default {"add":0,"change":0,"destroy":0,"replace":0,"noop":0,"total":0,"has_changes":false} */
   summary?: DeclarativePlanSummary;
+  /** @default [] */
   resourceChanges?: DeclarativePlanResourceChange[];
   /** @default "No changes. Workflow spec is up to date." */
   renderedPlan?: string;

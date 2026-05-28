@@ -42,7 +42,7 @@ export class WorkflowEdges {
     workflowId: string,
     sourceBlock: string,
     targetBlock: string,
-    id?: string,
+    id?: string | null,
     sourceHandle?: string | null,
     targetHandle?: string | null
   ): Promise<WorkflowEdgeDoc> {

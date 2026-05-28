@@ -6,23 +6,20 @@ export interface WorkflowPublished {
   versionId?: string | null;
   /** When the workflow was last published */
   publishedAt?: Date | null;
-  /**
-   * Release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch.
-   * @default ""
-   */
-  description?: string;
+  /** Release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch. */
+  description?: string | null;
 }
 
 export interface WorkflowPublishedResponse {
   version_id?: string | null;
   published_at?: string | null;
-  description?: string;
+  description?: string | null;
 }
 
 export const ZWorkflowPublished = z.object({
   versionId: z.string().nullable().optional(),
   publishedAt: z.coerce.date().nullable().optional(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 }) as z.ZodType<WorkflowPublished>;
 
 export function deserializeWorkflowPublished(wire: WorkflowPublishedResponse): WorkflowPublished {

@@ -31,6 +31,7 @@ export interface ExperimentVotesMetricsResponse {
   target: string;
   score?: number | null;
   priorScore?: number | null;
+  /** @default [] */
   rows?: ExperimentVoteRow[];
 }
 

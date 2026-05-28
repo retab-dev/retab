@@ -6,6 +6,7 @@ export interface PartialSchema {
   object?: string;
   /** @default "" */
   createdAt?: string;
+  /** @default {} */
   jsonSchema?: Record<string, unknown>;
   /** @default true */
   strict?: boolean;

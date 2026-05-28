@@ -109,6 +109,7 @@ export interface ExperimentResult {
     | CancelledWorkflowExperimentResult;
   timing: ExperimentResultTiming;
   blockType: ExperimentResultBlockType;
+  /** @default {} */
   handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
   artifact?: StepArtifactRef | null;
   /** @default 0 */

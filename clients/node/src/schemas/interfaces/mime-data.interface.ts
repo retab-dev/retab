@@ -6,26 +6,22 @@ export interface MIMEData {
   filename: string;
   /** The URL of the file in base64 format */
   url: string;
-  mimeType?: string;
 }
 
 export interface MIMEDataResponse {
   filename: string;
   url: string;
-  mime_type?: string;
 }
 
 export const ZMIMEData = z.object({
   filename: z.string(),
   url: z.string(),
-  mimeType: z.string().optional(),
 }) as z.ZodType<MIMEData>;
 
 export function deserializeMIMEData(wire: MIMEDataResponse): MIMEData {
   return {
     filename: wire['filename'],
     url: wire['url'],
-    mimeType: wire['mime_type'],
   };
 }
 
@@ -33,6 +29,5 @@ export function serializeMIMEData(domain: MIMEData): MIMEDataResponse {
   return {
     filename: domain['filename'],
     url: domain['url'],
-    mime_type: domain['mimeType'],
   };
 }

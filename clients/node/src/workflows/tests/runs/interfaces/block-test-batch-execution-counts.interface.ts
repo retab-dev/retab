@@ -22,7 +22,9 @@ import {
 
 /** Denormalized counts surface, split along the canonical axes. */
 export interface BlockTestBatchExecutionCounts {
+  /** @default {"pending":0,"queued":0,"running":0,"completed":0,"error":0,"cancelled":0} */
   lifecycleCounts?: BlockTestLifecycleCounts;
+  /** @default {"passed":0,"failed":0,"blocked":0} */
   outcome?: BlockTestOutcomeCounts;
 }
 

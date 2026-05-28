@@ -13,9 +13,15 @@ import {
 
 /** Input payloads supplied at run creation time. */
 export interface RunInputs {
-  /** start_document block ID -> input document reference */
+  /**
+   * start_document block ID -> input document reference
+   * @default {}
+   */
   documents?: Record<string, FileRef>;
-  /** start-json block ID -> input JSON data */
+  /**
+   * start-json block ID -> input JSON data
+   * @default {}
+   */
   jsonData?: Record<string, unknown>;
 }
 

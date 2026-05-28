@@ -5,7 +5,9 @@ export interface ValidationError {
   loc: (string | number)[];
   msg: string;
   type: string;
+  /** @default null */
   input?: unknown;
+  /** @default {} */
   ctx?: Record<string, unknown>;
 }
 

@@ -19,7 +19,10 @@ export interface PublicHandlePayload {
   type: PublicHandlePayloadType;
   /** For file handles: document reference */
   document?: FileRef | null;
-  /** For JSON handles: structured data */
+  /**
+   * For JSON handles: structured data
+   * @default null
+   */
   data?: unknown;
 }
 

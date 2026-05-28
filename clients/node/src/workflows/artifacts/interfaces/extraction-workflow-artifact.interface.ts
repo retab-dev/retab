@@ -53,7 +53,7 @@ export interface ExtractionWorkflowArtifact {
   /** The extracted structured data */
   output: Record<string, unknown>;
   /** Consensus metadata for multi-vote extraction runs */
-  consensus?: ExtractionConsensus;
+  consensus?: ExtractionConsensus | null;
   metadata?: Record<string, string> | null;
   /** Usage information for the extraction */
   usage?: RetabUsage | null;
@@ -75,7 +75,7 @@ export interface ExtractionWorkflowArtifactResponse {
   image_resolution_dpi?: number;
   instructions?: string | null;
   output: Record<string, unknown>;
-  consensus?: ExtractionConsensusResponse;
+  consensus?: ExtractionConsensusResponse | null;
   metadata?: Record<string, string> | null;
   usage?: RetabUsageResponse | null;
   created_at: string;
@@ -91,7 +91,7 @@ export const ZExtractionWorkflowArtifact = z.object({
   imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: z.record(z.string(), z.unknown()),
-  consensus: ZExtractionConsensus.optional(),
+  consensus: ZExtractionConsensus.nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date(),
@@ -113,7 +113,9 @@ export function deserializeExtractionWorkflowArtifact(
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
-        : deserializeExtractionConsensus(wire['consensus']),
+        : wire['consensus'] == null
+          ? wire['consensus']
+          : deserializeExtractionConsensus(wire['consensus']),
     metadata: wire['metadata'],
     usage:
       wire['usage'] == null
@@ -141,7 +143,9 @@ export function serializeExtractionWorkflowArtifact(
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
-        : serializeExtractionConsensus(domain['consensus']),
+        : domain['consensus'] == null
+          ? domain['consensus']
+          : serializeExtractionConsensus(domain['consensus']),
     metadata: domain['metadata'],
     usage:
       domain['usage'] == null

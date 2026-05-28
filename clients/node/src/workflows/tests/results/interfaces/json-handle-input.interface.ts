@@ -5,6 +5,7 @@ import { z } from 'zod';
 export interface JsonHandleInput {
   /** @default "json" */
   type: 'json';
+  /** @default null */
   data?: unknown;
 }
 

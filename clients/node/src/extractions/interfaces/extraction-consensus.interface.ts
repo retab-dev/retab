@@ -2,7 +2,10 @@
 
 import { z } from 'zod';
 export interface ExtractionConsensus {
-  /** Alternative extraction vote outputs used to build the consolidated result. */
+  /**
+   * Alternative extraction vote outputs used to build the consolidated result.
+   * @default []
+   */
   choices?: Record<string, unknown>[];
   /** Consensus likelihood tree mirroring the extraction output. Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves carry one entry per matched list item. */
   likelihoods?: Record<string, unknown> | null;

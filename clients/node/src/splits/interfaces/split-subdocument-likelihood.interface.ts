@@ -4,7 +4,10 @@ import { z } from 'zod';
 export interface SplitSubdocumentLikelihood {
   /** Confidence that this split label is correct */
   name?: number | null;
-  /** Confidence for each page in the corresponding split.pages array */
+  /**
+   * Confidence for each page in the corresponding split.pages array
+   * @default []
+   */
   pages?: number[];
 }
 
