@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ClassificationConsensus {
     /// Alternative classification vote outputs used to build the consolidated result.
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub choices: Option<Vec<ClassificationDecision>>,
     /// Consensus likelihood score (0.0-1.0) of the winning classification.

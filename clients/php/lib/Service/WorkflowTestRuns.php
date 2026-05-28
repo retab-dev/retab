@@ -86,7 +86,7 @@ class WorkflowTestRuns
      * ``workflow_id`` is the execution context. Optional ``scope`` narrows the
      * run to one saved test or one block; omitted scope runs all workflow tests.
      * @param string $workflowId
-     * @param \Retab\Resource\WorkflowTestRunSingleScope|\Retab\Resource\WorkflowTestRunWorkflowScope|\Retab\Resource\WorkflowTestRunBlockScope|null $scope Optional execution scope. Omit to run every saved test in the workflow.
+     * @param \Retab\Resource\WorkflowTestRunSingleScope|\Retab\Resource\WorkflowTestRunWorkflowScope|\Retab\Resource\WorkflowTestRunBlockScope|null $scope Optional execution scope. Omit (or pass null) to run every saved test in the workflow.
      * @return \Retab\Resource\WorkflowTestRun
      * @throws \Retab\Exception\RetabException
      */

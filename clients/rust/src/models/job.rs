@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 /// and result retrieval.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub id: Option<String>,
+    /// Opaque job id (server-generated ``job_<nanoid>``).
+    pub id: String,
     /// Defaults to `job`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub object: Option<String>,
@@ -51,9 +51,9 @@ pub struct Job {
 impl Job {
     /// Construct a new `Job` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(endpoint: SupportedEndpoint) -> Self {
+    pub fn new(id: impl Into<String>, endpoint: SupportedEndpoint) -> Self {
         Self {
-            id: Default::default(),
+            id: id.into(),
             object: Default::default(),
             status: Default::default(),
             endpoint,

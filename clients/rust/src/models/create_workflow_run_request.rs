@@ -11,10 +11,14 @@ pub struct CreateWorkflowRunRequest {
     /// Workflow id for the fresh run.
     pub workflow_id: String,
     /// Mapping of start_document block IDs to their input documents.
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub documents:
         Option<std::collections::HashMap<String, CreateWorkflowRunRequestDocumentsOneOf>>,
     /// Mapping of start-json block IDs to their input JSON data.
+    ///
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub json_inputs: Option<std::collections::HashMap<String, serde_json::Value>>,
     /// Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.

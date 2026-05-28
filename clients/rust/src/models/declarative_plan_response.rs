@@ -15,8 +15,10 @@ pub struct DeclarativePlanResponse {
     /// Defaults to `workflows-plan/v1`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub format_version: Option<String>,
+    /// Defaults to `{"add":0,"change":0,"destroy":0,"replace":0,"noop":0,"total":0,"has_changes":false}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub summary: Option<DeclarativePlanSummary>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resource_changes: Option<Vec<DeclarativePlanResourceChange>>,
     /// Defaults to `No changes. Workflow spec is up to date.`.

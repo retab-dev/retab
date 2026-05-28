@@ -11,6 +11,8 @@ pub struct PartitionChunkLikelihood {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub key: Option<f64>,
     /// Confidence for each page in the corresponding partition chunk.pages array
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub pages: Option<Vec<f64>>,
 }

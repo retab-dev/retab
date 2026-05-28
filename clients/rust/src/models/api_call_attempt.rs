@@ -12,12 +12,14 @@ pub struct ApiCallAttempt {
     pub attempt_number: i64,
     pub request_method: String,
     pub request_url: String,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub request_headers: Option<std::collections::HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub request_body: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub response_status: Option<i64>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub response_headers: Option<std::collections::HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

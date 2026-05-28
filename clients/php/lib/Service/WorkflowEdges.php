@@ -66,7 +66,7 @@ class WorkflowEdges
      * - Both source and target blocks exist in the workflow
      * - The connection is semantically valid (type compatibility, container rules, etc.)
      * @param string $workflowId Workflow to create the edge in.
-     * @param string|null $id Opaque edge ID. Omit to let the server generate one.
+     * @param string|null $id If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one.
      * @param string $sourceBlock Source block ID
      * @param string $targetBlock Target block ID
      * @param string|null $sourceHandle Output handle

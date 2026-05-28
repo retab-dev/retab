@@ -13,6 +13,8 @@ pub struct ConditionEvaluationPerItem {
     /// Index of this item in the array
     pub index: i64,
     /// Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub indices: Option<Vec<i64>>,
     /// Actual value at this index

@@ -50,6 +50,7 @@ class JobsTest extends TestCase
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->jobs()->create(endpoint: \Retab\Resource\JobsEndpoint::V1Extractions, request: []);
         $this->assertInstanceOf(\Retab\Resource\Job::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
@@ -62,6 +63,7 @@ class JobsTest extends TestCase
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->jobs()->get('test_job_id', includeRequest: true, includeResponse: true);
         $this->assertInstanceOf(\Retab\Resource\Job::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -77,6 +79,7 @@ class JobsTest extends TestCase
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->jobs()->cancel('test_job_id');
         $this->assertInstanceOf(\Retab\Resource\Job::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
@@ -89,6 +92,7 @@ class JobsTest extends TestCase
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->jobs()->retry('test_job_id');
         $this->assertInstanceOf(\Retab\Resource\Job::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());

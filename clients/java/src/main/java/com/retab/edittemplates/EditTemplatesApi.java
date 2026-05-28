@@ -5,6 +5,7 @@ package com.retab.edittemplates;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.RetabException;
 import com.retab.models.CreateEditTemplateRequest;
 import com.retab.models.EditTemplate;
 import com.retab.models.FormField;
@@ -53,7 +54,10 @@ public final class EditTemplatesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -97,7 +101,10 @@ public final class EditTemplatesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -118,7 +125,10 @@ public final class EditTemplatesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -157,7 +167,10 @@ public final class EditTemplatesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -178,7 +191,10 @@ public final class EditTemplatesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

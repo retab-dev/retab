@@ -10,6 +10,8 @@ pub struct PartitionChunk {
     /// The partition key value for this chunk
     pub key: String,
     /// The pages assigned to this partition chunk (1-indexed)
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub pages: Option<Vec<i64>>,
 }

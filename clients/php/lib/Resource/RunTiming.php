@@ -24,7 +24,7 @@ readonly class RunTiming implements \JsonSerializable
 
     public function __construct(
         /** When the run record was created */
-        public ?\DateTimeImmutable $createdAt = null,
+        public \DateTimeImmutable $createdAt,
         /** When the run started executing */
         public ?\DateTimeImmutable $startedAt = null,
         /** When the run finished executing */
@@ -40,8 +40,15 @@ readonly class RunTiming implements \JsonSerializable
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
+        foreach ([
+            'created_at',
+        ] as $__required) {
+            if (!array_key_exists($__required, $data)) {
+                throw new \UnexpectedValueException("Missing required field '$__required' for RunTiming::fromArray()");
+            }
+        }
         return new self(
-            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
+            createdAt: new \DateTimeImmutable($data['created_at']),
             startedAt: isset($data['started_at']) ? new \DateTimeImmutable($data['started_at']) : null,
             completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
             reviewWaitingStartedAt: isset($data['review_waiting_started_at']) ? new \DateTimeImmutable($data['review_waiting_started_at']) : null,
@@ -54,7 +61,7 @@ readonly class RunTiming implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'started_at' => $this->startedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'review_waiting_started_at' => $this->reviewWaitingStartedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),

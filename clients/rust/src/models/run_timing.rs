@@ -14,11 +14,10 @@ use serde::{Deserialize, Serialize};
 /// ``run_duration.py``). Records that already store ``duration_ms`` are left
 /// untouched (idempotent), so backfill cannot drift from the canonical value
 /// written by the projection.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunTiming {
     /// When the run record was created
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
+    pub created_at: String,
     /// When the run started executing
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub started_at: Option<String>,
@@ -36,4 +35,18 @@ pub struct RunTiming {
     /// Total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
+}
+impl RunTiming {
+    /// Construct a new `RunTiming` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(created_at: impl Into<String>) -> Self {
+        Self {
+            created_at: created_at.into(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            review_waiting_started_at: Default::default(),
+            accumulated_review_waiting_ms: Default::default(),
+            duration_ms: Default::default(),
+        }
+    }
 }

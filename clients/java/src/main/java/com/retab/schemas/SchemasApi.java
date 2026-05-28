@@ -3,6 +3,7 @@
 package com.retab.schemas;
 
 import com.retab.RetabClient;
+import com.retab.RetabException;
 import com.retab.models.GenerateSchemaRequest;
 import com.retab.models.MimeData;
 import com.retab.models.PartialSchema;
@@ -78,7 +79,10 @@ public final class SchemasApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+      throw RetabException.fromStatusCode(
+          response.statusCode(),
+          "Request failed (" + response.statusCode() + "): " + response.body(),
+          response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 /// Document-local confusion summary for split/classifier blocks.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentDocumentConfusionMetric {
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub diag: Option<std::collections::HashMap<String, f64>>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub flows: Option<Vec<ExperimentConfusionFlowMetric>>,
 }

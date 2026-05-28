@@ -27,6 +27,7 @@ pub struct WorkflowTest {
     /// Defaults to `valid`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub validation_status: Option<String>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub validation_issues: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -35,10 +36,10 @@ pub struct WorkflowTest {
     pub latest_passing_run_summary: Option<LatestBlockTestRunSummary>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub latest_failing_run_summary: Option<LatestBlockTestRunSummary>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub updated_at: Option<String>,
+    /// When the workflow test was created
+    pub created_at: String,
+    /// When the workflow test was last updated
+    pub updated_at: String,
 }
 impl WorkflowTest {
     /// Construct a new `WorkflowTest` with the required fields set.
@@ -48,6 +49,8 @@ impl WorkflowTest {
         workflow_id: impl Into<String>,
         target: WorkflowTestBlockTarget,
         source: CreateWorkflowTestRequestSourceOneOf,
+        created_at: impl Into<String>,
+        updated_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -65,8 +68,8 @@ impl WorkflowTest {
             latest_run_summary: Default::default(),
             latest_passing_run_summary: Default::default(),
             latest_failing_run_summary: Default::default(),
-            created_at: Default::default(),
-            updated_at: Default::default(),
+            created_at: created_at.into(),
+            updated_at: updated_at.into(),
         }
     }
 }

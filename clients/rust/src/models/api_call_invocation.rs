@@ -15,6 +15,7 @@ pub struct ApiCallInvocation {
     pub id: String,
     pub workflow_run_id: String,
     pub step_id: String,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub attempts: Option<Vec<ApiCallAttempt>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

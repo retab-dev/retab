@@ -17,8 +17,9 @@ readonly class Job implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
+        /** Opaque job id (server-generated ``job_<nanoid>``). */
+        public string $id,
         public JobsEndpoint $endpoint,
-        public ?string $id = null,
         public ?JobStatus $status = null,
         public ?JobError $error = null,
         /** @var array<\Retab\Resource\JobWarning>|null */
@@ -43,6 +44,7 @@ readonly class Job implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         foreach ([
+            'id',
             'endpoint',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -50,8 +52,8 @@ readonly class Job implements \JsonSerializable
             }
         }
         return new self(
+            id: $data['id'],
             endpoint: JobsEndpoint::from($data['endpoint']),
-            id: $data['id'] ?? null,
             status: isset($data['status']) ? JobStatus::from($data['status']) : null,
             error: isset($data['error']) ? JobError::fromArray($data['error']) : null,
             warnings: isset($data['warnings']) ? array_map(fn($item) => JobWarning::fromArray($item), $data['warnings']) : null,
@@ -74,8 +76,8 @@ readonly class Job implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'endpoint' => $this->endpoint->value,
             'id' => $this->id,
+            'endpoint' => $this->endpoint->value,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),
             'warnings' => $this->warnings !== null ? array_map(fn($item) => $item->toArray(), $this->warnings) : null,

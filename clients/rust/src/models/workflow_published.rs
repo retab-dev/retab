@@ -14,8 +14,6 @@ pub struct WorkflowPublished {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub published_at: Option<String>,
     /// Release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch.
-    ///
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
 }

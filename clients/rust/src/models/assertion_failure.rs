@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct AssertionFailure {
     pub code: String,
     pub message: String,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<std::collections::HashMap<String, serde_json::Value>>,
 }

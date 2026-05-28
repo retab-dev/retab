@@ -25,6 +25,7 @@ pub struct ExperimentSummaryMetricsResponse {
     pub score: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub prior_score: Option<f64>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub documents: Option<Vec<ExperimentSummaryMetricDocument>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

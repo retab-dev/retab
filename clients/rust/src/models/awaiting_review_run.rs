@@ -12,6 +12,8 @@ pub struct AwaitingReviewRun {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub status: Option<String>,
     /// Block IDs that are waiting for review
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub waiting_for_block_ids: Option<Vec<String>>,
 }

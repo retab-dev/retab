@@ -66,7 +66,7 @@ class WorkflowBlocks
      *
      * This creates a block in the live workflow_blocks collection.
      * @param string $workflowId Workflow to create the block in.
-     * @param string|null $id Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+     * @param string|null $id If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
      * @param \Retab\Resource\WorkflowBlockCreateRequestType $type Block type
      * @param string|null $label Display label
      * @param float|null $positionX X position

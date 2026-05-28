@@ -11,6 +11,7 @@ pub struct ManualWorkflowTestSource {
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub type_: Option<String>,
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs: Option<
         std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,

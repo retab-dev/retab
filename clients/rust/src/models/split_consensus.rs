@@ -8,9 +8,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SplitConsensus {
     /// Consensus likelihood tree mirroring the split output
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub likelihoods: Option<Vec<SplitSubdocumentLikelihood>>,
     /// Alternative split vote outputs used to build the consolidated result
+    ///
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub choices: Option<Vec<Vec<SplitResult>>>,
 }

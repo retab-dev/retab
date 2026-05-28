@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 /// Split/classifier diagnostics attached to the summary response.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentConfusionSummaryAggregate {
+    /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub diag: Option<std::collections::HashMap<String, f64>>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub flows: Option<Vec<ExperimentConfusionFlowMetric>>,
 }
