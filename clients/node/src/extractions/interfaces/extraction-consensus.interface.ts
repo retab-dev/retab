@@ -26,3 +26,12 @@ export function deserializeExtractionConsensus(
     likelihoods: wire['likelihoods'],
   };
 }
+
+export function serializeExtractionConsensus(
+  domain: ExtractionConsensus
+): ExtractionConsensusResponse {
+  return {
+    choices: domain['choices'],
+    likelihoods: domain['likelihoods'],
+  };
+}

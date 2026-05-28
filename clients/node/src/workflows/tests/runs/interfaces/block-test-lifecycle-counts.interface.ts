@@ -47,3 +47,16 @@ export function deserializeBlockTestLifecycleCounts(
     cancelled: wire['cancelled'],
   };
 }
+
+export function serializeBlockTestLifecycleCounts(
+  domain: BlockTestLifecycleCounts
+): BlockTestLifecycleCountsResponse {
+  return {
+    pending: domain['pending'],
+    queued: domain['queued'],
+    running: domain['running'],
+    completed: domain['completed'],
+    error: domain['error'],
+    cancelled: domain['cancelled'],
+  };
+}

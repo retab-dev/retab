@@ -25,3 +25,12 @@ export function deserializeNotContainsCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeNotContainsCondition(
+  domain: NotContainsCondition
+): NotContainsConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

@@ -24,3 +24,12 @@ export function deserializeDeclarativeExportResponse(
     yamlDefinition: wire['yaml_definition'],
   };
 }
+
+export function serializeDeclarativeExportResponse(
+  domain: DeclarativeExportResponse
+): DeclarativeExportResponseResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    yaml_definition: domain['yamlDefinition'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../workflows/runs/interfaces/error-details.interface.js';
 
 export interface FunctionInvocation {
@@ -69,5 +70,26 @@ export function deserializeFunctionInvocation(
           ? wire['error']
           : deserializeErrorDetails(wire['error']),
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeFunctionInvocation(
+  domain: FunctionInvocation
+): FunctionInvocationResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+    inputs: domain['inputs'],
+    output: domain['output'],
+    duration_ms: domain['durationMs'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializeErrorDetails(domain['error']),
+    created_at: domain['createdAt'].toISOString(),
   };
 }

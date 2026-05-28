@@ -35,3 +35,14 @@ export function deserializeExperimentMetricsMissingError(
     message: wire['message'],
   };
 }
+
+export function serializeExperimentMetricsMissingError(
+  domain: ExperimentMetricsMissingError
+): ExperimentMetricsMissingErrorResponse {
+  return {
+    kind: domain['kind'],
+    error: domain['error'],
+    experiment_id: domain['experimentId'],
+    message: domain['message'],
+  };
+}

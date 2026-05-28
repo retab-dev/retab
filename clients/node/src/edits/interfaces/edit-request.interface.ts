@@ -8,6 +8,7 @@ import type {
 import {
   ZEditConfig,
   deserializeEditConfig,
+  serializeEditConfig,
 } from '../../workflows/artifacts/interfaces/edit-config.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
@@ -70,5 +71,24 @@ export function deserializeEditRequest(wire: EditRequestResponse): EditRequest {
         ? (wire['config'] as undefined)
         : deserializeEditConfig(wire['config']),
     bustCache: wire['bust_cache'],
+  };
+}
+
+export function serializeEditRequest(domain: EditRequest): EditRequestResponse {
+  return {
+    instructions: domain['instructions'],
+    document:
+      domain['document'] == null
+        ? (domain['document'] as undefined)
+        : domain['document'] == null
+          ? domain['document']
+          : (domain['document'] as unknown as MIMEDataResponse | FileRefResponse),
+    template_id: domain['templateId'],
+    model: domain['model'],
+    config:
+      domain['config'] == null
+        ? (domain['config'] as undefined)
+        : serializeEditConfig(domain['config']),
+    bust_cache: domain['bustCache'],
   };
 }

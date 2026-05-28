@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentDocumentProvenance,
   deserializeExperimentDocumentProvenance,
+  serializeExperimentDocumentProvenance,
 } from './experiment-document-provenance.interface.js';
 import type {
   FileHandleInput,
@@ -16,6 +17,7 @@ import type {
 import {
   ZFileHandleInput,
   deserializeFileHandleInput,
+  serializeFileHandleInput,
 } from '../../../workflows/tests/results/interfaces/file-handle-input.interface.js';
 import type {
   JsonHandleInput,
@@ -24,6 +26,7 @@ import type {
 import {
   ZJsonHandleInput,
   deserializeJsonHandleInput,
+  serializeJsonHandleInput,
 } from '../../../workflows/tests/results/interfaces/json-handle-input.interface.js';
 
 export interface ExplicitExperimentDocumentRequest {
@@ -63,5 +66,30 @@ export function deserializeExplicitExperimentDocumentRequest(
         : wire['provenance'] == null
           ? wire['provenance']
           : deserializeExperimentDocumentProvenance(wire['provenance']),
+  };
+}
+
+export function serializeExplicitExperimentDocumentRequest(
+  domain: ExplicitExperimentDocumentRequest
+): ExplicitExperimentDocumentRequestResponse {
+  return {
+    handle_inputs: Object.fromEntries(
+      Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+        __k,
+        (
+          {
+            file: () => serializeFileHandleInput(__v as FileHandleInput),
+            json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+          } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+        )[(__v as unknown as Record<string, string>)['type']]?.() ??
+          (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
+      ])
+    ),
+    provenance:
+      domain['provenance'] == null
+        ? (domain['provenance'] as undefined)
+        : domain['provenance'] == null
+          ? domain['provenance']
+          : serializeExperimentDocumentProvenance(domain['provenance']),
   };
 }

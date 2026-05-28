@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../../workflows/runs/interfaces/error-details.interface.js';
 
 /** The test run failed. The error message lives on this variant. */
@@ -47,5 +48,20 @@ export function deserializeErrorWorkflowTestRun(
         : wire['details'] == null
           ? wire['details']
           : deserializeErrorDetails(wire['details']),
+  };
+}
+
+export function serializeErrorWorkflowTestRun(
+  domain: ErrorWorkflowTestRun
+): ErrorWorkflowTestRunResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+    details:
+      domain['details'] == null
+        ? (domain['details'] as undefined)
+        : domain['details'] == null
+          ? domain['details']
+          : serializeErrorDetails(domain['details']),
   };
 }

@@ -25,3 +25,10 @@ export function deserializeApiTrigger(wire: ApiTriggerResponse): ApiTrigger {
     apiKeyId: wire['api_key_id'],
   };
 }
+
+export function serializeApiTrigger(domain: ApiTrigger): ApiTriggerResponse {
+  return {
+    type: domain['type'],
+    api_key_id: domain['apiKeyId'],
+  };
+}

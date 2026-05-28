@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { AssertionResult, AssertionResultResponse } from './assertion-result.interface.js';
-import { ZAssertionResult, deserializeAssertionResult } from './assertion-result.interface.js';
+import {
+  ZAssertionResult,
+  deserializeAssertionResult,
+  serializeAssertionResult,
+} from './assertion-result.interface.js';
 import type {
   CancelledWorkflowTestRun,
   CancelledWorkflowTestRunResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZCancelledWorkflowTestRun,
   deserializeCancelledWorkflowTestRun,
+  serializeCancelledWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
 import type {
   CompletedWorkflowTestRun,
@@ -18,6 +23,7 @@ import type {
 import {
   ZCompletedWorkflowTestRun,
   deserializeCompletedWorkflowTestRun,
+  serializeCompletedWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
 import type {
   ErrorDetails,
@@ -26,6 +32,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../../workflows/runs/interfaces/error-details.interface.js';
 import type {
   ErrorWorkflowTestRun,
@@ -34,6 +41,7 @@ import type {
 import {
   ZErrorWorkflowTestRun,
   deserializeErrorWorkflowTestRun,
+  serializeErrorWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
 import type {
   ManualWorkflowTestSource,
@@ -42,6 +50,7 @@ import type {
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
+  serializeManualWorkflowTestSource,
 } from './manual-workflow-test-source.interface.js';
 import type {
   PendingWorkflowTestRun,
@@ -50,6 +59,7 @@ import type {
 import {
   ZPendingWorkflowTestRun,
   deserializePendingWorkflowTestRun,
+  serializePendingWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
 import type {
   QueuedWorkflowTestRun,
@@ -58,6 +68,7 @@ import type {
 import {
   ZQueuedWorkflowTestRun,
   deserializeQueuedWorkflowTestRun,
+  serializeQueuedWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
 import type {
   RunningWorkflowTestRun,
@@ -66,6 +77,7 @@ import type {
 import {
   ZRunningWorkflowTestRun,
   deserializeRunningWorkflowTestRun,
+  serializeRunningWorkflowTestRun,
 } from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
 import type {
   RunStepWorkflowTestSource,
@@ -74,9 +86,14 @@ import type {
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
+  serializeRunStepWorkflowTestSource,
 } from './run-step-workflow-test-source.interface.js';
 import type { VerdictSummary, VerdictSummaryResponse } from './verdict-summary.interface.js';
-import { ZVerdictSummary, deserializeVerdictSummary } from './verdict-summary.interface.js';
+import {
+  ZVerdictSummary,
+  deserializeVerdictSummary,
+  serializeVerdictSummary,
+} from './verdict-summary.interface.js';
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
@@ -84,6 +101,7 @@ import type {
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
+  serializeWorkflowTestBlockTarget,
 } from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
 import type {
   WorkflowTestRunTiming,
@@ -92,6 +110,7 @@ import type {
 import {
   ZWorkflowTestRunTiming,
   deserializeWorkflowTestRunTiming,
+  serializeWorkflowTestRunTiming,
 } from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
 import type { WorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 import { ZWorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
@@ -302,5 +321,106 @@ export function deserializeWorkflowTestResult(
         : wire['verdict_summary'] == null
           ? wire['verdict_summary']
           : deserializeVerdictSummary(wire['verdict_summary']),
+  };
+}
+
+export function serializeWorkflowTestResult(
+  domain: WorkflowTestResult
+): WorkflowTestResultResponse {
+  return {
+    id: domain['id'],
+    run_id: domain['runId'],
+    test_id: domain['testId'],
+    lifecycle:
+      domain['lifecycle'] == null
+        ? (domain['lifecycle'] as undefined)
+        : domain['lifecycle'] == null
+          ? domain['lifecycle']
+          : ((
+              {
+                cancelled: () =>
+                  serializeCancelledWorkflowTestRun(
+                    domain['lifecycle'] as CancelledWorkflowTestRun
+                  ),
+                completed: () =>
+                  serializeCompletedWorkflowTestRun(
+                    domain['lifecycle'] as CompletedWorkflowTestRun
+                  ),
+                error: () =>
+                  serializeErrorWorkflowTestRun(domain['lifecycle'] as ErrorWorkflowTestRun),
+                pending: () =>
+                  serializePendingWorkflowTestRun(domain['lifecycle'] as PendingWorkflowTestRun),
+                queued: () =>
+                  serializeQueuedWorkflowTestRun(domain['lifecycle'] as QueuedWorkflowTestRun),
+                running: () =>
+                  serializeRunningWorkflowTestRun(domain['lifecycle'] as RunningWorkflowTestRun),
+              } as Record<
+                string,
+                () =>
+                  | PendingWorkflowTestRunResponse
+                  | QueuedWorkflowTestRunResponse
+                  | RunningWorkflowTestRunResponse
+                  | CompletedWorkflowTestRunResponse
+                  | ErrorWorkflowTestRunResponse
+                  | CancelledWorkflowTestRunResponse
+              >
+            )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+            (domain['lifecycle'] as unknown as
+              | PendingWorkflowTestRunResponse
+              | QueuedWorkflowTestRunResponse
+              | RunningWorkflowTestRunResponse
+              | CompletedWorkflowTestRunResponse
+              | ErrorWorkflowTestRunResponse
+              | CancelledWorkflowTestRunResponse)),
+    timing:
+      domain['timing'] == null
+        ? (domain['timing'] as undefined)
+        : domain['timing'] == null
+          ? domain['timing']
+          : serializeWorkflowTestRunTiming(domain['timing']),
+    verdict: domain['verdict'],
+    workflow_id: domain['workflowId'],
+    target: serializeWorkflowTestBlockTarget(domain['target']),
+    execution_fingerprint: domain['executionFingerprint'],
+    handle_inputs_fingerprint: domain['handleInputsFingerprint'],
+    workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
+    block_config_fingerprint: domain['blockConfigFingerprint'],
+    source:
+      (
+        {
+          manual: () =>
+            serializeManualWorkflowTestSource(domain['source'] as ManualWorkflowTestSource),
+          run_step: () =>
+            serializeRunStepWorkflowTestSource(domain['source'] as RunStepWorkflowTestSource),
+        } as Record<
+          string,
+          () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+        >
+      )[(domain['source'] as unknown as Record<string, string>)['type']]?.() ??
+      (domain['source'] as unknown as
+        | ManualWorkflowTestSourceResponse
+        | RunStepWorkflowTestSourceResponse),
+    outputs: domain['outputs'],
+    routing_decision: domain['routingDecision'],
+    warnings: domain['warnings'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializeErrorDetails(domain['error']),
+    skipped: domain['skipped'],
+    assertion_result:
+      domain['assertionResult'] == null
+        ? (domain['assertionResult'] as undefined)
+        : domain['assertionResult'] == null
+          ? domain['assertionResult']
+          : serializeAssertionResult(domain['assertionResult']),
+    verdict_summary:
+      domain['verdictSummary'] == null
+        ? (domain['verdictSummary'] as undefined)
+        : domain['verdictSummary'] == null
+          ? domain['verdictSummary']
+          : serializeVerdictSummary(domain['verdictSummary']),
   };
 }

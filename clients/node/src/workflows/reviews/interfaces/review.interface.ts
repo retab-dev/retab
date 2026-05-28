@@ -2,11 +2,23 @@
 
 import { z } from 'zod';
 import type { ReviewAllOf, ReviewAllOfResponse } from './review-all-of.interface.js';
-import { ZReviewAllOf, deserializeReviewAllOf } from './review-all-of.interface.js';
+import {
+  ZReviewAllOf,
+  deserializeReviewAllOf,
+  serializeReviewAllOf,
+} from './review-all-of.interface.js';
 import type { ReviewAlways, ReviewAlwaysResponse } from './review-always.interface.js';
-import { ZReviewAlways, deserializeReviewAlways } from './review-always.interface.js';
+import {
+  ZReviewAlways,
+  deserializeReviewAlways,
+  serializeReviewAlways,
+} from './review-always.interface.js';
 import type { ReviewAnyOf, ReviewAnyOfResponse } from './review-any-of.interface.js';
-import { ZReviewAnyOf, deserializeReviewAnyOf } from './review-any-of.interface.js';
+import {
+  ZReviewAnyOf,
+  deserializeReviewAnyOf,
+  serializeReviewAnyOf,
+} from './review-any-of.interface.js';
 import type {
   ReviewAnyRequiredFieldNull,
   ReviewAnyRequiredFieldNullResponse,
@@ -14,6 +26,7 @@ import type {
 import {
   ZReviewAnyRequiredFieldNull,
   deserializeReviewAnyRequiredFieldNull,
+  serializeReviewAnyRequiredFieldNull,
 } from './review-any-required-field-null.interface.js';
 import type {
   ReviewAnySplitPagesLt,
@@ -22,6 +35,7 @@ import type {
 import {
   ZReviewAnySplitPagesLt,
   deserializeReviewAnySplitPagesLt,
+  serializeReviewAnySplitPagesLt,
 } from './review-any-split-pages-lt.interface.js';
 import type {
   ReviewBoundaryConfidenceLt,
@@ -30,11 +44,20 @@ import type {
 import {
   ZReviewBoundaryConfidenceLt,
   deserializeReviewBoundaryConfidenceLt,
+  serializeReviewBoundaryConfidenceLt,
 } from './review-boundary-confidence-lt.interface.js';
 import type { ReviewBranchIn, ReviewBranchInResponse } from './review-branch-in.interface.js';
-import { ZReviewBranchIn, deserializeReviewBranchIn } from './review-branch-in.interface.js';
+import {
+  ZReviewBranchIn,
+  deserializeReviewBranchIn,
+  serializeReviewBranchIn,
+} from './review-branch-in.interface.js';
 import type { ReviewCategoryIn, ReviewCategoryInResponse } from './review-category-in.interface.js';
-import { ZReviewCategoryIn, deserializeReviewCategoryIn } from './review-category-in.interface.js';
+import {
+  ZReviewCategoryIn,
+  deserializeReviewCategoryIn,
+  serializeReviewCategoryIn,
+} from './review-category-in.interface.js';
 import type {
   ReviewConfidenceLt,
   ReviewConfidenceLtResponse,
@@ -42,9 +65,14 @@ import type {
 import {
   ZReviewConfidenceLt,
   deserializeReviewConfidenceLt,
+  serializeReviewConfidenceLt,
 } from './review-confidence-lt.interface.js';
 import type { ReviewDecision, ReviewDecisionResponse } from './review-decision.interface.js';
-import { ZReviewDecision, deserializeReviewDecision } from './review-decision.interface.js';
+import {
+  ZReviewDecision,
+  deserializeReviewDecision,
+  serializeReviewDecision,
+} from './review-decision.interface.js';
 import type {
   ReviewFieldConfidenceLt,
   ReviewFieldConfidenceLtResponse,
@@ -52,6 +80,7 @@ import type {
 import {
   ZReviewFieldConfidenceLt,
   deserializeReviewFieldConfidenceLt,
+  serializeReviewFieldConfidenceLt,
 } from './review-field-confidence-lt.interface.js';
 import type {
   ReviewJsonCondition,
@@ -60,6 +89,7 @@ import type {
 import {
   ZReviewJsonCondition,
   deserializeReviewJsonCondition,
+  serializeReviewJsonCondition,
 } from './review-json-condition.interface.js';
 import type {
   ReviewSplitCountNeq,
@@ -68,6 +98,7 @@ import type {
 import {
   ZReviewSplitCountNeq,
   deserializeReviewSplitCountNeq,
+  serializeReviewSplitCountNeq,
 } from './review-split-count-neq.interface.js';
 import type {
   ReviewTopMarginLt,
@@ -76,6 +107,7 @@ import type {
 import {
   ZReviewTopMarginLt,
   deserializeReviewTopMarginLt,
+  serializeReviewTopMarginLt,
 } from './review-top-margin-lt.interface.js';
 import type {
   ReviewValidationFailed,
@@ -84,6 +116,7 @@ import type {
 import {
   ZReviewValidationFailed,
   deserializeReviewValidationFailed,
+  serializeReviewValidationFailed,
 } from './review-validation-failed.interface.js';
 import type { ReviewBlockType } from './review-block-type.interface.js';
 import { ZReviewBlockType } from './review-block-type.interface.js';
@@ -266,5 +299,90 @@ export function deserializeReview(wire: ReviewResponse): Review {
         : wire['decision'] == null
           ? wire['decision']
           : deserializeReviewDecision(wire['decision']),
+  };
+}
+
+export function serializeReview(domain: Review): ReviewResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    workflow_version_id: domain['workflowVersionId'],
+    workflow_run_id: domain['workflowRunId'],
+    block_id: domain['blockId'],
+    step_id: domain['stepId'],
+    parent_step_id: domain['parentStepId'],
+    iteration_key: domain['iterationKey'],
+    block_type: domain['blockType'],
+    triggered_by:
+      (
+        {
+          all_of: () => serializeReviewAllOf(domain['triggeredBy'] as ReviewAllOf),
+          always: () => serializeReviewAlways(domain['triggeredBy'] as ReviewAlways),
+          any_of: () => serializeReviewAnyOf(domain['triggeredBy'] as ReviewAnyOf),
+          any_required_field_null: () =>
+            serializeReviewAnyRequiredFieldNull(
+              domain['triggeredBy'] as ReviewAnyRequiredFieldNull
+            ),
+          any_split_pages_lt: () =>
+            serializeReviewAnySplitPagesLt(domain['triggeredBy'] as ReviewAnySplitPagesLt),
+          boundary_confidence_lt: () =>
+            serializeReviewBoundaryConfidenceLt(
+              domain['triggeredBy'] as ReviewBoundaryConfidenceLt
+            ),
+          branch_in: () => serializeReviewBranchIn(domain['triggeredBy'] as ReviewBranchIn),
+          category_in: () => serializeReviewCategoryIn(domain['triggeredBy'] as ReviewCategoryIn),
+          confidence_lt: () =>
+            serializeReviewConfidenceLt(domain['triggeredBy'] as ReviewConfidenceLt),
+          field_confidence_lt: () =>
+            serializeReviewFieldConfidenceLt(domain['triggeredBy'] as ReviewFieldConfidenceLt),
+          json_condition: () =>
+            serializeReviewJsonCondition(domain['triggeredBy'] as ReviewJsonCondition),
+          split_count_neq: () =>
+            serializeReviewSplitCountNeq(domain['triggeredBy'] as ReviewSplitCountNeq),
+          top_margin_lt: () =>
+            serializeReviewTopMarginLt(domain['triggeredBy'] as ReviewTopMarginLt),
+          validation_failed: () =>
+            serializeReviewValidationFailed(domain['triggeredBy'] as ReviewValidationFailed),
+        } as Record<
+          string,
+          () =>
+            | ReviewAlwaysResponse
+            | ReviewValidationFailedResponse
+            | ReviewConfidenceLtResponse
+            | ReviewCategoryInResponse
+            | ReviewTopMarginLtResponse
+            | ReviewSplitCountNeqResponse
+            | ReviewAnySplitPagesLtResponse
+            | ReviewBoundaryConfidenceLtResponse
+            | ReviewAnyRequiredFieldNullResponse
+            | ReviewFieldConfidenceLtResponse
+            | ReviewJsonConditionResponse
+            | ReviewBranchInResponse
+            | ReviewAnyOfResponse
+            | ReviewAllOfResponse
+        >
+      )[(domain['triggeredBy'] as unknown as Record<string, string>)['kind']]?.() ??
+      (domain['triggeredBy'] as unknown as
+        | ReviewAlwaysResponse
+        | ReviewValidationFailedResponse
+        | ReviewConfidenceLtResponse
+        | ReviewCategoryInResponse
+        | ReviewTopMarginLtResponse
+        | ReviewSplitCountNeqResponse
+        | ReviewAnySplitPagesLtResponse
+        | ReviewBoundaryConfidenceLtResponse
+        | ReviewAnyRequiredFieldNullResponse
+        | ReviewFieldConfidenceLtResponse
+        | ReviewJsonConditionResponse
+        | ReviewBranchInResponse
+        | ReviewAnyOfResponse
+        | ReviewAllOfResponse),
+    created_at: domain['createdAt'].toISOString(),
+    decision:
+      domain['decision'] == null
+        ? (domain['decision'] as undefined)
+        : domain['decision'] == null
+          ? domain['decision']
+          : serializeReviewDecision(domain['decision']),
   };
 }

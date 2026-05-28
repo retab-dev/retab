@@ -8,6 +8,7 @@ import type {
 import {
   ZEditConfig,
   deserializeEditConfig,
+  serializeEditConfig,
 } from '../../workflows/artifacts/interfaces/edit-config.interface.js';
 import type {
   EditResult,
@@ -16,9 +17,14 @@ import type {
 import {
   ZEditResult,
   deserializeEditResult,
+  serializeEditResult,
 } from '../../workflows/artifacts/interfaces/edit-result.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
@@ -26,6 +32,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../extractions/interfaces/retab-usage.interface.js';
 
 export interface Edit {
@@ -103,5 +110,35 @@ export function deserializeEdit(wire: EditResponse): Edit {
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializeEdit(domain: Edit): EditResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    instructions: domain['instructions'],
+    config: serializeEditConfig(domain['config']),
+    template_id: domain['templateId'],
+    output: serializeEditResult(domain['output']),
+    filled_document_ref:
+      domain['filledDocumentRef'] == null
+        ? (domain['filledDocumentRef'] as undefined)
+        : domain['filledDocumentRef'] == null
+          ? domain['filledDocumentRef']
+          : serializeFileRef(domain['filledDocumentRef']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

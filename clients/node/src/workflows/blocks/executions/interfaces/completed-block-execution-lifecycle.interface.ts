@@ -22,3 +22,11 @@ export function deserializeCompletedBlockExecutionLifecycle(
     status: wire['status'],
   };
 }
+
+export function serializeCompletedBlockExecutionLifecycle(
+  domain: CompletedBlockExecutionLifecycle
+): CompletedBlockExecutionLifecycleResponse {
+  return {
+    status: domain['status'],
+  };
+}

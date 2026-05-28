@@ -84,3 +84,19 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     chunkingKeys: wire['chunking_keys'],
   };
 }
+
+export function serializeExtractionRequest(domain: ExtractionRequest): ExtractionRequestResponse {
+  return {
+    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    json_schema: domain['jsonSchema'],
+    model: domain['model'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    instructions: domain['instructions'],
+    n_consensus: domain['nConsensus'],
+    metadata: domain['metadata'],
+    additional_messages: domain['additionalMessages'],
+    bust_cache: domain['bustCache'],
+    stream: domain['stream'],
+    chunking_keys: domain['chunkingKeys'],
+  };
+}

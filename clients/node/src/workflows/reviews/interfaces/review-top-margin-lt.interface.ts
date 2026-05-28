@@ -24,3 +24,10 @@ export function deserializeReviewTopMarginLt(wire: ReviewTopMarginLtResponse): R
     margin: wire['margin'],
   };
 }
+
+export function serializeReviewTopMarginLt(domain: ReviewTopMarginLt): ReviewTopMarginLtResponse {
+  return {
+    kind: domain['kind'],
+    margin: domain['margin'],
+  };
+}

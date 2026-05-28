@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentByDocumentTargetMetric,
   deserializeExperimentByDocumentTargetMetric,
+  serializeExperimentByDocumentTargetMetric,
 } from './experiment-by-document-target-metric.interface.js';
 import type {
   ExperimentDocumentConfusionMetric,
@@ -16,6 +17,7 @@ import type {
 import {
   ZExperimentDocumentConfusionMetric,
   deserializeExperimentDocumentConfusionMetric,
+  serializeExperimentDocumentConfusionMetric,
 } from './experiment-document-confusion-metric.interface.js';
 import type {
   ExperimentMetricDocumentRef,
@@ -24,6 +26,7 @@ import type {
 import {
   ZExperimentMetricDocumentRef,
   deserializeExperimentMetricDocumentRef,
+  serializeExperimentMetricDocumentRef,
 } from './experiment-metric-document-ref.interface.js';
 
 /** One document's compact per-target breakdown. */
@@ -82,5 +85,28 @@ export function deserializeExperimentByDocumentMetricsResponse(
       wire['targets'] == null
         ? (wire['targets'] as undefined)
         : wire['targets'].map((__i) => deserializeExperimentByDocumentTargetMetric(__i)),
+  };
+}
+
+export function serializeExperimentByDocumentMetricsResponse(
+  domain: ExperimentByDocumentMetricsResponse
+): ExperimentByDocumentMetricsResponseResponse {
+  return {
+    run_id: domain['runId'],
+    kind: domain['kind'],
+    view: domain['view'],
+    document: serializeExperimentMetricDocumentRef(domain['document']),
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    confusion:
+      domain['confusion'] == null
+        ? (domain['confusion'] as undefined)
+        : domain['confusion'] == null
+          ? domain['confusion']
+          : serializeExperimentDocumentConfusionMetric(domain['confusion']),
+    targets:
+      domain['targets'] == null
+        ? (domain['targets'] as undefined)
+        : domain['targets'].map((__i) => serializeExperimentByDocumentTargetMetric(__i)),
   };
 }

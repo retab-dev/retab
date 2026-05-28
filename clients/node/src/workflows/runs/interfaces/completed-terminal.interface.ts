@@ -20,3 +20,9 @@ export function deserializeCompletedTerminal(wire: CompletedTerminalResponse): C
     status: wire['status'],
   };
 }
+
+export function serializeCompletedTerminal(domain: CompletedTerminal): CompletedTerminalResponse {
+  return {
+    status: domain['status'],
+  };
+}

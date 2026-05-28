@@ -47,3 +47,16 @@ export function deserializeWorkflowEdgeCreateRequest(
     targetHandle: wire['target_handle'],
   };
 }
+
+export function serializeWorkflowEdgeCreateRequest(
+  domain: WorkflowEdgeCreateRequest
+): WorkflowEdgeCreateRequestResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    id: domain['id'],
+    source_block: domain['sourceBlock'],
+    target_block: domain['targetBlock'],
+    source_handle: domain['sourceHandle'],
+    target_handle: domain['targetHandle'],
+  };
+}

@@ -9,10 +9,20 @@ import type {
 } from '../../workflows/tests/interfaces/index.js';
 import type {
   ManualWorkflowTestSource,
+  ManualWorkflowTestSourceResponse,
   RunStepWorkflowTestSource,
+  RunStepWorkflowTestSourceResponse,
 } from '../../workflows/tests/results/interfaces/index.js';
 import type { WorkflowTestBlockTarget } from '../../workflows/tests/runs/interfaces/index.js';
-import { deserializeWorkflowTest } from '../../workflows/tests/interfaces/index.js';
+import {
+  deserializeWorkflowTest,
+  serializeAssertionSpec,
+} from '../../workflows/tests/interfaces/index.js';
+import {
+  serializeManualWorkflowTestSource,
+  serializeRunStepWorkflowTestSource,
+} from '../../workflows/tests/results/interfaces/index.js';
+import { serializeWorkflowTestBlockTarget } from '../../workflows/tests/runs/interfaces/index.js';
 import { WorkflowTestRunResults } from './results/workflow-test-run-results.js';
 import { WorkflowTestRuns } from './runs/workflow-test-runs.js';
 
@@ -59,10 +69,20 @@ export class WorkflowTests {
   ): Promise<WorkflowTest> {
     const body = {
       workflow_id: workflowId,
-      target: target,
-      source: source,
+      target: serializeWorkflowTestBlockTarget(target),
+      source:
+        (
+          {
+            manual: () => serializeManualWorkflowTestSource(source as ManualWorkflowTestSource),
+            run_step: () => serializeRunStepWorkflowTestSource(source as RunStepWorkflowTestSource),
+          } as Record<
+            string,
+            () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+          >
+        )[(source as unknown as Record<string, string>)['type']]?.() ??
+        (source as unknown as ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse),
       name: name,
-      assertion: assertion,
+      assertion: serializeAssertionSpec(assertion),
     };
     const __wire = await this.client.request<WorkflowTestResponse>({
       method: 'POST',
@@ -93,8 +113,31 @@ export class WorkflowTests {
   ): Promise<WorkflowTest> {
     const body = {
       name: name,
-      assertion: assertion,
-      source: source,
+      assertion:
+        assertion === undefined
+          ? undefined
+          : assertion == null
+            ? assertion
+            : serializeAssertionSpec(assertion),
+      source:
+        source === undefined
+          ? undefined
+          : source == null
+            ? source
+            : ((
+                {
+                  manual: () =>
+                    serializeManualWorkflowTestSource(source as ManualWorkflowTestSource),
+                  run_step: () =>
+                    serializeRunStepWorkflowTestSource(source as RunStepWorkflowTestSource),
+                } as Record<
+                  string,
+                  () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+                >
+              )[(source as unknown as Record<string, string>)['type']]?.() ??
+              (source as unknown as
+                | ManualWorkflowTestSourceResponse
+                | RunStepWorkflowTestSourceResponse)),
     };
     const __wire = await this.client.request<WorkflowTestResponse>({
       method: 'PATCH',

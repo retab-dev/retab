@@ -20,3 +20,9 @@ export function deserializeRetabUsage(wire: RetabUsageResponse): RetabUsage {
     credits: wire['credits'],
   };
 }
+
+export function serializeRetabUsage(domain: RetabUsage): RetabUsageResponse {
+  return {
+    credits: domain['credits'],
+  };
+}

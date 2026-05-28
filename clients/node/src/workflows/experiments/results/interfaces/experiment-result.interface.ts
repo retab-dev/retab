@@ -8,6 +8,7 @@ import type {
 import {
   ZCancelledWorkflowExperimentResult,
   deserializeCancelledWorkflowExperimentResult,
+  serializeCancelledWorkflowExperimentResult,
 } from './cancelled-workflow-experiment-result.interface.js';
 import type {
   CompletedWorkflowExperimentResult,
@@ -16,6 +17,7 @@ import type {
 import {
   ZCompletedWorkflowExperimentResult,
   deserializeCompletedWorkflowExperimentResult,
+  serializeCompletedWorkflowExperimentResult,
 } from './completed-workflow-experiment-result.interface.js';
 import type {
   ErrorWorkflowExperimentResult,
@@ -24,6 +26,7 @@ import type {
 import {
   ZErrorWorkflowExperimentResult,
   deserializeErrorWorkflowExperimentResult,
+  serializeErrorWorkflowExperimentResult,
 } from './error-workflow-experiment-result.interface.js';
 import type {
   ExperimentResultTiming,
@@ -32,6 +35,7 @@ import type {
 import {
   ZExperimentResultTiming,
   deserializeExperimentResultTiming,
+  serializeExperimentResultTiming,
 } from './experiment-result-timing.interface.js';
 import type {
   FileHandleInput,
@@ -40,6 +44,7 @@ import type {
 import {
   ZFileHandleInput,
   deserializeFileHandleInput,
+  serializeFileHandleInput,
 } from '../../../../workflows/tests/results/interfaces/file-handle-input.interface.js';
 import type {
   JsonHandleInput,
@@ -48,6 +53,7 @@ import type {
 import {
   ZJsonHandleInput,
   deserializeJsonHandleInput,
+  serializeJsonHandleInput,
 } from '../../../../workflows/tests/results/interfaces/json-handle-input.interface.js';
 import type {
   PendingWorkflowExperimentResult,
@@ -56,6 +62,7 @@ import type {
 import {
   ZPendingWorkflowExperimentResult,
   deserializePendingWorkflowExperimentResult,
+  serializePendingWorkflowExperimentResult,
 } from './pending-workflow-experiment-result.interface.js';
 import type {
   QueuedWorkflowExperimentResult,
@@ -64,6 +71,7 @@ import type {
 import {
   ZQueuedWorkflowExperimentResult,
   deserializeQueuedWorkflowExperimentResult,
+  serializeQueuedWorkflowExperimentResult,
 } from './queued-workflow-experiment-result.interface.js';
 import type {
   RunningWorkflowExperimentResult,
@@ -72,6 +80,7 @@ import type {
 import {
   ZRunningWorkflowExperimentResult,
   deserializeRunningWorkflowExperimentResult,
+  serializeRunningWorkflowExperimentResult,
 } from './running-workflow-experiment-result.interface.js';
 import type {
   StepArtifactRef,
@@ -80,6 +89,7 @@ import type {
 import {
   ZStepArtifactRef,
   deserializeStepArtifactRef,
+  serializeStepArtifactRef,
 } from '../../../../workflows/steps/interfaces/step-artifact-ref.interface.js';
 import type { ExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 import { ZExperimentResultBlockType } from './experiment-result-block-type.interface.js';
@@ -224,5 +234,84 @@ export function deserializeExperimentResult(wire: ExperimentResultResponse): Exp
           : deserializeStepArtifactRef(wire['artifact']),
     attempt: wire['attempt'],
     isPlaceholder: wire['is_placeholder'],
+  };
+}
+
+export function serializeExperimentResult(domain: ExperimentResult): ExperimentResultResponse {
+  return {
+    id: domain['id'],
+    run_id: domain['runId'],
+    experiment_id: domain['experimentId'],
+    document_id: domain['documentId'],
+    lifecycle:
+      (
+        {
+          cancelled: () =>
+            serializeCancelledWorkflowExperimentResult(
+              domain['lifecycle'] as CancelledWorkflowExperimentResult
+            ),
+          completed: () =>
+            serializeCompletedWorkflowExperimentResult(
+              domain['lifecycle'] as CompletedWorkflowExperimentResult
+            ),
+          error: () =>
+            serializeErrorWorkflowExperimentResult(
+              domain['lifecycle'] as ErrorWorkflowExperimentResult
+            ),
+          pending: () =>
+            serializePendingWorkflowExperimentResult(
+              domain['lifecycle'] as PendingWorkflowExperimentResult
+            ),
+          queued: () =>
+            serializeQueuedWorkflowExperimentResult(
+              domain['lifecycle'] as QueuedWorkflowExperimentResult
+            ),
+          running: () =>
+            serializeRunningWorkflowExperimentResult(
+              domain['lifecycle'] as RunningWorkflowExperimentResult
+            ),
+        } as Record<
+          string,
+          () =>
+            | PendingWorkflowExperimentResultResponse
+            | QueuedWorkflowExperimentResultResponse
+            | RunningWorkflowExperimentResultResponse
+            | CompletedWorkflowExperimentResultResponse
+            | ErrorWorkflowExperimentResultResponse
+            | CancelledWorkflowExperimentResultResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | PendingWorkflowExperimentResultResponse
+        | QueuedWorkflowExperimentResultResponse
+        | RunningWorkflowExperimentResultResponse
+        | CompletedWorkflowExperimentResultResponse
+        | ErrorWorkflowExperimentResultResponse
+        | CancelledWorkflowExperimentResultResponse),
+    timing: serializeExperimentResultTiming(domain['timing']),
+    block_type: domain['blockType'],
+    handle_inputs:
+      domain['handleInputs'] == null
+        ? (domain['handleInputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => serializeFileHandleInput(__v as FileHandleInput),
+                  json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+                } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
+            ])
+          ),
+    artifact:
+      domain['artifact'] == null
+        ? (domain['artifact'] as undefined)
+        : domain['artifact'] == null
+          ? domain['artifact']
+          : serializeStepArtifactRef(domain['artifact']),
+    attempt: domain['attempt'],
+    is_placeholder: domain['isPlaceholder'],
   };
 }

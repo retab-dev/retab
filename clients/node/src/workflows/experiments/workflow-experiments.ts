@@ -10,7 +10,11 @@ import type {
   WorkflowExperiment,
   WorkflowExperimentResponse,
 } from '../../workflows/experiments/interfaces/index.js';
-import { deserializeWorkflowExperiment } from '../../workflows/experiments/interfaces/index.js';
+import {
+  deserializeWorkflowExperiment,
+  serializeExperimentDocumentCaptureRequest,
+  serializeExplicitExperimentDocumentRequest,
+} from '../../workflows/experiments/interfaces/index.js';
 import { ExperimentRunMetrics } from './metrics/experiment-run-metrics.js';
 import { ExperimentRunResults } from './results/experiment-run-results.js';
 import { ExperimentRuns } from './runs/experiment-runs.js';
@@ -61,8 +65,18 @@ export class WorkflowExperiments {
     const body = {
       workflow_id: workflowId,
       block_id: blockId,
-      document_captures: documentCaptures,
-      documents: documents,
+      document_captures:
+        documentCaptures === undefined
+          ? undefined
+          : documentCaptures == null
+            ? documentCaptures
+            : documentCaptures.map((__i) => serializeExperimentDocumentCaptureRequest(__i)),
+      documents:
+        documents === undefined
+          ? undefined
+          : documents == null
+            ? documents
+            : documents.map((__i) => serializeExplicitExperimentDocumentRequest(__i)),
       n_consensus: nConsensus,
       name: name,
       source_experiment_id: sourceExperimentId,
@@ -96,8 +110,18 @@ export class WorkflowExperiments {
     name?: string | null
   ): Promise<WorkflowExperiment> {
     const body = {
-      document_captures: documentCaptures,
-      documents: documents,
+      document_captures:
+        documentCaptures === undefined
+          ? undefined
+          : documentCaptures == null
+            ? documentCaptures
+            : documentCaptures.map((__i) => serializeExperimentDocumentCaptureRequest(__i)),
+      documents:
+        documents === undefined
+          ? undefined
+          : documents == null
+            ? documents
+            : documents.map((__i) => serializeExplicitExperimentDocumentRequest(__i)),
       n_consensus: nConsensus,
       name: name,
     };

@@ -64,3 +64,14 @@ export function deserializeParseRequest(wire: ParseRequestResponse): ParseReques
     bustCache: wire['bust_cache'],
   };
 }
+
+export function serializeParseRequest(domain: ParseRequest): ParseRequestResponse {
+  return {
+    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    model: domain['model'],
+    table_parsing_format: domain['tableParsingFormat'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    instructions: domain['instructions'],
+    bust_cache: domain['bustCache'],
+  };
+}

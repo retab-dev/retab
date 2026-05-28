@@ -37,3 +37,13 @@ export function deserializeVerdictSummary(wire: VerdictSummaryResponse): Verdict
     failedAssertionIds: wire['failed_assertion_ids'],
   };
 }
+
+export function serializeVerdictSummary(domain: VerdictSummary): VerdictSummaryResponse {
+  return {
+    result: domain['result'],
+    assertions_passed: domain['assertionsPassed'],
+    assertions_failed: domain['assertionsFailed'],
+    blocked_assertions: domain['blockedAssertions'],
+    failed_assertion_ids: domain['failedAssertionIds'],
+  };
+}

@@ -29,3 +29,13 @@ export function deserializeExperimentTargetConfusionMetric(
     flowTo: wire['flow_to'],
   };
 }
+
+export function serializeExperimentTargetConfusionMetric(
+  domain: ExperimentTargetConfusionMetric
+): ExperimentTargetConfusionMetricResponse {
+  return {
+    self: domain['self'],
+    flow_from: domain['flowFrom'],
+    flow_to: domain['flowTo'],
+  };
+}

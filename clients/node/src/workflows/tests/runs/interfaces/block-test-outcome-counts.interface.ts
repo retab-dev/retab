@@ -32,3 +32,13 @@ export function deserializeBlockTestOutcomeCounts(
     blocked: wire['blocked'],
   };
 }
+
+export function serializeBlockTestOutcomeCounts(
+  domain: BlockTestOutcomeCounts
+): BlockTestOutcomeCountsResponse {
+  return {
+    passed: domain['passed'],
+    failed: domain['failed'],
+    blocked: domain['blocked'],
+  };
+}

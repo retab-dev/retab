@@ -25,3 +25,12 @@ export function deserializeExperimentDocumentProvenance(
     stepId: wire['step_id'],
   };
 }
+
+export function serializeExperimentDocumentProvenance(
+  domain: ExperimentDocumentProvenance
+): ExperimentDocumentProvenanceResponse {
+  return {
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+  };
+}

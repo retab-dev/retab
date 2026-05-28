@@ -26,3 +26,12 @@ export function deserializeWorkflowTestBlockTarget(
     blockId: wire['block_id'],
   };
 }
+
+export function serializeWorkflowTestBlockTarget(
+  domain: WorkflowTestBlockTarget
+): WorkflowTestBlockTargetResponse {
+  return {
+    type: domain['type'],
+    block_id: domain['blockId'],
+  };
+}

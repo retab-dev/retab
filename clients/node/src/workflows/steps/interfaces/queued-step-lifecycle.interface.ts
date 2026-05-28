@@ -22,3 +22,11 @@ export function deserializeQueuedStepLifecycle(
     status: wire['status'],
   };
 }
+
+export function serializeQueuedStepLifecycle(
+  domain: QueuedStepLifecycle
+): QueuedStepLifecycleResponse {
+  return {
+    status: domain['status'],
+  };
+}

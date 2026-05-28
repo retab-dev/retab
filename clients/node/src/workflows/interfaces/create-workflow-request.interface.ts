@@ -32,3 +32,12 @@ export function deserializeCreateWorkflowRequest(
     description: wire['description'],
   };
 }
+
+export function serializeCreateWorkflowRequest(
+  domain: CreateWorkflowRequest
+): CreateWorkflowRequestResponse {
+  return {
+    name: domain['name'],
+    description: domain['description'],
+  };
+}

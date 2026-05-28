@@ -25,3 +25,10 @@ export function deserializeCancelledTerminal(wire: CancelledTerminalResponse): C
     reason: wire['reason'],
   };
 }
+
+export function serializeCancelledTerminal(domain: CancelledTerminal): CancelledTerminalResponse {
+  return {
+    status: domain['status'],
+    reason: domain['reason'],
+  };
+}

@@ -22,3 +22,11 @@ export function deserializeApproveReviewRequest(
     versionId: wire['version_id'],
   };
 }
+
+export function serializeApproveReviewRequest(
+  domain: ApproveReviewRequest
+): ApproveReviewRequestResponse {
+  return {
+    version_id: domain['versionId'],
+  };
+}

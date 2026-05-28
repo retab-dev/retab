@@ -22,3 +22,11 @@ export function deserializeReviewAnyRequiredFieldNull(
     kind: wire['kind'],
   };
 }
+
+export function serializeReviewAnyRequiredFieldNull(
+  domain: ReviewAnyRequiredFieldNull
+): ReviewAnyRequiredFieldNullResponse {
+  return {
+    kind: domain['kind'],
+  };
+}

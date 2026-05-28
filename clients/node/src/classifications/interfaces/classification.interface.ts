@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { Category, CategoryResponse } from './category.interface.js';
-import { ZCategory, deserializeCategory } from './category.interface.js';
+import { ZCategory, deserializeCategory, serializeCategory } from './category.interface.js';
 import type {
   ClassificationConsensus,
   ClassificationConsensusResponse,
@@ -10,6 +10,7 @@ import type {
 import {
   ZClassificationConsensus,
   deserializeClassificationConsensus,
+  serializeClassificationConsensus,
 } from './classification-consensus.interface.js';
 import type {
   ClassificationDecision,
@@ -18,9 +19,14 @@ import type {
 import {
   ZClassificationDecision,
   deserializeClassificationDecision,
+  serializeClassificationDecision,
 } from './classification-decision.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
@@ -28,6 +34,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../extractions/interfaces/retab-usage.interface.js';
 
 export interface Classification {
@@ -106,5 +113,33 @@ export function deserializeClassification(wire: ClassificationResponse): Classif
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializeClassification(domain: Classification): ClassificationResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    categories: domain['categories'].map((__i) => serializeCategory(__i)),
+    n_consensus: domain['nConsensus'],
+    instructions: domain['instructions'],
+    output: serializeClassificationDecision(domain['output']),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeClassificationConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

@@ -23,3 +23,10 @@ export function deserializeEndsWithCondition(wire: EndsWithConditionResponse): E
     expected: wire['expected'],
   };
 }
+
+export function serializeEndsWithCondition(domain: EndsWithCondition): EndsWithConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

@@ -79,3 +79,20 @@ export function deserializeWorkflowBlockCreateRequest(
     parentId: wire['parent_id'],
   };
 }
+
+export function serializeWorkflowBlockCreateRequest(
+  domain: WorkflowBlockCreateRequest
+): WorkflowBlockCreateRequestResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    id: domain['id'],
+    type: domain['type'],
+    label: domain['label'],
+    position_x: domain['positionX'],
+    position_y: domain['positionY'],
+    width: domain['width'],
+    height: domain['height'],
+    config: domain['config'],
+    parent_id: domain['parentId'],
+  };
+}

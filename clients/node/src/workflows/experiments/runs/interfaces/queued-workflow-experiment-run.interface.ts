@@ -22,3 +22,11 @@ export function deserializeQueuedWorkflowExperimentRun(
     status: wire['status'],
   };
 }
+
+export function serializeQueuedWorkflowExperimentRun(
+  domain: QueuedWorkflowExperimentRun
+): QueuedWorkflowExperimentRunResponse {
+  return {
+    status: domain['status'],
+  };
+}

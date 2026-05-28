@@ -29,3 +29,13 @@ export function deserializeExperimentConfusionFlowMetric(
     score: wire['score'],
   };
 }
+
+export function serializeExperimentConfusionFlowMetric(
+  domain: ExperimentConfusionFlowMetric
+): ExperimentConfusionFlowMetricResponse {
+  return {
+    source: domain['source'],
+    target: domain['target'],
+    score: domain['score'],
+  };
+}

@@ -22,3 +22,11 @@ export function deserializeRunningWorkflowExperimentResult(
     status: wire['status'],
   };
 }
+
+export function serializeRunningWorkflowExperimentResult(
+  domain: RunningWorkflowExperimentResult
+): RunningWorkflowExperimentResultResponse {
+  return {
+    status: domain['status'],
+  };
+}

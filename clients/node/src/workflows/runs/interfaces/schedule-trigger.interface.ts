@@ -25,3 +25,10 @@ export function deserializeScheduleTrigger(wire: ScheduleTriggerResponse): Sched
     scheduleId: wire['schedule_id'],
   };
 }
+
+export function serializeScheduleTrigger(domain: ScheduleTrigger): ScheduleTriggerResponse {
+  return {
+    type: domain['type'],
+    schedule_id: domain['scheduleId'],
+  };
+}

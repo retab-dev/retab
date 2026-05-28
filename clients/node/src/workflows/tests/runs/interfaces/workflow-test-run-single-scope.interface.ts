@@ -25,3 +25,12 @@ export function deserializeWorkflowTestRunSingleScope(
     testId: wire['test_id'],
   };
 }
+
+export function serializeWorkflowTestRunSingleScope(
+  domain: WorkflowTestRunSingleScope
+): WorkflowTestRunSingleScopeResponse {
+  return {
+    type: domain['type'],
+    test_id: domain['testId'],
+  };
+}

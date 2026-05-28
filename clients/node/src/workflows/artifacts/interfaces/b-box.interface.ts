@@ -39,3 +39,13 @@ export function deserializeBBox(wire: BBoxResponse): BBox {
     page: wire['page'],
   };
 }
+
+export function serializeBBox(domain: BBox): BBoxResponse {
+  return {
+    left: domain['left'],
+    top: domain['top'],
+    width: domain['width'],
+    height: domain['height'],
+    page: domain['page'],
+  };
+}

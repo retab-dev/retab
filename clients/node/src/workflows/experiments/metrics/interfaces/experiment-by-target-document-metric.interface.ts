@@ -37,3 +37,15 @@ export function deserializeExperimentByTargetDocumentMetric(
     value: wire['value'],
   };
 }
+
+export function serializeExperimentByTargetDocumentMetric(
+  domain: ExperimentByTargetDocumentMetric
+): ExperimentByTargetDocumentMetricResponse {
+  return {
+    id: domain['id'],
+    filename: domain['filename'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    value: domain['value'],
+  };
+}

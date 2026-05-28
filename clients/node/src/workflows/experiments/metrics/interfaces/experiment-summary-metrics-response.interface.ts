@@ -18,6 +18,7 @@ import type {
 import {
   ZExperimentSummaryMetricDocument,
   deserializeExperimentSummaryMetricDocument,
+  serializeExperimentSummaryMetricDocument,
 } from './experiment-summary-metric-document.interface.js';
 import type { ExperimentSummaryMetricsResponseBlockType } from './experiment-summary-metrics-response-block-type.interface.js';
 import { ZExperimentSummaryMetricsResponseBlockType } from './experiment-summary-metrics-response-block-type.interface.js';
@@ -97,5 +98,33 @@ export function deserializeExperimentSummaryMetricsResponse(
               | ExperimentExtractSummaryAggregate
               | ExperimentConfusionSummaryAggregate),
     priorRunId: wire['prior_run_id'],
+  };
+}
+
+export function serializeExperimentSummaryMetricsResponse(
+  domain: ExperimentSummaryMetricsResponse
+): ExperimentSummaryMetricsResponseResponse {
+  return {
+    experiment_id: domain['experimentId'],
+    run_id: domain['runId'],
+    kind: domain['kind'],
+    view: domain['view'],
+    definition_fingerprint: domain['definitionFingerprint'],
+    block_type: domain['blockType'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    documents:
+      domain['documents'] == null
+        ? (domain['documents'] as undefined)
+        : domain['documents'].map((__i) => serializeExperimentSummaryMetricDocument(__i)),
+    aggregate:
+      domain['aggregate'] == null
+        ? (domain['aggregate'] as undefined)
+        : domain['aggregate'] == null
+          ? domain['aggregate']
+          : (domain['aggregate'] as unknown as
+              | ExperimentExtractSummaryAggregateResponse
+              | ExperimentConfusionSummaryAggregateResponse),
+    prior_run_id: domain['priorRunId'],
   };
 }

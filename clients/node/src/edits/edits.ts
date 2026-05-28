@@ -6,6 +6,7 @@ import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type { Edit, EditResponse } from '../edits/interfaces/index.js';
 import type { EditConfig } from '../workflows/artifacts/interfaces/index.js';
 import { deserializeEdit } from '../edits/interfaces/index.js';
+import { serializeEditConfig } from '../workflows/artifacts/interfaces/index.js';
 import { EditTemplates } from './templates/edit-templates.js';
 
 export class Edits {
@@ -58,7 +59,7 @@ export class Edits {
       document: documentCoerced,
       template_id: templateId,
       model: model,
-      config: config,
+      config: config === undefined ? undefined : serializeEditConfig(config),
       bust_cache: bustCache,
     };
     const __wire = await this.client.request<EditResponse>({

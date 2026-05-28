@@ -8,12 +8,17 @@ import type {
 import {
   ZFormField,
   deserializeFormField,
+  serializeFormField,
 } from '../../../workflows/artifacts/interfaces/form-field.interface.js';
 import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../../schemas/interfaces/mime-data.interface.js';
 
 /** Public create-edit-template request body. */
 export interface CreateEditTemplateRequest {
@@ -44,5 +49,15 @@ export function deserializeCreateEditTemplateRequest(
     name: wire['name'],
     document: deserializeMIMEData(wire['document']),
     formFields: wire['form_fields'].map((__i) => deserializeFormField(__i)),
+  };
+}
+
+export function serializeCreateEditTemplateRequest(
+  domain: CreateEditTemplateRequest
+): CreateEditTemplateRequestResponse {
+  return {
+    name: domain['name'],
+    document: serializeMIMEData(domain['document']),
+    form_fields: domain['formFields'].map((__i) => serializeFormField(__i)),
   };
 }

@@ -8,9 +8,14 @@ import type {
 import {
   ZAssertionSchemaDep,
   deserializeAssertionSchemaDep,
+  serializeAssertionSchemaDep,
 } from './assertion-schema-dep.interface.js';
 import type { AssertionSpec, AssertionSpecResponse } from './assertion-spec.interface.js';
-import { ZAssertionSpec, deserializeAssertionSpec } from './assertion-spec.interface.js';
+import {
+  ZAssertionSpec,
+  deserializeAssertionSpec,
+  serializeAssertionSpec,
+} from './assertion-spec.interface.js';
 import type {
   LatestBlockTestRunSummary,
   LatestBlockTestRunSummaryResponse,
@@ -18,6 +23,7 @@ import type {
 import {
   ZLatestBlockTestRunSummary,
   deserializeLatestBlockTestRunSummary,
+  serializeLatestBlockTestRunSummary,
 } from './latest-block-test-run-summary.interface.js';
 import type {
   ManualWorkflowTestSource,
@@ -26,6 +32,7 @@ import type {
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
+  serializeManualWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
@@ -34,6 +41,7 @@ import type {
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
+  serializeRunStepWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
 import type {
   WorkflowTestBlockTarget,
@@ -42,6 +50,7 @@ import type {
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
+  serializeWorkflowTestBlockTarget,
 } from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
 import type { AssertionDriftStatus } from './assertion-drift-status.interface.js';
 import { ZAssertionDriftStatus } from './assertion-drift-status.interface.js';
@@ -167,5 +176,72 @@ export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTes
       wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
     updatedAt:
       wire['updated_at'] == null ? (wire['updated_at'] as undefined) : new Date(wire['updated_at']),
+  };
+}
+
+export function serializeWorkflowTest(domain: WorkflowTest): WorkflowTestResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    target: serializeWorkflowTestBlockTarget(domain['target']),
+    source:
+      (
+        {
+          manual: () =>
+            serializeManualWorkflowTestSource(domain['source'] as ManualWorkflowTestSource),
+          run_step: () =>
+            serializeRunStepWorkflowTestSource(domain['source'] as RunStepWorkflowTestSource),
+        } as Record<
+          string,
+          () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+        >
+      )[(domain['source'] as unknown as Record<string, string>)['type']]?.() ??
+      (domain['source'] as unknown as
+        | ManualWorkflowTestSourceResponse
+        | RunStepWorkflowTestSourceResponse),
+    name: domain['name'],
+    assertion:
+      domain['assertion'] == null
+        ? (domain['assertion'] as undefined)
+        : domain['assertion'] == null
+          ? domain['assertion']
+          : serializeAssertionSpec(domain['assertion']),
+    assertion_schema_dep:
+      domain['assertionSchemaDep'] == null
+        ? (domain['assertionSchemaDep'] as undefined)
+        : domain['assertionSchemaDep'] == null
+          ? domain['assertionSchemaDep']
+          : serializeAssertionSchemaDep(domain['assertionSchemaDep']),
+    assertion_drift_status: domain['assertionDriftStatus'],
+    schema_drift: domain['schemaDrift'],
+    schema_drift_detail: domain['schemaDriftDetail'],
+    validation_status: domain['validationStatus'],
+    validation_issues: domain['validationIssues'],
+    latest_run_summary:
+      domain['latestRunSummary'] == null
+        ? (domain['latestRunSummary'] as undefined)
+        : domain['latestRunSummary'] == null
+          ? domain['latestRunSummary']
+          : serializeLatestBlockTestRunSummary(domain['latestRunSummary']),
+    latest_passing_run_summary:
+      domain['latestPassingRunSummary'] == null
+        ? (domain['latestPassingRunSummary'] as undefined)
+        : domain['latestPassingRunSummary'] == null
+          ? domain['latestPassingRunSummary']
+          : serializeLatestBlockTestRunSummary(domain['latestPassingRunSummary']),
+    latest_failing_run_summary:
+      domain['latestFailingRunSummary'] == null
+        ? (domain['latestFailingRunSummary'] as undefined)
+        : domain['latestFailingRunSummary'] == null
+          ? domain['latestFailingRunSummary']
+          : serializeLatestBlockTestRunSummary(domain['latestFailingRunSummary']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'].toISOString(),
   };
 }

@@ -26,3 +26,12 @@ export function deserializeReviewAnySplitPagesLt(
     minPages: wire['min_pages'],
   };
 }
+
+export function serializeReviewAnySplitPagesLt(
+  domain: ReviewAnySplitPagesLt
+): ReviewAnySplitPagesLtResponse {
+  return {
+    kind: domain['kind'],
+    min_pages: domain['minPages'],
+  };
+}

@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../schemas/interfaces/mime-data.interface.js';
 
 export interface CreateUploadResponse {
   /** Underlying file ID */
@@ -50,5 +54,18 @@ export function deserializeCreateUploadResponse(
     uploadHeaders: wire['upload_headers'],
     mimeData: deserializeMIMEData(wire['mime_data']),
     expiresAt: new Date(wire['expires_at']),
+  };
+}
+
+export function serializeCreateUploadResponse(
+  domain: CreateUploadResponse
+): CreateUploadResponseResponse {
+  return {
+    file_id: domain['fileId'],
+    upload_url: domain['uploadUrl'],
+    upload_method: domain['uploadMethod'],
+    upload_headers: domain['uploadHeaders'],
+    mime_data: serializeMIMEData(domain['mimeData']),
+    expires_at: domain['expiresAt'].toISOString(),
   };
 }

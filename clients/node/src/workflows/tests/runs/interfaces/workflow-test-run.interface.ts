@@ -8,6 +8,7 @@ import type {
 import {
   ZApiTrigger,
   deserializeApiTrigger,
+  serializeApiTrigger,
 } from '../../../../workflows/runs/interfaces/api-trigger.interface.js';
 import type {
   BlockTestBatchExecutionCounts,
@@ -16,6 +17,7 @@ import type {
 import {
   ZBlockTestBatchExecutionCounts,
   deserializeBlockTestBatchExecutionCounts,
+  serializeBlockTestBatchExecutionCounts,
 } from './block-test-batch-execution-counts.interface.js';
 import type {
   CancelledWorkflowTestRun,
@@ -24,6 +26,7 @@ import type {
 import {
   ZCancelledWorkflowTestRun,
   deserializeCancelledWorkflowTestRun,
+  serializeCancelledWorkflowTestRun,
 } from './cancelled-workflow-test-run.interface.js';
 import type {
   CompletedWorkflowTestRun,
@@ -32,6 +35,7 @@ import type {
 import {
   ZCompletedWorkflowTestRun,
   deserializeCompletedWorkflowTestRun,
+  serializeCompletedWorkflowTestRun,
 } from './completed-workflow-test-run.interface.js';
 import type {
   EmailTrigger,
@@ -40,6 +44,7 @@ import type {
 import {
   ZEmailTrigger,
   deserializeEmailTrigger,
+  serializeEmailTrigger,
 } from '../../../../workflows/runs/interfaces/email-trigger.interface.js';
 import type {
   ErrorWorkflowTestRun,
@@ -48,6 +53,7 @@ import type {
 import {
   ZErrorWorkflowTestRun,
   deserializeErrorWorkflowTestRun,
+  serializeErrorWorkflowTestRun,
 } from './error-workflow-test-run.interface.js';
 import type {
   ManualTrigger,
@@ -56,6 +62,7 @@ import type {
 import {
   ZManualTrigger,
   deserializeManualTrigger,
+  serializeManualTrigger,
 } from '../../../../workflows/runs/interfaces/manual-trigger.interface.js';
 import type {
   PendingWorkflowTestRun,
@@ -64,6 +71,7 @@ import type {
 import {
   ZPendingWorkflowTestRun,
   deserializePendingWorkflowTestRun,
+  serializePendingWorkflowTestRun,
 } from './pending-workflow-test-run.interface.js';
 import type {
   QueuedWorkflowTestRun,
@@ -72,6 +80,7 @@ import type {
 import {
   ZQueuedWorkflowTestRun,
   deserializeQueuedWorkflowTestRun,
+  serializeQueuedWorkflowTestRun,
 } from './queued-workflow-test-run.interface.js';
 import type {
   RestartTrigger,
@@ -80,6 +89,7 @@ import type {
 import {
   ZRestartTrigger,
   deserializeRestartTrigger,
+  serializeRestartTrigger,
 } from '../../../../workflows/runs/interfaces/restart-trigger.interface.js';
 import type {
   RunningWorkflowTestRun,
@@ -88,6 +98,7 @@ import type {
 import {
   ZRunningWorkflowTestRun,
   deserializeRunningWorkflowTestRun,
+  serializeRunningWorkflowTestRun,
 } from './running-workflow-test-run.interface.js';
 import type {
   ScheduleTrigger,
@@ -96,6 +107,7 @@ import type {
 import {
   ZScheduleTrigger,
   deserializeScheduleTrigger,
+  serializeScheduleTrigger,
 } from '../../../../workflows/runs/interfaces/schedule-trigger.interface.js';
 import type {
   WebhookTrigger,
@@ -104,6 +116,7 @@ import type {
 import {
   ZWebhookTrigger,
   deserializeWebhookTrigger,
+  serializeWebhookTrigger,
 } from '../../../../workflows/runs/interfaces/webhook-trigger.interface.js';
 import type {
   WorkflowSnapshotRef,
@@ -112,6 +125,7 @@ import type {
 import {
   ZWorkflowSnapshotRef,
   deserializeWorkflowSnapshotRef,
+  serializeWorkflowSnapshotRef,
 } from '../../../../workflows/runs/interfaces/workflow-snapshot-ref.interface.js';
 import type {
   WorkflowTestBlockTarget,
@@ -120,6 +134,7 @@ import type {
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
+  serializeWorkflowTestBlockTarget,
 } from './workflow-test-block-target.interface.js';
 import type {
   WorkflowTestRunTiming,
@@ -128,6 +143,7 @@ import type {
 import {
   ZWorkflowTestRunTiming,
   deserializeWorkflowTestRunTiming,
+  serializeWorkflowTestRunTiming,
 } from './workflow-test-run-timing.interface.js';
 
 export interface WorkflowTestRun {
@@ -285,5 +301,84 @@ export function deserializeWorkflowTestRun(wire: WorkflowTestRunResponse): Workf
       wire['counts'] == null
         ? (wire['counts'] as undefined)
         : deserializeBlockTestBatchExecutionCounts(wire['counts']),
+  };
+}
+
+export function serializeWorkflowTestRun(domain: WorkflowTestRun): WorkflowTestRunResponse {
+  return {
+    id: domain['id'],
+    workflow: serializeWorkflowSnapshotRef(domain['workflow']),
+    trigger:
+      (
+        {
+          api: () => serializeApiTrigger(domain['trigger'] as ApiTrigger),
+          email: () => serializeEmailTrigger(domain['trigger'] as EmailTrigger),
+          manual: () => serializeManualTrigger(domain['trigger'] as ManualTrigger),
+          restart: () => serializeRestartTrigger(domain['trigger'] as RestartTrigger),
+          schedule: () => serializeScheduleTrigger(domain['trigger'] as ScheduleTrigger),
+          webhook: () => serializeWebhookTrigger(domain['trigger'] as WebhookTrigger),
+        } as Record<
+          string,
+          () =>
+            | ManualTriggerResponse
+            | ApiTriggerResponse
+            | ScheduleTriggerResponse
+            | WebhookTriggerResponse
+            | EmailTriggerResponse
+            | RestartTriggerResponse
+        >
+      )[(domain['trigger'] as unknown as Record<string, string>)['type']]?.() ??
+      (domain['trigger'] as unknown as
+        | ManualTriggerResponse
+        | ApiTriggerResponse
+        | ScheduleTriggerResponse
+        | WebhookTriggerResponse
+        | EmailTriggerResponse
+        | RestartTriggerResponse),
+    lifecycle:
+      (
+        {
+          cancelled: () =>
+            serializeCancelledWorkflowTestRun(domain['lifecycle'] as CancelledWorkflowTestRun),
+          completed: () =>
+            serializeCompletedWorkflowTestRun(domain['lifecycle'] as CompletedWorkflowTestRun),
+          error: () => serializeErrorWorkflowTestRun(domain['lifecycle'] as ErrorWorkflowTestRun),
+          pending: () =>
+            serializePendingWorkflowTestRun(domain['lifecycle'] as PendingWorkflowTestRun),
+          queued: () =>
+            serializeQueuedWorkflowTestRun(domain['lifecycle'] as QueuedWorkflowTestRun),
+          running: () =>
+            serializeRunningWorkflowTestRun(domain['lifecycle'] as RunningWorkflowTestRun),
+        } as Record<
+          string,
+          () =>
+            | PendingWorkflowTestRunResponse
+            | QueuedWorkflowTestRunResponse
+            | RunningWorkflowTestRunResponse
+            | CompletedWorkflowTestRunResponse
+            | ErrorWorkflowTestRunResponse
+            | CancelledWorkflowTestRunResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | PendingWorkflowTestRunResponse
+        | QueuedWorkflowTestRunResponse
+        | RunningWorkflowTestRunResponse
+        | CompletedWorkflowTestRunResponse
+        | ErrorWorkflowTestRunResponse
+        | CancelledWorkflowTestRunResponse),
+    timing: serializeWorkflowTestRunTiming(domain['timing']),
+    target:
+      domain['target'] == null
+        ? (domain['target'] as undefined)
+        : domain['target'] == null
+          ? domain['target']
+          : serializeWorkflowTestBlockTarget(domain['target']),
+    test_id: domain['testId'],
+    total_tests: domain['totalTests'],
+    counts:
+      domain['counts'] == null
+        ? (domain['counts'] as undefined)
+        : serializeBlockTestBatchExecutionCounts(domain['counts']),
   };
 }

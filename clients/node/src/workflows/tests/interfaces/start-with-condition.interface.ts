@@ -25,3 +25,12 @@ export function deserializeStartWithCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeStartWithCondition(
+  domain: StartWithCondition
+): StartWithConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

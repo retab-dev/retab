@@ -34,3 +34,14 @@ export function deserializeCreateReviewVersionRequest(
     note: wire['note'],
   };
 }
+
+export function serializeCreateReviewVersionRequest(
+  domain: CreateReviewVersionRequest
+): CreateReviewVersionRequestResponse {
+  return {
+    review_id: domain['reviewId'],
+    parent_id: domain['parentId'],
+    snapshot: domain['snapshot'],
+    note: domain['note'],
+  };
+}

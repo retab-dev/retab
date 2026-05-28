@@ -27,3 +27,12 @@ export function deserializeReviewJsonCondition(
     condition: wire['condition'],
   };
 }
+
+export function serializeReviewJsonCondition(
+  domain: ReviewJsonCondition
+): ReviewJsonConditionResponse {
+  return {
+    kind: domain['kind'],
+    condition: domain['condition'],
+  };
+}

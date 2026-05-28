@@ -25,3 +25,12 @@ export function deserializeNotEqualsCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeNotEqualsCondition(
+  domain: NotEqualsCondition
+): NotEqualsConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

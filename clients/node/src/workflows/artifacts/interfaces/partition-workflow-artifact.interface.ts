@@ -8,6 +8,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   PartitionChunk,
@@ -16,6 +17,7 @@ import type {
 import {
   ZPartitionChunk,
   deserializePartitionChunk,
+  serializePartitionChunk,
 } from '../../../partitions/interfaces/partition-chunk.interface.js';
 import type {
   PartitionConsensus,
@@ -24,6 +26,7 @@ import type {
 import {
   ZPartitionConsensus,
   deserializePartitionConsensus,
+  serializePartitionConsensus,
 } from '../../../partitions/interfaces/partition-consensus.interface.js';
 import type {
   RetabUsage,
@@ -32,6 +35,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../../extractions/interfaces/retab-usage.interface.js';
 
 export interface PartitionWorkflowArtifact {
@@ -127,5 +131,35 @@ export function deserializePartitionWorkflowArtifact(
           : deserializeRetabUsage(wire['usage']),
     createdAt: new Date(wire['created_at']),
     operation: wire['operation'],
+  };
+}
+
+export function serializePartitionWorkflowArtifact(
+  domain: PartitionWorkflowArtifact
+): PartitionWorkflowArtifactResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    key: domain['key'],
+    instructions: domain['instructions'],
+    n_consensus: domain['nConsensus'],
+    allow_overlap: domain['allowOverlap'],
+    output:
+      domain['output'] == null
+        ? (domain['output'] as undefined)
+        : domain['output'].map((__i) => serializePartitionChunk(__i)),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializePartitionConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at: domain['createdAt'].toISOString(),
+    operation: domain['operation'],
   };
 }

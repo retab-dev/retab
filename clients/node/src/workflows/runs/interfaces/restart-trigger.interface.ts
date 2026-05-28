@@ -25,3 +25,10 @@ export function deserializeRestartTrigger(wire: RestartTriggerResponse): Restart
     parentRunId: wire['parent_run_id'],
   };
 }
+
+export function serializeRestartTrigger(domain: RestartTrigger): RestartTriggerResponse {
+  return {
+    type: domain['type'],
+    parent_run_id: domain['parentRunId'],
+  };
+}

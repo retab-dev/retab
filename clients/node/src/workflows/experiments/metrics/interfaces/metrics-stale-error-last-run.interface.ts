@@ -37,3 +37,19 @@ export function deserialize_MetricsStaleErrorLastRun(
           : new Date(wire['created_at']),
   };
 }
+
+export function serialize_MetricsStaleErrorLastRun(
+  domain: _MetricsStaleErrorLastRun
+): _MetricsStaleErrorLastRunResponse {
+  return {
+    run_id: domain['runId'],
+    definition_fingerprint: domain['definitionFingerprint'],
+    score: domain['score'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
+  };
+}

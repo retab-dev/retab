@@ -2,9 +2,17 @@
 
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../extractions/interfaces/file-ref.interface.js';
 import type { PartitionChunk, PartitionChunkResponse } from './partition-chunk.interface.js';
-import { ZPartitionChunk, deserializePartitionChunk } from './partition-chunk.interface.js';
+import {
+  ZPartitionChunk,
+  deserializePartitionChunk,
+  serializePartitionChunk,
+} from './partition-chunk.interface.js';
 import type {
   PartitionConsensus,
   PartitionConsensusResponse,
@@ -12,6 +20,7 @@ import type {
 import {
   ZPartitionConsensus,
   deserializePartitionConsensus,
+  serializePartitionConsensus,
 } from './partition-consensus.interface.js';
 import type {
   RetabUsage,
@@ -20,6 +29,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../extractions/interfaces/retab-usage.interface.js';
 
 export interface Partition {
@@ -109,5 +119,37 @@ export function deserializePartition(wire: PartitionResponse): Partition {
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializePartition(domain: Partition): PartitionResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    key: domain['key'],
+    instructions: domain['instructions'],
+    n_consensus: domain['nConsensus'],
+    allow_overlap: domain['allowOverlap'],
+    output:
+      domain['output'] == null
+        ? (domain['output'] as undefined)
+        : domain['output'].map((__i) => serializePartitionChunk(__i)),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializePartitionConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

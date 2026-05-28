@@ -30,3 +30,11 @@ export function deserializeActor(wire: ActorResponse): Actor {
     displayName: wire['display_name'],
   };
 }
+
+export function serializeActor(domain: Actor): ActorResponse {
+  return {
+    kind: domain['kind'],
+    id: domain['id'],
+    display_name: domain['displayName'],
+  };
+}

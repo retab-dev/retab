@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { ApiCallAttempt, ApiCallAttemptResponse } from './api-call-attempt.interface.js';
-import { ZApiCallAttempt, deserializeApiCallAttempt } from './api-call-attempt.interface.js';
+import {
+  ZApiCallAttempt,
+  deserializeApiCallAttempt,
+  serializeApiCallAttempt,
+} from './api-call-attempt.interface.js';
 import type {
   ErrorDetails,
   ErrorDetailsResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../workflows/runs/interfaces/error-details.interface.js';
 
 export interface ApiCallInvocation {
@@ -64,5 +69,25 @@ export function deserializeApiCallInvocation(wire: ApiCallInvocationResponse): A
           ? wire['error']
           : deserializeErrorDetails(wire['error']),
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeApiCallInvocation(domain: ApiCallInvocation): ApiCallInvocationResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+    attempts:
+      domain['attempts'] == null
+        ? (domain['attempts'] as undefined)
+        : domain['attempts'].map((__i) => serializeApiCallAttempt(__i)),
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializeErrorDetails(domain['error']),
+    created_at: domain['createdAt'].toISOString(),
   };
 }

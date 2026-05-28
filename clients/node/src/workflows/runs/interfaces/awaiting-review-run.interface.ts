@@ -25,3 +25,10 @@ export function deserializeAwaitingReviewRun(wire: AwaitingReviewRunResponse): A
     waitingForBlockIds: wire['waiting_for_block_ids'],
   };
 }
+
+export function serializeAwaitingReviewRun(domain: AwaitingReviewRun): AwaitingReviewRunResponse {
+  return {
+    status: domain['status'],
+    waiting_for_block_ids: domain['waitingForBlockIds'],
+  };
+}

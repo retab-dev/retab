@@ -8,6 +8,7 @@ import type {
 import {
   ZCancelledWorkflowExperimentRun,
   deserializeCancelledWorkflowExperimentRun,
+  serializeCancelledWorkflowExperimentRun,
 } from './cancelled-workflow-experiment-run.interface.js';
 import type {
   CompletedWorkflowExperimentRun,
@@ -16,6 +17,7 @@ import type {
 import {
   ZCompletedWorkflowExperimentRun,
   deserializeCompletedWorkflowExperimentRun,
+  serializeCompletedWorkflowExperimentRun,
 } from './completed-workflow-experiment-run.interface.js';
 import type {
   ErrorWorkflowExperimentRun,
@@ -24,6 +26,7 @@ import type {
 import {
   ZErrorWorkflowExperimentRun,
   deserializeErrorWorkflowExperimentRun,
+  serializeErrorWorkflowExperimentRun,
 } from './error-workflow-experiment-run.interface.js';
 import type {
   PendingWorkflowExperimentRun,
@@ -32,6 +35,7 @@ import type {
 import {
   ZPendingWorkflowExperimentRun,
   deserializePendingWorkflowExperimentRun,
+  serializePendingWorkflowExperimentRun,
 } from './pending-workflow-experiment-run.interface.js';
 import type {
   QueuedWorkflowExperimentRun,
@@ -40,6 +44,7 @@ import type {
 import {
   ZQueuedWorkflowExperimentRun,
   deserializeQueuedWorkflowExperimentRun,
+  serializeQueuedWorkflowExperimentRun,
 } from './queued-workflow-experiment-run.interface.js';
 import type {
   RunningWorkflowExperimentRun,
@@ -48,6 +53,7 @@ import type {
 import {
   ZRunningWorkflowExperimentRun,
   deserializeRunningWorkflowExperimentRun,
+  serializeRunningWorkflowExperimentRun,
 } from './running-workflow-experiment-run.interface.js';
 
 export interface CancelWorkflowExperimentRunResponse {
@@ -134,5 +140,56 @@ export function deserializeCancelWorkflowExperimentRunResponse(
         | CompletedWorkflowExperimentRun
         | ErrorWorkflowExperimentRun
         | CancelledWorkflowExperimentRun),
+  };
+}
+
+export function serializeCancelWorkflowExperimentRunResponse(
+  domain: CancelWorkflowExperimentRunResponse
+): CancelWorkflowExperimentRunResponseResponse {
+  return {
+    id: domain['id'],
+    lifecycle:
+      (
+        {
+          cancelled: () =>
+            serializeCancelledWorkflowExperimentRun(
+              domain['lifecycle'] as CancelledWorkflowExperimentRun
+            ),
+          completed: () =>
+            serializeCompletedWorkflowExperimentRun(
+              domain['lifecycle'] as CompletedWorkflowExperimentRun
+            ),
+          error: () =>
+            serializeErrorWorkflowExperimentRun(domain['lifecycle'] as ErrorWorkflowExperimentRun),
+          pending: () =>
+            serializePendingWorkflowExperimentRun(
+              domain['lifecycle'] as PendingWorkflowExperimentRun
+            ),
+          queued: () =>
+            serializeQueuedWorkflowExperimentRun(
+              domain['lifecycle'] as QueuedWorkflowExperimentRun
+            ),
+          running: () =>
+            serializeRunningWorkflowExperimentRun(
+              domain['lifecycle'] as RunningWorkflowExperimentRun
+            ),
+        } as Record<
+          string,
+          () =>
+            | PendingWorkflowExperimentRunResponse
+            | QueuedWorkflowExperimentRunResponse
+            | RunningWorkflowExperimentRunResponse
+            | CompletedWorkflowExperimentRunResponse
+            | ErrorWorkflowExperimentRunResponse
+            | CancelledWorkflowExperimentRunResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | PendingWorkflowExperimentRunResponse
+        | QueuedWorkflowExperimentRunResponse
+        | RunningWorkflowExperimentRunResponse
+        | CompletedWorkflowExperimentRunResponse
+        | ErrorWorkflowExperimentRunResponse
+        | CancelledWorkflowExperimentRunResponse),
   };
 }

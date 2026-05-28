@@ -30,3 +30,11 @@ export function deserializeFileRef(wire: FileRefResponse): FileRef {
     mimeType: wire['mime_type'],
   };
 }
+
+export function serializeFileRef(domain: FileRef): FileRefResponse {
+  return {
+    id: domain['id'],
+    filename: domain['filename'],
+    mime_type: domain['mimeType'],
+  };
+}

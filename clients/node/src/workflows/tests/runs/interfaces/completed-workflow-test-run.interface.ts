@@ -22,3 +22,11 @@ export function deserializeCompletedWorkflowTestRun(
     status: wire['status'],
   };
 }
+
+export function serializeCompletedWorkflowTestRun(
+  domain: CompletedWorkflowTestRun
+): CompletedWorkflowTestRunResponse {
+  return {
+    status: domain['status'],
+  };
+}

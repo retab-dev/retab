@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { ErrorDetails, ErrorDetailsResponse } from './error-details.interface.js';
-import { ZErrorDetails, deserializeErrorDetails } from './error-details.interface.js';
+import {
+  ZErrorDetails,
+  deserializeErrorDetails,
+  serializeErrorDetails,
+} from './error-details.interface.js';
 import type { ErrorTerminalCategory } from './error-terminal-category.interface.js';
 import { ZErrorTerminalCategory } from './error-terminal-category.interface.js';
 import type { ErrorTerminalStage } from './error-terminal-stage.interface.js';
@@ -55,5 +59,21 @@ export function deserializeErrorTerminal(wire: ErrorTerminalResponse): ErrorTerm
           ? wire['details']
           : deserializeErrorDetails(wire['details']),
     failingStepId: wire['failing_step_id'],
+  };
+}
+
+export function serializeErrorTerminal(domain: ErrorTerminal): ErrorTerminalResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+    stage: domain['stage'],
+    category: domain['category'],
+    details:
+      domain['details'] == null
+        ? (domain['details'] as undefined)
+        : domain['details'] == null
+          ? domain['details']
+          : serializeErrorDetails(domain['details']),
+    failing_step_id: domain['failingStepId'],
   };
 }

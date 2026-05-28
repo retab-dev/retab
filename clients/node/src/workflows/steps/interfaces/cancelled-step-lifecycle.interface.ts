@@ -27,3 +27,12 @@ export function deserializeCancelledStepLifecycle(
     reason: wire['reason'],
   };
 }
+
+export function serializeCancelledStepLifecycle(
+  domain: CancelledStepLifecycle
+): CancelledStepLifecycleResponse {
+  return {
+    status: domain['status'],
+    reason: domain['reason'],
+  };
+}

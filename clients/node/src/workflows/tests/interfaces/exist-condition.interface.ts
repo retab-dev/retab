@@ -19,3 +19,9 @@ export function deserializeExistCondition(wire: ExistConditionResponse): ExistCo
     kind: wire['kind'],
   };
 }
+
+export function serializeExistCondition(domain: ExistCondition): ExistConditionResponse {
+  return {
+    kind: domain['kind'],
+  };
+}

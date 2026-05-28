@@ -32,3 +32,11 @@ export function deserializeCategory(wire: CategoryResponse): Category {
     description: wire['description'],
   };
 }
+
+export function serializeCategory(domain: Category): CategoryResponse {
+  return {
+    name: domain['name'],
+    handle_key: domain['handleKey'],
+    description: domain['description'],
+  };
+}

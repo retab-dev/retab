@@ -59,3 +59,22 @@ export function deserializeCreateWorkflowRunRequest(
     version: wire['version'],
   };
 }
+
+export function serializeCreateWorkflowRunRequest(
+  domain: CreateWorkflowRunRequest
+): CreateWorkflowRunRequestResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    documents:
+      domain['documents'] == null
+        ? (domain['documents'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['documents']).map(([__k, __v]) => [
+              __k,
+              __v as unknown as FileRefResponse | MIMEDataResponse,
+            ])
+          ),
+    json_inputs: domain['jsonInputs'],
+    version: domain['version'],
+  };
+}

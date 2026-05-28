@@ -27,3 +27,12 @@ export function deserializeRejectReviewRequest(
     reason: wire['reason'],
   };
 }
+
+export function serializeRejectReviewRequest(
+  domain: RejectReviewRequest
+): RejectReviewRequestResponse {
+  return {
+    version_id: domain['versionId'],
+    reason: domain['reason'],
+  };
+}

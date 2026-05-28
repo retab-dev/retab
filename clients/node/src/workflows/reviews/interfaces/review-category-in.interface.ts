@@ -24,3 +24,10 @@ export function deserializeReviewCategoryIn(wire: ReviewCategoryInResponse): Rev
     categories: wire['categories'],
   };
 }
+
+export function serializeReviewCategoryIn(domain: ReviewCategoryIn): ReviewCategoryInResponse {
+  return {
+    kind: domain['kind'],
+    categories: domain['categories'],
+  };
+}

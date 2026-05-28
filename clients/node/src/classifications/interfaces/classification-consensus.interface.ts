@@ -8,6 +8,7 @@ import type {
 import {
   ZClassificationDecision,
   deserializeClassificationDecision,
+  serializeClassificationDecision,
 } from './classification-decision.interface.js';
 
 export interface ClassificationConsensus {
@@ -39,5 +40,17 @@ export function deserializeClassificationConsensus(
         ? (wire['choices'] as undefined)
         : wire['choices'].map((__i) => deserializeClassificationDecision(__i)),
     likelihoods: wire['likelihoods'],
+  };
+}
+
+export function serializeClassificationConsensus(
+  domain: ClassificationConsensus
+): ClassificationConsensusResponse {
+  return {
+    choices:
+      domain['choices'] == null
+        ? (domain['choices'] as undefined)
+        : domain['choices'].map((__i) => serializeClassificationDecision(__i)),
+    likelihoods: domain['likelihoods'],
   };
 }

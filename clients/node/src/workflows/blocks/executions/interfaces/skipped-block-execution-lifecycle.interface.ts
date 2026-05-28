@@ -27,3 +27,12 @@ export function deserializeSkippedBlockExecutionLifecycle(
     reason: wire['reason'],
   };
 }
+
+export function serializeSkippedBlockExecutionLifecycle(
+  domain: SkippedBlockExecutionLifecycle
+): SkippedBlockExecutionLifecycleResponse {
+  return {
+    status: domain['status'],
+    reason: domain['reason'],
+  };
+}

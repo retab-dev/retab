@@ -33,3 +33,14 @@ export function deserializeExperimentByDocumentTargetMetric(
     value: wire['value'],
   };
 }
+
+export function serializeExperimentByDocumentTargetMetric(
+  domain: ExperimentByDocumentTargetMetric
+): ExperimentByDocumentTargetMetricResponse {
+  return {
+    path: domain['path'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    value: domain['value'],
+  };
+}

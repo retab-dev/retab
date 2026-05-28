@@ -22,3 +22,11 @@ export function deserializeReviewValidationFailed(
     kind: wire['kind'],
   };
 }
+
+export function serializeReviewValidationFailed(
+  domain: ReviewValidationFailed
+): ReviewValidationFailedResponse {
+  return {
+    kind: domain['kind'],
+  };
+}

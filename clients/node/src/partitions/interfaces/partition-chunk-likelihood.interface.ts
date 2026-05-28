@@ -26,3 +26,12 @@ export function deserializePartitionChunkLikelihood(
     pages: wire['pages'],
   };
 }
+
+export function serializePartitionChunkLikelihood(
+  domain: PartitionChunkLikelihood
+): PartitionChunkLikelihoodResponse {
+  return {
+    key: domain['key'],
+    pages: domain['pages'],
+  };
+}

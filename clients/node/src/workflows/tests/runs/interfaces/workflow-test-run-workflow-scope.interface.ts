@@ -21,3 +21,11 @@ export function deserializeWorkflowTestRunWorkflowScope(
     type: wire['type'],
   };
 }
+
+export function serializeWorkflowTestRunWorkflowScope(
+  domain: WorkflowTestRunWorkflowScope
+): WorkflowTestRunWorkflowScopeResponse {
+  return {
+    type: domain['type'],
+  };
+}

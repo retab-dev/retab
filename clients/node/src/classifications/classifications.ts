@@ -8,7 +8,10 @@ import type {
   Classification,
   ClassificationResponse,
 } from '../classifications/interfaces/index.js';
-import { deserializeClassification } from '../classifications/interfaces/index.js';
+import {
+  deserializeClassification,
+  serializeCategory,
+} from '../classifications/interfaces/index.js';
 
 export class Classifications {
   constructor(private readonly client: Retab) {}
@@ -52,7 +55,7 @@ export class Classifications {
     const documentCoerced = await coerceMimeData(document);
     const body = {
       document: documentCoerced,
-      categories: categories,
+      categories: categories.map((__i) => serializeCategory(__i)),
       model: model,
       first_n_pages: firstNPages,
       instructions: instructions,

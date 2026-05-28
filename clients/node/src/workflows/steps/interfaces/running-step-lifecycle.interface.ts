@@ -22,3 +22,11 @@ export function deserializeRunningStepLifecycle(
     status: wire['status'],
   };
 }
+
+export function serializeRunningStepLifecycle(
+  domain: RunningStepLifecycle
+): RunningStepLifecycleResponse {
+  return {
+    status: domain['status'],
+  };
+}

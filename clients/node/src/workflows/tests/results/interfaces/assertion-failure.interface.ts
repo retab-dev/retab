@@ -26,3 +26,11 @@ export function deserializeAssertionFailure(wire: AssertionFailureResponse): Ass
     details: wire['details'],
   };
 }
+
+export function serializeAssertionFailure(domain: AssertionFailure): AssertionFailureResponse {
+  return {
+    code: domain['code'],
+    message: domain['message'],
+    details: domain['details'],
+  };
+}

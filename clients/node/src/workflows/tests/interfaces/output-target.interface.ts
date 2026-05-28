@@ -23,3 +23,10 @@ export function deserializeOutputTarget(wire: OutputTargetResponse): OutputTarge
     path: wire['path'],
   };
 }
+
+export function serializeOutputTarget(domain: OutputTarget): OutputTargetResponse {
+  return {
+    output_handle_id: domain['outputHandleId'],
+    path: domain['path'],
+  };
+}

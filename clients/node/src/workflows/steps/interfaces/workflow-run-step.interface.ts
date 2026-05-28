@@ -8,6 +8,7 @@ import type {
 import {
   ZAwaitingReviewStepLifecycle,
   deserializeAwaitingReviewStepLifecycle,
+  serializeAwaitingReviewStepLifecycle,
 } from './awaiting-review-step-lifecycle.interface.js';
 import type {
   CancelledStepLifecycle,
@@ -16,6 +17,7 @@ import type {
 import {
   ZCancelledStepLifecycle,
   deserializeCancelledStepLifecycle,
+  serializeCancelledStepLifecycle,
 } from './cancelled-step-lifecycle.interface.js';
 import type {
   CompletedStepLifecycle,
@@ -24,6 +26,7 @@ import type {
 import {
   ZCompletedStepLifecycle,
   deserializeCompletedStepLifecycle,
+  serializeCompletedStepLifecycle,
 } from './completed-step-lifecycle.interface.js';
 import type {
   ContainerContextData,
@@ -32,6 +35,7 @@ import type {
 import {
   ZContainerContextData,
   deserializeContainerContextData,
+  serializeContainerContextData,
 } from './container-context-data.interface.js';
 import type {
   ErrorStepLifecycle,
@@ -40,6 +44,7 @@ import type {
 import {
   ZErrorStepLifecycle,
   deserializeErrorStepLifecycle,
+  serializeErrorStepLifecycle,
 } from './error-step-lifecycle.interface.js';
 import type {
   PendingStepLifecycle,
@@ -48,6 +53,7 @@ import type {
 import {
   ZPendingStepLifecycle,
   deserializePendingStepLifecycle,
+  serializePendingStepLifecycle,
 } from './pending-step-lifecycle.interface.js';
 import type {
   PublicHandlePayload,
@@ -56,6 +62,7 @@ import type {
 import {
   ZPublicHandlePayload,
   deserializePublicHandlePayload,
+  serializePublicHandlePayload,
 } from './public-handle-payload.interface.js';
 import type {
   QueuedStepLifecycle,
@@ -64,6 +71,7 @@ import type {
 import {
   ZQueuedStepLifecycle,
   deserializeQueuedStepLifecycle,
+  serializeQueuedStepLifecycle,
 } from './queued-step-lifecycle.interface.js';
 import type {
   RunningStepLifecycle,
@@ -72,6 +80,7 @@ import type {
 import {
   ZRunningStepLifecycle,
   deserializeRunningStepLifecycle,
+  serializeRunningStepLifecycle,
 } from './running-step-lifecycle.interface.js';
 import type {
   SkippedStepLifecycle,
@@ -80,9 +89,14 @@ import type {
 import {
   ZSkippedStepLifecycle,
   deserializeSkippedStepLifecycle,
+  serializeSkippedStepLifecycle,
 } from './skipped-step-lifecycle.interface.js';
 import type { StepArtifactRef, StepArtifactRefResponse } from './step-artifact-ref.interface.js';
-import { ZStepArtifactRef, deserializeStepArtifactRef } from './step-artifact-ref.interface.js';
+import {
+  ZStepArtifactRef,
+  deserializeStepArtifactRef,
+  serializeStepArtifactRef,
+} from './step-artifact-ref.interface.js';
 import type { WorkflowRunStepBlockType } from './workflow-run-step-block-type.interface.js';
 import { ZWorkflowRunStepBlockType } from './workflow-run-step-block-type.interface.js';
 
@@ -282,5 +296,101 @@ export function deserializeWorkflowRunStep(wire: WorkflowRunStepResponse): Workf
           ? wire['artifact']
           : deserializeStepArtifactRef(wire['artifact']),
     retryCount: wire['retry_count'],
+  };
+}
+
+export function serializeWorkflowRunStep(domain: WorkflowRunStep): WorkflowRunStepResponse {
+  return {
+    block_id: domain['blockId'],
+    step_id: domain['stepId'],
+    block_type: domain['blockType'],
+    block_label: domain['blockLabel'],
+    lifecycle:
+      (
+        {
+          awaiting_review: () =>
+            serializeAwaitingReviewStepLifecycle(
+              domain['lifecycle'] as AwaitingReviewStepLifecycle
+            ),
+          cancelled: () =>
+            serializeCancelledStepLifecycle(domain['lifecycle'] as CancelledStepLifecycle),
+          completed: () =>
+            serializeCompletedStepLifecycle(domain['lifecycle'] as CompletedStepLifecycle),
+          error: () => serializeErrorStepLifecycle(domain['lifecycle'] as ErrorStepLifecycle),
+          pending: () => serializePendingStepLifecycle(domain['lifecycle'] as PendingStepLifecycle),
+          queued: () => serializeQueuedStepLifecycle(domain['lifecycle'] as QueuedStepLifecycle),
+          running: () => serializeRunningStepLifecycle(domain['lifecycle'] as RunningStepLifecycle),
+          skipped: () => serializeSkippedStepLifecycle(domain['lifecycle'] as SkippedStepLifecycle),
+        } as Record<
+          string,
+          () =>
+            | PendingStepLifecycleResponse
+            | QueuedStepLifecycleResponse
+            | RunningStepLifecycleResponse
+            | CompletedStepLifecycleResponse
+            | AwaitingReviewStepLifecycleResponse
+            | ErrorStepLifecycleResponse
+            | SkippedStepLifecycleResponse
+            | CancelledStepLifecycleResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | PendingStepLifecycleResponse
+        | QueuedStepLifecycleResponse
+        | RunningStepLifecycleResponse
+        | CompletedStepLifecycleResponse
+        | AwaitingReviewStepLifecycleResponse
+        | ErrorStepLifecycleResponse
+        | SkippedStepLifecycleResponse
+        | CancelledStepLifecycleResponse),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    model: domain['model'],
+    loop_containers:
+      domain['loopContainers'] == null
+        ? (domain['loopContainers'] as undefined)
+        : domain['loopContainers'].map((__i) => serializeContainerContextData(__i)),
+    run_id: domain['runId'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
+    handle_inputs:
+      domain['handleInputs'] == null
+        ? (domain['handleInputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+              __k,
+              serializePublicHandlePayload(__v),
+            ])
+          ),
+    handle_outputs:
+      domain['handleOutputs'] == null
+        ? (domain['handleOutputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleOutputs']).map(([__k, __v]) => [
+              __k,
+              serializePublicHandlePayload(__v),
+            ])
+          ),
+    artifact:
+      domain['artifact'] == null
+        ? (domain['artifact'] as undefined)
+        : domain['artifact'] == null
+          ? domain['artifact']
+          : serializeStepArtifactRef(domain['artifact']),
+    retry_count: domain['retryCount'],
   };
 }

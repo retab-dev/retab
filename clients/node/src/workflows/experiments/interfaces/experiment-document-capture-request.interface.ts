@@ -25,3 +25,12 @@ export function deserializeExperimentDocumentCaptureRequest(
     stepId: wire['step_id'],
   };
 }
+
+export function serializeExperimentDocumentCaptureRequest(
+  domain: ExperimentDocumentCaptureRequest
+): ExperimentDocumentCaptureRequestResponse {
+  return {
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+  };
+}

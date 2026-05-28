@@ -24,3 +24,10 @@ export function deserializeParseOutput(wire: ParseOutputResponse): ParseOutput {
     text: wire['text'],
   };
 }
+
+export function serializeParseOutput(domain: ParseOutput): ParseOutputResponse {
+  return {
+    pages: domain['pages'],
+    text: domain['text'],
+  };
+}

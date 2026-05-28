@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { BBox, BBoxResponse } from './b-box.interface.js';
-import { ZBBox, deserializeBBox } from './b-box.interface.js';
+import { ZBBox, deserializeBBox, serializeBBox } from './b-box.interface.js';
 import type { FieldType } from './field-type.interface.js';
 import { ZFieldType } from './field-type.interface.js';
 
@@ -42,5 +42,15 @@ export function deserializeFormField(wire: FormFieldResponse): FormField {
     type: wire['type'],
     key: wire['key'],
     value: wire['value'],
+  };
+}
+
+export function serializeFormField(domain: FormField): FormFieldResponse {
+  return {
+    bbox: serializeBBox(domain['bbox']),
+    description: domain['description'],
+    type: domain['type'],
+    key: domain['key'],
+    value: domain['value'],
   };
 }

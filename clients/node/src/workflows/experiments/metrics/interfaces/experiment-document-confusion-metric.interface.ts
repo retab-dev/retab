@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentConfusionFlowMetric,
   deserializeExperimentConfusionFlowMetric,
+  serializeExperimentConfusionFlowMetric,
 } from './experiment-confusion-flow-metric.interface.js';
 
 /** Document-local confusion summary for split/classifier blocks. */
@@ -35,5 +36,17 @@ export function deserializeExperimentDocumentConfusionMetric(
       wire['flows'] == null
         ? (wire['flows'] as undefined)
         : wire['flows'].map((__i) => deserializeExperimentConfusionFlowMetric(__i)),
+  };
+}
+
+export function serializeExperimentDocumentConfusionMetric(
+  domain: ExperimentDocumentConfusionMetric
+): ExperimentDocumentConfusionMetricResponse {
+  return {
+    diag: domain['diag'],
+    flows:
+      domain['flows'] == null
+        ? (domain['flows'] as undefined)
+        : domain['flows'].map((__i) => serializeExperimentConfusionFlowMetric(__i)),
   };
 }

@@ -2,11 +2,19 @@
 
 import { z } from 'zod';
 import type { JobError, JobErrorResponse } from './job-error.interface.js';
-import { ZJobError, deserializeJobError } from './job-error.interface.js';
+import { ZJobError, deserializeJobError, serializeJobError } from './job-error.interface.js';
 import type { JobResponse, JobResponseResponse } from './job-response.interface.js';
-import { ZJobResponse, deserializeJobResponse } from './job-response.interface.js';
+import {
+  ZJobResponse,
+  deserializeJobResponse,
+  serializeJobResponse,
+} from './job-response.interface.js';
 import type { JobWarning, JobWarningResponse } from './job-warning.interface.js';
-import { ZJobWarning, deserializeJobWarning } from './job-warning.interface.js';
+import {
+  ZJobWarning,
+  deserializeJobWarning,
+  serializeJobWarning,
+} from './job-warning.interface.js';
 import type { JobStatus } from './job-status.interface.js';
 import { ZJobStatus } from './job-status.interface.js';
 import type { SupportedEndpoint } from './supported-endpoint.interface.js';
@@ -111,5 +119,42 @@ export function deserializeJob(wire: JobWire): Job {
         : wire['response'] == null
           ? wire['response']
           : deserializeJobResponse(wire['response']),
+  };
+}
+
+export function serializeJob(domain: Job): JobWire {
+  return {
+    id: domain['id'],
+    object: domain['object'],
+    status: domain['status'],
+    endpoint: domain['endpoint'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializeJobError(domain['error']),
+    warnings:
+      domain['warnings'] == null
+        ? (domain['warnings'] as undefined)
+        : domain['warnings'] == null
+          ? domain['warnings']
+          : domain['warnings'].map((__i) => serializeJobWarning(__i)),
+    created_at: domain['createdAt'],
+    started_at: domain['startedAt'],
+    completed_at: domain['completedAt'],
+    expires_at: domain['expiresAt'],
+    metadata: domain['metadata'],
+    cancelled: domain['cancelled'],
+    attempt_count: domain['attemptCount'],
+    last_attempt_at: domain['lastAttemptAt'],
+    last_failure_code: domain['lastFailureCode'],
+    request: domain['request'],
+    response:
+      domain['response'] == null
+        ? (domain['response'] as undefined)
+        : domain['response'] == null
+          ? domain['response']
+          : serializeJobResponse(domain['response']),
   };
 }

@@ -36,3 +36,15 @@ export function deserializeDeclarativeValidationResponse(
     diagnostics: wire['diagnostics'],
   };
 }
+
+export function serializeDeclarativeValidationResponse(
+  domain: DeclarativeValidationResponse
+): DeclarativeValidationResponseResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    block_count: domain['blockCount'],
+    edge_count: domain['edgeCount'],
+    is_valid: domain['isValid'],
+    diagnostics: domain['diagnostics'],
+  };
+}

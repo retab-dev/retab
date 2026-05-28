@@ -33,3 +33,14 @@ export function deserializeExperimentSummaryMetricDocument(
     priorScore: wire['prior_score'],
   };
 }
+
+export function serializeExperimentSummaryMetricDocument(
+  domain: ExperimentSummaryMetricDocument
+): ExperimentSummaryMetricDocumentResponse {
+  return {
+    id: domain['id'],
+    filename: domain['filename'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+  };
+}

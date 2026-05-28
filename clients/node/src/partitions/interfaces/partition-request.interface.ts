@@ -67,3 +67,15 @@ export function deserializePartitionRequest(wire: PartitionRequestResponse): Par
     bustCache: wire['bust_cache'],
   };
 }
+
+export function serializePartitionRequest(domain: PartitionRequest): PartitionRequestResponse {
+  return {
+    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    key: domain['key'],
+    instructions: domain['instructions'],
+    model: domain['model'],
+    n_consensus: domain['nConsensus'],
+    allow_overlap: domain['allowOverlap'],
+    bust_cache: domain['bustCache'],
+  };
+}

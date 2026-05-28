@@ -33,3 +33,12 @@ export function deserializePartialSchema(wire: PartialSchemaResponse): PartialSc
     strict: wire['strict'],
   };
 }
+
+export function serializePartialSchema(domain: PartialSchema): PartialSchemaResponse {
+  return {
+    object: domain['object'],
+    created_at: domain['createdAt'],
+    json_schema: domain['jsonSchema'],
+    strict: domain['strict'],
+  };
+}

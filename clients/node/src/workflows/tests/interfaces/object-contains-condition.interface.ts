@@ -25,3 +25,12 @@ export function deserializeObjectContainsCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeObjectContainsCondition(
+  domain: ObjectContainsCondition
+): ObjectContainsConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

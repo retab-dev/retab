@@ -8,6 +8,7 @@ import type {
 import {
   ZCategory,
   deserializeCategory,
+  serializeCategory,
 } from '../../../classifications/interfaces/category.interface.js';
 import type {
   ClassificationConsensus,
@@ -16,6 +17,7 @@ import type {
 import {
   ZClassificationConsensus,
   deserializeClassificationConsensus,
+  serializeClassificationConsensus,
 } from '../../../classifications/interfaces/classification-consensus.interface.js';
 import type {
   ClassificationDecision,
@@ -24,6 +26,7 @@ import type {
 import {
   ZClassificationDecision,
   deserializeClassificationDecision,
+  serializeClassificationDecision,
 } from '../../../classifications/interfaces/classification-decision.interface.js';
 import type {
   FileRef,
@@ -32,6 +35,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
@@ -40,6 +44,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../../extractions/interfaces/retab-usage.interface.js';
 
 export interface ClassificationWorkflowArtifact {
@@ -124,5 +129,31 @@ export function deserializeClassificationWorkflowArtifact(
           : deserializeRetabUsage(wire['usage']),
     createdAt: new Date(wire['created_at']),
     operation: wire['operation'],
+  };
+}
+
+export function serializeClassificationWorkflowArtifact(
+  domain: ClassificationWorkflowArtifact
+): ClassificationWorkflowArtifactResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    categories: domain['categories'].map((__i) => serializeCategory(__i)),
+    n_consensus: domain['nConsensus'],
+    instructions: domain['instructions'],
+    output: serializeClassificationDecision(domain['output']),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeClassificationConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at: domain['createdAt'].toISOString(),
+    operation: domain['operation'],
   };
 }

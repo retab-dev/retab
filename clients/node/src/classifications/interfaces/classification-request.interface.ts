@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { Category, CategoryResponse } from './category.interface.js';
-import { ZCategory, deserializeCategory } from './category.interface.js';
+import { ZCategory, deserializeCategory, serializeCategory } from './category.interface.js';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
 import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
 import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
@@ -66,5 +66,19 @@ export function deserializeClassificationRequest(
     instructions: wire['instructions'],
     nConsensus: wire['n_consensus'],
     bustCache: wire['bust_cache'],
+  };
+}
+
+export function serializeClassificationRequest(
+  domain: ClassificationRequest
+): ClassificationRequestResponse {
+  return {
+    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    categories: domain['categories'].map((__i) => serializeCategory(__i)),
+    model: domain['model'],
+    first_n_pages: domain['firstNPages'],
+    instructions: domain['instructions'],
+    n_consensus: domain['nConsensus'],
+    bust_cache: domain['bustCache'],
   };
 }

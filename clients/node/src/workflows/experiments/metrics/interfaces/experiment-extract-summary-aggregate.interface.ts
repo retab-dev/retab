@@ -21,3 +21,11 @@ export function deserializeExperimentExtractSummaryAggregate(
     likelihoods: wire['likelihoods'],
   };
 }
+
+export function serializeExperimentExtractSummaryAggregate(
+  domain: ExperimentExtractSummaryAggregate
+): ExperimentExtractSummaryAggregateResponse {
+  return {
+    likelihoods: domain['likelihoods'],
+  };
+}

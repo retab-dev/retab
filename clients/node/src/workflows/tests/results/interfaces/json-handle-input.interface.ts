@@ -24,3 +24,10 @@ export function deserializeJsonHandleInput(wire: JsonHandleInputResponse): JsonH
     data: wire['data'],
   };
 }
+
+export function serializeJsonHandleInput(domain: JsonHandleInput): JsonHandleInputResponse {
+  return {
+    type: domain['type'],
+    data: domain['data'],
+  };
+}

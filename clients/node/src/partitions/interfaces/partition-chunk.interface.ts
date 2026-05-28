@@ -24,3 +24,10 @@ export function deserializePartitionChunk(wire: PartitionChunkResponse): Partiti
     pages: wire['pages'],
   };
 }
+
+export function serializePartitionChunk(domain: PartitionChunk): PartitionChunkResponse {
+  return {
+    key: domain['key'],
+    pages: domain['pages'],
+  };
+}

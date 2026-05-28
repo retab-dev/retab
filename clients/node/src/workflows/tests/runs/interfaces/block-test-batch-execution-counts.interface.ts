@@ -8,6 +8,7 @@ import type {
 import {
   ZBlockTestLifecycleCounts,
   deserializeBlockTestLifecycleCounts,
+  serializeBlockTestLifecycleCounts,
 } from './block-test-lifecycle-counts.interface.js';
 import type {
   BlockTestOutcomeCounts,
@@ -16,6 +17,7 @@ import type {
 import {
   ZBlockTestOutcomeCounts,
   deserializeBlockTestOutcomeCounts,
+  serializeBlockTestOutcomeCounts,
 } from './block-test-outcome-counts.interface.js';
 
 /** Denormalized counts surface, split along the canonical axes. */
@@ -46,5 +48,20 @@ export function deserializeBlockTestBatchExecutionCounts(
       wire['outcome'] == null
         ? (wire['outcome'] as undefined)
         : deserializeBlockTestOutcomeCounts(wire['outcome']),
+  };
+}
+
+export function serializeBlockTestBatchExecutionCounts(
+  domain: BlockTestBatchExecutionCounts
+): BlockTestBatchExecutionCountsResponse {
+  return {
+    lifecycle_counts:
+      domain['lifecycleCounts'] == null
+        ? (domain['lifecycleCounts'] as undefined)
+        : serializeBlockTestLifecycleCounts(domain['lifecycleCounts']),
+    outcome:
+      domain['outcome'] == null
+        ? (domain['outcome'] as undefined)
+        : serializeBlockTestOutcomeCounts(domain['outcome']),
   };
 }

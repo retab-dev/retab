@@ -39,3 +39,14 @@ export function deserializeExperimentVoteRow(wire: ExperimentVoteRowResponse): E
     totalVoterCount: wire['total_voter_count'],
   };
 }
+
+export function serializeExperimentVoteRow(domain: ExperimentVoteRow): ExperimentVoteRowResponse {
+  return {
+    consensus: domain['consensus'],
+    votes: domain['votes'],
+    score: domain['score'],
+    row_presence_score: domain['rowPresenceScore'],
+    present_voter_count: domain['presentVoterCount'],
+    total_voter_count: domain['totalVoterCount'],
+  };
+}

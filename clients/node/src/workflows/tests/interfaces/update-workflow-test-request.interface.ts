@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { AssertionSpec, AssertionSpecResponse } from './assertion-spec.interface.js';
-import { ZAssertionSpec, deserializeAssertionSpec } from './assertion-spec.interface.js';
+import {
+  ZAssertionSpec,
+  deserializeAssertionSpec,
+  serializeAssertionSpec,
+} from './assertion-spec.interface.js';
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
+  serializeManualWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
@@ -18,6 +23,7 @@ import type {
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
+  serializeRunStepWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
 
 export interface UpdateWorkflowTestRequest {
@@ -67,5 +73,38 @@ export function deserializeUpdateWorkflowTestRequest(
               } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>
             )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
             (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource)),
+  };
+}
+
+export function serializeUpdateWorkflowTestRequest(
+  domain: UpdateWorkflowTestRequest
+): UpdateWorkflowTestRequestResponse {
+  return {
+    name: domain['name'],
+    assertion:
+      domain['assertion'] == null
+        ? (domain['assertion'] as undefined)
+        : domain['assertion'] == null
+          ? domain['assertion']
+          : serializeAssertionSpec(domain['assertion']),
+    source:
+      domain['source'] == null
+        ? (domain['source'] as undefined)
+        : domain['source'] == null
+          ? domain['source']
+          : ((
+              {
+                manual: () =>
+                  serializeManualWorkflowTestSource(domain['source'] as ManualWorkflowTestSource),
+                run_step: () =>
+                  serializeRunStepWorkflowTestSource(domain['source'] as RunStepWorkflowTestSource),
+              } as Record<
+                string,
+                () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+              >
+            )[(domain['source'] as unknown as Record<string, string>)['type']]?.() ??
+            (domain['source'] as unknown as
+              | ManualWorkflowTestSourceResponse
+              | RunStepWorkflowTestSourceResponse)),
   };
 }

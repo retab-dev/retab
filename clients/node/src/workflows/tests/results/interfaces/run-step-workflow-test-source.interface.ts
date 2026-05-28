@@ -29,3 +29,13 @@ export function deserializeRunStepWorkflowTestSource(
     stepId: wire['step_id'],
   };
 }
+
+export function serializeRunStepWorkflowTestSource(
+  domain: RunStepWorkflowTestSource
+): RunStepWorkflowTestSourceResponse {
+  return {
+    type: domain['type'],
+    run_id: domain['runId'],
+    step_id: domain['stepId'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   ZDeclarativePlanResourceChange,
   deserializeDeclarativePlanResourceChange,
+  serializeDeclarativePlanResourceChange,
 } from './declarative-plan-resource-change.interface.js';
 import type {
   DeclarativePlanSummary,
@@ -16,6 +17,7 @@ import type {
 import {
   ZDeclarativePlanSummary,
   deserializeDeclarativePlanSummary,
+  serializeDeclarativePlanSummary,
 } from './declarative-plan-summary.interface.js';
 import type { DeclarativePlanResponseAction } from './declarative-plan-response-action.interface.js';
 import { ZDeclarativePlanResponseAction } from './declarative-plan-response-action.interface.js';
@@ -77,5 +79,27 @@ export function deserializeDeclarativePlanResponse(
         ? (wire['resource_changes'] as undefined)
         : wire['resource_changes'].map((__i) => deserializeDeclarativePlanResourceChange(__i)),
     renderedPlan: wire['rendered_plan'],
+  };
+}
+
+export function serializeDeclarativePlanResponse(
+  domain: DeclarativePlanResponse
+): DeclarativePlanResponseResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    action: domain['action'],
+    block_count: domain['blockCount'],
+    edge_count: domain['edgeCount'],
+    diagnostics: domain['diagnostics'],
+    format_version: domain['formatVersion'],
+    summary:
+      domain['summary'] == null
+        ? (domain['summary'] as undefined)
+        : serializeDeclarativePlanSummary(domain['summary']),
+    resource_changes:
+      domain['resourceChanges'] == null
+        ? (domain['resourceChanges'] as undefined)
+        : domain['resourceChanges'].map((__i) => serializeDeclarativePlanResourceChange(__i)),
+    rendered_plan: domain['renderedPlan'],
   };
 }

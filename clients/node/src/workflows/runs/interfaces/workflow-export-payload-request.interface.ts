@@ -107,3 +107,24 @@ export function deserializeWorkflowExportPayloadRequest(
     quote: wire['quote'],
   };
 }
+
+export function serializeWorkflowExportPayloadRequest(
+  domain: WorkflowExportPayloadRequest
+): WorkflowExportPayloadRequestResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    block_id: domain['blockId'],
+    export_source: domain['exportSource'],
+    selected_run_ids: domain['selectedRunIds'],
+    selected_doc_types: domain['selectedDocTypes'],
+    status: domain['status'],
+    exclude_status: domain['excludeStatus'],
+    from_date: domain['fromDate'],
+    to_date: domain['toDate'],
+    trigger_types: domain['triggerTypes'],
+    preferred_columns: domain['preferredColumns'],
+    delimiter: domain['delimiter'],
+    line_delimiter: domain['lineDelimiter'],
+    quote: domain['quote'],
+  };
+}

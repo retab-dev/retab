@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationPerItem,
   deserializeConditionEvaluationPerItem,
+  serializeConditionEvaluationPerItem,
 } from './condition-evaluation-per-item.interface.js';
 import type {
   ConditionEvaluationSubCondition,
@@ -16,6 +17,7 @@ import type {
 import {
   ZConditionEvaluationSubCondition,
   deserializeConditionEvaluationSubCondition,
+  serializeConditionEvaluationSubCondition,
 } from './condition-evaluation-sub-condition.interface.js';
 import type { ConditionEvaluationDetailsLogicalOperator } from './condition-evaluation-details-logical-operator.interface.js';
 import { ZConditionEvaluationDetailsLogicalOperator } from './condition-evaluation-details-logical-operator.interface.js';
@@ -93,5 +95,30 @@ export function deserializeConditionEvaluationDetails(
           ? wire['sub_conditions']
           : wire['sub_conditions'].map((__i) => deserializeConditionEvaluationSubCondition(__i)),
     logicalOperator: wire['logical_operator'],
+  };
+}
+
+export function serializeConditionEvaluationDetails(
+  domain: ConditionEvaluationDetails
+): ConditionEvaluationDetailsResponse {
+  return {
+    path: domain['path'],
+    operator: domain['operator'],
+    expected: domain['expected'],
+    actual: domain['actual'],
+    matched: domain['matched'],
+    per_item:
+      domain['perItem'] == null
+        ? (domain['perItem'] as undefined)
+        : domain['perItem'] == null
+          ? domain['perItem']
+          : domain['perItem'].map((__i) => serializeConditionEvaluationPerItem(__i)),
+    sub_conditions:
+      domain['subConditions'] == null
+        ? (domain['subConditions'] as undefined)
+        : domain['subConditions'] == null
+          ? domain['subConditions']
+          : domain['subConditions'].map((__i) => serializeConditionEvaluationSubCondition(__i)),
+    logical_operator: domain['logicalOperator'],
   };
 }
