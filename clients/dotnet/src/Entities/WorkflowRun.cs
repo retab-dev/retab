@@ -26,10 +26,10 @@ namespace Retab
 
         /// <summary>Discriminated lifecycle state.</summary>
         [Newtonsoft.Json.JsonConverter(typeof(PendingRunDiscriminatorConverter))]
-        public object? Lifecycle { get; set; }
+        public object Lifecycle { get; set; } = default!;
 
         /// <summary>All timing information</summary>
-        public RunTiming? Timing { get; set; }
+        public RunTiming Timing { get; set; } = default!;
 
         /// <summary>Input payloads supplied at run creation time</summary>
         public RunInputs? Inputs { get; set; }
