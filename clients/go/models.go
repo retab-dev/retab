@@ -1683,12 +1683,10 @@ type RunStepWorkflowTestSource struct {
 // RunTiming all timing information for a run.
 // “duration_ms“ is backfilled at read time from
 // “completed_at - started_at“ when both timestamps are present and the
-// stored value is “None“. The field is ```` so producers cannot
-// pass it through “__init__“ — they must round-trip through
-// “model_validate“ (or persist via the Mongo projection helpers in
-// “run_duration.py“). Records that already store “duration_ms“ are left
-// untouched (idempotent), so backfill cannot drift from the canonical value
-// written by the projection.
+// stored value is “None“ (the Mongo projection helpers in
+// “run_duration.py“ compute and persist the canonical value). Records that
+// already store “duration_ms“ are left untouched (idempotent), so backfill
+// cannot drift from the canonical value written by the projection.
 type RunTiming struct {
 	// CreatedAt is when the run record was created
 	CreatedAt time.Time `json:"created_at"`
