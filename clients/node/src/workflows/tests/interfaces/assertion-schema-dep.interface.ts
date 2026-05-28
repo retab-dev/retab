@@ -34,3 +34,14 @@ export function deserializeAssertionSchemaDep(
     dependsOnRoot: wire['depends_on_root'],
   };
 }
+
+export function serializeAssertionSchemaDep(
+  domain: AssertionSchemaDep
+): AssertionSchemaDepResponse {
+  return {
+    output_handle_id: domain['outputHandleId'],
+    schema_path: domain['schemaPath'],
+    subtree_hash: domain['subtreeHash'],
+    depends_on_root: domain['dependsOnRoot'],
+  };
+}

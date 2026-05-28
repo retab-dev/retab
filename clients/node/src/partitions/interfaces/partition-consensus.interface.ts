@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { PartitionChunk, PartitionChunkResponse } from './partition-chunk.interface.js';
-import { ZPartitionChunk, deserializePartitionChunk } from './partition-chunk.interface.js';
+import {
+  ZPartitionChunk,
+  deserializePartitionChunk,
+  serializePartitionChunk,
+} from './partition-chunk.interface.js';
 import type {
   PartitionChunkLikelihood,
   PartitionChunkLikelihoodResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZPartitionChunkLikelihood,
   deserializePartitionChunkLikelihood,
+  serializePartitionChunkLikelihood,
 } from './partition-chunk-likelihood.interface.js';
 
 export interface PartitionConsensus {
@@ -41,5 +46,20 @@ export function deserializePartitionConsensus(
       wire['likelihoods'] == null
         ? (wire['likelihoods'] as undefined)
         : wire['likelihoods'].map((__i) => deserializePartitionChunkLikelihood(__i)),
+  };
+}
+
+export function serializePartitionConsensus(
+  domain: PartitionConsensus
+): PartitionConsensusResponse {
+  return {
+    choices:
+      domain['choices'] == null
+        ? (domain['choices'] as undefined)
+        : domain['choices'].map((__i) => __i.map((__i1) => serializePartitionChunk(__i1))),
+    likelihoods:
+      domain['likelihoods'] == null
+        ? (domain['likelihoods'] as undefined)
+        : domain['likelihoods'].map((__i) => serializePartitionChunkLikelihood(__i)),
   };
 }

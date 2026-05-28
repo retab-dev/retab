@@ -23,3 +23,10 @@ export function deserializeContainCondition(wire: ContainConditionResponse): Con
     expected: wire['expected'],
   };
 }
+
+export function serializeContainCondition(domain: ContainCondition): ContainConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

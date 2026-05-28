@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentVoteRow,
   deserializeExperimentVoteRow,
+  serializeExperimentVoteRow,
 } from './experiment-vote-row.interface.js';
 import type {
   ExperimentVotesMetricDocument,
@@ -16,6 +17,7 @@ import type {
 import {
   ZExperimentVotesMetricDocument,
   deserializeExperimentVotesMetricDocument,
+  serializeExperimentVotesMetricDocument,
 } from './experiment-votes-metric-document.interface.js';
 
 /** One document/target vote matrix with flat consensus rows. */
@@ -69,5 +71,23 @@ export function deserializeExperimentVotesMetricsResponse(
       wire['rows'] == null
         ? (wire['rows'] as undefined)
         : wire['rows'].map((__i) => deserializeExperimentVoteRow(__i)),
+  };
+}
+
+export function serializeExperimentVotesMetricsResponse(
+  domain: ExperimentVotesMetricsResponse
+): ExperimentVotesMetricsResponseResponse {
+  return {
+    run_id: domain['runId'],
+    kind: domain['kind'],
+    view: domain['view'],
+    document: serializeExperimentVotesMetricDocument(domain['document']),
+    target: domain['target'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    rows:
+      domain['rows'] == null
+        ? (domain['rows'] as undefined)
+        : domain['rows'].map((__i) => serializeExperimentVoteRow(__i)),
   };
 }

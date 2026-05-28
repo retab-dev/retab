@@ -8,6 +8,7 @@ import type {
 import {
   ZFormField,
   deserializeFormField,
+  serializeFormField,
 } from '../../../workflows/artifacts/interfaces/form-field.interface.js';
 
 export interface UpdateEditTemplateRequest {
@@ -38,5 +39,19 @@ export function deserializeUpdateEditTemplateRequest(
         : wire['form_fields'] == null
           ? wire['form_fields']
           : wire['form_fields'].map((__i) => deserializeFormField(__i)),
+  };
+}
+
+export function serializeUpdateEditTemplateRequest(
+  domain: UpdateEditTemplateRequest
+): UpdateEditTemplateRequestResponse {
+  return {
+    name: domain['name'],
+    form_fields:
+      domain['formFields'] == null
+        ? (domain['formFields'] as undefined)
+        : domain['formFields'] == null
+          ? domain['formFields']
+          : domain['formFields'].map((__i) => serializeFormField(__i)),
   };
 }

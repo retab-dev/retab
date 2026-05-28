@@ -26,3 +26,12 @@ export function deserializeSplitSubdocumentLikelihood(
     pages: wire['pages'],
   };
 }
+
+export function serializeSplitSubdocumentLikelihood(
+  domain: SplitSubdocumentLikelihood
+): SplitSubdocumentLikelihoodResponse {
+  return {
+    name: domain['name'],
+    pages: domain['pages'],
+  };
+}

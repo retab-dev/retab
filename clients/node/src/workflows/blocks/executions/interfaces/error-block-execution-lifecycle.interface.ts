@@ -27,3 +27,12 @@ export function deserializeErrorBlockExecutionLifecycle(
     message: wire['message'],
   };
 }
+
+export function serializeErrorBlockExecutionLifecycle(
+  domain: ErrorBlockExecutionLifecycle
+): ErrorBlockExecutionLifecycleResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+  };
+}

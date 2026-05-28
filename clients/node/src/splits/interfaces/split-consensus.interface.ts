@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { SplitResult, SplitResultResponse } from './split-result.interface.js';
-import { ZSplitResult, deserializeSplitResult } from './split-result.interface.js';
+import {
+  ZSplitResult,
+  deserializeSplitResult,
+  serializeSplitResult,
+} from './split-result.interface.js';
 import type {
   SplitSubdocumentLikelihood,
   SplitSubdocumentLikelihoodResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZSplitSubdocumentLikelihood,
   deserializeSplitSubdocumentLikelihood,
+  serializeSplitSubdocumentLikelihood,
 } from './split-subdocument-likelihood.interface.js';
 
 export interface SplitConsensus {
@@ -39,5 +44,18 @@ export function deserializeSplitConsensus(wire: SplitConsensusResponse): SplitCo
       wire['choices'] == null
         ? (wire['choices'] as undefined)
         : wire['choices'].map((__i) => __i.map((__i1) => deserializeSplitResult(__i1))),
+  };
+}
+
+export function serializeSplitConsensus(domain: SplitConsensus): SplitConsensusResponse {
+  return {
+    likelihoods:
+      domain['likelihoods'] == null
+        ? (domain['likelihoods'] as undefined)
+        : domain['likelihoods'].map((__i) => serializeSplitSubdocumentLikelihood(__i)),
+    choices:
+      domain['choices'] == null
+        ? (domain['choices'] as undefined)
+        : domain['choices'].map((__i) => __i.map((__i1) => serializeSplitResult(__i1))),
   };
 }

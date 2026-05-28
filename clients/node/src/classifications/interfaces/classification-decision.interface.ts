@@ -26,3 +26,12 @@ export function deserializeClassificationDecision(
     category: wire['category'],
   };
 }
+
+export function serializeClassificationDecision(
+  domain: ClassificationDecision
+): ClassificationDecisionResponse {
+  return {
+    reasoning: domain['reasoning'],
+    category: domain['category'],
+  };
+}

@@ -6,7 +6,11 @@ import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
 import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
 import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
 import type { Subdocument, SubdocumentResponse } from './subdocument.interface.js';
-import { ZSubdocument, deserializeSubdocument } from './subdocument.interface.js';
+import {
+  ZSubdocument,
+  deserializeSubdocument,
+  serializeSubdocument,
+} from './subdocument.interface.js';
 
 /** Canonical split request. */
 export interface SplitRequest {
@@ -59,5 +63,16 @@ export function deserializeSplitRequest(wire: SplitRequestResponse): SplitReques
     instructions: wire['instructions'],
     nConsensus: wire['n_consensus'],
     bustCache: wire['bust_cache'],
+  };
+}
+
+export function serializeSplitRequest(domain: SplitRequest): SplitRequestResponse {
+  return {
+    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    subdocuments: domain['subdocuments'].map((__i) => serializeSubdocument(__i)),
+    model: domain['model'],
+    instructions: domain['instructions'],
+    n_consensus: domain['nConsensus'],
+    bust_cache: domain['bustCache'],
   };
 }

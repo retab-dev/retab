@@ -201,3 +201,33 @@ export function deserializeAnyItemMatchesCondition(
       | SplitIouCondition,
   };
 }
+
+export function serializeAnyItemMatchesCondition(
+  domain: AnyItemMatchesCondition
+): AnyItemMatchesConditionResponse {
+  return {
+    kind: domain['kind'],
+    condition: domain['condition'] as unknown as
+      | ExistConditionResponse
+      | NotExistsConditionResponse
+      | EqualConditionResponse
+      | NotEqualsConditionResponse
+      | NumberCompareConditionResponse
+      | ContainConditionResponse
+      | ObjectContainsConditionResponse
+      | ArrayContainsConditionResponse
+      | MatcheRegexConditionResponse
+      | JsonSchemaValidConditionResponse
+      | SimilarityGteConditionResponse
+      | LlmJudgedAsConditionResponse
+      | LlmNotJudgedAsConditionResponse
+      | NotContainsConditionResponse
+      | LengthCompareConditionResponse
+      | BetweenConditionResponse
+      | StartWithConditionResponse
+      | EndsWithConditionResponse
+      | AllItemsMatchConditionResponse
+      | AnyItemMatchesConditionResponse
+      | SplitIouConditionResponse,
+  };
+}

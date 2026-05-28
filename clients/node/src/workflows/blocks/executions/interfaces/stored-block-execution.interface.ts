@@ -8,6 +8,7 @@ import type {
 import {
   ZCompletedBlockExecutionLifecycle,
   deserializeCompletedBlockExecutionLifecycle,
+  serializeCompletedBlockExecutionLifecycle,
 } from './completed-block-execution-lifecycle.interface.js';
 import type {
   ErrorBlockExecutionLifecycle,
@@ -16,6 +17,7 @@ import type {
 import {
   ZErrorBlockExecutionLifecycle,
   deserializeErrorBlockExecutionLifecycle,
+  serializeErrorBlockExecutionLifecycle,
 } from './error-block-execution-lifecycle.interface.js';
 import type {
   SkippedBlockExecutionLifecycle,
@@ -24,6 +26,7 @@ import type {
 import {
   ZSkippedBlockExecutionLifecycle,
   deserializeSkippedBlockExecutionLifecycle,
+  serializeSkippedBlockExecutionLifecycle,
 } from './skipped-block-execution-lifecycle.interface.js';
 import type {
   StepArtifactRef,
@@ -32,6 +35,7 @@ import type {
 import {
   ZStepArtifactRef,
   deserializeStepArtifactRef,
+  serializeStepArtifactRef,
 } from '../../../../workflows/steps/interfaces/step-artifact-ref.interface.js';
 
 /** Public block execution result for a single workflow block. */
@@ -164,5 +168,61 @@ export function deserializeStoredBlockExecution(
     blockConfig: wire['block_config'],
     stepId: wire['step_id'],
     availableIterations: wire['available_iterations'],
+  };
+}
+
+export function serializeStoredBlockExecution(
+  domain: StoredBlockExecution
+): StoredBlockExecutionResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    run_id: domain['runId'],
+    block_id: domain['blockId'],
+    block_type: domain['blockType'],
+    lifecycle:
+      (
+        {
+          completed: () =>
+            serializeCompletedBlockExecutionLifecycle(
+              domain['lifecycle'] as CompletedBlockExecutionLifecycle
+            ),
+          error: () =>
+            serializeErrorBlockExecutionLifecycle(
+              domain['lifecycle'] as ErrorBlockExecutionLifecycle
+            ),
+          skipped: () =>
+            serializeSkippedBlockExecutionLifecycle(
+              domain['lifecycle'] as SkippedBlockExecutionLifecycle
+            ),
+        } as Record<
+          string,
+          () =>
+            | CompletedBlockExecutionLifecycleResponse
+            | ErrorBlockExecutionLifecycleResponse
+            | SkippedBlockExecutionLifecycleResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | CompletedBlockExecutionLifecycleResponse
+        | ErrorBlockExecutionLifecycleResponse
+        | SkippedBlockExecutionLifecycleResponse),
+    handle_inputs: domain['handleInputs'],
+    artifact:
+      domain['artifact'] == null
+        ? (domain['artifact'] as undefined)
+        : domain['artifact'] == null
+          ? domain['artifact']
+          : serializeStepArtifactRef(domain['artifact']),
+    handle_outputs: domain['handleOutputs'],
+    routing_decision: domain['routingDecision'],
+    duration_ms: domain['durationMs'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    block_config: domain['blockConfig'],
+    step_id: domain['stepId'],
+    available_iterations: domain['availableIterations'],
   };
 }

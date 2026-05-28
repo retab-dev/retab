@@ -8,6 +8,7 @@ import type {
 import {
   ZMaterializedDocument,
   deserializeMaterializedDocument,
+  serializeMaterializedDocument,
 } from './materialized-document.interface.js';
 
 /** File reference for a handle input. */
@@ -31,5 +32,12 @@ export function deserializeFileHandleInput(wire: FileHandleInputResponse): FileH
   return {
     type: wire['type'],
     document: deserializeMaterializedDocument(wire['document']),
+  };
+}
+
+export function serializeFileHandleInput(domain: FileHandleInput): FileHandleInputResponse {
+  return {
+    type: domain['type'],
+    document: serializeMaterializedDocument(domain['document']),
   };
 }

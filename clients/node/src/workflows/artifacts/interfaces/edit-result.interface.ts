@@ -2,12 +2,16 @@
 
 import { z } from 'zod';
 import type { FormField, FormFieldResponse } from './form-field.interface.js';
-import { ZFormField, deserializeFormField } from './form-field.interface.js';
+import { ZFormField, deserializeFormField, serializeFormField } from './form-field.interface.js';
 import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../../schemas/interfaces/mime-data.interface.js';
 
 export interface EditResult {
   /** Filled form fields (positions, descriptions, and filled values). */
@@ -30,5 +34,12 @@ export function deserializeEditResult(wire: EditResultResponse): EditResult {
   return {
     formData: wire['form_data'].map((__i) => deserializeFormField(__i)),
     filledDocument: deserializeMIMEData(wire['filled_document']),
+  };
+}
+
+export function serializeEditResult(domain: EditResult): EditResultResponse {
+  return {
+    form_data: domain['formData'].map((__i) => serializeFormField(__i)),
+    filled_document: serializeMIMEData(domain['filledDocument']),
   };
 }

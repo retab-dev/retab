@@ -27,3 +27,12 @@ export function deserializeWorkflowSnapshotRef(
     versionId: wire['version_id'],
   };
 }
+
+export function serializeWorkflowSnapshotRef(
+  domain: WorkflowSnapshotRef
+): WorkflowSnapshotRefResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    version_id: domain['versionId'],
+  };
+}

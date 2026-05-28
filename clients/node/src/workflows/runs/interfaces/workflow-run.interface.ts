@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { ApiTrigger, ApiTriggerResponse } from './api-trigger.interface.js';
-import { ZApiTrigger, deserializeApiTrigger } from './api-trigger.interface.js';
+import {
+  ZApiTrigger,
+  deserializeApiTrigger,
+  serializeApiTrigger,
+} from './api-trigger.interface.js';
 import type {
   AwaitingReviewRun,
   AwaitingReviewRunResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZAwaitingReviewRun,
   deserializeAwaitingReviewRun,
+  serializeAwaitingReviewRun,
 } from './awaiting-review-run.interface.js';
 import type {
   CancelledTerminal,
@@ -18,6 +23,7 @@ import type {
 import {
   ZCancelledTerminal,
   deserializeCancelledTerminal,
+  serializeCancelledTerminal,
 } from './cancelled-terminal.interface.js';
 import type {
   CompletedTerminal,
@@ -26,27 +32,60 @@ import type {
 import {
   ZCompletedTerminal,
   deserializeCompletedTerminal,
+  serializeCompletedTerminal,
 } from './completed-terminal.interface.js';
 import type { EmailTrigger, EmailTriggerResponse } from './email-trigger.interface.js';
-import { ZEmailTrigger, deserializeEmailTrigger } from './email-trigger.interface.js';
+import {
+  ZEmailTrigger,
+  deserializeEmailTrigger,
+  serializeEmailTrigger,
+} from './email-trigger.interface.js';
 import type { ErrorTerminal, ErrorTerminalResponse } from './error-terminal.interface.js';
-import { ZErrorTerminal, deserializeErrorTerminal } from './error-terminal.interface.js';
+import {
+  ZErrorTerminal,
+  deserializeErrorTerminal,
+  serializeErrorTerminal,
+} from './error-terminal.interface.js';
 import type { ManualTrigger, ManualTriggerResponse } from './manual-trigger.interface.js';
-import { ZManualTrigger, deserializeManualTrigger } from './manual-trigger.interface.js';
+import {
+  ZManualTrigger,
+  deserializeManualTrigger,
+  serializeManualTrigger,
+} from './manual-trigger.interface.js';
 import type { PendingRun, PendingRunResponse } from './pending-run.interface.js';
-import { ZPendingRun, deserializePendingRun } from './pending-run.interface.js';
+import {
+  ZPendingRun,
+  deserializePendingRun,
+  serializePendingRun,
+} from './pending-run.interface.js';
 import type { RestartTrigger, RestartTriggerResponse } from './restart-trigger.interface.js';
-import { ZRestartTrigger, deserializeRestartTrigger } from './restart-trigger.interface.js';
+import {
+  ZRestartTrigger,
+  deserializeRestartTrigger,
+  serializeRestartTrigger,
+} from './restart-trigger.interface.js';
 import type { RunInputs, RunInputsResponse } from './run-inputs.interface.js';
-import { ZRunInputs, deserializeRunInputs } from './run-inputs.interface.js';
+import { ZRunInputs, deserializeRunInputs, serializeRunInputs } from './run-inputs.interface.js';
 import type { RunningRun, RunningRunResponse } from './running-run.interface.js';
-import { ZRunningRun, deserializeRunningRun } from './running-run.interface.js';
+import {
+  ZRunningRun,
+  deserializeRunningRun,
+  serializeRunningRun,
+} from './running-run.interface.js';
 import type { RunTiming, RunTimingResponse } from './run-timing.interface.js';
-import { ZRunTiming, deserializeRunTiming } from './run-timing.interface.js';
+import { ZRunTiming, deserializeRunTiming, serializeRunTiming } from './run-timing.interface.js';
 import type { ScheduleTrigger, ScheduleTriggerResponse } from './schedule-trigger.interface.js';
-import { ZScheduleTrigger, deserializeScheduleTrigger } from './schedule-trigger.interface.js';
+import {
+  ZScheduleTrigger,
+  deserializeScheduleTrigger,
+  serializeScheduleTrigger,
+} from './schedule-trigger.interface.js';
 import type { WebhookTrigger, WebhookTriggerResponse } from './webhook-trigger.interface.js';
-import { ZWebhookTrigger, deserializeWebhookTrigger } from './webhook-trigger.interface.js';
+import {
+  ZWebhookTrigger,
+  deserializeWebhookTrigger,
+  serializeWebhookTrigger,
+} from './webhook-trigger.interface.js';
 import type {
   WorkflowSnapshotRef,
   WorkflowSnapshotRefResponse,
@@ -54,6 +93,7 @@ import type {
 import {
   ZWorkflowSnapshotRef,
   deserializeWorkflowSnapshotRef,
+  serializeWorkflowSnapshotRef,
 } from './workflow-snapshot-ref.interface.js';
 
 /** Public workflow run response without tenant isolation fields. */
@@ -192,5 +232,72 @@ export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
     timing: deserializeRunTiming(wire['timing']),
     inputs:
       wire['inputs'] == null ? (wire['inputs'] as undefined) : deserializeRunInputs(wire['inputs']),
+  };
+}
+
+export function serializeWorkflowRun(domain: WorkflowRun): WorkflowRunResponse {
+  return {
+    id: domain['id'],
+    workflow: serializeWorkflowSnapshotRef(domain['workflow']),
+    trigger:
+      (
+        {
+          api: () => serializeApiTrigger(domain['trigger'] as ApiTrigger),
+          email: () => serializeEmailTrigger(domain['trigger'] as EmailTrigger),
+          manual: () => serializeManualTrigger(domain['trigger'] as ManualTrigger),
+          restart: () => serializeRestartTrigger(domain['trigger'] as RestartTrigger),
+          schedule: () => serializeScheduleTrigger(domain['trigger'] as ScheduleTrigger),
+          webhook: () => serializeWebhookTrigger(domain['trigger'] as WebhookTrigger),
+        } as Record<
+          string,
+          () =>
+            | ManualTriggerResponse
+            | ApiTriggerResponse
+            | ScheduleTriggerResponse
+            | WebhookTriggerResponse
+            | EmailTriggerResponse
+            | RestartTriggerResponse
+        >
+      )[(domain['trigger'] as unknown as Record<string, string>)['type']]?.() ??
+      (domain['trigger'] as unknown as
+        | ManualTriggerResponse
+        | ApiTriggerResponse
+        | ScheduleTriggerResponse
+        | WebhookTriggerResponse
+        | EmailTriggerResponse
+        | RestartTriggerResponse),
+    lifecycle:
+      (
+        {
+          awaiting_review: () =>
+            serializeAwaitingReviewRun(domain['lifecycle'] as AwaitingReviewRun),
+          cancelled: () => serializeCancelledTerminal(domain['lifecycle'] as CancelledTerminal),
+          completed: () => serializeCompletedTerminal(domain['lifecycle'] as CompletedTerminal),
+          error: () => serializeErrorTerminal(domain['lifecycle'] as ErrorTerminal),
+          pending: () => serializePendingRun(domain['lifecycle'] as PendingRun),
+          running: () => serializeRunningRun(domain['lifecycle'] as RunningRun),
+        } as Record<
+          string,
+          () =>
+            | PendingRunResponse
+            | RunningRunResponse
+            | AwaitingReviewRunResponse
+            | CompletedTerminalResponse
+            | ErrorTerminalResponse
+            | CancelledTerminalResponse
+        >
+      )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
+      (domain['lifecycle'] as unknown as
+        | PendingRunResponse
+        | RunningRunResponse
+        | AwaitingReviewRunResponse
+        | CompletedTerminalResponse
+        | ErrorTerminalResponse
+        | CancelledTerminalResponse),
+    timing: serializeRunTiming(domain['timing']),
+    inputs:
+      domain['inputs'] == null
+        ? (domain['inputs'] as undefined)
+        : serializeRunInputs(domain['inputs']),
   };
 }

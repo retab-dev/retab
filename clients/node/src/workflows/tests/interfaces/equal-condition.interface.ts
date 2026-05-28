@@ -23,3 +23,10 @@ export function deserializeEqualCondition(wire: EqualConditionResponse): EqualCo
     expected: wire['expected'],
   };
 }
+
+export function serializeEqualCondition(domain: EqualCondition): EqualConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

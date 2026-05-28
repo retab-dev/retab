@@ -22,3 +22,9 @@ export function deserializeEditConfig(wire: EditConfigResponse): EditConfig {
     color: wire['color'],
   };
 }
+
+export function serializeEditConfig(domain: EditConfig): EditConfigResponse {
+  return {
+    color: domain['color'],
+  };
+}

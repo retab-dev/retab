@@ -20,3 +20,9 @@ export function deserializeReviewAlways(wire: ReviewAlwaysResponse): ReviewAlway
     kind: wire['kind'],
   };
 }
+
+export function serializeReviewAlways(domain: ReviewAlways): ReviewAlwaysResponse {
+  return {
+    kind: domain['kind'],
+  };
+}

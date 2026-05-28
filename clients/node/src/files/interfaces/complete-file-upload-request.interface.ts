@@ -21,3 +21,11 @@ export function deserializeCompleteFileUploadRequest(
     sha256: wire['sha_256'],
   };
 }
+
+export function serializeCompleteFileUploadRequest(
+  domain: CompleteFileUploadRequest
+): CompleteFileUploadRequestResponse {
+  return {
+    sha_256: domain['sha256'],
+  };
+}

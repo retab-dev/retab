@@ -51,3 +51,17 @@ export function deserializeDeclarativePlanSummary(
     hasChanges: wire['has_changes'],
   };
 }
+
+export function serializeDeclarativePlanSummary(
+  domain: DeclarativePlanSummary
+): DeclarativePlanSummaryResponse {
+  return {
+    add: domain['add'],
+    change: domain['change'],
+    destroy: domain['destroy'],
+    replace: domain['replace'],
+    noop: domain['noop'],
+    total: domain['total'],
+    has_changes: domain['hasChanges'],
+  };
+}

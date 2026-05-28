@@ -37,3 +37,16 @@ export function deserializeWorkflowPublished(wire: WorkflowPublishedResponse): W
     description: wire['description'],
   };
 }
+
+export function serializeWorkflowPublished(domain: WorkflowPublished): WorkflowPublishedResponse {
+  return {
+    version_id: domain['versionId'],
+    published_at:
+      domain['publishedAt'] == null
+        ? (domain['publishedAt'] as undefined)
+        : domain['publishedAt'] == null
+          ? domain['publishedAt']
+          : domain['publishedAt'].toISOString(),
+    description: domain['description'],
+  };
+}

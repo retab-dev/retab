@@ -26,3 +26,12 @@ export function deserializeReviewSplitCountNeq(
     expected: wire['expected'],
   };
 }
+
+export function serializeReviewSplitCountNeq(
+  domain: ReviewSplitCountNeq
+): ReviewSplitCountNeqResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+  };
+}

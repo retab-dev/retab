@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { WorkflowRun, WorkflowRunResponse } from './workflow-run.interface.js';
-import { ZWorkflowRun, deserializeWorkflowRun } from './workflow-run.interface.js';
+import {
+  ZWorkflowRun,
+  deserializeWorkflowRun,
+  serializeWorkflowRun,
+} from './workflow-run.interface.js';
 import type { CancelWorkflowResponseCancellationStatus } from './cancel-workflow-response-cancellation-status.interface.js';
 import { ZCancelWorkflowResponseCancellationStatus } from './cancel-workflow-response-cancellation-status.interface.js';
 
@@ -40,5 +44,15 @@ export function deserializeCancelWorkflowResponse(
     run: deserializeWorkflowRun(wire['run']),
     redisAvailable: wire['redis_available'],
     cancellationStatus: wire['cancellation_status'],
+  };
+}
+
+export function serializeCancelWorkflowResponse(
+  domain: CancelWorkflowResponse
+): CancelWorkflowResponseResponse {
+  return {
+    run: serializeWorkflowRun(domain['run']),
+    redis_available: domain['redisAvailable'],
+    cancellation_status: domain['cancellationStatus'],
   };
 }

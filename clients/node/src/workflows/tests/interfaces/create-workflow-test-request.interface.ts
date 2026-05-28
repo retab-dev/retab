@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { AssertionSpec, AssertionSpecResponse } from './assertion-spec.interface.js';
-import { ZAssertionSpec, deserializeAssertionSpec } from './assertion-spec.interface.js';
+import {
+  ZAssertionSpec,
+  deserializeAssertionSpec,
+  serializeAssertionSpec,
+} from './assertion-spec.interface.js';
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
@@ -10,6 +14,7 @@ import type {
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
+  serializeManualWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
@@ -18,6 +23,7 @@ import type {
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
+  serializeRunStepWorkflowTestSource,
 } from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
 import type {
   WorkflowTestBlockTarget,
@@ -26,6 +32,7 @@ import type {
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
+  serializeWorkflowTestBlockTarget,
 } from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
 
 export interface CreateWorkflowTestRequest {
@@ -72,5 +79,31 @@ export function deserializeCreateWorkflowTestRequest(
       (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource),
     name: wire['name'],
     assertion: deserializeAssertionSpec(wire['assertion']),
+  };
+}
+
+export function serializeCreateWorkflowTestRequest(
+  domain: CreateWorkflowTestRequest
+): CreateWorkflowTestRequestResponse {
+  return {
+    workflow_id: domain['workflowId'],
+    target: serializeWorkflowTestBlockTarget(domain['target']),
+    source:
+      (
+        {
+          manual: () =>
+            serializeManualWorkflowTestSource(domain['source'] as ManualWorkflowTestSource),
+          run_step: () =>
+            serializeRunStepWorkflowTestSource(domain['source'] as RunStepWorkflowTestSource),
+        } as Record<
+          string,
+          () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
+        >
+      )[(domain['source'] as unknown as Record<string, string>)['type']]?.() ??
+      (domain['source'] as unknown as
+        | ManualWorkflowTestSourceResponse
+        | RunStepWorkflowTestSourceResponse),
+    name: domain['name'],
+    assertion: serializeAssertionSpec(domain['assertion']),
   };
 }

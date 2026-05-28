@@ -28,3 +28,10 @@ export function deserializeWorkflowArtifact(wire: WorkflowArtifactResponse): Wor
     id: wire['id'],
   };
 }
+
+export function serializeWorkflowArtifact(domain: WorkflowArtifact): WorkflowArtifactResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+  };
+}

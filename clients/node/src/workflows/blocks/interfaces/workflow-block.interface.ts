@@ -85,3 +85,20 @@ export function deserializeWorkflowBlock(wire: WorkflowBlockResponse): WorkflowB
     resolvedSchemas: wire['resolved_schemas'],
   };
 }
+
+export function serializeWorkflowBlock(domain: WorkflowBlock): WorkflowBlockResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    type: domain['type'],
+    label: domain['label'],
+    position_x: domain['positionX'],
+    position_y: domain['positionY'],
+    width: domain['width'],
+    height: domain['height'],
+    config: domain['config'],
+    parent_id: domain['parentId'],
+    updated_at: domain['updatedAt'].toISOString(),
+    resolved_schemas: domain['resolvedSchemas'],
+  };
+}

@@ -32,3 +32,13 @@ export function deserializeNumberCompareCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeNumberCompareCondition(
+  domain: NumberCompareCondition
+): NumberCompareConditionResponse {
+  return {
+    kind: domain['kind'],
+    op: domain['op'],
+    expected: domain['expected'],
+  };
+}

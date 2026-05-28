@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { ValidationError, ValidationErrorResponse } from './validation-error.interface.js';
-import { ZValidationError, deserializeValidationError } from './validation-error.interface.js';
+import {
+  ZValidationError,
+  deserializeValidationError,
+  serializeValidationError,
+} from './validation-error.interface.js';
 
 export interface HttpValidationError {
   detail?: ValidationError[];
@@ -24,5 +28,16 @@ export function deserializeHttpValidationError(
       wire['detail'] == null
         ? (wire['detail'] as undefined)
         : wire['detail'].map((__i) => deserializeValidationError(__i)),
+  };
+}
+
+export function serializeHttpValidationError(
+  domain: HttpValidationError
+): HttpValidationErrorResponse {
+  return {
+    detail:
+      domain['detail'] == null
+        ? (domain['detail'] as undefined)
+        : domain['detail'].map((__i) => serializeValidationError(__i)),
   };
 }

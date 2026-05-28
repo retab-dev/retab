@@ -25,3 +25,10 @@ export function deserializeWebhookTrigger(wire: WebhookTriggerResponse): Webhook
     webhookId: wire['webhook_id'],
   };
 }
+
+export function serializeWebhookTrigger(domain: WebhookTrigger): WebhookTriggerResponse {
+  return {
+    type: domain['type'],
+    webhook_id: domain['webhookId'],
+  };
+}

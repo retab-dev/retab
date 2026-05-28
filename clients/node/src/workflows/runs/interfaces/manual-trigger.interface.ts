@@ -25,3 +25,10 @@ export function deserializeManualTrigger(wire: ManualTriggerResponse): ManualTri
     userId: wire['user_id'],
   };
 }
+
+export function serializeManualTrigger(domain: ManualTrigger): ManualTriggerResponse {
+  return {
+    type: domain['type'],
+    user_id: domain['userId'],
+  };
+}

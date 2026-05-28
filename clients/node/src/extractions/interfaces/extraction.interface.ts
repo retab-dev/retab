@@ -8,11 +8,16 @@ import type {
 import {
   ZExtractionConsensus,
   deserializeExtractionConsensus,
+  serializeExtractionConsensus,
 } from './extraction-consensus.interface.js';
 import type { FileRef, FileRefResponse } from './file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from './file-ref.interface.js';
+import { ZFileRef, deserializeFileRef, serializeFileRef } from './file-ref.interface.js';
 import type { RetabUsage, RetabUsageResponse } from './retab-usage.interface.js';
-import { ZRetabUsage, deserializeRetabUsage } from './retab-usage.interface.js';
+import {
+  ZRetabUsage,
+  deserializeRetabUsage,
+  serializeRetabUsage,
+} from './retab-usage.interface.js';
 
 /** A stored extraction record from the Retab API. */
 export interface Extraction {
@@ -103,5 +108,35 @@ export function deserializeExtraction(wire: ExtractionResponse): Extraction {
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializeExtraction(domain: Extraction): ExtractionResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    json_schema: domain['jsonSchema'],
+    n_consensus: domain['nConsensus'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    instructions: domain['instructions'],
+    output: domain['output'],
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeExtractionConsensus(domain['consensus']),
+    metadata: domain['metadata'],
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

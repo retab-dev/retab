@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../schemas/interfaces/mime-data.interface.js';
 
 export interface FileLink {
   /** The signed URL to download the file */
@@ -40,5 +44,19 @@ export function deserializeFileLink(wire: FileLinkResponse): FileLink {
         : wire['mime_data'] == null
           ? wire['mime_data']
           : deserializeMIMEData(wire['mime_data']),
+  };
+}
+
+export function serializeFileLink(domain: FileLink): FileLinkResponse {
+  return {
+    download_url: domain['downloadUrl'],
+    expires_in: domain['expiresIn'],
+    filename: domain['filename'],
+    mime_data:
+      domain['mimeData'] == null
+        ? (domain['mimeData'] as undefined)
+        : domain['mimeData'] == null
+          ? domain['mimeData']
+          : serializeMIMEData(domain['mimeData']),
   };
 }

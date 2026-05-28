@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from './file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from './file-ref.interface.js';
+import { ZFileRef, deserializeFileRef, serializeFileRef } from './file-ref.interface.js';
 import type { SourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 import { ZSourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 
@@ -47,5 +47,16 @@ export function deserializeSourcesResponse(wire: SourcesResponseResponse): Sourc
     file: deserializeFileRef(wire['file']),
     extraction: wire['extraction'],
     sources: wire['sources'],
+  };
+}
+
+export function serializeSourcesResponse(domain: SourcesResponse): SourcesResponseResponse {
+  return {
+    object: domain['object'],
+    extraction_id: domain['extractionId'],
+    document_type: domain['documentType'],
+    file: serializeFileRef(domain['file']),
+    extraction: domain['extraction'],
+    sources: domain['sources'],
   };
 }

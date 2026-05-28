@@ -41,3 +41,16 @@ export function deserializeMaterializedDocument(
     contentFingerprint: wire['content_fingerprint'],
   };
 }
+
+export function serializeMaterializedDocument(
+  domain: MaterializedDocument
+): MaterializedDocumentResponse {
+  return {
+    original_id: domain['originalId'],
+    filename: domain['filename'],
+    mime_type: domain['mimeType'],
+    gcs_uri: domain['gcsUri'],
+    size_bytes: domain['sizeBytes'],
+    content_fingerprint: domain['contentFingerprint'],
+  };
+}

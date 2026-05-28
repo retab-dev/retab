@@ -43,3 +43,27 @@ export function deserializeExperimentRunTiming(
     durationMs: wire['duration_ms'],
   };
 }
+
+export function serializeExperimentRunTiming(
+  domain: ExperimentRunTiming
+): ExperimentRunTimingResponse {
+  return {
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    duration_ms: domain['durationMs'],
+  };
+}

@@ -21,3 +21,11 @@ export function deserializeNotExistsCondition(
     kind: wire['kind'],
   };
 }
+
+export function serializeNotExistsCondition(
+  domain: NotExistsCondition
+): NotExistsConditionResponse {
+  return {
+    kind: domain['kind'],
+  };
+}

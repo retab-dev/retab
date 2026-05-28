@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationPerItem,
   deserializeConditionEvaluationPerItem,
+  serializeConditionEvaluationPerItem,
 } from './condition-evaluation-per-item.interface.js';
 
 /** Evaluation result for a sub-condition in a compound condition. */
@@ -76,5 +77,24 @@ export function deserializeConditionEvaluationSubCondition(
         : wire['per_item'] == null
           ? wire['per_item']
           : wire['per_item'].map((__i) => deserializeConditionEvaluationPerItem(__i)),
+  };
+}
+
+export function serializeConditionEvaluationSubCondition(
+  domain: ConditionEvaluationSubCondition
+): ConditionEvaluationSubConditionResponse {
+  return {
+    sub_condition_id: domain['subConditionId'],
+    path: domain['path'],
+    operator: domain['operator'],
+    expected: domain['expected'],
+    actual: domain['actual'],
+    matched: domain['matched'],
+    per_item:
+      domain['perItem'] == null
+        ? (domain['perItem'] as undefined)
+        : domain['perItem'] == null
+          ? domain['perItem']
+          : domain['perItem'].map((__i) => serializeConditionEvaluationPerItem(__i)),
   };
 }

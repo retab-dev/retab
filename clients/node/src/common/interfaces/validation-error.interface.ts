@@ -34,3 +34,13 @@ export function deserializeValidationError(wire: ValidationErrorResponse): Valid
     ctx: wire['ctx'],
   };
 }
+
+export function serializeValidationError(domain: ValidationError): ValidationErrorResponse {
+  return {
+    loc: domain['loc'],
+    msg: domain['msg'],
+    type: domain['type'],
+    input: domain['input'],
+    ctx: domain['ctx'],
+  };
+}

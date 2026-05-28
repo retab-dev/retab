@@ -25,3 +25,12 @@ export function deserializeJsonSchemaValidCondition(
     schema: wire['schema'],
   };
 }
+
+export function serializeJsonSchemaValidCondition(
+  domain: JsonSchemaValidCondition
+): JsonSchemaValidConditionResponse {
+  return {
+    kind: domain['kind'],
+    schema: domain['schema'],
+  };
+}

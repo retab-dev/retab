@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { AssertionFailure, AssertionFailureResponse } from './assertion-failure.interface.js';
-import { ZAssertionFailure, deserializeAssertionFailure } from './assertion-failure.interface.js';
+import {
+  ZAssertionFailure,
+  deserializeAssertionFailure,
+  serializeAssertionFailure,
+} from './assertion-failure.interface.js';
 import type { AssertionOutcome } from './assertion-outcome.interface.js';
 import { ZAssertionOutcome } from './assertion-outcome.interface.js';
 
@@ -63,5 +67,25 @@ export function deserializeAssertionResult(wire: AssertionResultResponse): Asser
         : wire['failure'] == null
           ? wire['failure']
           : deserializeAssertionFailure(wire['failure']),
+  };
+}
+
+export function serializeAssertionResult(domain: AssertionResult): AssertionResultResponse {
+  return {
+    assertion_id: domain['assertionId'],
+    condition_kind: domain['conditionKind'],
+    outcome: domain['outcome'],
+    actual_value: domain['actualValue'],
+    expected_value: domain['expectedValue'],
+    score: domain['score'],
+    threshold: domain['threshold'],
+    metric_kind: domain['metricKind'],
+    assertion_label: domain['assertionLabel'],
+    failure:
+      domain['failure'] == null
+        ? (domain['failure'] as undefined)
+        : domain['failure'] == null
+          ? domain['failure']
+          : serializeAssertionFailure(domain['failure']),
   };
 }

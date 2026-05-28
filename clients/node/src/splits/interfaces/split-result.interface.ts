@@ -24,3 +24,10 @@ export function deserializeSplitResult(wire: SplitResultResponse): SplitResult {
     pages: wire['pages'],
   };
 }
+
+export function serializeSplitResult(domain: SplitResult): SplitResultResponse {
+  return {
+    name: domain['name'],
+    pages: domain['pages'],
+  };
+}

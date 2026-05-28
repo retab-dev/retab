@@ -28,3 +28,11 @@ export function deserializeMIMEData(wire: MIMEDataResponse): MIMEData {
     mimeType: wire['mime_type'],
   };
 }
+
+export function serializeMIMEData(domain: MIMEData): MIMEDataResponse {
+  return {
+    filename: domain['filename'],
+    url: domain['url'],
+    mime_type: domain['mimeType'],
+  };
+}

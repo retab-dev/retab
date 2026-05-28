@@ -27,3 +27,11 @@ export function deserializeJobWarning(wire: JobWarningResponse): JobWarning {
     details: wire['details'],
   };
 }
+
+export function serializeJobWarning(domain: JobWarning): JobWarningResponse {
+  return {
+    code: domain['code'],
+    message: domain['message'],
+    details: domain['details'],
+  };
+}

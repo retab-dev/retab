@@ -91,3 +91,31 @@ export function deserializeWorkflowExperiment(
     schemaDriftDetail: wire['schema_drift_detail'],
   };
 }
+
+export function serializeWorkflowExperiment(
+  domain: WorkflowExperiment
+): WorkflowExperimentResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    block_id: domain['blockId'],
+    n_consensus: domain['nConsensus'],
+    document_count: domain['documentCount'],
+    name: domain['name'],
+    last_run_id: domain['lastRunId'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'].toISOString(),
+    status: domain['status'],
+    block_type: domain['blockType'],
+    score: domain['score'],
+    is_stale: domain['isStale'],
+    schema_drift: domain['schemaDrift'],
+    schema_drift_detail: domain['schemaDriftDetail'],
+  };
+}

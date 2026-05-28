@@ -29,3 +29,13 @@ export function deserializeLlmJudgedAsCondition(
     expectedLabel: wire['expected_label'],
   };
 }
+
+export function serializeLlmJudgedAsCondition(
+  domain: LlmJudgedAsCondition
+): LlmJudgedAsConditionResponse {
+  return {
+    kind: domain['kind'],
+    rubric: domain['rubric'],
+    expected_label: domain['expectedLabel'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   Z_MetricsStaleErrorLastRun,
   deserialize_MetricsStaleErrorLastRun,
+  serialize_MetricsStaleErrorLastRun,
 } from './metrics-stale-error-last-run.interface.js';
 
 /** Returned when the latest run's config or document set has drifted */
@@ -54,5 +55,19 @@ export function deserializeExperimentMetricsStaleError(
     lastRun: deserialize_MetricsStaleErrorLastRun(wire['last_run']),
     currentConfigFingerprint: wire['current_config_fingerprint'],
     message: wire['message'],
+  };
+}
+
+export function serializeExperimentMetricsStaleError(
+  domain: ExperimentMetricsStaleError
+): ExperimentMetricsStaleErrorResponse {
+  return {
+    kind: domain['kind'],
+    error: domain['error'],
+    experiment_id: domain['experimentId'],
+    stale_reasons: domain['staleReasons'],
+    last_run: serialize_MetricsStaleErrorLastRun(domain['lastRun']),
+    current_config_fingerprint: domain['currentConfigFingerprint'],
+    message: domain['message'],
   };
 }

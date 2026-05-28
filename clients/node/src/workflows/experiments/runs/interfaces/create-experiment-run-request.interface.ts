@@ -27,3 +27,12 @@ export function deserializeCreateExperimentRunRequest(
     workflowId: wire['workflow_id'],
   };
 }
+
+export function serializeCreateExperimentRunRequest(
+  domain: CreateExperimentRunRequest
+): CreateExperimentRunRequestResponse {
+  return {
+    experiment_id: domain['experimentId'],
+    workflow_id: domain['workflowId'],
+  };
+}

@@ -33,3 +33,11 @@ export function deserializeEmailTrigger(wire: EmailTriggerResponse): EmailTrigge
     subject: wire['subject'],
   };
 }
+
+export function serializeEmailTrigger(domain: EmailTrigger): EmailTriggerResponse {
+  return {
+    type: domain['type'],
+    sender: domain['sender'],
+    subject: domain['subject'],
+  };
+}

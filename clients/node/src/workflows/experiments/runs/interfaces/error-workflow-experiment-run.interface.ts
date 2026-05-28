@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../../workflows/runs/interfaces/error-details.interface.js';
 
 /** The experiment run failed. */
@@ -47,5 +48,20 @@ export function deserializeErrorWorkflowExperimentRun(
         : wire['details'] == null
           ? wire['details']
           : deserializeErrorDetails(wire['details']),
+  };
+}
+
+export function serializeErrorWorkflowExperimentRun(
+  domain: ErrorWorkflowExperimentRun
+): ErrorWorkflowExperimentRunResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+    details:
+      domain['details'] == null
+        ? (domain['details'] as undefined)
+        : domain['details'] == null
+          ? domain['details']
+          : serializeErrorDetails(domain['details']),
   };
 }

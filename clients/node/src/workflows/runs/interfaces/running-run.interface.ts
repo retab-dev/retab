@@ -20,3 +20,9 @@ export function deserializeRunningRun(wire: RunningRunResponse): RunningRun {
     status: wire['status'],
   };
 }
+
+export function serializeRunningRun(domain: RunningRun): RunningRunResponse {
+  return {
+    status: domain['status'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../workflows/runs/interfaces/error-details.interface.js';
 import type { ErrorStepLifecycleCategory } from './error-step-lifecycle-category.interface.js';
 import { ZErrorStepLifecycleCategory } from './error-step-lifecycle-category.interface.js';
@@ -55,5 +56,22 @@ export function deserializeErrorStepLifecycle(
         : wire['details'] == null
           ? wire['details']
           : deserializeErrorDetails(wire['details']),
+  };
+}
+
+export function serializeErrorStepLifecycle(
+  domain: ErrorStepLifecycle
+): ErrorStepLifecycleResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+    stage: domain['stage'],
+    category: domain['category'],
+    details:
+      domain['details'] == null
+        ? (domain['details'] as undefined)
+        : domain['details'] == null
+          ? domain['details']
+          : serializeErrorDetails(domain['details']),
   };
 }

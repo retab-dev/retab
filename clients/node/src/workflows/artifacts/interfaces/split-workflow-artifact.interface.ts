@@ -8,6 +8,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
@@ -16,6 +17,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../../extractions/interfaces/retab-usage.interface.js';
 import type {
   SplitConsensus,
@@ -24,6 +26,7 @@ import type {
 import {
   ZSplitConsensus,
   deserializeSplitConsensus,
+  serializeSplitConsensus,
 } from '../../../splits/interfaces/split-consensus.interface.js';
 import type {
   SplitResult,
@@ -32,6 +35,7 @@ import type {
 import {
   ZSplitResult,
   deserializeSplitResult,
+  serializeSplitResult,
 } from '../../../splits/interfaces/split-result.interface.js';
 import type {
   Subdocument,
@@ -40,6 +44,7 @@ import type {
 import {
   ZSubdocument,
   deserializeSubdocument,
+  serializeSubdocument,
 } from '../../../splits/interfaces/subdocument.interface.js';
 
 export interface SplitWorkflowArtifact {
@@ -124,5 +129,31 @@ export function deserializeSplitWorkflowArtifact(
           : deserializeRetabUsage(wire['usage']),
     createdAt: new Date(wire['created_at']),
     operation: wire['operation'],
+  };
+}
+
+export function serializeSplitWorkflowArtifact(
+  domain: SplitWorkflowArtifact
+): SplitWorkflowArtifactResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    subdocuments: domain['subdocuments'].map((__i) => serializeSubdocument(__i)),
+    n_consensus: domain['nConsensus'],
+    instructions: domain['instructions'],
+    output: domain['output'].map((__i) => serializeSplitResult(__i)),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeSplitConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at: domain['createdAt'].toISOString(),
+    operation: domain['operation'],
   };
 }

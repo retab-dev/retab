@@ -8,6 +8,7 @@ import type {
 import {
   ZExtractionConsensus,
   deserializeExtractionConsensus,
+  serializeExtractionConsensus,
 } from '../../../extractions/interfaces/extraction-consensus.interface.js';
 import type {
   FileRef,
@@ -16,6 +17,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
@@ -24,6 +26,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../../extractions/interfaces/retab-usage.interface.js';
 
 export interface ExtractionWorkflowArtifact {
@@ -120,5 +123,33 @@ export function deserializeExtractionWorkflowArtifact(
           : deserializeRetabUsage(wire['usage']),
     createdAt: new Date(wire['created_at']),
     operation: wire['operation'],
+  };
+}
+
+export function serializeExtractionWorkflowArtifact(
+  domain: ExtractionWorkflowArtifact
+): ExtractionWorkflowArtifactResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    json_schema: domain['jsonSchema'],
+    n_consensus: domain['nConsensus'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    instructions: domain['instructions'],
+    output: domain['output'],
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeExtractionConsensus(domain['consensus']),
+    metadata: domain['metadata'],
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at: domain['createdAt'].toISOString(),
+    operation: domain['operation'],
   };
 }

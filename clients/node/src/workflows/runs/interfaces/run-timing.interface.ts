@@ -64,3 +64,32 @@ export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
     durationMs: wire['duration_ms'],
   };
 }
+
+export function serializeRunTiming(domain: RunTiming): RunTimingResponse {
+  return {
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    review_waiting_started_at:
+      domain['reviewWaitingStartedAt'] == null
+        ? (domain['reviewWaitingStartedAt'] as undefined)
+        : domain['reviewWaitingStartedAt'] == null
+          ? domain['reviewWaitingStartedAt']
+          : domain['reviewWaitingStartedAt'].toISOString(),
+    accumulated_review_waiting_ms: domain['accumulatedReviewWaitingMs'],
+    duration_ms: domain['durationMs'],
+  };
+}

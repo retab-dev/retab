@@ -26,3 +26,12 @@ export function deserializeUpdateWorkflowRequest(
     description: wire['description'],
   };
 }
+
+export function serializeUpdateWorkflowRequest(
+  domain: UpdateWorkflowRequest
+): UpdateWorkflowRequestResponse {
+  return {
+    name: domain['name'],
+    description: domain['description'],
+  };
+}

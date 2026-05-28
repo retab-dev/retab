@@ -27,3 +27,12 @@ export function deserializeSkippedStepLifecycle(
     reason: wire['reason'],
   };
 }
+
+export function serializeSkippedStepLifecycle(
+  domain: SkippedStepLifecycle
+): SkippedStepLifecycleResponse {
+  return {
+    status: domain['status'],
+    reason: domain['reason'],
+  };
+}

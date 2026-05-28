@@ -2,9 +2,17 @@
 
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../extractions/interfaces/file-ref.interface.js';
 import type { ParseOutput, ParseOutputResponse } from './parse-output.interface.js';
-import { ZParseOutput, deserializeParseOutput } from './parse-output.interface.js';
+import {
+  ZParseOutput,
+  deserializeParseOutput,
+  serializeParseOutput,
+} from './parse-output.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
@@ -12,6 +20,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../extractions/interfaces/retab-usage.interface.js';
 import type { TableParsingFormat } from './table-parsing-format.interface.js';
 import { ZTableParsingFormat } from './table-parsing-format.interface.js';
@@ -81,5 +90,29 @@ export function deserializeParse(wire: ParseResponse): Parse {
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializeParse(domain: Parse): ParseResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    table_parsing_format: domain['tableParsingFormat'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    instructions: domain['instructions'],
+    output: serializeParseOutput(domain['output']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

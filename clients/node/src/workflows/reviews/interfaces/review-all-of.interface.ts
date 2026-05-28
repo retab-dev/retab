@@ -2,9 +2,17 @@
 
 import { z } from 'zod';
 import type { ReviewAlways, ReviewAlwaysResponse } from './review-always.interface.js';
-import { ZReviewAlways, deserializeReviewAlways } from './review-always.interface.js';
+import {
+  ZReviewAlways,
+  deserializeReviewAlways,
+  serializeReviewAlways,
+} from './review-always.interface.js';
 import type { ReviewAnyOf, ReviewAnyOfResponse } from './review-any-of.interface.js';
-import { ZReviewAnyOf, deserializeReviewAnyOf } from './review-any-of.interface.js';
+import {
+  ZReviewAnyOf,
+  deserializeReviewAnyOf,
+  serializeReviewAnyOf,
+} from './review-any-of.interface.js';
 import type {
   ReviewAnyRequiredFieldNull,
   ReviewAnyRequiredFieldNullResponse,
@@ -12,6 +20,7 @@ import type {
 import {
   ZReviewAnyRequiredFieldNull,
   deserializeReviewAnyRequiredFieldNull,
+  serializeReviewAnyRequiredFieldNull,
 } from './review-any-required-field-null.interface.js';
 import type {
   ReviewAnySplitPagesLt,
@@ -20,6 +29,7 @@ import type {
 import {
   ZReviewAnySplitPagesLt,
   deserializeReviewAnySplitPagesLt,
+  serializeReviewAnySplitPagesLt,
 } from './review-any-split-pages-lt.interface.js';
 import type {
   ReviewBoundaryConfidenceLt,
@@ -28,11 +38,20 @@ import type {
 import {
   ZReviewBoundaryConfidenceLt,
   deserializeReviewBoundaryConfidenceLt,
+  serializeReviewBoundaryConfidenceLt,
 } from './review-boundary-confidence-lt.interface.js';
 import type { ReviewBranchIn, ReviewBranchInResponse } from './review-branch-in.interface.js';
-import { ZReviewBranchIn, deserializeReviewBranchIn } from './review-branch-in.interface.js';
+import {
+  ZReviewBranchIn,
+  deserializeReviewBranchIn,
+  serializeReviewBranchIn,
+} from './review-branch-in.interface.js';
 import type { ReviewCategoryIn, ReviewCategoryInResponse } from './review-category-in.interface.js';
-import { ZReviewCategoryIn, deserializeReviewCategoryIn } from './review-category-in.interface.js';
+import {
+  ZReviewCategoryIn,
+  deserializeReviewCategoryIn,
+  serializeReviewCategoryIn,
+} from './review-category-in.interface.js';
 import type {
   ReviewConfidenceLt,
   ReviewConfidenceLtResponse,
@@ -40,6 +59,7 @@ import type {
 import {
   ZReviewConfidenceLt,
   deserializeReviewConfidenceLt,
+  serializeReviewConfidenceLt,
 } from './review-confidence-lt.interface.js';
 import type {
   ReviewFieldConfidenceLt,
@@ -48,6 +68,7 @@ import type {
 import {
   ZReviewFieldConfidenceLt,
   deserializeReviewFieldConfidenceLt,
+  serializeReviewFieldConfidenceLt,
 } from './review-field-confidence-lt.interface.js';
 import type {
   ReviewJsonCondition,
@@ -56,6 +77,7 @@ import type {
 import {
   ZReviewJsonCondition,
   deserializeReviewJsonCondition,
+  serializeReviewJsonCondition,
 } from './review-json-condition.interface.js';
 import type {
   ReviewSplitCountNeq,
@@ -64,6 +86,7 @@ import type {
 import {
   ZReviewSplitCountNeq,
   deserializeReviewSplitCountNeq,
+  serializeReviewSplitCountNeq,
 } from './review-split-count-neq.interface.js';
 import type {
   ReviewTopMarginLt,
@@ -72,6 +95,7 @@ import type {
 import {
   ZReviewTopMarginLt,
   deserializeReviewTopMarginLt,
+  serializeReviewTopMarginLt,
 } from './review-top-margin-lt.interface.js';
 import type {
   ReviewValidationFailed,
@@ -80,6 +104,7 @@ import type {
 import {
   ZReviewValidationFailed,
   deserializeReviewValidationFailed,
+  serializeReviewValidationFailed,
 } from './review-validation-failed.interface.js';
 
 /** Gate fires only if ALL child predicates fire. */
@@ -210,6 +235,68 @@ export function deserializeReviewAllOf(wire: ReviewAllOfResponse): ReviewAllOf {
           | ReviewBranchIn
           | ReviewAnyOf
           | ReviewAllOf)
+    ),
+  };
+}
+
+export function serializeReviewAllOf(domain: ReviewAllOf): ReviewAllOfResponse {
+  return {
+    kind: domain['kind'],
+    predicates: domain['predicates'].map(
+      (__i) =>
+        (
+          ({
+            all_of: () => serializeReviewAllOf(__i as ReviewAllOf),
+            always: () => serializeReviewAlways(__i as ReviewAlways),
+            any_of: () => serializeReviewAnyOf(__i as ReviewAnyOf),
+            any_required_field_null: () =>
+              serializeReviewAnyRequiredFieldNull(__i as ReviewAnyRequiredFieldNull),
+            any_split_pages_lt: () => serializeReviewAnySplitPagesLt(__i as ReviewAnySplitPagesLt),
+            boundary_confidence_lt: () =>
+              serializeReviewBoundaryConfidenceLt(__i as ReviewBoundaryConfidenceLt),
+            branch_in: () => serializeReviewBranchIn(__i as ReviewBranchIn),
+            category_in: () => serializeReviewCategoryIn(__i as ReviewCategoryIn),
+            confidence_lt: () => serializeReviewConfidenceLt(__i as ReviewConfidenceLt),
+            field_confidence_lt: () =>
+              serializeReviewFieldConfidenceLt(__i as ReviewFieldConfidenceLt),
+            json_condition: () => serializeReviewJsonCondition(__i as ReviewJsonCondition),
+            split_count_neq: () => serializeReviewSplitCountNeq(__i as ReviewSplitCountNeq),
+            top_margin_lt: () => serializeReviewTopMarginLt(__i as ReviewTopMarginLt),
+            validation_failed: () => serializeReviewValidationFailed(__i as ReviewValidationFailed),
+          }) as Record<
+            string,
+            () =>
+              | ReviewAlwaysResponse
+              | ReviewValidationFailedResponse
+              | ReviewConfidenceLtResponse
+              | ReviewCategoryInResponse
+              | ReviewTopMarginLtResponse
+              | ReviewSplitCountNeqResponse
+              | ReviewAnySplitPagesLtResponse
+              | ReviewBoundaryConfidenceLtResponse
+              | ReviewAnyRequiredFieldNullResponse
+              | ReviewFieldConfidenceLtResponse
+              | ReviewJsonConditionResponse
+              | ReviewBranchInResponse
+              | ReviewAnyOfResponse
+              | ReviewAllOfResponse
+          >
+        )[(__i as unknown as Record<string, string>)['kind']]?.() ??
+        (__i as unknown as
+          | ReviewAlwaysResponse
+          | ReviewValidationFailedResponse
+          | ReviewConfidenceLtResponse
+          | ReviewCategoryInResponse
+          | ReviewTopMarginLtResponse
+          | ReviewSplitCountNeqResponse
+          | ReviewAnySplitPagesLtResponse
+          | ReviewBoundaryConfidenceLtResponse
+          | ReviewAnyRequiredFieldNullResponse
+          | ReviewFieldConfidenceLtResponse
+          | ReviewJsonConditionResponse
+          | ReviewBranchInResponse
+          | ReviewAnyOfResponse
+          | ReviewAllOfResponse)
     ),
   };
 }

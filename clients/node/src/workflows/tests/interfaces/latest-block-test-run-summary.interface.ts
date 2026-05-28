@@ -76,3 +76,26 @@ export function deserializeLatestBlockTestRunSummary(
     blockedAssertions: wire['blocked_assertions'],
   };
 }
+
+export function serializeLatestBlockTestRunSummary(
+  domain: LatestBlockTestRunSummary
+): LatestBlockTestRunSummaryResponse {
+  return {
+    run_record_id: domain['runRecordId'],
+    status: domain['status'],
+    outcome: domain['outcome'],
+    started_at: domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    duration_ms: domain['durationMs'],
+    workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
+    block_config_fingerprint: domain['blockConfigFingerprint'],
+    assertions_passed: domain['assertionsPassed'],
+    assertions_failed: domain['assertionsFailed'],
+    blocked_assertions: domain['blockedAssertions'],
+  };
+}

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { MIMEData, MIMEDataResponse } from './mime-data.interface.js';
-import { ZMIMEData, deserializeMIMEData } from './mime-data.interface.js';
+import { ZMIMEData, deserializeMIMEData, serializeMIMEData } from './mime-data.interface.js';
 import type { GenerateSchemaRequestReasoningEffort } from './generate-schema-request-reasoning-effort.interface.js';
 import { ZGenerateSchemaRequestReasoningEffort } from './generate-schema-request-reasoning-effort.interface.js';
 
@@ -50,5 +50,18 @@ export function deserializeGenerateSchemaRequest(
     instructions: wire['instructions'],
     imageResolutionDpi: wire['image_resolution_dpi'],
     stream: wire['stream'],
+  };
+}
+
+export function serializeGenerateSchemaRequest(
+  domain: GenerateSchemaRequest
+): GenerateSchemaRequestResponse {
+  return {
+    documents: domain['documents'].map((__i) => serializeMIMEData(__i)),
+    model: domain['model'],
+    reasoning_effort: domain['reasoningEffort'],
+    instructions: domain['instructions'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
+    stream: domain['stream'],
   };
 }

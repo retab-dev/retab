@@ -37,3 +37,14 @@ export function deserializeSimilarityGteCondition(
     method: wire['method'],
   };
 }
+
+export function serializeSimilarityGteCondition(
+  domain: SimilarityGteCondition
+): SimilarityGteConditionResponse {
+  return {
+    kind: domain['kind'],
+    reference: domain['reference'],
+    threshold: domain['threshold'],
+    method: domain['method'],
+  };
+}

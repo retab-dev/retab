@@ -4,7 +4,7 @@ import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type { Split, SplitResponse, Subdocument } from '../splits/interfaces/index.js';
-import { deserializeSplit } from '../splits/interfaces/index.js';
+import { deserializeSplit, serializeSubdocument } from '../splits/interfaces/index.js';
 
 export class Splits {
   constructor(private readonly client: Retab) {}
@@ -47,7 +47,7 @@ export class Splits {
     const documentCoerced = await coerceMimeData(document);
     const body = {
       document: documentCoerced,
-      subdocuments: subdocuments,
+      subdocuments: subdocuments.map((__i) => serializeSubdocument(__i)),
       model: model,
       instructions: instructions,
       n_consensus: nConsensus,

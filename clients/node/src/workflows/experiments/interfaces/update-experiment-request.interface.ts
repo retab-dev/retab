@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentDocumentCaptureRequest,
   deserializeExperimentDocumentCaptureRequest,
+  serializeExperimentDocumentCaptureRequest,
 } from './experiment-document-capture-request.interface.js';
 import type {
   ExplicitExperimentDocumentRequest,
@@ -16,6 +17,7 @@ import type {
 import {
   ZExplicitExperimentDocumentRequest,
   deserializeExplicitExperimentDocumentRequest,
+  serializeExplicitExperimentDocumentRequest,
 } from './explicit-experiment-document-request.interface.js';
 import type { UpdateExperimentRequestNConsensus } from './update-experiment-request-n-consensus.interface.js';
 import { ZUpdateExperimentRequestNConsensus } from './update-experiment-request-n-consensus.interface.js';
@@ -61,5 +63,26 @@ export function deserializeUpdateExperimentRequest(
           : wire['documents'].map((__i) => deserializeExplicitExperimentDocumentRequest(__i)),
     nConsensus: wire['n_consensus'],
     name: wire['name'],
+  };
+}
+
+export function serializeUpdateExperimentRequest(
+  domain: UpdateExperimentRequest
+): UpdateExperimentRequestResponse {
+  return {
+    document_captures:
+      domain['documentCaptures'] == null
+        ? (domain['documentCaptures'] as undefined)
+        : domain['documentCaptures'] == null
+          ? domain['documentCaptures']
+          : domain['documentCaptures'].map((__i) => serializeExperimentDocumentCaptureRequest(__i)),
+    documents:
+      domain['documents'] == null
+        ? (domain['documents'] as undefined)
+        : domain['documents'] == null
+          ? domain['documents']
+          : domain['documents'].map((__i) => serializeExplicitExperimentDocumentRequest(__i)),
+    n_consensus: domain['nConsensus'],
+    name: domain['name'],
   };
 }

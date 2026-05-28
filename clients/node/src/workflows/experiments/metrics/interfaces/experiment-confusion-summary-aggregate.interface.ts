@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentConfusionFlowMetric,
   deserializeExperimentConfusionFlowMetric,
+  serializeExperimentConfusionFlowMetric,
 } from './experiment-confusion-flow-metric.interface.js';
 
 /** Split/classifier diagnostics attached to the summary response. */
@@ -35,5 +36,17 @@ export function deserializeExperimentConfusionSummaryAggregate(
       wire['flows'] == null
         ? (wire['flows'] as undefined)
         : wire['flows'].map((__i) => deserializeExperimentConfusionFlowMetric(__i)),
+  };
+}
+
+export function serializeExperimentConfusionSummaryAggregate(
+  domain: ExperimentConfusionSummaryAggregate
+): ExperimentConfusionSummaryAggregateResponse {
+  return {
+    diag: domain['diag'],
+    flows:
+      domain['flows'] == null
+        ? (domain['flows'] as undefined)
+        : domain['flows'].map((__i) => serializeExperimentConfusionFlowMetric(__i)),
   };
 }

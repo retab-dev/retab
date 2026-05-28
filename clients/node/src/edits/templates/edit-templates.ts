@@ -6,6 +6,7 @@ import { coerceMimeData, type DocumentInput } from '../../runtime/mime.js';
 import type { EditTemplate, EditTemplateResponse } from '../../edits/templates/interfaces/index.js';
 import type { FormField } from '../../workflows/artifacts/interfaces/index.js';
 import { deserializeEditTemplate } from '../../edits/templates/interfaces/index.js';
+import { serializeFormField } from '../../workflows/artifacts/interfaces/index.js';
 
 export class EditTemplates {
   constructor(private readonly client: Retab) {}
@@ -44,7 +45,7 @@ export class EditTemplates {
     const body = {
       name: name,
       document: documentCoerced,
-      form_fields: formFields,
+      form_fields: formFields.map((__i) => serializeFormField(__i)),
     };
     const __wire = await this.client.request<EditTemplateResponse>({
       method: 'POST',
@@ -74,7 +75,12 @@ export class EditTemplates {
   ): Promise<EditTemplate> {
     const body = {
       name: name,
-      form_fields: formFields,
+      form_fields:
+        formFields === undefined
+          ? undefined
+          : formFields == null
+            ? formFields
+            : formFields.map((__i) => serializeFormField(__i)),
     };
     const __wire = await this.client.request<EditTemplateResponse>({
       method: 'PATCH',

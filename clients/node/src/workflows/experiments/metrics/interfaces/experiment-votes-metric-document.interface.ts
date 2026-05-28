@@ -25,3 +25,12 @@ export function deserializeExperimentVotesMetricDocument(
     filename: wire['filename'],
   };
 }
+
+export function serializeExperimentVotesMetricDocument(
+  domain: ExperimentVotesMetricDocument
+): ExperimentVotesMetricDocumentResponse {
+  return {
+    id: domain['id'],
+    filename: domain['filename'],
+  };
+}

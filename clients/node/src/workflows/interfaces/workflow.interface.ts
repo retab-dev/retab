@@ -8,6 +8,7 @@ import type {
 import {
   ZWorkflowPublished,
   deserializeWorkflowPublished,
+  serializeWorkflowPublished,
 } from './workflow-published.interface.js';
 
 /** Public workflow resource returned by workflow metadata endpoints. */
@@ -61,5 +62,21 @@ export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
           : deserializeWorkflowPublished(wire['published']),
     createdAt: new Date(wire['created_at']),
     updatedAt: new Date(wire['updated_at']),
+  };
+}
+
+export function serializeWorkflow(domain: Workflow): WorkflowResponse {
+  return {
+    id: domain['id'],
+    name: domain['name'],
+    description: domain['description'],
+    published:
+      domain['published'] == null
+        ? (domain['published'] as undefined)
+        : domain['published'] == null
+          ? domain['published']
+          : serializeWorkflowPublished(domain['published']),
+    created_at: domain['createdAt'].toISOString(),
+    updated_at: domain['updatedAt'].toISOString(),
   };
 }

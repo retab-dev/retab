@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { Review, ReviewResponse } from './review.interface.js';
-import { ZReview, deserializeReview } from './review.interface.js';
+import { ZReview, deserializeReview, serializeReview } from './review.interface.js';
 import type { ResumeStatus } from './resume-status.interface.js';
 import { ZResumeStatus } from './resume-status.interface.js';
 import type { SubmissionStatus } from './submission-status.interface.js';
@@ -40,5 +40,16 @@ export function deserializeSubmitDecisionResponse(
     review: deserializeReview(wire['review']),
     resumeStatus: wire['resume_status'],
     resumeError: wire['resume_error'],
+  };
+}
+
+export function serializeSubmitDecisionResponse(
+  domain: SubmitDecisionResponse
+): SubmitDecisionResponseResponse {
+  return {
+    submission_status: domain['submissionStatus'],
+    review: serializeReview(domain['review']),
+    resume_status: domain['resumeStatus'],
+    resume_error: domain['resumeError'],
   };
 }

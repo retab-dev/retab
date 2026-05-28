@@ -43,3 +43,24 @@ export function deserializeWorkflowTestRunTiming(
     durationMs: wire['duration_ms'],
   };
 }
+
+export function serializeWorkflowTestRunTiming(
+  domain: WorkflowTestRunTiming
+): WorkflowTestRunTimingResponse {
+  return {
+    created_at: domain['createdAt'].toISOString(),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    duration_ms: domain['durationMs'],
+  };
+}

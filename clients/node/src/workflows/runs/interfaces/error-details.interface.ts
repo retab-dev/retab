@@ -45,3 +45,14 @@ export function deserializeErrorDetails(wire: ErrorDetailsResponse): ErrorDetail
     context: wire['context'],
   };
 }
+
+export function serializeErrorDetails(domain: ErrorDetails): ErrorDetailsResponse {
+  return {
+    message: domain['message'],
+    stack_trace: domain['stackTrace'],
+    block_id: domain['blockId'],
+    block_name: domain['blockName'],
+    error_code: domain['errorCode'],
+    context: domain['context'],
+  };
+}

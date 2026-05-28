@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationResult,
   deserializeConditionEvaluationResult,
+  serializeConditionEvaluationResult,
 } from './condition-evaluation-result.interface.js';
 
 export interface ConditionalEvaluation {
@@ -67,5 +68,24 @@ export function deserializeConditionalEvaluation(
     matchedBranchId: wire['matched_branch_id'],
     matchedConditionIds: wire['matched_condition_ids'],
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeConditionalEvaluation(
+  domain: ConditionalEvaluation
+): ConditionalEvaluationResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+    evaluations:
+      domain['evaluations'] == null
+        ? (domain['evaluations'] as undefined)
+        : domain['evaluations'].map((__i) => serializeConditionEvaluationResult(__i)),
+    selected_handles: domain['selectedHandles'],
+    matched_branch_id: domain['matchedBranchId'],
+    matched_condition_ids: domain['matchedConditionIds'],
+    created_at: domain['createdAt'].toISOString(),
   };
 }

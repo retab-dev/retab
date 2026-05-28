@@ -8,6 +8,7 @@ import type {
 import {
   ZActor,
   deserializeActor,
+  serializeActor,
 } from '../../../../workflows/reviews/interfaces/actor.interface.js';
 
 /** Public API shape for one immutable review version. */
@@ -52,5 +53,17 @@ export function deserializeReviewVersion(wire: ReviewVersionResponse): ReviewVer
     snapshot: wire['snapshot'],
     note: wire['note'],
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeReviewVersion(domain: ReviewVersion): ReviewVersionResponse {
+  return {
+    id: domain['id'],
+    review_id: domain['reviewId'],
+    parent_id: domain['parentId'],
+    author: serializeActor(domain['author']),
+    snapshot: domain['snapshot'],
+    note: domain['note'],
+    created_at: domain['createdAt'].toISOString(),
   };
 }

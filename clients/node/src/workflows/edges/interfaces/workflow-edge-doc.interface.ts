@@ -48,3 +48,15 @@ export function deserializeWorkflowEdgeDoc(wire: WorkflowEdgeDocResponse): Workf
     updatedAt: new Date(wire['updated_at']),
   };
 }
+
+export function serializeWorkflowEdgeDoc(domain: WorkflowEdgeDoc): WorkflowEdgeDocResponse {
+  return {
+    id: domain['id'],
+    workflow_id: domain['workflowId'],
+    source_block: domain['sourceBlock'],
+    target_block: domain['targetBlock'],
+    source_handle: domain['sourceHandle'],
+    target_handle: domain['targetHandle'],
+    updated_at: domain['updatedAt'].toISOString(),
+  };
+}

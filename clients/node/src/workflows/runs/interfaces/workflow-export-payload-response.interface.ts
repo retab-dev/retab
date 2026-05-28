@@ -31,3 +31,13 @@ export function deserializeWorkflowExportPayloadResponse(
     columns: wire['columns'],
   };
 }
+
+export function serializeWorkflowExportPayloadResponse(
+  domain: WorkflowExportPayloadResponse
+): WorkflowExportPayloadResponseResponse {
+  return {
+    csv_data: domain['csvData'],
+    rows: domain['rows'],
+    columns: domain['columns'],
+  };
+}

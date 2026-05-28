@@ -8,6 +8,13 @@ export {
   mimeToBlob,
   retabStorageFileIdFromUrl,
 } from './runtime/mime.js';
+export {
+  RetabError,
+  RetabAuthenticationError,
+  RetabPermissionError,
+  RetabNotFoundError,
+  RetabRateLimitError,
+} from './common/exceptions.js';
 
 export * from './schemas/interfaces/index.js';
 export * from './extractions/interfaces/index.js';

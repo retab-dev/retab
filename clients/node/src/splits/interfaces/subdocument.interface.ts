@@ -35,3 +35,11 @@ export function deserializeSubdocument(wire: SubdocumentResponse): Subdocument {
     allowMultipleInstances: wire['allow_multiple_instances'],
   };
 }
+
+export function serializeSubdocument(domain: Subdocument): SubdocumentResponse {
+  return {
+    name: domain['name'],
+    description: domain['description'],
+    allow_multiple_instances: domain['allowMultipleInstances'],
+  };
+}

@@ -25,3 +25,12 @@ export function deserializeExperimentMetricDocumentRef(
     filename: wire['filename'],
   };
 }
+
+export function serializeExperimentMetricDocumentRef(
+  domain: ExperimentMetricDocumentRef
+): ExperimentMetricDocumentRefResponse {
+  return {
+    id: domain['id'],
+    filename: domain['filename'],
+  };
+}

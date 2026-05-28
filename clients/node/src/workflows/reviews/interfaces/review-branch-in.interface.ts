@@ -24,3 +24,10 @@ export function deserializeReviewBranchIn(wire: ReviewBranchInResponse): ReviewB
     branches: wire['branches'],
   };
 }
+
+export function serializeReviewBranchIn(domain: ReviewBranchIn): ReviewBranchInResponse {
+  return {
+    kind: domain['kind'],
+    branches: domain['branches'],
+  };
+}

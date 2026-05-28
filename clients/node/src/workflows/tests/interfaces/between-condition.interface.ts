@@ -32,3 +32,12 @@ export function deserializeBetweenCondition(wire: BetweenConditionResponse): Bet
     inclusive: wire['inclusive'],
   };
 }
+
+export function serializeBetweenCondition(domain: BetweenCondition): BetweenConditionResponse {
+  return {
+    kind: domain['kind'],
+    lower: domain['lower'],
+    upper: domain['upper'],
+    inclusive: domain['inclusive'],
+  };
+}

@@ -25,3 +25,12 @@ export function deserializeMatcheRegexCondition(
     pattern: wire['pattern'],
   };
 }
+
+export function serializeMatcheRegexCondition(
+  domain: MatcheRegexCondition
+): MatcheRegexConditionResponse {
+  return {
+    kind: domain['kind'],
+    pattern: domain['pattern'],
+  };
+}

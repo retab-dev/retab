@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationDetails,
   deserializeConditionEvaluationDetails,
+  serializeConditionEvaluationDetails,
 } from './condition-evaluation-details.interface.js';
 import type {
   ConditionEvaluationPerItem,
@@ -16,6 +17,7 @@ import type {
 import {
   ZConditionEvaluationPerItem,
   deserializeConditionEvaluationPerItem,
+  serializeConditionEvaluationPerItem,
 } from './condition-evaluation-per-item.interface.js';
 import type {
   ConditionEvaluationSubCondition,
@@ -24,6 +26,7 @@ import type {
 import {
   ZConditionEvaluationSubCondition,
   deserializeConditionEvaluationSubCondition,
+  serializeConditionEvaluationSubCondition,
 } from './condition-evaluation-sub-condition.interface.js';
 import type { ConditionEvaluationResultLogicalOperator } from './condition-evaluation-result-logical-operator.interface.js';
 import { ZConditionEvaluationResultLogicalOperator } from './condition-evaluation-result-logical-operator.interface.js';
@@ -119,5 +122,33 @@ export function deserializeConditionEvaluationResult(
           ? wire['sub_evaluations']
           : wire['sub_evaluations'].map((__i) => deserializeConditionEvaluationSubCondition(__i)),
     details: deserializeConditionEvaluationDetails(wire['details']),
+  };
+}
+
+export function serializeConditionEvaluationResult(
+  domain: ConditionEvaluationResult
+): ConditionEvaluationResultResponse {
+  return {
+    condition_id: domain['conditionId'],
+    path: domain['path'],
+    operator: domain['operator'],
+    expected: domain['expected'],
+    actual: domain['actual'],
+    matched: domain['matched'],
+    branch_name: domain['branchName'],
+    logical_operator: domain['logicalOperator'],
+    per_item:
+      domain['perItem'] == null
+        ? (domain['perItem'] as undefined)
+        : domain['perItem'] == null
+          ? domain['perItem']
+          : domain['perItem'].map((__i) => serializeConditionEvaluationPerItem(__i)),
+    sub_evaluations:
+      domain['subEvaluations'] == null
+        ? (domain['subEvaluations'] as undefined)
+        : domain['subEvaluations'] == null
+          ? domain['subEvaluations']
+          : domain['subEvaluations'].map((__i) => serializeConditionEvaluationSubCondition(__i)),
+    details: serializeConditionEvaluationDetails(domain['details']),
   };
 }

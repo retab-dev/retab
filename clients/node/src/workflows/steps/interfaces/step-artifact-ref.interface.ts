@@ -28,3 +28,10 @@ export function deserializeStepArtifactRef(wire: StepArtifactRefResponse): StepA
     id: wire['id'],
   };
 }
+
+export function serializeStepArtifactRef(domain: StepArtifactRef): StepArtifactRefResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+  };
+}

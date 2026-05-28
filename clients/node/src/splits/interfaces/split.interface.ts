@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef, deserializeFileRef } from '../../extractions/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
@@ -10,13 +14,26 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../extractions/interfaces/retab-usage.interface.js';
 import type { SplitConsensus, SplitConsensusResponse } from './split-consensus.interface.js';
-import { ZSplitConsensus, deserializeSplitConsensus } from './split-consensus.interface.js';
+import {
+  ZSplitConsensus,
+  deserializeSplitConsensus,
+  serializeSplitConsensus,
+} from './split-consensus.interface.js';
 import type { SplitResult, SplitResultResponse } from './split-result.interface.js';
-import { ZSplitResult, deserializeSplitResult } from './split-result.interface.js';
+import {
+  ZSplitResult,
+  deserializeSplitResult,
+  serializeSplitResult,
+} from './split-result.interface.js';
 import type { Subdocument, SubdocumentResponse } from './subdocument.interface.js';
-import { ZSubdocument, deserializeSubdocument } from './subdocument.interface.js';
+import {
+  ZSubdocument,
+  deserializeSubdocument,
+  serializeSubdocument,
+} from './subdocument.interface.js';
 
 export interface Split {
   /** Unique identifier of the split result */
@@ -94,5 +111,33 @@ export function deserializeSplit(wire: SplitResponse): Split {
         : wire['created_at'] == null
           ? wire['created_at']
           : new Date(wire['created_at']),
+  };
+}
+
+export function serializeSplit(domain: Split): SplitResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    subdocuments: domain['subdocuments'].map((__i) => serializeSubdocument(__i)),
+    n_consensus: domain['nConsensus'],
+    instructions: domain['instructions'],
+    output: domain['output'].map((__i) => serializeSplitResult(__i)),
+    consensus:
+      domain['consensus'] == null
+        ? (domain['consensus'] as undefined)
+        : serializeSplitConsensus(domain['consensus']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
   };
 }

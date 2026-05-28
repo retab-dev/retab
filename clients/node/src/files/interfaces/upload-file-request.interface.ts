@@ -34,3 +34,12 @@ export function deserializeUploadFileRequest(wire: UploadFileRequestResponse): U
     sha256: wire['sha_256'],
   };
 }
+
+export function serializeUploadFileRequest(domain: UploadFileRequest): UploadFileRequestResponse {
+  return {
+    filename: domain['filename'],
+    content_type: domain['contentType'],
+    size_bytes: domain['sizeBytes'],
+    sha_256: domain['sha256'],
+  };
+}

@@ -25,3 +25,11 @@ export function deserializePublishWorkflowRequest(
     description: wire['description'],
   };
 }
+
+export function serializePublishWorkflowRequest(
+  domain: PublishWorkflowRequest
+): PublishWorkflowRequestResponse {
+  return {
+    description: domain['description'],
+  };
+}

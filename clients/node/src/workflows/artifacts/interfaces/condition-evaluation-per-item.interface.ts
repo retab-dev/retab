@@ -40,3 +40,14 @@ export function deserializeConditionEvaluationPerItem(
     matched: wire['matched'],
   };
 }
+
+export function serializeConditionEvaluationPerItem(
+  domain: ConditionEvaluationPerItem
+): ConditionEvaluationPerItemResponse {
+  return {
+    index: domain['index'],
+    indices: domain['indices'],
+    actual: domain['actual'],
+    matched: domain['matched'],
+  };
+}

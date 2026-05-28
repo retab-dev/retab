@@ -22,3 +22,11 @@ export function deserializeAwaitingReviewStepLifecycle(
     status: wire['status'],
   };
 }
+
+export function serializeAwaitingReviewStepLifecycle(
+  domain: AwaitingReviewStepLifecycle
+): AwaitingReviewStepLifecycleResponse {
+  return {
+    status: domain['status'],
+  };
+}

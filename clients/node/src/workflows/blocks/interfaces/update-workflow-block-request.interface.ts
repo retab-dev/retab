@@ -53,3 +53,18 @@ export function deserializeUpdateWorkflowBlockRequest(
     configMode: wire['config_mode'],
   };
 }
+
+export function serializeUpdateWorkflowBlockRequest(
+  domain: UpdateWorkflowBlockRequest
+): UpdateWorkflowBlockRequestResponse {
+  return {
+    label: domain['label'],
+    position_x: domain['positionX'],
+    position_y: domain['positionY'],
+    width: domain['width'],
+    height: domain['height'],
+    config: domain['config'],
+    parent_id: domain['parentId'],
+    config_mode: domain['configMode'],
+  };
+}

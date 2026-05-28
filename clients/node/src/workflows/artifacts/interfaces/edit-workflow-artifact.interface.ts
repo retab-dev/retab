@@ -2,9 +2,17 @@
 
 import { z } from 'zod';
 import type { EditConfig, EditConfigResponse } from './edit-config.interface.js';
-import { ZEditConfig, deserializeEditConfig } from './edit-config.interface.js';
+import {
+  ZEditConfig,
+  deserializeEditConfig,
+  serializeEditConfig,
+} from './edit-config.interface.js';
 import type { EditResult, EditResultResponse } from './edit-result.interface.js';
-import { ZEditResult, deserializeEditResult } from './edit-result.interface.js';
+import {
+  ZEditResult,
+  deserializeEditResult,
+  serializeEditResult,
+} from './edit-result.interface.js';
 import type {
   FileRef,
   FileRefResponse,
@@ -12,6 +20,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
@@ -20,6 +29,7 @@ import type {
 import {
   ZRetabUsage,
   deserializeRetabUsage,
+  serializeRetabUsage,
 } from '../../../extractions/interfaces/retab-usage.interface.js';
 
 export interface EditWorkflowArtifact {
@@ -103,5 +113,33 @@ export function deserializeEditWorkflowArtifact(
           : deserializeRetabUsage(wire['usage']),
     createdAt: new Date(wire['created_at']),
     operation: wire['operation'],
+  };
+}
+
+export function serializeEditWorkflowArtifact(
+  domain: EditWorkflowArtifact
+): EditWorkflowArtifactResponse {
+  return {
+    id: domain['id'],
+    file: serializeFileRef(domain['file']),
+    model: domain['model'],
+    instructions: domain['instructions'],
+    config: serializeEditConfig(domain['config']),
+    template_id: domain['templateId'],
+    output: serializeEditResult(domain['output']),
+    filled_document_ref:
+      domain['filledDocumentRef'] == null
+        ? (domain['filledDocumentRef'] as undefined)
+        : domain['filledDocumentRef'] == null
+          ? domain['filledDocumentRef']
+          : serializeFileRef(domain['filledDocumentRef']),
+    usage:
+      domain['usage'] == null
+        ? (domain['usage'] as undefined)
+        : domain['usage'] == null
+          ? domain['usage']
+          : serializeRetabUsage(domain['usage']),
+    created_at: domain['createdAt'].toISOString(),
+    operation: domain['operation'],
   };
 }

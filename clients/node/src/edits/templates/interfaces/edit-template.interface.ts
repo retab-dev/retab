@@ -8,6 +8,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type {
   FormField,
@@ -16,6 +17,7 @@ import type {
 import {
   ZFormField,
   deserializeFormField,
+  serializeFormField,
 } from '../../../workflows/artifacts/interfaces/form-field.interface.js';
 
 export interface EditTemplate {
@@ -82,5 +84,32 @@ export function deserializeEditTemplate(wire: EditTemplateResponse): EditTemplat
         : wire['updated_at'] == null
           ? wire['updated_at']
           : new Date(wire['updated_at']),
+  };
+}
+
+export function serializeEditTemplate(domain: EditTemplate): EditTemplateResponse {
+  return {
+    id: domain['id'],
+    name: domain['name'],
+    file: serializeFileRef(domain['file']),
+    form_fields:
+      domain['formFields'] == null
+        ? (domain['formFields'] as undefined)
+        : domain['formFields'] == null
+          ? domain['formFields']
+          : domain['formFields'].map((__i) => serializeFormField(__i)),
+    field_count: domain['fieldCount'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'] == null
+          ? domain['updatedAt']
+          : domain['updatedAt'].toISOString(),
   };
 }

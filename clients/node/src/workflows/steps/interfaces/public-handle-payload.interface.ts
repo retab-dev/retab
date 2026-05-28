@@ -8,6 +8,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 import type { PublicHandlePayloadType } from './public-handle-payload-type.interface.js';
 import { ZPublicHandlePayloadType } from './public-handle-payload-type.interface.js';
@@ -46,5 +47,20 @@ export function deserializePublicHandlePayload(
           ? wire['document']
           : deserializeFileRef(wire['document']),
     data: wire['data'],
+  };
+}
+
+export function serializePublicHandlePayload(
+  domain: PublicHandlePayload
+): PublicHandlePayloadResponse {
+  return {
+    type: domain['type'],
+    document:
+      domain['document'] == null
+        ? (domain['document'] as undefined)
+        : domain['document'] == null
+          ? domain['document']
+          : serializeFileRef(domain['document']),
+    data: domain['data'],
   };
 }

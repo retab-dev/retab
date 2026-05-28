@@ -32,3 +32,13 @@ export function deserializeLengthCompareCondition(
     expected: wire['expected'],
   };
 }
+
+export function serializeLengthCompareCondition(
+  domain: LengthCompareCondition
+): LengthCompareConditionResponse {
+  return {
+    kind: domain['kind'],
+    op: domain['op'],
+    expected: domain['expected'],
+  };
+}

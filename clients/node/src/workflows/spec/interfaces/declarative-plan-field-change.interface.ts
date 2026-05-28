@@ -53,3 +53,18 @@ export function deserializeDeclarativePlanFieldChange(
     unifiedDiff: wire['unified_diff'],
   };
 }
+
+export function serializeDeclarativePlanFieldChange(
+  domain: DeclarativePlanFieldChange
+): DeclarativePlanFieldChangeResponse {
+  return {
+    path: domain['path'],
+    path_display: domain['pathDisplay'],
+    action: domain['action'],
+    before: domain['before'],
+    after: domain['after'],
+    before_sensitive: domain['beforeSensitive'],
+    after_sensitive: domain['afterSensitive'],
+    unified_diff: domain['unifiedDiff'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../workflows/runs/interfaces/error-details.interface.js';
 
 /** One attempt of an api_call (initial + retries). */
@@ -86,5 +87,37 @@ export function deserializeApiCallAttempt(wire: ApiCallAttemptResponse): ApiCall
         : wire['completed_at'] == null
           ? wire['completed_at']
           : new Date(wire['completed_at']),
+  };
+}
+
+export function serializeApiCallAttempt(domain: ApiCallAttempt): ApiCallAttemptResponse {
+  return {
+    attempt_number: domain['attemptNumber'],
+    request_method: domain['requestMethod'],
+    request_url: domain['requestUrl'],
+    request_headers: domain['requestHeaders'],
+    request_body: domain['requestBody'],
+    response_status: domain['responseStatus'],
+    response_headers: domain['responseHeaders'],
+    response_body: domain['responseBody'],
+    duration_ms: domain['durationMs'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializeErrorDetails(domain['error']),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
   };
 }

@@ -20,3 +20,11 @@ export function deserializeExperimentRunTrigger(
     type: wire['type'],
   };
 }
+
+export function serializeExperimentRunTrigger(
+  domain: ExperimentRunTrigger
+): ExperimentRunTriggerResponse {
+  return {
+    type: domain['type'],
+  };
+}

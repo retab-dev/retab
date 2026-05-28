@@ -20,3 +20,9 @@ export function deserializePendingRun(wire: PendingRunResponse): PendingRun {
     status: wire['status'],
   };
 }
+
+export function serializePendingRun(domain: PendingRun): PendingRunResponse {
+  return {
+    status: domain['status'],
+  };
+}

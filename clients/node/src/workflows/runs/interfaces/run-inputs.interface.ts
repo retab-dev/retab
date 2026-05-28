@@ -8,6 +8,7 @@ import type {
 import {
   ZFileRef,
   deserializeFileRef,
+  serializeFileRef,
 } from '../../../extractions/interfaces/file-ref.interface.js';
 
 /** Input payloads supplied at run creation time. */
@@ -37,5 +38,17 @@ export function deserializeRunInputs(wire: RunInputsResponse): RunInputs {
             Object.entries(wire['documents']).map(([__k, __v]) => [__k, deserializeFileRef(__v)])
           ),
     jsonData: wire['json_data'],
+  };
+}
+
+export function serializeRunInputs(domain: RunInputs): RunInputsResponse {
+  return {
+    documents:
+      domain['documents'] == null
+        ? (domain['documents'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['documents']).map(([__k, __v]) => [__k, serializeFileRef(__v)])
+          ),
+    json_data: domain['jsonData'],
   };
 }

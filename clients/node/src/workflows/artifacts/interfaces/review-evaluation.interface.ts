@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationResult,
   deserializeConditionEvaluationResult,
+  serializeConditionEvaluationResult,
 } from './condition-evaluation-result.interface.js';
 import type { ReviewEvaluationReviewDecision } from './review-evaluation-review-decision.interface.js';
 import { ZReviewEvaluationReviewDecision } from './review-evaluation-review-decision.interface.js';
@@ -98,5 +99,33 @@ export function deserializeReviewEvaluation(wire: ReviewEvaluationResponse): Rev
           ? wire['reviewed_at']
           : new Date(wire['reviewed_at']),
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeReviewEvaluation(domain: ReviewEvaluation): ReviewEvaluationResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+    evaluations:
+      domain['evaluations'] == null
+        ? (domain['evaluations'] as undefined)
+        : domain['evaluations'].map((__i) => serializeConditionEvaluationResult(__i)),
+    selected_handles: domain['selectedHandles'],
+    matched_branch_id: domain['matchedBranchId'],
+    matched_condition_ids: domain['matchedConditionIds'],
+    requires_human_review: domain['requiresHumanReview'],
+    reviewer_id: domain['reviewerId'],
+    review_decision: domain['reviewDecision'],
+    review_notes: domain['reviewNotes'],
+    requested_revision: domain['requestedRevision'],
+    reviewed_at:
+      domain['reviewedAt'] == null
+        ? (domain['reviewedAt'] as undefined)
+        : domain['reviewedAt'] == null
+          ? domain['reviewedAt']
+          : domain['reviewedAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
   };
 }

@@ -8,6 +8,7 @@ import type {
 import {
   ZExperimentByTargetDocumentMetric,
   deserializeExperimentByTargetDocumentMetric,
+  serializeExperimentByTargetDocumentMetric,
 } from './experiment-by-target-document-metric.interface.js';
 import type {
   ExperimentTargetConfusionMetric,
@@ -16,6 +17,7 @@ import type {
 import {
   ZExperimentTargetConfusionMetric,
   deserializeExperimentTargetConfusionMetric,
+  serializeExperimentTargetConfusionMetric,
 } from './experiment-target-confusion-metric.interface.js';
 
 /** One target's compact per-document distribution. */
@@ -74,5 +76,28 @@ export function deserializeExperimentByTargetMetricsResponse(
       wire['documents'] == null
         ? (wire['documents'] as undefined)
         : wire['documents'].map((__i) => deserializeExperimentByTargetDocumentMetric(__i)),
+  };
+}
+
+export function serializeExperimentByTargetMetricsResponse(
+  domain: ExperimentByTargetMetricsResponse
+): ExperimentByTargetMetricsResponseResponse {
+  return {
+    run_id: domain['runId'],
+    kind: domain['kind'],
+    view: domain['view'],
+    target: domain['target'],
+    score: domain['score'],
+    prior_score: domain['priorScore'],
+    confusion:
+      domain['confusion'] == null
+        ? (domain['confusion'] as undefined)
+        : domain['confusion'] == null
+          ? domain['confusion']
+          : serializeExperimentTargetConfusionMetric(domain['confusion']),
+    documents:
+      domain['documents'] == null
+        ? (domain['documents'] as undefined)
+        : domain['documents'].map((__i) => serializeExperimentByTargetDocumentMetric(__i)),
   };
 }

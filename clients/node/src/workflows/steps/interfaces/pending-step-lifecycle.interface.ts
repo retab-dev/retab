@@ -22,3 +22,11 @@ export function deserializePendingStepLifecycle(
     status: wire['status'],
   };
 }
+
+export function serializePendingStepLifecycle(
+  domain: PendingStepLifecycle
+): PendingStepLifecycleResponse {
+  return {
+    status: domain['status'],
+  };
+}

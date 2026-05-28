@@ -8,6 +8,7 @@ import type {
 import {
   ZDeclarativePlanChange,
   deserializeDeclarativePlanChange,
+  serializeDeclarativePlanChange,
 } from './declarative-plan-change.interface.js';
 import type { DeclarativePlanResourceChangeActions } from './declarative-plan-resource-change-actions.interface.js';
 import { ZDeclarativePlanResourceChangeActions } from './declarative-plan-resource-change-actions.interface.js';
@@ -66,5 +67,21 @@ export function deserializeDeclarativePlanResourceChange(
     summary: wire['summary'],
     change: deserializeDeclarativePlanChange(wire['change']),
     path: wire['path'],
+  };
+}
+
+export function serializeDeclarativePlanResourceChange(
+  domain: DeclarativePlanResourceChange
+): DeclarativePlanResourceChangeResponse {
+  return {
+    address: domain['address'],
+    target: domain['target'],
+    target_id: domain['targetId'],
+    name: domain['name'],
+    type: domain['type'],
+    actions: domain['actions'],
+    summary: domain['summary'],
+    change: serializeDeclarativePlanChange(domain['change']),
+    path: domain['path'],
   };
 }

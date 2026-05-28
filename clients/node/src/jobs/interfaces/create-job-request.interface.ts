@@ -31,3 +31,11 @@ export function deserializeCreateJobRequest(wire: CreateJobRequestResponse): Cre
     metadata: wire['metadata'],
   };
 }
+
+export function serializeCreateJobRequest(domain: CreateJobRequest): CreateJobRequestResponse {
+  return {
+    endpoint: domain['endpoint'],
+    request: domain['request'],
+    metadata: domain['metadata'],
+  };
+}

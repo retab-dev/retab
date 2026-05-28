@@ -45,3 +45,15 @@ export function deserializeCreateBlockExecutionRequest(
     checkEligibility: wire['check_eligibility'],
   };
 }
+
+export function serializeCreateBlockExecutionRequest(
+  domain: CreateBlockExecutionRequest
+): CreateBlockExecutionRequestResponse {
+  return {
+    run_id: domain['runId'],
+    block_id: domain['blockId'],
+    step_id: domain['stepId'],
+    n_consensus: domain['nConsensus'],
+    check_eligibility: domain['checkEligibility'],
+  };
+}

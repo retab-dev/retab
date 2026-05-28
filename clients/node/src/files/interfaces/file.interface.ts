@@ -59,3 +59,25 @@ export function deserializeFile(wire: FileResponse): File {
     pageCount: wire['page_count'],
   };
 }
+
+export function serializeFile(domain: File): FileResponse {
+  return {
+    object: domain['object'],
+    id: domain['id'],
+    filename: domain['filename'],
+    mime_type: domain['mimeType'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'] == null
+          ? domain['updatedAt']
+          : domain['updatedAt'].toISOString(),
+    page_count: domain['pageCount'],
+  };
+}

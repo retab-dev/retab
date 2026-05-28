@@ -26,3 +26,12 @@ export function deserializeReviewBoundaryConfidenceLt(
     threshold: wire['threshold'],
   };
 }
+
+export function serializeReviewBoundaryConfidenceLt(
+  domain: ReviewBoundaryConfidenceLt
+): ReviewBoundaryConfidenceLtResponse {
+  return {
+    kind: domain['kind'],
+    threshold: domain['threshold'],
+  };
+}

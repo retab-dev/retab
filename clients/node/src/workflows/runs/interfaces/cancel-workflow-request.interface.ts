@@ -22,3 +22,11 @@ export function deserializeCancelWorkflowRequest(
     commandId: wire['command_id'],
   };
 }
+
+export function serializeCancelWorkflowRequest(
+  domain: CancelWorkflowRequest
+): CancelWorkflowRequestResponse {
+  return {
+    command_id: domain['commandId'],
+  };
+}

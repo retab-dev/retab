@@ -29,3 +29,11 @@ export function deserializeSplitIouCondition(wire: SplitIouConditionResponse): S
     threshold: wire['threshold'],
   };
 }
+
+export function serializeSplitIouCondition(domain: SplitIouCondition): SplitIouConditionResponse {
+  return {
+    kind: domain['kind'],
+    expected: domain['expected'],
+    threshold: domain['threshold'],
+  };
+}

@@ -8,6 +8,7 @@ import type {
 import {
   ZDeclarativePlanFieldChange,
   deserializeDeclarativePlanFieldChange,
+  serializeDeclarativePlanFieldChange,
 } from './declarative-plan-field-change.interface.js';
 
 export interface DeclarativePlanChange {
@@ -46,5 +47,20 @@ export function deserializeDeclarativePlanChange(
       wire['field_changes'] == null
         ? (wire['field_changes'] as undefined)
         : wire['field_changes'].map((__i) => deserializeDeclarativePlanFieldChange(__i)),
+  };
+}
+
+export function serializeDeclarativePlanChange(
+  domain: DeclarativePlanChange
+): DeclarativePlanChangeResponse {
+  return {
+    before: domain['before'],
+    after: domain['after'],
+    before_sensitive: domain['beforeSensitive'],
+    after_sensitive: domain['afterSensitive'],
+    field_changes:
+      domain['fieldChanges'] == null
+        ? (domain['fieldChanges'] as undefined)
+        : domain['fieldChanges'].map((__i) => serializeDeclarativePlanFieldChange(__i)),
   };
 }

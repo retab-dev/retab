@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-28T15:27:11.862Z",
+  "generatedAt": "2026-05-28T16:12:39.786Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",

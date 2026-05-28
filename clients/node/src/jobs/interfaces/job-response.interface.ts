@@ -23,3 +23,10 @@ export function deserializeJobResponse(wire: JobResponseResponse): JobResponse {
     body: wire['body'],
   };
 }
+
+export function serializeJobResponse(domain: JobResponse): JobResponseResponse {
+  return {
+    status_code: domain['statusCode'],
+    body: domain['body'],
+  };
+}

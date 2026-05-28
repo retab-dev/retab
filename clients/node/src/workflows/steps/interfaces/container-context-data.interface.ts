@@ -40,3 +40,14 @@ export function deserializeContainerContextData(
     parallelItemIndex: wire['parallel_item_index'],
   };
 }
+
+export function serializeContainerContextData(
+  domain: ContainerContextData
+): ContainerContextDataResponse {
+  return {
+    container_id: domain['containerId'],
+    iteration: domain['iteration'],
+    is_parallel: domain['isParallel'],
+    parallel_item_index: domain['parallelItemIndex'],
+  };
+}

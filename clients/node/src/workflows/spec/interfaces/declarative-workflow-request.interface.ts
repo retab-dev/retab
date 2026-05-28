@@ -21,3 +21,11 @@ export function deserializeDeclarativeWorkflowRequest(
     yamlDefinition: wire['yaml_definition'],
   };
 }
+
+export function serializeDeclarativeWorkflowRequest(
+  domain: DeclarativeWorkflowRequest
+): DeclarativeWorkflowRequestResponse {
+  return {
+    yaml_definition: domain['yamlDefinition'],
+  };
+}

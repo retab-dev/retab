@@ -27,3 +27,12 @@ export function deserializeCancelledWorkflowExperimentResult(
     reason: wire['reason'],
   };
 }
+
+export function serializeCancelledWorkflowExperimentResult(
+  domain: CancelledWorkflowExperimentResult
+): CancelledWorkflowExperimentResultResponse {
+  return {
+    status: domain['status'],
+    reason: domain['reason'],
+  };
+}

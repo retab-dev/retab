@@ -27,3 +27,11 @@ export function deserializeJobError(wire: JobErrorResponse): JobError {
     details: wire['details'],
   };
 }
+
+export function serializeJobError(domain: JobError): JobErrorResponse {
+  return {
+    code: domain['code'],
+    message: domain['message'],
+    details: domain['details'],
+  };
+}

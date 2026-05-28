@@ -2,9 +2,17 @@
 
 import { z } from 'zod';
 import type { FileHandleInput, FileHandleInputResponse } from './file-handle-input.interface.js';
-import { ZFileHandleInput, deserializeFileHandleInput } from './file-handle-input.interface.js';
+import {
+  ZFileHandleInput,
+  deserializeFileHandleInput,
+  serializeFileHandleInput,
+} from './file-handle-input.interface.js';
 import type { JsonHandleInput, JsonHandleInputResponse } from './json-handle-input.interface.js';
-import { ZJsonHandleInput, deserializeJsonHandleInput } from './json-handle-input.interface.js';
+import {
+  ZJsonHandleInput,
+  deserializeJsonHandleInput,
+  serializeJsonHandleInput,
+} from './json-handle-input.interface.js';
 
 export interface ManualWorkflowTestSource {
   /** @default "manual" */
@@ -40,6 +48,29 @@ export function deserializeManualWorkflowTestSource(
                 } as Record<string, () => JsonHandleInput | FileHandleInput>
               )[(__v as unknown as Record<string, string>)['type']]?.() ??
                 (__v as unknown as JsonHandleInput | FileHandleInput),
+            ])
+          ),
+  };
+}
+
+export function serializeManualWorkflowTestSource(
+  domain: ManualWorkflowTestSource
+): ManualWorkflowTestSourceResponse {
+  return {
+    type: domain['type'],
+    handle_inputs:
+      domain['handleInputs'] == null
+        ? (domain['handleInputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => serializeFileHandleInput(__v as FileHandleInput),
+                  json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+                } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
             ])
           ),
   };

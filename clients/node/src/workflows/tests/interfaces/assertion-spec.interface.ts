@@ -80,7 +80,11 @@ import type {
 } from './object-contains-condition.interface.js';
 import { ZObjectContainsCondition } from './object-contains-condition.interface.js';
 import type { OutputTarget, OutputTargetResponse } from './output-target.interface.js';
-import { ZOutputTarget, deserializeOutputTarget } from './output-target.interface.js';
+import {
+  ZOutputTarget,
+  deserializeOutputTarget,
+  serializeOutputTarget,
+} from './output-target.interface.js';
 import type {
   SimilarityGteCondition,
   SimilarityGteConditionResponse,
@@ -210,5 +214,35 @@ export function deserializeAssertionSpec(wire: AssertionSpecResponse): Assertion
       | AnyItemMatchesCondition
       | SplitIouCondition,
     label: wire['label'],
+  };
+}
+
+export function serializeAssertionSpec(domain: AssertionSpec): AssertionSpecResponse {
+  return {
+    id: domain['id'],
+    target: serializeOutputTarget(domain['target']),
+    condition: domain['condition'] as unknown as
+      | ExistConditionResponse
+      | NotExistsConditionResponse
+      | EqualConditionResponse
+      | NotEqualsConditionResponse
+      | NumberCompareConditionResponse
+      | ContainConditionResponse
+      | ObjectContainsConditionResponse
+      | ArrayContainsConditionResponse
+      | MatcheRegexConditionResponse
+      | JsonSchemaValidConditionResponse
+      | SimilarityGteConditionResponse
+      | LlmJudgedAsConditionResponse
+      | LlmNotJudgedAsConditionResponse
+      | NotContainsConditionResponse
+      | LengthCompareConditionResponse
+      | BetweenConditionResponse
+      | StartWithConditionResponse
+      | EndsWithConditionResponse
+      | AllItemsMatchConditionResponse
+      | AnyItemMatchesConditionResponse
+      | SplitIouConditionResponse,
+    label: domain['label'],
   };
 }

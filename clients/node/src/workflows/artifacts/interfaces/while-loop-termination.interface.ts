@@ -8,6 +8,7 @@ import type {
 import {
   ZConditionEvaluationResult,
   deserializeConditionEvaluationResult,
+  serializeConditionEvaluationResult,
 } from './condition-evaluation-result.interface.js';
 import type { WhileLoopTerminationTerminationReason } from './while-loop-termination-termination-reason.interface.js';
 import { ZWhileLoopTerminationTerminationReason } from './while-loop-termination-termination-reason.interface.js';
@@ -62,5 +63,22 @@ export function deserializeWhileLoopTermination(
         ? (wire['evaluations'] as undefined)
         : wire['evaluations'].map((__i) => deserializeConditionEvaluationResult(__i)),
     createdAt: new Date(wire['created_at']),
+  };
+}
+
+export function serializeWhileLoopTermination(
+  domain: WhileLoopTermination
+): WhileLoopTerminationResponse {
+  return {
+    operation: domain['operation'],
+    id: domain['id'],
+    workflow_run_id: domain['workflowRunId'],
+    step_id: domain['stepId'],
+    termination_reason: domain['terminationReason'],
+    evaluations:
+      domain['evaluations'] == null
+        ? (domain['evaluations'] as undefined)
+        : domain['evaluations'].map((__i) => serializeConditionEvaluationResult(__i)),
+    created_at: domain['createdAt'].toISOString(),
   };
 }

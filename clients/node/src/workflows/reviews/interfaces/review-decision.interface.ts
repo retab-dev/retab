@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import type { Actor, ActorResponse } from './actor.interface.js';
-import { ZActor, deserializeActor } from './actor.interface.js';
+import { ZActor, deserializeActor, serializeActor } from './actor.interface.js';
 import type { ReviewVerdict } from './review-verdict.interface.js';
 import { ZReviewVerdict } from './review-verdict.interface.js';
 
@@ -39,5 +39,18 @@ export function deserializeReviewDecision(wire: ReviewDecisionResponse): ReviewD
     decidedAt:
       wire['decided_at'] == null ? (wire['decided_at'] as undefined) : new Date(wire['decided_at']),
     reason: wire['reason'],
+  };
+}
+
+export function serializeReviewDecision(domain: ReviewDecision): ReviewDecisionResponse {
+  return {
+    verdict: domain['verdict'],
+    version_id: domain['versionId'],
+    author: serializeActor(domain['author']),
+    decided_at:
+      domain['decidedAt'] == null
+        ? (domain['decidedAt'] as undefined)
+        : domain['decidedAt'].toISOString(),
+    reason: domain['reason'],
   };
 }

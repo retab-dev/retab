@@ -8,6 +8,7 @@ import type {
 import {
   ZErrorDetails,
   deserializeErrorDetails,
+  serializeErrorDetails,
 } from '../../../../workflows/runs/interfaces/error-details.interface.js';
 
 /** The result row failed. Per-job error message is bundled into lifecycle. */
@@ -47,5 +48,20 @@ export function deserializeErrorWorkflowExperimentResult(
         : wire['details'] == null
           ? wire['details']
           : deserializeErrorDetails(wire['details']),
+  };
+}
+
+export function serializeErrorWorkflowExperimentResult(
+  domain: ErrorWorkflowExperimentResult
+): ErrorWorkflowExperimentResultResponse {
+  return {
+    status: domain['status'],
+    message: domain['message'],
+    details:
+      domain['details'] == null
+        ? (domain['details'] as undefined)
+        : domain['details'] == null
+          ? domain['details']
+          : serializeErrorDetails(domain['details']),
   };
 }
