@@ -22,11 +22,9 @@ pub struct WorkflowRun {
     /// What started this run
     pub trigger: WorkflowRunTriggerOneOf,
     /// Discriminated lifecycle state.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub lifecycle: Option<WorkflowRunLifecycleOneOf>,
+    pub lifecycle: WorkflowRunLifecycleOneOf,
     /// All timing information
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub timing: Option<RunTiming>,
+    pub timing: RunTiming,
     /// Input payloads supplied at run creation time
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inputs: Option<RunInputs>,
@@ -38,13 +36,15 @@ impl WorkflowRun {
         id: impl Into<String>,
         workflow: WorkflowSnapshotRef,
         trigger: WorkflowRunTriggerOneOf,
+        lifecycle: WorkflowRunLifecycleOneOf,
+        timing: RunTiming,
     ) -> Self {
         Self {
             id: id.into(),
             workflow,
             trigger,
-            lifecycle: Default::default(),
-            timing: Default::default(),
+            lifecycle,
+            timing,
             inputs: Default::default(),
         }
     }
