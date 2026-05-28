@@ -21,18 +21,6 @@ module Retab
     sig { params(value: String).returns(String) }
     def version_id=(value); end
 
-    sig { returns(String) }
-    def name_at_run_time; end
-
-    sig { params(value: String).returns(String) }
-    def name_at_run_time=(value); end
-
-    sig { returns(T.nilable(String)) }
-    def requested_version; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def requested_version=(value); end
-
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

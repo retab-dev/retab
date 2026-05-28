@@ -210,15 +210,6 @@ const (
 	GenerateSchemaRequestReasoningEffortXhigh   GenerateSchemaRequestReasoningEffort = "xhigh"
 )
 
-// HandlePayloadType represents handle payload type values.
-type HandlePayloadType string
-
-const (
-	HandlePayloadTypeFile    HandlePayloadType = "file"
-	HandlePayloadTypeJSON    HandlePayloadType = "json"
-	HandlePayloadTypeJSONRef HandlePayloadType = "json_ref"
-)
-
 // JobStatus represents job status values.
 type JobStatus string
 
@@ -270,6 +261,14 @@ type TableParsingFormat = ParseRequestTableParsingFormat
 
 // ParseWorkflowArtifactTableParsingFormat is an alias for ParseRequestTableParsingFormat.
 type ParseWorkflowArtifactTableParsingFormat = ParseRequestTableParsingFormat
+
+// PublicHandlePayloadType represents public handle payload type values.
+type PublicHandlePayloadType string
+
+const (
+	PublicHandlePayloadTypeFile PublicHandlePayloadType = "file"
+	PublicHandlePayloadTypeJSON PublicHandlePayloadType = "json"
+)
 
 // ReviewEvaluationReviewDecision represents review evaluation review decision values.
 type ReviewEvaluationReviewDecision string

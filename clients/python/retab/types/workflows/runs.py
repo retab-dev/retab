@@ -315,8 +315,6 @@ class WorkflowSnapshotRef(BaseModel):
 
     workflow_id: str = Field(..., description="ID of the workflow that was run")
     version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
-    name_at_run_time: str = Field(..., description="Workflow name as it was at run-creation time (denormalized for display).")
-    requested_version: str | None = Field(default="production", description="Raw version selector requested when this run was created")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

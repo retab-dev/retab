@@ -15,11 +15,5 @@ namespace Retab
 
         /// <summary>Content-addressed workflow version used for this run.</summary>
         public string VersionId { get; set; } = default!;
-
-        /// <summary>Workflow name as it was at run-creation time (denormalized for display).</summary>
-        public string NameAtRunTime { get; set; } = default!;
-
-        /// <summary>Raw version selector requested when this run was created</summary>
-        public string? RequestedVersion { get; set; }
     }
 }

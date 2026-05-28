@@ -1837,20 +1837,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_handle_payload_round_trip
-    fixture = {
-      "type" => "stub",
-      "document" => nil,
-      "data" => nil,
-      "artifact_ref" => nil,
-      "preview" => nil
-    }
-    model = Retab::HandlePayload.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_job_round_trip
     fixture = {
       "id" => "stub",
@@ -2320,6 +2306,18 @@ class ModelRoundTripTest < Minitest::Test
       "status" => "pending"
     }
     model = Retab::PendingWorkflowTestRun.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_public_handle_payload_round_trip
+    fixture = {
+      "type" => "stub",
+      "document" => nil,
+      "data" => nil
+    }
+    model = Retab::PublicHandlePayload.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -3295,16 +3293,13 @@ class ModelRoundTripTest < Minitest::Test
   def test_workflow_snapshot_ref_round_trip
     fixture = {
       "workflow_id" => "stub",
-      "version_id" => "stub",
-      "name_at_run_time" => "stub",
-      "requested_version" => "stub"
+      "version_id" => "stub"
     }
     model = Retab::WorkflowSnapshotRef.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["workflow_id"], json[:workflow_id])
     assert_equal(fixture["version_id"], json[:version_id])
-    assert_equal(fixture["name_at_run_time"], json[:name_at_run_time])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

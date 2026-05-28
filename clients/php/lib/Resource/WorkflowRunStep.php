@@ -39,12 +39,12 @@ readonly class WorkflowRunStep implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /**
          * Handle input payloads consumed by this step
-         * @var array<string, \Retab\Resource\HandlePayload>|null
+         * @var array<string, \Retab\Resource\PublicHandlePayload>|null
          */
         public ?array $handleInputs = null,
         /**
          * Handle output payloads produced by this step
-         * @var array<string, \Retab\Resource\HandlePayload>|null
+         * @var array<string, \Retab\Resource\PublicHandlePayload>|null
          */
         public ?array $handleOutputs = null,
         /** Canonical persisted result of this step */

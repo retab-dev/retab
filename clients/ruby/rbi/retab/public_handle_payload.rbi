@@ -5,7 +5,7 @@
 # typed: strong
 
 module Retab
-  class HandlePayload
+  class PublicHandlePayload
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
@@ -26,18 +26,6 @@ module Retab
 
     sig { params(value: T.nilable(T.untyped)).returns(T.nilable(T.untyped)) }
     def data=(value); end
-
-    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
-    def artifact_ref; end
-
-    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
-    def artifact_ref=(value); end
-
-    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
-    def preview; end
-
-    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
-    def preview=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end

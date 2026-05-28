@@ -6,9 +6,8 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-enum HandlePayloadType: string
+enum PublicHandlePayloadType: string
 {
     case File = 'file';
     case Json = 'json';
-    case JsonRef = 'json_ref';
 }

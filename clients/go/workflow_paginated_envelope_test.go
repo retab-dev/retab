@@ -188,7 +188,7 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 			"data": []map[string]any{
 				{
 					"id":        "wfnodetestrun_1",
-					"workflow":  map[string]any{"workflow_id": "wf_1", "version_id": "draft_1", "name_at_run_time": "Workflow"},
+					"workflow":  map[string]any{"workflow_id": "wf_1", "version_id": "draft_1"},
 					"trigger":   map[string]any{"type": "api"},
 					"lifecycle": map[string]any{"status": "completed"},
 					"timing":    map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": "2026-05-18T10:00:01Z"},
@@ -249,7 +249,7 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":          "wftestrun_1",
-			"workflow":    map[string]any{"workflow_id": "wf_1", "version_id": "draft_1", "name_at_run_time": "Workflow"},
+			"workflow":    map[string]any{"workflow_id": "wf_1", "version_id": "draft_1"},
 			"trigger":     map[string]any{"type": "api"},
 			"lifecycle":   map[string]any{"status": "pending"},
 			"timing":      map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": nil},

@@ -23,8 +23,6 @@ _NOW = "2026-05-01T14:30:00Z"
 _WORKFLOW_REF = {
     "workflow_id": "wf_abc123",
     "version_id": "draft_1",
-    "name_at_run_time": "Q1 workflow",
-    "requested_version": "draft",
 }
 _TRIGGER = {"type": "api"}
 _PENDING = {"status": "pending"}

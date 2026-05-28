@@ -18,7 +18,7 @@ requirements_list = load_requirements()
 
 setup(
     name="retab",
-    version="0.0.144",
+    version="0.0.145",
     author="Retab",
     author_email="contact@retab.com",
     description="Retab official python library",

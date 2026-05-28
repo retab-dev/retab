@@ -5,11 +5,5 @@
     "filename": "Test",
     "mime_type": "test_mime_type"
   },
-  "data": {},
-  "artifact_ref": {
-    "key": {}
-  },
-  "preview": {
-    "key": {}
-  }
+  "data": {}
 }

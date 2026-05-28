@@ -4,10 +4,10 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents handle payload type values.</summary>
+    /// <summary>Represents public handle payload type values.</summary>
     [JsonConverter(typeof(RetabNewtonsoftStringEnumConverter))]
     [STJS.JsonConverter(typeof(RetabStringEnumConverterFactory))]
-    public enum HandlePayloadType
+    public enum PublicHandlePayloadType
     {
         [EnumMember(Value = "unknown")]
         Unknown,
@@ -16,7 +16,5 @@ namespace Retab
         File,
         [EnumMember(Value = "json")]
         Json,
-        [EnumMember(Value = "json_ref")]
-        JsonRef,
     }
 }

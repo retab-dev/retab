@@ -6,10 +6,9 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum HandlePayloadType {
+pub enum PublicHandlePayloadType {
     File,
     Json,
-    JsonRef,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -17,7 +16,7 @@ pub enum HandlePayloadType {
     Unknown(String),
 }
 
-impl HandlePayloadType {
+impl PublicHandlePayloadType {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
@@ -25,38 +24,36 @@ impl HandlePayloadType {
         match self {
             Self::File => "file",
             Self::Json => "json",
-            Self::JsonRef => "json_ref",
             Self::Unknown(s) => s.as_str(),
         }
     }
 }
 
-impl fmt::Display for HandlePayloadType {
+impl fmt::Display for PublicHandlePayloadType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for HandlePayloadType {
+impl AsRef<str> for PublicHandlePayloadType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for HandlePayloadType {
+impl FromStr for PublicHandlePayloadType {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "file" => Self::File,
             "json" => Self::Json,
-            "json_ref" => Self::JsonRef,
             other => Self::Unknown(other.to_string()),
         })
     }
 }
 
-impl From<String> for HandlePayloadType {
+impl From<String> for PublicHandlePayloadType {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -66,19 +63,19 @@ impl From<String> for HandlePayloadType {
     }
 }
 
-impl From<&str> for HandlePayloadType {
+impl From<&str> for PublicHandlePayloadType {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for HandlePayloadType {
+impl Serialize for PublicHandlePayloadType {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for HandlePayloadType {
+impl<'de> Deserialize<'de> for PublicHandlePayloadType {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

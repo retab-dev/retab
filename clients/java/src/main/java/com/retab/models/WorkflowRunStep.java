@@ -23,8 +23,8 @@ public final class WorkflowRunStep {
   private final List<ContainerContextData> loopContainers;
   private final String runId;
   private final OffsetDateTime createdAt;
-  private final Map<String, HandlePayload> handleInputs;
-  private final Map<String, HandlePayload> handleOutputs;
+  private final Map<String, PublicHandlePayload> handleInputs;
+  private final Map<String, PublicHandlePayload> handleOutputs;
   private final StepArtifactRef artifact;
   private final Long retryCount;
 
@@ -43,9 +43,9 @@ public final class WorkflowRunStep {
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "handle_inputs", required = false)
-          Map<String, HandlePayload> handleInputs,
+          Map<String, PublicHandlePayload> handleInputs,
       @JsonProperty(value = "handle_outputs", required = false)
-          Map<String, HandlePayload> handleOutputs,
+          Map<String, PublicHandlePayload> handleOutputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "retry_count", required = false) Long retryCount) {
     this.blockId = blockId;
@@ -121,12 +121,12 @@ public final class WorkflowRunStep {
   }
 
   @JsonProperty("handle_inputs")
-  public Map<String, HandlePayload> getHandleInputs() {
+  public Map<String, PublicHandlePayload> getHandleInputs() {
     return handleInputs;
   }
 
   @JsonProperty("handle_outputs")
-  public Map<String, HandlePayload> getHandleOutputs() {
+  public Map<String, PublicHandlePayload> getHandleOutputs() {
     return handleOutputs;
   }
 

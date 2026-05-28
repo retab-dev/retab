@@ -4,9 +4,7 @@
       "id": "01234",
       "workflow": {
         "workflow_id": "workflow_id_01234",
-        "version_id": "version_id_01234",
-        "name_at_run_time": "Test",
-        "requested_version": "test_requested_version"
+        "version_id": "version_id_01234"
       },
       "trigger": {
         "type": "manual",

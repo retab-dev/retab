@@ -20,13 +20,13 @@ from retab.types.workflows.model import (
     WorkflowRun,
     WorkflowBlock,
     Workflow,
-    HandlePayload,
     WorkflowBlockCreateRequest,
     UpdateWorkflowBlockRequest,
     WorkflowEdgeCreateRequest,
     StepExecutionResponse,
     StoredBlockExecution,
 )
+from retab.types.workflows.steps import PublicHandlePayload
 
 INVOICE_WORKFLOW_YAML = """apiVersion: workflows.retab.com/v1alpha2
 kind: Workflow
@@ -506,7 +506,6 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
             "workflow": {
                 "workflow_id": "workflow_123",
                 "version_id": "ver_0123456789abcdef0123456789abcdef",
-                "name_at_run_time": "Classifier Workflow",
             },
             "trigger": {"type": "manual"},
             "lifecycle": {"status": "running"},
@@ -540,8 +539,6 @@ def test_workflow_run_v2_typed_fields() -> None:
             "workflow": {
                 "workflow_id": "wf_1",
                 "version_id": "ver_abcdef0123456789abcdef0123456789",
-                "name_at_run_time": "Test",
-                "requested_version": "ver_abcdef0123456789abcdef0123456789",
             },
             "trigger": {"type": "api", "api_key_id": "ak_1"},
             "lifecycle": {"status": "completed"},
@@ -557,7 +554,6 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.workflow is not None
     assert run.workflow.workflow_id == "wf_1"
     assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
-    assert run.workflow.name_at_run_time == "Test"
     assert run.trigger is not None
     assert run.trigger.type == "api"
     assert run.lifecycle is not None
@@ -579,7 +575,6 @@ def test_workflow_run_v2_typed_fields() -> None:
             "workflow": {
                 "workflow_id": "wf_1",
                 "version_id": "ver_0123456789abcdef0123456789abcdef",
-                "name_at_run_time": "T",
             },
             "trigger": {"type": "manual"},
             "lifecycle": {"status": "pending"},
@@ -593,7 +588,7 @@ def test_workflow_run_v2_typed_fields() -> None:
 
 def test_handle_payload_rejects_removed_text_type() -> None:
     with pytest.raises(ValidationError):
-        HandlePayload.model_validate({"type": "text", "text": "removed"})
+        PublicHandlePayload.model_validate({"type": "text", "text": "removed"})
 
 
 def test_workflows_create_route() -> None:
@@ -960,7 +955,6 @@ def _v2_run_payload(**overrides) -> dict:
         "workflow": {
             "workflow_id": "wf_1",
             "version_id": "ver_0123456789abcdef0123456789abcdef",
-            "name_at_run_time": "Test",
         },
         "trigger": overrides.pop("trigger", {"type": "manual"}),
         "lifecycle": overrides.pop("lifecycle", {"status": "running"}),
@@ -1056,12 +1050,11 @@ def test_workflow_run_step_handle_outputs_data() -> None:
     dumped = step.model_dump()
     assert "status" not in dumped
     assert "terminal" not in dumped
-    # handle_outputs should be typed as HandlePayload
-    from retab.types.workflows.model import HandlePayload
+    # handle_outputs should be typed as PublicHandlePayload
 
     assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
-    assert isinstance(payload, HandlePayload)
+    assert isinstance(payload, PublicHandlePayload)
     assert payload.type == "json"
     assert "input_document" not in WorkflowRunStep.model_fields
     assert "output_document" not in WorkflowRunStep.model_fields
@@ -1070,38 +1063,29 @@ def test_workflow_run_step_handle_outputs_data() -> None:
     assert "terminal" not in WorkflowRunStep.model_fields
 
 
-def test_workflow_run_step_accepts_json_ref_handle_payload() -> None:
+def test_workflow_run_step_rejects_private_json_ref_handle_payload() -> None:
     from retab.types.workflows.model import WorkflowRunStep
 
-    step = WorkflowRunStep.model_validate(
-        {
-            "run_id": "run_1",
-            "organization_id": "org_1",
-            "block_id": "function-1",
-            "step_id": "function-1",
-            "block_type": "function",
-            "block_label": "Function",
-            "lifecycle": {"status": "completed"},
-            "handle_outputs": {
-                "output-json-0": {
-                    "type": "json_ref",
-                    "artifact_ref": {
-                        "operation": "workflow_step_json",
-                        "id": "artifact_123",
-                        "key": "output-json-0",
+    with pytest.raises(ValidationError):
+        WorkflowRunStep.model_validate(
+            {
+                "run_id": "run_1",
+                "organization_id": "org_1",
+                "block_id": "function-1",
+                "step_id": "function-1",
+                "block_type": "function",
+                "block_label": "Function",
+                "lifecycle": {"status": "completed"},
+                "handle_outputs": {
+                    "output-json-0": {
+                        "type": "json_ref",
+                        "artifact_ref": {
+                            "operation": "workflow_step_json",
+                            "id": "artifact_123",
+                            "key": "output-json-0",
+                        },
+                        "preview": {"truncated": True},
                     },
-                    "preview": {"truncated": True},
                 },
-            },
-        }
-    )
-
-    assert step.handle_outputs is not None
-    payload = step.handle_outputs["output-json-0"]
-    assert payload.type == "json_ref"
-    assert payload.artifact_ref == {
-        "operation": "workflow_step_json",
-        "id": "artifact_123",
-        "key": "output-json-0",
-    }
-    assert payload.preview == {"truncated": True}
+            }
+        )

@@ -52,9 +52,10 @@ describe('generated SDK smoke coverage', () => {
             workflow: {
               workflow_id: 'wf_1',
               version_id: 'ver_1',
-              name_at_run_time: 'Workflow',
             },
             trigger: { type: 'manual' },
+            lifecycle: { status: 'pending' },
+            timing: { created_at: '2026-05-28T00:00:00Z' },
           }),
           { status: 200, headers: { 'content-type': 'application/json' } }
         );

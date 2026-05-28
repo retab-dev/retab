@@ -4,11 +4,10 @@
 
 module Retab
   module Types
-    class HandlePayloadType
+    class PublicHandlePayloadType
       FILE = "file"
       JSON = "json"
-      JSON_REF = "json_ref"
-      ALL = [FILE, JSON, JSON_REF].freeze
+      ALL = [FILE, JSON].freeze
     end
   end
 end

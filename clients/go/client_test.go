@@ -189,8 +189,8 @@ func TestWorkflowsCreateUpdatePublishAndDelete(t *testing.T) {
 }
 
 func TestHandlePayloadDoesNotExposeRemovedTextField(t *testing.T) {
-	if _, ok := reflect.TypeOf(HandlePayload{}).FieldByName("Text"); ok {
-		t.Fatal("HandlePayload must not expose removed text handle payloads")
+	if _, ok := reflect.TypeOf(PublicHandlePayload{}).FieldByName("Text"); ok {
+		t.Fatal("PublicHandlePayload must not expose removed text handle payloads")
 	}
 }
 
@@ -886,10 +886,8 @@ func workflowRunResponse(runID string, workflowID string, lifecycleKind string) 
 		"id":              runID,
 		"organization_id": "org_123",
 		"workflow": map[string]any{
-			"workflow_id":       workflowID,
-			"version_id":        "ver_0123456789abcdef0123456789abcdef",
-			"name_at_run_time":  "Workflow",
-			"requested_version": "production",
+			"workflow_id": workflowID,
+			"version_id":  "ver_0123456789abcdef0123456789abcdef",
 		},
 		"trigger": map[string]any{"type": "api"},
 		"lifecycle": map[string]any{
@@ -944,14 +942,6 @@ func TestWorkflowStepsGet(t *testing.T) {
 			},
 			"handle_outputs": map[string]any{
 				"output-json-0": map[string]any{"type": "json", "data": map[string]any{"ok": true}},
-				"output-json-ref": map[string]any{
-					"type": "json_ref",
-					"artifact_ref": map[string]any{
-						"id":  "artifact_123",
-						"uri": "gs://bucket/run/block/output.json",
-					},
-					"preview": map[string]any{"truncated": true},
-				},
 			},
 		})
 	}))
@@ -990,19 +980,6 @@ func TestWorkflowStepsGet(t *testing.T) {
 	}
 	if step.HandleOutputs["output-json-0"].Type != "json" {
 		t.Fatalf("output-json-0 = %#v", step.HandleOutputs["output-json-0"])
-	}
-	refPayload, ok := step.HandleOutputs["output-json-ref"]
-	if !ok {
-		t.Fatalf("json_ref payload = %#v", step.HandleOutputs["output-json-ref"])
-	}
-	if refPayload.Type != "json_ref" {
-		t.Fatalf("json_ref type = %v", refPayload.Type)
-	}
-	if refPayload.ArtifactRef["id"] != "artifact_123" {
-		t.Fatalf("artifact_ref = %#v", refPayload.ArtifactRef)
-	}
-	if refPayload.Preview["truncated"] != true {
-		t.Fatalf("preview = %#v", refPayload.Preview)
 	}
 	encoded, err := json.Marshal(step)
 	if err != nil {

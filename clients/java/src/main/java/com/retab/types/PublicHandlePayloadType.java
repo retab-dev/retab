@@ -6,16 +6,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum HandlePayloadType {
+public enum PublicHandlePayloadType {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
   FILE("file"),
-  JSON("json"),
-  JSON_REF("json_ref");
+  JSON("json");
 
   private final String value;
 
-  HandlePayloadType(String value) {
+  PublicHandlePayloadType(String value) {
     this.value = value;
   }
 
@@ -25,8 +24,8 @@ public enum HandlePayloadType {
   }
 
   @JsonCreator
-  public static HandlePayloadType fromValue(String value) {
-    for (HandlePayloadType item : values()) {
+  public static PublicHandlePayloadType fromValue(String value) {
+    for (PublicHandlePayloadType item : values()) {
       if (item.value.equals(value)) {
         return item;
       }
