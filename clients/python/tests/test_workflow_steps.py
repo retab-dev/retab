@@ -205,7 +205,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert payload.data == {"invoice_number": "INV-001"}
 
 
-def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
+def test_workflow_steps_get_does_not_expose_storage_only_handle_fields() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _workflow_run_step_payload(
         step_id="step_function_1",
@@ -214,7 +214,8 @@ def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
         block_label="Function",
         handle_outputs={
             "output-json-0": {
-                "type": "json_ref",
+                "type": "json",
+                "data": {"result": "ok"},
                 "artifact_ref": {
                     "operation": "workflow_step_json",
                     "id": "artifact_123",
@@ -229,13 +230,10 @@ def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
 
     assert step.handle_outputs is not None
     payload = step.handle_outputs["output-json-0"]
-    assert payload.type == "json_ref"
-    assert payload.artifact_ref == {
-        "operation": "workflow_step_json",
-        "id": "artifact_123",
-        "key": "output-json-0",
-    }
-    assert payload.preview == {"truncated": True}
+    assert payload.type == "json"
+    assert payload.data == {"result": "ok"}
+    assert "artifact_ref" not in payload.model_dump()
+    assert "preview" not in payload.model_dump()
 
 
 def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> None:

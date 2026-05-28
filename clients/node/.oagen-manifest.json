@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-05-28T14:02:53.092Z",
+  "generatedAt": "2026-05-28T14:57:14.004Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -313,10 +313,10 @@
     "src/workflows/steps/interfaces/error-step-lifecycle-category.interface.ts",
     "src/workflows/steps/interfaces/error-step-lifecycle-stage.interface.ts",
     "src/workflows/steps/interfaces/error-step-lifecycle.interface.ts",
-    "src/workflows/steps/interfaces/handle-payload-type.interface.ts",
-    "src/workflows/steps/interfaces/handle-payload.interface.ts",
     "src/workflows/steps/interfaces/index.ts",
     "src/workflows/steps/interfaces/pending-step-lifecycle.interface.ts",
+    "src/workflows/steps/interfaces/public-handle-payload-type.interface.ts",
+    "src/workflows/steps/interfaces/public-handle-payload.interface.ts",
     "src/workflows/steps/interfaces/queued-step-lifecycle.interface.ts",
     "src/workflows/steps/interfaces/running-step-lifecycle.interface.ts",
     "src/workflows/steps/interfaces/skipped-step-lifecycle.interface.ts",
