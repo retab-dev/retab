@@ -48,7 +48,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123", "limit": 200}
+    assert request.params == {"run_id": "run_123", "limit": 5}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -151,7 +151,7 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123", "limit": 200}
+    assert request.params == {"run_id": "run_123", "limit": 5}
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
@@ -319,7 +319,7 @@ def test_workflow_steps_list_with_block_id_pushes_to_server() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123", "block_id": "extract-1", "limit": 200}
+    assert request.params == {"run_id": "run_123", "block_id": "extract-1", "limit": 5}
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
     assert result[0].artifact is not None
@@ -337,7 +337,7 @@ def test_workflow_steps_list_without_block_id_omits_param() -> None:
     WorkflowSteps(client=client).list("run_123")
 
     request = client._prepared_request.call_args.args[0]
-    assert request.params == {"run_id": "run_123", "limit": 200}
+    assert request.params == {"run_id": "run_123", "limit": 5}
 
 
 def test_workflow_steps_get_requires_step_id() -> None:

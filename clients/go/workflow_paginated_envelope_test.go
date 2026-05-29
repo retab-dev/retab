@@ -180,12 +180,13 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
 				{
-					"id":        "wfnodetestrun_1",
-					"workflow":  map[string]any{"workflow_id": "wf_1", "version_id": "draft_1"},
-					"trigger":   map[string]any{"type": "api"},
-					"lifecycle": map[string]any{"status": "completed"},
-					"timing":    map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": "2026-05-18T10:00:01Z"},
-					"test_id":   "wfnodetest_1",
+					"id":                  "wfnodetestrun_1",
+					"workflow_id":         "wf_1",
+					"workflow_version_id": "draft_1",
+					"trigger":             map[string]any{"type": "api"},
+					"lifecycle":           map[string]any{"status": "completed"},
+					"timing":              map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": "2026-05-18T10:00:01Z"},
+					"test_id":             "wfnodetest_1",
 				},
 			},
 			"list_metadata": map[string]any{"before": nil, "after": nil},
@@ -239,13 +240,14 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id":          "wftestrun_1",
-			"workflow":    map[string]any{"workflow_id": "wf_1", "version_id": "draft_1"},
-			"trigger":     map[string]any{"type": "api"},
-			"lifecycle":   map[string]any{"status": "pending"},
-			"timing":      map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": nil},
-			"test_id":     "wfnodetest_1",
-			"total_tests": 1,
+			"id":                  "wftestrun_1",
+			"workflow_id":         "wf_1",
+			"workflow_version_id": "draft_1",
+			"trigger":             map[string]any{"type": "api"},
+			"lifecycle":           map[string]any{"status": "pending"},
+			"timing":              map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": nil},
+			"test_id":             "wfnodetest_1",
+			"total_tests":         1,
 			"target": map[string]any{
 				"type":     "block",
 				"block_id": "block_transform",
@@ -266,7 +268,7 @@ func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Lifecycle.Status() != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID == nil || *result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
+	if result.Lifecycle.Status() != "pending" || result.WorkflowID != "wf_1" || result.TestID == nil || *result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
 		t.Fatalf("create response lost fields: %#v", result)
 	}
 	if result.ID != "wftestrun_1" {

@@ -46,6 +46,7 @@ class WorkflowRunsTest extends TestCase
         $result = $client->workflows()->runs()->create(workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
@@ -77,6 +78,7 @@ class WorkflowRunsTest extends TestCase
         $result = $client->workflows()->runs()->get('test_run_id');
         $this->assertInstanceOf(\Retab\Resource\WorkflowRun::class, $result);
         $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

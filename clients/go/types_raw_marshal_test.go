@@ -20,7 +20,7 @@ func TestWorkflowRunMarshalUsesGeneratedStructShape(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	for _, want := range []string{`"id":"run_1"`, `"workflow"`, `"trigger":null`} {
+	for _, want := range []string{`"id":"run_1"`, `"workflow_id"`, `"workflow_version_id"`, `"trigger":{`} {
 		if !strings.Contains(string(out), want) {
 			t.Fatalf("generated marshal output missing %s:\n%s", want, out)
 		}

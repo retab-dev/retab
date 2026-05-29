@@ -2,13 +2,10 @@
   "data": [
     {
       "id": "01234",
-      "workflow": {
-        "workflow_id": "workflow_id_01234",
-        "version_id": "version_id_01234"
-      },
+      "workflow_id": "workflow_id_01234",
+      "workflow_version_id": "workflow_version_id_01234",
       "trigger": {
-        "type": "manual",
-        "user_id": "user_id_01234"
+        "type": "manual"
       },
       "lifecycle": {
         "status": "pending"

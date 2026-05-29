@@ -7,7 +7,8 @@ namespace Retab
     public class ExperimentRun
     {
         public string Id { get; set; } = default!;
-        public WorkflowSnapshotRef Workflow { get; set; } = default!;
+        public string WorkflowId { get; set; } = default!;
+        public string WorkflowVersionId { get; set; } = default!;
         public ExperimentRunTrigger Trigger { get; set; } = default!;
         public string ExperimentId { get; set; } = default!;
         public string BlockId { get; set; } = default!;

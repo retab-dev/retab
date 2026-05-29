@@ -12,26 +12,15 @@ public final class RunTiming {
   private final OffsetDateTime createdAt;
   private final OffsetDateTime startedAt;
   private final OffsetDateTime completedAt;
-  private final OffsetDateTime reviewWaitingStartedAt;
-  private final Long accumulatedReviewWaitingMs;
-  private final Long durationMs;
 
   @JsonCreator
   public RunTiming(
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
-      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
-      @JsonProperty(value = "review_waiting_started_at", required = false)
-          OffsetDateTime reviewWaitingStartedAt,
-      @JsonProperty(value = "accumulated_review_waiting_ms", required = false)
-          Long accumulatedReviewWaitingMs,
-      @JsonProperty(value = "duration_ms", required = false) Long durationMs) {
+      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt) {
     this.createdAt = createdAt;
     this.startedAt = startedAt;
     this.completedAt = completedAt;
-    this.reviewWaitingStartedAt = reviewWaitingStartedAt;
-    this.accumulatedReviewWaitingMs = accumulatedReviewWaitingMs;
-    this.durationMs = durationMs;
   }
 
   @JsonProperty("created_at")
@@ -47,20 +36,5 @@ public final class RunTiming {
   @JsonProperty("completed_at")
   public OffsetDateTime getCompletedAt() {
     return completedAt;
-  }
-
-  @JsonProperty("review_waiting_started_at")
-  public OffsetDateTime getReviewWaitingStartedAt() {
-    return reviewWaitingStartedAt;
-  }
-
-  @JsonProperty("accumulated_review_waiting_ms")
-  public Long getAccumulatedReviewWaitingMs() {
-    return accumulatedReviewWaitingMs;
-  }
-
-  @JsonProperty("duration_ms")
-  public Long getDurationMs() {
-    return durationMs;
   }
 }

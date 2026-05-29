@@ -596,7 +596,7 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(runs.Data) != 1 || runs.Data[0].Workflow.WorkflowID != "wf_123" {
+	if len(runs.Data) != 1 || runs.Data[0].WorkflowID != "wf_123" {
 		t.Fatalf("runs = %#v", runs)
 	}
 	if !strings.Contains(listQuery, "status=running") {
@@ -890,13 +890,11 @@ func TestWorkflowTestsDoNotExposeWaitForCompletion(t *testing.T) {
 
 func workflowRunResponse(runID string, workflowID string, lifecycleKind string) map[string]any {
 	return map[string]any{
-		"id":              runID,
-		"organization_id": "org_123",
-		"workflow": map[string]any{
-			"workflow_id": workflowID,
-			"version_id":  "ver_0123456789abcdef0123456789abcdef",
-		},
-		"trigger": map[string]any{"type": "api"},
+		"id":                  runID,
+		"organization_id":     "org_123",
+		"workflow_id":         workflowID,
+		"workflow_version_id": "ver_0123456789abcdef0123456789abcdef",
+		"trigger":             map[string]any{"type": "api"},
 		"lifecycle": map[string]any{
 			"status": lifecycleKind,
 		},

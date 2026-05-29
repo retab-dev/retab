@@ -15,16 +15,22 @@ module Retab
     sig { params(value: String).returns(String) }
     def id=(value); end
 
-    sig { returns(Retab::WorkflowSnapshotRef) }
-    def workflow; end
+    sig { returns(String) }
+    def workflow_id; end
 
-    sig { params(value: Retab::WorkflowSnapshotRef).returns(Retab::WorkflowSnapshotRef) }
-    def workflow=(value); end
+    sig { params(value: String).returns(String) }
+    def workflow_id=(value); end
 
-    sig { returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)) }
+    sig { returns(String) }
+    def workflow_version_id; end
+
+    sig { params(value: String).returns(String) }
+    def workflow_version_id=(value); end
+
+    sig { returns(Retab::TriggerInfo) }
     def trigger; end
 
-    sig { params(value: T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)).returns(T.any(Retab::ManualTrigger, Retab::ApiTrigger, Retab::ScheduleTrigger, Retab::WebhookTrigger, Retab::EmailTrigger, Retab::RestartTrigger)) }
+    sig { params(value: Retab::TriggerInfo).returns(Retab::TriggerInfo) }
     def trigger=(value); end
 
     sig { returns(T.any(Retab::PendingWorkflowTestRun, Retab::QueuedWorkflowTestRun, Retab::RunningWorkflowTestRun, Retab::CompletedWorkflowTestRun, Retab::ErrorWorkflowTestRun, Retab::CancelledWorkflowTestRun)) }

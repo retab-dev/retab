@@ -1,8 +1,5 @@
 {
   "created_at": "2023-01-01T00:00:00.000Z",
   "started_at": "2023-01-01T00:00:00.000Z",
-  "completed_at": "2023-01-01T00:00:00.000Z",
-  "review_waiting_started_at": "2023-01-01T00:00:00.000Z",
-  "accumulated_review_waiting_ms": 1,
-  "duration_ms": 1
+  "completed_at": "2023-01-01T00:00:00.000Z"
 }

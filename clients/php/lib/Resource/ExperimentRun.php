@@ -13,7 +13,8 @@ readonly class ExperimentRun implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public WorkflowSnapshotRef $workflow,
+        public string $workflowId,
+        public string $workflowVersionId,
         public ExperimentRunTrigger $trigger,
         public string $experimentId,
         public string $blockId,
@@ -36,7 +37,8 @@ readonly class ExperimentRun implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow',
+            'workflow_id',
+            'workflow_version_id',
             'trigger',
             'experiment_id',
             'block_id',
@@ -53,7 +55,8 @@ readonly class ExperimentRun implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflow: WorkflowSnapshotRef::fromArray($data['workflow']),
+            workflowId: $data['workflow_id'],
+            workflowVersionId: $data['workflow_version_id'],
             trigger: ExperimentRunTrigger::fromArray($data['trigger']),
             experimentId: $data['experiment_id'],
             blockId: $data['block_id'],
@@ -79,7 +82,8 @@ readonly class ExperimentRun implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow' => $this->workflow->toArray(),
+            'workflow_id' => $this->workflowId,
+            'workflow_version_id' => $this->workflowVersionId,
             'trigger' => $this->trigger->toArray(),
             'experiment_id' => $this->experimentId,
             'block_id' => $this->blockId,

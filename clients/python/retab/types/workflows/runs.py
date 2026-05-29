@@ -7,7 +7,6 @@ from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.artifacts import ErrorDetails
-from retab.types.workflows.experiments.runs import WorkflowSnapshotRef
 
 
 class CancelWorkflowResponseCancellationStatus(str, Enum):
@@ -30,6 +29,16 @@ class ErrorTerminalCategory(str, Enum):
     TRANSIENT = "transient"
     PERMANENT = "permanent"
     QUOTA = "quota"
+
+
+class TriggerInfoType(str, Enum):
+    MANUAL = "manual"
+    API = "api"
+    SCHEDULE = "schedule"
+    WEBHOOK = "webhook"
+    EMAIL = "email"
+    CUSTOM = "custom"
+    RESTART = "restart"
 
 
 class WorkflowExportPayloadRequestExportSource(str, Enum):
@@ -58,15 +67,6 @@ class WorkflowExportPayloadRequestTriggerType(str, Enum):
 
 
 WorkflowExportPayloadRequestExcludeStatus = WorkflowExportPayloadRequestStatus
-
-
-class ApiTrigger(BaseModel):
-    """Run started programmatically via the public API."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["api"] = Field(default="api")
-    api_key_id: str | None = Field(default=None, description="API key id used to start the run, when known")
 
 
 class AwaitingReviewRun(BaseModel):
@@ -128,16 +128,6 @@ class CreateWorkflowRunRequest(BaseModel):
     )
 
 
-class EmailTrigger(BaseModel):
-    """Run started by an inbound email."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["email"] = Field(default="email")
-    sender: str | None = Field(default=None, description="Sender email address, when known")
-    subject: str | None = Field(default=None, description="Email subject, when known")
-
-
 class ErrorTerminal(BaseModel):
     """The run failed. All loose error fields are bundled here."""
 
@@ -151,30 +141,12 @@ class ErrorTerminal(BaseModel):
     failing_step_id: str | None = Field(default=None, description="Step ID of the failing step, when the failure was attributable to a specific step")
 
 
-class ManualTrigger(BaseModel):
-    """Manual run started by a user from the dashboard."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["manual"] = Field(default="manual")
-    user_id: str | None = Field(default=None, description="User who started the run, when known")
-
-
 class PendingRun(BaseModel):
     """The run has been created but execution has not started."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     status: Literal["pending"] = Field(default="pending")
-
-
-class RestartTrigger(BaseModel):
-    """Run created by restarting a parent run."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["restart"] = Field(default="restart")
-    parent_run_id: str = Field(..., description="ID of the parent run that was restarted")
 
 
 class RunInputs(BaseModel):
@@ -189,18 +161,15 @@ class RunInputs(BaseModel):
 class RunTiming(BaseModel):
     """Timing information for a run.
 
-    `duration_ms` is the elapsed time between `started_at` and `completed_at`."""
+    Three event timestamps that consumers cannot reconstruct on their own.
+    Wall-clock duration is a trivial `completed_at - started_at` subtraction
+    done client-side; it is not stored or exposed."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     created_at: datetime.datetime | None = Field(default=None, description="When the run record was created")
     started_at: datetime.datetime | None = Field(default=None, description="When the run started executing")
     completed_at: datetime.datetime | None = Field(default=None, description="When the run finished executing")
-    review_waiting_started_at: datetime.datetime | None = Field(default=None, description="When the current awaiting_review period started")
-    accumulated_review_waiting_ms: int | None = Field(default=0, description="Accumulated time spent waiting for review across the run")
-    duration_ms: int | None = Field(
-        default=None, description="Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.", init=False
-    )
 
 
 class RunningRun(BaseModel):
@@ -211,22 +180,16 @@ class RunningRun(BaseModel):
     status: Literal["running"] = Field(default="running")
 
 
-class ScheduleTrigger(BaseModel):
-    """Run started by a workflow schedule."""
+class TriggerInfo(BaseModel):
+    """Public summary of what started a run: just the trigger category.
+
+    The full per-variant detail (schedule_id, parent_run_id, sender, ...) is
+    kept internally on `StoredWorkflowRun.trigger` but intentionally not
+    exposed in the public API surface."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    type: Literal["schedule"] = Field(default="schedule")
-    schedule_id: str = Field(..., description="ID of the schedule that fired this run")
-
-
-class WebhookTrigger(BaseModel):
-    """Run started by an inbound webhook."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["webhook"] = Field(default="webhook")
-    webhook_id: str | None = Field(default=None, description="ID of the webhook configuration, when known")
+    type: TriggerInfoType = Field(..., description="What started this run")
 
 
 class WorkflowExportPayloadRequest(BaseModel):
@@ -271,8 +234,9 @@ class WorkflowRun(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique ID for this run")
-    workflow: WorkflowSnapshotRef = Field(..., description="Workflow + version reference")
-    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., description="What started this run", discriminator="type")
+    workflow_id: str = Field(..., description="ID of the workflow that was run")
+    workflow_version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
+    trigger: TriggerInfo = Field(..., description="What started this run")
     lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal = Field(
         ..., description="Lifecycle state of the run.", discriminator="status"
     )
@@ -285,23 +249,18 @@ class WorkflowRun(BaseModel):
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
-ApiTrigger.model_rebuild()
 AwaitingReviewRun.model_rebuild()
 CancelWorkflowRequest.model_rebuild()
 CancelWorkflowResponse.model_rebuild()
 CancelledTerminal.model_rebuild()
 CompletedTerminal.model_rebuild()
 CreateWorkflowRunRequest.model_rebuild()
-EmailTrigger.model_rebuild()
 ErrorTerminal.model_rebuild()
-ManualTrigger.model_rebuild()
 PendingRun.model_rebuild()
-RestartTrigger.model_rebuild()
 RunInputs.model_rebuild()
 RunTiming.model_rebuild()
 RunningRun.model_rebuild()
-ScheduleTrigger.model_rebuild()
-WebhookTrigger.model_rebuild()
+TriggerInfo.model_rebuild()
 WorkflowExportPayloadRequest.model_rebuild()
 WorkflowExportPayloadResponse.model_rebuild()
 WorkflowRun.model_rebuild()

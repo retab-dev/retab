@@ -6,7 +6,9 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Timing information for a run.
-/// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
+/// Three event timestamps that consumers cannot reconstruct on their own.
+/// Wall-clock duration is a trivial `completed_at - started_at` subtraction
+/// done client-side; it is not stored or exposed.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunTiming {
     /// When the run record was created
@@ -18,15 +20,4 @@ pub struct RunTiming {
     /// When the run finished executing
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub completed_at: Option<String>,
-    /// When the current awaiting_review period started
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub review_waiting_started_at: Option<String>,
-    /// Accumulated time spent waiting for review across the run
-    ///
-    /// Defaults to `0`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub accumulated_review_waiting_ms: Option<i64>,
-    /// Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub duration_ms: Option<i64>,
 }

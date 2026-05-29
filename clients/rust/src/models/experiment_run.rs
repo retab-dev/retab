@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentRun {
     pub id: String,
-    pub workflow: WorkflowSnapshotRef,
+    pub workflow_id: String,
+    pub workflow_version_id: String,
     pub trigger: ExperimentRunTrigger,
     pub experiment_id: String,
     pub block_id: String,
@@ -41,7 +42,8 @@ impl ExperimentRun {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        workflow: WorkflowSnapshotRef,
+        workflow_id: impl Into<String>,
+        workflow_version_id: impl Into<String>,
         trigger: ExperimentRunTrigger,
         experiment_id: impl Into<String>,
         block_id: impl Into<String>,
@@ -54,7 +56,8 @@ impl ExperimentRun {
     ) -> Self {
         Self {
             id: id.into(),
-            workflow,
+            workflow_id: workflow_id.into(),
+            workflow_version_id: workflow_version_id.into(),
             trigger,
             experiment_id: experiment_id.into(),
             block_id: block_id.into(),

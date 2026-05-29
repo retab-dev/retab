@@ -49,10 +49,8 @@ describe('generated SDK smoke coverage', () => {
         return new Response(
           JSON.stringify({
             id: 'run_1',
-            workflow: {
-              workflow_id: 'wf_1',
-              version_id: 'ver_1',
-            },
+            workflow_id: 'wf_1',
+            workflow_version_id: 'ver_1',
             trigger: { type: 'manual' },
             lifecycle: { status: 'pending' },
             timing: { created_at: '2026-05-28T00:00:00Z' },

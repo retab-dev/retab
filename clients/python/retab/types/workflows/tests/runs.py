@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.experiments.runs import WorkflowSnapshotRef
-from retab.types.workflows.runs import ApiTrigger, EmailTrigger, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger
+from retab.types.workflows.runs import TriggerInfo
 from retab.types.workflows.tests import WorkflowTestBlockTarget
 from retab.types.workflows.tests.results import (
     CancelledWorkflowTestRun,
@@ -70,8 +69,9 @@ class WorkflowTestRun(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
-    workflow: WorkflowSnapshotRef
-    trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., discriminator="type")
+    workflow_id: str
+    workflow_version_id: str
+    trigger: TriggerInfo
     lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun = Field(
         ..., discriminator="status"
     )

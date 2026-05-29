@@ -4,7 +4,9 @@ namespace Retab
 
     /// <summary>Timing information for a run.</summary>
     /// <remarks>
-    /// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
+    /// Three event timestamps that consumers cannot reconstruct on their own.
+    /// Wall-clock duration is a trivial `completed_at - started_at` subtraction
+    /// done client-side; it is not stored or exposed.
     /// </remarks>
     public class RunTiming
     {
@@ -17,15 +19,6 @@ namespace Retab
 
         /// <summary>When the run finished executing</summary>
         public DateTimeOffset? CompletedAt { get; set; }
-
-        /// <summary>When the current awaiting_review period started</summary>
-        public DateTimeOffset? ReviewWaitingStartedAt { get; set; }
-
-        /// <summary>Accumulated time spent waiting for review across the run</summary>
-        public long? AccumulatedReviewWaitingMs { get; set; }
-
-        /// <summary>Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.</summary>
-        public long? DurationMs { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

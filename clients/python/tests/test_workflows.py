@@ -503,10 +503,8 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
         {
             "id": "run_123",
             "organization_id": "org_123",
-            "workflow": {
-                "workflow_id": "workflow_123",
-                "version_id": "ver_0123456789abcdef0123456789abcdef",
-            },
+            "workflow_id": "workflow_123",
+            "workflow_version_id": "ver_0123456789abcdef0123456789abcdef",
             "trigger": {"type": "manual"},
             "lifecycle": {"status": "running"},
             "timing": {
@@ -531,15 +529,13 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
 
 
 def test_workflow_run_v2_typed_fields() -> None:
-    """v2 nested fields parse and round-trip with the typed sub-models."""
+    """v2 typed fields parse and round-trip with the typed sub-models."""
     run = WorkflowRun.model_validate(
         {
             "id": "run_789",
             "organization_id": "org_1",
-            "workflow": {
-                "workflow_id": "wf_1",
-                "version_id": "ver_abcdef0123456789abcdef0123456789",
-            },
+            "workflow_id": "wf_1",
+            "workflow_version_id": "ver_abcdef0123456789abcdef0123456789",
             "trigger": {"type": "api", "api_key_id": "ak_1"},
             "lifecycle": {"status": "completed"},
             "timing": {
@@ -551,9 +547,8 @@ def test_workflow_run_v2_typed_fields() -> None:
             "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
         }
     )
-    assert run.workflow is not None
-    assert run.workflow.workflow_id == "wf_1"
-    assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
+    assert run.workflow_id == "wf_1"
+    assert run.workflow_version_id == "ver_abcdef0123456789abcdef0123456789"
     assert run.trigger is not None
     assert run.trigger.type == "api"
     assert run.lifecycle is not None
@@ -561,21 +556,21 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.inputs is not None
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
     assert run.timing is not None
-    assert run.timing.accumulated_review_waiting_ms == 5000
-    assert run.timing.duration_ms is None
-    assert not hasattr(run.timing, "active_duration_ms")
-    assert run.timing.model_dump()["duration_ms"] is None
-    assert "active_duration_ms" not in run.timing.model_dump()
+    assert run.timing.completed_at is not None
+    # Legacy timing fields are silently dropped by the three-timestamp model.
+    dumped = run.timing.model_dump()
+    assert "accumulated_review_waiting_ms" not in dumped
+    assert "review_waiting_started_at" not in dumped
+    assert "duration_ms" not in dumped
+    assert "active_duration_ms" not in dumped
 
     # Defaults: omitted inputs fall back to an empty RunInputs.
     run2 = WorkflowRun.model_validate(
         {
             "id": "run_000",
             "organization_id": "org_1",
-            "workflow": {
-                "workflow_id": "wf_1",
-                "version_id": "ver_0123456789abcdef0123456789abcdef",
-            },
+            "workflow_id": "wf_1",
+            "workflow_version_id": "ver_0123456789abcdef0123456789abcdef",
             "trigger": {"type": "manual"},
             "lifecycle": {"status": "pending"},
             "timing": {"created_at": "2026-01-01T00:00:00Z"},
@@ -585,7 +580,7 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run2.inputs.documents == {}
     assert run2.inputs.json_data == {}
     assert run2.timing is not None
-    assert run2.timing.accumulated_review_waiting_ms == 0
+    assert run2.timing.created_at is not None
 
 
 def test_handle_payload_rejects_removed_text_type() -> None:
@@ -955,10 +950,8 @@ def _v2_run_payload(**overrides) -> dict:
     payload: dict = {
         "id": overrides.pop("id", "run_1"),
         "organization_id": "org_1",
-        "workflow": {
-            "workflow_id": "wf_1",
-            "version_id": "ver_0123456789abcdef0123456789abcdef",
-        },
+        "workflow_id": "wf_1",
+        "workflow_version_id": "ver_0123456789abcdef0123456789abcdef",
         "trigger": overrides.pop("trigger", {"type": "manual"}),
         "lifecycle": overrides.pop("lifecycle", {"status": "running"}),
         "timing": overrides.pop(

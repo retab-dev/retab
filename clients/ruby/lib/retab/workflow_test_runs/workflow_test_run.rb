@@ -7,7 +7,8 @@ module Retab
 
     HASH_ATTRS = {
       id: :id,
-      workflow: :workflow,
+      workflow_id: :workflow_id,
+      workflow_version_id: :workflow_version_id,
       trigger: :trigger,
       lifecycle: :lifecycle,
       timing: :timing,
@@ -19,7 +20,8 @@ module Retab
 
     attr_accessor(
       :id,
-      :workflow,
+      :workflow_id,
+      :workflow_version_id,
       :trigger,
       :lifecycle,
       :timing,
@@ -33,25 +35,9 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @workflow = hash[:workflow] ? Retab::WorkflowSnapshotRef.new(hash[:workflow]) : nil
-      @trigger = hash[:trigger] ? (
-        case hash[:trigger][:type]
-        when "api"
-          Retab::ApiTrigger.new(hash[:trigger])
-        when "email"
-          Retab::EmailTrigger.new(hash[:trigger])
-        when "manual"
-          Retab::ManualTrigger.new(hash[:trigger])
-        when "restart"
-          Retab::RestartTrigger.new(hash[:trigger])
-        when "schedule"
-          Retab::ScheduleTrigger.new(hash[:trigger])
-        when "webhook"
-          Retab::WebhookTrigger.new(hash[:trigger])
-        else
-          hash[:trigger]
-        end
-      ) : nil
+      @workflow_id = hash[:workflow_id]
+      @workflow_version_id = hash[:workflow_version_id]
+      @trigger = hash[:trigger] ? Retab::TriggerInfo.new(hash[:trigger]) : nil
       @lifecycle = hash[:lifecycle] ? (
         case hash[:lifecycle][:status]
         when "cancelled"

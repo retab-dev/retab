@@ -15,11 +15,17 @@ module Retab
     sig { params(value: String).returns(String) }
     def id=(value); end
 
-    sig { returns(Retab::WorkflowSnapshotRef) }
-    def workflow; end
+    sig { returns(String) }
+    def workflow_id; end
 
-    sig { params(value: Retab::WorkflowSnapshotRef).returns(Retab::WorkflowSnapshotRef) }
-    def workflow=(value); end
+    sig { params(value: String).returns(String) }
+    def workflow_id=(value); end
+
+    sig { returns(String) }
+    def workflow_version_id; end
+
+    sig { params(value: String).returns(String) }
+    def workflow_version_id=(value); end
 
     sig { returns(Retab::ExperimentRunTrigger) }
     def trigger; end

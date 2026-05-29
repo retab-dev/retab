@@ -582,59 +582,6 @@ impl From<CancelledWorkflowExperimentResult> for ExperimentResultLifecycleOneOf 
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum WorkflowRunTriggerOneOf {
-    #[serde(rename = "manual")]
-    ManualTrigger(Box<ManualTrigger>),
-    #[serde(rename = "api")]
-    ApiTrigger(Box<ApiTrigger>),
-    #[serde(rename = "schedule")]
-    ScheduleTrigger(Box<ScheduleTrigger>),
-    #[serde(rename = "webhook")]
-    WebhookTrigger(Box<WebhookTrigger>),
-    #[serde(rename = "email")]
-    EmailTrigger(Box<EmailTrigger>),
-    #[serde(rename = "restart")]
-    RestartTrigger(Box<RestartTrigger>),
-}
-
-impl From<ManualTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: ManualTrigger) -> Self {
-        WorkflowRunTriggerOneOf::ManualTrigger(Box::new(v))
-    }
-}
-
-impl From<ApiTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: ApiTrigger) -> Self {
-        WorkflowRunTriggerOneOf::ApiTrigger(Box::new(v))
-    }
-}
-
-impl From<ScheduleTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: ScheduleTrigger) -> Self {
-        WorkflowRunTriggerOneOf::ScheduleTrigger(Box::new(v))
-    }
-}
-
-impl From<WebhookTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: WebhookTrigger) -> Self {
-        WorkflowRunTriggerOneOf::WebhookTrigger(Box::new(v))
-    }
-}
-
-impl From<EmailTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: EmailTrigger) -> Self {
-        WorkflowRunTriggerOneOf::EmailTrigger(Box::new(v))
-    }
-}
-
-impl From<RestartTrigger> for WorkflowRunTriggerOneOf {
-    fn from(v: RestartTrigger) -> Self {
-        WorkflowRunTriggerOneOf::RestartTrigger(Box::new(v))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum WorkflowRunLifecycleOneOf {
     #[serde(rename = "pending")]

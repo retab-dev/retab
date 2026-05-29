@@ -1,6 +1,64 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary")
+load("@node_sdk_npm//:defs.bzl", "npm_link_all_packages")
 load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
 
 package(default_visibility = ["//visibility:public"])
+
+# Lockfile inputs for the hermetic checker dependency closure (see
+# node_sdk_npm npm_translate_lock in //MODULE.bazel).
+exports_files([
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    ".prettierrc",
+])
+
+# Materialize the committed package-lock.json closure (prettier/eslint/tsc and
+# their plugins/type stubs) as a Bazel-managed node_modules so the Node SDK
+# drift check runs against pinned versions with no developer-installed deps.
+npm_link_all_packages(name = "node_modules")
+
+# Hermetic prettier-format step for the sandboxed Node SDK drift check.
+#
+# The generator (//.oagen-workspace/retab-gen:generated_node_sdk_raw) emits an
+# UNFORMATTED src/ + manifest tree. prettier is not in the generator closure, so
+# this step formats that raw tree with the Node SDK client's OWN vendored
+# prettier (node_sdk_npm, pinned to package-lock.json) plus this package's
+# .prettierrc -- matching exactly how the committed SDK was formatted.
+js_binary(
+    name = "format_generated_node_sdk_bin",
+    data = [":node_modules"],
+    entry_point = "scripts/format-generated-sdk.mjs",
+)
+
+# Run the formatter over the raw generated tree, producing a formatted tree that
+# is byte-identical to the committed src/ + manifest (modulo the generatedAt
+# timestamp, which the drift diff normalizes).
+js_run_binary(
+    name = "generated_node_sdk_formatted",
+    srcs = [
+        "//.oagen-workspace/retab-gen:generated_node_sdk_raw",
+        ".prettierrc",
+    ],
+    chdir = package_name(),
+    env = {
+        "RETAB_RAW_SDK_DIR": "$(execpath //.oagen-workspace/retab-gen:generated_node_sdk_raw)",
+        "RETAB_FORMATTED_SDK_DIR": "generated-node-formatted",
+        "RETAB_PRETTIERRC": "$(execpath .prettierrc)",
+    },
+    out_dirs = ["generated-node-formatted"],
+    tool = ":format_generated_node_sdk_bin",
+)
+
+# Stage the committed Node SDK generated paths (src/ + manifest) into a single
+# TreeArtifact so the drift check can diff it against the generated tree entirely
+# inside the sandbox, without reading the live working tree.
+copy_to_directory(
+    name = "committed_node_sdk_tree",
+    srcs = glob(["src/**"]) + [".oagen-manifest.json"],
+    out = "committed-node-sdk-tree",
+)
 
 filegroup(
     name = "sources",

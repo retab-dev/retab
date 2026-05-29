@@ -7,7 +7,8 @@ module Retab
 
     HASH_ATTRS = {
       id: :id,
-      workflow: :workflow,
+      workflow_id: :workflow_id,
+      workflow_version_id: :workflow_version_id,
       trigger: :trigger,
       experiment_id: :experiment_id,
       block_id: :block_id,
@@ -27,7 +28,8 @@ module Retab
 
     attr_accessor(
       :id,
-      :workflow,
+      :workflow_id,
+      :workflow_version_id,
       :trigger,
       :experiment_id,
       :block_id,
@@ -49,7 +51,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @workflow = hash[:workflow] ? Retab::WorkflowSnapshotRef.new(hash[:workflow]) : nil
+      @workflow_id = hash[:workflow_id]
+      @workflow_version_id = hash[:workflow_version_id]
       @trigger = hash[:trigger] ? Retab::ExperimentRunTrigger.new(hash[:trigger]) : nil
       @experiment_id = hash[:experiment_id]
       @block_id = hash[:block_id]

@@ -9,8 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowRun {
   private final String id;
-  private final WorkflowSnapshotRef workflow;
-  private final Trigger trigger;
+  private final String workflowId;
+  private final String workflowVersionId;
+  private final TriggerInfo trigger;
   private final WorkflowRunLifecycle lifecycle;
   private final RunTiming timing;
   private final RunInputs inputs;
@@ -18,13 +19,15 @@ public final class WorkflowRun {
   @JsonCreator
   public WorkflowRun(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
-      @JsonProperty(value = "trigger", required = true) Trigger trigger,
+      @JsonProperty(value = "workflow_id", required = true) String workflowId,
+      @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
+      @JsonProperty(value = "trigger", required = true) TriggerInfo trigger,
       @JsonProperty(value = "lifecycle", required = true) WorkflowRunLifecycle lifecycle,
       @JsonProperty(value = "timing", required = true) RunTiming timing,
       @JsonProperty(value = "inputs", required = false) RunInputs inputs) {
     this.id = id;
-    this.workflow = workflow;
+    this.workflowId = workflowId;
+    this.workflowVersionId = workflowVersionId;
     this.trigger = trigger;
     this.lifecycle = lifecycle;
     this.timing = timing;
@@ -36,13 +39,18 @@ public final class WorkflowRun {
     return id;
   }
 
-  @JsonProperty("workflow")
-  public WorkflowSnapshotRef getWorkflow() {
-    return workflow;
+  @JsonProperty("workflow_id")
+  public String getWorkflowId() {
+    return workflowId;
+  }
+
+  @JsonProperty("workflow_version_id")
+  public String getWorkflowVersionId() {
+    return workflowVersionId;
   }
 
   @JsonProperty("trigger")
-  public Trigger getTrigger() {
+  public TriggerInfo getTrigger() {
     return trigger;
   }
 

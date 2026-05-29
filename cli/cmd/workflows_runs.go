@@ -891,11 +891,11 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 			version = "draft"
 		}
 		params := &retab.WorkflowRunsCreateParams{
-			WorkflowID: sourceRun.Workflow.WorkflowID,
+			WorkflowID: sourceRun.WorkflowID,
 			Version:    ptr(version),
 		}
 		if params.WorkflowID == "" {
-			return fmt.Errorf("source run %s does not include workflow.workflow_id", args[0])
+			return fmt.Errorf("source run %s does not include workflow_id", args[0])
 		}
 		if sourceRun.Inputs != nil {
 			if sourceRun.Inputs.Documents != nil {

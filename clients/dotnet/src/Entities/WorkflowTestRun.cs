@@ -5,9 +5,9 @@ namespace Retab
     public class WorkflowTestRun
     {
         public string Id { get; set; } = default!;
-        public WorkflowSnapshotRef Workflow { get; set; } = default!;
-        [Newtonsoft.Json.JsonConverter(typeof(ManualTriggerDiscriminatorConverter))]
-        public object Trigger { get; set; } = default!;
+        public string WorkflowId { get; set; } = default!;
+        public string WorkflowVersionId { get; set; } = default!;
+        public TriggerInfo Trigger { get; set; } = default!;
         [Newtonsoft.Json.JsonConverter(typeof(PendingWorkflowTestRunDiscriminatorConverter))]
         public object Lifecycle { get; set; } = default!;
         public ExperimentRunTiming Timing { get; set; } = default!;
