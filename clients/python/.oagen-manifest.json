@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "python",
-  "generatedAt": "2026-05-29T05:54:53.848Z",
+  "generatedAt": "2026-05-29T09:27:03.784Z",
   "files": [
     "retab/resources/__init__.py",
     "retab/resources/classifications.py",

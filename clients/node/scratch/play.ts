@@ -53,6 +53,26 @@ function isCleanJson(v: unknown): boolean {
   return true;
 }
 
+function lc(lifecycle: unknown): string {
+  return (lifecycle as { status?: string })?.status ?? '?';
+}
+
+async function pollTerminal<T>(
+  fetchOne: () => Promise<T>,
+  statusOf: (v: T) => string,
+  timeoutMs = 120_000
+): Promise<T> {
+  const start = Date.now();
+  const terminal = new Set(['completed', 'error', 'cancelled']);
+  let last = await fetchOne();
+  while (Date.now() - start < timeoutMs) {
+    last = await fetchOne();
+    if (terminal.has(statusOf(last))) return last;
+    await sleep(2000);
+  }
+  return last;
+}
+
 async function waitForRun(runId: string, timeoutMs = 120_000): Promise<WorkflowRun> {
   const start = Date.now();
   let last: WorkflowRun | null = null;
@@ -169,10 +189,38 @@ async function main() {
 
     const expRun = await client.workflows.experiments.runs.create(exp.id, WORKFLOW_ID);
     experimentRunId = expRun.id;
-    console.log(
-      `  experiment run id: ${expRun.id} status=${(expRun as { status?: string }).status ?? '?'}`
-    );
+    console.log(`  experiment run id: ${expRun.id} status=${lc(expRun.lifecycle)}`);
     ok('experiment run created', !!expRun.id);
+
+    const expTerm = await pollTerminal(
+      () => client.workflows.experiments.runs.get(experimentRunId!),
+      (r) => lc(r.lifecycle)
+    );
+    console.log(
+      `  experiment run terminal: ${lc(expTerm.lifecycle)} score=${expTerm.score ?? 'n/a'} docs=${expTerm.completedDocumentCount}/${expTerm.totalDocumentCount} errors=${expTerm.errorCount}`
+    );
+    ok(
+      'experiment run reached terminal',
+      ['completed', 'error'].includes(lc(expTerm.lifecycle)),
+      lc(expTerm.lifecycle)
+    );
+
+    const expResults = await client.workflows.experiments.results.list({
+      runId: experimentRunId!,
+      limit: 10,
+    });
+    console.log(`  experiment results: ${expResults.data.length}`);
+    ok('experiment results fetched', Array.isArray(expResults.data));
+    try {
+      const metrics = await client.workflows.experiments.metrics.get({
+        runId: experimentRunId!,
+        view: 'summary',
+      });
+      console.log(`  experiment metrics: ${JSON.stringify(metrics).slice(0, 160)}`);
+      ok('experiment metrics fetched', !!metrics);
+    } catch (e) {
+      console.log(`  ⚠️  metrics: ${errDetail(e)}`);
+    }
   } catch (e) {
     fail++;
     console.log(`  ❌ experiment flow threw: ${errDetail(e)}`);
@@ -211,10 +259,28 @@ async function main() {
       type: 'single',
       testId: test.id,
     });
-    console.log(
-      `  test run id: ${testRun.id} status=${(testRun as { status?: string }).status ?? '?'}`
-    );
+    console.log(`  test run id: ${testRun.id} status=${lc(testRun.lifecycle)}`);
     ok('test run created', !!testRun.id);
+
+    const testTerm = await pollTerminal(
+      () => client.workflows.tests.runs.get(testRun.id),
+      (r) => lc(r.lifecycle)
+    );
+    console.log(
+      `  test run terminal: ${lc(testTerm.lifecycle)} total=${testTerm.totalTests} outcome=${JSON.stringify(testTerm.counts?.outcome)}`
+    );
+    ok(
+      'test run reached terminal',
+      ['completed', 'error'].includes(lc(testTerm.lifecycle)),
+      lc(testTerm.lifecycle)
+    );
+
+    const testResults = await client.workflows.tests.results.list({ runId: testRun.id, limit: 10 });
+    console.log(`  test results: ${testResults.data.length}`);
+    for (const r of testResults.data) {
+      console.log(`    - ${JSON.stringify(r).slice(0, 200)}`);
+    }
+    ok('test results fetched', Array.isArray(testResults.data));
   } catch (e) {
     fail++;
     console.log(`  ❌ test flow threw: ${errDetail(e)}`);

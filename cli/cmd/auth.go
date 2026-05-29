@@ -362,6 +362,7 @@ compact human block for interactive terminals).`,
 		} else {
 			out["valid"] = true
 		}
+		addAuthOrganizationStatus(cmd, out)
 		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
 }
@@ -427,6 +428,33 @@ func getSelectedEnvironmentForAuthStatus(
 
 func probeAuthStatus(cmd *cobra.Command) error {
 	return cliJSONRequestInto(cmd, http.MethodGet, "/v1/auth/status", nil, nil, nil)
+}
+
+// cliAuthOrganization mirrors the /v1/auth/organization response: the org id
+// is always present, the WorkOS-resolved name is best-effort (absent when the
+// lookup degraded server-side).
+type cliAuthOrganization struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// addAuthOrganizationStatus resolves the organization bound to the active
+// credential and records it on the status payload. Best-effort: any failure
+// (network, server) is swallowed so `auth status` still renders the rest of
+// the block — the org line is informational, not a verification signal.
+func addAuthOrganizationStatus(cmd *cobra.Command, out map[string]any) {
+	var organization cliAuthOrganization
+	if err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/auth/organization", nil, nil, &organization); err != nil {
+		return
+	}
+	if organization.ID == "" {
+		return
+	}
+	organizationOut := map[string]any{"id": organization.ID}
+	if organization.Name != "" {
+		organizationOut["name"] = organization.Name
+	}
+	out["organization"] = organizationOut
 }
 
 // resolveAuthOutputFormat reads the global --output persistent flag.
@@ -511,6 +539,7 @@ func writeAuthStatusJSON(w io.Writer, out map[string]any) error {
 //
 //	Logged in as <preview>
 //	Source:  <source>
+//	Organization:  <name> (<id>)  (when resolvable)
 //	Environment:  <selected environment>  (OAuth, when available)
 //	Status:  <valid|invalid|not authenticated>
 //
@@ -547,6 +576,12 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 		return err
 	}
 
+	if organizationLine := authStatusOrganizationDisplay(out); organizationLine != "" {
+		if _, err := fmt.Fprintf(w, "%sOrganization:%s  %s\n", s.dim, s.reset, organizationLine); err != nil {
+			return err
+		}
+	}
+
 	if environmentLine := authStatusEnvironmentDisplay(out); environmentLine != "" {
 		if _, err := fmt.Fprintf(w, "%sEnvironment:%s  %s\n", s.dim, s.reset, environmentLine); err != nil {
 			return err
@@ -572,6 +607,23 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	}
 	_, err := fmt.Fprintf(w, "%sStatus:%s  %s\n", s.dim, s.reset, status)
 	return err
+}
+
+func authStatusOrganizationDisplay(out map[string]any) string {
+	organizationAny, ok := out["organization"]
+	if !ok || organizationAny == nil {
+		return ""
+	}
+	organization, ok := organizationAny.(map[string]any)
+	if !ok {
+		return ""
+	}
+	id, _ := organization["id"].(string)
+	name, _ := organization["name"].(string)
+	if name != "" && id != "" {
+		return fmt.Sprintf("%s (%s)", name, id)
+	}
+	return id
 }
 
 func authStatusEnvironmentDisplay(out map[string]any) string {
@@ -611,9 +663,9 @@ func authStatusEnvironmentDisplay(out map[string]any) string {
 // Row order is fixed (not map iteration order) so the output is
 // deterministic across runs and easy to scan visually. Optional rows
 // (BASE_URL, OAUTH_DOMAIN, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
-// ENVIRONMENT, ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID, ERROR, HINT)
-// are only emitted when present in the payload — rendering an empty value
-// would just be noise.
+// ORGANIZATION, ENVIRONMENT, ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID,
+// ERROR, HINT) are only emitted when present in the payload — rendering an
+// empty value would just be noise.
 func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
@@ -660,6 +712,9 @@ func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 				row("HAS_REFRESH", hr)
 			}
 		}
+	}
+	if organizationLine := authStatusOrganizationDisplay(out); organizationLine != "" {
+		row("ORGANIZATION", organizationLine)
 	}
 	if environmentLine := authStatusEnvironmentDisplay(out); environmentLine != "" {
 		row("ENVIRONMENT", environmentLine)

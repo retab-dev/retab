@@ -602,3 +602,153 @@ func TestWriteAuthStatus_OutputJSONRoutesToJSON(t *testing.T) {
 		t.Errorf("--output json missing 'authenticated' key:\n%s", buf.String())
 	}
 }
+
+// The human status block renders an Organization line, placed above the
+// Environment line, formatted as "<name> (<id>)" when both are present.
+func TestWriteAuthStatusHuman_RendersOrganization(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"valid":         true,
+		"organization": map[string]any{
+			"id":   "org_456",
+			"name": "Acme Inc",
+		},
+		"environment": map[string]any{
+			"id":   "env_prod",
+			"name": "Production",
+			"type": "production",
+		},
+	}
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Organization:") || !strings.Contains(out, "Acme Inc (org_456)") {
+		t.Fatalf("status should render the organization name and id:\n%s", out)
+	}
+	if strings.Index(out, "Organization:") > strings.Index(out, "Environment:") {
+		t.Fatalf("Organization line should appear before Environment line:\n%s", out)
+	}
+}
+
+// When only the organization id resolved (WorkOS name lookup degraded
+// server-side), the block shows the bare id rather than an empty paren.
+func TestWriteAuthStatusHuman_RendersOrganizationIDOnly(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"valid":         true,
+		"organization": map[string]any{
+			"id": "org_456",
+		},
+	}
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Organization:") || !strings.Contains(out, "org_456") {
+		t.Fatalf("status should render the organization id:\n%s", out)
+	}
+	if strings.Contains(out, "(org_456)") {
+		t.Fatalf("id-only organization should not render empty-name parens:\n%s", out)
+	}
+}
+
+func TestWriteAuthStatusTable_RendersOrganization(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"valid":         true,
+		"organization": map[string]any{
+			"id":   "org_456",
+			"name": "Acme Inc",
+		},
+	}
+	if err := writeAuthStatusTable(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusTable: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "ORGANIZATION") || !strings.Contains(out, "Acme Inc (org_456)") {
+		t.Fatalf("table output should include the ORGANIZATION row:\n%s", out)
+	}
+}
+
+// addAuthOrganizationStatus calls /v1/auth/organization with the active
+// credential and records id+name on the status payload.
+func TestAddAuthOrganizationStatus_PopulatesOrganization(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	var seenPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id": "org_456", "name": "Acme Inc"}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		APIKey:  "sk_live_test",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	cmd.PersistentFlags().Bool("debug", false, "")
+
+	out := map[string]any{}
+	addAuthOrganizationStatus(cmd, out)
+
+	if seenPath != "/v1/auth/organization" {
+		t.Fatalf("org path = %q, want /v1/auth/organization", seenPath)
+	}
+	organization, ok := out["organization"].(map[string]any)
+	if !ok {
+		t.Fatalf("organization not recorded on payload: %#v", out["organization"])
+	}
+	if organization["id"] != "org_456" || organization["name"] != "Acme Inc" {
+		t.Fatalf("organization payload = %#v, want id=org_456 name=Acme Inc", organization)
+	}
+}
+
+// A failing org endpoint must not break `auth status` — the line is
+// informational, so the helper swallows the error and leaves no row.
+func TestAddAuthOrganizationStatus_SwallowsFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		APIKey:  "sk_live_test",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	cmd.PersistentFlags().Bool("debug", false, "")
+
+	out := map[string]any{}
+	addAuthOrganizationStatus(cmd, out)
+
+	if _, ok := out["organization"]; ok {
+		t.Fatalf("organization should be absent when the lookup fails: %#v", out["organization"])
+	}
+}
