@@ -42,7 +42,7 @@ namespace Retab
         /// <summary>Parent workflow run ID</summary>
         public string RunId { get; set; } = default!;
 
-        /// <summary>When the step doc was first persisted</summary>
+        /// <summary>When the step was created</summary>
         public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Handle input payloads consumed by this step</summary>
@@ -51,7 +51,7 @@ namespace Retab
         /// <summary>Handle output payloads produced by this step</summary>
         public Dictionary<string, PublicHandlePayload>? HandleOutputs { get; set; }
 
-        /// <summary>Canonical persisted result of this step</summary>
+        /// <summary>Reference to the result produced by this step, if any.</summary>
         public StepArtifactRef? Artifact { get; set; }
 
         /// <summary>Number of retry attempts</summary>

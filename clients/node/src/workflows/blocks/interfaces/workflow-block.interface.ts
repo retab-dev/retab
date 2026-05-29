@@ -35,7 +35,7 @@ export interface WorkflowBlock {
   /** ID of parent container (while_loop, for_each) */
   parentId?: string | null;
   updatedAt: Date;
-  /** Internal graph-derived schema sidecar. */
+  /** Schemas resolved for this block from the workflow graph. */
   resolvedSchemas?: Record<string, unknown> | null;
 }
 

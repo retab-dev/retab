@@ -29,6 +29,11 @@ type ExperimentRunsListParams struct {
 }
 
 // List experiment Runs
+// List experiment runs.
+// Optionally filter by `workflow_id`, `experiment_id`, `block_id`,
+// `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+// window. Returns a cursor-paginated list ordered by `sort_by` (default
+// newest first).
 func (s *ExperimentRunService) List(ctx context.Context, params *ExperimentRunsListParams, opts ...RequestOption) (*PaginatedList[ExperimentRun], error) {
 	return doPaginated[ExperimentRun](ctx, s.client, "GET", "/v1/workflows/experiments/runs", params, nil, opts...)
 }
@@ -56,6 +61,10 @@ func (s *ExperimentRunService) Create(ctx context.Context, params *ExperimentRun
 }
 
 // Get experiment Run
+// Retrieve a single experiment run.
+// Identified by `run_id`. Returns the run with its lifecycle status, timing,
+// score, and document progress counts. Returns 404 if no run with that ID
+// exists.
 func (s *ExperimentRunService) Get(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRun, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: run_id is required")
@@ -69,6 +78,11 @@ func (s *ExperimentRunService) Get(ctx context.Context, runID string, opts ...Re
 }
 
 // Cancel experiment Run
+// Cancel an experiment run.
+// Identified by `run_id`. Cancels the run and any of its pending or
+// in-flight results, returning the run's new `cancelled` lifecycle. Returns
+// 404 if the run does not exist or is not in a cancellable (pending, queued,
+// or running) state.
 func (s *ExperimentRunService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*CancelWorkflowExperimentRunResponse, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: run_id is required")

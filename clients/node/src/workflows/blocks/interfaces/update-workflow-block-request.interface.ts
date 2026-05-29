@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { UpdateWorkflowBlockRequestConfigMode } from './update-workflow-block-request-config-mode.interface.js';
 import { ZUpdateWorkflowBlockRequestConfigMode } from './update-workflow-block-request-config-mode.interface.js';
 
-/** Request to update a block. Only provided fields are updated. */
+/** Update a block. Only the fields you provide are changed. */
 export interface UpdateWorkflowBlockRequest {
   label?: string | null;
   positionX?: number | null;
@@ -13,7 +13,7 @@ export interface UpdateWorkflowBlockRequest {
   height?: number | null;
   config?: Record<string, unknown> | null;
   parentId?: string | null;
-  /** How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted. */
+  /** How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. */
   configMode?: UpdateWorkflowBlockRequestConfigMode | null;
 }
 

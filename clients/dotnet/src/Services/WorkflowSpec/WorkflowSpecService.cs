@@ -18,11 +18,9 @@ namespace Retab
 
         /// <summary>Apply Workflow Spec</summary>
         /// <remarks>
-        /// Apply declarative YAML to draft workflow state.
-        /// Contract:
-        /// - apply writes canonical draft state, not authored formatting
-        /// - re-applying canonical exported YAML against unchanged draft state should
-        /// return an empty resource_changes list
+        /// Apply a declarative YAML spec to the draft workflow.
+        /// Re-applying a spec that already matches the draft makes no changes and
+        /// returns an empty `resource_changes` list.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -41,10 +39,10 @@ namespace Retab
 
         /// <summary>Plan Workflow Spec</summary>
         /// <remarks>
-        /// Compute the declarative reconcile plan against the current draft workflow.
-        /// Contract:
-        /// - plan compares authored YAML against current draft state
-        /// - canonical exported YAML should plan as `noop` against the same draft
+        /// Preview the changes a declarative YAML spec would make to the draft workflow.
+        /// Compares the spec against the current draft and returns the resulting
+        /// changes without applying them. A spec that already matches the draft
+        /// plans as a no-op.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -63,15 +61,10 @@ namespace Retab
 
         /// <summary>Validate Workflow Spec</summary>
         /// <remarks>
-        /// Validate declarative YAML without mutating workflow state.
-        /// Contract:
-        /// - validate, plan, and apply agree on whether a spec is acceptable: any
-        /// severity=error diagnostic — whether emitted at parse time as a
-        /// DeclarativeWorkflowError or bumped during compile/diagnose — raises
-        /// HTTP 400 with the structured error issues
-        /// - warnings do not make the document invalid; warning-only specs return
-        /// HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
-        /// - counts reflect the canonical compiled graph, not raw authored block count
+        /// Validate declarative YAML without changing the workflow.
+        /// Any error-level diagnostic responds with 400 and the structured issues.
+        /// Warnings do not make a spec invalid: a warning-only spec responds with
+        /// 200, `is_valid=True`, and the warnings in `diagnostics`.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

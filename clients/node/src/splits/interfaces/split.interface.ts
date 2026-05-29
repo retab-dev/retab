@@ -38,6 +38,7 @@ import {
   serializeSubdocument,
 } from './subdocument.interface.js';
 
+/** A split result: a document divided into its constituent `subdocuments`. */
 export interface Split {
   /** Unique identifier of the split result */
   id: string;

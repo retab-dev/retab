@@ -6,7 +6,7 @@ namespace Retab
 
     /// <summary>Run-level summary plus block-specific diagnostics.</summary>
     /// <remarks>
-    /// ``prior_run_id`` + ``prior_score`` populate when the request opts into
+    /// `prior_run_id` + `prior_score` populate when the request opts into
     /// prior-comparison and a completed prior run exists.
     /// </remarks>
     public class ExperimentSummaryMetricsResponse

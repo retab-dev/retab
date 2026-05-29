@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a workflow test.</summary>
+    /// <summary>A saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output.</summary>
     public class WorkflowTest
     {
         public string Id { get; set; } = default!;

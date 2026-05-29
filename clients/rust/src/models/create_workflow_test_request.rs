@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body to create a workflow test: the target block, an input `source`, and an `assertion` to evaluate its output.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWorkflowTestRequest {
     pub workflow_id: String,

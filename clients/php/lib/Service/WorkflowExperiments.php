@@ -120,6 +120,12 @@ class WorkflowExperiments
 
     /**
      * Get Experiment
+     *
+     * Retrieve a single experiment.
+     *
+     * Identified by `experiment_id`. Returns the experiment along with its
+     * latest-run status, score, staleness, and schema-drift detection. Returns
+     * 404 if no experiment with that ID exists.
      * @param string $experimentId
      * @return \Retab\Resource\WorkflowExperiment
      * @throws \Retab\Exception\RetabException
@@ -138,6 +144,12 @@ class WorkflowExperiments
 
     /**
      * Update Experiment
+     *
+     * Update an experiment.
+     *
+     * Identified by `experiment_id`. Send any of `name`, `n_consensus`,
+     * `documents`, or `document_captures`; omitted fields are left unchanged.
+     * Returns the updated experiment with its latest-run status and drift info.
      * @param string $experimentId
      * @param array<\Retab\Resource\ExperimentDocumentCaptureRequest>|null $documentCaptures
      * @param array<\Retab\Resource\ExplicitExperimentDocumentRequest>|null $documents
@@ -171,6 +183,12 @@ class WorkflowExperiments
 
     /**
      * Delete Experiment
+     *
+     * Delete an experiment.
+     *
+     * Identified by `experiment_id`. Also removes the experiment's runs and
+     * results. Returns 204 on success, 404 if not found, and 409 if the latest
+     * run is still pending or running (cancel it first).
      * @param string $experimentId
      * @return void
      * @throws \Retab\Exception\RetabException

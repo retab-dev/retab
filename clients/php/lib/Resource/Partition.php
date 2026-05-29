@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A partition result: a document segmented into chunks along the requested `key`. */
 readonly class Partition implements \JsonSerializable
 {
     use JsonSerializableTrait;

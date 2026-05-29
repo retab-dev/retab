@@ -46,7 +46,7 @@ type WorkflowBlockExecutionsCreateParams struct {
 	RunID string `json:"run_id" url:"-"`
 	// BlockID is workflow block id to execute.
 	BlockID string `json:"block_id" url:"-"`
-	// StepID is optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key.
+	// StepID is optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step.
 	StepID *string `json:"step_id,omitempty" url:"-"`
 	// NConsensus is optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7.
 	NConsensus *int `json:"n_consensus,omitempty" url:"-"`

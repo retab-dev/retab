@@ -19,14 +19,14 @@ class WorkflowEdges
      *
      * List edges for a workflow with keyset cursor pagination.
      *
-     * Optionally filter by source or target block ID. Sorted by ``updated_at``
-     * descending with ``id`` as the tiebreaker. Pass ``after`` for the next
-     * page, ``before`` for the previous page — mutually exclusive.
+     * Optionally filter by source or target block ID. Sorted by `updated_at`
+     * descending with `id` as the tiebreaker. Pass `after` for the next
+     * page, `before` for the previous page — mutually exclusive.
      * @param string $workflowId
      * @param string|null $sourceBlock Filter by source block ID
      * @param string|null $targetBlock Filter by target block ID
-     * @param string|null $before Edge id cursor: return the page before this id (mutually exclusive with ``after``).
-     * @param string|null $after Edge id cursor: return the page after this id (mutually exclusive with ``before``).
+     * @param string|null $before Edge id cursor: return the page before this id (mutually exclusive with `after`).
+     * @param string|null $after Edge id cursor: return the page after this id (mutually exclusive with `before`).
      * @param int|null $limit Maximum number of edges to return per page (1-200). Defaults to 100.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowEdgeDoc>
      * @throws \Retab\Exception\RetabException
@@ -66,7 +66,7 @@ class WorkflowEdges
      * - Both source and target blocks exist in the workflow
      * - The connection is semantically valid (type compatibility, container rules, etc.)
      * @param string $workflowId Workflow to create the edge in.
-     * @param string|null $id If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one.
+     * @param string|null $id Edge ID. Omit to let the server generate one (recommended).
      * @param string $sourceBlock Source block ID
      * @param string $targetBlock Target block ID
      * @param string|null $sourceHandle Output handle

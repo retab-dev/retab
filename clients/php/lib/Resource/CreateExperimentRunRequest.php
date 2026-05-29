@@ -7,12 +7,10 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Body for the flat `POST /workflows/experiments/runs` route.
+ * Request body to create an experiment run.
  *
- * Carries the scoping identity in the body — no parent id in the URL
- * (meta-pattern-blueprint §1). `workflow_id` is optional because it is
- * derivable from the experiment record; when supplied it is validated
- * against the experiment's stored workflow.
+ * `workflow_id` is optional; when omitted it is taken from the experiment,
+ * and when supplied it must match the experiment's workflow.
  */
 readonly class CreateExperimentRunRequest implements \JsonSerializable
 {

@@ -2,7 +2,7 @@ namespace Retab
 {
     using System;
 
-    /// <summary>Represents an edit.</summary>
+    /// <summary>An edit result: form-field values written onto a document or template PDF.</summary>
     public class Edit
     {
 

@@ -18,6 +18,13 @@ namespace Retab
         public WorkflowTestRunsService(Retab client) : base(client) { }
 
         /// <summary>List Test Execution Runs</summary>
+        /// <remarks>
+        /// List workflow test runs.
+        /// Optionally filter by `workflow_id`, `test_id`, `target_block_id`,
+        /// `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+        /// window. Returns a cursor-paginated list ordered by `sort_by` (default
+        /// newest first).
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -46,7 +53,7 @@ namespace Retab
         /// <summary>Create Test Run</summary>
         /// <remarks>
         /// Create a workflow-scoped test run.
-        /// ``workflow_id`` is the execution context. Optional ``scope`` narrows the
+        /// `workflow_id` is the execution context. Optional `scope` narrows the
         /// run to one saved test or one block; omitted scope runs all workflow tests.
         /// </remarks>
         /// <param name="options">Request options.</param>
@@ -65,6 +72,11 @@ namespace Retab
         }
 
         /// <summary>Get Test Execution Run</summary>
+        /// <remarks>
+        /// Retrieve a single workflow test run.
+        /// Identified by `run_id`. Returns the run with its lifecycle status, timing,
+        /// and pass/fail counts. Returns 404 if no run with that ID exists.
+        /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -81,6 +93,12 @@ namespace Retab
         }
 
         /// <summary>Cancel Test Execution Run</summary>
+        /// <remarks>
+        /// Cancel a workflow test run.
+        /// Identified by `run_id`. Stops the run and returns it with its updated
+        /// cancelled lifecycle. Returns 404 if the run does not exist or is not in a
+        /// cancellable state.
+        /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

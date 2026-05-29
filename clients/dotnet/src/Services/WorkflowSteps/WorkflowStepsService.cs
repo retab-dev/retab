@@ -19,10 +19,10 @@ namespace Retab
         /// <summary>List Workflow Run Steps</summary>
         /// <remarks>
         /// List steps with status and artifact summaries.
-        /// Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker
-        /// (the same compound key the underlying index uses). Pass ``after`` for
-        /// the next page, ``before`` for the previous page — mutually exclusive.
-        /// ``run_id`` is optional; when omitted the list is scoped to the caller's
+        /// Sorted by `started_at` ascending with `step_id` as the tiebreaker
+        /// (the same compound key the underlying index uses). Pass `after` for
+        /// the next page, `before` for the previous page — mutually exclusive.
+        /// `run_id` is optional; when omitted the list is scoped to the caller's
         /// organization.
         /// </remarks>
         /// <param name="options">Request options.</param>
@@ -52,10 +52,8 @@ namespace Retab
 
         /// <summary>Get Workflow Step</summary>
         /// <remarks>
-        /// Get one persisted step document by step id.
-        /// This is the canonical step object shape used by ``GET /workflows/steps``.
-        /// It intentionally does not join fingerprint rows or return experiment query
-        /// projections.
+        /// Get one step by its step id.
+        /// Returns the same step shape as `GET /workflows/steps`.
         /// </remarks>
         /// <param name="stepId">The step id.</param>
         /// <param name="options">Request options.</param>

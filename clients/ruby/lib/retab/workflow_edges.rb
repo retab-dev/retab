@@ -14,8 +14,8 @@ module Retab
     # @param workflow_id [String]
     # @param source_block [String, nil] Filter by source block ID
     # @param target_block [String, nil] Filter by target block ID
-    # @param before [String, nil] Edge id cursor: return the page before this id (mutually exclusive with ``after``).
-    # @param after [String, nil] Edge id cursor: return the page after this id (mutually exclusive with ``before``).
+    # @param before [String, nil] Edge id cursor: return the page before this id (mutually exclusive with `after`).
+    # @param after [String, nil] Edge id cursor: return the page after this id (mutually exclusive with `before`).
     # @param limit [Integer, nil] Maximum number of edges to return per page (1-200).
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowEdgeDoc>]
@@ -70,7 +70,7 @@ module Retab
 
     # Create Edge
     # @param workflow_id [String] Workflow to create the edge in.
-    # @param id [String, nil] If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one.
+    # @param id [String, nil] Edge ID. Omit to let the server generate one (recommended).
     # @param source_block [String] Source block ID
     # @param target_block [String] Target block ID
     # @param source_handle [String, nil] Output handle

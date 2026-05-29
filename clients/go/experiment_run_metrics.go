@@ -25,6 +25,13 @@ type ExperimentRunMetricsGetParams struct {
 }
 
 // Get experiment Metrics For Run
+// Get metrics for an experiment run.
+// Requires the `run_id` query parameter. Use `view` to choose the breakdown
+// (`summary`, `by_document`, `by_target`, or `votes`), and narrow with
+// `document_id` or `target_path`. By default each score-bearing row also
+// carries a `prior_score` from the previous completed run; pass
+// `include_prior=false` to omit it or `prior_run_id` to compare against a
+// specific run.
 func (s *ExperimentRunMetricService) Get(ctx context.Context, params *ExperimentRunMetricsGetParams, opts ...RequestOption) (*Experiment, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: run_id is required")

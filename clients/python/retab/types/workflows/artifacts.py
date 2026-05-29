@@ -74,9 +74,14 @@ class ApiCallAttempt(BaseModel):
 
 
 class ApiCallInvocation(BaseModel):
+    """Record of an API-call block's outbound HTTP request during a run.
+
+    Lists each request `attempts` made (including retries) and any `error`
+    if the call ultimately failed."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: Literal["api_call_invocation"] = Field(default="api_call_invocation", description="Artifact operation that determines the backing record type")
+    operation: Literal["api_call_invocation"] = Field(default="api_call_invocation", description="The operation that produced this artifact")
     id: str
     run_id: str
     step_id: str
@@ -86,6 +91,8 @@ class ApiCallInvocation(BaseModel):
 
 
 class ClassificationWorkflowArtifact(BaseModel):
+    """A classification produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the classification")
@@ -98,7 +105,7 @@ class ClassificationWorkflowArtifact(BaseModel):
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
-    operation: Literal["classification"] = Field(default="classification", description="Artifact operation that determines the backing record type")
+    operation: Literal["classification"] = Field(default="classification", description="The operation that produced this artifact")
 
 
 class ConditionEvaluationDetails(BaseModel):
@@ -174,9 +181,15 @@ class ConditionEvaluationSubCondition(BaseModel):
 
 
 class ConditionalEvaluation(BaseModel):
+    """Record of how a conditional block routed during a workflow run.
+
+    Captures each condition that was evaluated (`evaluations`), which output
+    branches were chosen (`selected_handles`), and the branch and condition
+    IDs that matched (`matched_branch_id`, `matched_condition_ids`)."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: Literal["conditional_evaluation"] = Field(default="conditional_evaluation", description="Artifact operation that determines the backing record type")
+    operation: Literal["conditional_evaluation"] = Field(default="conditional_evaluation", description="The operation that produced this artifact")
     id: str
     run_id: str
     step_id: str
@@ -188,6 +201,8 @@ class ConditionalEvaluation(BaseModel):
 
 
 class EditWorkflowArtifact(BaseModel):
+    """An edit produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the edit.")
@@ -200,7 +215,7 @@ class EditWorkflowArtifact(BaseModel):
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
-    operation: Literal["edit"] = Field(default="edit", description="Artifact operation that determines the backing record type")
+    operation: Literal["edit"] = Field(default="edit", description="The operation that produced this artifact")
 
 
 class ErrorDetails(BaseModel):
@@ -211,7 +226,7 @@ class ErrorDetails(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     message: str | None = Field(default=None, description="Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.")
-    stack_trace: str | None = Field(default=None, description="Full Python stack trace")
+    stack_trace: str | None = Field(default=None, description="Full stack trace")
     block_id: str | None = Field(default=None, description="ID of the block that failed")
     block_name: str | None = Field(default=None, description="Name/label of the block that failed")
     error_code: str | None = Field(default=None, description="Error code if available")
@@ -219,6 +234,8 @@ class ErrorDetails(BaseModel):
 
 
 class ExtractionWorkflowArtifact(BaseModel):
+    """An extraction produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the extraction")
@@ -233,13 +250,18 @@ class ExtractionWorkflowArtifact(BaseModel):
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
-    operation: Literal["extraction"] = Field(default="extraction", description="Artifact operation that determines the backing record type")
+    operation: Literal["extraction"] = Field(default="extraction", description="The operation that produced this artifact")
 
 
 class FunctionInvocation(BaseModel):
+    """Record of a function block's execution during a workflow run.
+
+    Captures the `inputs` passed to the function, the `output` it returned,
+    how long it ran (`duration_ms`), and any `error` if execution failed."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: Literal["function_invocation"] = Field(default="function_invocation", description="Artifact operation that determines the backing record type")
+    operation: Literal["function_invocation"] = Field(default="function_invocation", description="The operation that produced this artifact")
     id: str
     run_id: str
     step_id: str
@@ -251,6 +273,8 @@ class FunctionInvocation(BaseModel):
 
 
 class ParseWorkflowArtifact(BaseModel):
+    """A parse produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the parse")
@@ -262,10 +286,12 @@ class ParseWorkflowArtifact(BaseModel):
     output: ParseOutput = Field(..., description="The parsed document content")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
-    operation: Literal["parse"] = Field(default="parse", description="Artifact operation that determines the backing record type")
+    operation: Literal["parse"] = Field(default="parse", description="The operation that produced this artifact")
 
 
 class PartitionWorkflowArtifact(BaseModel):
+    """A partition produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the partition")
@@ -279,13 +305,21 @@ class PartitionWorkflowArtifact(BaseModel):
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
-    operation: Literal["partition"] = Field(default="partition", description="Artifact operation that determines the backing record type")
+    operation: Literal["partition"] = Field(default="partition", description="The operation that produced this artifact")
 
 
 class ReviewEvaluation(BaseModel):
+    """Record of a review-gate evaluation during a workflow run.
+
+    Captures the conditions evaluated against the block's output
+    (`evaluations`), whether the gate required human review
+    (`requires_human_review`), and, once a reviewer acts, the verdict
+    (`review_decision`), any notes, whether a revision was requested, and the
+    reviewer and timestamp."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: Literal["review_trigger_evaluation"] = Field(default="review_trigger_evaluation", description="Artifact operation that determines the backing record type")
+    operation: Literal["review_trigger_evaluation"] = Field(default="review_trigger_evaluation", description="The operation that produced this artifact")
     id: str
     run_id: str
     step_id: str
@@ -303,6 +337,8 @@ class ReviewEvaluation(BaseModel):
 
 
 class SplitWorkflowArtifact(BaseModel):
+    """A document split produced by a workflow run, tagged with its artifact `operation` and creation time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the split result")
@@ -315,13 +351,19 @@ class SplitWorkflowArtifact(BaseModel):
     consensus: SplitConsensus | None = Field(default=None, description="Consensus metadata for multi-vote split runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the split operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
-    operation: Literal["split"] = Field(default="split", description="Artifact operation that determines the backing record type")
+    operation: Literal["split"] = Field(default="split", description="The operation that produced this artifact")
 
 
 class WhileLoopTermination(BaseModel):
+    """Record of why a while-loop block stopped iterating during a run.
+
+    Reports the `termination_reason` (`max_iterations_reached`,
+    `condition_matched`, or `error`) and the termination conditions that were
+    evaluated on the final iteration (`evaluations`)."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: Literal["while_loop_termination"] = Field(default="while_loop_termination", description="Artifact operation that determines the backing record type")
+    operation: Literal["while_loop_termination"] = Field(default="while_loop_termination", description="The operation that produced this artifact")
     id: str
     run_id: str
     step_id: str
@@ -335,8 +377,8 @@ class WorkflowArtifact(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: WorkflowArtifactOperation = Field(..., description="Artifact operation that determines the backing record type")
-    id: str = Field(..., description="Persisted resource identifier")
+    operation: WorkflowArtifactOperation = Field(..., description="The operation that produced this artifact")
+    id: str = Field(..., description="Resource identifier")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

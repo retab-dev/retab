@@ -24,6 +24,13 @@ namespace Retab
         public virtual WorkflowTestRunsService Runs => new WorkflowTestRunsService(this.Client);
 
         /// <summary>List Tests</summary>
+        /// <remarks>
+        /// List workflow tests.
+        /// Requires `workflow_id` and returns its saved tests as a cursor-paginated
+        /// list, each with its latest-run summaries and drift status. Optionally
+        /// filter to one block with `target_block_id`. Returns 404 if the workflow
+        /// does not exist.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -50,6 +57,13 @@ namespace Retab
         }
 
         /// <summary>Create Test</summary>
+        /// <remarks>
+        /// Create a workflow test.
+        /// Pins an expected outcome for one block in a workflow. Provide the
+        /// `workflow_id`, the `target` block, an `assertion` describing the expected
+        /// output, and a `source` of test inputs (explicit handle inputs or a capture
+        /// from a prior run/step). Returns the created test with status 201.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -66,6 +80,12 @@ namespace Retab
         }
 
         /// <summary>Get Test</summary>
+        /// <remarks>
+        /// Retrieve a single workflow test.
+        /// Identified by `test_id`. Returns the test with its target block,
+        /// assertion, input source, and latest-run summaries. Returns 404 if no test
+        /// with that ID exists.
+        /// </remarks>
         /// <param name="testId">The test id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -82,6 +102,11 @@ namespace Retab
         }
 
         /// <summary>Update Test</summary>
+        /// <remarks>
+        /// Update a workflow test.
+        /// Identified by `test_id`. Send any of `name`, `assertion`, or `source`;
+        /// omitted fields are left unchanged. Returns the updated test.
+        /// </remarks>
         /// <param name="testId">The test id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -99,6 +124,11 @@ namespace Retab
         }
 
         /// <summary>Delete Test</summary>
+        /// <remarks>
+        /// Delete a workflow test.
+        /// Identified by `test_id`. Returns 204 on success and 404 if no test with
+        /// that ID exists.
+        /// </remarks>
         /// <param name="testId">The test id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

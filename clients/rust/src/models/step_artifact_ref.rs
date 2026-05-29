@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct StepArtifactRef {
     /// The kind of resource this artifact references
     pub operation: StepArtifactRefOperation,
-    /// Persisted resource identifier
+    /// Resource identifier
     pub id: String,
 }
 impl StepArtifactRef {

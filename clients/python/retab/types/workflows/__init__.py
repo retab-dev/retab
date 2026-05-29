@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateWorkflowRequest(BaseModel):
+    """Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
@@ -22,6 +24,8 @@ class PublishWorkflowRequest(BaseModel):
 
 
 class UpdateWorkflowRequest(BaseModel):
+    """Body for updating a workflow. Only the supplied fields (`name`, `description`) are changed."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default=None, description="The name of the workflow")

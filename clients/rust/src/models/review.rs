@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Public API shape for one review. Strips internal fields.
+/// One review and its current decision.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Review {
     pub id: String,

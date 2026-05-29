@@ -5,10 +5,9 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Response from POST /workflows/reviews/{review_id}/approve | /reject.
-/// The shape carries ``resume_status`` so callers can see whether the
-/// Temporal resume signal succeeded — meta-pattern §2 action-endpoint
-/// criterion #4 (divergent response shape).
+/// Response to a review approve or reject request.
+/// Carries `resume_status` so callers can see whether the run resumed
+/// successfully.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubmitDecisionResponse {
     /// Defaults to `accepted`.

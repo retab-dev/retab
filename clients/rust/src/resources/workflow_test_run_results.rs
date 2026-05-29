@@ -67,6 +67,12 @@ impl<'a> WorkflowTestRunResultsApi<'a> {
     }
 
     /// Get Test Execution Result
+    ///
+    /// Retrieve a single workflow test result.
+    ///
+    /// Identified by `result_id`. Returns the result for one test within a run,
+    /// including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle,
+    /// timing, and any error. Returns 404 if no result with that ID exists.
     pub async fn get(&self, result_id: &str) -> Result<WorkflowTestResult, Error> {
         self.get_with_options(result_id, None).await
     }

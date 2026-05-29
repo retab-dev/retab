@@ -47,6 +47,7 @@ import {
   serializeSubdocument,
 } from '../../../splits/interfaces/subdocument.interface.js';
 
+/** A document split produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface SplitWorkflowArtifact {
   /** Unique identifier of the split result */
   id: string;
@@ -72,7 +73,7 @@ export interface SplitWorkflowArtifact {
   /** Timestamp when this artifact was created. */
   createdAt: Date;
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "split"
    */
   operation: 'split';

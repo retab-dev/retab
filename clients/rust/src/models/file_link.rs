@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A short-lived signed link to download a file, with its `filename` and expiry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileLink {
     /// The signed URL to download the file

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`. */
 readonly class WorkflowTestResult implements \JsonSerializable
 {
     use JsonSerializableTrait;

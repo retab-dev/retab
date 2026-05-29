@@ -38,7 +38,7 @@ class EditTemplatesMixin:
         sort_by: str | None = cast(str, "created_at"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Templates"""
+        """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         params: dict[str, Any] = {
             "before": before,
             "after": after,
@@ -56,7 +56,7 @@ class EditTemplatesMixin:
     def prepare_create(
         self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> PreparedRequest:
-        """Create Template"""
+        """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -69,7 +69,7 @@ class EditTemplatesMixin:
         return PreparedRequest(method="POST", url="/v1/edits/templates", params=params or None, data=data)
 
     def prepare_get(self, template_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Template"""
+        """Get Template Retrieve an edit template. Fetches a single edit template by its `template_id`, including its form fields. Responds with `404` if no template with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -78,7 +78,7 @@ class EditTemplatesMixin:
         return PreparedRequest(method="GET", url=f"/v1/edits/templates/{template_id}", params=params or None, data=data)
 
     def prepare_update(self, template_id: str, name: str | None = None, form_fields: list[FormField] | None = None, **extra_params: Any) -> PreparedRequest:
-        """Update Template"""
+        """Update Template Update an edit template. Applies a partial update to the template identified by `template_id`. Set `name` to rename it and/or `form_fields` to replace its field list; omitted fields are left unchanged. Returns the updated template, or `404` if no template with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -88,7 +88,7 @@ class EditTemplatesMixin:
         return PreparedRequest(method="PATCH", url=f"/v1/edits/templates/{template_id}", params=params or None, data=data)
 
     def prepare_delete(self, template_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Template"""
+        """Delete Template Delete an edit template. Permanently deletes the edit template identified by `template_id`. Returns `204` on success, or `404` if no template with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -110,32 +110,32 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
         sort_by: str | None = cast(str, "created_at"),
         **extra_params: Any,
     ) -> PaginatedList[EditTemplate]:
-        """List Templates"""
+        """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, name=name, sort_by=sort_by, **extra_params)
         return self.request_page(prepared_request, model=EditTemplate)
 
     def create(
         self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> EditTemplate:
-        """Create Template"""
+        """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         prepared_request = self.prepare_create(name=name, document=document, form_fields=form_fields, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     def get(self, template_id: str, **extra_params: Any) -> EditTemplate:
-        """Get Template"""
+        """Get Template Retrieve an edit template. Fetches a single edit template by its `template_id`, including its form fields. Responds with `404` if no template with that id exists."""
         prepared_request = self.prepare_get(template_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     def update(self, template_id: str, name: str | None = None, form_fields: list[FormField] | None = None, **extra_params: Any) -> EditTemplate:
-        """Update Template"""
+        """Update Template Update an edit template. Applies a partial update to the template identified by `template_id`. Set `name` to rename it and/or `form_fields` to replace its field list; omitted fields are left unchanged. Returns the updated template, or `404` if no template with that id exists."""
         prepared_request = self.prepare_update(template_id, name=name, form_fields=form_fields, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     def delete(self, template_id: str, **extra_params: Any) -> None:
-        """Delete Template"""
+        """Delete Template Delete an edit template. Permanently deletes the edit template identified by `template_id`. Returns `204` on success, or `404` if no template with that id exists."""
         prepared_request = self.prepare_delete(template_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -154,32 +154,32 @@ class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
         sort_by: str | None = cast(str, "created_at"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[EditTemplate]:
-        """List Templates"""
+        """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, name=name, sort_by=sort_by, **extra_params)
         return await self.request_page(prepared_request, model=EditTemplate)
 
     async def create(
         self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> EditTemplate:
-        """Create Template"""
+        """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         prepared_request = self.prepare_create(name=name, document=document, form_fields=form_fields, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     async def get(self, template_id: str, **extra_params: Any) -> EditTemplate:
-        """Get Template"""
+        """Get Template Retrieve an edit template. Fetches a single edit template by its `template_id`, including its form fields. Responds with `404` if no template with that id exists."""
         prepared_request = self.prepare_get(template_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     async def update(self, template_id: str, name: str | None = None, form_fields: list[FormField] | None = None, **extra_params: Any) -> EditTemplate:
-        """Update Template"""
+        """Update Template Update an edit template. Applies a partial update to the template identified by `template_id`. Set `name` to rename it and/or `form_fields` to replace its field list; omitted fields are left unchanged. Returns the updated template, or `404` if no template with that id exists."""
         prepared_request = self.prepare_update(template_id, name=name, form_fields=form_fields, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return EditTemplate.model_validate(response)
 
     async def delete(self, template_id: str, **extra_params: Any) -> None:
-        """Delete Template"""
+        """Delete Template Delete an edit template. Permanently deletes the edit template identified by `template_id`. Returns `204` on success, or `404` if no template with that id exists."""
         prepared_request = self.prepare_delete(template_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

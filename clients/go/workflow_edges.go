@@ -25,9 +25,9 @@ type WorkflowEdgesListParams struct {
 
 // List edges
 // List edges for a workflow with keyset cursor pagination.
-// Optionally filter by source or target block ID. Sorted by “updated_at“
-// descending with “id“ as the tiebreaker. Pass “after“ for the next
-// page, “before“ for the previous page — mutually exclusive.
+// Optionally filter by source or target block ID. Sorted by `updated_at`
+// descending with `id` as the tiebreaker. Pass `after` for the next
+// page, `before` for the previous page — mutually exclusive.
 func (s *WorkflowEdgeService) List(ctx context.Context, params *WorkflowEdgesListParams, opts ...RequestOption) (*PaginatedList[WorkflowEdgeDoc], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")
@@ -42,7 +42,7 @@ func (s *WorkflowEdgeService) List(ctx context.Context, params *WorkflowEdgesLis
 type WorkflowEdgesCreateParams struct {
 	// WorkflowID is workflow to create the edge in.
 	WorkflowID string `json:"workflow_id" url:"-"`
-	// ID is if omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one.
+	// ID is edge ID. Omit to let the server generate one (recommended).
 	ID *string `json:"id,omitempty" url:"-"`
 	// SourceBlock is source block ID
 	SourceBlock string `json:"source_block" url:"-"`

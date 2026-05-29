@@ -2,7 +2,7 @@ namespace Retab
 {
     using System;
 
-    /// <summary>Represents a file.</summary>
+    /// <summary>An uploaded file: its `id`, `filename`, MIME type, page count, and timestamps.</summary>
     public class File
     {
         public string? Object { get; set; } = "file";

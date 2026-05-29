@@ -13,9 +13,10 @@ import {
 import type { WhileLoopTerminationTerminationReason } from './while-loop-termination-termination-reason.interface.js';
 import { ZWhileLoopTerminationTerminationReason } from './while-loop-termination-termination-reason.interface.js';
 
+/** Record of why a while-loop block stopped iterating during a run. */
 export interface WhileLoopTermination {
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "while_loop_termination"
    */
   operation: 'while_loop_termination';

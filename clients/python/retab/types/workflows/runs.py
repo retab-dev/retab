@@ -116,7 +116,7 @@ class CompletedTerminal(BaseModel):
 
 
 class CreateWorkflowRunRequest(BaseModel):
-    """Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs."""
+    """Create a new workflow run from a workflow id, an optional version selector, and optional inputs."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -230,6 +230,8 @@ class WebhookTrigger(BaseModel):
 
 
 class WorkflowExportPayloadRequest(BaseModel):
+    """Body describing which block outputs (or inputs) across a workflow's runs to export as CSV, with optional run, doc-type, and status filters."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow ID to export")
@@ -247,13 +249,15 @@ class WorkflowExportPayloadRequest(BaseModel):
     preferred_columns: list[str] | None = Field(default=[], description="Preferred data column order")
     delimiter: str | None = Field(
         default=";",
-        description="CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.",
+        description="CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.",
     )
     line_delimiter: str | None = Field(default="\n", description="CSV line delimiter")
     quote: str | None = Field(default='"', description="CSV quote character")
 
 
 class WorkflowExportPayloadResponse(BaseModel):
+    """The exported data as CSV, with its row and column counts."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     csv_data: str = Field(..., description="CSV content")
@@ -270,7 +274,7 @@ class WorkflowRun(BaseModel):
     workflow: WorkflowSnapshotRef = Field(..., description="Workflow + version reference")
     trigger: ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger = Field(..., description="What started this run", discriminator="type")
     lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal = Field(
-        ..., description="Discriminated lifecycle state.", discriminator="status"
+        ..., description="Lifecycle state of the run.", discriminator="status"
     )
     timing: RunTiming = Field(..., description="All timing information")
     inputs: RunInputs | None = Field(default={"documents": {}, "json_data": {}}, validate_default=True, description="Input payloads supplied at run creation time")

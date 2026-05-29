@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowTestRun {
     pub id: String,

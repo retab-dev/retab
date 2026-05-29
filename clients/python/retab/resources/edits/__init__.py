@@ -42,7 +42,7 @@ class EditsMixin:
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Edits"""
+        """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         params: dict[str, Any] = {
             "before": before,
             "after": after,
@@ -69,7 +69,7 @@ class EditsMixin:
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Edit"""
+        """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -89,7 +89,7 @@ class EditsMixin:
         return PreparedRequest(method="POST", url="/v1/edits", params=params or None, data=data)
 
     def prepare_get(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Edit"""
+        """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -98,7 +98,7 @@ class EditsMixin:
         return PreparedRequest(method="GET", url=f"/v1/edits/{edit_id}", params=params or None, data=data)
 
     def prepare_delete(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Edit"""
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -126,7 +126,7 @@ class Edits(SyncAPIResource, EditsMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[Edit]:
-        """List Edits"""
+        """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         prepared_request = self.prepare_list(
             before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
         )
@@ -142,7 +142,7 @@ class Edits(SyncAPIResource, EditsMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Edit:
-        """Create Edit"""
+        """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
         prepared_request = self.prepare_create(
             instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
         )
@@ -150,13 +150,13 @@ class Edits(SyncAPIResource, EditsMixin):
         return Edit.model_validate(response)
 
     def get(self, edit_id: str, **extra_params: Any) -> Edit:
-        """Get Edit"""
+        """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
         prepared_request = self.prepare_get(edit_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     def delete(self, edit_id: str, **extra_params: Any) -> None:
-        """Delete Edit"""
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
         prepared_request = self.prepare_delete(edit_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -181,7 +181,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Edit]:
-        """List Edits"""
+        """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         prepared_request = self.prepare_list(
             before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
         )
@@ -197,7 +197,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Edit:
-        """Create Edit"""
+        """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
         prepared_request = self.prepare_create(
             instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
         )
@@ -205,13 +205,13 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         return Edit.model_validate(response)
 
     async def get(self, edit_id: str, **extra_params: Any) -> Edit:
-        """Get Edit"""
+        """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
         prepared_request = self.prepare_get(edit_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
     async def delete(self, edit_id: str, **extra_params: Any) -> None:
-        """Delete Edit"""
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
         prepared_request = self.prepare_delete(edit_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

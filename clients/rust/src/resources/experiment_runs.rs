@@ -86,6 +86,13 @@ impl CreateParams {
 
 impl<'a> ExperimentRunsApi<'a> {
     /// List Experiment Runs
+    ///
+    /// List experiment runs.
+    ///
+    /// Optionally filter by `workflow_id`, `experiment_id`, `block_id`,
+    /// `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+    /// window. Returns a cursor-paginated list ordered by `sort_by` (default
+    /// newest first).
     pub async fn list(&self, params: ListParams) -> Result<WorkflowExperimentRunList, Error> {
         self.list_with_options(params, None).await
     }
@@ -128,6 +135,12 @@ impl<'a> ExperimentRunsApi<'a> {
     }
 
     /// Get Experiment Run
+    ///
+    /// Retrieve a single experiment run.
+    ///
+    /// Identified by `run_id`. Returns the run with its lifecycle status, timing,
+    /// score, and document progress counts. Returns 404 if no run with that ID
+    /// exists.
     pub async fn get(&self, run_id: &str) -> Result<ExperimentRun, Error> {
         self.get_with_options(run_id, None).await
     }
@@ -147,6 +160,13 @@ impl<'a> ExperimentRunsApi<'a> {
     }
 
     /// Cancel Experiment Run
+    ///
+    /// Cancel an experiment run.
+    ///
+    /// Identified by `run_id`. Cancels the run and any of its pending or
+    /// in-flight results, returning the run's new `cancelled` lifecycle. Returns
+    /// 404 if the run does not exist or is not in a cancellable (pending, queued,
+    /// or running) state.
     pub async fn cancel(&self, run_id: &str) -> Result<CancelWorkflowExperimentRunResponse, Error> {
         self.cancel_with_options(run_id, None).await
     }

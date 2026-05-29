@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Public API shape for one review. Strips internal fields.</summary>
+    /// <summary>One review and its current decision.</summary>
     public class Review
     {
         public string Id { get; set; } = default!;

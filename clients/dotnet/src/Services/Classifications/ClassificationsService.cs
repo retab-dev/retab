@@ -18,6 +18,11 @@ namespace Retab
         public ClassificationsService(Retab client) : base(client) { }
 
         /// <summary>List Classifications</summary>
+        /// <remarks>
+        /// List classifications.
+        /// Returns a paginated list of classifications, most recent first. Filter by
+        /// `filename` or a `from_date`/`to_date` range, and page with `before`/`after`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +49,14 @@ namespace Retab
         }
 
         /// <summary>Create Classification</summary>
+        /// <remarks>
+        /// Classify a document.
+        /// Runs a classification on the supplied `document` against the provided
+        /// `categories`. Tune the run with `model`, `instructions`, `first_n_pages`
+        /// (limit to the first pages), and `n_consensus` (number of votes to combine).
+        /// Returns the created classification with the chosen category and reasoning;
+        /// responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -60,6 +73,12 @@ namespace Retab
         }
 
         /// <summary>Get Classification</summary>
+        /// <remarks>
+        /// Retrieve a classification.
+        /// Fetches a single classification by its `classification_id`. Returns the
+        /// classification with its file reference, categories, and result; responds
+        /// with `404` if no classification with that id exists.
+        /// </remarks>
         /// <param name="classificationId">The classification id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -76,6 +95,11 @@ namespace Retab
         }
 
         /// <summary>Delete Classification</summary>
+        /// <remarks>
+        /// Delete a classification.
+        /// Permanently deletes the classification identified by `classification_id`.
+        /// Responds with 204 on success, or 404 if no such classification exists.
+        /// </remarks>
         /// <param name="classificationId">The classification id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

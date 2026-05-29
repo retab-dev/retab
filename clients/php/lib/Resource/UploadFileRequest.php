@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body to start a file upload: the `filename`, expected `size_bytes`, and optional content type and checksum. */
 readonly class UploadFileRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

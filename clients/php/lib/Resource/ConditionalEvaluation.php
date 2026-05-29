@@ -6,6 +6,13 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Record of how a conditional block routed during a workflow run.
+ *
+ * Captures each condition that was evaluated (`evaluations`), which output
+ * branches were chosen (`selected_handles`), and the branch and condition
+ * IDs that matched (`matched_branch_id`, `matched_condition_ids`).
+ */
 readonly class ConditionalEvaluation implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -23,7 +30,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
         public ?array $matchedConditionIds = null,
         /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'conditional_evaluation',
     ) {}
 

@@ -24,6 +24,11 @@ type EditsListParams struct {
 }
 
 // List edits
+// List edits.
+// Returns a paginated list of edits. Filter by `filename` (case-insensitive
+// prefix match), `template_id`, and a `from_date`/`to_date` creation range
+// (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and
+// `order`; an invalid date format responds with `400`.
 func (s *EditService) List(ctx context.Context, params *EditsListParams, opts ...RequestOption) (*PaginatedList[Edit], error) {
 	return doPaginated[Edit](ctx, s.client, "GET", "/v1/edits", params, nil, opts...)
 }
@@ -45,6 +50,12 @@ type EditsCreateParams struct {
 }
 
 // Create edit
+// Create an edit.
+// Fills the form fields of a document according to `instructions` and renders
+// the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX,
+// or PPTX) or `template_id` (an existing edit template) — supplying both or
+// neither responds with `400`. Returns the created edit with the filled form
+// data and rendered document; responds with `201`.
 func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opts ...RequestOption) (*Edit, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: instructions is required")
@@ -88,6 +99,10 @@ func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opt
 }
 
 // Get edit
+// Retrieve an edit.
+// Fetches a single edit by its `edit_id`. Returns the edit with its filled
+// form data and rendered document; responds with `404` if no edit with that
+// id exists.
 func (s *EditService) Get(ctx context.Context, editID string, opts ...RequestOption) (*Edit, error) {
 	if editID == "" {
 		return nil, fmt.Errorf("retab: edit_id is required")
@@ -101,6 +116,9 @@ func (s *EditService) Get(ctx context.Context, editID string, opts ...RequestOpt
 }
 
 // Delete edit
+// Delete an edit.
+// Permanently deletes the edit identified by `edit_id`. Returns `204` on
+// success, or `404` if no edit with that id exists.
 func (s *EditService) Delete(ctx context.Context, editID string, opts ...RequestOption) error {
 	if editID == "" {
 		return fmt.Errorf("retab: edit_id is required")

@@ -5,11 +5,9 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Body for the flat `POST /workflows/experiments/runs` route.
-/// Carries the scoping identity in the body — no parent id in the URL
-/// (meta-pattern-blueprint §1). `workflow_id` is optional because it is
-/// derivable from the experiment record; when supplied it is validated
-/// against the experiment's stored workflow.
+/// Request body to create an experiment run.
+/// `workflow_id` is optional; when omitted it is taken from the experiment,
+/// and when supplied it must match the experiment's workflow.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateExperimentRunRequest {
     /// The experiment to create a run for.

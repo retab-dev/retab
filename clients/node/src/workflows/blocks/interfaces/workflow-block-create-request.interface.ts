@@ -4,11 +4,11 @@ import { z } from 'zod';
 import type { WorkflowBlockCreateRequestType } from './workflow-block-create-request-type.interface.js';
 import { ZWorkflowBlockCreateRequestType } from './workflow-block-create-request-type.interface.js';
 
-/** Body for POST /v1/workflows/blocks. */
+/** Create a new block in a workflow. */
 export interface WorkflowBlockCreateRequest {
   /** Workflow to create the block in. */
   workflowId: string;
-  /** If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability. */
+  /** Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409. */
   id?: string | null;
   /** Block type */
   type: WorkflowBlockCreateRequestType;

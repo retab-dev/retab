@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a classification.</summary>
+    /// <summary>A classification result: the categories a document was scored against and the chosen `output` decision.</summary>
     public class Classification
     {
 

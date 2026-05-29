@@ -136,7 +136,7 @@ export interface WorkflowRunStep {
   loopContainers?: ContainerContextData[];
   /** Parent workflow run ID */
   runId: string;
-  /** When the step doc was first persisted */
+  /** When the step was created */
   createdAt?: Date | null;
   /**
    * Handle input payloads consumed by this step
@@ -148,7 +148,7 @@ export interface WorkflowRunStep {
    * @default {}
    */
   handleOutputs?: Record<string, PublicHandlePayload>;
-  /** Canonical persisted result of this step */
+  /** Reference to the result produced by this step, if any. */
   artifact?: StepArtifactRef | null;
   /**
    * Number of retry attempts

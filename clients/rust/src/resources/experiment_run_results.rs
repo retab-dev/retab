@@ -45,6 +45,12 @@ impl ListParams {
 
 impl<'a> ExperimentRunResultsApi<'a> {
     /// List Experiment Results
+    ///
+    /// List per-document results for an experiment run.
+    ///
+    /// Requires the `run_id` query parameter. Returns one result row per document
+    /// in the run, with each row's lifecycle status, timing, and produced
+    /// artifact, as a cursor-paginated list.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowExperimentResultList, Error> {
         self.list_with_options(params, None).await
     }
@@ -63,6 +69,12 @@ impl<'a> ExperimentRunResultsApi<'a> {
     }
 
     /// Get Experiment Result
+    ///
+    /// Retrieve a single experiment result.
+    ///
+    /// Identified by `result_id`. Returns the per-document result with its
+    /// lifecycle status, timing, and produced artifact. Returns 404 if no result
+    /// with that ID exists.
     pub async fn get(&self, result_id: &str) -> Result<ExperimentResult, Error> {
         self.get_with_options(result_id, None).await
     }

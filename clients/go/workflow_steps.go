@@ -30,10 +30,10 @@ type WorkflowStepsListParams struct {
 
 // List workflow Run Steps
 // List steps with status and artifact summaries.
-// Sorted by “started_at“ ascending with “step_id“ as the tiebreaker
-// (the same compound key the underlying index uses). Pass “after“ for
-// the next page, “before“ for the previous page — mutually exclusive.
-// “run_id“ is optional; when omitted the list is scoped to the caller's
+// Sorted by `started_at` ascending with `step_id` as the tiebreaker
+// (the same compound key the underlying index uses). Pass `after` for
+// the next page, `before` for the previous page — mutually exclusive.
+// `run_id` is optional; when omitted the list is scoped to the caller's
 // organization.
 func (s *WorkflowStepService) List(ctx context.Context, params *WorkflowStepsListParams, opts ...RequestOption) (*PaginatedList[WorkflowRunStep], error) {
 	return doPaginated[WorkflowRunStep](ctx, s.client, "GET", "/v1/workflows/steps", params, nil, opts...)
@@ -46,10 +46,8 @@ type WorkflowStepsGetParams struct {
 }
 
 // Get workflow Step
-// Get one persisted step document by step id.
-// This is the canonical step object shape used by “GET /workflows/steps“.
-// It intentionally does not join fingerprint rows or return experiment query
-// projections.
+// Get one step by its step id.
+// Returns the same step shape as `GET /workflows/steps`.
 func (s *WorkflowStepService) Get(ctx context.Context, stepID string, params *WorkflowStepsGetParams, opts ...RequestOption) (*WorkflowRunStep, error) {
 	if stepID == "" {
 		return nil, fmt.Errorf("retab: step_id is required")

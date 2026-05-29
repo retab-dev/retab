@@ -28,7 +28,7 @@ class ExperimentRunsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Experiment Runs"""
+        """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "experiment_id": experiment_id,
@@ -61,7 +61,7 @@ class ExperimentRunsMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/experiments/runs", params=params or None, data=data)
 
     def prepare_get(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Experiment Run"""
+        """Get Experiment Run Retrieve a single experiment run. Identified by `run_id`. Returns the run with its lifecycle status, timing, score, and document progress counts. Returns 404 if no run with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -70,7 +70,7 @@ class ExperimentRunsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/experiments/runs/{run_id}", params=params or None, data=data)
 
     def prepare_cancel(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Cancel Experiment Run"""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -99,7 +99,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[ExperimentRun]:
-        """List Experiment Runs"""
+        """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             experiment_id=experiment_id,
@@ -125,13 +125,13 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         return ExperimentRun.model_validate(response)
 
     def get(self, run_id: str, **extra_params: Any) -> ExperimentRun:
-        """Get Experiment Run"""
+        """Get Experiment Run Retrieve a single experiment run. Identified by `run_id`. Returns the run with its lifecycle status, timing, score, and document progress counts. Returns 404 if no run with that ID exists."""
         prepared_request = self.prepare_get(run_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return ExperimentRun.model_validate(response)
 
     def cancel(self, run_id: str, **extra_params: Any) -> CancelWorkflowExperimentRunResponse:
-        """Cancel Experiment Run"""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return CancelWorkflowExperimentRunResponse.model_validate(response)
@@ -157,7 +157,7 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[ExperimentRun]:
-        """List Experiment Runs"""
+        """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             experiment_id=experiment_id,
@@ -183,13 +183,13 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         return ExperimentRun.model_validate(response)
 
     async def get(self, run_id: str, **extra_params: Any) -> ExperimentRun:
-        """Get Experiment Run"""
+        """Get Experiment Run Retrieve a single experiment run. Identified by `run_id`. Returns the run with its lifecycle status, timing, score, and document progress counts. Returns 404 if no run with that ID exists."""
         prepared_request = self.prepare_get(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ExperimentRun.model_validate(response)
 
     async def cancel(self, run_id: str, **extra_params: Any) -> CancelWorkflowExperimentRunResponse:
-        """Cancel Experiment Run"""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return CancelWorkflowExperimentRunResponse.model_validate(response)

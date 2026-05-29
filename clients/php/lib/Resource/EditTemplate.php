@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A reusable edit template: an empty PDF and the `form_fields` defined on it. */
 readonly class EditTemplate implements \JsonSerializable
 {
     use JsonSerializableTrait;

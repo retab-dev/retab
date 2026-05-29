@@ -6,6 +6,13 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Request to run a structured extraction on a single document.
+ *
+ * Extends the base extraction request with the `document` to process (either
+ * inline content or a reference to a previously uploaded file) and a `stream`
+ * flag that controls whether results are returned incrementally.
+ */
 readonly class ExtractionRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

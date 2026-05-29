@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Terminal: the executed block raised. ``message`` is the executor's</summary>
+    /// <summary>Terminal: the executed block raised. `message` is the executor's</summary>
     /// <remarks>
     /// error string.
     /// </remarks>

@@ -16,8 +16,8 @@ module Retab
 
     # List Blocks
     # @param workflow_id [String]
-    # @param before [String, nil] Block id cursor: return the page before this id (mutually exclusive with ``after``).
-    # @param after [String, nil] Block id cursor: return the page after this id (mutually exclusive with ``before``).
+    # @param before [String, nil] Block id cursor: return the page before this id (mutually exclusive with `after`).
+    # @param after [String, nil] Block id cursor: return the page after this id (mutually exclusive with `before`).
     # @param limit [Integer, nil] Maximum number of blocks to return per page (1-200).
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowBlock>]
@@ -60,7 +60,7 @@ module Retab
 
     # Create Block
     # @param workflow_id [String] Workflow to create the block in.
-    # @param id [String, nil] If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.
+    # @param id [String, nil] Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409.
     # @param type [Retab::Types::WorkflowBlockCreateRequestType] Block type
     # @param label [String, nil] Display label
     # @param position_x [Float, nil] X position
@@ -114,7 +114,7 @@ module Retab
 
     # Get Block
     # @param block_id [String]
-    # @param workflow_id [String, nil] Optional disambiguator for legacy duplicate block IDs. Required only when the block id is not unique within the org — in that case the unqualified call returns 409 listing the colliding workflow_ids. Newly-created blocks use server-generated opaque IDs and never need this.
+    # @param workflow_id [String, nil] Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization — otherwise the call returns 409 listing the colliding workflow_ids. Server-generated block IDs are always unique and never need this.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowBlock]
     def get(
@@ -150,8 +150,8 @@ module Retab
     # @param height [Float, nil]
     # @param config [Hash{String => Object}, nil]
     # @param parent_id [String, nil]
-    # @param config_mode [Retab::Types::UpdateWorkflowBlockRequestConfigMode, nil] How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
-    # @param workflow_id [String, nil] Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+    # @param config_mode [Retab::Types::UpdateWorkflowBlockRequestConfigMode, nil] How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.
+    # @param workflow_id [String, nil] Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowBlock]
     def update(
@@ -199,7 +199,7 @@ module Retab
 
     # Delete Block
     # @param block_id [String]
-    # @param workflow_id [String, nil] Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+    # @param workflow_id [String, nil] Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def delete(

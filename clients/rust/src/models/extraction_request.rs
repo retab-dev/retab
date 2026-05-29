@@ -5,6 +5,10 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Request to run a structured extraction on a single document.
+/// Extends the base extraction request with the `document` to process (either
+/// inline content or a reference to a previously uploaded file) and a `stream`
+/// flag that controls whether results are returned incrementally.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtractionRequest {
     pub document: ClassificationRequestDocumentOneOf,

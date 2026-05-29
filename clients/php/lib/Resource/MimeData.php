@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A file represented by its `filename` and a base64 data `url`. */
 readonly class MimeData implements \JsonSerializable
 {
     use JsonSerializableTrait;

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`. */
 readonly class DeclarativePlanResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body carrying a workflow's full YAML definition for validate, plan, apply, or export. */
 readonly class DeclarativeWorkflowRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

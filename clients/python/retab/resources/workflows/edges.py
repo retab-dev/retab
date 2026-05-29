@@ -20,7 +20,7 @@ class WorkflowEdgesMixin:
         limit: int | None = 100,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive."""
+        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "source_block": source_block,
@@ -86,7 +86,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         limit: int | None = 100,
         **extra_params: Any,
     ) -> PaginatedList[WorkflowEdgeDoc]:
-        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive."""
+        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, source_block=source_block, target_block=target_block, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowEdgeDoc)
 
@@ -126,7 +126,7 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         limit: int | None = 100,
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowEdgeDoc]:
-        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive."""
+        """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, source_block=source_block, target_block=target_block, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowEdgeDoc)
 

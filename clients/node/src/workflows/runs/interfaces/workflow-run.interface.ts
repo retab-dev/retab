@@ -110,7 +110,7 @@ export interface WorkflowRun {
     | WebhookTrigger
     | EmailTrigger
     | RestartTrigger;
-  /** Discriminated lifecycle state. */
+  /** Lifecycle state of the run. */
   lifecycle:
     | PendingRun
     | RunningRun

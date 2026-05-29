@@ -19,6 +19,12 @@ class SourcesResponseDocumentType(str, Enum):
 
 
 class ExtractionRequest(BaseModel):
+    """Request to run a structured extraction on a single document.
+
+    Extends the base extraction request with the `document` to process (either
+    inline content or a reference to a previously uploaded file) and a `stream`
+    flag that controls whether results are returned incrementally."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef
@@ -64,6 +70,14 @@ class ExtractionConsensus(BaseModel):
 
 
 class SourcesResponse(BaseModel):
+    """An extraction's output annotated with the source that backs each value.
+
+    Returned when fetching the sources for an extraction. Carries the source
+    `file` and its detected `document_type`, the original `extraction` output,
+    and a parallel `sources` tree where each leaf is a `{value, source}` object
+    locating the value in the document (a page region for PDFs, a cell for
+    spreadsheets, a text span for plain text, and so on)."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     object: Literal["extraction.sources"] = Field(default="extraction.sources")

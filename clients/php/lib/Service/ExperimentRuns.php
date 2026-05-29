@@ -17,6 +17,13 @@ class ExperimentRuns
 
     /**
      * List Experiment Runs
+     *
+     * List experiment runs.
+     *
+     * Optionally filter by `workflow_id`, `experiment_id`, `block_id`,
+     * `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+     * window. Returns a cursor-paginated list ordered by `sort_by` (default
+     * newest first).
      * @param string|null $workflowId
      * @param string|null $experimentId
      * @param string|null $blockId
@@ -106,6 +113,12 @@ class ExperimentRuns
 
     /**
      * Get Experiment Run
+     *
+     * Retrieve a single experiment run.
+     *
+     * Identified by `run_id`. Returns the run with its lifecycle status, timing,
+     * score, and document progress counts. Returns 404 if no run with that ID
+     * exists.
      * @param string $runId
      * @return \Retab\Resource\ExperimentRun
      * @throws \Retab\Exception\RetabException
@@ -124,6 +137,13 @@ class ExperimentRuns
 
     /**
      * Cancel Experiment Run
+     *
+     * Cancel an experiment run.
+     *
+     * Identified by `run_id`. Cancels the run and any of its pending or
+     * in-flight results, returning the run's new `cancelled` lifecycle. Returns
+     * 404 if the run does not exist or is not in a cancellable (pending, queued,
+     * or running) state.
      * @param string $runId
      * @return \Retab\Resource\CancelWorkflowExperimentRunResponse
      * @throws \Retab\Exception\RetabException

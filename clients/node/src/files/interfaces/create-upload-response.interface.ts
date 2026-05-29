@@ -11,6 +11,7 @@ import {
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
 
+/** Instructions for uploading file content to a reserved file record. */
 export interface CreateUploadResponse {
   /** Underlying file ID */
   fileId: string;

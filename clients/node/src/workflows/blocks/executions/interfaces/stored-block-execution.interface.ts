@@ -35,7 +35,7 @@ import {
   serializeStepArtifactRef,
 } from './step-artifact-ref.interface.js';
 
-/** Public block execution result for a single workflow block. */
+/** The result of executing a single workflow block. */
 export interface StoredBlockExecution {
   /** Unique block execution ID */
   id: string;
@@ -47,14 +47,14 @@ export interface StoredBlockExecution {
   blockId: string;
   /** Type of the block */
   blockType: string;
-  /** Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``. */
+  /** Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`. */
   lifecycle:
     | CompletedBlockExecutionLifecycle
     | ErrorBlockExecutionLifecycle
     | SkippedBlockExecutionLifecycle;
   /** Input payloads keyed by handle ID (file metadata for files, data for json) */
   handleInputs?: Record<string, unknown> | null;
-  /** Canonical persisted-ref artifact for this block execution (operation + id), if any */
+  /** Reference to the artifact produced by this block execution, if any. */
   artifact?: StepArtifactRef | null;
   /** Output payloads keyed by handle ID */
   handleOutputs?: Record<string, unknown> | null;

@@ -18,7 +18,7 @@ readonly class WorkflowRun implements \JsonSerializable
         public WorkflowSnapshotRef $workflow,
         /** What started this run */
         public ManualTrigger|ApiTrigger|ScheduleTrigger|WebhookTrigger|EmailTrigger|RestartTrigger $trigger,
-        /** Discriminated lifecycle state. */
+        /** Lifecycle state of the run. */
         public PendingRun|RunningRun|AwaitingReviewRun|CompletedTerminal|ErrorTerminal|CancelledTerminal $lifecycle,
         /** All timing information */
         public RunTiming $timing,

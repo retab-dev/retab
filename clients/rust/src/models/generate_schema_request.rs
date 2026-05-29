@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body to generate a JSON schema from example `documents`, optionally steered by `instructions`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerateSchemaRequest {
     pub documents: Vec<MimeData>,

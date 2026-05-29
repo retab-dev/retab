@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Represents a declarative export response.</summary>
+    /// <summary>A workflow exported as its YAML definition.</summary>
     public class DeclarativeExportResponse
     {
         public string WorkflowId { get; set; } = default!;

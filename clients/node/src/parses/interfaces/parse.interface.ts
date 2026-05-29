@@ -28,6 +28,7 @@ import {
 import type { TableParsingFormat } from './table-parsing-format.interface.js';
 import { ZTableParsingFormat } from './table-parsing-format.interface.js';
 
+/** A parse result: the per-page and full-document text extracted from a document. */
 export interface Parse {
   /** Unique identifier of the parse */
   id: string;

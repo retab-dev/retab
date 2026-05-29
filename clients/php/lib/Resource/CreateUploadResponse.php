@@ -6,6 +6,13 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Instructions for uploading file content to a reserved file record.
+ *
+ * Returned when starting a file upload. Carries the new `file_id`, a
+ * short-lived signed `upload_url` with the HTTP method and headers to use,
+ * a durable reference to the file, and the URL's `expires_at` time.
+ */
 readonly class CreateUploadResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

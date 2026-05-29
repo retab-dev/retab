@@ -150,6 +150,12 @@ impl<'a> WorkflowExperimentsApi<'a> {
     }
 
     /// Get Experiment
+    ///
+    /// Retrieve a single experiment.
+    ///
+    /// Identified by `experiment_id`. Returns the experiment along with its
+    /// latest-run status, score, staleness, and schema-drift detection. Returns
+    /// 404 if no experiment with that ID exists.
     pub async fn get(&self, experiment_id: &str) -> Result<WorkflowExperiment, Error> {
         self.get_with_options(experiment_id, None).await
     }
@@ -169,6 +175,12 @@ impl<'a> WorkflowExperimentsApi<'a> {
     }
 
     /// Update Experiment
+    ///
+    /// Update an experiment.
+    ///
+    /// Identified by `experiment_id`. Send any of `name`, `n_consensus`,
+    /// `documents`, or `document_captures`; omitted fields are left unchanged.
+    /// Returns the updated experiment with its latest-run status and drift info.
     pub async fn update(
         &self,
         experiment_id: &str,
@@ -193,6 +205,12 @@ impl<'a> WorkflowExperimentsApi<'a> {
     }
 
     /// Delete Experiment
+    ///
+    /// Delete an experiment.
+    ///
+    /// Identified by `experiment_id`. Also removes the experiment's runs and
+    /// results. Returns 204 on success, 404 if not found, and 409 if the latest
+    /// run is still pending or running (cancel it first).
     pub async fn delete(&self, experiment_id: &str) -> Result<(), Error> {
         self.delete_with_options(experiment_id, None).await
     }

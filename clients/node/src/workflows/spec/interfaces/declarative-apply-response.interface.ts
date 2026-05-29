@@ -22,6 +22,7 @@ import {
 import type { DeclarativeApplyResponseAction } from './declarative-apply-response-action.interface.js';
 import { ZDeclarativeApplyResponseAction } from './declarative-apply-response-action.interface.js';
 
+/** The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`. */
 export interface DeclarativeApplyResponse {
   workflowId: string;
   action: DeclarativeApplyResponseAction;

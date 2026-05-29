@@ -17,7 +17,7 @@ module Retab
     # @param order [Retab::Types::ExtractionsOrder, nil]
     # @param filename [String, nil]
     # @param filename_regex [String, nil] Deprecated alias for prefix filename filtering. Regex patterns are rejected.
-    # @param filename_contains [String, nil] Plain text filename text search powered by Atlas Search when available.
+    # @param filename_contains [String, nil] Plain-text search over the filename.
     # @param document_type [Array<String>, nil] Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
     # @param from_date [String, nil]
     # @param to_date [String, nil]

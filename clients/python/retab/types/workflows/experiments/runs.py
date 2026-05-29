@@ -22,6 +22,8 @@ class ExperimentRunNConsensus(IntEnum):
 
 
 class CancelWorkflowExperimentRunResponse(BaseModel):
+    """Result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
@@ -53,12 +55,10 @@ class CompletedWorkflowExperimentRun(BaseModel):
 
 
 class CreateExperimentRunRequest(BaseModel):
-    """Body for the flat `POST /workflows/experiments/runs` route.
+    """Request body to create an experiment run.
 
-    Carries the scoping identity in the body — no parent id in the URL
-    (meta-pattern-blueprint §1). `workflow_id` is optional because it is
-    derivable from the experiment record; when supplied it is validated
-    against the experiment's stored workflow."""
+    `workflow_id` is optional; when omitted it is taken from the experiment,
+    and when supplied it must match the experiment's workflow."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -122,10 +122,7 @@ class RunningWorkflowExperimentRun(BaseModel):
 
 
 class ExperimentRun(BaseModel):
-    """Run-id-first public experiment run shape.
-
-    The canonical identity is `id`. Internal queue handles and duplicate
-    identity aliases are intentionally absent."""
+    """A single execution of an experiment, identified by `id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

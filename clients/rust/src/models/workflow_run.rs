@@ -14,7 +14,7 @@ pub struct WorkflowRun {
     pub workflow: WorkflowSnapshotRef,
     /// What started this run
     pub trigger: WorkflowRunTriggerOneOf,
-    /// Discriminated lifecycle state.
+    /// Lifecycle state of the run.
     pub lifecycle: WorkflowRunLifecycleOneOf,
     /// All timing information
     pub timing: RunTiming,

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`. */
 readonly class DeclarativeApplyResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

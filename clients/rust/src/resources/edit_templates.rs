@@ -96,6 +96,14 @@ impl UpdateParams {
 
 impl<'a> EditTemplatesApi<'a> {
     /// List Templates
+    ///
+    /// List edit templates.
+    ///
+    /// Returns a paginated list of edit templates. Filter by `name`
+    /// (case-insensitive substring match) and order results by `sort_by`
+    /// (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and
+    /// `order`. Form fields are omitted from list items; fetch a single template to
+    /// retrieve them.
     pub async fn list(&self, params: ListParams) -> Result<EditTemplateList, Error> {
         self.list_with_options(params, None).await
     }
@@ -114,6 +122,13 @@ impl<'a> EditTemplatesApi<'a> {
     }
 
     /// Create Template
+    ///
+    /// Create an edit template.
+    ///
+    /// Stores a reusable form template from an empty `document` (PDF or Office
+    /// document) plus its `form_fields` and a `name`. Later edits can reference the
+    /// returned template id instead of re-uploading the document. An unsupported
+    /// document format responds with `400`; on success responds with `201`.
     pub async fn create(&self, params: CreateParams) -> Result<EditTemplate, Error> {
         self.create_with_options(params, None).await
     }
@@ -132,6 +147,11 @@ impl<'a> EditTemplatesApi<'a> {
     }
 
     /// Get Template
+    ///
+    /// Retrieve an edit template.
+    ///
+    /// Fetches a single edit template by its `template_id`, including its form
+    /// fields. Responds with `404` if no template with that id exists.
     pub async fn get(&self, template_id: &str) -> Result<EditTemplate, Error> {
         self.get_with_options(template_id, None).await
     }
@@ -151,6 +171,13 @@ impl<'a> EditTemplatesApi<'a> {
     }
 
     /// Update Template
+    ///
+    /// Update an edit template.
+    ///
+    /// Applies a partial update to the template identified by `template_id`. Set
+    /// `name` to rename it and/or `form_fields` to replace its field list; omitted
+    /// fields are left unchanged. Returns the updated template, or `404` if no
+    /// template with that id exists.
     pub async fn update(
         &self,
         template_id: &str,
@@ -175,6 +202,11 @@ impl<'a> EditTemplatesApi<'a> {
     }
 
     /// Delete Template
+    ///
+    /// Delete an edit template.
+    ///
+    /// Permanently deletes the edit template identified by `template_id`. Returns
+    /// `204` on success, or `404` if no template with that id exists.
     pub async fn delete(&self, template_id: &str) -> Result<(), Error> {
         self.delete_with_options(template_id, None).await
     }

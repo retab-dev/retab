@@ -40,7 +40,7 @@ namespace Retab
         public string? ParentId { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
 
-        /// <summary>Internal graph-derived schema sidecar.</summary>
+        /// <summary>Schemas resolved for this block from the workflow graph.</summary>
         public Dictionary<string, object>? ResolvedSchemas { get; set; }
 
         /// <summary>

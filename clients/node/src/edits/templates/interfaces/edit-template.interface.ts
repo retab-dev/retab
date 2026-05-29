@@ -20,6 +20,7 @@ import {
   serializeFormField,
 } from '../../../edits/interfaces/form-field.interface.js';
 
+/** A reusable edit template: an empty PDF and the `form_fields` defined on it. */
 export interface EditTemplate {
   /** Unique identifier of the template. */
   id: string;

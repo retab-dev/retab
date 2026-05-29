@@ -28,6 +28,8 @@ class ParseRequest(BaseModel):
 
 
 class Parse(BaseModel):
+    """A parse result: the per-page and full-document text extracted from a document."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the parse")

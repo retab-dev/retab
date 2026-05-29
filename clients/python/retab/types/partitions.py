@@ -22,6 +22,8 @@ class PartitionRequest(BaseModel):
 
 
 class Partition(BaseModel):
+    """A partition result: a document segmented into chunks along the requested `key`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the partition")

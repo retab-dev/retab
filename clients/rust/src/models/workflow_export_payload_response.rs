@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// The exported data as CSV, with its row and column counts.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowExportPayloadResponse {
     /// CSV content

@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body to finalize a file upload, optionally carrying the uploaded content's `sha256` checksum for verification.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CompleteFileUploadRequest {
     /// Optional SHA-256 checksum

@@ -30,21 +30,21 @@ class WorkflowArtifacts
      *
      * List artifacts produced by a workflow run.
      *
-     * Paginated by the producing step's ``step_id`` (sorted by ``started_at``
-     * ascending). Pass ``after`` for the next page, ``before`` for the previous
-     * page — mutually exclusive. ``step_id`` short-circuits pagination and
+     * Paginated by the producing step's `step_id` (sorted by `started_at`
+     * ascending). Pass `after` for the next page, `before` for the previous
+     * page — mutually exclusive. `step_id` short-circuits pagination and
      * returns the single attached artifact.
      *
-     * Filters: provide either ``run_id`` (list all artifacts in a run) or
-     * ``step_id`` (single-step lookup). When both are absent the request is
+     * Filters: provide either `run_id` (list all artifacts in a run) or
+     * `step_id` (single-step lookup). When both are absent the request is
      * rejected with 400.
-     * @param string|null $runId Workflow run ID whose artifacts should be listed. Required unless ``step_id`` is provided.
+     * @param string|null $runId Workflow run ID whose artifacts should be listed. Required unless `step_id` is provided.
      * @param \Retab\Resource\StepArtifactRefOperation|null $operation Optional artifact operation filter
      * @param string|null $blockId Optional block_id or step_id filter
-     * @param string|null $stepId Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). ``run_id`` is not required when ``step_id`` is set — it is resolved from the step record.
-     * @param string|null $before Step id cursor: return the page before this step (mutually exclusive with ``after``). Ignored when ``step_id`` is set.
-     * @param string|null $after Step id cursor: return the page after this step (mutually exclusive with ``before``). Ignored when ``step_id`` is set.
-     * @param int|null $limit Maximum number of artifacts to return per page (1-200). Ignored when ``step_id`` is set (that path returns the single attached artifact). Defaults to 100.
+     * @param string|null $stepId Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). `run_id` is not required when `step_id` is set — it is resolved from the step record.
+     * @param string|null $before Step id cursor: return the page before this step (mutually exclusive with `after`). Ignored when `step_id` is set.
+     * @param string|null $after Step id cursor: return the page after this step (mutually exclusive with `before`). Ignored when `step_id` is set.
+     * @param int|null $limit Maximum number of artifacts to return per page (1-200). Ignored when `step_id` is set (that path returns the single attached artifact). Defaults to 100.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowArtifact>
      * @throws \Retab\Exception\RetabException
      */
@@ -79,12 +79,10 @@ class WorkflowArtifacts
     /**
      * Get Workflow Artifact By Id
      *
-     * Get one workflow artifact by id alone.
+     * Get one workflow artifact by id.
      *
-     * The operation is derived from the id prefix
-     * (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
-     * the flat-resource shape — callers do not need to know which collection
-     * backs the id.
+     * The artifact kind is derived from the id prefix (`extr_…` → extraction,
+     * `clss_…` → classification, etc.).
      * @param string $artifactId
      * @return \Retab\Resource\ExtractionWorkflowArtifact|\Retab\Resource\SplitWorkflowArtifact|\Retab\Resource\ClassificationWorkflowArtifact|\Retab\Resource\ParseWorkflowArtifact|\Retab\Resource\EditWorkflowArtifact|\Retab\Resource\PartitionWorkflowArtifact|\Retab\Resource\ConditionalEvaluation|\Retab\Resource\ReviewEvaluation|\Retab\Resource\WhileLoopTermination|\Retab\Resource\ApiCallInvocation|\Retab\Resource\FunctionInvocation
      * @throws \Retab\Exception\RetabException

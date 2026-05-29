@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A split result: a document divided into its constituent `subdocuments`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Split {
     /// Unique identifier of the split result

@@ -16,6 +16,13 @@ class Partitions
 
     /**
      * List Partitions
+     *
+     * List partitions.
+     *
+     * Returns a paginated list of partitions for the authenticated environment, newest first
+     * by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+     * using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+     * `limit`, and `order`.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
@@ -56,6 +63,13 @@ class Partitions
 
     /**
      * Create Partitions
+     *
+     * Create a partition.
+     *
+     * Groups the pages of a `document` into chunks by a partition `key`, guided by
+     * `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple
+     * votes and consolidate them, and `allow_overlap` to let a page belong to more than one
+     * chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`.
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to partition
      * @param string $key The key to partition the document by
      * @param string $instructions Instructions describing how the document should be partitioned
@@ -97,6 +111,12 @@ class Partitions
 
     /**
      * Get Partition
+     *
+     * Retrieve a partition.
+     *
+     * Fetches a single partition by its `partition_id` within the authenticated environment
+     * and returns the full `Partition` including its `output` chunks. Responds with `404` if
+     * no partition with that id exists.
      * @param string $partitionId
      * @return \Retab\Resource\Partition
      * @throws \Retab\Exception\RetabException
@@ -115,6 +135,12 @@ class Partitions
 
     /**
      * Delete Partition
+     *
+     * Delete a partition.
+     *
+     * Permanently deletes the partition identified by `partition_id` in the authenticated
+     * environment. Returns `204` with no body on success, or `404` if the partition does not
+     * exist.
      * @param string $partitionId
      * @return void
      * @throws \Retab\Exception\RetabException

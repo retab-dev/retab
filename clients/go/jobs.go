@@ -90,6 +90,11 @@ type JobsGetParams struct {
 }
 
 // Get retrieve Job
+// Retrieve a job.
+// Returns the job identified by `job_id`, including its current status,
+// timestamps, and result (when completed) or error (when failed). Set
+// `include_request` or `include_response` to embed the original request or
+// the response payload. Responds with `404` if no matching job exists.
 func (s *JobService) Get(ctx context.Context, jobID string, params *JobsGetParams, opts ...RequestOption) (*Job, error) {
 	if jobID == "" {
 		return nil, fmt.Errorf("retab: job_id is required")

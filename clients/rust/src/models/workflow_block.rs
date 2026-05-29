@@ -42,7 +42,7 @@ pub struct WorkflowBlock {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_id: Option<String>,
     pub updated_at: String,
-    /// Internal graph-derived schema sidecar.
+    /// Schemas resolved for this block from the workflow graph.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resolved_schemas: Option<std::collections::HashMap<String, serde_json::Value>>,
 }

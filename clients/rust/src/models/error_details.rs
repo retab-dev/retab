@@ -12,7 +12,7 @@ pub struct ErrorDetails {
     /// Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub message: Option<String>,
-    /// Full Python stack trace
+    /// Full stack trace
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stack_trace: Option<String>,
     /// ID of the block that failed

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body for updating a workflow. Only the supplied fields (`name`, `description`) are changed. */
 readonly class UpdateWorkflowRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

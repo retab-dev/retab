@@ -5,6 +5,10 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Instructions for uploading file content to a reserved file record.
+/// Returned when starting a file upload. Carries the new `file_id`, a
+/// short-lived signed `upload_url` with the HTTP method and headers to use,
+/// a durable reference to the file, and the URL's `expires_at` time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateUploadResponse {
     /// Underlying file ID

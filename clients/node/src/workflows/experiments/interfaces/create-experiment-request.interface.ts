@@ -22,7 +22,7 @@ import {
 import type { CreateExperimentRequestNConsensus } from './create-experiment-request-n-consensus.interface.js';
 import { ZCreateExperimentRequestNConsensus } from './create-experiment-request-n-consensus.interface.js';
 
-/** Body for POST /v1/workflows/experiments. */
+/** Create an experiment, in one of two modes. */
 export interface CreateExperimentRequest {
   workflowId: string;
   blockId?: string | null;

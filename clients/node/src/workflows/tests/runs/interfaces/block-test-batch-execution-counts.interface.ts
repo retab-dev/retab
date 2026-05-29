@@ -20,7 +20,7 @@ import {
   serializeBlockTestOutcomeCounts,
 } from './block-test-outcome-counts.interface.js';
 
-/** Denormalized counts surface, split along the canonical axes. */
+/** Aggregate counts for a batch of block-test runs. */
 export interface BlockTestBatchExecutionCounts {
   /** @default {"pending":0,"queued":0,"running":0,"completed":0,"error":0,"cancelled":0} */
   lifecycleCounts?: BlockTestLifecycleCounts;

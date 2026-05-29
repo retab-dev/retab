@@ -6,6 +6,13 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Record of why a while-loop block stopped iterating during a run.
+ *
+ * Reports the `termination_reason` (`max_iterations_reached`,
+ * `condition_matched`, or `error`) and the termination conditions that were
+ * evaluated on the final iteration (`evaluations`).
+ */
 readonly class WhileLoopTermination implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -20,7 +27,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
         public \DateTimeImmutable $createdAt,
         /** @var array<\Retab\Resource\ConditionEvaluationResult>|null */
         public ?array $evaluations = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'while_loop_termination',
     ) {}
 

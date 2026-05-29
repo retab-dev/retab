@@ -8,9 +8,10 @@ import {
   serializeErrorDetails,
 } from './error-details.interface.js';
 
+/** Record of a function block's execution during a workflow run. */
 export interface FunctionInvocation {
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "function_invocation"
    */
   operation: 'function_invocation';

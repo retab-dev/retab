@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// An experiment that evaluates a workflow block against a set of documents, with its latest run status and score.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowExperiment {
     pub id: String,

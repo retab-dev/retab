@@ -68,6 +68,13 @@ namespace Retab
         }
 
         /// <summary>Retrieve Job</summary>
+        /// <remarks>
+        /// Retrieve a job.
+        /// Returns the job identified by `job_id`, including its current status,
+        /// timestamps, and result (when completed) or error (when failed). Set
+        /// `include_request` or `include_response` to embed the original request or
+        /// the response payload. Responds with `404` if no matching job exists.
+        /// </remarks>
         /// <param name="jobId">The job id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

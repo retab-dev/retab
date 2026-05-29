@@ -19,9 +19,9 @@ namespace Retab
         /// <summary>List Edges</summary>
         /// <remarks>
         /// List edges for a workflow with keyset cursor pagination.
-        /// Optionally filter by source or target block ID. Sorted by ``updated_at``
-        /// descending with ``id`` as the tiebreaker. Pass ``after`` for the next
-        /// page, ``before`` for the previous page — mutually exclusive.
+        /// Optionally filter by source or target block ID. Sorted by `updated_at`
+        /// descending with `id` as the tiebreaker. Pass `after` for the next
+        /// page, `before` for the previous page — mutually exclusive.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

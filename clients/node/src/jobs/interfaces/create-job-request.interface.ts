@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { CreateJobRequestEndpoint } from './create-job-request-endpoint.interface.js';
 import { ZCreateJobRequestEndpoint } from './create-job-request-endpoint.interface.js';
 
-/** Request body for POST /v1/jobs. */
+/** Create a job that runs a request against a supported endpoint asynchronously. */
 export interface CreateJobRequest {
   endpoint: CreateJobRequestEndpoint;
   request: Record<string, unknown>;

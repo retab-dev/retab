@@ -66,7 +66,7 @@ class WorkflowBlockExecutions
      * Create a block execution for `block_id` against the current draft.
      * @param string $runId Workflow run id that owns the step.
      * @param string $blockId Workflow block id to execute.
-     * @param string|null $stepId Optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key.
+     * @param string|null $stepId Optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step.
      * @param int|null $nConsensus Optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7.
      * @param bool|null $checkEligibility Whether to verify the upstream subgraph hasn't drifted since the source run. Disable only for explicit force-rerun flows.
      * @return \Retab\Resource\StoredBlockExecution

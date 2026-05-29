@@ -18,6 +18,13 @@ namespace Retab
         public ParsesService(Retab client) : base(client) { }
 
         /// <summary>List Parses</summary>
+        /// <remarks>
+        /// List parses.
+        /// Returns a paginated list of parses for the authenticated environment, newest first by
+        /// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+        /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+        /// `limit`, and `order`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +51,13 @@ namespace Retab
         }
 
         /// <summary>Create Parse</summary>
+        /// <remarks>
+        /// Create a parse.
+        /// Extracts the full text of a `document` into per-page and concatenated text using
+        /// the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and
+        /// optional `instructions` steer the parse. Returns the stored `Parse` with its `output`
+        /// and `usage`, and responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -60,6 +74,12 @@ namespace Retab
         }
 
         /// <summary>Get Parse</summary>
+        /// <remarks>
+        /// Retrieve a parse.
+        /// Fetches a single parse by its `parse_id` within the authenticated environment and
+        /// returns the full `Parse` including its `output`. Responds with `404` if no parse with
+        /// that id exists.
+        /// </remarks>
         /// <param name="parseId">The parse id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -76,6 +96,12 @@ namespace Retab
         }
 
         /// <summary>Delete Parse</summary>
+        /// <remarks>
+        /// Delete a parse.
+        /// Permanently deletes the parse identified by `parse_id` in the authenticated
+        /// environment. Returns `204` with no body on success, or `404` if the parse does not
+        /// exist.
+        /// </remarks>
         /// <param name="parseId">The parse id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

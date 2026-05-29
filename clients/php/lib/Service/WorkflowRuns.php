@@ -130,7 +130,7 @@ class WorkflowRuns
      * @param string|null $toDate Optional end date filter (YYYY-MM-DD)
      * @param \Retab\Resource\WorkflowRunsTriggerType|null $triggerType Optional trigger type filter
      * @param array<string>|null $preferredColumns Preferred data column order
-     * @param string|null $delimiter CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
+     * @param string|null $delimiter CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
      * @param string|null $lineDelimiter CSV line delimiter
      * @param string|null $quote CSV quote character
      * @return \Retab\Resource\WorkflowExportPayloadResponse

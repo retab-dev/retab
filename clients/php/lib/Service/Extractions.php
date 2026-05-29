@@ -29,7 +29,7 @@ class Extractions
      * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
      * @param string|null $filename
      * @param string|null $filenameRegex Deprecated alias for prefix filename filtering. Regex patterns are rejected.
-     * @param string|null $filenameContains Plain text filename text search powered by Atlas Search when available.
+     * @param string|null $filenameContains Plain-text search over the filename.
      * @param array<string>|null $documentType Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
      * @param string|null $fromDate
      * @param string|null $toDate
@@ -75,6 +75,13 @@ class Extractions
 
     /**
      * Create Extraction
+     *
+     * Run a structured extraction on a document.
+     *
+     * Extracts structured data from the `document` according to the supplied
+     * `json_schema`, using the requested `model`. Returns the extraction
+     * with its `output`, consensus details, and usage on `201`. When
+     * `stream` is `true`, partial results are streamed back as they are produced.
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document
      * @param array<string, mixed> $jsonSchema JSON schema describing the structured output
      * @param string|null $model The model to use for the extraction
@@ -128,6 +135,12 @@ class Extractions
 
     /**
      * Get Extraction
+     *
+     * Retrieve an extraction.
+     *
+     * Returns the extraction identified by `extraction_id`, including its source
+     * file, schema, `output`, and consensus details. Responds with `404` if no
+     * matching extraction exists.
      * @param string $extractionId
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException

@@ -274,11 +274,7 @@ impl<'a> WorkflowsApi<'a> {
     ///
     /// Discard all draft changes and restore the workflow to its published state.
     ///
-    /// This operation:
-    /// 1. Recreates blocks and edges from the published version
-    /// 2. Updates the workflow's updated_at timestamp and current draft graph
-    ///
-    /// Requires the workflow to be published (have a published_version_id).
+    /// The workflow must already be published.
     pub async fn discard_draft(&self, workflow_id: &str) -> Result<Workflow, Error> {
         self.discard_draft_with_options(workflow_id, None).await
     }

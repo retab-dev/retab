@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// An edit produced by a workflow run, tagged with its artifact `operation` and creation time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditWorkflowArtifact {
     /// Unique identifier of the edit.
@@ -32,7 +33,7 @@ pub struct EditWorkflowArtifact {
     /// Timestamp when this artifact was created.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `edit`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

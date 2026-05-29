@@ -30,7 +30,7 @@ pub struct ListParams {
     /// Deprecated alias for prefix filename filtering. Regex patterns are rejected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filename_regex: Option<String>,
-    /// Plain text filename text search powered by Atlas Search when available.
+    /// Plain-text search over the filename.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filename_contains: Option<String>,
     /// Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
@@ -127,6 +127,13 @@ impl<'a> ExtractionsApi<'a> {
     }
 
     /// Create Extraction
+    ///
+    /// Run a structured extraction on a document.
+    ///
+    /// Extracts structured data from the `document` according to the supplied
+    /// `json_schema`, using the requested `model`. Returns the extraction
+    /// with its `output`, consensus details, and usage on `201`. When
+    /// `stream` is `true`, partial results are streamed back as they are produced.
     pub async fn create(&self, params: CreateParams) -> Result<Extraction, Error> {
         self.create_with_options(params, None).await
     }
@@ -145,6 +152,12 @@ impl<'a> ExtractionsApi<'a> {
     }
 
     /// Get Extraction
+    ///
+    /// Retrieve an extraction.
+    ///
+    /// Returns the extraction identified by `extraction_id`, including its source
+    /// file, schema, `output`, and consensus details. Responds with `404` if no
+    /// matching extraction exists.
     pub async fn get(&self, extraction_id: &str) -> Result<Extraction, Error> {
         self.get_with_options(extraction_id, None).await
     }

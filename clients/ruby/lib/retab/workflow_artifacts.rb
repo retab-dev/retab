@@ -11,13 +11,13 @@ module Retab
     end
 
     # List Workflow Artifacts
-    # @param run_id [String, nil] Workflow run ID whose artifacts should be listed. Required unless ``step_id`` is provided.
+    # @param run_id [String, nil] Workflow run ID whose artifacts should be listed. Required unless `step_id` is provided.
     # @param operation [Retab::Types::WorkflowArtifactsOperation, nil] Optional artifact operation filter
     # @param block_id [String, nil] Optional block_id or step_id filter
-    # @param step_id [String, nil] Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). ``run_id`` is not required when ``step_id`` is set — it is resolved from the step record.
-    # @param before [String, nil] Step id cursor: return the page before this step (mutually exclusive with ``after``). Ignored when ``step_id`` is set.
-    # @param after [String, nil] Step id cursor: return the page after this step (mutually exclusive with ``before``). Ignored when ``step_id`` is set.
-    # @param limit [Integer, nil] Maximum number of artifacts to return per page (1-200). Ignored when ``step_id`` is set (that path returns the single attached artifact).
+    # @param step_id [String, nil] Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). `run_id` is not required when `step_id` is set — it is resolved from the step record.
+    # @param before [String, nil] Step id cursor: return the page before this step (mutually exclusive with `after`). Ignored when `step_id` is set.
+    # @param after [String, nil] Step id cursor: return the page after this step (mutually exclusive with `before`). Ignored when `step_id` is set.
+    # @param limit [Integer, nil] Maximum number of artifacts to return per page (1-200). Ignored when `step_id` is set (that path returns the single attached artifact).
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowArtifact>]
     def list(

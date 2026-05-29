@@ -20,11 +20,9 @@ type WorkflowSpecApplyParams struct {
 }
 
 // Apply workflow Spec
-// Apply declarative YAML to draft workflow state.
-// Contract:
-// - apply writes canonical draft state, not authored formatting
-// - re-applying canonical exported YAML against unchanged draft state should
-// return an empty resource_changes list
+// Apply a declarative YAML spec to the draft workflow.
+// Re-applying a spec that already matches the draft makes no changes and
+// returns an empty `resource_changes` list.
 func (s *WorkflowSpecService) Apply(ctx context.Context, params *WorkflowSpecApplyParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
 	var result DeclarativeApplyResponse
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/apply", nil, params, &result, opts)
@@ -41,10 +39,10 @@ type WorkflowSpecPlanParams struct {
 }
 
 // Plan workflow Spec
-// Compute the declarative reconcile plan against the current draft workflow.
-// Contract:
-// - plan compares authored YAML against current draft state
-// - canonical exported YAML should plan as `noop` against the same draft
+// Preview the changes a declarative YAML spec would make to the draft workflow.
+// Compares the spec against the current draft and returns the resulting
+// changes without applying them. A spec that already matches the draft
+// plans as a no-op.
 func (s *WorkflowSpecService) Plan(ctx context.Context, params *WorkflowSpecPlanParams, opts ...RequestOption) (*DeclarativePlanResponse, error) {
 	var result DeclarativePlanResponse
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/plan", nil, params, &result, opts)
@@ -61,15 +59,10 @@ type WorkflowSpecValidateParams struct {
 }
 
 // Validate workflow Spec
-// Validate declarative YAML without mutating workflow state.
-// Contract:
-// - validate, plan, and apply agree on whether a spec is acceptable: any
-// severity=error diagnostic — whether emitted at parse time as a
-// DeclarativeWorkflowError or bumped during compile/diagnose — raises
-// HTTP 400 with the structured error issues
-// - warnings do not make the document invalid; warning-only specs return
-// HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
-// - counts reflect the canonical compiled graph, not raw authored block count
+// Validate declarative YAML without changing the workflow.
+// Any error-level diagnostic responds with 400 and the structured issues.
+// Warnings do not make a spec invalid: a warning-only spec responds with
+// 200, `is_valid=True`, and the warnings in `diagnostics`.
 func (s *WorkflowSpecService) Validate(ctx context.Context, params *WorkflowSpecValidateParams, opts ...RequestOption) (*DeclarativeValidationResponse, error) {
 	var result DeclarativeValidationResponse
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/validate", nil, params, &result, opts)

@@ -6,9 +6,9 @@ import { ZWorkflowArtifactOperation } from './workflow-artifact-operation.interf
 
 /** Dereferenced workflow artifact with operation-specific fields preserved. */
 export interface WorkflowArtifact {
-  /** Artifact operation that determines the backing record type */
+  /** The operation that produced this artifact */
   operation: WorkflowArtifactOperation;
-  /** Persisted resource identifier */
+  /** Resource identifier */
   id: string;
 }
 

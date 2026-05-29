@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A parse produced by a workflow run, tagged with its artifact `operation` and creation time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParseWorkflowArtifact {
     /// Unique identifier of the parse
@@ -27,7 +28,7 @@ pub struct ParseWorkflowArtifact {
     pub usage: Option<RetabUsage>,
     /// Timestamp when this artifact was created.
     pub created_at: String,
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `parse`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

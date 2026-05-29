@@ -29,6 +29,7 @@ import {
   serializeRetabUsage,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
 
+/** An extraction produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface ExtractionWorkflowArtifact {
   /** Unique identifier of the extraction */
   id: string;
@@ -60,7 +61,7 @@ export interface ExtractionWorkflowArtifact {
   /** Timestamp when this artifact was created. */
   createdAt?: Date;
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "extraction"
    */
   operation: 'extraction';

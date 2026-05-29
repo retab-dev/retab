@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Result of validating a workflow YAML definition: whether it `is_valid`, block/edge counts, and `diagnostics`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeValidationResponse {
     pub workflow_id: String,

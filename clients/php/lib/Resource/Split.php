@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A split result: a document divided into its constituent `subdocuments`. */
 readonly class Split implements \JsonSerializable
 {
     use JsonSerializableTrait;

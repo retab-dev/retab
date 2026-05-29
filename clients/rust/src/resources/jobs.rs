@@ -199,6 +199,13 @@ impl<'a> JobsApi<'a> {
     }
 
     /// Retrieve Job
+    ///
+    /// Retrieve a job.
+    ///
+    /// Returns the job identified by `job_id`, including its current status,
+    /// timestamps, and result (when completed) or error (when failed). Set
+    /// `include_request` or `include_response` to embed the original request or
+    /// the response payload. Responds with `404` if no matching job exists.
     pub async fn get(&self, job_id: &str, params: GetParams) -> Result<Job, Error> {
         self.get_with_options(job_id, params, None).await
     }

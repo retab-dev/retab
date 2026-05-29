@@ -11,7 +11,7 @@ pub struct DeclarativePlanResourceChange {
     pub target: DeclarativePlanResourceChangeTarget,
     pub target_id: String,
     pub name: String,
-    /// Resource kind for this plan entry. ``workflow`` and ``edge`` are flat singletons; for ``target='block'`` this carries the block's concrete type (e.g. ``extract``, ``api_call``) so the plan summary can render type-specific labels.
+    /// Resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels.
     #[serde(rename = "type")]
     pub type_: DeclarativePlanResourceChangeType,
     pub actions: Vec<DeclarativePlanResourceChangeActions>,

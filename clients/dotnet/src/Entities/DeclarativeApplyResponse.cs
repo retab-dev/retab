@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a declarative apply response.</summary>
+    /// <summary>The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`.</summary>
     public class DeclarativeApplyResponse
     {
         public string WorkflowId { get; set; } = default!;

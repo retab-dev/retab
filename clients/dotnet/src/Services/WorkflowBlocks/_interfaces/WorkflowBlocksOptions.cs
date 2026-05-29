@@ -18,7 +18,7 @@ namespace Retab
         /// <summary>Workflow to create the block in.</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>If omitted, the server generates an opaque `blk_&lt;nanoid&gt;`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_&lt;nanoid&gt;` form for predictability.</summary>
+        /// <summary>Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409.</summary>
         public string? Id { get; set; }
 
         /// <summary>Block type</summary>
@@ -52,7 +52,7 @@ namespace Retab
     /// <summary>Request options for <see cref="WorkflowBlocksService.GetAsync"/>: Get Block</summary>
     public class WorkflowBlocksGetOptions : BaseOptions
     {
-        /// <summary>Optional disambiguator for legacy duplicate block IDs. Required only when the block id is not unique within the org — in that case the unqualified call returns 409 listing the colliding workflow_ids. Newly-created blocks use server-generated opaque IDs and never need this.</summary>
+        /// <summary>Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization — otherwise the call returns 409 listing the colliding workflow_ids. Server-generated block IDs are always unique and never need this.</summary>
         public string? WorkflowId { get; set; }
 
     }
@@ -74,10 +74,10 @@ namespace Retab
 
         public string? ParentId { get; set; }
 
-        /// <summary>How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.</summary>
+        /// <summary>How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.</summary>
         public UpdateWorkflowBlockRequestConfigMode? ConfigMode { get; set; }
 
-        /// <summary>Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.</summary>
+        /// <summary>Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.</summary>
         public string? WorkflowId { get; set; }
 
     }
@@ -85,7 +85,7 @@ namespace Retab
     /// <summary>Request options for <see cref="WorkflowBlocksService.DeleteAsync"/>: Delete Block</summary>
     public class WorkflowBlocksDeleteOptions : BaseOptions
     {
-        /// <summary>Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.</summary>
+        /// <summary>Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.</summary>
         public string? WorkflowId { get; set; }
 
     }

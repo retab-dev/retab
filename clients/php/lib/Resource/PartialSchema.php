@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A generated JSON schema with its `json_schema` body and `strict` flag. */
 readonly class PartialSchema implements \JsonSerializable
 {
     use JsonSerializableTrait;

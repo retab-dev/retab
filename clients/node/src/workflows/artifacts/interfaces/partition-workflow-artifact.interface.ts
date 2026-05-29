@@ -38,6 +38,7 @@ import {
   serializeRetabUsage,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
 
+/** A partition produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface PartitionWorkflowArtifact {
   /** Unique identifier of the partition */
   id: string;
@@ -71,7 +72,7 @@ export interface PartitionWorkflowArtifact {
   /** Timestamp when this artifact was created. */
   createdAt?: Date;
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "partition"
    */
   operation: 'partition';

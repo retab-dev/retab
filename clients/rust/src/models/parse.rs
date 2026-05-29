@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A parse result: the per-page and full-document text extracted from a document.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parse {
     /// Unique identifier of the parse

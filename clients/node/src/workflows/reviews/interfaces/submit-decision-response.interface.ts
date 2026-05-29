@@ -8,7 +8,7 @@ import { ZResumeStatus } from './resume-status.interface.js';
 import type { SubmissionStatus } from './submission-status.interface.js';
 import { ZSubmissionStatus } from './submission-status.interface.js';
 
-/** Response from POST /workflows/reviews/{review_id}/approve | /reject. */
+/** Response to a review approve or reject request. */
 export interface SubmitDecisionResponse {
   /** @default "accepted" */
   submissionStatus?: SubmissionStatus;

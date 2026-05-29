@@ -10,6 +10,7 @@ import { ZExperimentSchemaDriftStatus } from './experiment-schema-drift-status.i
 import type { NConsensusValue } from './n-consensus-value.interface.js';
 import { ZNConsensusValue } from './n-consensus-value.interface.js';
 
+/** An experiment that evaluates a workflow block against a set of documents, with its latest run status and score. */
 export interface WorkflowExperiment {
   id: string;
   workflowId: string;

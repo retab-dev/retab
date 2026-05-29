@@ -8,12 +8,20 @@ from retab.types.mime import MIMEData
 
 
 class CompleteFileUploadRequest(BaseModel):
+    """Body to finalize a file upload, optionally carrying the uploaded content's `sha256` checksum for verification."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     sha256: str | None = Field(default=None, description="Optional SHA-256 checksum")
 
 
 class CreateUploadResponse(BaseModel):
+    """Instructions for uploading file content to a reserved file record.
+
+    Returned when starting a file upload. Carries the new `file_id`, a
+    short-lived signed `upload_url` with the HTTP method and headers to use,
+    a durable reference to the file, and the URL's `expires_at` time."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     file_id: str = Field(..., alias="fileId", description="Underlying file ID")
@@ -25,6 +33,8 @@ class CreateUploadResponse(BaseModel):
 
 
 class File(BaseModel):
+    """An uploaded file: its `id`, `filename`, MIME type, page count, and timestamps."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     object: Literal["file"] = Field(default="file")
@@ -37,6 +47,8 @@ class File(BaseModel):
 
 
 class FileLink(BaseModel):
+    """A short-lived signed link to download a file, with its `filename` and expiry."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     download_url: str = Field(..., description="The signed URL to download the file")
@@ -46,6 +58,8 @@ class FileLink(BaseModel):
 
 
 class UploadFileRequest(BaseModel):
+    """Body to start a file upload: the `filename`, expected `size_bytes`, and optional content type and checksum."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     filename: str = Field(..., description="Filename to store")

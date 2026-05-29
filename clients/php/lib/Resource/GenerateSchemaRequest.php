@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body to generate a JSON schema from example `documents`, optionally steered by `instructions`. */
 readonly class GenerateSchemaRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

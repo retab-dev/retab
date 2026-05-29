@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A generated JSON schema with its `json_schema` body and `strict` flag.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PartialSchema {
     /// Defaults to `schema`.

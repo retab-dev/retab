@@ -80,6 +80,12 @@ namespace Retab
         }
 
         /// <summary>Get Experiment</summary>
+        /// <remarks>
+        /// Retrieve a single experiment.
+        /// Identified by `experiment_id`. Returns the experiment along with its
+        /// latest-run status, score, staleness, and schema-drift detection. Returns
+        /// 404 if no experiment with that ID exists.
+        /// </remarks>
         /// <param name="experimentId">The experiment id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -96,6 +102,12 @@ namespace Retab
         }
 
         /// <summary>Update Experiment</summary>
+        /// <remarks>
+        /// Update an experiment.
+        /// Identified by `experiment_id`. Send any of `name`, `n_consensus`,
+        /// `documents`, or `document_captures`; omitted fields are left unchanged.
+        /// Returns the updated experiment with its latest-run status and drift info.
+        /// </remarks>
         /// <param name="experimentId">The experiment id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -113,6 +125,12 @@ namespace Retab
         }
 
         /// <summary>Delete Experiment</summary>
+        /// <remarks>
+        /// Delete an experiment.
+        /// Identified by `experiment_id`. Also removes the experiment's runs and
+        /// results. Returns 204 on success, 404 if not found, and 409 if the latest
+        /// run is still pending or running (cancel it first).
+        /// </remarks>
         /// <param name="experimentId">The experiment id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs. */
+/** Create a new workflow run from a workflow id, an optional version selector, and optional inputs. */
 readonly class CreateWorkflowRunRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

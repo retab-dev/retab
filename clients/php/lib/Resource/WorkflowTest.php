@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output. */
 readonly class WorkflowTest implements \JsonSerializable
 {
     use JsonSerializableTrait;

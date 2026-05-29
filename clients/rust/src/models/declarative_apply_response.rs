@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeApplyResponse {
     pub workflow_id: String,

@@ -28,7 +28,7 @@ class WorkflowTestRunsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Test Execution Runs"""
+        """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "test_id": test_id,
@@ -53,7 +53,7 @@ class WorkflowTestRunsMixin:
     def prepare_create(
         self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> PreparedRequest:
-        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
+        """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -63,7 +63,7 @@ class WorkflowTestRunsMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/tests/runs", params=params or None, data=data)
 
     def prepare_get(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Test Execution Run"""
+        """Get Test Execution Run Retrieve a single workflow test run. Identified by `run_id`. Returns the run with its lifecycle status, timing, and pass/fail counts. Returns 404 if no run with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -72,7 +72,7 @@ class WorkflowTestRunsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/tests/runs/{run_id}", params=params or None, data=data)
 
     def prepare_cancel(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Cancel Test Execution Run"""
+        """Cancel Test Execution Run Cancel a workflow test run. Identified by `run_id`. Stops the run and returns it with its updated cancelled lifecycle. Returns 404 if the run does not exist or is not in a cancellable state."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -101,7 +101,7 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowTestRun]:
-        """List Test Execution Runs"""
+        """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             test_id=test_id,
@@ -123,19 +123,19 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
     def create(
         self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> WorkflowTestRun:
-        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
+        """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 
     def get(self, run_id: str, **extra_params: Any) -> WorkflowTestRun:
-        """Get Test Execution Run"""
+        """Get Test Execution Run Retrieve a single workflow test run. Identified by `run_id`. Returns the run with its lifecycle status, timing, and pass/fail counts. Returns 404 if no run with that ID exists."""
         prepared_request = self.prepare_get(run_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 
     def cancel(self, run_id: str, **extra_params: Any) -> WorkflowTestRun:
-        """Cancel Test Execution Run"""
+        """Cancel Test Execution Run Cancel a workflow test run. Identified by `run_id`. Stops the run and returns it with its updated cancelled lifecycle. Returns 404 if the run does not exist or is not in a cancellable state."""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
@@ -161,7 +161,7 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowTestRun]:
-        """List Test Execution Runs"""
+        """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             test_id=test_id,
@@ -183,19 +183,19 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
     async def create(
         self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
     ) -> WorkflowTestRun:
-        """Create Test Run Create a workflow-scoped test run. ``workflow_id`` is the execution context. Optional ``scope`` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
+        """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 
     async def get(self, run_id: str, **extra_params: Any) -> WorkflowTestRun:
-        """Get Test Execution Run"""
+        """Get Test Execution Run Retrieve a single workflow test run. Identified by `run_id`. Returns the run with its lifecycle status, timing, and pass/fail counts. Returns 404 if no run with that ID exists."""
         prepared_request = self.prepare_get(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
 
     async def cancel(self, run_id: str, **extra_params: Any) -> WorkflowTestRun:
-        """Cancel Test Execution Run"""
+        """Cancel Test Execution Run Cancel a workflow test run. Identified by `run_id`. Stops the run and returns it with its updated cancelled lifecycle. Returns 404 if the run does not exist or is not in a cancellable state."""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)

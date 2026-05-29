@@ -22,6 +22,12 @@ type EditTemplatesListParams struct {
 }
 
 // List templates
+// List edit templates.
+// Returns a paginated list of edit templates. Filter by `name`
+// (case-insensitive substring match) and order results by `sort_by`
+// (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and
+// `order`. Form fields are omitted from list items; fetch a single template to
+// retrieve them.
 func (s *EditTemplateService) List(ctx context.Context, params *EditTemplatesListParams, opts ...RequestOption) (*PaginatedList[EditTemplate], error) {
 	return doPaginated[EditTemplate](ctx, s.client, "GET", "/v1/edits/templates", params, nil, opts...)
 }
@@ -37,6 +43,11 @@ type EditTemplatesCreateParams struct {
 }
 
 // Create template
+// Create an edit template.
+// Stores a reusable form template from an empty `document` (PDF or Office
+// document) plus its `form_fields` and a `name`. Later edits can reference the
+// returned template id instead of re-uploading the document. An unsupported
+// document format responds with `400`; on success responds with `201`.
 func (s *EditTemplateService) Create(ctx context.Context, params *EditTemplatesCreateParams, opts ...RequestOption) (*EditTemplate, error) {
 	type createWireBody struct {
 		Name       string       `json:"name"`
@@ -68,6 +79,9 @@ func (s *EditTemplateService) Create(ctx context.Context, params *EditTemplatesC
 }
 
 // Get template
+// Retrieve an edit template.
+// Fetches a single edit template by its `template_id`, including its form
+// fields. Responds with `404` if no template with that id exists.
 func (s *EditTemplateService) Get(ctx context.Context, templateID string, opts ...RequestOption) (*EditTemplate, error) {
 	if templateID == "" {
 		return nil, fmt.Errorf("retab: template_id is required")
@@ -89,6 +103,11 @@ type EditTemplatesUpdateParams struct {
 }
 
 // Update template
+// Update an edit template.
+// Applies a partial update to the template identified by `template_id`. Set
+// `name` to rename it and/or `form_fields` to replace its field list; omitted
+// fields are left unchanged. Returns the updated template, or `404` if no
+// template with that id exists.
 func (s *EditTemplateService) Update(ctx context.Context, templateID string, params *EditTemplatesUpdateParams, opts ...RequestOption) (*EditTemplate, error) {
 	if templateID == "" {
 		return nil, fmt.Errorf("retab: template_id is required")
@@ -102,6 +121,9 @@ func (s *EditTemplateService) Update(ctx context.Context, templateID string, par
 }
 
 // Delete template
+// Delete an edit template.
+// Permanently deletes the edit template identified by `template_id`. Returns
+// `204` on success, or `404` if no template with that id exists.
 func (s *EditTemplateService) Delete(ctx context.Context, templateID string, opts ...RequestOption) error {
 	if templateID == "" {
 		return fmt.Errorf("retab: template_id is required")

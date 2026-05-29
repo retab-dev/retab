@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A reusable edit template: an empty PDF and the `form_fields` defined on it.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditTemplate {
     /// Unique identifier of the template.

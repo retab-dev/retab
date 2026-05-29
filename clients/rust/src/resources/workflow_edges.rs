@@ -23,10 +23,10 @@ pub struct ListParams {
     /// Filter by target block ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_block: Option<String>,
-    /// Edge id cursor: return the page before this id (mutually exclusive with ``after``).
+    /// Edge id cursor: return the page before this id (mutually exclusive with `after`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
-    /// Edge id cursor: return the page after this id (mutually exclusive with ``before``).
+    /// Edge id cursor: return the page after this id (mutually exclusive with `before`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
     /// Maximum number of edges to return per page (1-200).
@@ -73,9 +73,9 @@ impl<'a> WorkflowEdgesApi<'a> {
     ///
     /// List edges for a workflow with keyset cursor pagination.
     ///
-    /// Optionally filter by source or target block ID. Sorted by ``updated_at``
-    /// descending with ``id`` as the tiebreaker. Pass ``after`` for the next
-    /// page, ``before`` for the previous page — mutually exclusive.
+    /// Optionally filter by source or target block ID. Sorted by `updated_at`
+    /// descending with `id` as the tiebreaker. Pass `after` for the next
+    /// page, `before` for the previous page — mutually exclusive.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowEdgeList, Error> {
         self.list_with_options(params, None).await
     }

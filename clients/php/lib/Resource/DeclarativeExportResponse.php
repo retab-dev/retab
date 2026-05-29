@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A workflow exported as its YAML definition. */
 readonly class DeclarativeExportResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body for updating an experiment. Only the supplied fields are changed. */
 readonly class UpdateExperimentRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

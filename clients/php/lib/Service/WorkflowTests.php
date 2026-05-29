@@ -29,6 +29,13 @@ class WorkflowTests
 
     /**
      * List Tests
+     *
+     * List workflow tests.
+     *
+     * Requires `workflow_id` and returns its saved tests as a cursor-paginated
+     * list, each with its latest-run summaries and drift status. Optionally
+     * filter to one block with `target_block_id`. Returns 404 if the workflow
+     * does not exist.
      * @param string $workflowId
      * @param string|null $targetBlockId
      * @param string|null $before
@@ -66,6 +73,13 @@ class WorkflowTests
 
     /**
      * Create Test
+     *
+     * Create a workflow test.
+     *
+     * Pins an expected outcome for one block in a workflow. Provide the
+     * `workflow_id`, the `target` block, an `assertion` describing the expected
+     * output, and a `source` of test inputs (explicit handle inputs or a capture
+     * from a prior run/step). Returns the created test with status 201.
      * @param string $workflowId
      * @param \Retab\Resource\WorkflowTestBlockTarget $target
      * @param \Retab\Resource\ManualWorkflowTestSource|\Retab\Resource\RunStepWorkflowTestSource $source
@@ -100,6 +114,12 @@ class WorkflowTests
 
     /**
      * Get Test
+     *
+     * Retrieve a single workflow test.
+     *
+     * Identified by `test_id`. Returns the test with its target block,
+     * assertion, input source, and latest-run summaries. Returns 404 if no test
+     * with that ID exists.
      * @param string $testId
      * @return \Retab\Resource\WorkflowTest
      * @throws \Retab\Exception\RetabException
@@ -118,6 +138,11 @@ class WorkflowTests
 
     /**
      * Update Test
+     *
+     * Update a workflow test.
+     *
+     * Identified by `test_id`. Send any of `name`, `assertion`, or `source`;
+     * omitted fields are left unchanged. Returns the updated test.
      * @param string $testId
      * @param string|null $name
      * @param \Retab\Resource\AssertionSpec|null $assertion
@@ -148,6 +173,11 @@ class WorkflowTests
 
     /**
      * Delete Test
+     *
+     * Delete a workflow test.
+     *
+     * Identified by `test_id`. Returns 204 on success and 404 if no test with
+     * that ID exists.
      * @param string $testId
      * @return void
      * @throws \Retab\Exception\RetabException

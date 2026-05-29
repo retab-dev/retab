@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a partition.</summary>
+    /// <summary>A partition result: a document segmented into chunks along the requested `key`.</summary>
     public class Partition
     {
 

@@ -6,6 +6,12 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Record of an API-call block's outbound HTTP request during a run.
+ *
+ * Lists each request `attempts` made (including retries) and any `error`
+ * if the call ultimately failed.
+ */
 readonly class ApiCallInvocation implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -19,7 +25,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
         public ?ErrorDetails $error = null,
         /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'api_call_invocation',
     ) {}
 

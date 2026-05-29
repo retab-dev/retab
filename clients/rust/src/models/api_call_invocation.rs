@@ -5,9 +5,12 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Record of an API-call block's outbound HTTP request during a run.
+/// Lists each request `attempts` made (including retries) and any `error`
+/// if the call ultimately failed.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiCallInvocation {
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `api_call_invocation`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

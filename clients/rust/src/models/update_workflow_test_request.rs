@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body for updating a workflow test. Only the supplied fields (`name`, `assertion`, `source`) are changed.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateWorkflowTestRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]

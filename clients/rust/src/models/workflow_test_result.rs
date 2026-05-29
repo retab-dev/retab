@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowTestResult {
     pub id: String,

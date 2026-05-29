@@ -6,6 +6,15 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/**
+ * Record of a review-gate evaluation during a workflow run.
+ *
+ * Captures the conditions evaluated against the block's output
+ * (`evaluations`), whether the gate required human review
+ * (`requires_human_review`), and, once a reviewer acts, the verdict
+ * (`review_decision`), any notes, whether a revision was requested, and the
+ * reviewer and timestamp.
+ */
 readonly class ReviewEvaluation implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -29,7 +38,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
         public ?string $reviewNotes = null,
         public ?bool $requestedRevision = null,
         public ?\DateTimeImmutable $reviewedAt = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'review_trigger_evaluation',
     ) {}
 

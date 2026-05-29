@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body for updating an edit template. Only the supplied fields (`name`, `form_fields`) are changed. */
 readonly class UpdateEditTemplateRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

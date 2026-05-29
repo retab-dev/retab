@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body for updating an experiment. Only the supplied fields are changed.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateExperimentRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]

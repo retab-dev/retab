@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Canonical split request.
+/// Request body to create a split.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SplitRequest {
     /// The document to split

@@ -20,6 +20,10 @@ type ExperimentRunResultsListParams struct {
 }
 
 // List experiment Results
+// List per-document results for an experiment run.
+// Requires the `run_id` query parameter. Returns one result row per document
+// in the run, with each row's lifecycle status, timing, and produced
+// artifact, as a cursor-paginated list.
 func (s *ExperimentRunResultService) List(ctx context.Context, params *ExperimentRunResultsListParams, opts ...RequestOption) (*PaginatedList[ExperimentResult], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: run_id is required")
@@ -31,6 +35,10 @@ func (s *ExperimentRunResultService) List(ctx context.Context, params *Experimen
 }
 
 // Get experiment Result
+// Retrieve a single experiment result.
+// Identified by `result_id`. Returns the per-document result with its
+// lifecycle status, timing, and produced artifact. Returns 404 if no result
+// with that ID exists.
 func (s *ExperimentRunResultService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*ExperimentResult, error) {
 	if resultID == "" {
 		return nil, fmt.Errorf("retab: result_id is required")

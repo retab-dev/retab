@@ -80,6 +80,13 @@ impl CreateParams {
 
 impl<'a> SplitsApi<'a> {
     /// List Splits
+    ///
+    /// List splits.
+    ///
+    /// Returns a paginated list of splits for the authenticated environment, newest first by
+    /// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+    /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+    /// `limit`, and `order`.
     pub async fn list(&self, params: ListParams) -> Result<SplitList, Error> {
         self.list_with_options(params, None).await
     }
@@ -98,6 +105,13 @@ impl<'a> SplitsApi<'a> {
     }
 
     /// Create Split
+    ///
+    /// Create a split.
+    ///
+    /// Divides a `document` into the named `subdocuments`, assigning each its set of pages,
+    /// using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to
+    /// run multiple votes and consolidate them. Returns the stored `Split` with its `output`
+    /// page assignments, and responds with `201`.
     pub async fn create(&self, params: CreateParams) -> Result<Split, Error> {
         self.create_with_options(params, None).await
     }
@@ -116,6 +130,12 @@ impl<'a> SplitsApi<'a> {
     }
 
     /// Get Split
+    ///
+    /// Retrieve a split.
+    ///
+    /// Fetches a single split by its `split_id` within the authenticated environment and
+    /// returns the full `Split` including its `output` page assignments. Responds with `404`
+    /// if no split with that id exists.
     pub async fn get(&self, split_id: &str) -> Result<Split, Error> {
         self.get_with_options(split_id, None).await
     }
@@ -135,6 +155,12 @@ impl<'a> SplitsApi<'a> {
     }
 
     /// Delete Split
+    ///
+    /// Delete a split.
+    ///
+    /// Permanently deletes the split identified by `split_id` in the authenticated
+    /// environment. Returns `204` with no body on success, or `404` if the split does not
+    /// exist.
     pub async fn delete(&self, split_id: &str) -> Result<(), Error> {
         self.delete_with_options(split_id, None).await
     }

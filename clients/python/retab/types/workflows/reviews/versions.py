@@ -8,11 +8,10 @@ from retab.types.workflows.reviews import Actor
 
 
 class CreateReviewVersionRequest(BaseModel):
-    """POST /workflows/reviews/versions body.
+    """Create a corrected version of a review.
 
-    Public callers create corrections, not seeds. ``parent_id`` must
-    reference an existing version under the same ``review_id``; seed versions
-    are created by the runtime through the store path."""
+    `parent_id` must reference an existing version under the same
+    `review_id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

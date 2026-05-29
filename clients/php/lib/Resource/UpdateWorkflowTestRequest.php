@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body for updating a workflow test. Only the supplied fields (`name`, `assertion`, `source`) are changed. */
 readonly class UpdateWorkflowTestRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

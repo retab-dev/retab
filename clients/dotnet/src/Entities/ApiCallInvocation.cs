@@ -3,11 +3,15 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents an api call invocation.</summary>
+    /// <summary>Record of an API-call block's outbound HTTP request during a run.</summary>
+    /// <remarks>
+    /// Lists each request `attempts` made (including retries) and any `error`
+    /// if the call ultimately failed.
+    /// </remarks>
     public class ApiCallInvocation
     {
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "api_call_invocation";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;

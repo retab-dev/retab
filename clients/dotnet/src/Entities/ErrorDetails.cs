@@ -12,7 +12,7 @@ namespace Retab
         /// <summary>Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.</summary>
         public string? Message { get; set; }
 
-        /// <summary>Full Python stack trace</summary>
+        /// <summary>Full stack trace</summary>
         public string? StackTrace { get; set; }
 
         /// <summary>ID of the block that failed</summary>

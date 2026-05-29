@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A short-lived signed link to download a file, with its `filename` and expiry. */
 readonly class FileLink implements \JsonSerializable
 {
     use JsonSerializableTrait;

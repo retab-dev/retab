@@ -5,9 +5,13 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Record of why a while-loop block stopped iterating during a run.
+/// Reports the `termination_reason` (`max_iterations_reached`,
+/// `condition_matched`, or `error`) and the termination conditions that were
+/// evaluated on the final iteration (`evaluations`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhileLoopTermination {
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `while_loop_termination`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

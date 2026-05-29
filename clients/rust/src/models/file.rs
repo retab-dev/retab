@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// An uploaded file: its `id`, `filename`, MIME type, page count, and timestamps.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct File {
     /// Defaults to `file`.

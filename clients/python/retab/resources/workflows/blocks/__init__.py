@@ -14,7 +14,7 @@ from .executions import WorkflowBlockExecutions, AsyncWorkflowBlockExecutions
 
 class WorkflowBlocksMixin:
     def prepare_list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PreparedRequest:
-        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` (the previous response's ``list_metadata.after``) for the next page, ``before`` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
+        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "before": before,
@@ -126,7 +126,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         self.executions = WorkflowBlockExecutions(client=client)
 
     def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PaginatedList[WorkflowBlock]:
-        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` (the previous response's ``list_metadata.after``) for the next page, ``before`` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
+        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowBlock)
 
@@ -213,7 +213,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         self.executions = AsyncWorkflowBlockExecutions(client=client)
 
     async def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> AsyncPaginatedList[WorkflowBlock]:
-        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass ``after`` (the previous response's ``list_metadata.after``) for the next page, ``before`` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
+        """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowBlock)
 

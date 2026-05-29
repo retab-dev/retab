@@ -12,7 +12,7 @@ import type {
 } from '../../../classifications/interfaces/mime-data.interface.js';
 import { ZMIMEData } from '../../../classifications/interfaces/mime-data.interface.js';
 
-/** Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs. */
+/** Create a new workflow run from a workflow id, an optional version selector, and optional inputs. */
 export interface CreateWorkflowRunRequest {
   /** Workflow id for the fresh run. */
   workflowId: string;

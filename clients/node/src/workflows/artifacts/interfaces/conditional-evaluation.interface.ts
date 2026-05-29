@@ -11,9 +11,10 @@ import {
   serializeConditionEvaluationResult,
 } from './condition-evaluation-result.interface.js';
 
+/** Record of how a conditional block routed during a workflow run. */
 export interface ConditionalEvaluation {
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "conditional_evaluation"
    */
   operation: 'conditional_evaluation';

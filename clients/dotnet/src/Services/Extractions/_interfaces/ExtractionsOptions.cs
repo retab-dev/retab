@@ -13,7 +13,7 @@ namespace Retab
         /// <summary>Deprecated alias for prefix filename filtering. Regex patterns are rejected.</summary>
         public string? FilenameRegex { get; set; }
 
-        /// <summary>Plain text filename text search powered by Atlas Search when available.</summary>
+        /// <summary>Plain-text search over the filename.</summary>
         public string? FilenameContains { get; set; }
 
         /// <summary>Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.</summary>

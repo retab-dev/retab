@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a parse.</summary>
+    /// <summary>A parse result: the per-page and full-document text extracted from a document.</summary>
     public class Parse
     {
 

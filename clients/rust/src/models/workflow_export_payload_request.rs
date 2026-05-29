@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body describing which block outputs (or inputs) across a workflow's runs to export as CSV, with optional run, doc-type, and status filters.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowExportPayloadRequest {
     /// Workflow ID to export
@@ -42,7 +43,7 @@ pub struct WorkflowExportPayloadRequest {
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub preferred_columns: Option<Vec<String>>,
-    /// CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
+    /// CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
     ///
     /// Defaults to `;`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

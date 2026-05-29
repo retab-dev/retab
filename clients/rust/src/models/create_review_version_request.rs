@@ -5,10 +5,9 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// POST /workflows/reviews/versions body.
-/// Public callers create corrections, not seeds. ``parent_id`` must
-/// reference an existing version under the same ``review_id``; seed versions
-/// are created by the runtime through the store path.
+/// Create a corrected version of a review.
+/// `parent_id` must reference an existing version under the same
+/// `review_id`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateReviewVersionRequest {
     pub review_id: String,

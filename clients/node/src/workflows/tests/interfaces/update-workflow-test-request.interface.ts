@@ -26,6 +26,7 @@ import {
   serializeRunStepWorkflowTestSource,
 } from './run-step-workflow-test-source.interface.js';
 
+/** Body for updating a workflow test. Only the supplied fields (`name`, `assertion`, `source`) are changed. */
 export interface UpdateWorkflowTestRequest {
   name?: string | null;
   assertion?: AssertionSpec | null;

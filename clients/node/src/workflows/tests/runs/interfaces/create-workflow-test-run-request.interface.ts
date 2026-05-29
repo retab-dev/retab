@@ -29,7 +29,7 @@ import {
   serializeWorkflowTestRunWorkflowScope,
 } from './workflow-test-run-workflow-scope.interface.js';
 
-/** Request body for POST /v1/workflows/tests/runs. Provide a workflow_id and optionally narrow execution with scope.type single or block. Omit scope, or pass scope.type workflow, to run every saved workflow test. */
+/** Create a workflow test run. Provide a `workflow_id`, and optionally narrow execution with `scope` to a single test or one block. Omit `scope` to run every saved workflow test. */
 export interface CreateWorkflowTestRunRequest {
   workflowId: string;
   /** Optional execution scope. Omit (or pass null) to run every saved test in the workflow. */

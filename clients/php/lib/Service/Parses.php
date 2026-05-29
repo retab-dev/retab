@@ -16,6 +16,13 @@ class Parses
 
     /**
      * List Parses
+     *
+     * List parses.
+     *
+     * Returns a paginated list of parses for the authenticated environment, newest first by
+     * default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+     * using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+     * `limit`, and `order`.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
@@ -56,6 +63,13 @@ class Parses
 
     /**
      * Create Parse
+     *
+     * Create a parse.
+     *
+     * Extracts the full text of a `document` into per-page and concatenated text using
+     * the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and
+     * optional `instructions` steer the parse. Returns the stored `Parse` with its `output`
+     * and `usage`, and responds with `201`.
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to parse
      * @param string|null $model The model to use for parsing
      * @param \Retab\Resource\TableParsingFormat|null $tableParsingFormat Format used to render tables extracted from the document
@@ -94,6 +108,12 @@ class Parses
 
     /**
      * Get Parse
+     *
+     * Retrieve a parse.
+     *
+     * Fetches a single parse by its `parse_id` within the authenticated environment and
+     * returns the full `Parse` including its `output`. Responds with `404` if no parse with
+     * that id exists.
      * @param string $parseId
      * @return \Retab\Resource\Parse
      * @throws \Retab\Exception\RetabException
@@ -112,6 +132,12 @@ class Parses
 
     /**
      * Delete Parse
+     *
+     * Delete a parse.
+     *
+     * Permanently deletes the parse identified by `parse_id` in the authenticated
+     * environment. Returns `204` with no body on success, or `404` if the parse does not
+     * exist.
      * @param string $parseId
      * @return void
      * @throws \Retab\Exception\RetabException

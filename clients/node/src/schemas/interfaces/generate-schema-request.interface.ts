@@ -11,6 +11,7 @@ import {
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
 
+/** Body to generate a JSON schema from example `documents`, optionally steered by `instructions`. */
 export interface GenerateSchemaRequest {
   documents: MIMEData[];
   /** @default "retab-small" */

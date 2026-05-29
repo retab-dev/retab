@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// An edit result: form-field values written onto a document or template PDF.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Edit {
     /// Unique identifier of the edit.

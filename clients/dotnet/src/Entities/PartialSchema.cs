@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a partial schema.</summary>
+    /// <summary>A generated JSON schema with its `json_schema` body and `strict` flag.</summary>
     public class PartialSchema
     {
         public string? Object { get; set; } = "schema";

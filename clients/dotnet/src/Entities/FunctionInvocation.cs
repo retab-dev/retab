@@ -3,11 +3,15 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a function invocation.</summary>
+    /// <summary>Record of a function block's execution during a workflow run.</summary>
+    /// <remarks>
+    /// Captures the `inputs` passed to the function, the `output` it returned,
+    /// how long it ran (`duration_ms`), and any `error` if execution failed.
+    /// </remarks>
     public class FunctionInvocation
     {
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "function_invocation";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;

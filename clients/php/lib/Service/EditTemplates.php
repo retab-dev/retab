@@ -16,6 +16,14 @@ class EditTemplates
 
     /**
      * List Templates
+     *
+     * List edit templates.
+     *
+     * Returns a paginated list of edit templates. Filter by `name`
+     * (case-insensitive substring match) and order results by `sort_by`
+     * (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and
+     * `order`. Form fields are omitted from list items; fetch a single template to
+     * retrieve them.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
@@ -53,6 +61,13 @@ class EditTemplates
 
     /**
      * Create Template
+     *
+     * Create an edit template.
+     *
+     * Stores a reusable form template from an empty `document` (PDF or Office
+     * document) plus its `form_fields` and a `name`. Later edits can reference the
+     * returned template id instead of re-uploading the document. An unsupported
+     * document format responds with `400`; on success responds with `201`.
      * @param string $name Name of the template.
      * @param \Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The PDF document to use as the empty template.
      * @param array<\Retab\Resource\FormField> $formFields Form fields to attach to the template.
@@ -82,6 +97,11 @@ class EditTemplates
 
     /**
      * Get Template
+     *
+     * Retrieve an edit template.
+     *
+     * Fetches a single edit template by its `template_id`, including its form
+     * fields. Responds with `404` if no template with that id exists.
      * @param string $templateId
      * @return \Retab\Resource\EditTemplate
      * @throws \Retab\Exception\RetabException
@@ -100,6 +120,13 @@ class EditTemplates
 
     /**
      * Update Template
+     *
+     * Update an edit template.
+     *
+     * Applies a partial update to the template identified by `template_id`. Set
+     * `name` to rename it and/or `form_fields` to replace its field list; omitted
+     * fields are left unchanged. Returns the updated template, or `404` if no
+     * template with that id exists.
      * @param string $templateId
      * @param string|null $name New name for the template.
      * @param array<\Retab\Resource\FormField>|null $formFields Replacement list of form fields.
@@ -127,6 +154,11 @@ class EditTemplates
 
     /**
      * Delete Template
+     *
+     * Delete an edit template.
+     *
+     * Permanently deletes the edit template identified by `template_id`. Returns
+     * `204` on success, or `404` if no template with that id exists.
      * @param string $templateId
      * @return void
      * @throws \Retab\Exception\RetabException

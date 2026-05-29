@@ -41,6 +41,8 @@ class EditRequest(BaseModel):
 
 
 class Edit(BaseModel):
+    """An edit result: form-field values written onto a document or template PDF."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the edit.")

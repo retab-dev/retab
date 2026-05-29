@@ -5,12 +5,9 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Public block execution result for a single workflow block.
-/// Terminal state is carried by the discriminated ``lifecycle`` union. The
-/// legacy flat ``success`` / ``error`` / ``skipped`` fields were removed in
-/// the hard cutover — they let invalid combinations (``success=true`` with
-/// a non-empty ``error``) be representable on the wire and forced consumers
-/// to know an undocumented field-precedence rule.
+/// The result of executing a single workflow block.
+/// The terminal state is carried by the `lifecycle` field, which is one of
+/// completed, error, or skipped.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredBlockExecution {
     /// Unique block execution ID
@@ -23,12 +20,12 @@ pub struct StoredBlockExecution {
     pub block_id: String,
     /// Type of the block
     pub block_type: String,
-    /// Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``.
+    /// Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.
     pub lifecycle: StoredBlockExecutionLifecycleOneOf,
     /// Input payloads keyed by handle ID (file metadata for files, data for json)
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs: Option<std::collections::HashMap<String, serde_json::Value>>,
-    /// Canonical persisted-ref artifact for this block execution (operation + id), if any
+    /// Reference to the artifact produced by this block execution, if any.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub artifact: Option<StepArtifactRef>,
     /// Output payloads keyed by handle ID

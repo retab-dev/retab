@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a split.</summary>
+    /// <summary>A split result: a document divided into its constituent `subdocuments`.</summary>
     public class Split
     {
 

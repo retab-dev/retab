@@ -35,6 +35,7 @@ import {
   serializeRetabUsage,
 } from '../../classifications/interfaces/retab-usage.interface.js';
 
+/** A partition result: a document segmented into chunks along the requested `key`. */
 export interface Partition {
   /** Unique identifier of the partition */
   id: string;

@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents an edit template.</summary>
+    /// <summary>A reusable edit template: an empty PDF and the `form_fields` defined on it.</summary>
     public class EditTemplate
     {
 

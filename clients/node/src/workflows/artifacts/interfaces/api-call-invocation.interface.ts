@@ -14,9 +14,10 @@ import {
   serializeErrorDetails,
 } from './error-details.interface.js';
 
+/** Record of an API-call block's outbound HTTP request during a run. */
 export interface ApiCallInvocation {
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "api_call_invocation"
    */
   operation: 'api_call_invocation';

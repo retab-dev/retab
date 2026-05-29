@@ -22,6 +22,7 @@ import {
 import type { UpdateExperimentRequestNConsensus } from './update-experiment-request-n-consensus.interface.js';
 import { ZUpdateExperimentRequestNConsensus } from './update-experiment-request-n-consensus.interface.js';
 
+/** Body for updating an experiment. Only the supplied fields are changed. */
 export interface UpdateExperimentRequest {
   documentCaptures?: ExperimentDocumentCaptureRequest[] | null;
   documents?: ExplicitExperimentDocumentRequest[] | null;

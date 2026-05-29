@@ -3,11 +3,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Run-id-first public experiment run shape.</summary>
-    /// <remarks>
-    /// The canonical identity is `id`. Internal queue handles and duplicate
-    /// identity aliases are intentionally absent.
-    /// </remarks>
+    /// <summary>A single execution of an experiment, identified by `id`.</summary>
     public class ExperimentRun
     {
         public string Id { get; set; } = default!;

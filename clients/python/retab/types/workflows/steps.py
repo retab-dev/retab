@@ -168,10 +168,10 @@ class WorkflowRunStep(BaseModel):
     model: str | None = Field(default=None, description="LLM model used by this step, when applicable")
     loop_containers: list[ContainerContextData] | None = Field(default=[], description="Container hierarchy from outermost to innermost. Empty when not inside any container.")
     run_id: str = Field(..., description="Parent workflow run ID")
-    created_at: datetime.datetime | None = Field(default=None, description="When the step doc was first persisted")
+    created_at: datetime.datetime | None = Field(default=None, description="When the step was created")
     handle_inputs: dict[str, PublicHandlePayload] | None = Field(default={}, description="Handle input payloads consumed by this step")
     handle_outputs: dict[str, PublicHandlePayload] | None = Field(default={}, description="Handle output payloads produced by this step")
-    artifact: StepArtifactRef | None = Field(default=None, description="Canonical persisted result of this step")
+    artifact: StepArtifactRef | None = Field(default=None, description="Reference to the result produced by this step, if any.")
     retry_count: int | None = Field(default=0, description="Number of retry attempts")
 
 
