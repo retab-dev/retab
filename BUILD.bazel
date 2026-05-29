@@ -1,4 +1,4 @@
-load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
+load("//tools/bazel:defs.bzl", "LOCAL_TAGS", "MANUAL_LOCAL_TAGS")
 load("//tools/bazel:sdk_generation.bzl", "sdk_generation_tree")
 
 package(default_visibility = ["//visibility:public"])
@@ -104,6 +104,14 @@ sh_test(
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
+# Hermetic Node SDK drift check (blueprint Phase 4): non-manual so it joins the
+# commit gate and `bazel test //...`. Generation runs on the pinned Node 24.13.0
+# toolchain (threaded through sdk_generation_tree) against the committed OpenAPI
+# contract, so this is reproducible like the //api-quality:unit_tests proof gate
+# (also local + no-sandbox + non-manual). The retab-node-oagen-emitter service
+# boundary selects this target for real regenerate-and-diff drift coverage,
+# instead of the //api-quality:unit_tests proxy other (still-manual) languages
+# use.
 sh_test(
     name = "check_node",
     srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
@@ -116,7 +124,7 @@ sh_test(
         ":generated_node_sdk",
         ":generation_inputs",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = LOCAL_TAGS + ["generated-check"],
 )
 
 sdk_generation_tree(
@@ -127,12 +135,15 @@ sdk_generation_tree(
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
+# Generate from the committed OpenAPI contract (checked_openapi_json), not the
+# live-backend genrule, so SDK drift is decoupled from backend regeneration and
+# the check is hermetic. Pinned Node toolchain is threaded in by the rule.
 sdk_generation_tree(
     name = "generated_node_sdk",
     language = "node",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//open-source/docs/api-reference:checked_openapi_json",
     srcs = [":generation_inputs"],
-    tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
+    tags = LOCAL_TAGS + ["generated-artifact"],
 )
 
 sh_test(
