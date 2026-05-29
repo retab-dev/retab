@@ -361,6 +361,180 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsCreateResolvesDocumentIDToFileRef(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc":
+			// Resolve file metadata for the FileRef.
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":        "file_abc",
+				"filename":  "deed.tiff",
+				"mime_type": "image/tiff",
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if body["workflow_id"] != "wf_123" {
+				t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":     "run_123",
+				"status": "running",
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document-id", "block_start=file_abc"); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	if startDocument["id"] != "file_abc" {
+		t.Fatalf("expected FileRef id file_abc, got %#v", startDocument)
+	}
+	if startDocument["filename"] != "deed.tiff" || startDocument["mime_type"] != "image/tiff" {
+		t.Fatalf("FileRef should carry resolved filename/mime_type, got %#v", startDocument)
+	}
+	if _, ok := startDocument["url"]; ok {
+		t.Fatalf("FileRef should reference by id, not send a url; got %#v", startDocument)
+	}
+	if _, ok := startDocument["content"]; ok {
+		t.Fatalf("FileRef should not inline content; got %#v", startDocument)
+	}
+}
+
+func TestWorkflowsRunsCreatePreservesFileRefIDFromDocumentsFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		postedDocuments, _ = body["documents"].(map[string]any)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":     "run_123",
+			"status": "running",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	docsPath := filepath.Join(dir, "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"block_start":{"id":"file_abc","filename":"deed.tiff","mime_type":"image/tiff"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _ := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	// The id key must survive the --documents-file passthrough (regression:
+	// it used to be silently dropped, making file references impossible).
+	if startDocument["id"] != "file_abc" {
+		t.Fatalf("expected documents-file id to be preserved, got %#v", startDocument)
+	}
+	if startDocument["filename"] != "deed.tiff" || startDocument["mime_type"] != "image/tiff" {
+		t.Fatalf("FileRef descriptor = %#v", startDocument)
+	}
+}
+
+func TestWorkflowsRunsCreateRejectsConflictingDocumentIDAndURL(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document-id", "block_start=file_abc"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("document-url", "block_start=https://example.com/x.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected conflict error for block claimed by both --document-id and --document-url")
+	}
+	if !strings.Contains(err.Error(), "block_start") || !strings.Contains(err.Error(), "--document-id") {
+		t.Fatalf("error should name the block and conflicting flags, got: %v", err)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
