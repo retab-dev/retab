@@ -87,7 +87,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 	if format != OutputTable && result != nil && result.ResumeStatus != nil && *result.ResumeStatus != retab.ResumeStatusResumed {
 		switch *result.ResumeStatus {
 		case retab.ResumeStatusPending:
-			fmt.Fprintf(os.Stderr, "note: resume_status=%q - decision was accepted but the workflow has not resumed yet. Poll `retab workflows runs get %s` until lifecycle.status changes from awaiting_review.\n", *result.ResumeStatus, result.Review.WorkflowRunID)
+			fmt.Fprintf(os.Stderr, "note: resume_status=%q - decision was accepted but the workflow has not resumed yet. Poll `retab workflows runs get %s` until lifecycle.status changes from awaiting_review.\n", *result.ResumeStatus, result.Review.RunID)
 		case retab.ResumeStatusSkipped:
 			fmt.Fprintf(os.Stderr, "note: resume_status=%q - decision was recorded but no resume signal was sent (the run is likely already terminal).\n", *result.ResumeStatus)
 		default:
@@ -101,7 +101,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 		row := map[string]any{
 			"submission_status": result.SubmissionStatus,
 			"id":                result.Review.ID,
-			"workflow_run_id":   result.Review.WorkflowRunID,
+			"run_id":            result.Review.RunID,
 			"block_id":          result.Review.BlockID,
 			"block_type":        result.Review.BlockType,
 			"resume_status":     result.ResumeStatus,
@@ -168,7 +168,7 @@ func resolveReviewOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, e
 
 var reviewQueueColumns = []TableColumn{
 	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "id") }},
-	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
+	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "run_id") }},
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "STEP_ID", Extract: func(row any) string { return reviewQueueCell(row, "step_id") }},
 	{Header: "ITERATION", Extract: func(row any) string { return reviewQueueCell(row, "iteration_key") }},
@@ -179,7 +179,7 @@ var reviewQueueColumns = []TableColumn{
 
 var reviewOverlayColumns = []TableColumn{
 	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "id") }},
-	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
+	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "run_id") }},
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "STEP_ID", Extract: func(row any) string { return reviewQueueCell(row, "step_id") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
@@ -192,7 +192,7 @@ var reviewOverlayColumns = []TableColumn{
 var reviewDecisionColumns = []TableColumn{
 	{Header: "SUBMISSION", Extract: func(row any) string { return reviewQueueCell(row, "submission_status") }},
 	{Header: "REVIEW_ID", Extract: func(row any) string { return reviewQueueCell(row, "id") }},
-	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
+	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "run_id") }},
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
 	{Header: "VERDICT", Extract: func(row any) string { return reviewQueueCell(row, "verdict") }},

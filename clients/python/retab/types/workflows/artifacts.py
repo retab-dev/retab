@@ -78,7 +78,7 @@ class ApiCallInvocation(BaseModel):
 
     operation: Literal["api_call_invocation"] = Field(default="api_call_invocation", description="Artifact operation that determines the backing record type")
     id: str
-    workflow_run_id: str
+    run_id: str
     step_id: str
     attempts: list[ApiCallAttempt] | None = Field(default=[])
     error: ErrorDetails | None = None
@@ -178,7 +178,7 @@ class ConditionalEvaluation(BaseModel):
 
     operation: Literal["conditional_evaluation"] = Field(default="conditional_evaluation", description="Artifact operation that determines the backing record type")
     id: str
-    workflow_run_id: str
+    run_id: str
     step_id: str
     evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
     selected_handles: list[str] | None = Field(default=[])
@@ -241,7 +241,7 @@ class FunctionInvocation(BaseModel):
 
     operation: Literal["function_invocation"] = Field(default="function_invocation", description="Artifact operation that determines the backing record type")
     id: str
-    workflow_run_id: str
+    run_id: str
     step_id: str
     inputs: dict[str, Any] | None = Field(default={})
     output: Any | None = None
@@ -287,7 +287,7 @@ class ReviewEvaluation(BaseModel):
 
     operation: Literal["review_trigger_evaluation"] = Field(default="review_trigger_evaluation", description="Artifact operation that determines the backing record type")
     id: str
-    workflow_run_id: str
+    run_id: str
     step_id: str
     evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
     selected_handles: list[str] | None = Field(default=[])
@@ -323,7 +323,7 @@ class WhileLoopTermination(BaseModel):
 
     operation: Literal["while_loop_termination"] = Field(default="while_loop_termination", description="Artifact operation that determines the backing record type")
     id: str
-    workflow_run_id: str
+    run_id: str
     step_id: str
     termination_reason: WhileLoopTerminationTerminationReason = Field(..., description="Why the while-loop terminated")
     evaluations: list[ConditionEvaluationResult] | None = Field(default=[])

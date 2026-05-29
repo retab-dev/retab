@@ -78,6 +78,19 @@ class WorkflowsTest extends TestCase
         $this->assertStringEndsWith('v1/workflows/test_workflow_id', $request->getUri()->getPath());
     }
 
+    public function testDiscardDraft(): void
+    {
+        $fixture = $this->loadFixture('workflow');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->discardDraft('test_workflow_id');
+        $this->assertInstanceOf(\Retab\Resource\Workflow::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/test_workflow_id/discard-draft', $request->getUri()->getPath());
+    }
+
     public function testPublish(): void
     {
         $fixture = $this->loadFixture('workflow');

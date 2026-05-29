@@ -27,9 +27,6 @@ pub struct ExperimentResult {
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub attempt: Option<i64>,
-    /// Defaults to `false`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub is_placeholder: Option<bool>,
 }
 impl ExperimentResult {
     /// Construct a new `ExperimentResult` with the required fields set.
@@ -54,7 +51,6 @@ impl ExperimentResult {
             handle_inputs: Default::default(),
             artifact: Default::default(),
             attempt: Default::default(),
-            is_placeholder: Default::default(),
         }
     }
 }

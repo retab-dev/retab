@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-29T05:54:54.587Z",
+  "generatedAt": "2026-05-29T11:27:38.702Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -234,7 +234,6 @@
     "src/Enums/ExperimentRunMetricsView.cs",
     "src/Enums/ExperimentSchemaDriftStatus.cs",
     "src/Enums/FieldType.cs",
-    "src/Enums/GenerateSchemaRequestReasoningEffort.cs",
     "src/Enums/JobStatus.cs",
     "src/Enums/JobsSource.cs",
     "src/Enums/LatestBlockTestRunSummaryStatus.cs",
@@ -500,6 +499,10 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/discard-draft": {
+      "sdkMethod": "DiscardDraftAsync",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

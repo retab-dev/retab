@@ -12,7 +12,7 @@ readonly class ExperimentDocumentProvenance implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        public ?string $workflowRunId = null,
+        public ?string $runId = null,
         public ?string $stepId = null,
     ) {}
 
@@ -20,7 +20,7 @@ readonly class ExperimentDocumentProvenance implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         return new self(
-            workflowRunId: $data['workflow_run_id'] ?? null,
+            runId: $data['run_id'] ?? null,
             stepId: $data['step_id'] ?? null,
         );
     }
@@ -29,7 +29,7 @@ readonly class ExperimentDocumentProvenance implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
         ];
     }

@@ -3,17 +3,17 @@
 import { z } from 'zod';
 /** Capture one experiment document from workflow execution provenance. */
 export interface ExperimentDocumentCaptureRequest {
-  workflowRunId: string;
+  runId: string;
   stepId?: string | null;
 }
 
 export interface ExperimentDocumentCaptureRequestResponse {
-  workflow_run_id: string;
+  run_id: string;
   step_id?: string | null;
 }
 
 export const ZExperimentDocumentCaptureRequest = z.object({
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string().nullable().optional(),
 }) as z.ZodType<ExperimentDocumentCaptureRequest>;
 
@@ -21,7 +21,7 @@ export function deserializeExperimentDocumentCaptureRequest(
   wire: ExperimentDocumentCaptureRequestResponse
 ): ExperimentDocumentCaptureRequest {
   return {
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
   };
 }
@@ -30,7 +30,7 @@ export function serializeExperimentDocumentCaptureRequest(
   domain: ExperimentDocumentCaptureRequest
 ): ExperimentDocumentCaptureRequestResponse {
   return {
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
   };
 }

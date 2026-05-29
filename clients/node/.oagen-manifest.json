@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-05-29T09:27:01.037Z",
+  "generatedAt": "2026-05-29T11:27:34.207Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -103,7 +103,6 @@
     "src/partitions/partitions.ts",
     "src/retab.ts",
     "src/runtime/mime.ts",
-    "src/schemas/interfaces/generate-schema-request-reasoning-effort.interface.ts",
     "src/schemas/interfaces/generate-schema-request.interface.ts",
     "src/schemas/interfaces/index.ts",
     "src/schemas/interfaces/partial-schema.interface.ts",

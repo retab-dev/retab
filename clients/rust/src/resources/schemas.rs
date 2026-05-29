@@ -34,7 +34,6 @@ impl GenerateParams {
             body: GenerateSchemaRequest {
                 documents: documents.into_iter().map(Into::into).collect(),
                 model: Default::default(),
-                reasoning_effort: Default::default(),
                 instructions: Default::default(),
                 image_resolution_dpi: Default::default(),
                 stream: Default::default(),

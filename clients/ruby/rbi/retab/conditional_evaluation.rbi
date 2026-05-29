@@ -22,10 +22,10 @@ module Retab
     def id=(value); end
 
     sig { returns(String) }
-    def workflow_run_id; end
+    def run_id; end
 
     sig { params(value: String).returns(String) }
-    def workflow_run_id=(value); end
+    def run_id=(value); end
 
     sig { returns(String) }
     def step_id; end

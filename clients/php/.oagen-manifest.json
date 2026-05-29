@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-29T05:54:55.920Z",
+  "generatedAt": "2026-05-29T11:27:40.338Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -144,7 +144,6 @@
     "lib/Resource/FormField.php",
     "lib/Resource/FunctionInvocation.php",
     "lib/Resource/GenerateSchemaRequest.php",
-    "lib/Resource/GenerateSchemaRequestReasoningEffort.php",
     "lib/Resource/HttpValidationError.php",
     "lib/Resource/Job.php",
     "lib/Resource/JobError.php",
@@ -799,6 +798,10 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/discard-draft": {
+      "sdkMethod": "discardDraft",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

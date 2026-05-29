@@ -196,6 +196,29 @@ module Retab
       nil
     end
 
+    # Discard Draft Workflow
+    # @param workflow_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Workflow]
+    def discard_draft(
+      workflow_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/discard-draft",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Workflow.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # Publish Workflow
     # @param workflow_id [String]
     # @param description [String, nil] Optional description for this published version

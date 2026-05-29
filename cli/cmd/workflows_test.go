@@ -535,3 +535,69 @@ func TestWorkflowsDeleteWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
 		t.Fatalf("server was hit %d time(s), want 0", hits.Load())
 	}
 }
+
+// TestWorkflowsDiscardDraftWithYesFlagProceedsWithoutPrompt pins that the
+// command POSTs to the discard-draft action route when --yes skips the
+// confirmation prompt.
+func TestWorkflowsDiscardDraftWithYesFlagProceedsWithoutPrompt(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var sawDiscard atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/wf_revert/discard-draft" {
+			sawDiscard.Add(1)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id":"wf_revert"}`))
+			return
+		}
+		t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsDiscardDraftCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsDiscardDraftCmd.Flags().Set("yes", "false")
+	})
+
+	if err := workflowsDiscardDraftCmd.RunE(workflowsDiscardDraftCmd, []string{"wf_revert"}); err != nil {
+		t.Fatalf("discard-draft with --yes: %v", err)
+	}
+	if sawDiscard.Load() != 1 {
+		t.Fatalf("expected one POST to discard-draft, got %d", sawDiscard.Load())
+	}
+}
+
+// TestWorkflowsDiscardDraftWithoutYesAndNonTTYStdinRefuses pins the
+// destructive-confirmation guard: discarding draft edits without --yes and
+// without a TTY must refuse before hitting the server.
+func TestWorkflowsDiscardDraftWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsDiscardDraftCmd.Flags().Set("yes", "false"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := workflowsDiscardDraftCmd.RunE(workflowsDiscardDraftCmd, []string{"wf_keep"})
+	if err == nil {
+		t.Fatal("expected refusal when stdin is not a TTY")
+	}
+	if !strings.Contains(err.Error(), "--yes") {
+		t.Fatalf("error %q does not mention --yes", err.Error())
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", hits.Load())
+	}
+}

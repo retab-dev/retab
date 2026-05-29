@@ -20,7 +20,7 @@ export interface ReviewEvaluation {
    */
   operation: 'review_trigger_evaluation';
   id: string;
-  workflowRunId: string;
+  runId: string;
   stepId: string;
   /** @default [] */
   evaluations?: ConditionEvaluationResult[];
@@ -44,7 +44,7 @@ export interface ReviewEvaluation {
 export interface ReviewEvaluationResponse {
   operation: 'review_trigger_evaluation';
   id: string;
-  workflow_run_id: string;
+  run_id: string;
   step_id: string;
   evaluations?: ConditionEvaluationResultResponse[];
   selected_handles?: string[];
@@ -62,7 +62,7 @@ export interface ReviewEvaluationResponse {
 export const ZReviewEvaluation = z.object({
   operation: z.literal('review_trigger_evaluation'),
   id: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string(),
   evaluations: ZConditionEvaluationResult.array().optional(),
   selectedHandles: z.string().array().optional(),
@@ -81,7 +81,7 @@ export function deserializeReviewEvaluation(wire: ReviewEvaluationResponse): Rev
   return {
     operation: wire['operation'],
     id: wire['id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
     evaluations:
       wire['evaluations'] == null
@@ -109,7 +109,7 @@ export function serializeReviewEvaluation(domain: ReviewEvaluation): ReviewEvalu
   return {
     operation: domain['operation'],
     id: domain['id'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
     evaluations:
       domain['evaluations'] == null

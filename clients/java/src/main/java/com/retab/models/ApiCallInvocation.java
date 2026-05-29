@@ -12,7 +12,7 @@ import java.util.List;
 public final class ApiCallInvocation implements WorkflowArtifactOperation2 {
   private final String operation;
   private final String id;
-  private final String workflowRunId;
+  private final String runId;
   private final String stepId;
   private final List<ApiCallAttempt> attempts;
   private final ErrorDetails error;
@@ -22,14 +22,14 @@ public final class ApiCallInvocation implements WorkflowArtifactOperation2 {
   public ApiCallInvocation(
       @JsonProperty(value = "operation", required = false) String operation,
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "workflow_run_id", required = true) String workflowRunId,
+      @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "step_id", required = true) String stepId,
       @JsonProperty(value = "attempts", required = false) List<ApiCallAttempt> attempts,
       @JsonProperty(value = "error", required = false) ErrorDetails error,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
     this.operation = operation;
     this.id = id;
-    this.workflowRunId = workflowRunId;
+    this.runId = runId;
     this.stepId = stepId;
     this.attempts = attempts;
     this.error = error;
@@ -46,9 +46,9 @@ public final class ApiCallInvocation implements WorkflowArtifactOperation2 {
     return id;
   }
 
-  @JsonProperty("workflow_run_id")
-  public String getWorkflowRunId() {
-    return workflowRunId;
+  @JsonProperty("run_id")
+  public String getRunId() {
+    return runId;
   }
 
   @JsonProperty("step_id")

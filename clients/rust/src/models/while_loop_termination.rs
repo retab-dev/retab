@@ -13,7 +13,7 @@ pub struct WhileLoopTermination {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
     pub id: String,
-    pub workflow_run_id: String,
+    pub run_id: String,
     pub step_id: String,
     /// Why the while-loop terminated
     pub termination_reason: WhileLoopTerminationTerminationReason,
@@ -28,7 +28,7 @@ impl WhileLoopTermination {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        workflow_run_id: impl Into<String>,
+        run_id: impl Into<String>,
         step_id: impl Into<String>,
         termination_reason: WhileLoopTerminationTerminationReason,
         created_at: impl Into<String>,
@@ -36,7 +36,7 @@ impl WhileLoopTermination {
         Self {
             operation: Default::default(),
             id: id.into(),
-            workflow_run_id: workflow_run_id.into(),
+            run_id: run_id.into(),
             step_id: step_id.into(),
             termination_reason,
             evaluations: Default::default(),

@@ -12,7 +12,7 @@ readonly class FunctionInvocation implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public string $workflowRunId,
+        public string $runId,
         public string $stepId,
         /** @var array<string, mixed>|null */
         public ?array $inputs = null,
@@ -30,7 +30,7 @@ readonly class FunctionInvocation implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow_run_id',
+            'run_id',
             'step_id',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -39,7 +39,7 @@ readonly class FunctionInvocation implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflowRunId: $data['workflow_run_id'],
+            runId: $data['run_id'],
             stepId: $data['step_id'],
             inputs: $data['inputs'] ?? null,
             output: $data['output'] ?? null,
@@ -55,7 +55,7 @@ readonly class FunctionInvocation implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'inputs' => $this->inputs,
             'output' => $this->output,

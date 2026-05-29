@@ -12,7 +12,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public string $workflowRunId,
+        public string $runId,
         public string $stepId,
         /** @var array<\Retab\Resource\ConditionEvaluationResult>|null */
         public ?array $evaluations = null,
@@ -32,7 +32,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow_run_id',
+            'run_id',
             'step_id',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -41,7 +41,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflowRunId: $data['workflow_run_id'],
+            runId: $data['run_id'],
             stepId: $data['step_id'],
             evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
             selectedHandles: $data['selected_handles'] ?? null,
@@ -57,7 +57,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,
             'selected_handles' => $this->selectedHandles,

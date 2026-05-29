@@ -1,7 +1,7 @@
 {
   "operation": "function_invocation",
   "id": "01234",
-  "workflow_run_id": "workflow_run_id_01234",
+  "run_id": "run_id_01234",
   "step_id": "step_id_01234",
   "inputs": {
     "key": {}

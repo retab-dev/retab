@@ -14,10 +14,9 @@ type SchemaService struct {
 
 // SchemasGenerateParams contains the parameters for Generate.
 type SchemasGenerateParams struct {
-	Documents       any                                   `json:"documents" url:"-"`
-	Model           *string                               `json:"model,omitempty" url:"-"`
-	ReasoningEffort *GenerateSchemaRequestReasoningEffort `json:"reasoning_effort,omitempty" url:"-"`
-	Instructions    *string                               `json:"instructions,omitempty" url:"-"`
+	Documents    any     `json:"documents" url:"-"`
+	Model        *string `json:"model,omitempty" url:"-"`
+	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// ImageResolutionDpi is resolution of the image sent to the LLM
 	ImageResolutionDpi *int  `json:"image_resolution_dpi,omitempty" url:"-"`
 	Stream             *bool `json:"stream,omitempty" url:"-"`
@@ -27,12 +26,11 @@ type SchemasGenerateParams struct {
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
 func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*PartialSchema, error) {
 	type generateWireBody struct {
-		Documents          []MIMEData                            `json:"documents"`
-		Model              *string                               `json:"model,omitempty"`
-		ReasoningEffort    *GenerateSchemaRequestReasoningEffort `json:"reasoning_effort,omitempty"`
-		Instructions       *string                               `json:"instructions,omitempty"`
-		ImageResolutionDpi *int                                  `json:"image_resolution_dpi,omitempty"`
-		Stream             *bool                                 `json:"stream,omitempty"`
+		Documents          []MIMEData `json:"documents"`
+		Model              *string    `json:"model,omitempty"`
+		Instructions       *string    `json:"instructions,omitempty"`
+		ImageResolutionDpi *int       `json:"image_resolution_dpi,omitempty"`
+		Stream             *bool      `json:"stream,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -60,7 +58,6 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 	body := generateWireBody{
 		Documents:          coercedDocuments,
 		Model:              params.Model,
-		ReasoningEffort:    params.ReasoningEffort,
 		Instructions:       params.Instructions,
 		ImageResolutionDpi: params.ImageResolutionDpi,
 		Stream:             params.Stream,

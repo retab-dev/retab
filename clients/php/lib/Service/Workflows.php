@@ -212,6 +212,32 @@ class Workflows
     }
 
     /**
+     * Discard Draft Workflow
+     *
+     * Discard all draft changes and restore the workflow to its published state.
+     *
+     * This operation:
+     * 1. Recreates blocks and edges from the published version
+     * 2. Updates the workflow's updated_at timestamp and current draft graph
+     *
+     * Requires the workflow to be published (have a published_version_id).
+     * @param string $workflowId
+     * @return \Retab\Resource\Workflow
+     * @throws \Retab\Exception\RetabException
+     */
+    public function discardDraft(
+        string $workflowId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Workflow {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/workflows/' . rawurlencode($workflowId) . '/discard-draft',
+            options: $options,
+        );
+        return Workflow::fromArray($response);
+    }
+
+    /**
      * Publish Workflow
      *
      * Publish a workflow.

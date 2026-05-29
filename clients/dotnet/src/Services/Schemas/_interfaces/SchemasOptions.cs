@@ -12,8 +12,6 @@ namespace Retab
 
         public string? Model { get; set; }
 
-        public GenerateSchemaRequestReasoningEffort? ReasoningEffort { get; set; }
-
         public string? Instructions { get; set; }
 
         /// <summary>Resolution of the image sent to the LLM</summary>

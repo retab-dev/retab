@@ -157,6 +157,29 @@ namespace Retab
             return this.DeleteAsync(workflowId, requestOptions, cancellationToken);
         }
 
+        /// <summary>Discard Draft Workflow</summary>
+        /// <remarks>
+        /// Discard all draft changes and restore the workflow to its published state.
+        /// This operation:
+        /// 1. Recreates blocks and edges from the published version
+        /// 2. Updates the workflow's updated_at timestamp and current draft graph
+        /// Requires the workflow to be published (have a published_version_id).
+        /// </remarks>
+        /// <param name="workflowId">The workflow id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Workflow"/> result.</returns>
+        public virtual async Task<Workflow> DiscardDraftAsync(string workflowId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Workflow>($"/v1/workflows/{Uri.EscapeDataString(workflowId)}/discard-draft", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="DiscardDraftAsync"/>.</summary>
+        public virtual Task<Workflow> DiscardDraft(string workflowId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.DiscardDraftAsync(workflowId, requestOptions, cancellationToken);
+        }
+
         /// <summary>Publish Workflow</summary>
         /// <remarks>
         /// Publish a workflow.

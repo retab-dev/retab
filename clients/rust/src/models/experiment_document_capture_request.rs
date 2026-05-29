@@ -8,16 +8,16 @@ use serde::{Deserialize, Serialize};
 /// Capture one experiment document from workflow execution provenance.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentDocumentCaptureRequest {
-    pub workflow_run_id: String,
+    pub run_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub step_id: Option<String>,
 }
 impl ExperimentDocumentCaptureRequest {
     /// Construct a new `ExperimentDocumentCaptureRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(workflow_run_id: impl Into<String>) -> Self {
+    pub fn new(run_id: impl Into<String>) -> Self {
         Self {
-            workflow_run_id: workflow_run_id.into(),
+            run_id: run_id.into(),
             step_id: Default::default(),
         }
     }

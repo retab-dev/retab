@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-29T05:54:57.529Z",
+  "generatedAt": "2026-05-29T11:27:42.113Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -147,7 +147,6 @@
     "lib/retab/types/extractions_order.rb",
     "lib/retab/types/field_type.rb",
     "lib/retab/types/files_order.rb",
-    "lib/retab/types/generate_schema_request_reasoning_effort.rb",
     "lib/retab/types/job_status.rb",
     "lib/retab/types/jobs_endpoint.rb",
     "lib/retab/types/jobs_order.rb",
@@ -859,6 +858,10 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/discard-draft": {
+      "sdkMethod": "discard_draft",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

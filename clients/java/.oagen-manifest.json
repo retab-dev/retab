@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-29T05:45:59.545Z",
+  "generatedAt": "2026-05-29T11:21:01.544Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -304,7 +304,6 @@
     "src/main/java/com/retab/types/ExperimentSchemaDriftStatus.java",
     "src/main/java/com/retab/types/ExperimentSummaryMetricsResponseBlockType.java",
     "src/main/java/com/retab/types/FieldType.java",
-    "src/main/java/com/retab/types/GenerateSchemaRequestReasoningEffort.java",
     "src/main/java/com/retab/types/JobStatus.java",
     "src/main/java/com/retab/types/JobsEndpoint.java",
     "src/main/java/com/retab/types/JobsSource.java",
@@ -548,6 +547,10 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/discard-draft": {
+      "sdkMethod": "discardDraft",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

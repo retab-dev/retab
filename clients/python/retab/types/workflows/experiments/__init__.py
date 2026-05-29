@@ -58,7 +58,7 @@ class ExperimentDocumentCaptureRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    workflow_run_id: str
+    run_id: str
     step_id: str | None = None
 
 
@@ -67,7 +67,7 @@ class ExperimentDocumentProvenance(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    workflow_run_id: str | None = None
+    run_id: str | None = None
     step_id: str | None = None
 
 

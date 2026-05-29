@@ -11,9 +11,6 @@ pub struct GenerateSchemaRequest {
     /// Defaults to `retab-small`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
-    /// Defaults to `minimal`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub reasoning_effort: Option<GenerateSchemaRequestReasoningEffort>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
     /// Resolution of the image sent to the LLM
@@ -32,7 +29,6 @@ impl GenerateSchemaRequest {
         Self {
             documents,
             model: Default::default(),
-            reasoning_effort: Default::default(),
             instructions: Default::default(),
             image_resolution_dpi: Default::default(),
             stream: Default::default(),

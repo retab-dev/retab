@@ -100,7 +100,7 @@ def test_experiments_create_posts_to_workflow_experiments_route() -> None:
         workflow_id="wf_abc123",
         block_id="block_extract",
         name="Q1 invoices",
-        document_captures=[{"workflow_run_id": "wfr_1"}, {"workflow_run_id": "wfr_2", "step_id": "for_each-0"}],
+        document_captures=[{"run_id": "wfr_1"}, {"run_id": "wfr_2", "step_id": "for_each-0"}],
         n_consensus=5,
     )
 
@@ -112,8 +112,8 @@ def test_experiments_create_posts_to_workflow_experiments_route() -> None:
     assert request.data["name"] == "Q1 invoices"
     assert request.data["n_consensus"] == 5
     assert request.data["document_captures"] == [
-        {"workflow_run_id": "wfr_1"},
-        {"workflow_run_id": "wfr_2", "step_id": "for_each-0"},
+        {"run_id": "wfr_1"},
+        {"run_id": "wfr_2", "step_id": "for_each-0"},
     ]
     # ``documents`` not passed → omitted from the body (backend treats
     # missing as "no explicit docs", not "empty list").

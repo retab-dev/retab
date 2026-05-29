@@ -5,7 +5,6 @@ namespace Retab
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
-    using Newtonsoft.Json;
 
     /// <summary>Service that exposes the schemas API operations on <see cref="Retab"/>.</summary>
     public class SchemasService : Service

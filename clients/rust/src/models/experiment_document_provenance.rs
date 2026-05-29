@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExperimentDocumentProvenance {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub workflow_run_id: Option<String>,
+    pub run_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub step_id: Option<String>,
 }

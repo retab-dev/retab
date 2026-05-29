@@ -108,6 +108,24 @@ func (s *WorkflowService) Delete(ctx context.Context, workflowID string, opts ..
 	return err
 }
 
+// DiscardDraft workflow
+// Discard all draft changes and restore the workflow to its published state.
+// This operation:
+// 1. Recreates blocks and edges from the published version
+// 2. Updates the workflow's updated_at timestamp and current draft graph
+// Requires the workflow to be published (have a published_version_id).
+func (s *WorkflowService) DiscardDraft(ctx context.Context, workflowID string, opts ...RequestOption) (*Workflow, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	var result Workflow
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/discard-draft", url.PathEscape(workflowID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // WorkflowsPublishParams contains the parameters for Publish.
 type WorkflowsPublishParams struct {
 	Body interface{} `json:"-"`

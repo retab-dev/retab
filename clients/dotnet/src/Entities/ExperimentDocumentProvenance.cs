@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Workflow execution metadata attached to a captured document.</summary>
     public class ExperimentDocumentProvenance
     {
-        public string? WorkflowRunId { get; set; }
+        public string? RunId { get; set; }
         public string? StepId { get; set; }
 
         /// <summary>

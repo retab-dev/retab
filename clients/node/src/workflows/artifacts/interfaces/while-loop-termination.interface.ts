@@ -20,7 +20,7 @@ export interface WhileLoopTermination {
    */
   operation: 'while_loop_termination';
   id: string;
-  workflowRunId: string;
+  runId: string;
   stepId: string;
   /** Why the while-loop terminated */
   terminationReason: WhileLoopTerminationTerminationReason;
@@ -33,7 +33,7 @@ export interface WhileLoopTermination {
 export interface WhileLoopTerminationResponse {
   operation: 'while_loop_termination';
   id: string;
-  workflow_run_id: string;
+  run_id: string;
   step_id: string;
   termination_reason: WhileLoopTerminationTerminationReason;
   evaluations?: ConditionEvaluationResultResponse[];
@@ -43,7 +43,7 @@ export interface WhileLoopTerminationResponse {
 export const ZWhileLoopTermination = z.object({
   operation: z.literal('while_loop_termination'),
   id: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string(),
   terminationReason: ZWhileLoopTerminationTerminationReason,
   evaluations: ZConditionEvaluationResult.array().optional(),
@@ -56,7 +56,7 @@ export function deserializeWhileLoopTermination(
   return {
     operation: wire['operation'],
     id: wire['id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
     terminationReason: wire['termination_reason'],
     evaluations:
@@ -73,7 +73,7 @@ export function serializeWhileLoopTermination(
   return {
     operation: domain['operation'],
     id: domain['id'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
     termination_reason: domain['terminationReason'],
     evaluations:

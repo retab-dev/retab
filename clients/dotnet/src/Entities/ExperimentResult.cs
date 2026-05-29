@@ -24,7 +24,6 @@ namespace Retab
         public Dictionary<string, object>? HandleInputs { get; set; }
         public StepArtifactRef? Artifact { get; set; }
         public long? Attempt { get; set; }
-        public bool? IsPlaceholder { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

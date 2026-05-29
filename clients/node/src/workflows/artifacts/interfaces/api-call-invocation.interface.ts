@@ -21,7 +21,7 @@ export interface ApiCallInvocation {
    */
   operation: 'api_call_invocation';
   id: string;
-  workflowRunId: string;
+  runId: string;
   stepId: string;
   /** @default [] */
   attempts?: ApiCallAttempt[];
@@ -33,7 +33,7 @@ export interface ApiCallInvocation {
 export interface ApiCallInvocationResponse {
   operation: 'api_call_invocation';
   id: string;
-  workflow_run_id: string;
+  run_id: string;
   step_id: string;
   attempts?: ApiCallAttemptResponse[];
   error?: ErrorDetailsResponse | null;
@@ -43,7 +43,7 @@ export interface ApiCallInvocationResponse {
 export const ZApiCallInvocation = z.object({
   operation: z.literal('api_call_invocation'),
   id: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string(),
   attempts: ZApiCallAttempt.array().optional(),
   error: ZErrorDetails.nullable().optional(),
@@ -54,7 +54,7 @@ export function deserializeApiCallInvocation(wire: ApiCallInvocationResponse): A
   return {
     operation: wire['operation'],
     id: wire['id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
     attempts:
       wire['attempts'] == null
@@ -75,7 +75,7 @@ export function serializeApiCallInvocation(domain: ApiCallInvocation): ApiCallIn
   return {
     operation: domain['operation'],
     id: domain['id'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
     attempts:
       domain['attempts'] == null

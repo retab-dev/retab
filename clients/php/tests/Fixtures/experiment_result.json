@@ -23,6 +23,5 @@
     "operation": "extraction",
     "id": "01234"
   },
-  "attempt": 1,
-  "is_placeholder": true
+  "attempt": 1
 }

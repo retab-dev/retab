@@ -28,7 +28,6 @@ readonly class ExperimentResult implements \JsonSerializable
         public ?array $handleInputs = null,
         public ?StepArtifactRef $artifact = null,
         public ?int $attempt = null,
-        public ?bool $isPlaceholder = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -60,7 +59,6 @@ readonly class ExperimentResult implements \JsonSerializable
             handleInputs: $data['handle_inputs'] ?? null,
             artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,
             attempt: $data['attempt'] ?? null,
-            isPlaceholder: $data['is_placeholder'] ?? null,
         );
     }
 
@@ -78,7 +76,6 @@ readonly class ExperimentResult implements \JsonSerializable
             'handle_inputs' => $this->handleInputs,
             'artifact' => $this->artifact?->toArray(),
             'attempt' => $this->attempt,
-            'is_placeholder' => $this->isPlaceholder,
         ];
     }
 }

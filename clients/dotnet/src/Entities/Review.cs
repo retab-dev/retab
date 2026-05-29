@@ -10,7 +10,7 @@ namespace Retab
         public string Id { get; set; } = default!;
         public string WorkflowId { get; set; } = default!;
         public string WorkflowVersionId { get; set; } = default!;
-        public string WorkflowRunId { get; set; } = default!;
+        public string RunId { get; set; } = default!;
         public string BlockId { get; set; } = default!;
         public string StepId { get; set; } = default!;
         public string? ParentStepId { get; set; }

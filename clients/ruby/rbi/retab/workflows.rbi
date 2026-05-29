@@ -86,6 +86,14 @@ module Retab
     sig do
       params(
         workflow_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Workflow)
+    end
+    def discard_draft(workflow_id:, request_options:); end
+
+    sig do
+      params(
+        workflow_id: String,
         description: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Workflow)
