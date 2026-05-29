@@ -99,43 +99,60 @@ async function main() {
   const steps: WorkflowRunStep[] = stepsPage.data;
   ok('steps returned', steps.length > 0, `${steps.length} steps`);
 
+  // NOTE: the list endpoint strips handle payloads for bandwidth (server-side
+  // projection). handleOutputs are only populated on the single-step GET.
+  const listHasPayloads = steps.some((s) => Object.keys(s.handleOutputs ?? {}).length > 0);
+  console.log(
+    `  list endpoint exposes handle payloads: ${listHasPayloads} (expected false — stripped for bandwidth)`
+  );
+
+  const completed = steps.filter((s) => (s.lifecycle as { status: string }).status === 'completed');
+  console.log(`  completed steps: ${completed.map((s) => s.blockLabel).join(', ')}`);
+
   let jsonHandleCount = 0;
   let cleanCount = 0;
-  for (const s of steps) {
-    const st = (s.lifecycle as { status: string }).status;
-    const outKeys = Object.keys(s.handleOutputs ?? {});
-    console.log(`  • ${s.blockLabel} [${s.blockType}] ${st} — outHandles: [${outKeys.join(', ')}]`);
-    for (const [hk, payload] of Object.entries(s.handleOutputs ?? {})) {
-      if (payload.type === 'json' || payload.data !== undefined) {
-        jsonHandleCount++;
-        const clean = isCleanJson(payload.data);
-        if (clean) cleanCount++;
-        const preview = JSON.stringify(payload.data)?.slice(0, 160);
-        console.log(`      ↳ ${hk} (type=${payload.type}) clean=${clean} data=${preview}`);
-        ok(`handleOutput ${s.blockLabel}.${hk} is clean JSON`, clean);
-      } else if (payload.type === 'file') {
+  let testTarget: { stepId: string; blockId: string; outputHandleId: string } | null = null;
+
+  for (const s of completed) {
+    // Fetch the FULL step to get handle payloads.
+    const full = await client.workflows.steps.get(s.stepId, { runId: created.id });
+    const outKeys = Object.keys(full.handleOutputs ?? {});
+    console.log(
+      `  • ${full.blockLabel} [${full.blockType}] — outHandles: [${outKeys.join(', ')}] artifact=${full.artifact?.id ?? 'none'}`
+    );
+    for (const [hk, payload] of Object.entries(full.handleOutputs ?? {})) {
+      if (payload.type === 'file') {
         console.log(`      ↳ ${hk} (file) doc=${payload.document?.id}`);
+        continue;
+      }
+      jsonHandleCount++;
+      const clean = isCleanJson(payload.data);
+      if (clean) cleanCount++;
+      const preview = JSON.stringify(payload.data)?.slice(0, 200);
+      console.log(`      ↳ ${hk} (type=${payload.type}) clean=${clean} data=${preview}`);
+      ok(`handleOutput ${full.blockLabel}.${hk} is clean JSON`, clean);
+      if (!testTarget && full.blockType === 'extract') {
+        testTarget = { stepId: full.stepId, blockId: full.blockId, outputHandleId: hk };
       }
     }
   }
-  console.log(`  summary: ${jsonHandleCount} json handle outputs, ${cleanCount} clean`);
-
-  // Also fetch a single step directly to test steps.get
-  if (steps.length > 0) {
-    const one = await client.workflows.steps.get(steps[0].stepId, { runId: created.id });
-    ok('steps.get works', one.stepId === steps[0].stepId);
-  }
+  console.log(
+    `  summary: ${jsonHandleCount} json handle outputs (completed steps), ${cleanCount} clean`
+  );
+  ok('found clean JSON in at least one handleOutput', cleanCount > 0);
 
   section('5. Experiments: create + run');
   let experimentRunId: string | null = null;
   try {
+    // block_id is required (unless cloning from source_experiment_id).
+    const expBlockId = testTarget?.blockId ?? 'block_NOUoDOXYboTy8McT2ZugO';
     const exp = await client.workflows.experiments.create(
       WORKFLOW_ID,
-      null,
+      expBlockId,
       // capture documents from the run we just made
       [{ workflowRunId: created.id }],
       null,
-      1,
+      3, // n_consensus must be 3, 5, or 7
       `sdk-play-exp-${Date.now()}`
     );
     console.log(`  experiment id: ${exp.id}`);
@@ -163,13 +180,16 @@ async function main() {
 
   section('6. Tests: create + run');
   try {
-    // target the start_document block (always present + completed)
+    // start_document is not testable; target a completed extract block whose
+    // real output handle we discovered above.
+    if (!testTarget) throw new Error('no extract step with a JSON output handle to target');
+    console.log(`  targeting ${testTarget.blockId} handle=${testTarget.outputHandleId}`);
     const test = await client.workflows.tests.create(
       WORKFLOW_ID,
-      { type: 'block', blockId: START_BLOCK },
-      { type: 'run_step', runId: created.id },
+      { type: 'block', blockId: testTarget.blockId },
+      { type: 'run_step', runId: created.id, stepId: testTarget.stepId },
       {
-        target: { outputHandleId: START_BLOCK },
+        target: { outputHandleId: testTarget.outputHandleId },
         condition: { kind: 'exists' },
         label: 'output exists',
       },
