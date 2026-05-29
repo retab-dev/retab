@@ -18,53 +18,76 @@ import (
 	"time"
 )
 
-// Managed `lit` bundles
-// ----------------------
-// Upstream LiteParse ships release tarballs for only 3 of the 6 platforms
-// Retab supports, and those tarballs contain only the `lit` binary — not the
-// libpdfium that `lit` dlopen()s at runtime. So when no `lit` is on PATH, the
-// Retab CLI downloads a self-contained bundle we build + publish ourselves
-// (see .github/workflows/build-liteparse.yml + scripts/build-liteparse.sh):
-// `lit` packaged together with the matching libpdfium. The bundle is fetched
-// once, checksum-verified against the pinned manifest below, extracted into the
-// user cache dir, and reused thereafter. PDFIUM_LIB_PATH is set to the extracted
-// directory when exec'ing the managed `lit` (see litCLI.command).
+// Self-contained `lit` bundles
+// ----------------------------
+// The local-first `files parse|grep|inspect` commands shell out to LiteParse's
+// `lit` CLI. `lit` is a Rust+C++ binary that dlopen()s libpdfium at runtime and
+// reads Tesseract OCR data (eng.traineddata) from disk — none of which fits in
+// our pure-Go, CGO-free `retab` binary. So we ship `lit` as a bundle of three
+// files (lit + libpdfium + eng.traineddata) and resolve it one of two ways:
+//
+//   1. Embedded (default release build, -tags retab_embed_lit): the bundle for
+//      the current platform is baked into `retab` via go:embed and unpacked to
+//      the user cache dir on first use. Fully offline, no network, no API.
+//   2. Downloaded (source builds without the embed tag): the bundle is fetched
+//      from the pinned GitHub release, checksum-verified, and cached.
+//
+// Either way it lands in the same cache layout and `lit` is exec'd with
+// PDFIUM_LIB_PATH (so it finds libpdfium) and --tessdata-path (so OCR finds its
+// language data). See litCLI.command / parseArgs.
 
 // litBundleTag pins the bundle release this CLI build expects. It matches the
-// tag published by build-liteparse.yml.
+// tag published by build-liteparse.yml and the assets goreleaser embeds.
 const litBundleTag = "lit-v2.0.3"
 
-// litBundleBaseURL is the release download root. Overridable via
-// RETAB_LITEPARSE_BUNDLE_URL for mirrors and tests.
+// litBundleBaseURL is the download root for the fallback (non-embedded) path.
+// Overridable via RETAB_LITEPARSE_BUNDLE_URL for mirrors and tests.
 const litBundleBaseURL = "https://github.com/retab-dev/retab/releases/download"
 
-// errBundleUnavailable signals that no checksum-pinned bundle exists for the
-// current platform, so the caller should fall back to the install hint rather
-// than treat it as a hard download failure.
+// errBundleUnavailable signals that neither an embedded bundle nor a
+// checksum-pinned downloadable bundle exists for the current platform, so the
+// caller should fall back to the manual install hint.
 var errBundleUnavailable = errors.New("no managed liteparse bundle for this platform")
 
-// litBundle describes one platform's downloadable lit+pdfium archive.
+// litBundle describes one platform's lit bundle: the members packed in the
+// archive plus (for the download path) the archive's expected checksum.
 type litBundle struct {
-	Asset  string // archive filename, e.g. lit-darwin-arm64.tar.gz
-	SHA256 string // hex sha256 of the archive; empty => not yet pinned (disabled)
-	LitBin string // binary name inside the archive (lit or lit.exe)
-	Pdfium string // pdfium shared-library filename inside the archive
+	Asset    string // archive filename, e.g. lit-darwin-arm64.tar.gz
+	SHA256   string // hex sha256 of the archive; empty => download disabled
+	LitBin   string // binary name inside the archive (lit or lit.exe)
+	Pdfium   string // pdfium shared-library filename inside the archive
+	Tessdata string // OCR data filename (eng.traineddata); empty if no OCR
 }
 
-// litBundles is the pinned per-platform manifest, keyed by GOOS/GOARCH.
+// litBundles is the per-platform manifest, keyed by GOOS/GOARCH.
 //
-// SHA256 values come from the checksums.txt that build-liteparse.yml publishes.
-// They are intentionally empty until that workflow has run for litBundleTag:
-// an empty SHA256 disables managed download for the platform (we refuse to run
-// an unverified binary) and the resolver falls back to the manual install hint.
-// Filling these six values is the only step needed to activate download-on-demand.
+// SHA256 only gates the *download* fallback (we refuse to run an unverified
+// download); the embedded path is compiled in and trusted, so it works
+// regardless of SHA256. The values are filled from the checksums.txt that
+// build-liteparse.yml publishes. windows/arm64 ships OCR-less (no Tessdata),
+// matching the build matrix.
 var litBundles = map[string]litBundle{
-	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so"},
-	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so"},
-	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib"},
-	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib"},
-	"windows/amd64": {Asset: "lit-windows-amd64.zip", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll"},
-	"windows/arm64": {Asset: "lit-windows-arm64.zip", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll"},
+	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "eng.traineddata"},
+	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "eng.traineddata"},
+	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "eng.traineddata"},
+	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "eng.traineddata"},
+	"windows/amd64": {Asset: "lit-windows-amd64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: "eng.traineddata"},
+	"windows/arm64": {Asset: "lit-windows-arm64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: ""},
+}
+
+func currentBundle() (litBundle, bool) {
+	b, ok := litBundles[runtime.GOOS+"/"+runtime.GOARCH]
+	return b, ok
+}
+
+// wantMembers is the set of archive members to extract for a bundle. Other
+// files (LICENSE, BUNDLE.txt, nested paths) are ignored.
+func (b litBundle) wantMembers() map[string]bool {
+	want := map[string]bool{b.LitBin: true, b.Pdfium: true}
+	if b.Tessdata != "" {
+		want[b.Tessdata] = true
+	}
+	return want
 }
 
 // litBundleFetch downloads the bytes at url. It's a package var so tests can
@@ -72,7 +95,7 @@ var litBundles = map[string]litBundle{
 var litBundleFetch = httpFetch
 
 func httpFetch(url string) ([]byte, error) {
-	client := &http.Client{Timeout: 5 * time.Minute}
+	client := &http.Client{Timeout: 10 * time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -91,25 +114,6 @@ func bundleBaseURL() string {
 	return litBundleBaseURL
 }
 
-// ensureManagedLit resolves (downloading + verifying + extracting on first use)
-// the managed `lit` bundle for the current platform at the given tag. It
-// returns the path to the `lit` binary and the directory holding libpdfium
-// (to be exported as PDFIUM_LIB_PATH). errBundleUnavailable is returned when no
-// checksum-pinned bundle exists for this platform.
-func ensureManagedLit(tag string) (litPath, pdfiumDir string, err error) {
-	platform := runtime.GOOS + "/" + runtime.GOARCH
-	b, ok := litBundles[platform]
-	if !ok || b.SHA256 == "" {
-		return "", "", errBundleUnavailable
-	}
-	base, err := liteParseBinCacheDir()
-	if err != nil {
-		return "", "", err
-	}
-	destDir := filepath.Join(base, tag, runtime.GOOS+"-"+runtime.GOARCH)
-	return installLitBundle(b, tag, bundleBaseURL(), destDir, litBundleFetch)
-}
-
 func liteParseBinCacheDir() (string, error) {
 	base, err := os.UserCacheDir()
 	if err != nil {
@@ -118,66 +122,143 @@ func liteParseBinCacheDir() (string, error) {
 	return filepath.Join(base, "retab", "liteparse-bin"), nil
 }
 
+// resolveManagedLit returns a litCLI backed by the embedded bundle if this
+// build has one, otherwise by a checksum-verified download. errBundleUnavailable
+// means neither is available for this platform.
+func resolveManagedLit() (*litCLI, error) {
+	b, ok := currentBundle()
+	if !ok {
+		return nil, errBundleUnavailable
+	}
+
+	// Embedded path (default release build): trusted, compiled-in, offline.
+	if data, ok := embeddedLitArchive(); ok && len(data) > 0 {
+		dir, err := ensureBundleFromBytes("embedded-"+litBundleTag, data, b)
+		if err != nil {
+			return nil, err
+		}
+		return litCLIFromDir(b, dir), nil
+	}
+
+	// Download fallback (source builds): requires a pinned checksum.
+	if b.SHA256 == "" {
+		return nil, errBundleUnavailable
+	}
+	dir, err := ensureBundleFromDownload(litBundleTag, b, bundleBaseURL(), litBundleFetch)
+	if err != nil {
+		return nil, err
+	}
+	return litCLIFromDir(b, dir), nil
+}
+
+// litCLIFromDir builds a litCLI pointed at an extracted bundle dir, wiring the
+// pdfium and (when present) tessdata directories.
+func litCLIFromDir(b litBundle, dir string) *litCLI {
+	c := &litCLI{bin: filepath.Join(dir, b.LitBin), pdfiumDir: dir}
+	if b.Tessdata != "" {
+		c.tessdataDir = dir
+	}
+	return c
+}
+
 type fetchFunc func(url string) ([]byte, error)
 
-// installLitBundle is the testable core: if destDir already holds the binary,
-// it's reused; otherwise the archive is fetched from
-// <baseURL>/<tag>/<asset>, its sha256 verified against b.SHA256, and the lit
-// binary + pdfium library extracted into destDir.
-func installLitBundle(b litBundle, tag, baseURL, destDir string, fetch fetchFunc) (litPath, pdfiumDir string, err error) {
-	litPath = filepath.Join(destDir, b.LitBin)
-	pdfiumPath := filepath.Join(destDir, b.Pdfium)
-	if fileExists(litPath) && fileExists(pdfiumPath) {
-		return litPath, destDir, nil
+// ensureBundleFromDownload fetches <baseURL>/<tag>/<asset>, verifies its sha256
+// against b.SHA256, and stages it into the cache. Returns the extracted dir.
+func ensureBundleFromDownload(tag string, b litBundle, baseURL string, fetch fetchFunc) (string, error) {
+	base, err := liteParseBinCacheDir()
+	if err != nil {
+		return "", err
+	}
+	destDir := filepath.Join(base, tag, runtime.GOOS+"-"+runtime.GOARCH)
+	if bundleStaged(destDir, b) {
+		return destDir, nil
 	}
 
 	url := strings.TrimRight(baseURL, "/") + "/" + tag + "/" + b.Asset
 	data, err := fetch(url)
 	if err != nil {
-		return "", "", fmt.Errorf("download liteparse bundle: %w", err)
+		return "", fmt.Errorf("download liteparse bundle: %w", err)
 	}
 	sum := sha256.Sum256(data)
 	if got := hex.EncodeToString(sum[:]); !strings.EqualFold(got, b.SHA256) {
-		return "", "", fmt.Errorf("liteparse bundle checksum mismatch for %s: got %s, want %s", b.Asset, got, b.SHA256)
+		return "", fmt.Errorf("liteparse bundle checksum mismatch for %s: got %s, want %s", b.Asset, got, b.SHA256)
 	}
+	if err := stageBundle(data, b, destDir); err != nil {
+		return "", err
+	}
+	return destDir, nil
+}
 
-	// Extract into a temp dir first, then atomically rename into place so a
-	// crash mid-extract never leaves a half-populated cache dir.
+// ensureBundleFromBytes stages an in-memory (embedded) bundle into the cache.
+// The cache key folds in len(data) so a CLI upgrade carrying a different bundle
+// re-extracts instead of reusing stale files; no checksum is needed because the
+// bytes are compiled into this binary.
+func ensureBundleFromBytes(key string, data []byte, b litBundle) (string, error) {
+	base, err := liteParseBinCacheDir()
+	if err != nil {
+		return "", err
+	}
+	destDir := filepath.Join(base, fmt.Sprintf("%s-%d", key, len(data)), runtime.GOOS+"-"+runtime.GOARCH)
+	if bundleStaged(destDir, b) {
+		return destDir, nil
+	}
+	if err := stageBundle(data, b, destDir); err != nil {
+		return "", err
+	}
+	return destDir, nil
+}
+
+// bundleStaged reports whether destDir already holds every member of the bundle.
+func bundleStaged(destDir string, b litBundle) bool {
+	for name := range b.wantMembers() {
+		if !fileExists(filepath.Join(destDir, name)) {
+			return false
+		}
+	}
+	return true
+}
+
+// stageBundle extracts the wanted members of a .tar.gz (or .zip) archive into
+// destDir atomically: it extracts into a temp dir, verifies all members landed,
+// makes the binary executable, then renames into place so a crash mid-extract
+// never leaves a half-populated cache dir.
+func stageBundle(data []byte, b litBundle, destDir string) error {
 	if err := os.MkdirAll(filepath.Dir(destDir), 0o755); err != nil {
-		return "", "", err
+		return err
 	}
 	tmpDir, err := os.MkdirTemp(filepath.Dir(destDir), ".lit-extract-*")
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	defer os.RemoveAll(tmpDir)
 
-	want := map[string]bool{b.LitBin: true, b.Pdfium: true}
+	want := b.wantMembers()
 	if strings.HasSuffix(b.Asset, ".zip") {
 		err = extractZipMembers(data, tmpDir, want)
 	} else {
 		err = extractTarGzMembers(data, tmpDir, want)
 	}
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	for name := range want {
 		if !fileExists(filepath.Join(tmpDir, name)) {
-			return "", "", fmt.Errorf("liteparse bundle %s missing expected member %q", b.Asset, name)
+			return fmt.Errorf("liteparse bundle %s missing expected member %q", b.Asset, name)
 		}
 	}
 	if err := os.Chmod(filepath.Join(tmpDir, b.LitBin), 0o755); err != nil {
-		return "", "", err
+		return err
 	}
 
-	// If a concurrent invocation already populated destDir, keep theirs.
 	if err := os.Rename(tmpDir, destDir); err != nil {
-		if fileExists(litPath) && fileExists(pdfiumPath) {
-			return litPath, destDir, nil
+		// A concurrent invocation may have populated destDir first.
+		if bundleStaged(destDir, b) {
+			return nil
 		}
-		return "", "", fmt.Errorf("install liteparse bundle: %w", err)
+		return fmt.Errorf("install liteparse bundle: %w", err)
 	}
-	return litPath, destDir, nil
+	return nil
 }
 
 func fileExists(p string) bool {

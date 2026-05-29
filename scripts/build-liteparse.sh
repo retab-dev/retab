@@ -24,14 +24,19 @@
 #   3. Downloads the prebuilt libpdfium matching $PDFIUM_TAG for this target
 #      from run-llama/pdfium-binaries (the same fork + tag LiteParse pins in
 #      crates/pdfium-sys/build.rs).
-#   4. Stages `lit` + the pdfium shared library (+ LICENSE) into $STAGE_DIR.
+#   4. When OCR is on, downloads the English Tesseract model (eng.traineddata,
+#      tessdata_best @ $TESSDATA_TAG). lit's Tesseract is statically linked but
+#      still loads the model file from disk at runtime; bundling it lets OCR
+#      work fully offline (the consumer passes --tessdata-path <bundle dir>).
+#   5. Stages `lit` + the pdfium shared library (+ eng.traineddata + LICENSE)
+#      into $STAGE_DIR.
 #
-# Archiving + checksums are intentionally left to the caller (the workflow),
-# because portable archive creation differs per-OS (tar.gz on unix,
-# Compress-Archive on Windows).
+# Archiving + checksums are intentionally left to the caller (the workflow).
+# All six platforms archive as a single `.tar.gz` for uniform extraction.
 #
 # Consumers must set PDFIUM_LIB_PATH to the directory containing the staged
-# libpdfium before exec'ing `lit`.
+# libpdfium before exec'ing `lit`, and (for OCR) pass --tessdata-path pointing
+# at the same directory.
 #
 # Inputs (env vars)
 # -----------------
@@ -41,6 +46,7 @@
 #   LITEPARSE_REF git tag/branch/sha to build       (default: crates-v2.0.3)
 #   LITEPARSE_SRC pre-existing source tree          (optional; skips clone)
 #   PDFIUM_TAG    pdfium-binaries release tag        (default: chromium/7847)
+#   TESSDATA_TAG  tessdata_best git tag to fetch eng (default: 4.1.0)
 #   STAGE_DIR     output staging dir                 (default: ./dist/lit-<os>-<arch>)
 #
 set -euo pipefail
@@ -53,8 +59,10 @@ LIT_ARCH="${LIT_ARCH:?LIT_ARCH is required (amd64|arm64)}"
 LIT_OCR="${LIT_OCR:-1}"
 LITEPARSE_REF="${LITEPARSE_REF:-crates-v2.0.3}"
 PDFIUM_TAG="${PDFIUM_TAG:-chromium/7847}"
+TESSDATA_TAG="${TESSDATA_TAG:-4.1.0}"
 LITEPARSE_REPO="${LITEPARSE_REPO:-https://github.com/run-llama/liteparse.git}"
 PDFIUM_REPO="${PDFIUM_REPO:-run-llama/pdfium-binaries}"
+TESSDATA_REPO="${TESSDATA_REPO:-tesseract-ocr/tessdata_best}"
 STAGE_DIR="${STAGE_DIR:-dist/lit-${LIT_OS}-${LIT_ARCH}}"
 
 # --- Map target -> rust triple, pdfium asset, and lib layout ----------------
@@ -118,11 +126,25 @@ tar xzf "${PDFIUM_TGZ}" -C "${PDFIUM_EXTRACT}"
 PDFIUM_LIB="${PDFIUM_EXTRACT}/${PDFIUM_MEMBER}"
 [ -f "${PDFIUM_LIB}" ] || die "pdfium member ${PDFIUM_MEMBER} missing from ${PDFIUM_ASSET}"
 
+# --- 3.5 Fetch the English Tesseract model (OCR builds only) ----------------
+# lit's Tesseract is statically linked but still reads the model file from disk
+# at runtime. Bundling eng.traineddata (tessdata_best) lets OCR run fully
+# offline; the consumer passes --tessdata-path pointing at the bundle dir.
+TESSDATA_LOCAL=""
+if [ "${LIT_OCR}" != "0" ]; then
+  TESSDATA_URL="https://github.com/${TESSDATA_REPO}/raw/${TESSDATA_TAG}/eng.traineddata"
+  log "downloading eng.traineddata from ${TESSDATA_REPO}@${TESSDATA_TAG}"
+  TESSDATA_LOCAL="${WORKDIR}/eng.traineddata"
+  curl -fsSL -o "${TESSDATA_LOCAL}" "${TESSDATA_URL}"
+  [ -s "${TESSDATA_LOCAL}" ] || die "eng.traineddata download was empty"
+fi
+
 # --- 4. Stage the bundle ----------------------------------------------------
 rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}"
 cp "${LIT_BUILT}" "${STAGE_DIR}/${LIT_BIN_NAME}"
 cp "${PDFIUM_LIB}" "${STAGE_DIR}/${LIB_NAME}"
+[ -n "${TESSDATA_LOCAL}" ] && cp "${TESSDATA_LOCAL}" "${STAGE_DIR}/eng.traineddata"
 chmod +x "${STAGE_DIR}/${LIT_BIN_NAME}" 2>/dev/null || true
 
 # Carry licenses so the redistributable bundle is compliant.
@@ -141,10 +163,10 @@ LiteParse \`lit\` bundle for ${LIT_OS}/${LIT_ARCH}
 
 Contents:
   ${LIT_BIN_NAME}   - LiteParse CLI
-  ${LIB_NAME}       - PDFium shared library (dlopen'd by lit at runtime)
+  ${LIB_NAME}       - PDFium shared library (dlopen'd by lit at runtime)$( [ "${LIT_OCR}" = "0" ] || printf '\n  eng.traineddata   - Tesseract English OCR model (tessdata_best @ %s)' "${TESSDATA_TAG}" )
 
 The consumer MUST set PDFIUM_LIB_PATH to this directory before running lit:
-  PDFIUM_LIB_PATH=<this dir> ${LIT_BIN_NAME} parse <file>
+  PDFIUM_LIB_PATH=<this dir> ${LIT_BIN_NAME} parse <file>$( [ "${LIT_OCR}" = "0" ] || printf '\nFor OCR, also pass --tessdata-path <this dir>.' )
 EOF
 
 log "staged bundle at ${STAGE_DIR}:"
@@ -156,5 +178,6 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "stage_dir=${STAGE_DIR}"
     echo "lit_bin=${LIT_BIN_NAME}"
     echo "pdfium_lib=${LIB_NAME}"
+    echo "tessdata=$( [ -n "${TESSDATA_LOCAL}" ] && echo eng.traineddata || echo "" )"
   } >> "${GITHUB_OUTPUT}"
 fi

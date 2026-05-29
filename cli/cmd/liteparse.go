@@ -136,13 +136,13 @@ func defaultResolveLiteParser(bin string) (LiteParser, error) {
 		return nil, fmt.Errorf("liteparse binary %q not found; point --liteparse-bin / RETAB_LITEPARSE_BIN at an existing `lit`", bin)
 	}
 
-	// No `lit` on PATH and none requested: fall back to the Retab-managed
-	// bundle (lit + matching libpdfium), downloaded + checksum-verified on
-	// first use and cached. errBundleUnavailable means we don't ship a pinned
-	// bundle for this platform yet — surface the install hint instead.
-	litPath, pdfiumDir, err := ensureManagedLit(litBundleTag)
+	// No `lit` on PATH and none requested: fall back to the self-contained
+	// bundle (lit + libpdfium + OCR data) embedded in this binary, or
+	// downloaded + checksum-verified for source builds. errBundleUnavailable
+	// means we ship no bundle for this platform — surface the install hint.
+	managed, err := resolveManagedLit()
 	if err == nil {
-		return &litCLI{bin: litPath, pdfiumDir: pdfiumDir}, nil
+		return managed, nil
 	}
 	if !errors.Is(err, errBundleUnavailable) {
 		return nil, err
@@ -158,11 +158,14 @@ func defaultResolveLiteParser(bin string) (LiteParser, error) {
 // litCLI execs the `lit` binary. pdfiumDir, when non-empty, is the directory
 // holding a bundled libpdfium; it's exported to `lit` as PDFIUM_LIB_PATH so a
 // managed bundle can dlopen its own pdfium instead of requiring one on the
-// system. For a user-provided `lit` (PATH/flag/env) pdfiumDir is empty and we
-// leave the environment untouched.
+// system. tessdataDir, when non-empty, is the directory holding the bundled
+// eng.traineddata; it's passed via --tessdata-path so OCR finds its language
+// data. For a user-provided `lit` (PATH/flag/env) both are empty and we leave
+// the environment + args untouched.
 type litCLI struct {
-	bin       string
-	pdfiumDir string
+	bin         string
+	pdfiumDir   string
+	tessdataDir string
 }
 
 // command builds an exec.Cmd for `lit`, wiring PDFIUM_LIB_PATH when this is a
@@ -207,6 +210,11 @@ func (c *litCLI) parseArgs(path string, opt ParseOptions) []string {
 		if opt.OCRServerURL != "" {
 			args = append(args, "--ocr-server-url", opt.OCRServerURL)
 		}
+		// Point Tesseract at the bundled language data when this is a managed
+		// bundle; a user-provided `lit` uses its own TESSDATA_PREFIX.
+		if c.tessdataDir != "" {
+			args = append(args, "--tessdata-path", c.tessdataDir)
+		}
 	}
 	if opt.DPI > 0 {
 		args = append(args, "--dpi", fmt.Sprintf("%d", opt.DPI))
@@ -218,7 +226,15 @@ func (c *litCLI) parseArgs(path string, opt ParseOptions) []string {
 }
 
 func (c *litCLI) Parse(ctx context.Context, path string, opt ParseOptions) (*ParseResult, error) {
-	cmd := c.command(ctx, c.parseArgs(path, opt)...)
+	// Standalone images are wrapped into a temp PDF so OCR runs through
+	// PDFium+Tesseract instead of `lit`'s ImageMagick image path.
+	input, cleanup, err := litInputPath(path, opt.DPI)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	cmd := c.command(ctx, c.parseArgs(input, opt)...)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
@@ -269,8 +285,16 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 	if err := os.MkdirAll(opt.OutDir, 0o755); err != nil {
 		return nil, fmt.Errorf("create screenshot dir: %w", err)
 	}
+	// Wrap standalone images into a temp PDF (same reason as Parse) so the
+	// renderer goes through PDFium rather than `lit`'s ImageMagick path.
+	input, cleanup, err := litInputPath(path, opt.DPI)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
 	before, _ := imagesIn(opt.OutDir)
-	args := []string{"screenshot", path, "--output-dir", opt.OutDir, "--quiet"}
+	args := []string{"screenshot", input, "--output-dir", opt.OutDir, "--quiet"}
 	if opt.TargetPages != "" {
 		args = append(args, "--target-pages", opt.TargetPages)
 	}

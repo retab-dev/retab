@@ -201,6 +201,22 @@ func TestSnippet(t *testing.T) {
 	}
 }
 
+func TestFlattenWhitespace(t *testing.T) {
+	// Context windows pull in newlines; the table view must collapse them so a
+	// match stays on one row instead of wrapping and breaking alignment.
+	got := flattenWhitespace("# Title\n\nRevenue grew 18%\tquarter over\n  quarter.")
+	want := "# Title Revenue grew 18% quarter over quarter."
+	if got != want {
+		t.Fatalf("flattenWhitespace = %q, want %q", got, want)
+	}
+	if flattenWhitespace("   \n\t ") != "" {
+		t.Errorf("all-whitespace should flatten to empty string")
+	}
+	if flattenWhitespace("single") != "single" {
+		t.Errorf("single token should be unchanged")
+	}
+}
+
 func TestClamp01(t *testing.T) {
 	if clamp01(-0.5) != 0 || clamp01(1.5) != 1 || clamp01(0.3) != 0.3 {
 		t.Fatal("clamp01 broken")

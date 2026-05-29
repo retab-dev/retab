@@ -40,6 +40,18 @@ type commandGroup struct {
 	commands []string
 }
 
+// featuredSubcommands lists leaf subcommands worth advertising directly in the
+// root help, keyed by parent command name. renderRouterSubcommands only
+// expands *routers* (commands that themselves have subcommands), so leaf
+// actions normally stay hidden until you run `retab <parent> --help`. The
+// local-first `files` commands are the exception: parse/grep/inspect run
+// entirely on-device — no upload, no API call — and are easy to miss behind the
+// generic "Manage files" row, so we tease them on the front page where users
+// will actually discover them.
+var featuredSubcommands = map[string][]string{
+	"files": {"parse", "grep", "inspect"},
+}
+
 var commandGroups = []commandGroup{
 	{
 		title:    "Primitives",
@@ -234,6 +246,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 
 			renderRouterSubcommands(w, c, s, pad)
+			renderFeaturedSubcommands(w, c, s, pad)
 		}
 	}
 
@@ -254,6 +267,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 			helpFprintf(w, "  %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 			renderRouterSubcommands(w, c, s, pad)
+			renderFeaturedSubcommands(w, c, s, pad)
 		}
 	}
 
@@ -333,8 +347,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 // detection rule is generic — any command that grows nested surface area
 // later will surface here automatically.
 func renderRouterSubcommands(w io.Writer, c *cobra.Command, s styles, parentPad int) {
-	type row struct{ name, short string }
-	var rows []row
+	var rows []nestedRow
 	for _, sub := range c.Commands() {
 		if sub.Hidden || !sub.HasSubCommands() {
 			continue
@@ -342,13 +355,46 @@ func renderRouterSubcommands(w io.Writer, c *cobra.Command, s styles, parentPad 
 		if sub.Name() == "help" || sub.Name() == "completion" {
 			continue
 		}
-		rows = append(rows, row{name: sub.Name(), short: sub.Short})
+		rows = append(rows, nestedRow{name: sub.Name(), short: sub.Short})
 	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].name < rows[j].name })
+	renderNestedRowList(w, rows, s, parentPad)
+}
+
+// renderFeaturedSubcommands prints the curated leaf subcommands of c (see
+// featuredSubcommands) at col 4, matching renderRouterSubcommands' layout. The
+// curated order is preserved (it's a hand-picked tour, not an alphabetical
+// dump). Routers are skipped — renderRouterSubcommands already expands those —
+// so a command can never appear twice.
+func renderFeaturedSubcommands(w io.Writer, c *cobra.Command, s styles, parentPad int) {
+	names := featuredSubcommands[c.Name()]
+	if len(names) == 0 {
+		return
+	}
+	byName := map[string]*cobra.Command{}
+	for _, sub := range c.Commands() {
+		byName[sub.Name()] = sub
+	}
+	var rows []nestedRow
+	for _, name := range names {
+		sub, ok := byName[name]
+		if !ok || sub.Hidden || sub.HasSubCommands() {
+			continue
+		}
+		rows = append(rows, nestedRow{name: sub.Name(), short: sub.Short})
+	}
+	renderNestedRowList(w, rows, s, parentPad)
+}
+
+// nestedRow is the row shape both nested renderers feed to renderNestedRowList.
+type nestedRow struct{ name, short string }
+
+// renderNestedRowList does the actual col-4 emission shared by the router and
+// featured-leaf renderers.
+func renderNestedRowList(w io.Writer, rows []nestedRow, s styles, parentPad int) {
 	if len(rows) == 0 {
 		return
 	}
-	sort.Slice(rows, func(i, j int) bool { return rows[i].name < rows[j].name })
-
 	// Parent description sits at col (2 + parentPad + 2). To align the
 	// nested-row description to the same column from a col-4 indent, the
 	// name field width is (parentPad - 2). If a sub-name happens to be
