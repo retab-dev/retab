@@ -44,12 +44,12 @@ module Retab
       @key = hash[:key]
       @instructions = hash[:instructions]
       @n_consensus = hash[:n_consensus]
-      @allow_overlap = hash[:allow_overlap]
+      @allow_overlap = hash[:allow_overlap].nil? ? true : hash[:allow_overlap]
       @output = (hash[:output] || []).map { |item| item ? Retab::PartitionChunk.new(item) : nil }
       @consensus = hash[:consensus] ? Retab::PartitionConsensus.new(hash[:consensus]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "partition" : hash[:operation]
     end
   end
 end

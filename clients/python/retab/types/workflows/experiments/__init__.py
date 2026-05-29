@@ -30,15 +30,15 @@ class CreateExperimentRequest(BaseModel):
 
     Two modes:
 
-    - **Create from scratch** — provide ``block_id``, ``name``, optional
-      ``document_captures``/``documents``/``n_consensus``. ``source_experiment_id``
+    - **Create from scratch** — provide `block_id`, `name`, optional
+      `document_captures`/`documents`/`n_consensus`. `source_experiment_id`
       is omitted.
     - **Duplicate an existing experiment** — provide only
-      ``source_experiment_id``. The handler copies the source's block, name
-      (with ``(Copy)`` suffix), n_consensus, and documents. All other fields
+      `source_experiment_id`. The handler copies the source's block, name
+      (with `(Copy)` suffix), n_consensus, and documents. All other fields
       must be omitted.
 
-    The discriminator is whether ``source_experiment_id`` is set. This is
+    The discriminator is whether `source_experiment_id` is set. This is
     validated server-side: combining a source with any other field is
     rejected so the two modes stay structurally distinct."""
 

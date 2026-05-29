@@ -6,7 +6,7 @@ namespace Retab
     {
 
         /// <summary>Optional description for this published version</summary>
-        public string? Description { get; set; }
+        public string? Description { get; set; } = "";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

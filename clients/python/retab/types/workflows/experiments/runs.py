@@ -53,10 +53,10 @@ class CompletedWorkflowExperimentRun(BaseModel):
 
 
 class CreateExperimentRunRequest(BaseModel):
-    """Body for the flat ``POST /workflows/experiments/runs`` route.
+    """Body for the flat `POST /workflows/experiments/runs` route.
 
     Carries the scoping identity in the body — no parent id in the URL
-    (meta-pattern-blueprint §1). ``workflow_id`` is optional because it is
+    (meta-pattern-blueprint §1). `workflow_id` is optional because it is
     derivable from the experiment record; when supplied it is validated
     against the experiment's stored workflow."""
 
@@ -72,7 +72,7 @@ class CreateExperimentRunRequest(BaseModel):
 class ErrorWorkflowExperimentRun(BaseModel):
     """The experiment run failed.
 
-    Carries a human-readable ``message`` and a structured ``details`` envelope
+    Carries a human-readable `message` and a structured `details` envelope
     consumers can branch on instead of parsing free text."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -124,7 +124,7 @@ class RunningWorkflowExperimentRun(BaseModel):
 class ExperimentRun(BaseModel):
     """Run-id-first public experiment run shape.
 
-    The canonical identity is ``id``. Internal queue handles and duplicate
+    The canonical identity is `id`. Internal queue handles and duplicate
     identity aliases are intentionally absent."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -156,11 +156,7 @@ class ExperimentRun(BaseModel):
 
 
 class WorkflowSnapshotRef(BaseModel):
-    """Reference to the workflow + immutable version that drove the run.
-
-    The class name is retained temporarily for compatibility with surrounding
-    run-model code, but public API output uses ``version_id`` rather than
-    snapshot identity."""
+    """Reference to the workflow and immutable version that drove the run."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

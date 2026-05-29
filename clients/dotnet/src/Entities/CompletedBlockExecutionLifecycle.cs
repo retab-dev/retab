@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Terminal: the executed block executed successfully.</summary>
     public class CompletedBlockExecutionLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "completed";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

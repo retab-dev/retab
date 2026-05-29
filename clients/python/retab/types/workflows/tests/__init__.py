@@ -130,7 +130,7 @@ class AssertionSchemaDep(BaseModel):
 class AssertionSpec(BaseModel):
     """Block-test assertion against one declared output handle.
 
-    ``target`` is the only supported shape: an output handle id and an
+    `target` is the only supported shape: an output handle id and an
     optional relative path inside that handle's payload."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -221,13 +221,13 @@ class LatestBlockTestRunSummary(BaseModel):
 
     The two harmonized axes — execution status and verdict outcome — are
     exposed as separate fields. The runner only writes the summary on
-    terminal-state transitions, so in practice ``status`` is one of
-    ``completed | error | cancelled`` and ``outcome`` is populated when
-    ``status == "completed"``.
+    terminal-state transitions, so in practice `status` is one of
+    `completed | error | cancelled` and `outcome` is populated when
+    `status == "completed"`.
 
-    ``status`` is a flat enum — there's no per-state payload to carry on a
-    summary projection, so the API_DESIGN.md ``lifecycle`` vs ``status``
-    convention says use ``status`` here."""
+    `status` is a flat enum — there's no per-state payload to carry on a
+    summary projection, so the API_DESIGN.md `lifecycle` vs `status`
+    convention says use `status` here."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -237,8 +237,8 @@ class LatestBlockTestRunSummary(BaseModel):
     started_at: datetime.datetime
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
-    workflow_draft_fingerprint: str | None = Field(default="")
-    block_config_fingerprint: str | None = Field(default="")
+    workflow_draft_fingerprint: str | None = None
+    block_config_fingerprint: str | None = None
     assertions_passed: int | None = Field(default=0)
     assertions_failed: int | None = Field(default=0)
     blocked_assertions: int | None = Field(default=0)
@@ -346,8 +346,8 @@ class SimilarityGteCondition(BaseModel):
 class SplitIouCondition(BaseModel):
     """Intersection-over-Union for split page assignments.
 
-    ``expected`` is stored in the canonical split-eval payload shape:
-    ``{"splits": [{"name", "pages"}]}``"""
+    `expected` is stored in the canonical split-eval payload shape:
+    `{"splits": [{"name", "pages"}]}`"""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

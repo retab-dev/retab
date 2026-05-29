@@ -37,7 +37,7 @@ module Retab
       @workflow_id = hash[:workflow_id]
       @id = hash[:id]
       @type = hash[:type]
-      @label = hash[:label]
+      @label = hash[:label].nil? ? "" : hash[:label]
       @position_x = hash[:position_x]
       @position_y = hash[:position_y]
       @width = hash[:width]

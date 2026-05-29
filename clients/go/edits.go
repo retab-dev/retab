@@ -47,10 +47,10 @@ type EditsCreateParams struct {
 // Create edit
 func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opts ...RequestOption) (*Edit, error) {
 	if params == nil {
-		return nil, fmt.Errorf("retab: document is required")
+		return nil, fmt.Errorf("retab: instructions is required")
 	}
-	if params.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
+	if params.Instructions == "" {
+		return nil, fmt.Errorf("retab: instructions is required")
 	}
 	type createWireBody struct {
 		Instructions string      `json:"instructions"`

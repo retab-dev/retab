@@ -9,15 +9,15 @@ namespace Retab\Resource;
 /**
  * Request to update a block. Only provided fields are updated.
  *
- * ``config_mode`` is a request-level signal (not persisted) that controls
- * how the route folds the ``config`` patch into the existing config doc:
+ * `config_mode` is a request-level signal (not persisted) that controls
+ * how the route folds the `config` patch into the existing config doc:
  *
- * * ``"merge"`` (default): RFC 7396 JSON Merge Patch — dicts recurse,
- *   arrays/scalars replace, ``null`` deletes the key. This is what CLI
- *   callers pass via ``--merge-config-file``.
- * * ``"replace"``: take ``config`` as the full new typed config. Top-level
- *   ``null`` values are pruned so the caller can wipe a key with one
- *   request. This is what CLI callers pass via ``--config-file``.
+ * * `"merge"` (default): RFC 7396 JSON Merge Patch — dicts recurse,
+ *   arrays/scalars replace, `null` deletes the key. This is what CLI
+ *   callers pass via `--merge-config-file`.
+ * * `"replace"`: take `config` as the full new typed config. Top-level
+ *   `null` values are pruned so the caller can wipe a key with one
+ *   request. This is what CLI callers pass via `--config-file`.
  *
  * Pre-config_mode callers (legacy SDKs, the canvas, any code that doesn't
  * send the field) keep the merge behavior; they were already sending
@@ -36,7 +36,7 @@ readonly class UpdateWorkflowBlockRequest implements \JsonSerializable
         /** @var array<string, mixed>|null */
         public ?array $config = null,
         public ?string $parentId = null,
-        /** How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted. */
+        /** How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted. */
         public ?UpdateWorkflowBlockRequestConfigMode $configMode = null,
     ) {}
 

@@ -29,8 +29,8 @@ public final class ExperimentVotesMetricsResponse implements Experiment {
       @JsonProperty(value = "prior_score", required = false) Double priorScore,
       @JsonProperty(value = "rows", required = false) List<ExperimentVoteRow> rows) {
     this.runId = runId;
-    this.kind = kind;
-    this.view = view;
+    this.kind = kind != null ? kind : "votes";
+    this.view = view != null ? view : "votes";
     this.document = document;
     this.target = target;
     this.score = score;

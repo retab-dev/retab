@@ -18,7 +18,7 @@ public final class SplitIouCondition implements Condition {
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Map<String, Object> expected,
       @JsonProperty(value = "threshold", required = false) Double threshold) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "split_iou_gte";
     this.expected = expected;
     this.threshold = threshold;
   }

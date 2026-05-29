@@ -59,7 +59,7 @@ public final class WorkflowExperiment {
     this.status = status;
     this.blockType = blockType;
     this.score = score;
-    this.isStale = isStale;
+    this.isStale = isStale != null ? isStale : false;
     this.schemaDrift = schemaDrift;
     this.schemaDriftDetail = schemaDriftDetail;
   }

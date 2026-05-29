@@ -27,7 +27,7 @@ public final class ApiCallInvocation implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "attempts", required = false) List<ApiCallAttempt> attempts,
       @JsonProperty(value = "error", required = false) ErrorDetails error,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
-    this.operation = operation;
+    this.operation = operation != null ? operation : "api_call_invocation";
     this.id = id;
     this.runId = runId;
     this.stepId = stepId;

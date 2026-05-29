@@ -7,10 +7,10 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Body for ``POST /v1/workflows/blocks/executions``.
+ * Body for `POST /v1/workflows/blocks/executions`.
  *
- * ``block_id`` is the block to replay; ``run_id`` is the workflow run that
- * sourced the original step's ``handle_inputs``. ``step_id`` optionally pins
+ * `block_id` is the block to replay; `run_id` is the workflow run that
+ * sourced the original step's `handle_inputs`. `step_id` optionally pins
  * a concrete step row whose inputs should be used, which is useful for
  * iteration-prefixed for_each body steps.
  */

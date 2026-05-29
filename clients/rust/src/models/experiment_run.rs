@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Run-id-first public experiment run shape.
-/// The canonical identity is ``id``. Internal queue handles and duplicate
+/// The canonical identity is `id`. Internal queue handles and duplicate
 /// identity aliases are intentionally absent.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentRun {

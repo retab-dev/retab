@@ -30,11 +30,11 @@ module Retab
       hash = self.class.normalize(json)
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @categories = (hash[:categories] || []).map { |item| item ? Retab::Category.new(item) : nil }
-      @model = hash[:model]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @first_n_pages = hash[:first_n_pages]
       @instructions = hash[:instructions]
       @n_consensus = hash[:n_consensus]
-      @bust_cache = hash[:bust_cache]
+      @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
     end
   end
 end

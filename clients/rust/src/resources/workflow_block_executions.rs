@@ -69,9 +69,9 @@ impl<'a> WorkflowBlockExecutionsApi<'a> {
     /// List recent block executions for one workflow run block.
     ///
     /// Cursor pagination matches the conventions used by
-    /// ``GET /v1/extractions`` — pass ``after`` from the previous page's
-    /// ``list_metadata.after`` to advance, ``before`` to step backwards, and
-    /// ``order`` to flip the sort direction. ``run_id`` + ``block_id`` are
+    /// `GET /v1/extractions` — pass `after` from the previous page's
+    /// `list_metadata.after` to advance, `before` to step backwards, and
+    /// `order` to flip the sort direction. `run_id` + `block_id` are
     /// required scope filters; without them this endpoint would expose
     /// cross-run cursors that walk arbitrary block executions.
     pub async fn list(&self, params: ListParams) -> Result<BlockExecutionList, Error> {
@@ -93,7 +93,7 @@ impl<'a> WorkflowBlockExecutionsApi<'a> {
 
     /// Create Block Execution
     ///
-    /// Create a block execution for ``block_id`` against the current draft.
+    /// Create a block execution for `block_id` against the current draft.
     pub async fn create(&self, params: CreateParams) -> Result<StoredBlockExecution, Error> {
         self.create_with_options(params, None).await
     }

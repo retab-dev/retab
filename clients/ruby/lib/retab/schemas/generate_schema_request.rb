@@ -25,10 +25,10 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @documents = (hash[:documents] || []).map { |item| item ? Retab::MimeData.new(item) : nil }
-      @model = hash[:model]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @instructions = hash[:instructions]
       @image_resolution_dpi = hash[:image_resolution_dpi]
-      @stream = hash[:stream]
+      @stream = hash[:stream].nil? ? false : hash[:stream]
     end
   end
 end

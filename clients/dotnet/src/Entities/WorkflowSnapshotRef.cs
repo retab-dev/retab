@@ -1,12 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Reference to the workflow + immutable version that drove the run.</summary>
-    /// <remarks>
-    /// The class name is retained temporarily for compatibility with surrounding
-    /// run-model code, but public API output uses ``version_id`` rather than
-    /// snapshot identity.
-    /// </remarks>
+    /// <summary>Reference to the workflow and immutable version that drove the run.</summary>
     public class WorkflowSnapshotRef
     {
 

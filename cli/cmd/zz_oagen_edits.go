@@ -44,10 +44,9 @@ var editsCreateCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		document := doc
 		req := retab.EditsCreateParams{
 			Instructions: instructions,
-			Document:     &document,
+			Document:     doc,
 			TemplateID:   ptr(templateID),
 			Model:        ptr(model),
 			Config:       &retab.EditConfig{Color: ptr(color)},

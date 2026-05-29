@@ -45,7 +45,7 @@ public final class SplitWorkflowArtifact implements WorkflowArtifactOperation2 {
     this.consensus = consensus;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "split";
   }
 
   @JsonProperty("id")

@@ -5,7 +5,7 @@ import { z } from 'zod';
 export interface WorkflowEdgeCreateRequest {
   /** Workflow to create the edge in. */
   workflowId: string;
-  /** If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one. */
+  /** If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one. */
   id?: string | null;
   /** Source block ID */
   sourceBlock: string;

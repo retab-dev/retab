@@ -5,9 +5,9 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Body for the flat ``POST /workflows/experiments/runs`` route.
+/// Body for the flat `POST /workflows/experiments/runs` route.
 /// Carries the scoping identity in the body — no parent id in the URL
-/// (meta-pattern-blueprint §1). ``workflow_id`` is optional because it is
+/// (meta-pattern-blueprint §1). `workflow_id` is optional because it is
 /// derivable from the experiment record; when supplied it is validated
 /// against the experiment's stored workflow.
 #[derive(Debug, Clone, Serialize, Deserialize)]

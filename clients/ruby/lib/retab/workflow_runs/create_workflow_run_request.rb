@@ -25,7 +25,7 @@ module Retab
       @workflow_id = hash[:workflow_id]
       @documents = hash[:documents] || {}
       @json_inputs = hash[:json_inputs] || {}
-      @version = hash[:version]
+      @version = hash[:version].nil? ? "production" : hash[:version]
     end
   end
 end

@@ -7,7 +7,7 @@ namespace Retab
     /// </remarks>
     public class ErrorBlockExecutionLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "error";
 
         /// <summary>Human-readable error message</summary>
         public string Message { get; set; } = default!;

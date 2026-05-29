@@ -1,0 +1,199 @@
+package cmd
+
+import (
+	"fmt"
+	"io"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/spf13/cobra"
+)
+
+// This file wires the local-first `files parse|grep|inspect|doctor` commands
+// onto the existing `files` group. They are an intentional exception to the
+// "CLI = thin overlay on the generated SDK" rule: they take a LOCAL path,
+// never upload, never call the API, and shell out to LiteParse (`lit`) for
+// PDFs/images while parsing text/csv/xlsx/docx natively in Go. See
+// liteparse.go and native_parse.go for the machinery.
+//
+// Registration lives in its own untagged init() so these commands compile
+// into both the default (`files.go`) and the generated-prototype
+// (`zz_oagen_files.go`) builds — both define `filesCmd`, but under mutually
+// exclusive build tags, so exactly one exists at link time.
+
+func init() {
+	addParseOptionFlags(filesParseCmd)
+	filesParseCmd.Flags().String("format", "text", "output format: text | json")
+	filesParseCmd.Flags().Bool("bbox", false, "include per-item bounding boxes in JSON output (pdf/image)")
+	filesParseCmd.Flags().StringP("out", "o", "", "write output to this path instead of stdout")
+
+	addParseOptionFlags(filesGrepCmd)
+	filesGrepCmd.Flags().Bool("regex", false, "treat the pattern as a regular expression")
+	filesGrepCmd.Flags().Bool("case-sensitive", false, "match case-sensitively (default: case-insensitive)")
+	filesGrepCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 500, value: "50"}, "max-results", "max matches to return (1-500)")
+	filesGrepCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 500, value: "80"}, "context-chars", "characters of context on each side of a match (0-500)")
+	filesGrepCmd.Flags().Bool("bbox", false, "attach a normalized bounding box to pdf/image matches")
+
+	addParseOptionFlags(filesInspectCmd)
+	filesInspectCmd.Flags().String("lines", "", "line range for text/docx, e.g. 10-40 (1-based, inclusive)")
+	filesInspectCmd.Flags().String("cells", "", "cell range for csv/xlsx, e.g. A1:Z100")
+	filesInspectCmd.Flags().String("sheet", "", "sheet name or 1-based index for xlsx (default: first sheet)")
+	filesInspectCmd.Flags().String("render", "", "page range to render for pdf/image, e.g. 1,3,5 (max 3 pages)")
+	filesInspectCmd.Flags().StringP("out", "o", "", "output directory for rendered page images (default: a temp dir)")
+	filesInspectCmd.MarkFlagsMutuallyExclusive("lines", "cells", "render")
+
+	filesCmd.AddCommand(filesParseCmd, filesGrepCmd, filesInspectCmd, filesDoctorCmd)
+}
+
+// addParseOptionFlags attaches the LiteParse-tuning flags shared by parse,
+// grep, and inspect. Defaults mirror defaultParseOptions().
+func addParseOptionFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("no-ocr", false, "disable OCR (pdf/image; native text layer only)")
+	cmd.Flags().String("ocr-language", "eng", "Tesseract OCR language code")
+	cmd.Flags().String("ocr-server-url", "", "URL of an external OCR server (default: bundled Tesseract)")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 36, max: 600, value: "150"}, "dpi", "rendering DPI for OCR/screenshots (36-600)")
+	cmd.Flags().String("pages", "", "limit parsing to these pages, e.g. 1-5,10 (pdf/image)")
+	cmd.Flags().String("liteparse-bin", "", "path to the `lit` binary (default: $RETAB_LITEPARSE_BIN or `lit` on PATH)")
+	cmd.Flags().Bool("no-cache", false, "skip the on-disk parse cache for pdf/image")
+}
+
+// parseOptionsFromCmd builds a ParseOptions from the shared flags.
+func parseOptionsFromCmd(cmd *cobra.Command) ParseOptions {
+	opt := defaultParseOptions()
+	if noOCR, _ := cmd.Flags().GetBool("no-ocr"); noOCR {
+		opt.OCR = false
+	}
+	if lang, _ := cmd.Flags().GetString("ocr-language"); lang != "" {
+		opt.OCRLanguage = lang
+	}
+	if server, _ := cmd.Flags().GetString("ocr-server-url"); server != "" {
+		opt.OCRServerURL = server
+	}
+	if dpi, _ := cmd.Flags().GetInt("dpi"); dpi > 0 {
+		opt.DPI = dpi
+	}
+	if pages, _ := cmd.Flags().GetString("pages"); pages != "" {
+		opt.TargetPages = pages
+	}
+	return opt
+}
+
+func liteBinFromCmd(cmd *cobra.Command) string {
+	bin, _ := cmd.Flags().GetString("liteparse-bin")
+	return bin
+}
+
+func useCacheFromCmd(cmd *cobra.Command) bool {
+	noCache, _ := cmd.Flags().GetBool("no-cache")
+	return !noCache
+}
+
+// tableSelected reports whether the user asked for table output on the root
+// --output flag. Used by grep/inspect to choose between the MCP-shaped JSON
+// (the default, for parity) and a compact TTY table.
+func tableSelected(cmd *cobra.Command) bool {
+	var w io.Writer
+	if cmd != nil {
+		w = cmd.OutOrStdout()
+	}
+	format, err := ResolveOutputFormat(cmd, w)
+	if err != nil {
+		return false
+	}
+	return format == OutputTable
+}
+
+var filesDoctorCmd = &cobra.Command{
+	Use:   "doctor",
+	Short: "Check the local LiteParse toolchain",
+	Long: `Report whether the local document-parsing toolchain is ready.
+
+The local ` + "`files parse|grep|inspect`" + ` commands shell out to LiteParse
+(the ` + "`lit`" + ` binary) for PDFs and images. This reports whether ` + "`lit`" + `
+is discoverable and its version. text/csv/xlsx/docx are parsed natively in
+Go and need no external tools.`,
+	Args: cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+
+		report := map[string]any{
+			"native_formats": []string{"txt/md/json", "csv/tsv", "xlsx", "docx"},
+		}
+		parser, err := resolveLiteParser(liteBinFromCmd(cmd))
+		if err != nil {
+			report["liteparse_available"] = false
+			report["liteparse_error"] = err.Error()
+			if printErr := printJSON(report); printErr != nil {
+				return printErr
+			}
+			return nil
+		}
+		report["liteparse_available"] = true
+		if c, ok := parser.(*litCLI); ok {
+			report["liteparse_bin"] = c.bin
+			if c.pdfiumDir != "" {
+				// Resolved from the Retab-managed bundle (lit + bundled libpdfium).
+				report["liteparse_source"] = "managed-bundle"
+				report["liteparse_pdfium_dir"] = c.pdfiumDir
+			} else {
+				// A `lit` found on PATH / via --liteparse-bin / RETAB_LITEPARSE_BIN.
+				report["liteparse_source"] = "system"
+			}
+		}
+		if version, verr := parser.Version(ctx); verr == nil {
+			report["liteparse_version"] = strings.TrimSpace(version)
+		} else {
+			report["liteparse_version_error"] = verr.Error()
+		}
+		return printJSON(report)
+	}),
+}
+
+// parsePageList parses a comma/range page spec ("1,3,5-7") into a sorted,
+// de-duplicated 1-based page slice. Used by `files inspect --render`. Returns
+// an error on malformed input or a zero/negative page.
+func parsePageList(spec string) ([]int, error) {
+	seen := map[int]bool{}
+	var pages []int
+	for _, chunk := range strings.Split(spec, ",") {
+		chunk = strings.TrimSpace(chunk)
+		if chunk == "" {
+			continue
+		}
+		if lo, hi, ok := strings.Cut(chunk, "-"); ok {
+			start, err := strconv.Atoi(strings.TrimSpace(lo))
+			if err != nil {
+				return nil, fmt.Errorf("invalid page range %q", chunk)
+			}
+			end, err := strconv.Atoi(strings.TrimSpace(hi))
+			if err != nil {
+				return nil, fmt.Errorf("invalid page range %q", chunk)
+			}
+			if start < 1 || end < 1 || end < start {
+				return nil, fmt.Errorf("invalid page range %q", chunk)
+			}
+			for p := start; p <= end; p++ {
+				if !seen[p] {
+					seen[p] = true
+					pages = append(pages, p)
+				}
+			}
+			continue
+		}
+		p, err := strconv.Atoi(chunk)
+		if err != nil || p < 1 {
+			return nil, fmt.Errorf("invalid page %q", chunk)
+		}
+		if !seen[p] {
+			seen[p] = true
+			pages = append(pages, p)
+		}
+	}
+	if len(pages) == 0 {
+		return nil, fmt.Errorf("no pages specified")
+	}
+	sort.Ints(pages)
+	return pages, nil
+}

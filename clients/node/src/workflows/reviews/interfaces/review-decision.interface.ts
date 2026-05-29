@@ -6,7 +6,7 @@ import { ZActor, deserializeActor, serializeActor } from './actor.interface.js';
 import type { ReviewVerdict } from './review-verdict.interface.js';
 import { ZReviewVerdict } from './review-verdict.interface.js';
 
-/** The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`. */
+/** The terminal decision recorded against one review version. */
 export interface ReviewDecision {
   verdict: ReviewVerdict;
   versionId: string;

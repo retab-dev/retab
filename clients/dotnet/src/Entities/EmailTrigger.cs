@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Run started by an inbound email.</summary>
     public class EmailTrigger
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "email";
 
         /// <summary>Sender email address, when known</summary>
         public string? Sender { get; set; }

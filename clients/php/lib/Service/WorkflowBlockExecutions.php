@@ -20,9 +20,9 @@ class WorkflowBlockExecutions
      * List recent block executions for one workflow run block.
      *
      * Cursor pagination matches the conventions used by
-     * ``GET /v1/extractions`` — pass ``after`` from the previous page's
-     * ``list_metadata.after`` to advance, ``before`` to step backwards, and
-     * ``order`` to flip the sort direction. ``run_id`` + ``block_id`` are
+     * `GET /v1/extractions` — pass `after` from the previous page's
+     * `list_metadata.after` to advance, `before` to step backwards, and
+     * `order` to flip the sort direction. `run_id` + `block_id` are
      * required scope filters; without them this endpoint would expose
      * cross-run cursors that walk arbitrary block executions.
      * @param string $runId
@@ -63,7 +63,7 @@ class WorkflowBlockExecutions
     /**
      * Create Block Execution
      *
-     * Create a block execution for ``block_id`` against the current draft.
+     * Create a block execution for `block_id` against the current draft.
      * @param string $runId Workflow run id that owns the step.
      * @param string $blockId Workflow block id to execute.
      * @param string|null $stepId Optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key.

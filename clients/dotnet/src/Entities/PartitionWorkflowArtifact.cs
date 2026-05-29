@@ -26,7 +26,7 @@ namespace Retab
         public long? NConsensus { get; set; }
 
         /// <summary>Whether pages were allowed to appear in more than one partition chunk</summary>
-        public bool? AllowOverlap { get; set; }
+        public bool? AllowOverlap { get; set; } = true;
 
         /// <summary>The list of partition chunks with their assigned pages</summary>
         public List<PartitionChunk>? Output { get; set; }
@@ -37,11 +37,11 @@ namespace Retab
         /// <summary>Usage information for the partition operation</summary>
         public RetabUsage? Usage { get; set; }
 
-        /// <summary>When this artifact was written by the orchestrator.</summary>
+        /// <summary>Timestamp when this artifact was created.</summary>
         public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Artifact operation that determines the backing record type</summary>
-        public string? Operation { get; set; }
+        public string? Operation { get; set; } = "partition";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

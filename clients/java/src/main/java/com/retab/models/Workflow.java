@@ -25,8 +25,8 @@ public final class Workflow {
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
     this.id = id;
-    this.name = name;
-    this.description = description;
+    this.name = name != null ? name : "Untitled Workflow";
+    this.description = description != null ? description : "";
     this.published = published;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;

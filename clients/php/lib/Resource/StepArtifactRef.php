@@ -7,18 +7,17 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Canonical persisted resource produced by a workflow step.
+ * A resource produced by a workflow step.
  *
- * Uniformly a `(operation, id)` ref into a backing collection. The artifact
- * itself carries no payload — consumers dispatch on ``operation`` and fetch
- * the backing record by ``id``.
+ * An `(operation, id)` reference. The artifact itself carries no payload —
+ * consumers dispatch on `operation` and fetch the referenced record by `id`.
  */
 readonly class StepArtifactRef implements \JsonSerializable
 {
     use JsonSerializableTrait;
 
     public function __construct(
-        /** Persisted resource operation; identifies the backing collection */
+        /** The kind of resource this artifact references */
         public StepArtifactRefOperation $operation,
         /** Persisted resource identifier */
         public string $id,

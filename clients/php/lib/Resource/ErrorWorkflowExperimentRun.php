@@ -9,7 +9,7 @@ namespace Retab\Resource;
 /**
  * The experiment run failed.
  *
- * Carries a human-readable ``message`` and a structured ``details`` envelope
+ * Carries a human-readable `message` and a structured `details` envelope
  * consumers can branch on instead of parsing free text.
  */
 readonly class ErrorWorkflowExperimentRun implements \JsonSerializable

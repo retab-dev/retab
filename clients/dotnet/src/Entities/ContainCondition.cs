@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a contain condition.</summary>
     public class ContainCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "contains";
         public object Expected { get; set; } = default!;
 
         /// <summary>

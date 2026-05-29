@@ -15,7 +15,7 @@ public final class FileHandleInput implements HandleInput {
   public FileHandleInput(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "document", required = true) MaterializedDocument document) {
-    this.type = type;
+    this.type = type != null ? type : "file";
     this.document = document;
   }
 

@@ -14,7 +14,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @description = hash[:description]
+      @description = hash[:description].nil? ? "" : hash[:description]
     end
   end
 end

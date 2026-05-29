@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The experiment run failed.
-/// Carries a human-readable ``message`` and a structured ``details`` envelope
+/// Carries a human-readable `message` and a structured `details` envelope
 /// consumers can branch on instead of parsing free text.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorWorkflowExperimentRun {

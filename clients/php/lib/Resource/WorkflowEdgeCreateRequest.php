@@ -18,7 +18,7 @@ readonly class WorkflowEdgeCreateRequest implements \JsonSerializable
         public string $sourceBlock,
         /** Target block ID */
         public string $targetBlock,
-        /** If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one. */
+        /** If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one. */
         public ?string $id = null,
         /** Output handle */
         public ?string $sourceHandle = null,

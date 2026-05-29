@@ -15,7 +15,7 @@ public final class ReviewConfidenceLt implements ReviewKind {
   public ReviewConfidenceLt(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "threshold", required = true) Double threshold) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "confidence_lt";
     this.threshold = threshold;
   }
 

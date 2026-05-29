@@ -23,7 +23,7 @@ public final class CreateWorkflowRunRequest {
     this.workflowId = workflowId;
     this.documents = documents;
     this.jsonInputs = jsonInputs;
-    this.version = version;
+    this.version = version != null ? version : "production";
   }
 
   @JsonProperty("workflow_id")

@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @type = hash[:type]
+      @type = hash[:type].nil? ? "block" : hash[:type]
       @block_id = hash[:block_id]
     end
   end

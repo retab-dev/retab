@@ -40,10 +40,10 @@ module Retab
     def matched=(value); end
 
     sig { returns(T.nilable(T::Array[Retab::ConditionEvaluationPerItem])) }
-    def per_item; end
+    def items; end
 
     sig { params(value: T.nilable(T::Array[Retab::ConditionEvaluationPerItem])).returns(T.nilable(T::Array[Retab::ConditionEvaluationPerItem])) }
-    def per_item=(value); end
+    def items=(value); end
 
     sig { returns(T.nilable(T::Array[Retab::ConditionEvaluationSubCondition])) }
     def sub_conditions; end

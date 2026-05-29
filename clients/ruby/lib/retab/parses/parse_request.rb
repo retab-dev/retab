@@ -27,11 +27,11 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
-      @model = hash[:model]
-      @table_parsing_format = hash[:table_parsing_format]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
+      @table_parsing_format = hash[:table_parsing_format].nil? ? "html" : hash[:table_parsing_format]
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
-      @bust_cache = hash[:bust_cache]
+      @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
     end
   end
 end

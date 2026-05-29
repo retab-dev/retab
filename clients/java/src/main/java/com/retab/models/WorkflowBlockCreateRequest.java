@@ -36,7 +36,7 @@ public final class WorkflowBlockCreateRequest {
     this.workflowId = workflowId;
     this.id = id;
     this.type = type;
-    this.label = label;
+    this.label = label != null ? label : "";
     this.positionX = positionX;
     this.positionY = positionY;
     this.width = width;

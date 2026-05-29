@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.JobStatus;
 import com.retab.types.SupportedEndpoint;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -18,14 +19,14 @@ public final class Job {
   private final SupportedEndpoint endpoint;
   private final JobError error;
   private final List<JobWarning> warnings;
-  private final String createdAt;
-  private final String startedAt;
-  private final String completedAt;
-  private final String expiresAt;
+  private final OffsetDateTime createdAt;
+  private final OffsetDateTime startedAt;
+  private final OffsetDateTime completedAt;
+  private final OffsetDateTime expiresAt;
   private final Map<String, String> metadata;
   private final Boolean cancelled;
   private final Long attemptCount;
-  private final String lastAttemptAt;
+  private final OffsetDateTime lastAttemptAt;
   private final String lastFailureCode;
   private final Map<String, Object> request;
   private final JobResponse response;
@@ -38,19 +39,19 @@ public final class Job {
       @JsonProperty(value = "endpoint", required = true) SupportedEndpoint endpoint,
       @JsonProperty(value = "error", required = false) JobError error,
       @JsonProperty(value = "warnings", required = false) List<JobWarning> warnings,
-      @JsonProperty(value = "created_at", required = false) String createdAt,
-      @JsonProperty(value = "started_at", required = false) String startedAt,
-      @JsonProperty(value = "completed_at", required = false) String completedAt,
-      @JsonProperty(value = "expires_at", required = false) String expiresAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
+      @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
+      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
+      @JsonProperty(value = "expires_at", required = false) OffsetDateTime expiresAt,
       @JsonProperty(value = "metadata", required = false) Map<String, String> metadata,
       @JsonProperty(value = "cancelled", required = false) Boolean cancelled,
       @JsonProperty(value = "attempt_count", required = false) Long attemptCount,
-      @JsonProperty(value = "last_attempt_at", required = false) String lastAttemptAt,
+      @JsonProperty(value = "last_attempt_at", required = false) OffsetDateTime lastAttemptAt,
       @JsonProperty(value = "last_failure_code", required = false) String lastFailureCode,
       @JsonProperty(value = "request", required = false) Map<String, Object> request,
       @JsonProperty(value = "response", required = false) JobResponse response) {
     this.id = id;
-    this.objectType = objectType;
+    this.objectType = objectType != null ? objectType : "job";
     this.status = status;
     this.endpoint = endpoint;
     this.error = error;
@@ -60,7 +61,7 @@ public final class Job {
     this.completedAt = completedAt;
     this.expiresAt = expiresAt;
     this.metadata = metadata;
-    this.cancelled = cancelled;
+    this.cancelled = cancelled != null ? cancelled : false;
     this.attemptCount = attemptCount;
     this.lastAttemptAt = lastAttemptAt;
     this.lastFailureCode = lastFailureCode;
@@ -99,22 +100,22 @@ public final class Job {
   }
 
   @JsonProperty("created_at")
-  public String getCreatedAt() {
+  public OffsetDateTime getCreatedAt() {
     return createdAt;
   }
 
   @JsonProperty("started_at")
-  public String getStartedAt() {
+  public OffsetDateTime getStartedAt() {
     return startedAt;
   }
 
   @JsonProperty("completed_at")
-  public String getCompletedAt() {
+  public OffsetDateTime getCompletedAt() {
     return completedAt;
   }
 
   @JsonProperty("expires_at")
-  public String getExpiresAt() {
+  public OffsetDateTime getExpiresAt() {
     return expiresAt;
   }
 
@@ -134,7 +135,7 @@ public final class Job {
   }
 
   @JsonProperty("last_attempt_at")
-  public String getLastAttemptAt() {
+  public OffsetDateTime getLastAttemptAt() {
     return lastAttemptAt;
   }
 

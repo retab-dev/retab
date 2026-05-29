@@ -51,7 +51,7 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
     this.metadata = metadata;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "extraction";
   }
 
   @JsonProperty("id")

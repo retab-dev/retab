@@ -11,7 +11,7 @@ module Retab
       expected: :expected,
       actual: :actual,
       matched: :matched,
-      per_item: :per_item,
+      items: :items,
       sub_conditions: :sub_conditions,
       logical_operator: :logical_operator
     }.freeze
@@ -22,7 +22,7 @@ module Retab
       :expected,
       :actual,
       :matched,
-      :per_item,
+      :items,
       :sub_conditions,
       :logical_operator
     )
@@ -30,12 +30,12 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @path = hash[:path]
-      @operator = hash[:operator]
+      @path = hash[:path].nil? ? "" : hash[:path]
+      @operator = hash[:operator].nil? ? "" : hash[:operator]
       @expected = hash[:expected]
       @actual = hash[:actual]
-      @matched = hash[:matched]
-      @per_item = (hash[:per_item] || []).map { |item| item ? Retab::ConditionEvaluationPerItem.new(item) : nil }
+      @matched = hash[:matched].nil? ? false : hash[:matched]
+      @items = (hash[:items] || []).map { |item| item ? Retab::ConditionEvaluationPerItem.new(item) : nil }
       @sub_conditions = (hash[:sub_conditions] || []).map { |item|
         item ? Retab::ConditionEvaluationSubCondition.new(item) : nil
       }

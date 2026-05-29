@@ -7,7 +7,7 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerdictSummary {
-    pub result: bool,
+    pub passed: bool,
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub assertions_passed: Option<i64>,
@@ -24,9 +24,9 @@ pub struct VerdictSummary {
 impl VerdictSummary {
     /// Construct a new `VerdictSummary` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(result: bool) -> Self {
+    pub fn new(passed: bool) -> Self {
         Self {
-            result,
+            passed,
             assertions_passed: Default::default(),
             assertions_failed: Default::default(),
             blocked_assertions: Default::default(),

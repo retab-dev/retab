@@ -26,7 +26,7 @@ pub struct ConditionalEvaluation {
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub matched_condition_ids: Option<Vec<String>>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }

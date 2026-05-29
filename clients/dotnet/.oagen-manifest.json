@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-29T11:27:38.702Z",
+  "generatedAt": "2026-05-29T15:02:19.544Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -13,7 +13,9 @@
     "src/Common/RequestOptions.cs",
     "src/Common/RetabException.cs",
     "src/Common/RetabList.cs",
+    "src/Common/RetabNewtonsoftNumberEnumConverter.cs",
     "src/Common/RetabNewtonsoftStringEnumConverter.cs",
+    "src/Common/RetabNumberEnumAttribute.cs",
     "src/Common/RetabRequest.cs",
     "src/Common/RetabStringEnumConverterFactory.cs",
     "src/Common/Service.cs",

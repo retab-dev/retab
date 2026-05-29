@@ -8,7 +8,7 @@ namespace Retab
     /// </remarks>
     public class WorkflowTestBlockTarget
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "block";
         public string BlockId { get; set; } = default!;
 
         /// <summary>

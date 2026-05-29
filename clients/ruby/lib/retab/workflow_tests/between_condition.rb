@@ -22,10 +22,10 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "between" : hash[:kind]
       @lower = hash[:lower]
       @upper = hash[:upper]
-      @inclusive = hash[:inclusive]
+      @inclusive = hash[:inclusive].nil? ? true : hash[:inclusive]
     end
   end
 end

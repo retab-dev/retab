@@ -20,23 +20,19 @@ pub struct WorkflowTestResult {
     pub verdict: Option<WorkflowTestResultVerdict>,
     pub workflow_id: String,
     pub target: WorkflowTestBlockTarget,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub execution_fingerprint: Option<String>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs_fingerprint: Option<String>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_draft_fingerprint: Option<String>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config_fingerprint: Option<String>,
     pub source: CreateWorkflowTestRequestSourceOneOf,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub outputs: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub routing_decision: Option<Vec<String>>,
+    pub routing_decisions: Option<Vec<String>>,
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub warnings: Option<Vec<String>>,
@@ -75,7 +71,7 @@ impl WorkflowTestResult {
             block_config_fingerprint: Default::default(),
             source,
             outputs: Default::default(),
-            routing_decision: Default::default(),
+            routing_decisions: Default::default(),
             warnings: Default::default(),
             error: Default::default(),
             skipped: Default::default(),

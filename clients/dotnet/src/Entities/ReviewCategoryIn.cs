@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Gate when the predicted category is in `categories` (e.g., review fraud alerts).</summary>
     public class ReviewCategoryIn
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "category_in";
         public List<string> Categories { get; set; } = default!;
 
         /// <summary>

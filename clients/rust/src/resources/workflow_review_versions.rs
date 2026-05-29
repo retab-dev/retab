@@ -63,7 +63,7 @@ impl<'a> WorkflowReviewVersionsApi<'a> {
     ///
     /// List versions for one review.
     ///
-    /// ``review_id`` is required by design — listing versions across all reviews
+    /// `review_id` is required by design — listing versions across all reviews
     /// has no product use and would expose a needlessly wide query surface.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowReviewVersionList, Error> {
         self.list_with_options(params, None).await

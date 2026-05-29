@@ -245,7 +245,7 @@ class ModelRoundTripTest < Minitest::Test
       "handle_inputs" => nil,
       "artifact" => nil,
       "handle_outputs" => nil,
-      "routing_decision" => nil,
+      "routing_decisions" => nil,
       "duration_ms" => nil,
       "created_at" => "stub",
       "block_config" => nil,
@@ -549,7 +549,7 @@ class ModelRoundTripTest < Minitest::Test
       "expected" => nil,
       "actual" => nil,
       "matched" => true,
-      "per_item" => nil,
+      "items" => nil,
       "sub_conditions" => nil,
       "logical_operator" => nil
     }
@@ -583,7 +583,7 @@ class ModelRoundTripTest < Minitest::Test
       "matched" => true,
       "branch_name" => "stub",
       "logical_operator" => nil,
-      "per_item" => nil,
+      "items" => nil,
       "sub_evaluations" => nil,
       "details" => {}
     }
@@ -596,13 +596,13 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_condition_evaluation_sub_condition_round_trip
     fixture = {
-      "sub_condition_id" => "stub",
+      "sub_condition_id" => nil,
       "path" => "stub",
       "operator" => "stub",
       "expected" => nil,
       "actual" => nil,
       "matched" => true,
-      "per_item" => nil
+      "items" => nil
     }
     model = Retab::ConditionEvaluationSubCondition.new(fixture.to_json)
     json = model.to_h
@@ -1208,7 +1208,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_email_trigger_round_trip
     fixture = {
       "type" => "email",
-      "sender" => "stub",
+      "sender" => nil,
       "subject" => nil
     }
     model = Retab::EmailTrigger.new(fixture.to_json)
@@ -1963,8 +1963,8 @@ class ModelRoundTripTest < Minitest::Test
       "started_at" => "stub",
       "completed_at" => nil,
       "duration_ms" => nil,
-      "workflow_draft_fingerprint" => "stub",
-      "block_config_fingerprint" => "stub",
+      "workflow_draft_fingerprint" => nil,
+      "block_config_fingerprint" => nil,
       "assertions_passed" => 1,
       "assertions_failed" => 1,
       "blocked_assertions" => 1
@@ -2224,7 +2224,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_partial_schema_round_trip
     fixture = {
       "object" => "stub",
-      "created_at" => "stub",
+      "created_at" => nil,
       "json_schema" => {},
       "strict" => true
     }
@@ -3014,7 +3014,7 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_verdict_summary_round_trip
     fixture = {
-      "result" => true,
+      "passed" => true,
       "assertions_passed" => 1,
       "assertions_failed" => 1,
       "blocked_assertions" => 1,
@@ -3023,7 +3023,7 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::VerdictSummary.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    assert_equal(fixture["result"], json[:result])
+    assert_equal(fixture["passed"], json[:passed])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -3434,13 +3434,13 @@ class ModelRoundTripTest < Minitest::Test
       "verdict" => nil,
       "workflow_id" => "stub",
       "target" => {},
-      "execution_fingerprint" => "stub",
-      "handle_inputs_fingerprint" => "stub",
-      "workflow_draft_fingerprint" => "stub",
-      "block_config_fingerprint" => "stub",
+      "execution_fingerprint" => nil,
+      "handle_inputs_fingerprint" => nil,
+      "workflow_draft_fingerprint" => nil,
+      "block_config_fingerprint" => nil,
       "source" => {},
       "outputs" => nil,
-      "routing_decision" => nil,
+      "routing_decisions" => nil,
       "warnings" => [],
       "error" => nil,
       "skipped" => true,

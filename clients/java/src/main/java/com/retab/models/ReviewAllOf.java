@@ -16,7 +16,7 @@ public final class ReviewAllOf implements ReviewKind {
   public ReviewAllOf(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "predicates", required = true) List<ReviewKind> predicates) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "all_of";
     this.predicates = predicates;
   }
 

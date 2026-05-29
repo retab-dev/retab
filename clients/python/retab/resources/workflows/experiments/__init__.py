@@ -32,7 +32,7 @@ class WorkflowExperimentsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
+        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "before": before,
@@ -57,7 +57,7 @@ class WorkflowExperimentsMixin:
         source_experiment_id: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Experiment Create an experiment. When ``source_experiment_id`` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
+        """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -129,7 +129,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowExperiment]:
-        """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
+        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowExperiment)
 
@@ -144,7 +144,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         source_experiment_id: str | None = None,
         **extra_params: Any,
     ) -> WorkflowExperiment:
-        """Create Experiment Create an experiment. When ``source_experiment_id`` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
+        """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
         prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             block_id=block_id,
@@ -203,7 +203,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowExperiment]:
-        """List Experiments List experiments under one workflow with cursor pagination. The enrichment passes (latest-run snapshot, block info, drift detection) run on the paginated page, not the full collection — so they scale with ``limit``, not with the total experiment count under the workflow."""
+        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowExperiment)
 
@@ -218,7 +218,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         source_experiment_id: str | None = None,
         **extra_params: Any,
     ) -> WorkflowExperiment:
-        """Create Experiment Create an experiment. When ``source_experiment_id`` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
+        """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
         prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             block_id=block_id,

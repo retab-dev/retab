@@ -15,7 +15,7 @@ public final class NotEqualsCondition implements Condition {
   public NotEqualsCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Object expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "not_equals";
     this.expected = expected;
   }
 

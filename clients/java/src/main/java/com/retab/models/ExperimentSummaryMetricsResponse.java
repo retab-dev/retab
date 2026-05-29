@@ -40,8 +40,8 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
       @JsonProperty(value = "prior_run_id", required = false) String priorRunId) {
     this.experimentId = experimentId;
     this.runId = runId;
-    this.kind = kind;
-    this.view = view;
+    this.kind = kind != null ? kind : "summary";
+    this.view = view != null ? view : "summary";
     this.definitionFingerprint = definitionFingerprint;
     this.blockType = blockType;
     this.score = score;

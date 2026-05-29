@@ -23,10 +23,10 @@ public final class GenerateSchemaRequest {
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "stream", required = false) Boolean stream) {
     this.documents = documents;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.instructions = instructions;
     this.imageResolutionDpi = imageResolutionDpi;
-    this.stream = stream;
+    this.stream = stream != null ? stream : false;
   }
 
   @JsonProperty("documents")

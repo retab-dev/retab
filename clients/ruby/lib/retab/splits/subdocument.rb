@@ -21,8 +21,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @name = hash[:name]
-      @description = hash[:description]
-      @allow_multiple_instances = hash[:allow_multiple_instances]
+      @description = hash[:description].nil? ? "" : hash[:description]
+      @allow_multiple_instances = hash[:allow_multiple_instances].nil? ? false : hash[:allow_multiple_instances]
     end
   end
 end

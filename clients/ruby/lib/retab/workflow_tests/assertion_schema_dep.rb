@@ -25,7 +25,7 @@ module Retab
       @output_handle_id = hash[:output_handle_id]
       @schema_path = hash[:schema_path]
       @subtree_hash = hash[:subtree_hash]
-      @depends_on_root = hash[:depends_on_root]
+      @depends_on_root = hash[:depends_on_root].nil? ? false : hash[:depends_on_root]
     end
   end
 end

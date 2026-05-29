@@ -28,7 +28,7 @@ module Retab
       @block_id = hash[:block_id]
       @step_id = hash[:step_id]
       @n_consensus = hash[:n_consensus]
-      @check_eligibility = hash[:check_eligibility]
+      @check_eligibility = hash[:check_eligibility].nil? ? true : hash[:check_eligibility]
     end
   end
 end

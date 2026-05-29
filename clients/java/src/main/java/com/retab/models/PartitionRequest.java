@@ -28,10 +28,10 @@ public final class PartitionRequest {
     this.document = document;
     this.key = key;
     this.instructions = instructions;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.nConsensus = nConsensus;
-    this.allowOverlap = allowOverlap;
-    this.bustCache = bustCache;
+    this.allowOverlap = allowOverlap != null ? allowOverlap : true;
+    this.bustCache = bustCache != null ? bustCache : false;
   }
 
   @JsonProperty("document")

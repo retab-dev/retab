@@ -15,7 +15,7 @@ public final class CancelledStepLifecycle implements StepLifecycle {
   public CancelledStepLifecycle(
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "reason", required = true) String reason) {
-    this.status = status;
+    this.status = status != null ? status : "cancelled";
     this.reason = reason;
   }
 

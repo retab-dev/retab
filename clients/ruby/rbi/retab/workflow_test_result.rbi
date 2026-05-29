@@ -94,10 +94,10 @@ module Retab
     def outputs=(value); end
 
     sig { returns(T.nilable(T::Array[String])) }
-    def routing_decision; end
+    def routing_decisions; end
 
     sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
-    def routing_decision=(value); end
+    def routing_decisions=(value); end
 
     sig { returns(T.nilable(T::Array[String])) }
     def warnings; end

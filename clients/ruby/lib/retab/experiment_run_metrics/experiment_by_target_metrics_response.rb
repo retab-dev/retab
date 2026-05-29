@@ -31,8 +31,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @run_id = hash[:run_id]
-      @kind = hash[:kind]
-      @view = hash[:view]
+      @kind = hash[:kind].nil? ? "by_target" : hash[:kind]
+      @view = hash[:view].nil? ? "by_target" : hash[:view]
       @target = hash[:target]
       @score = hash[:score]
       @prior_score = hash[:prior_score]

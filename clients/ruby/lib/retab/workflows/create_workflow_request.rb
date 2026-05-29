@@ -18,8 +18,8 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @name = hash[:name]
-      @description = hash[:description]
+      @name = hash[:name].nil? ? "Untitled Workflow" : hash[:name]
+      @description = hash[:description].nil? ? "" : hash[:description]
     end
   end
 end

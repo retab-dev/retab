@@ -12,7 +12,7 @@ public final class ExistCondition implements Condition {
 
   @JsonCreator
   public ExistCondition(@JsonProperty(value = "kind", required = false) String kind) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "exists";
   }
 
   @JsonProperty("kind")

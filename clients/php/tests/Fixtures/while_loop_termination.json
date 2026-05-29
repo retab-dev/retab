@@ -14,7 +14,7 @@
       "matched": true,
       "branch_name": "Test",
       "logical_operator": "and",
-      "per_item": [
+      "items": [
         {
           "index": 1,
           "indices": [
@@ -32,7 +32,7 @@
           "expected": {},
           "actual": {},
           "matched": true,
-          "per_item": [
+          "items": [
             {
               "index": 1,
               "indices": [
@@ -50,7 +50,7 @@
         "expected": {},
         "actual": {},
         "matched": true,
-        "per_item": [
+        "items": [
           {
             "index": 1,
             "indices": [
@@ -68,7 +68,7 @@
             "expected": {},
             "actual": {},
             "matched": true,
-            "per_item": [
+            "items": [
               {
                 "index": 1,
                 "indices": [

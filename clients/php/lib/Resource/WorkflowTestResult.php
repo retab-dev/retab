@@ -28,7 +28,7 @@ readonly class WorkflowTestResult implements \JsonSerializable
         /** @var array<string, mixed>|null */
         public ?array $outputs = null,
         /** @var array<string>|null */
-        public ?array $routingDecision = null,
+        public ?array $routingDecisions = null,
         /** @var array<string>|null */
         public ?array $warnings = null,
         public ?ErrorDetails $error = null,
@@ -70,7 +70,7 @@ readonly class WorkflowTestResult implements \JsonSerializable
             workflowDraftFingerprint: $data['workflow_draft_fingerprint'] ?? null,
             blockConfigFingerprint: $data['block_config_fingerprint'] ?? null,
             outputs: $data['outputs'] ?? null,
-            routingDecision: $data['routing_decision'] ?? null,
+            routingDecisions: $data['routing_decisions'] ?? null,
             warnings: $data['warnings'] ?? null,
             error: isset($data['error']) ? ErrorDetails::fromArray($data['error']) : null,
             skipped: $data['skipped'] ?? null,
@@ -97,7 +97,7 @@ readonly class WorkflowTestResult implements \JsonSerializable
             'workflow_draft_fingerprint' => $this->workflowDraftFingerprint,
             'block_config_fingerprint' => $this->blockConfigFingerprint,
             'outputs' => $this->outputs,
-            'routing_decision' => $this->routingDecision,
+            'routing_decisions' => $this->routingDecisions,
             'warnings' => $this->warnings,
             'error' => $this->error?->toArray(),
             'skipped' => $this->skipped,

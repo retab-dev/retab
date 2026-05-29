@@ -20,7 +20,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @type = hash[:type]
+      @type = hash[:type].nil? ? "email" : hash[:type]
       @sender = hash[:sender]
       @subject = hash[:subject]
     end

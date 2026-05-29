@@ -63,10 +63,8 @@ class WorkflowBlocks
      * Create Block
      *
      * Create a new block in a workflow.
-     *
-     * This creates a block in the live workflow_blocks collection.
      * @param string $workflowId Workflow to create the block in.
-     * @param string|null $id If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+     * @param string|null $id If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.
      * @param \Retab\Resource\WorkflowBlockCreateRequestType $type Block type
      * @param string|null $label Display label
      * @param float|null $positionX X position
@@ -153,7 +151,7 @@ class WorkflowBlocks
      * @param float|null $height
      * @param array<string, mixed>|null $config
      * @param string|null $parentId
-     * @param \Retab\Resource\UpdateWorkflowBlockRequestConfigMode|null $configMode How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
+     * @param \Retab\Resource\UpdateWorkflowBlockRequestConfigMode|null $configMode How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
      * @param string|null $workflowId Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
      * @return \Retab\Resource\WorkflowBlock
      * @throws \Retab\Exception\RetabException

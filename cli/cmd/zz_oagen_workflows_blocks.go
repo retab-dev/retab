@@ -218,17 +218,23 @@ var workflowsBlocksGetCmd = &cobra.Command{
 }
 
 var workflowsBlocksListCmd = &cobra.Command{
-	Use:     "list <workflow-id>",
+	Use:     "list [workflow-id]",
 	Short:   "List blocks in a workflow",
-	Long:    "List every block in a workflow's draft graph, including id, type,\nlabel, position, and config.\n\nPaginate by passing the cursor from a previous response's list_metadata:\n--after for the next page, --before for the previous one. The two are\nmutually exclusive.",
-	Example: "  # List all blocks\n  retab workflows blocks list wf_abc123\n\n  # First page of 50\n  retab workflows blocks list wf_abc123 --limit 50\n\n  # Next page, using the cursor from the previous response\n  retab workflows blocks list wf_abc123 --limit 50 \\\n    --after $(retab workflows blocks list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')\n\n  # Get the ids only\n  retab workflows blocks list wf_abc123 | jq -r '.data[].id'",
-	Args:    cobra.ExactArgs(1),
+	Long:    "List every block in a workflow's draft graph, including id, type,\nlabel, position, and config.\n\nName the workflow either positionally (`list <workflow-id>`) or with\nthe `--workflow-id` flag - the two forms are equivalent. Passing both\nis accepted when they agree; an error is raised only when they disagree, so a\ntypo isn't silently masked. The workflow id is required: blocks have no\norg-wide listing.\n\nPaginate by passing the cursor from a previous response's list_metadata:\n--after for the next page, --before for the previous one. The two are\nmutually exclusive.",
+	Example: "  # List all blocks (positional)\n  retab workflows blocks list wf_abc123\n\n  # Same, with the flag form\n  retab workflows blocks list --workflow-id wf_abc123\n\n  # First page of 50\n  retab workflows blocks list wf_abc123 --limit 50\n\n  # Next page, using the cursor from the previous response\n  retab workflows blocks list wf_abc123 --limit 50 \\\n    --after $(retab workflows blocks list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')\n\n  # Get the ids only\n  retab workflows blocks list wf_abc123 | jq -r '.data[].id'",
+	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — blocks have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
-		params := workflowBlocksListParams(cmd, args[0])
+		params := workflowBlocksListParams(cmd, workflowID)
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		result, err := client.Workflows.Blocks.List(ctx, params)
@@ -331,6 +337,7 @@ func init() {
 	workflowsBlocksDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	workflowsBlocksDeleteCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
 	workflowsBlocksGetCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
+	workflowsBlocksListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsBlocksListCmd.Flags().String("before", "", "block id: return the page before this id (mutually exclusive with --after)")
 	workflowsBlocksListCmd.Flags().String("after", "", "block id: return the page after this id (mutually exclusive with --before)")
 	workflowsBlocksListCmd.MarkFlagsMutuallyExclusive("before", "after")

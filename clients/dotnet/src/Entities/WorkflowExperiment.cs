@@ -27,7 +27,7 @@ namespace Retab
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public ExperimentBlockType BlockType { get; set; }
         public double? Score { get; set; }
-        public bool? IsStale { get; set; }
+        public bool? IsStale { get; set; } = false;
         public ExperimentSchemaDriftStatus? SchemaDrift { get; set; }
         public string? SchemaDriftDetail { get; set; }
 

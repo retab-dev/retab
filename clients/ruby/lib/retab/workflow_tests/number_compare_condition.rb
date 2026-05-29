@@ -20,7 +20,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "number_compare" : hash[:kind]
       @op = hash[:op]
       @expected = hash[:expected]
     end

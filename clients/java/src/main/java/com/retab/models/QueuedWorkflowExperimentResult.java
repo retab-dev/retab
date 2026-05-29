@@ -13,7 +13,7 @@ public final class QueuedWorkflowExperimentResult implements WorkflowExperimentR
   @JsonCreator
   public QueuedWorkflowExperimentResult(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "queued";
   }
 
   @JsonProperty("status")

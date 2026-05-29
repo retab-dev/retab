@@ -25,7 +25,7 @@ class WorkflowReviews
     /**
      * List Reviews Route
      *
-     * List reviews — the review queue, oldest first by ``created_at``.
+     * List reviews — the review queue, oldest first by `created_at`.
      * @param string|null $workflowId
      * @param string|null $runId
      * @param string|null $blockId
@@ -93,12 +93,10 @@ class WorkflowReviews
     /**
      * Approve Review Route
      *
-     * Approve one exact review version and resume the Temporal run.
+     * Approve one review version and resume the workflow run.
      *
-     * Earns its action-verb shape per the four criteria in
-     * ``meta-pattern-blueprint.md`` §2: precondition (``decision is None``),
-     * side-effect dominates (Temporal resume signal), divergent request body vs
-     * ``/reject``, divergent response (carries ``resume_status``).
+     * The response carries `resume_status` so callers can see whether the run
+     * resumed successfully.
      * @param string $reviewId
      * @param string $versionId Exact content-addressed key of the version to approve.
      * @return \Retab\Resource\SubmitDecisionResponse
@@ -124,10 +122,9 @@ class WorkflowReviews
     /**
      * Reject Review Route
      *
-     * Reject one exact review version and resume the Temporal run.
+     * Reject one review version and resume the workflow run.
      *
-     * ``reason`` is required by the request shape — "rejected without reason"
-     * is unrepresentable on the wire.
+     * A `reason` is required.
      * @param string $reviewId
      * @param string $versionId Exact content-addressed key of the version to reject.
      * @param string $reason Required, non-empty rejection reason.

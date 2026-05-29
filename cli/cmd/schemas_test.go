@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 )
@@ -42,7 +43,7 @@ func TestWriteGeneratedSchemaDefaultEmitsReusableSchema(t *testing.T) {
 }
 
 func TestWriteGeneratedSchemaJSONFormatPreservesEnvelope(t *testing.T) {
-	createdAt := "2026-05-15T11:42:06Z"
+	createdAt := time.Date(2026, 5, 15, 11, 42, 6, 0, time.UTC)
 	response := retab.PartialSchema{
 		Object:     "schema",
 		CreatedAt:  &createdAt,

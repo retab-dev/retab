@@ -14,7 +14,7 @@ namespace Retab
         public string UploadUrl { get; set; } = default!;
 
         /// <summary>HTTP method for upload</summary>
-        public string? UploadMethod { get; set; }
+        public string? UploadMethod { get; set; } = "PUT";
 
         /// <summary>Headers required by the signed upload URL</summary>
         public Dictionary<string, string>? UploadHeaders { get; set; }

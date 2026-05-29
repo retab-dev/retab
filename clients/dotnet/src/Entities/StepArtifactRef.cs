@@ -3,16 +3,15 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Canonical persisted resource produced by a workflow step.</summary>
+    /// <summary>A resource produced by a workflow step.</summary>
     /// <remarks>
-    /// Uniformly a `(operation, id)` ref into a backing collection. The artifact
-    /// itself carries no payload — consumers dispatch on ``operation`` and fetch
-    /// the backing record by ``id``.
+    /// An `(operation, id)` reference. The artifact itself carries no payload —
+    /// consumers dispatch on `operation` and fetch the referenced record by `id`.
     /// </remarks>
     public class StepArtifactRef
     {
 
-        /// <summary>Persisted resource operation; identifies the backing collection</summary>
+        /// <summary>The kind of resource this artifact references</summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public StepArtifactRefOperation Operation { get; set; }

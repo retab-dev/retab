@@ -22,9 +22,9 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @submission_status = hash[:submission_status]
+      @submission_status = hash[:submission_status].nil? ? "accepted" : hash[:submission_status]
       @review = hash[:review] ? Retab::Review.new(hash[:review]) : nil
-      @resume_status = hash[:resume_status]
+      @resume_status = hash[:resume_status].nil? ? "resumed" : hash[:resume_status]
       @resume_error = hash[:resume_error]
     end
   end

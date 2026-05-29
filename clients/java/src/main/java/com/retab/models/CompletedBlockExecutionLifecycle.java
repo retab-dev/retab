@@ -13,7 +13,7 @@ public final class CompletedBlockExecutionLifecycle implements BlockExecutionLif
   @JsonCreator
   public CompletedBlockExecutionLifecycle(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "completed";
   }
 
   @JsonProperty("status")

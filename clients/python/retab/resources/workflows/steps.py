@@ -19,7 +19,7 @@ class WorkflowStepsMixin:
         status: list[str] | None = None,
         before: str | None = None,
         after: str | None = None,
-        limit: int | None = 200,
+        limit: int | None = 20,
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker (the same compound key the underlying index uses). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``run_id`` is optional; when omitted the list is scoped to the caller's organization."""
@@ -63,7 +63,7 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         status: list[str] | None = None,
         before: str | None = None,
         after: str | None = None,
-        limit: int | None = 200,
+        limit: int | None = 20,
         **extra_params: Any,
     ) -> PaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker (the same compound key the underlying index uses). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``run_id`` is optional; when omitted the list is scoped to the caller's organization."""
@@ -91,7 +91,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         status: list[str] | None = None,
         before: str | None = None,
         after: str | None = None,
-        limit: int | None = 200,
+        limit: int | None = 20,
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker (the same compound key the underlying index uses). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``run_id`` is optional; when omitted the list is scoped to the caller's organization."""

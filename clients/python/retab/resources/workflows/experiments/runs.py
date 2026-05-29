@@ -51,7 +51,7 @@ class ExperimentRunsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/experiments/runs", params=params or None, data=data)
 
     def prepare_create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Create Experiment Run Flat Create an experiment run. The ``experiment_id`` and (optionally) ``workflow_id`` live in the body — flat-resource shape per meta-pattern-blueprint §1. When ``workflow_id`` is absent the experiment's stored workflow is used; when present it must match (the validation rejects mismatched pairs with 404, defending against confused-deputy callers)."""
+        """Create Experiment Run Flat Create an experiment run. The `experiment_id` and an optional `workflow_id` are supplied in the body. When `workflow_id` is omitted, the experiment's workflow is used; when supplied, it must match that workflow or the request is rejected with 404."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -119,7 +119,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         return self.request_page(prepared_request, model=ExperimentRun)
 
     def create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> ExperimentRun:
-        """Create Experiment Run Flat Create an experiment run. The ``experiment_id`` and (optionally) ``workflow_id`` live in the body — flat-resource shape per meta-pattern-blueprint §1. When ``workflow_id`` is absent the experiment's stored workflow is used; when present it must match (the validation rejects mismatched pairs with 404, defending against confused-deputy callers)."""
+        """Create Experiment Run Flat Create an experiment run. The `experiment_id` and an optional `workflow_id` are supplied in the body. When `workflow_id` is omitted, the experiment's workflow is used; when supplied, it must match that workflow or the request is rejected with 404."""
         prepared_request = self.prepare_create(experiment_id=experiment_id, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return ExperimentRun.model_validate(response)
@@ -177,7 +177,7 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         return await self.request_page(prepared_request, model=ExperimentRun)
 
     async def create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> ExperimentRun:
-        """Create Experiment Run Flat Create an experiment run. The ``experiment_id`` and (optionally) ``workflow_id`` live in the body — flat-resource shape per meta-pattern-blueprint §1. When ``workflow_id`` is absent the experiment's stored workflow is used; when present it must match (the validation rejects mismatched pairs with 404, defending against confused-deputy callers)."""
+        """Create Experiment Run Flat Create an experiment run. The `experiment_id` and an optional `workflow_id` are supplied in the body. When `workflow_id` is omitted, the experiment's workflow is used; when supplied, it must match that workflow or the request is rejected with 404."""
         prepared_request = self.prepare_create(experiment_id=experiment_id, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ExperimentRun.model_validate(response)

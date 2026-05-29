@@ -38,8 +38,8 @@ module Retab
       hash = self.class.normalize(json)
       @experiment_id = hash[:experiment_id]
       @run_id = hash[:run_id]
-      @kind = hash[:kind]
-      @view = hash[:view]
+      @kind = hash[:kind].nil? ? "summary" : hash[:kind]
+      @view = hash[:view].nil? ? "summary" : hash[:view]
       @definition_fingerprint = hash[:definition_fingerprint]
       @block_type = hash[:block_type]
       @score = hash[:score]

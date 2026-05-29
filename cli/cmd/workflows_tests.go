@@ -332,25 +332,39 @@ output, name, timestamps.`,
 }
 
 var workflowsTestsListCmd = &cobra.Command{
-	Use:   "list <workflow-id>",
+	Use:   "list [workflow-id]",
 	Short: "List tests",
 	Long: `List every test attached to a workflow. Filter by
 ` + "`--target-block-id`" + ` to focus on the regression suite for a
-particular block.`,
-	Example: `  # All tests in a workflow
+particular block.
+
+Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
+the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
+is accepted when they agree; an error is raised only when they disagree. The
+workflow id is required: tests have no org-wide listing.`,
+	Example: `  # All tests in a workflow (positional)
   retab workflows tests list wf_abc123
+
+  # Same, with the flag form
+  retab workflows tests list --workflow-id wf_abc123
 
   # Just the tests guarding one block
   retab workflows tests list wf_abc123 --target-block-id blk_extract_1`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — tests have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.WorkflowTestsListParams{WorkflowID: args[0]}
+		req := retab.WorkflowTestsListParams{WorkflowID: workflowID}
 		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
 			req.TargetBlockID = ptr(v)
 		}
@@ -762,6 +776,7 @@ func init() {
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
 
+	workflowsTestsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
 

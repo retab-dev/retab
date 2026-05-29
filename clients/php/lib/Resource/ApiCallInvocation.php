@@ -17,7 +17,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
         /** @var array<\Retab\Resource\ApiCallAttempt>|null */
         public ?array $attempts = null,
         public ?ErrorDetails $error = null,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'api_call_invocation',

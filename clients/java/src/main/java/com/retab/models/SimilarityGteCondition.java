@@ -20,7 +20,7 @@ public final class SimilarityGteCondition implements Condition {
       @JsonProperty(value = "reference", required = true) Object reference,
       @JsonProperty(value = "threshold", required = true) Double threshold,
       @JsonProperty(value = "method", required = false) SimilarityGteConditionMethod method) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "similarity_gte";
     this.reference = reference;
     this.threshold = threshold;
     this.method = method;

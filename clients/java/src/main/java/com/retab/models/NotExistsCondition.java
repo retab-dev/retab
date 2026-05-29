@@ -12,7 +12,7 @@ public final class NotExistsCondition implements Condition {
 
   @JsonCreator
   public NotExistsCondition(@JsonProperty(value = "kind", required = false) String kind) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "not_exists";
   }
 
   @JsonProperty("kind")

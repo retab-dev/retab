@@ -32,7 +32,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
          * Per-item breakdown if this sub-condition used a wildcard path
          * @var array<\Retab\Resource\ConditionEvaluationPerItem>|null
          */
-        public ?array $perItem = null,
+        public ?array $items = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -45,7 +45,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
             expected: $data['expected'] ?? null,
             actual: $data['actual'] ?? null,
             matched: $data['matched'] ?? null,
-            perItem: isset($data['per_item']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['per_item']) : null,
+            items: isset($data['items']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
         );
     }
 
@@ -59,7 +59,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
             'expected' => $this->expected,
             'actual' => $this->actual,
             'matched' => $this->matched,
-            'per_item' => $this->perItem !== null ? array_map(fn($item) => $item->toArray(), $this->perItem) : null,
+            'items' => $this->items !== null ? array_map(fn($item) => $item->toArray(), $this->items) : null,
         ];
     }
 }

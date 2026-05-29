@@ -134,7 +134,7 @@ class EmailTrigger(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     type: Literal["email"] = Field(default="email")
-    sender: str | None = Field(default="", description="Sender email address, when known")
+    sender: str | None = Field(default=None, description="Sender email address, when known")
     subject: str | None = Field(default=None, description="Email subject, when known")
 
 
@@ -187,14 +187,9 @@ class RunInputs(BaseModel):
 
 
 class RunTiming(BaseModel):
-    """All timing information for a run.
+    """Timing information for a run.
 
-    ``duration_ms`` is backfilled at read time from
-    ``completed_at - started_at`` when both timestamps are present and the
-    stored value is ``None`` (the Mongo projection helpers in
-    ``run_duration.py`` compute and persist the canonical value). Records that
-    already store ``duration_ms`` are left untouched (idempotent), so backfill
-    cannot drift from the canonical value written by the projection."""
+    `duration_ms` is the elapsed time between `started_at` and `completed_at`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -204,7 +199,7 @@ class RunTiming(BaseModel):
     review_waiting_started_at: datetime.datetime | None = Field(default=None, description="When the current awaiting_review period started")
     accumulated_review_waiting_ms: int | None = Field(default=0, description="Accumulated time spent waiting for review across the run")
     duration_ms: int | None = Field(
-        default=None, description="Total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored.", init=False
+        default=None, description="Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.", init=False
     )
 
 
@@ -267,15 +262,7 @@ class WorkflowExportPayloadResponse(BaseModel):
 
 
 class WorkflowRun(BaseModel):
-    """Public workflow run response without tenant isolation fields.
-
-    This is the API response shape — distinct from the internal storage
-    model (:class:`StoredWorkflowRun`), which carries persistence-only
-    fields that never appear in API responses. Routes call
-    :func:`serialize_workflow_run_response` to convert the storage shape
-    into this response shape; constructing this class directly for
-    persistence would drop those storage-only fields silently. The two
-    classes were deliberately renamed to avoid the prior name collision."""
+    """A single execution of a workflow."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

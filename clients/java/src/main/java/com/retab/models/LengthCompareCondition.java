@@ -18,7 +18,7 @@ public final class LengthCompareCondition implements Condition {
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "op", required = true) LengthCompareConditionOp op,
       @JsonProperty(value = "expected", required = true) Long expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "length_compare";
     this.op = op;
     this.expected = expected;
   }

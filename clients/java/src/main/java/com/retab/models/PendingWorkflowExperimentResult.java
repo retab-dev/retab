@@ -13,7 +13,7 @@ public final class PendingWorkflowExperimentResult implements WorkflowExperiment
   @JsonCreator
   public PendingWorkflowExperimentResult(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "pending";
   }
 
   @JsonProperty("status")

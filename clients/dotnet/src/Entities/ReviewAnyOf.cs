@@ -8,7 +8,7 @@ namespace Retab
     /// </remarks>
     public class ReviewAnyOf
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "any_of";
         public List<object> Predicates { get; set; } = default!;
 
         /// <summary>

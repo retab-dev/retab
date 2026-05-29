@@ -28,8 +28,8 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
-      @error = hash[:error]
+      @kind = hash[:kind].nil? ? "stale_metrics" : hash[:kind]
+      @error = hash[:error].nil? ? "stale_metrics" : hash[:error]
       @experiment_id = hash[:experiment_id]
       @stale_reasons = (hash[:stale_reasons] || [])
       @last_run = hash[:last_run] ? Retab::MetricsStaleErrorLastRun.new(hash[:last_run]) : nil

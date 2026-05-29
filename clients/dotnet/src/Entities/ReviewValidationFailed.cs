@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Gate if the block output fails its declared schema validation.</summary>
     public class ReviewValidationFailed
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "validation_failed";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

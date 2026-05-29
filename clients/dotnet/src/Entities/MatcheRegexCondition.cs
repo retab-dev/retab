@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a matche regex condition.</summary>
     public class MatcheRegexCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "matches_regex";
         public string Pattern { get; set; } = default!;
 
         /// <summary>

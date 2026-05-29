@@ -27,7 +27,7 @@ export interface ConditionalEvaluation {
   matchedBranchId?: string | null;
   /** @default [] */
   matchedConditionIds?: string[];
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt?: Date;
 }
 

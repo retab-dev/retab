@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a manual workflow test source.</summary>
     public class ManualWorkflowTestSource
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "manual";
         public Dictionary<string, object>? HandleInputs { get; set; }
 
         /// <summary>

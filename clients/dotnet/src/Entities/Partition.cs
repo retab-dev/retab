@@ -26,7 +26,7 @@ namespace Retab
         public long? NConsensus { get; set; }
 
         /// <summary>Whether pages were allowed to appear in more than one partition chunk</summary>
-        public bool? AllowOverlap { get; set; }
+        public bool? AllowOverlap { get; set; } = true;
 
         /// <summary>The list of partition chunks with their assigned pages</summary>
         public List<PartitionChunk>? Output { get; set; }

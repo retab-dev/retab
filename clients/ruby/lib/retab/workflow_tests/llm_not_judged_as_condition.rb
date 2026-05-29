@@ -20,7 +20,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "llm_not_judged_as" : hash[:kind]
       @rubric = hash[:rubric]
       @expected_label = hash[:expected_label]
     end

@@ -1,5 +1,6 @@
 namespace Retab
 {
+    using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
@@ -14,21 +15,21 @@ namespace Retab
 
         /// <summary>Opaque job id (server-generated ``job_&lt;nanoid&gt;``).</summary>
         public string Id { get; set; } = default!;
-        public string? Object { get; set; }
+        public string? Object { get; set; } = "job";
         public JobStatus? Status { get; set; }
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public CreateJobRequestEndpoint Endpoint { get; set; }
         public JobError? Error { get; set; }
         public List<JobError>? Warnings { get; set; }
-        public string? CreatedAt { get; set; }
-        public string? StartedAt { get; set; }
-        public string? CompletedAt { get; set; }
-        public string? ExpiresAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
+        public DateTimeOffset? StartedAt { get; set; }
+        public DateTimeOffset? CompletedAt { get; set; }
+        public DateTimeOffset? ExpiresAt { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
-        public bool? Cancelled { get; set; }
+        public bool? Cancelled { get; set; } = false;
         public long? AttemptCount { get; set; }
-        public string? LastAttemptAt { get; set; }
+        public DateTimeOffset? LastAttemptAt { get; set; }
         public string? LastFailureCode { get; set; }
         public Dictionary<string, object>? Request { get; set; }
         public JobResponse? Response { get; set; }

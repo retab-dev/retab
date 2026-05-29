@@ -6,13 +6,13 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Result of evaluating ONE assertion against a block's output.
-/// ``outcome`` is a verdict only — pass / fail / blocked. An execution
+/// `outcome` is a verdict only — pass / fail / blocked. An execution
 /// error (the assertion couldn't be evaluated because of a type error,
 /// invalid regex, schema validation crash, block execution crash, etc.) is
-/// expressed by ``outcome="blocked"`` with a populated ``failure`` whose
-/// ``code`` identifies the specific failure mode (``execution_error``,
-/// ``type_error``, ``invalid_regex``, ``schema_invalid``,
-/// ``block_execution_failed``, ...).
+/// expressed by `outcome="blocked"` with a populated `failure` whose
+/// `code` identifies the specific failure mode (`execution_error`,
+/// `type_error`, `invalid_regex`, `schema_invalid`,
+/// `block_execution_failed`, ...).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssertionResult {
     pub assertion_id: String,

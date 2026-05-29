@@ -12,7 +12,7 @@ module Retab
       expected: :expected,
       actual: :actual,
       matched: :matched,
-      per_item: :per_item
+      items: :items
     }.freeze
 
     attr_accessor(
@@ -22,19 +22,19 @@ module Retab
       :expected,
       :actual,
       :matched,
-      :per_item
+      :items
     )
 
     def initialize(json)
       super()
       hash = self.class.normalize(json)
       @sub_condition_id = hash[:sub_condition_id]
-      @path = hash[:path]
-      @operator = hash[:operator]
+      @path = hash[:path].nil? ? "" : hash[:path]
+      @operator = hash[:operator].nil? ? "" : hash[:operator]
       @expected = hash[:expected]
       @actual = hash[:actual]
-      @matched = hash[:matched]
-      @per_item = (hash[:per_item] || []).map { |item| item ? Retab::ConditionEvaluationPerItem.new(item) : nil }
+      @matched = hash[:matched].nil? ? false : hash[:matched]
+      @items = (hash[:items] || []).map { |item| item ? Retab::ConditionEvaluationPerItem.new(item) : nil }
     end
   end
 end

@@ -1,14 +1,15 @@
 namespace Retab
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>Represents a partial schema.</summary>
     public class PartialSchema
     {
-        public string? Object { get; set; }
-        public string? CreatedAt { get; set; }
+        public string? Object { get; set; } = "schema";
+        public DateTimeOffset? CreatedAt { get; set; }
         public Dictionary<string, object>? JsonSchema { get; set; }
-        public bool? Strict { get; set; }
+        public bool? Strict { get; set; } = true;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

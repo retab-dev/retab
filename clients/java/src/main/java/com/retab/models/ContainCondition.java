@@ -15,7 +15,7 @@ public final class ContainCondition implements Condition {
   public ContainCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Object expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "contains";
     this.expected = expected;
   }
 

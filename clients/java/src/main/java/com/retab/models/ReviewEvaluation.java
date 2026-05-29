@@ -47,7 +47,7 @@ public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "requested_revision", required = false) Boolean requestedRevision,
       @JsonProperty(value = "reviewed_at", required = false) OffsetDateTime reviewedAt,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
-    this.operation = operation;
+    this.operation = operation != null ? operation : "review_trigger_evaluation";
     this.id = id;
     this.runId = runId;
     this.stepId = stepId;
@@ -55,11 +55,11 @@ public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
     this.selectedHandles = selectedHandles;
     this.matchedBranchId = matchedBranchId;
     this.matchedConditionIds = matchedConditionIds;
-    this.requiresHumanReview = requiresHumanReview;
+    this.requiresHumanReview = requiresHumanReview != null ? requiresHumanReview : false;
     this.reviewerId = reviewerId;
     this.reviewDecision = reviewDecision;
     this.reviewNotes = reviewNotes;
-    this.requestedRevision = requestedRevision;
+    this.requestedRevision = requestedRevision != null ? requestedRevision : false;
     this.reviewedAt = reviewedAt;
     this.createdAt = createdAt;
   }

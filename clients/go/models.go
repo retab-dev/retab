@@ -52,7 +52,7 @@ type APICallInvocation struct {
 	StepID    string            `json:"step_id"`
 	Attempts  []*APICallAttempt `json:"attempts,omitempty"`
 	Error     *ErrorDetails     `json:"error,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
@@ -77,13 +77,13 @@ type AssertionFailure struct {
 }
 
 // AssertionResult result of evaluating ONE assertion against a block's output.
-// “outcome“ is a verdict only — pass / fail / blocked. An execution
+// `outcome` is a verdict only — pass / fail / blocked. An execution
 // error (the assertion couldn't be evaluated because of a type error,
 // invalid regex, schema validation crash, block execution crash, etc.) is
-// expressed by “outcome="blocked"“ with a populated “failure“ whose
-// “code“ identifies the specific failure mode (“execution_error“,
-// “type_error“, “invalid_regex“, “schema_invalid“,
-// “block_execution_failed“, ...).
+// expressed by `outcome="blocked"` with a populated `failure` whose
+// `code` identifies the specific failure mode (`execution_error`,
+// `type_error`, `invalid_regex`, `schema_invalid`,
+// `block_execution_failed`, ...).
 type AssertionResult struct {
 	AssertionID    string            `json:"assertion_id"`
 	ConditionKind  string            `json:"condition_kind"`
@@ -106,7 +106,7 @@ type AssertionSchemaDep struct {
 }
 
 // AssertionSpec block-test assertion against one declared output handle.
-// “target“ is the only supported shape: an output handle id and an
+// `target` is the only supported shape: an output handle id and an
 // optional relative path inside that handle's payload.
 type AssertionSpec struct {
 	ID        *string      `json:"id,omitempty"`
@@ -183,8 +183,8 @@ type StoredBlockExecution struct {
 	Artifact *StepArtifactRef `json:"artifact,omitempty"`
 	// HandleOutputs is output payloads keyed by handle ID
 	HandleOutputs map[string]interface{} `json:"handle_outputs,omitempty"`
-	// RoutingDecision is active output handles for routing decisions
-	RoutingDecision []string `json:"routing_decision,omitempty"`
+	// RoutingDecisions is active output handles for routing decisions
+	RoutingDecisions []string `json:"routing_decisions,omitempty"`
 	// DurationMs is duration of the block execution in milliseconds
 	DurationMs *float64 `json:"duration_ms,omitempty"`
 	// CreatedAt is when the block execution record was created
@@ -198,11 +198,11 @@ type StoredBlockExecution struct {
 }
 
 // BlockTestBatchExecutionCounts denormalized counts surface, split along the canonical axes.
-// Each individual run contributes to exactly one “lifecycle_counts“
-// bucket, and additionally to one “outcome“ bucket when
-// “lifecycle_counts.completed“ is incremented.
-// The “lifecycle_counts“ name disambiguates from the API_DESIGN.md
-// “lifecycle“ convention (which signals a discriminated union of
+// Each individual run contributes to exactly one `lifecycle_counts`
+// bucket, and additionally to one `outcome` bucket when
+// `lifecycle_counts.completed` is incremented.
+// The `lifecycle_counts` name disambiguates from the API_DESIGN.md
+// `lifecycle` convention (which signals a discriminated union of
 // typed states). This field is a counts subdocument, not a union.
 type BlockTestBatchExecutionCounts struct {
 	LifecycleCounts *BlockTestLifecycleCounts `json:"lifecycle_counts,omitempty"`
@@ -357,7 +357,7 @@ type ClassificationWorkflowArtifact struct {
 	Consensus *ClassificationConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the classification
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -400,8 +400,8 @@ type ConditionEvaluationDetails struct {
 	Actual *interface{} `json:"actual,omitempty"`
 	// Matched is whether the condition matched
 	Matched *bool `json:"matched,omitempty"`
-	// PerItem is per-item breakdown for wildcard array conditions
-	PerItem []*ConditionEvaluationPerItem `json:"per_item,omitempty"`
+	// Items is per-item breakdown for wildcard array conditions
+	Items []*ConditionEvaluationPerItem `json:"items,omitempty"`
 	// SubConditions is sub-condition evaluations for compound conditions
 	SubConditions []*ConditionEvaluationSubCondition `json:"sub_conditions,omitempty"`
 	// LogicalOperator is logical operator combining sub-conditions
@@ -444,8 +444,8 @@ type ConditionEvaluationResult struct {
 	BranchName string `json:"branch_name,omitempty"`
 	// LogicalOperator is logical operator for compound conditions
 	LogicalOperator *ConditionEvaluationResultLogicalOperator `json:"logical_operator,omitempty"`
-	// PerItem is per-item breakdown for wildcard array conditions
-	PerItem []*ConditionEvaluationPerItem `json:"per_item,omitempty"`
+	// Items is per-item breakdown for wildcard array conditions
+	Items []*ConditionEvaluationPerItem `json:"items,omitempty"`
 	// SubEvaluations is sub-condition evaluations for compound conditions
 	SubEvaluations []*ConditionEvaluationSubCondition `json:"sub_evaluations,omitempty"`
 	// Details is nested details object for frontend compatibility
@@ -476,8 +476,8 @@ type ConditionEvaluationSubCondition struct {
 	Actual *interface{} `json:"actual,omitempty"`
 	// Matched is whether this sub-condition matched
 	Matched *bool `json:"matched,omitempty"`
-	// PerItem is per-item breakdown if this sub-condition used a wildcard path
-	PerItem []*ConditionEvaluationPerItem `json:"per_item,omitempty"`
+	// Items is per-item breakdown if this sub-condition used a wildcard path
+	Items []*ConditionEvaluationPerItem `json:"items,omitempty"`
 }
 
 // ConditionalEvaluation represents a conditional evaluation.
@@ -491,7 +491,7 @@ type ConditionalEvaluation struct {
 	SelectedHandles     []string                     `json:"selected_handles,omitempty"`
 	MatchedBranchID     *string                      `json:"matched_branch_id,omitempty"`
 	MatchedConditionIDs []string                     `json:"matched_condition_ids,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
@@ -538,7 +538,7 @@ func (r *CreateUploadResponse) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// ReviewDecision the one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.
+// ReviewDecision the terminal decision recorded against one review version.
 type ReviewDecision struct {
 	Verdict   ReviewVerdict `json:"verdict"`
 	VersionID string        `json:"version_id"`
@@ -730,7 +730,7 @@ type EditWorkflowArtifact struct {
 	FilledDocumentRef *FileRef `json:"filled_document_ref,omitempty"`
 	// Usage is usage information for the edit operation.
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -1104,7 +1104,7 @@ type ExtractionWorkflowArtifact struct {
 	Metadata  map[string]string    `json:"metadata,omitempty"`
 	// Usage is usage information for the extraction
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -1180,7 +1180,7 @@ type FunctionInvocation struct {
 	Output     *interface{}           `json:"output,omitempty"`
 	DurationMs *int                   `json:"duration_ms,omitempty"`
 	Error      *ErrorDetails          `json:"error,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
@@ -1200,14 +1200,14 @@ type Job struct {
 	Endpoint        SupportedEndpoint      `json:"endpoint"`
 	Error           *JobError              `json:"error,omitempty"`
 	Warnings        []*JobWarning          `json:"warnings,omitempty"`
-	CreatedAt       *string                `json:"created_at,omitempty"`
-	StartedAt       *string                `json:"started_at,omitempty"`
-	CompletedAt     *string                `json:"completed_at,omitempty"`
-	ExpiresAt       *string                `json:"expires_at,omitempty"`
+	CreatedAt       *time.Time             `json:"created_at,omitempty"`
+	StartedAt       *time.Time             `json:"started_at,omitempty"`
+	CompletedAt     *time.Time             `json:"completed_at,omitempty"`
+	ExpiresAt       *time.Time             `json:"expires_at,omitempty"`
 	Metadata        map[string]string      `json:"metadata,omitempty"`
 	Cancelled       *bool                  `json:"cancelled,omitempty"`
 	AttemptCount    *int                   `json:"attempt_count,omitempty"`
-	LastAttemptAt   *string                `json:"last_attempt_at,omitempty"`
+	LastAttemptAt   *time.Time             `json:"last_attempt_at,omitempty"`
 	LastFailureCode *string                `json:"last_failure_code,omitempty"`
 	Request         map[string]interface{} `json:"request,omitempty"`
 	Response        *JobResponse           `json:"response,omitempty"`
@@ -1244,12 +1244,12 @@ type JSONSchemaValidCondition struct {
 // LatestBlockTestRunSummary summary of the most recent block-test run.
 // The two harmonized axes — execution status and verdict outcome — are
 // exposed as separate fields. The runner only writes the summary on
-// terminal-state transitions, so in practice “status“ is one of
-// “completed | error | cancelled“ and “outcome“ is populated when
-// “status == "completed"“.
-// “status“ is a flat enum — there's no per-state payload to carry on a
-// summary projection, so the API_DESIGN.md “lifecycle“ vs “status“
-// convention says use “status“ here.
+// terminal-state transitions, so in practice `status` is one of
+// `completed | error | cancelled` and `outcome` is populated when
+// `status == "completed"`.
+// `status` is a flat enum — there's no per-state payload to carry on a
+// summary projection, so the API_DESIGN.md `lifecycle` vs `status`
+// convention says use `status` here.
 type LatestBlockTestRunSummary struct {
 	RunRecordID              string                            `json:"run_record_id"`
 	Status                   LatestBlockTestRunSummaryStatus   `json:"status"`
@@ -1405,7 +1405,7 @@ type ParseWorkflowArtifact struct {
 	Output ParseOutput `json:"output"`
 	// Usage is usage information for the parse operation
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -1414,7 +1414,7 @@ type ParseWorkflowArtifact struct {
 // PartialSchema represents a partial schema.
 type PartialSchema struct {
 	Object     string                 `json:"object,omitempty"`
-	CreatedAt  *string                `json:"created_at,omitempty"`
+	CreatedAt  *time.Time             `json:"created_at,omitempty"`
 	JSONSchema map[string]interface{} `json:"json_schema,omitempty"`
 	Strict     bool                   `json:"strict,omitempty"`
 }
@@ -1510,7 +1510,7 @@ type PartitionWorkflowArtifact struct {
 	Consensus *PartitionConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the partition operation
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -1604,9 +1604,7 @@ type ReviewAnyOf struct {
 	Predicates []ReviewKind `json:"predicates"`
 }
 
-// ReviewAnyRequiredFieldNull gate when any required field in the extract schema is null/missing.
-// First-class predicate because this is the most common real-world driver
-// for structured-extraction review.
+// ReviewAnyRequiredFieldNull gate when any required field in the extract schema is null or missing.
 type ReviewAnyRequiredFieldNull struct {
 	Kind *string `json:"kind,omitempty"`
 }
@@ -1663,7 +1661,7 @@ type ReviewEvaluation struct {
 	ReviewNotes         *string                         `json:"review_notes,omitempty"`
 	RequestedRevision   *bool                           `json:"requested_revision,omitempty"`
 	ReviewedAt          *time.Time                      `json:"reviewed_at,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -1718,13 +1716,8 @@ type RunStepWorkflowTestSource struct {
 	StepID *string `json:"step_id,omitempty"`
 }
 
-// RunTiming all timing information for a run.
-// “duration_ms“ is backfilled at read time from
-// “completed_at - started_at“ when both timestamps are present and the
-// stored value is “None“ (the Mongo projection helpers in
-// “run_duration.py“ compute and persist the canonical value). Records that
-// already store “duration_ms“ are left untouched (idempotent), so backfill
-// cannot drift from the canonical value written by the projection.
+// RunTiming timing information for a run.
+// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
 type RunTiming struct {
 	// CreatedAt is when the run record was created
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -1736,7 +1729,7 @@ type RunTiming struct {
 	ReviewWaitingStartedAt *time.Time `json:"review_waiting_started_at,omitempty"`
 	// AccumulatedReviewWaitingMs is accumulated time spent waiting for review across the run
 	AccumulatedReviewWaitingMs *int `json:"accumulated_review_waiting_ms,omitempty"`
-	// DurationMs is total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored.
+	// DurationMs is total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.
 	DurationMs *int `json:"duration_ms,omitempty"`
 }
 
@@ -1825,8 +1818,8 @@ type SplitConsensus struct {
 }
 
 // SplitIouCondition intersection-over-Union for split page assignments.
-// “expected“ is stored in the canonical split-eval payload shape:
-// “{"splits": [{"name", "pages"}]}“
+// `expected` is stored in the canonical split-eval payload shape:
+// `{"splits": [{"name", "pages"}]}`
 type SplitIouCondition struct {
 	Kind      *string                `json:"kind,omitempty"`
 	Expected  map[string]interface{} `json:"expected"`
@@ -1878,7 +1871,7 @@ type SplitWorkflowArtifact struct {
 	Consensus *SplitConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the split operation
 	Usage *RetabUsage `json:"usage,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
@@ -1899,12 +1892,11 @@ type StartWithCondition struct {
 	Expected string  `json:"expected"`
 }
 
-// StepArtifactRef canonical persisted resource produced by a workflow step.
-// Uniformly a `(operation, id)` ref into a backing collection. The artifact
-// itself carries no payload — consumers dispatch on “operation“ and fetch
-// the backing record by “id“.
+// StepArtifactRef a resource produced by a workflow step.
+// An `(operation, id)` reference. The artifact itself carries no payload —
+// consumers dispatch on `operation` and fetch the referenced record by `id`.
 type StepArtifactRef struct {
-	// Operation is persisted resource operation; identifies the backing collection
+	// Operation is the kind of resource this artifact references
 	Operation StepArtifactRefOperation `json:"operation"`
 	// ID is persisted resource identifier
 	ID string `json:"id"`
@@ -1931,7 +1923,7 @@ type ValidationError struct {
 
 // VerdictSummary represents a verdict summary.
 type VerdictSummary struct {
-	Result             bool     `json:"result"`
+	Passed             bool     `json:"passed"`
 	AssertionsPassed   *int     `json:"assertions_passed,omitempty"`
 	AssertionsFailed   *int     `json:"assertions_failed,omitempty"`
 	BlockedAssertions  *int     `json:"blocked_assertions,omitempty"`
@@ -1955,18 +1947,11 @@ type WhileLoopTermination struct {
 	// TerminationReason is why the while-loop terminated
 	TerminationReason WhileLoopTerminationTerminationReason `json:"termination_reason"`
 	Evaluations       []*ConditionEvaluationResult          `json:"evaluations,omitempty"`
-	// CreatedAt is when this artifact was written by the orchestrator.
+	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// Workflow public workflow resource returned by workflow metadata endpoints.
-// This is the API response shape — distinct from the internal storage
-// model (:class:`StoredWorkflow`), which carries persistence-only fields
-// that never appear in API responses. Routes call
-// :func:`serialize_workflow_response` to convert the storage shape into
-// this response shape; constructing this class directly for persistence
-// would drop those storage-only fields silently. The two classes were
-// deliberately renamed to avoid the prior name collision.
+// Workflow a workflow and its current configuration.
 type Workflow struct {
 	// ID is unique ID for this workflow
 	ID string `json:"id"`
@@ -2061,8 +2046,8 @@ type WorkflowExperiment struct {
 }
 
 // ExperimentResult run-scoped per-document experiment result.
-// The storage row is still named “experiment_jobs“ internally, but the
-// public contract is a result row addressed by “run_id“ + “document_id“.
+// The storage row is still named `experiment_jobs` internally, but the
+// public contract is a result row addressed by `run_id` + `document_id`.
 type ExperimentResult struct {
 	ID           string                    `json:"id"`
 	RunID        string                    `json:"run_id"`
@@ -2077,7 +2062,7 @@ type ExperimentResult struct {
 }
 
 // ExperimentRun run-id-first public experiment run shape.
-// The canonical identity is “id“. Internal queue handles and duplicate
+// The canonical identity is `id`. Internal queue handles and duplicate
 // identity aliases are intentionally absent.
 type ExperimentRun struct {
 	ID                     string                  `json:"id"`
@@ -2115,7 +2100,7 @@ type WorkflowPublished struct {
 	VersionID *string `json:"version_id,omitempty"`
 	// PublishedAt is when the workflow was last published
 	PublishedAt *time.Time `json:"published_at,omitempty"`
-	// Description is release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch.
+	// Description is release note attached to the currently published version. Echoes the `description` body passed to `POST /v1/workflows/{id}/publish` so the caller can confirm it was stored without a separate fetch.
 	Description *string `json:"description,omitempty"`
 }
 
@@ -2160,14 +2145,7 @@ type ReviewVersion struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// WorkflowRun public workflow run response without tenant isolation fields.
-// This is the API response shape — distinct from the internal storage
-// model (:class:`StoredWorkflowRun`), which carries persistence-only
-// fields that never appear in API responses. Routes call
-// :func:`serialize_workflow_run_response` to convert the storage shape
-// into this response shape; constructing this class directly for
-// persistence would drop those storage-only fields silently. The two
-// classes were deliberately renamed to avoid the prior name collision.
+// WorkflowRun a single execution of a workflow.
 type WorkflowRun struct {
 	// ID is unique ID for this run
 	ID string `json:"id"`
@@ -2183,10 +2161,7 @@ type WorkflowRun struct {
 	Inputs *RunInputs `json:"inputs,omitempty"`
 }
 
-// WorkflowSnapshotRef reference to the workflow + immutable version that drove the run.
-// The class name is retained temporarily for compatibility with surrounding
-// run-model code, but public API output uses “version_id“ rather than
-// snapshot identity.
+// WorkflowSnapshotRef reference to the workflow and immutable version that drove the run.
 type WorkflowSnapshotRef struct {
 	// WorkflowID is id of the workflow that was run
 	WorkflowID string `json:"workflow_id"`
@@ -2285,7 +2260,7 @@ type WorkflowTestResult struct {
 	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
 	Source                   WorkflowTestSource         `json:"source"`
 	Outputs                  map[string]interface{}     `json:"outputs,omitempty"`
-	RoutingDecision          []string                   `json:"routing_decision,omitempty"`
+	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
 	Warnings                 []string                   `json:"warnings,omitempty"`
 	Error                    *ErrorDetails              `json:"error,omitempty"`
 	Skipped                  *bool                      `json:"skipped,omitempty"`
@@ -2358,6 +2333,28 @@ func unionDiscriminator(raw json.RawMessage, prop string) string {
 	return s
 }
 
+// withUnionDiscriminator forces prop=value onto a JSON object payload so a
+// union variant always serializes with its discriminator tag present.
+func withUnionDiscriminator(raw []byte, prop string, value string) []byte {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return raw
+	}
+	if fields == nil {
+		fields = map[string]json.RawMessage{}
+	}
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return raw
+	}
+	fields[prop] = encoded
+	out, err := json.Marshal(fields)
+	if err != nil {
+		return raw
+	}
+	return out
+}
+
 // BlockExecutionLifecycle is a discriminated union keyed by the "status" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Status()/As*() and build one with BlockExecutionLifecycleFrom*().
@@ -2405,6 +2402,7 @@ func (u BlockExecutionLifecycle) AsCompletedBlockExecutionLifecycle() (*Complete
 // BlockExecutionLifecycleFromCompletedBlockExecutionLifecycle builds a BlockExecutionLifecycle from a CompletedBlockExecutionLifecycle.
 func BlockExecutionLifecycleFromCompletedBlockExecutionLifecycle(v CompletedBlockExecutionLifecycle) BlockExecutionLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return BlockExecutionLifecycle{raw: data}
 }
 
@@ -2423,6 +2421,7 @@ func (u BlockExecutionLifecycle) AsErrorBlockExecutionLifecycle() (*ErrorBlockEx
 // BlockExecutionLifecycleFromErrorBlockExecutionLifecycle builds a BlockExecutionLifecycle from a ErrorBlockExecutionLifecycle.
 func BlockExecutionLifecycleFromErrorBlockExecutionLifecycle(v ErrorBlockExecutionLifecycle) BlockExecutionLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return BlockExecutionLifecycle{raw: data}
 }
 
@@ -2441,6 +2440,7 @@ func (u BlockExecutionLifecycle) AsSkippedBlockExecutionLifecycle() (*SkippedBlo
 // BlockExecutionLifecycleFromSkippedBlockExecutionLifecycle builds a BlockExecutionLifecycle from a SkippedBlockExecutionLifecycle.
 func BlockExecutionLifecycleFromSkippedBlockExecutionLifecycle(v SkippedBlockExecutionLifecycle) BlockExecutionLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "skipped")
 	return BlockExecutionLifecycle{raw: data}
 }
 
@@ -2491,6 +2491,7 @@ func (u Condition) AsAllItemsMatchCondition() (*AllItemsMatchCondition, error) {
 // ConditionFromAllItemsMatchCondition builds a Condition from a AllItemsMatchCondition.
 func ConditionFromAllItemsMatchCondition(v AllItemsMatchCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "all_items_match")
 	return Condition{raw: data}
 }
 
@@ -2509,6 +2510,7 @@ func (u Condition) AsAnyItemMatchesCondition() (*AnyItemMatchesCondition, error)
 // ConditionFromAnyItemMatchesCondition builds a Condition from a AnyItemMatchesCondition.
 func ConditionFromAnyItemMatchesCondition(v AnyItemMatchesCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "any_item_matches")
 	return Condition{raw: data}
 }
 
@@ -2527,6 +2529,7 @@ func (u Condition) AsArrayContainsCondition() (*ArrayContainsCondition, error) {
 // ConditionFromArrayContainsCondition builds a Condition from a ArrayContainsCondition.
 func ConditionFromArrayContainsCondition(v ArrayContainsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "array_contains")
 	return Condition{raw: data}
 }
 
@@ -2545,6 +2548,7 @@ func (u Condition) AsBetweenCondition() (*BetweenCondition, error) {
 // ConditionFromBetweenCondition builds a Condition from a BetweenCondition.
 func ConditionFromBetweenCondition(v BetweenCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "between")
 	return Condition{raw: data}
 }
 
@@ -2563,6 +2567,7 @@ func (u Condition) AsContainCondition() (*ContainCondition, error) {
 // ConditionFromContainCondition builds a Condition from a ContainCondition.
 func ConditionFromContainCondition(v ContainCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "contains")
 	return Condition{raw: data}
 }
 
@@ -2581,6 +2586,7 @@ func (u Condition) AsEndsWithCondition() (*EndsWithCondition, error) {
 // ConditionFromEndsWithCondition builds a Condition from a EndsWithCondition.
 func ConditionFromEndsWithCondition(v EndsWithCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "ends_with")
 	return Condition{raw: data}
 }
 
@@ -2599,6 +2605,7 @@ func (u Condition) AsEqualCondition() (*EqualCondition, error) {
 // ConditionFromEqualCondition builds a Condition from a EqualCondition.
 func ConditionFromEqualCondition(v EqualCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "equals")
 	return Condition{raw: data}
 }
 
@@ -2617,6 +2624,7 @@ func (u Condition) AsExistCondition() (*ExistCondition, error) {
 // ConditionFromExistCondition builds a Condition from a ExistCondition.
 func ConditionFromExistCondition(v ExistCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "exists")
 	return Condition{raw: data}
 }
 
@@ -2635,6 +2643,7 @@ func (u Condition) AsJSONSchemaValidCondition() (*JSONSchemaValidCondition, erro
 // ConditionFromJSONSchemaValidCondition builds a Condition from a JSONSchemaValidCondition.
 func ConditionFromJSONSchemaValidCondition(v JSONSchemaValidCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "json_schema_valid")
 	return Condition{raw: data}
 }
 
@@ -2653,6 +2662,7 @@ func (u Condition) AsLengthCompareCondition() (*LengthCompareCondition, error) {
 // ConditionFromLengthCompareCondition builds a Condition from a LengthCompareCondition.
 func ConditionFromLengthCompareCondition(v LengthCompareCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "length_compare")
 	return Condition{raw: data}
 }
 
@@ -2671,6 +2681,7 @@ func (u Condition) AsLlmJudgedAsCondition() (*LlmJudgedAsCondition, error) {
 // ConditionFromLlmJudgedAsCondition builds a Condition from a LlmJudgedAsCondition.
 func ConditionFromLlmJudgedAsCondition(v LlmJudgedAsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "llm_judged_as")
 	return Condition{raw: data}
 }
 
@@ -2689,6 +2700,7 @@ func (u Condition) AsLlmNotJudgedAsCondition() (*LlmNotJudgedAsCondition, error)
 // ConditionFromLlmNotJudgedAsCondition builds a Condition from a LlmNotJudgedAsCondition.
 func ConditionFromLlmNotJudgedAsCondition(v LlmNotJudgedAsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "llm_not_judged_as")
 	return Condition{raw: data}
 }
 
@@ -2707,6 +2719,7 @@ func (u Condition) AsMatcheRegexCondition() (*MatcheRegexCondition, error) {
 // ConditionFromMatcheRegexCondition builds a Condition from a MatcheRegexCondition.
 func ConditionFromMatcheRegexCondition(v MatcheRegexCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "matches_regex")
 	return Condition{raw: data}
 }
 
@@ -2725,6 +2738,7 @@ func (u Condition) AsNotContainsCondition() (*NotContainsCondition, error) {
 // ConditionFromNotContainsCondition builds a Condition from a NotContainsCondition.
 func ConditionFromNotContainsCondition(v NotContainsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "not_contains")
 	return Condition{raw: data}
 }
 
@@ -2743,6 +2757,7 @@ func (u Condition) AsNotEqualsCondition() (*NotEqualsCondition, error) {
 // ConditionFromNotEqualsCondition builds a Condition from a NotEqualsCondition.
 func ConditionFromNotEqualsCondition(v NotEqualsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "not_equals")
 	return Condition{raw: data}
 }
 
@@ -2761,6 +2776,7 @@ func (u Condition) AsNotExistsCondition() (*NotExistsCondition, error) {
 // ConditionFromNotExistsCondition builds a Condition from a NotExistsCondition.
 func ConditionFromNotExistsCondition(v NotExistsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "not_exists")
 	return Condition{raw: data}
 }
 
@@ -2779,6 +2795,7 @@ func (u Condition) AsNumberCompareCondition() (*NumberCompareCondition, error) {
 // ConditionFromNumberCompareCondition builds a Condition from a NumberCompareCondition.
 func ConditionFromNumberCompareCondition(v NumberCompareCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "number_compare")
 	return Condition{raw: data}
 }
 
@@ -2797,6 +2814,7 @@ func (u Condition) AsObjectContainsCondition() (*ObjectContainsCondition, error)
 // ConditionFromObjectContainsCondition builds a Condition from a ObjectContainsCondition.
 func ConditionFromObjectContainsCondition(v ObjectContainsCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "object_contains")
 	return Condition{raw: data}
 }
 
@@ -2815,6 +2833,7 @@ func (u Condition) AsSimilarityGteCondition() (*SimilarityGteCondition, error) {
 // ConditionFromSimilarityGteCondition builds a Condition from a SimilarityGteCondition.
 func ConditionFromSimilarityGteCondition(v SimilarityGteCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "similarity_gte")
 	return Condition{raw: data}
 }
 
@@ -2833,6 +2852,7 @@ func (u Condition) AsSplitIouCondition() (*SplitIouCondition, error) {
 // ConditionFromSplitIouCondition builds a Condition from a SplitIouCondition.
 func ConditionFromSplitIouCondition(v SplitIouCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "split_iou_gte")
 	return Condition{raw: data}
 }
 
@@ -2851,6 +2871,7 @@ func (u Condition) AsStartWithCondition() (*StartWithCondition, error) {
 // ConditionFromStartWithCondition builds a Condition from a StartWithCondition.
 func ConditionFromStartWithCondition(v StartWithCondition) Condition {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "starts_with")
 	return Condition{raw: data}
 }
 
@@ -2901,6 +2922,7 @@ func (u Experiment) AsExperimentByDocumentMetricsResponse() (*ExperimentByDocume
 // ExperimentFromExperimentByDocumentMetricsResponse builds a Experiment from a ExperimentByDocumentMetricsResponse.
 func ExperimentFromExperimentByDocumentMetricsResponse(v ExperimentByDocumentMetricsResponse) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "by_document")
 	return Experiment{raw: data}
 }
 
@@ -2919,6 +2941,7 @@ func (u Experiment) AsExperimentByTargetMetricsResponse() (*ExperimentByTargetMe
 // ExperimentFromExperimentByTargetMetricsResponse builds a Experiment from a ExperimentByTargetMetricsResponse.
 func ExperimentFromExperimentByTargetMetricsResponse(v ExperimentByTargetMetricsResponse) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "by_target")
 	return Experiment{raw: data}
 }
 
@@ -2937,6 +2960,7 @@ func (u Experiment) AsExperimentMetricsMissingError() (*ExperimentMetricsMissing
 // ExperimentFromExperimentMetricsMissingError builds a Experiment from a ExperimentMetricsMissingError.
 func ExperimentFromExperimentMetricsMissingError(v ExperimentMetricsMissingError) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "no_metrics")
 	return Experiment{raw: data}
 }
 
@@ -2955,6 +2979,7 @@ func (u Experiment) AsExperimentMetricsStaleError() (*ExperimentMetricsStaleErro
 // ExperimentFromExperimentMetricsStaleError builds a Experiment from a ExperimentMetricsStaleError.
 func ExperimentFromExperimentMetricsStaleError(v ExperimentMetricsStaleError) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "stale_metrics")
 	return Experiment{raw: data}
 }
 
@@ -2973,6 +2998,7 @@ func (u Experiment) AsExperimentSummaryMetricsResponse() (*ExperimentSummaryMetr
 // ExperimentFromExperimentSummaryMetricsResponse builds a Experiment from a ExperimentSummaryMetricsResponse.
 func ExperimentFromExperimentSummaryMetricsResponse(v ExperimentSummaryMetricsResponse) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "summary")
 	return Experiment{raw: data}
 }
 
@@ -2991,6 +3017,7 @@ func (u Experiment) AsExperimentVotesMetricsResponse() (*ExperimentVotesMetricsR
 // ExperimentFromExperimentVotesMetricsResponse builds a Experiment from a ExperimentVotesMetricsResponse.
 func ExperimentFromExperimentVotesMetricsResponse(v ExperimentVotesMetricsResponse) Experiment {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "votes")
 	return Experiment{raw: data}
 }
 
@@ -3041,6 +3068,7 @@ func (u HandleInput) AsFileHandleInput() (*FileHandleInput, error) {
 // HandleInputFromFileHandleInput builds a HandleInput from a FileHandleInput.
 func HandleInputFromFileHandleInput(v FileHandleInput) HandleInput {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "file")
 	return HandleInput{raw: data}
 }
 
@@ -3059,6 +3087,7 @@ func (u HandleInput) AsJSONHandleInput() (*JSONHandleInput, error) {
 // HandleInputFromJSONHandleInput builds a HandleInput from a JSONHandleInput.
 func HandleInputFromJSONHandleInput(v JSONHandleInput) HandleInput {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "json")
 	return HandleInput{raw: data}
 }
 
@@ -3109,6 +3138,7 @@ func (u ReviewKind) AsReviewAllOf() (*ReviewAllOf, error) {
 // ReviewKindFromReviewAllOf builds a ReviewKind from a ReviewAllOf.
 func ReviewKindFromReviewAllOf(v ReviewAllOf) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "all_of")
 	return ReviewKind{raw: data}
 }
 
@@ -3127,6 +3157,7 @@ func (u ReviewKind) AsReviewAlways() (*ReviewAlways, error) {
 // ReviewKindFromReviewAlways builds a ReviewKind from a ReviewAlways.
 func ReviewKindFromReviewAlways(v ReviewAlways) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "always")
 	return ReviewKind{raw: data}
 }
 
@@ -3145,6 +3176,7 @@ func (u ReviewKind) AsReviewAnyOf() (*ReviewAnyOf, error) {
 // ReviewKindFromReviewAnyOf builds a ReviewKind from a ReviewAnyOf.
 func ReviewKindFromReviewAnyOf(v ReviewAnyOf) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "any_of")
 	return ReviewKind{raw: data}
 }
 
@@ -3163,6 +3195,7 @@ func (u ReviewKind) AsReviewAnyRequiredFieldNull() (*ReviewAnyRequiredFieldNull,
 // ReviewKindFromReviewAnyRequiredFieldNull builds a ReviewKind from a ReviewAnyRequiredFieldNull.
 func ReviewKindFromReviewAnyRequiredFieldNull(v ReviewAnyRequiredFieldNull) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "any_required_field_null")
 	return ReviewKind{raw: data}
 }
 
@@ -3181,6 +3214,7 @@ func (u ReviewKind) AsReviewAnySplitPagesLt() (*ReviewAnySplitPagesLt, error) {
 // ReviewKindFromReviewAnySplitPagesLt builds a ReviewKind from a ReviewAnySplitPagesLt.
 func ReviewKindFromReviewAnySplitPagesLt(v ReviewAnySplitPagesLt) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "any_split_pages_lt")
 	return ReviewKind{raw: data}
 }
 
@@ -3199,6 +3233,7 @@ func (u ReviewKind) AsReviewBoundaryConfidenceLt() (*ReviewBoundaryConfidenceLt,
 // ReviewKindFromReviewBoundaryConfidenceLt builds a ReviewKind from a ReviewBoundaryConfidenceLt.
 func ReviewKindFromReviewBoundaryConfidenceLt(v ReviewBoundaryConfidenceLt) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "boundary_confidence_lt")
 	return ReviewKind{raw: data}
 }
 
@@ -3217,6 +3252,7 @@ func (u ReviewKind) AsReviewBranchIn() (*ReviewBranchIn, error) {
 // ReviewKindFromReviewBranchIn builds a ReviewKind from a ReviewBranchIn.
 func ReviewKindFromReviewBranchIn(v ReviewBranchIn) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "branch_in")
 	return ReviewKind{raw: data}
 }
 
@@ -3235,6 +3271,7 @@ func (u ReviewKind) AsReviewCategoryIn() (*ReviewCategoryIn, error) {
 // ReviewKindFromReviewCategoryIn builds a ReviewKind from a ReviewCategoryIn.
 func ReviewKindFromReviewCategoryIn(v ReviewCategoryIn) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "category_in")
 	return ReviewKind{raw: data}
 }
 
@@ -3253,6 +3290,7 @@ func (u ReviewKind) AsReviewConfidenceLt() (*ReviewConfidenceLt, error) {
 // ReviewKindFromReviewConfidenceLt builds a ReviewKind from a ReviewConfidenceLt.
 func ReviewKindFromReviewConfidenceLt(v ReviewConfidenceLt) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "confidence_lt")
 	return ReviewKind{raw: data}
 }
 
@@ -3271,6 +3309,7 @@ func (u ReviewKind) AsReviewFieldConfidenceLt() (*ReviewFieldConfidenceLt, error
 // ReviewKindFromReviewFieldConfidenceLt builds a ReviewKind from a ReviewFieldConfidenceLt.
 func ReviewKindFromReviewFieldConfidenceLt(v ReviewFieldConfidenceLt) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "field_confidence_lt")
 	return ReviewKind{raw: data}
 }
 
@@ -3289,6 +3328,7 @@ func (u ReviewKind) AsReviewJSONCondition() (*ReviewJSONCondition, error) {
 // ReviewKindFromReviewJSONCondition builds a ReviewKind from a ReviewJSONCondition.
 func ReviewKindFromReviewJSONCondition(v ReviewJSONCondition) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "json_condition")
 	return ReviewKind{raw: data}
 }
 
@@ -3307,6 +3347,7 @@ func (u ReviewKind) AsReviewSplitCountNeq() (*ReviewSplitCountNeq, error) {
 // ReviewKindFromReviewSplitCountNeq builds a ReviewKind from a ReviewSplitCountNeq.
 func ReviewKindFromReviewSplitCountNeq(v ReviewSplitCountNeq) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "split_count_neq")
 	return ReviewKind{raw: data}
 }
 
@@ -3325,6 +3366,7 @@ func (u ReviewKind) AsReviewTopMarginLt() (*ReviewTopMarginLt, error) {
 // ReviewKindFromReviewTopMarginLt builds a ReviewKind from a ReviewTopMarginLt.
 func ReviewKindFromReviewTopMarginLt(v ReviewTopMarginLt) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "top_margin_lt")
 	return ReviewKind{raw: data}
 }
 
@@ -3343,6 +3385,7 @@ func (u ReviewKind) AsReviewValidationFailed() (*ReviewValidationFailed, error) 
 // ReviewKindFromReviewValidationFailed builds a ReviewKind from a ReviewValidationFailed.
 func ReviewKindFromReviewValidationFailed(v ReviewValidationFailed) ReviewKind {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "validation_failed")
 	return ReviewKind{raw: data}
 }
 
@@ -3393,6 +3436,7 @@ func (u StepLifecycle) AsAwaitingReviewStepLifecycle() (*AwaitingReviewStepLifec
 // StepLifecycleFromAwaitingReviewStepLifecycle builds a StepLifecycle from a AwaitingReviewStepLifecycle.
 func StepLifecycleFromAwaitingReviewStepLifecycle(v AwaitingReviewStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "awaiting_review")
 	return StepLifecycle{raw: data}
 }
 
@@ -3411,6 +3455,7 @@ func (u StepLifecycle) AsCancelledStepLifecycle() (*CancelledStepLifecycle, erro
 // StepLifecycleFromCancelledStepLifecycle builds a StepLifecycle from a CancelledStepLifecycle.
 func StepLifecycleFromCancelledStepLifecycle(v CancelledStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
 	return StepLifecycle{raw: data}
 }
 
@@ -3429,6 +3474,7 @@ func (u StepLifecycle) AsCompletedStepLifecycle() (*CompletedStepLifecycle, erro
 // StepLifecycleFromCompletedStepLifecycle builds a StepLifecycle from a CompletedStepLifecycle.
 func StepLifecycleFromCompletedStepLifecycle(v CompletedStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return StepLifecycle{raw: data}
 }
 
@@ -3447,6 +3493,7 @@ func (u StepLifecycle) AsErrorStepLifecycle() (*ErrorStepLifecycle, error) {
 // StepLifecycleFromErrorStepLifecycle builds a StepLifecycle from a ErrorStepLifecycle.
 func StepLifecycleFromErrorStepLifecycle(v ErrorStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return StepLifecycle{raw: data}
 }
 
@@ -3465,6 +3512,7 @@ func (u StepLifecycle) AsPendingStepLifecycle() (*PendingStepLifecycle, error) {
 // StepLifecycleFromPendingStepLifecycle builds a StepLifecycle from a PendingStepLifecycle.
 func StepLifecycleFromPendingStepLifecycle(v PendingStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
 	return StepLifecycle{raw: data}
 }
 
@@ -3483,6 +3531,7 @@ func (u StepLifecycle) AsQueuedStepLifecycle() (*QueuedStepLifecycle, error) {
 // StepLifecycleFromQueuedStepLifecycle builds a StepLifecycle from a QueuedStepLifecycle.
 func StepLifecycleFromQueuedStepLifecycle(v QueuedStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
 	return StepLifecycle{raw: data}
 }
 
@@ -3501,6 +3550,7 @@ func (u StepLifecycle) AsRunningStepLifecycle() (*RunningStepLifecycle, error) {
 // StepLifecycleFromRunningStepLifecycle builds a StepLifecycle from a RunningStepLifecycle.
 func StepLifecycleFromRunningStepLifecycle(v RunningStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return StepLifecycle{raw: data}
 }
 
@@ -3519,6 +3569,7 @@ func (u StepLifecycle) AsSkippedStepLifecycle() (*SkippedStepLifecycle, error) {
 // StepLifecycleFromSkippedStepLifecycle builds a StepLifecycle from a SkippedStepLifecycle.
 func StepLifecycleFromSkippedStepLifecycle(v SkippedStepLifecycle) StepLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "skipped")
 	return StepLifecycle{raw: data}
 }
 
@@ -3569,6 +3620,7 @@ func (u Trigger) AsAPITrigger() (*APITrigger, error) {
 // TriggerFromAPITrigger builds a Trigger from a APITrigger.
 func TriggerFromAPITrigger(v APITrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "api")
 	return Trigger{raw: data}
 }
 
@@ -3587,6 +3639,7 @@ func (u Trigger) AsEmailTrigger() (*EmailTrigger, error) {
 // TriggerFromEmailTrigger builds a Trigger from a EmailTrigger.
 func TriggerFromEmailTrigger(v EmailTrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "email")
 	return Trigger{raw: data}
 }
 
@@ -3605,6 +3658,7 @@ func (u Trigger) AsManualTrigger() (*ManualTrigger, error) {
 // TriggerFromManualTrigger builds a Trigger from a ManualTrigger.
 func TriggerFromManualTrigger(v ManualTrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "manual")
 	return Trigger{raw: data}
 }
 
@@ -3623,6 +3677,7 @@ func (u Trigger) AsRestartTrigger() (*RestartTrigger, error) {
 // TriggerFromRestartTrigger builds a Trigger from a RestartTrigger.
 func TriggerFromRestartTrigger(v RestartTrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "restart")
 	return Trigger{raw: data}
 }
 
@@ -3641,6 +3696,7 @@ func (u Trigger) AsScheduleTrigger() (*ScheduleTrigger, error) {
 // TriggerFromScheduleTrigger builds a Trigger from a ScheduleTrigger.
 func TriggerFromScheduleTrigger(v ScheduleTrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "schedule")
 	return Trigger{raw: data}
 }
 
@@ -3659,6 +3715,7 @@ func (u Trigger) AsWebhookTrigger() (*WebhookTrigger, error) {
 // TriggerFromWebhookTrigger builds a Trigger from a WebhookTrigger.
 func TriggerFromWebhookTrigger(v WebhookTrigger) Trigger {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "webhook")
 	return Trigger{raw: data}
 }
 
@@ -3709,6 +3766,7 @@ func (u WorkflowExperimentResult) AsCancelledWorkflowExperimentResult() (*Cancel
 // WorkflowExperimentResultFromCancelledWorkflowExperimentResult builds a WorkflowExperimentResult from a CancelledWorkflowExperimentResult.
 func WorkflowExperimentResultFromCancelledWorkflowExperimentResult(v CancelledWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3727,6 +3785,7 @@ func (u WorkflowExperimentResult) AsCompletedWorkflowExperimentResult() (*Comple
 // WorkflowExperimentResultFromCompletedWorkflowExperimentResult builds a WorkflowExperimentResult from a CompletedWorkflowExperimentResult.
 func WorkflowExperimentResultFromCompletedWorkflowExperimentResult(v CompletedWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3745,6 +3804,7 @@ func (u WorkflowExperimentResult) AsErrorWorkflowExperimentResult() (*ErrorWorkf
 // WorkflowExperimentResultFromErrorWorkflowExperimentResult builds a WorkflowExperimentResult from a ErrorWorkflowExperimentResult.
 func WorkflowExperimentResultFromErrorWorkflowExperimentResult(v ErrorWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3763,6 +3823,7 @@ func (u WorkflowExperimentResult) AsPendingWorkflowExperimentResult() (*PendingW
 // WorkflowExperimentResultFromPendingWorkflowExperimentResult builds a WorkflowExperimentResult from a PendingWorkflowExperimentResult.
 func WorkflowExperimentResultFromPendingWorkflowExperimentResult(v PendingWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3781,6 +3842,7 @@ func (u WorkflowExperimentResult) AsQueuedWorkflowExperimentResult() (*QueuedWor
 // WorkflowExperimentResultFromQueuedWorkflowExperimentResult builds a WorkflowExperimentResult from a QueuedWorkflowExperimentResult.
 func WorkflowExperimentResultFromQueuedWorkflowExperimentResult(v QueuedWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3799,6 +3861,7 @@ func (u WorkflowExperimentResult) AsRunningWorkflowExperimentResult() (*RunningW
 // WorkflowExperimentResultFromRunningWorkflowExperimentResult builds a WorkflowExperimentResult from a RunningWorkflowExperimentResult.
 func WorkflowExperimentResultFromRunningWorkflowExperimentResult(v RunningWorkflowExperimentResult) WorkflowExperimentResult {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return WorkflowExperimentResult{raw: data}
 }
 
@@ -3849,6 +3912,7 @@ func (u WorkflowExperimentRun) AsCancelledWorkflowExperimentRun() (*CancelledWor
 // WorkflowExperimentRunFromCancelledWorkflowExperimentRun builds a WorkflowExperimentRun from a CancelledWorkflowExperimentRun.
 func WorkflowExperimentRunFromCancelledWorkflowExperimentRun(v CancelledWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3867,6 +3931,7 @@ func (u WorkflowExperimentRun) AsCompletedWorkflowExperimentRun() (*CompletedWor
 // WorkflowExperimentRunFromCompletedWorkflowExperimentRun builds a WorkflowExperimentRun from a CompletedWorkflowExperimentRun.
 func WorkflowExperimentRunFromCompletedWorkflowExperimentRun(v CompletedWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3885,6 +3950,7 @@ func (u WorkflowExperimentRun) AsErrorWorkflowExperimentRun() (*ErrorWorkflowExp
 // WorkflowExperimentRunFromErrorWorkflowExperimentRun builds a WorkflowExperimentRun from a ErrorWorkflowExperimentRun.
 func WorkflowExperimentRunFromErrorWorkflowExperimentRun(v ErrorWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3903,6 +3969,7 @@ func (u WorkflowExperimentRun) AsPendingWorkflowExperimentRun() (*PendingWorkflo
 // WorkflowExperimentRunFromPendingWorkflowExperimentRun builds a WorkflowExperimentRun from a PendingWorkflowExperimentRun.
 func WorkflowExperimentRunFromPendingWorkflowExperimentRun(v PendingWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3921,6 +3988,7 @@ func (u WorkflowExperimentRun) AsQueuedWorkflowExperimentRun() (*QueuedWorkflowE
 // WorkflowExperimentRunFromQueuedWorkflowExperimentRun builds a WorkflowExperimentRun from a QueuedWorkflowExperimentRun.
 func WorkflowExperimentRunFromQueuedWorkflowExperimentRun(v QueuedWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3939,6 +4007,7 @@ func (u WorkflowExperimentRun) AsRunningWorkflowExperimentRun() (*RunningWorkflo
 // WorkflowExperimentRunFromRunningWorkflowExperimentRun builds a WorkflowExperimentRun from a RunningWorkflowExperimentRun.
 func WorkflowExperimentRunFromRunningWorkflowExperimentRun(v RunningWorkflowExperimentRun) WorkflowExperimentRun {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return WorkflowExperimentRun{raw: data}
 }
 
@@ -3989,6 +4058,7 @@ func (u WorkflowRunLifecycle) AsAwaitingReviewRun() (*AwaitingReviewRun, error) 
 // WorkflowRunLifecycleFromAwaitingReviewRun builds a WorkflowRunLifecycle from a AwaitingReviewRun.
 func WorkflowRunLifecycleFromAwaitingReviewRun(v AwaitingReviewRun) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "awaiting_review")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4007,6 +4077,7 @@ func (u WorkflowRunLifecycle) AsCancelledTerminal() (*CancelledTerminal, error) 
 // WorkflowRunLifecycleFromCancelledTerminal builds a WorkflowRunLifecycle from a CancelledTerminal.
 func WorkflowRunLifecycleFromCancelledTerminal(v CancelledTerminal) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4025,6 +4096,7 @@ func (u WorkflowRunLifecycle) AsCompletedTerminal() (*CompletedTerminal, error) 
 // WorkflowRunLifecycleFromCompletedTerminal builds a WorkflowRunLifecycle from a CompletedTerminal.
 func WorkflowRunLifecycleFromCompletedTerminal(v CompletedTerminal) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4043,6 +4115,7 @@ func (u WorkflowRunLifecycle) AsErrorTerminal() (*ErrorTerminal, error) {
 // WorkflowRunLifecycleFromErrorTerminal builds a WorkflowRunLifecycle from a ErrorTerminal.
 func WorkflowRunLifecycleFromErrorTerminal(v ErrorTerminal) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4061,6 +4134,7 @@ func (u WorkflowRunLifecycle) AsPendingRun() (*PendingRun, error) {
 // WorkflowRunLifecycleFromPendingRun builds a WorkflowRunLifecycle from a PendingRun.
 func WorkflowRunLifecycleFromPendingRun(v PendingRun) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4079,6 +4153,7 @@ func (u WorkflowRunLifecycle) AsRunningRun() (*RunningRun, error) {
 // WorkflowRunLifecycleFromRunningRun builds a WorkflowRunLifecycle from a RunningRun.
 func WorkflowRunLifecycleFromRunningRun(v RunningRun) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return WorkflowRunLifecycle{raw: data}
 }
 
@@ -4129,6 +4204,7 @@ func (u WorkflowTestRunStatus) AsCancelledWorkflowTestRun() (*CancelledWorkflowT
 // WorkflowTestRunStatusFromCancelledWorkflowTestRun builds a WorkflowTestRunStatus from a CancelledWorkflowTestRun.
 func WorkflowTestRunStatusFromCancelledWorkflowTestRun(v CancelledWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4147,6 +4223,7 @@ func (u WorkflowTestRunStatus) AsCompletedWorkflowTestRun() (*CompletedWorkflowT
 // WorkflowTestRunStatusFromCompletedWorkflowTestRun builds a WorkflowTestRunStatus from a CompletedWorkflowTestRun.
 func WorkflowTestRunStatusFromCompletedWorkflowTestRun(v CompletedWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4165,6 +4242,7 @@ func (u WorkflowTestRunStatus) AsErrorWorkflowTestRun() (*ErrorWorkflowTestRun, 
 // WorkflowTestRunStatusFromErrorWorkflowTestRun builds a WorkflowTestRunStatus from a ErrorWorkflowTestRun.
 func WorkflowTestRunStatusFromErrorWorkflowTestRun(v ErrorWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4183,6 +4261,7 @@ func (u WorkflowTestRunStatus) AsPendingWorkflowTestRun() (*PendingWorkflowTestR
 // WorkflowTestRunStatusFromPendingWorkflowTestRun builds a WorkflowTestRunStatus from a PendingWorkflowTestRun.
 func WorkflowTestRunStatusFromPendingWorkflowTestRun(v PendingWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4201,6 +4280,7 @@ func (u WorkflowTestRunStatus) AsQueuedWorkflowTestRun() (*QueuedWorkflowTestRun
 // WorkflowTestRunStatusFromQueuedWorkflowTestRun builds a WorkflowTestRunStatus from a QueuedWorkflowTestRun.
 func WorkflowTestRunStatusFromQueuedWorkflowTestRun(v QueuedWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4219,6 +4299,7 @@ func (u WorkflowTestRunStatus) AsRunningWorkflowTestRun() (*RunningWorkflowTestR
 // WorkflowTestRunStatusFromRunningWorkflowTestRun builds a WorkflowTestRunStatus from a RunningWorkflowTestRun.
 func WorkflowTestRunStatusFromRunningWorkflowTestRun(v RunningWorkflowTestRun) WorkflowTestRunStatus {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return WorkflowTestRunStatus{raw: data}
 }
 
@@ -4269,6 +4350,7 @@ func (u WorkflowTestSource) AsManualWorkflowTestSource() (*ManualWorkflowTestSou
 // WorkflowTestSourceFromManualWorkflowTestSource builds a WorkflowTestSource from a ManualWorkflowTestSource.
 func WorkflowTestSourceFromManualWorkflowTestSource(v ManualWorkflowTestSource) WorkflowTestSource {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "manual")
 	return WorkflowTestSource{raw: data}
 }
 
@@ -4287,6 +4369,7 @@ func (u WorkflowTestSource) AsRunStepWorkflowTestSource() (*RunStepWorkflowTestS
 // WorkflowTestSourceFromRunStepWorkflowTestSource builds a WorkflowTestSource from a RunStepWorkflowTestSource.
 func WorkflowTestSourceFromRunStepWorkflowTestSource(v RunStepWorkflowTestSource) WorkflowTestSource {
 	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "run_step")
 	return WorkflowTestSource{raw: data}
 }
 

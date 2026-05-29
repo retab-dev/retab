@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Gate when any split boundary's confidence is below `threshold`.</summary>
     public class ReviewBoundaryConfidenceLt
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "boundary_confidence_lt";
         public double Threshold { get; set; }
 
         /// <summary>

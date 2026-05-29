@@ -41,10 +41,11 @@ public final class DeclarativeApplyResponse {
     this.blockCount = blockCount;
     this.edgeCount = edgeCount;
     this.diagnostics = diagnostics;
-    this.formatVersion = formatVersion;
+    this.formatVersion = formatVersion != null ? formatVersion : "workflows-plan/v1";
     this.summary = summary;
     this.resourceChanges = resourceChanges;
-    this.renderedPlan = renderedPlan;
+    this.renderedPlan =
+        renderedPlan != null ? renderedPlan : "No changes. Workflow spec is up to date.";
   }
 
   @JsonProperty("workflow_id")

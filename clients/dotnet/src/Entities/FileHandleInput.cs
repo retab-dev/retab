@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>File reference for a handle input.</summary>
     public class FileHandleInput
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "file";
         public MaterializedDocument Document { get; set; } = default!;
 
         /// <summary>

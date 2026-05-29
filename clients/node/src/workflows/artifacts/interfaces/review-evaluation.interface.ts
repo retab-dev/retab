@@ -37,7 +37,7 @@ export interface ReviewEvaluation {
   /** @default false */
   requestedRevision?: boolean;
   reviewedAt?: Date | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt: Date;
 }
 

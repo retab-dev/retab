@@ -20,8 +20,8 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @status = hash[:status]
-      @message = hash[:message]
+      @status = hash[:status].nil? ? "error" : hash[:status]
+      @message = hash[:message].nil? ? "(no message)" : hash[:message]
       @details = hash[:details] ? Retab::ErrorDetails.new(hash[:details]) : nil
     end
   end

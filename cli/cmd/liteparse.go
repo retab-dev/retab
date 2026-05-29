@@ -1,0 +1,392 @@
+package cmd
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+// LiteParse (https://github.com/run-llama/liteparse) is an Apache-2.0 OSS
+// document parser: PDFium text extraction with selective Tesseract OCR, run
+// entirely locally. The `files parse|grep|inspect` commands shell out to its
+// `lit` CLI for PDFs and images — the formats where local spatial parsing and
+// OCR are the value — and keep text/csv/xlsx/docx on native Go readers (see
+// native_parse.go), which preserves exact cell/line anchors that a
+// LibreOffice->PDF round-trip would destroy.
+
+// ParseOptions controls a LiteParse `lit parse` invocation. The zero value is
+// not valid; build it via defaultParseOptions so OCR/DPI/language carry the
+// documented defaults.
+type ParseOptions struct {
+	OCR          bool   // OCR enabled (LiteParse default true)
+	OCRLanguage  string // Tesseract language code, e.g. "eng"
+	OCRServerURL string // optional HTTP OCR server; empty uses bundled Tesseract
+	DPI          int    // rendering DPI for OCR/screenshots
+	TargetPages  string // e.g. "1-5,10,15-20"; empty parses all pages
+}
+
+func defaultParseOptions() ParseOptions {
+	return ParseOptions{OCR: true, OCRLanguage: "eng", DPI: 150}
+}
+
+// fingerprint is a stable string identifying the parse options, used as part
+// of the parse cache key so a language/DPI/OCR change naturally misses.
+func (o ParseOptions) fingerprint() string {
+	return fmt.Sprintf("ocr=%t;lang=%s;server=%s;dpi=%d;pages=%s",
+		o.OCR, o.OCRLanguage, o.OCRServerURL, o.DPI, o.TargetPages)
+}
+
+// ParsedItem is a single positioned text fragment from a page. Coordinates
+// are LiteParse viewport space (top-left origin, 72 DPI). Confidence is 1.0
+// for native PDF text and <1.0 for OCR'd text.
+type ParsedItem struct {
+	Text       string   `json:"text"`
+	X          float64  `json:"x"`
+	Y          float64  `json:"y"`
+	Width      float64  `json:"width"`
+	Height     float64  `json:"height"`
+	FontName   string   `json:"font_name,omitempty"`
+	FontSize   float64  `json:"font_size,omitempty"`
+	Confidence *float64 `json:"confidence,omitempty"`
+}
+
+// ParsedPage is one page of layout-preserved text plus its positioned items.
+type ParsedPage struct {
+	Page   int          `json:"page"`
+	Width  float64      `json:"width"`
+	Height float64      `json:"height"`
+	Text   string       `json:"text"`
+	Items  []ParsedItem `json:"items,omitempty"`
+}
+
+// SheetData holds the cell grid for a csv (single sheet) or xlsx (one per
+// worksheet). Rows are row-major, 0-based; Rows[r][c] is the cell text.
+type SheetData struct {
+	Index int        `json:"index"`
+	Name  string     `json:"name,omitempty"`
+	Rows  [][]string `json:"rows"`
+}
+
+// ParseResult is the normalized output of parsing any supported file. Pages
+// carries the textual/positioned view (always populated); Sheets carries the
+// structured cell grid for csv/spreadsheet so grep/inspect can emit cell
+// anchors.
+type ParseResult struct {
+	Filename     string       `json:"filename"`
+	MIMEType     string       `json:"mime_type"`
+	DocumentType string       `json:"document_type"` // pdf|image|text|csv|spreadsheet|docx
+	Source       string       `json:"source"`        // pdf_text_layer|ocr|native
+	TotalPages   int          `json:"total_pages"`
+	Pages        []ParsedPage `json:"pages"`
+	Sheets       []SheetData  `json:"sheets,omitempty"`
+}
+
+// ScreenshotOptions controls `lit screenshot`.
+type ScreenshotOptions struct {
+	TargetPages string
+	DPI         int
+	OutDir      string
+}
+
+// ScreenshotPage is one rendered page image on disk.
+type ScreenshotPage struct {
+	Page     int    `json:"page"`
+	Path     string `json:"path"`
+	MIMEType string `json:"mime_type"`
+}
+
+// LiteParser is the seam over the `lit` binary. The exec-backed litCLI is the
+// production implementation; tests inject a fake to avoid requiring `lit` on
+// PATH and to assert argv construction.
+type LiteParser interface {
+	Parse(ctx context.Context, path string, opt ParseOptions) (*ParseResult, error)
+	Screenshot(ctx context.Context, path string, opt ScreenshotOptions) ([]ScreenshotPage, error)
+	Version(ctx context.Context) (string, error)
+}
+
+// resolveLiteParserFn is the indirection tests override to supply a fake
+// without touching PATH. Production resolution honors --liteparse-bin, then
+// RETAB_LITEPARSE_BIN, then a `lit` on PATH.
+var resolveLiteParserFn = defaultResolveLiteParser
+
+func resolveLiteParser(bin string) (LiteParser, error) { return resolveLiteParserFn(bin) }
+
+func defaultResolveLiteParser(bin string) (LiteParser, error) {
+	// An explicitly requested binary (flag or env) must resolve as given; we
+	// never silently substitute a managed download for it.
+	explicit := bin != "" || os.Getenv("RETAB_LITEPARSE_BIN") != ""
+	if bin == "" {
+		bin = os.Getenv("RETAB_LITEPARSE_BIN")
+	}
+	if bin == "" {
+		bin = "lit"
+	}
+	if resolved, err := exec.LookPath(bin); err == nil {
+		return &litCLI{bin: resolved}, nil
+	}
+	if explicit {
+		return nil, fmt.Errorf("liteparse binary %q not found; point --liteparse-bin / RETAB_LITEPARSE_BIN at an existing `lit`", bin)
+	}
+
+	// No `lit` on PATH and none requested: fall back to the Retab-managed
+	// bundle (lit + matching libpdfium), downloaded + checksum-verified on
+	// first use and cached. errBundleUnavailable means we don't ship a pinned
+	// bundle for this platform yet — surface the install hint instead.
+	litPath, pdfiumDir, err := ensureManagedLit(litBundleTag)
+	if err == nil {
+		return &litCLI{bin: litPath, pdfiumDir: pdfiumDir}, nil
+	}
+	if !errors.Is(err, errBundleUnavailable) {
+		return nil, err
+	}
+	return nil, fmt.Errorf(
+		"liteparse binary %q not found. Install it with one of:\n"+
+			"  npm i -g @llamaindex/liteparse\n"+
+			"  pip install liteparse\n"+
+			"  cargo install liteparse\n"+
+			"or point --liteparse-bin / RETAB_LITEPARSE_BIN at an existing `lit`", bin)
+}
+
+// litCLI execs the `lit` binary. pdfiumDir, when non-empty, is the directory
+// holding a bundled libpdfium; it's exported to `lit` as PDFIUM_LIB_PATH so a
+// managed bundle can dlopen its own pdfium instead of requiring one on the
+// system. For a user-provided `lit` (PATH/flag/env) pdfiumDir is empty and we
+// leave the environment untouched.
+type litCLI struct {
+	bin       string
+	pdfiumDir string
+}
+
+// command builds an exec.Cmd for `lit`, wiring PDFIUM_LIB_PATH when this is a
+// managed bundle so the dlopen'd libpdfium resolves next to the binary.
+func (c *litCLI) command(ctx context.Context, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, c.bin, args...)
+	if c.pdfiumDir != "" {
+		cmd.Env = append(os.Environ(), "PDFIUM_LIB_PATH="+c.pdfiumDir)
+	}
+	return cmd
+}
+
+// liteParseJSON mirrors `lit parse --format json` output
+// (crates/liteparse/src/output/json.rs).
+type liteParseJSON struct {
+	Pages []struct {
+		Page      int     `json:"page"`
+		Width     float64 `json:"width"`
+		Height    float64 `json:"height"`
+		Text      string  `json:"text"`
+		TextItems []struct {
+			Text       string   `json:"text"`
+			X          float64  `json:"x"`
+			Y          float64  `json:"y"`
+			Width      float64  `json:"width"`
+			Height     float64  `json:"height"`
+			FontName   string   `json:"font_name"`
+			FontSize   float64  `json:"font_size"`
+			Confidence *float64 `json:"confidence"`
+		} `json:"text_items"`
+	} `json:"pages"`
+}
+
+func (c *litCLI) parseArgs(path string, opt ParseOptions) []string {
+	args := []string{"parse", path, "--format", "json", "--quiet"}
+	if !opt.OCR {
+		args = append(args, "--no-ocr")
+	} else {
+		if opt.OCRLanguage != "" {
+			args = append(args, "--ocr-language", opt.OCRLanguage)
+		}
+		if opt.OCRServerURL != "" {
+			args = append(args, "--ocr-server-url", opt.OCRServerURL)
+		}
+	}
+	if opt.DPI > 0 {
+		args = append(args, "--dpi", fmt.Sprintf("%d", opt.DPI))
+	}
+	if opt.TargetPages != "" {
+		args = append(args, "--target-pages", opt.TargetPages)
+	}
+	return args
+}
+
+func (c *litCLI) Parse(ctx context.Context, path string, opt ParseOptions) (*ParseResult, error) {
+	cmd := c.command(ctx, c.parseArgs(path, opt)...)
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		return nil, fmt.Errorf("liteparse parse failed: %s", msg)
+	}
+	var raw liteParseJSON
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return nil, fmt.Errorf("decode liteparse json: %w", err)
+	}
+	return convertLiteParse(&raw), nil
+}
+
+// convertLiteParse maps the `lit` JSON into a ParseResult. document_type and
+// filename/mime are filled by the caller; here we only derive Source from
+// whether any item carries an OCR confidence (<1.0).
+func convertLiteParse(raw *liteParseJSON) *ParseResult {
+	result := &ParseResult{Source: "pdf_text_layer", Pages: make([]ParsedPage, 0, len(raw.Pages))}
+	ocrUsed := false
+	for _, p := range raw.Pages {
+		page := ParsedPage{Page: p.Page, Width: p.Width, Height: p.Height, Text: p.Text}
+		for _, it := range p.TextItems {
+			if it.Confidence != nil && *it.Confidence < 1.0 {
+				ocrUsed = true
+			}
+			page.Items = append(page.Items, ParsedItem{
+				Text: it.Text, X: it.X, Y: it.Y, Width: it.Width, Height: it.Height,
+				FontName: it.FontName, FontSize: it.FontSize, Confidence: it.Confidence,
+			})
+		}
+		result.Pages = append(result.Pages, page)
+	}
+	result.TotalPages = len(result.Pages)
+	if ocrUsed {
+		result.Source = "ocr"
+	}
+	return result
+}
+
+func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOptions) ([]ScreenshotPage, error) {
+	if opt.OutDir == "" {
+		return nil, fmt.Errorf("screenshot output directory is required")
+	}
+	if err := os.MkdirAll(opt.OutDir, 0o755); err != nil {
+		return nil, fmt.Errorf("create screenshot dir: %w", err)
+	}
+	before, _ := imagesIn(opt.OutDir)
+	args := []string{"screenshot", path, "--output-dir", opt.OutDir, "--quiet"}
+	if opt.TargetPages != "" {
+		args = append(args, "--target-pages", opt.TargetPages)
+	}
+	if opt.DPI > 0 {
+		args = append(args, "--dpi", fmt.Sprintf("%d", opt.DPI))
+	}
+	cmd := c.command(ctx, args...)
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		return nil, fmt.Errorf("liteparse screenshot failed: %s", msg)
+	}
+	after, err := imagesIn(opt.OutDir)
+	if err != nil {
+		return nil, err
+	}
+	// New files are the ones this run produced.
+	seen := map[string]bool{}
+	for _, p := range before {
+		seen[p] = true
+	}
+	var pages []ScreenshotPage
+	for _, p := range after {
+		if seen[p] {
+			continue
+		}
+		pages = append(pages, ScreenshotPage{Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
+	}
+	sort.Slice(pages, func(i, j int) bool { return pages[i].Path < pages[j].Path })
+	for i := range pages {
+		pages[i].Page = i + 1
+	}
+	return pages, nil
+}
+
+func imagesIn(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		switch strings.ToLower(filepath.Ext(e.Name())) {
+		case ".png", ".jpg", ".jpeg", ".webp":
+			out = append(out, filepath.Join(dir, e.Name()))
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func (c *litCLI) Version(ctx context.Context) (string, error) {
+	out, err := c.command(ctx, "--version").Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// --- parse cache -----------------------------------------------------------
+
+// parseCacheEnabled is flipped off by --no-cache. Caching only applies to the
+// liteparse (pdf/image) path; native parsing is cheap enough to always redo.
+func liteParseCacheDir() (string, error) {
+	base, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(base, "retab", "liteparse"), nil
+}
+
+func parseCacheKey(fileBytes []byte, documentType string, opt ParseOptions) string {
+	h := sha256.New()
+	h.Write(fileBytes)
+	h.Write([]byte("\x00" + documentType + "\x00" + opt.fingerprint()))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func readParseCache(key string) (*ParseResult, bool) {
+	dir, err := liteParseCacheDir()
+	if err != nil {
+		return nil, false
+	}
+	data, err := os.ReadFile(filepath.Join(dir, key+".json"))
+	if err != nil {
+		return nil, false
+	}
+	var result ParseResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, false
+	}
+	return &result, true
+}
+
+func writeParseCache(key string, result *ParseResult) {
+	dir, err := liteParseCacheDir()
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return
+	}
+	data, err := json.Marshal(result)
+	if err != nil {
+		return
+	}
+	tmp := filepath.Join(dir, key+".json.tmp")
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return
+	}
+	_ = os.Rename(tmp, filepath.Join(dir, key+".json"))
+}

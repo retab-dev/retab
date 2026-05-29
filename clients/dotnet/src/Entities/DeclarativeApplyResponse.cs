@@ -15,10 +15,10 @@ namespace Retab
         public long BlockCount { get; set; }
         public long EdgeCount { get; set; }
         public Dictionary<string, object> Diagnostics { get; set; } = default!;
-        public string? FormatVersion { get; set; }
+        public string? FormatVersion { get; set; } = "workflows-plan/v1";
         public DeclarativePlanSummary? Summary { get; set; }
         public List<DeclarativePlanResourceChange>? ResourceChanges { get; set; }
-        public string? RenderedPlan { get; set; }
+        public string? RenderedPlan { get; set; } = "No changes. Workflow spec is up to date.";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

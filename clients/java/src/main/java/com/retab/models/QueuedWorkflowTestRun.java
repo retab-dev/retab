@@ -12,7 +12,7 @@ public final class QueuedWorkflowTestRun implements WorkflowTestRunStatus {
 
   @JsonCreator
   public QueuedWorkflowTestRun(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "queued";
   }
 
   @JsonProperty("status")

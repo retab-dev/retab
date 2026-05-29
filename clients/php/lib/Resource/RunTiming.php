@@ -7,14 +7,9 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * All timing information for a run.
+ * Timing information for a run.
  *
- * ``duration_ms`` is backfilled at read time from
- * ``completed_at - started_at`` when both timestamps are present and the
- * stored value is ``None`` (the Mongo projection helpers in
- * ``run_duration.py`` compute and persist the canonical value). Records that
- * already store ``duration_ms`` are left untouched (idempotent), so backfill
- * cannot drift from the canonical value written by the projection.
+ * `duration_ms` is the elapsed time between `started_at` and `completed_at`.
  */
 readonly class RunTiming implements \JsonSerializable
 {
@@ -31,7 +26,7 @@ readonly class RunTiming implements \JsonSerializable
         public ?\DateTimeImmutable $reviewWaitingStartedAt = null,
         /** Accumulated time spent waiting for review across the run */
         public ?int $accumulatedReviewWaitingMs = null,
-        /** Total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored. */
+        /** Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored. */
         public ?int $durationMs = null,
     ) {}
 

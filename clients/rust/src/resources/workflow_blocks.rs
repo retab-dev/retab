@@ -134,8 +134,6 @@ impl<'a> WorkflowBlocksApi<'a> {
     /// Create Block
     ///
     /// Create a new block in a workflow.
-    ///
-    /// This creates a block in the live workflow_blocks collection.
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowBlock, Error> {
         self.create_with_options(params, None).await
     }

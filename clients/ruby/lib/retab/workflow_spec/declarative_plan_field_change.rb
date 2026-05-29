@@ -35,8 +35,8 @@ module Retab
       @action = hash[:action]
       @before = hash[:before]
       @after = hash[:after]
-      @before_sensitive = hash[:before_sensitive]
-      @after_sensitive = hash[:after_sensitive]
+      @before_sensitive = hash[:before_sensitive].nil? ? false : hash[:before_sensitive]
+      @after_sensitive = hash[:after_sensitive].nil? ? false : hash[:after_sensitive]
       @unified_diff = hash[:unified_diff]
     end
   end

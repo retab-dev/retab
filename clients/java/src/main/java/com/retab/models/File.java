@@ -26,7 +26,7 @@ public final class File {
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = false) OffsetDateTime updatedAt,
       @JsonProperty(value = "page_count", required = false) Long pageCount) {
-    this.objectType = objectType;
+    this.objectType = objectType != null ? objectType : "file";
     this.id = id;
     this.filename = filename;
     this.mimeType = mimeType;

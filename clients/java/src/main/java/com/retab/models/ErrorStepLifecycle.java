@@ -23,7 +23,7 @@ public final class ErrorStepLifecycle implements StepLifecycle {
       @JsonProperty(value = "stage", required = false) ErrorStepLifecycleStage stage,
       @JsonProperty(value = "category", required = false) ErrorStepLifecycleCategory category,
       @JsonProperty(value = "details", required = false) ErrorDetails details) {
-    this.status = status;
+    this.status = status != null ? status : "error";
     this.message = message;
     this.stage = stage;
     this.category = category;

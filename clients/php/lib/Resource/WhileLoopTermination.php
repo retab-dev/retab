@@ -16,7 +16,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
         public string $stepId,
         /** Why the while-loop terminated */
         public WhileLoopTerminationTerminationReason $terminationReason,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public \DateTimeImmutable $createdAt,
         /** @var array<\Retab\Resource\ConditionEvaluationResult>|null */
         public ?array $evaluations = null,

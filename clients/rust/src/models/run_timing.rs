@@ -5,13 +5,8 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// All timing information for a run.
-/// ``duration_ms`` is backfilled at read time from
-/// ``completed_at - started_at`` when both timestamps are present and the
-/// stored value is ``None`` (the Mongo projection helpers in
-/// ``run_duration.py`` compute and persist the canonical value). Records that
-/// already store ``duration_ms`` are left untouched (idempotent), so backfill
-/// cannot drift from the canonical value written by the projection.
+/// Timing information for a run.
+/// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RunTiming {
     /// When the run record was created
@@ -31,7 +26,7 @@ pub struct RunTiming {
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub accumulated_review_waiting_ms: Option<i64>,
-    /// Total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored.
+    /// Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
 }

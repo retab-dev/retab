@@ -25,13 +25,13 @@ class AssertionFailure(BaseModel):
 class AssertionResult(BaseModel):
     """Result of evaluating ONE assertion against a block's output.
 
-    ``outcome`` is a verdict only — pass / fail / blocked. An execution
+    `outcome` is a verdict only — pass / fail / blocked. An execution
     error (the assertion couldn't be evaluated because of a type error,
     invalid regex, schema validation crash, block execution crash, etc.) is
-    expressed by ``outcome="blocked"`` with a populated ``failure`` whose
-    ``code`` identifies the specific failure mode (``execution_error``,
-    ``type_error``, ``invalid_regex``, ``schema_invalid``,
-    ``block_execution_failed``, ...)."""
+    expressed by `outcome="blocked"` with a populated `failure` whose
+    `code` identifies the specific failure mode (`execution_error`,
+    `type_error`, `invalid_regex`, `schema_invalid`,
+    `block_execution_failed`, ...)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -67,8 +67,8 @@ class CompletedWorkflowTestRun(BaseModel):
 class ErrorWorkflowTestRun(BaseModel):
     """The test run failed. The error message lives on this variant.
 
-    Carries the same structured ``details`` envelope as workflow runs so
-    consumers can branch on ``error_code`` / ``stage`` rather than parsing
+    Carries the same structured `details` envelope as workflow runs so
+    consumers can branch on `error_code` / `stage` rather than parsing
     a free-text message."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -105,7 +105,7 @@ class RunningWorkflowTestRun(BaseModel):
 class VerdictSummary(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    result: bool
+    passed: bool
     assertions_passed: int | None = Field(default=0)
     assertions_failed: int | None = Field(default=0)
     blocked_assertions: int | None = Field(default=0)
@@ -128,13 +128,13 @@ class WorkflowTestResult(BaseModel):
     )
     workflow_id: str
     target: WorkflowTestBlockTarget
-    execution_fingerprint: str | None = Field(default="")
-    handle_inputs_fingerprint: str | None = Field(default="")
-    workflow_draft_fingerprint: str | None = Field(default="")
-    block_config_fingerprint: str | None = Field(default="")
+    execution_fingerprint: str | None = None
+    handle_inputs_fingerprint: str | None = None
+    workflow_draft_fingerprint: str | None = None
+    block_config_fingerprint: str | None = None
     source: ManualWorkflowTestSource | RunStepWorkflowTestSource = Field(..., discriminator="type")
     outputs: dict[str, Any] | None = None
-    routing_decision: list[str] | None = None
+    routing_decisions: list[str] | None = None
     warnings: list[str] | None = Field(default=[])
     error: ErrorDetails | None = None
     skipped: bool | None = Field(default=False)

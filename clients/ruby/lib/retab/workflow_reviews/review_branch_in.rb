@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "branch_in" : hash[:kind]
       @branches = (hash[:branches] || [])
     end
   end

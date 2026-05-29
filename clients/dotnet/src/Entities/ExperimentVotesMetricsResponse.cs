@@ -6,8 +6,8 @@ namespace Retab
     public class ExperimentVotesMetricsResponse
     {
         public string RunId { get; set; } = default!;
-        public string? Kind { get; set; }
-        public string? View { get; set; }
+        public string? Kind { get; set; } = "votes";
+        public string? View { get; set; } = "votes";
         public ExperimentMetricDocumentRef Document { get; set; } = default!;
         public string Target { get; set; } = default!;
         public double? Score { get; set; }

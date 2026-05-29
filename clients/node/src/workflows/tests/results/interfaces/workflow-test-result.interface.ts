@@ -134,17 +134,13 @@ export interface WorkflowTestResult {
   verdict?: WorkflowTestResultVerdict | null;
   workflowId: string;
   target: WorkflowTestBlockTarget;
-  /** @default "" */
-  executionFingerprint?: string;
-  /** @default "" */
-  handleInputsFingerprint?: string;
-  /** @default "" */
-  workflowDraftFingerprint?: string;
-  /** @default "" */
-  blockConfigFingerprint?: string;
+  executionFingerprint?: string | null;
+  handleInputsFingerprint?: string | null;
+  workflowDraftFingerprint?: string | null;
+  blockConfigFingerprint?: string | null;
   source: ManualWorkflowTestSource | RunStepWorkflowTestSource;
   outputs?: Record<string, unknown> | null;
-  routingDecision?: string[] | null;
+  routingDecisions?: string[] | null;
   /** @default [] */
   warnings?: string[];
   error?: ErrorDetails | null;
@@ -172,13 +168,13 @@ export interface WorkflowTestResultResponse {
   verdict?: WorkflowTestResultVerdict | null;
   workflow_id: string;
   target: WorkflowTestBlockTargetResponse;
-  execution_fingerprint?: string;
-  handle_inputs_fingerprint?: string;
-  workflow_draft_fingerprint?: string;
-  block_config_fingerprint?: string;
+  execution_fingerprint?: string | null;
+  handle_inputs_fingerprint?: string | null;
+  workflow_draft_fingerprint?: string | null;
+  block_config_fingerprint?: string | null;
   source: ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse;
   outputs?: Record<string, unknown> | null;
-  routing_decision?: string[] | null;
+  routing_decisions?: string[] | null;
   warnings?: string[];
   error?: ErrorDetailsResponse | null;
   skipped?: boolean;
@@ -205,13 +201,13 @@ export const ZWorkflowTestResult = z.object({
   verdict: ZWorkflowTestResultVerdict.nullable().optional(),
   workflowId: z.string(),
   target: ZWorkflowTestBlockTarget,
-  executionFingerprint: z.string().optional(),
-  handleInputsFingerprint: z.string().optional(),
-  workflowDraftFingerprint: z.string().optional(),
-  blockConfigFingerprint: z.string().optional(),
+  executionFingerprint: z.string().nullable().optional(),
+  handleInputsFingerprint: z.string().nullable().optional(),
+  workflowDraftFingerprint: z.string().nullable().optional(),
+  blockConfigFingerprint: z.string().nullable().optional(),
   source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
   outputs: z.record(z.string(), z.unknown()).nullable().optional(),
-  routingDecision: z.string().array().nullable().optional(),
+  routingDecisions: z.string().array().nullable().optional(),
   warnings: z.string().array().optional(),
   error: ZErrorDetails.nullable().optional(),
   skipped: z.boolean().optional(),
@@ -301,7 +297,7 @@ export function deserializeWorkflowTestResult(
       )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
       (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource),
     outputs: wire['outputs'],
-    routingDecision: wire['routing_decision'],
+    routingDecisions: wire['routing_decisions'],
     warnings: wire['warnings'],
     error:
       wire['error'] == null
@@ -402,7 +398,7 @@ export function serializeWorkflowTestResult(
         | ManualWorkflowTestSourceResponse
         | RunStepWorkflowTestSourceResponse),
     outputs: domain['outputs'],
-    routing_decision: domain['routingDecision'],
+    routing_decisions: domain['routingDecisions'],
     warnings: domain['warnings'],
     error:
       domain['error'] == null

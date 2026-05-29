@@ -24,7 +24,7 @@ module Retab
       hash = self.class.normalize(json)
       @container_id = hash[:container_id]
       @iteration = hash[:iteration]
-      @is_parallel = hash[:is_parallel]
+      @is_parallel = hash[:is_parallel].nil? ? false : hash[:is_parallel]
       @parallel_item_index = hash[:parallel_item_index]
     end
   end

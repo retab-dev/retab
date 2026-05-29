@@ -17,7 +17,7 @@ public final class EmailTrigger implements Trigger {
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "sender", required = false) String sender,
       @JsonProperty(value = "subject", required = false) String subject) {
-    this.type = type;
+    this.type = type != null ? type : "email";
     this.sender = sender;
     this.subject = subject;
   }

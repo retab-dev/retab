@@ -60,7 +60,7 @@ module Retab
 
     # Create Block
     # @param workflow_id [String] Workflow to create the block in.
-    # @param id [String, nil] If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+    # @param id [String, nil] If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.
     # @param type [Retab::Types::WorkflowBlockCreateRequestType] Block type
     # @param label [String, nil] Display label
     # @param position_x [Float, nil] X position
@@ -150,7 +150,7 @@ module Retab
     # @param height [Float, nil]
     # @param config [Hash{String => Object}, nil]
     # @param parent_id [String, nil]
-    # @param config_mode [Retab::Types::UpdateWorkflowBlockRequestConfigMode, nil] How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
+    # @param config_mode [Retab::Types::UpdateWorkflowBlockRequestConfigMode, nil] How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
     # @param workflow_id [String, nil] Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowBlock]

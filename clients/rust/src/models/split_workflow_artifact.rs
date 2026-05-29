@@ -31,7 +31,7 @@ pub struct SplitWorkflowArtifact {
     /// Usage information for the split operation
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     pub created_at: String,
     /// Artifact operation that determines the backing record type
     ///

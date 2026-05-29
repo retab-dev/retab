@@ -7,7 +7,7 @@ namespace Retab
     /// <summary>Represents a sources response.</summary>
     public class SourcesResponse
     {
-        public string? Object { get; set; }
+        public string? Object { get; set; } = "extraction.sources";
 
         /// <summary>ID of the extraction</summary>
         public string ExtractionId { get; set; } = default!;

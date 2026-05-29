@@ -4,9 +4,9 @@ import { z } from 'zod';
 import type { StepArtifactRefOperation } from './step-artifact-ref-operation.interface.js';
 import { ZStepArtifactRefOperation } from './step-artifact-ref-operation.interface.js';
 
-/** Canonical persisted resource produced by a workflow step. */
+/** A resource produced by a workflow step. */
 export interface StepArtifactRef {
-  /** Persisted resource operation; identifies the backing collection */
+  /** The kind of resource this artifact references */
   operation: StepArtifactRefOperation;
   /** Persisted resource identifier */
   id: string;

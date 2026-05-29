@@ -46,7 +46,7 @@ module Retab
       @filled_document_ref = hash[:filled_document_ref] ? Retab::FileRef.new(hash[:filled_document_ref]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "edit" : hash[:operation]
     end
   end
 end

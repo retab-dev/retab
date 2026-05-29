@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a verdict summary.</summary>
     public class VerdictSummary
     {
-        public bool Result { get; set; }
+        public bool Passed { get; set; }
         public long? AssertionsPassed { get; set; }
         public long? AssertionsFailed { get; set; }
         public long? BlockedAssertions { get; set; }

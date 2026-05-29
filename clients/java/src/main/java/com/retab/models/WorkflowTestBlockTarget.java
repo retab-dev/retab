@@ -15,7 +15,7 @@ public final class WorkflowTestBlockTarget {
   public WorkflowTestBlockTarget(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "block_id", required = true) String blockId) {
-    this.type = type;
+    this.type = type != null ? type : "block";
     this.blockId = blockId;
   }
 

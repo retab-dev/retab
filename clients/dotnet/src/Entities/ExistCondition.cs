@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents an exist condition.</summary>
     public class ExistCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "exists";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

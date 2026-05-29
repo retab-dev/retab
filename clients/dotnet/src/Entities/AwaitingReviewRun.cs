@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>The run is paused on at least one gated block.</summary>
     public class AwaitingReviewRun
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "awaiting_review";
 
         /// <summary>Block IDs that are waiting for review</summary>
         public List<string>? WaitingForBlockIds { get; set; }

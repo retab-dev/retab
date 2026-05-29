@@ -25,7 +25,7 @@ module Retab
       @index = hash[:index]
       @indices = (hash[:indices] || [])
       @actual = hash[:actual]
-      @matched = hash[:matched]
+      @matched = hash[:matched].nil? ? false : hash[:matched]
     end
   end
 end

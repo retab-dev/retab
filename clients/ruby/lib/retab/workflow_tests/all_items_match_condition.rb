@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "all_items_match" : hash[:kind]
       @condition = hash[:condition] ? (
         case hash[:condition][:kind]
         when "all_items_match"

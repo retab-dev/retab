@@ -9,8 +9,8 @@ namespace Retab
     /// </remarks>
     public class ExperimentMetricsStaleError
     {
-        public string? Kind { get; set; }
-        public string? Error { get; set; }
+        public string? Kind { get; set; } = "stale_metrics";
+        public string? Error { get; set; } = "stale_metrics";
         public string ExperimentId { get; set; } = default!;
         public List<string>? StaleReasons { get; set; }
         public MetricsStaleErrorLastRun LastRun { get; set; } = default!;

@@ -15,7 +15,7 @@ public final class StartWithCondition implements Condition {
   public StartWithCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) String expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "starts_with";
     this.expected = expected;
   }
 

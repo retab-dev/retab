@@ -103,7 +103,7 @@ impl<'a> WorkflowReviewsApi<'a> {
 
     /// List Reviews Route
     ///
-    /// List reviews — the review queue, oldest first by ``created_at``.
+    /// List reviews — the review queue, oldest first by `created_at`.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowReviewList, Error> {
         self.list_with_options(params, None).await
     }
@@ -144,12 +144,10 @@ impl<'a> WorkflowReviewsApi<'a> {
 
     /// Approve Review Route
     ///
-    /// Approve one exact review version and resume the Temporal run.
+    /// Approve one review version and resume the workflow run.
     ///
-    /// Earns its action-verb shape per the four criteria in
-    /// ``meta-pattern-blueprint.md`` §2: precondition (``decision is None``),
-    /// side-effect dominates (Temporal resume signal), divergent request body vs
-    /// ``/reject``, divergent response (carries ``resume_status``).
+    /// The response carries `resume_status` so callers can see whether the run
+    /// resumed successfully.
     pub async fn approve(
         &self,
         review_id: &str,
@@ -175,10 +173,9 @@ impl<'a> WorkflowReviewsApi<'a> {
 
     /// Reject Review Route
     ///
-    /// Reject one exact review version and resume the Temporal run.
+    /// Reject one review version and resume the workflow run.
     ///
-    /// ``reason`` is required by the request shape — "rejected without reason"
-    /// is unrepresentable on the wire.
+    /// A `reason` is required.
     pub async fn reject(
         &self,
         review_id: &str,

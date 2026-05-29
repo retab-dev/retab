@@ -197,14 +197,10 @@ func jobWaitTerminalError(job *retab.Job) error {
 	case "", string(retab.JobStatusCompleted):
 		return nil
 	case string(retab.JobStatusFailed), string(retab.JobStatusCancelled), string(retab.JobStatusExpired):
-		id := ""
-		if job.ID != nil {
-			id = *job.ID
-		}
-		if id == "" {
+		if job.ID == "" {
 			return fmt.Errorf("job ended with status %s", status)
 		}
-		return fmt.Errorf("job %s ended with status %s", id, status)
+		return fmt.Errorf("job %s ended with status %s", job.ID, status)
 	default:
 		return nil
 	}

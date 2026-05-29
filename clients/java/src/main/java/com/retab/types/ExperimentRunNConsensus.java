@@ -8,26 +8,26 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ExperimentRunNConsensus {
   @JsonEnumDefaultValue
-  UNKNOWN("unknown"),
-  VALUE_3("3"),
-  VALUE_5("5"),
-  VALUE_7("7");
+  UNKNOWN(Integer.MIN_VALUE),
+  VALUE_3(3),
+  VALUE_5(5),
+  VALUE_7(7);
 
-  private final String value;
+  private final int value;
 
-  ExperimentRunNConsensus(String value) {
+  ExperimentRunNConsensus(int value) {
     this.value = value;
   }
 
   @JsonValue
-  public String getValue() {
+  public int getValue() {
     return value;
   }
 
   @JsonCreator
-  public static ExperimentRunNConsensus fromValue(String value) {
+  public static ExperimentRunNConsensus fromValue(int value) {
     for (ExperimentRunNConsensus item : values()) {
-      if (item.value.equals(value)) {
+      if (item.value == value) {
         return item;
       }
     }

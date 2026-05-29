@@ -13,7 +13,7 @@ public final class AwaitingReviewStepLifecycle implements StepLifecycle {
   @JsonCreator
   public AwaitingReviewStepLifecycle(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "awaiting_review";
   }
 
   @JsonProperty("status")

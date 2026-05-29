@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a run step workflow test source.</summary>
     public class RunStepWorkflowTestSource
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "run_step";
         public string RunId { get; set; } = default!;
         public string? StepId { get; set; }
 

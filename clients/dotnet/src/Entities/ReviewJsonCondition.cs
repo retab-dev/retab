@@ -11,7 +11,7 @@ namespace Retab
     /// </remarks>
     public class ReviewJsonCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "json_condition";
 
         /// <summary>Conditional-block Condition payload.</summary>
         public Dictionary<string, object> Condition { get; set; } = default!;

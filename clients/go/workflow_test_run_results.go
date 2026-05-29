@@ -21,15 +21,7 @@ type WorkflowTestRunResultsListParams struct {
 
 // List test Execution Results
 // List workflow test results for a single run, page by page.
-// Pagination strategy: the parent
-// “workflow_test_runs.result_run_record_ids“ document already holds the
-// ordered list of child record IDs. “workflow_block_test_runs“ rows do
-// not carry a “run_id“ field (the relationship lives only on the
-// parent), so a direct keyset query on the child collection is not
-// possible without a schema change. We slice the parent's ordered list to
-// resolve cursors and then “$in“-query the child collection for only
-// the requested page — preserving the run-time ordering encoded in the
-// parent doc and avoiding a fan-out collection scan.
+// Results are returned in run-time order.
 func (s *WorkflowTestRunResultService) List(ctx context.Context, params *WorkflowTestRunResultsListParams, opts ...RequestOption) (*PaginatedList[WorkflowTestResult], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: run_id is required")

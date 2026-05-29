@@ -6,12 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Gate when any required field in the extract schema is null/missing.
- *
- * First-class predicate because this is the most common real-world driver
- * for structured-extraction review.
- */
+/** Gate when any required field in the extract schema is null or missing. */
 readonly class ReviewAnyRequiredFieldNull implements \JsonSerializable
 {
     use JsonSerializableTrait;

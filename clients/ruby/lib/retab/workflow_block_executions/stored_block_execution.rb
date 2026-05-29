@@ -15,7 +15,7 @@ module Retab
       handle_inputs: :handle_inputs,
       artifact: :artifact,
       handle_outputs: :handle_outputs,
-      routing_decision: :routing_decision,
+      routing_decisions: :routing_decisions,
       duration_ms: :duration_ms,
       created_at: :created_at,
       block_config: :block_config,
@@ -33,7 +33,7 @@ module Retab
       :handle_inputs,
       :artifact,
       :handle_outputs,
-      :routing_decision,
+      :routing_decisions,
       :duration_ms,
       :created_at,
       :block_config,
@@ -64,7 +64,7 @@ module Retab
       @handle_inputs = hash[:handle_inputs] || {}
       @artifact = hash[:artifact] ? Retab::StepArtifactRef.new(hash[:artifact]) : nil
       @handle_outputs = hash[:handle_outputs] || {}
-      @routing_decision = (hash[:routing_decision] || [])
+      @routing_decisions = (hash[:routing_decisions] || [])
       @duration_ms = hash[:duration_ms]
       @created_at = hash[:created_at]
       @block_config = hash[:block_config] || {}

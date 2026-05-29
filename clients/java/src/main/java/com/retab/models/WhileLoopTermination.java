@@ -30,7 +30,7 @@ public final class WhileLoopTermination implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "evaluations", required = false)
           List<ConditionEvaluationResult> evaluations,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
-    this.operation = operation;
+    this.operation = operation != null ? operation : "while_loop_termination";
     this.id = id;
     this.runId = runId;
     this.stepId = stepId;

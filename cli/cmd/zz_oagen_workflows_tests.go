@@ -259,10 +259,11 @@ var workflowsTestsGetCmd = &cobra.Command{
 }
 
 var workflowsTestsListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List tests",
-	Long:  "List every test attached to a workflow. Filter by --target-block-id to focus on one block.",
-	Args:  cobra.NoArgs,
+	Use:     "list [workflow-id]",
+	Short:   "List tests",
+	Long:    "List every test attached to a workflow. Filter by\n--target-block-id to focus on the regression suite for a particular block.\n\nName the workflow either positionally (`list <workflow-id>`) or with\nthe `--workflow-id` flag - the two forms are equivalent. Passing both\nis accepted when they agree; an error is raised only when they disagree. The\nworkflow id is required: tests have no org-wide listing.",
+	Example: "  # All tests in a workflow (positional)\n  retab workflows tests list wf_abc123\n\n  # Same, with the flag form\n  retab workflows tests list --workflow-id wf_abc123\n\n  # Just the tests guarding one block\n  retab workflows tests list wf_abc123 --target-block-id blk_extract_1",
+	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -270,7 +271,12 @@ var workflowsTestsListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.WorkflowTestsListParams{WorkflowID: args[0]}
+		// Scope by workflow positionally OR via --workflow-id (co-equal forms).
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
+		req := retab.WorkflowTestsListParams{WorkflowID: workflowID}
 		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
 			req.TargetBlockID = ptr(v)
 		}
@@ -373,6 +379,7 @@ func init() {
 	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin) (required). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{...}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). See 'tests create --help' for the full schema.")
 	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin) (required)")
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
+	workflowsTestsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
 	workflowsTestsUpdateCmd.Flags().String("name", "", "new test name")

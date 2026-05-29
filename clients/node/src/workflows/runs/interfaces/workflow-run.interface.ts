@@ -96,7 +96,7 @@ import {
   serializeWorkflowSnapshotRef,
 } from '../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
 
-/** Public workflow run response without tenant isolation fields. */
+/** A single execution of a workflow. */
 export interface WorkflowRun {
   /** Unique ID for this run */
   id: string;

@@ -60,7 +60,7 @@ class WorkflowBlockCreateRequest(BaseModel):
     workflow_id: str = Field(..., description="Workflow to create the block in.")
     id: str | None = Field(
         default=None,
-        description="If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.",
+        description="If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.",
     )
     type: WorkflowBlockCreateRequestType = Field(..., description="Block type")
     label: str | None = Field(default="", description="Display label")
@@ -78,15 +78,15 @@ class WorkflowBlockCreateRequest(BaseModel):
 class UpdateWorkflowBlockRequest(BaseModel):
     """Request to update a block. Only provided fields are updated.
 
-    ``config_mode`` is a request-level signal (not persisted) that controls
-    how the route folds the ``config`` patch into the existing config doc:
+    `config_mode` is a request-level signal (not persisted) that controls
+    how the route folds the `config` patch into the existing config doc:
 
-    * ``"merge"`` (default): RFC 7396 JSON Merge Patch — dicts recurse,
-      arrays/scalars replace, ``null`` deletes the key. This is what CLI
-      callers pass via ``--merge-config-file``.
-    * ``"replace"``: take ``config`` as the full new typed config. Top-level
-      ``null`` values are pruned so the caller can wipe a key with one
-      request. This is what CLI callers pass via ``--config-file``.
+    * `"merge"` (default): RFC 7396 JSON Merge Patch — dicts recurse,
+      arrays/scalars replace, `null` deletes the key. This is what CLI
+      callers pass via `--merge-config-file`.
+    * `"replace"`: take `config` as the full new typed config. Top-level
+      `null` values are pruned so the caller can wipe a key with one
+      request. This is what CLI callers pass via `--config-file`.
 
     Pre-config_mode callers (legacy SDKs, the canvas, any code that doesn't
     send the field) keep the merge behavior; they were already sending
@@ -106,7 +106,7 @@ class UpdateWorkflowBlockRequest(BaseModel):
     parent_id: str | None = None
     config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(
         default=None,
-        description="How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.",
+        description="How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.",
     )
 
 

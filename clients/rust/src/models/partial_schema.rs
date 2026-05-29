@@ -10,7 +10,6 @@ pub struct PartialSchema {
     /// Defaults to `schema`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub object: Option<String>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
     /// Defaults to `{}`.

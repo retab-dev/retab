@@ -6,17 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Public workflow run response without tenant isolation fields.
- *
- * This is the API response shape — distinct from the internal storage
- * model (:class:`StoredWorkflowRun`), which carries persistence-only
- * fields that never appear in API responses. Routes call
- * :func:`serialize_workflow_run_response` to convert the storage shape
- * into this response shape; constructing this class directly for
- * persistence would drop those storage-only fields silently. The two
- * classes were deliberately renamed to avoid the prior name collision.
- */
+/** A single execution of a workflow. */
 readonly class WorkflowRun implements \JsonSerializable
 {
     use JsonSerializableTrait;

@@ -6,11 +6,11 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Denormalized counts surface, split along the canonical axes.
-/// Each individual run contributes to exactly one ``lifecycle_counts``
-/// bucket, and additionally to one ``outcome`` bucket when
-/// ``lifecycle_counts.completed`` is incremented.
-/// The ``lifecycle_counts`` name disambiguates from the API_DESIGN.md
-/// ``lifecycle`` convention (which signals a discriminated union of
+/// Each individual run contributes to exactly one `lifecycle_counts`
+/// bucket, and additionally to one `outcome` bucket when
+/// `lifecycle_counts.completed` is incremented.
+/// The `lifecycle_counts` name disambiguates from the API_DESIGN.md
+/// `lifecycle` convention (which signals a discriminated union of
 /// typed states). This field is a counts subdocument, not a union.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlockTestBatchExecutionCounts {

@@ -5,25 +5,26 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class PartialSchema {
   private final String objectType;
-  private final String createdAt;
+  private final OffsetDateTime createdAt;
   private final Map<String, Object> jsonSchema;
   private final Boolean strict;
 
   @JsonCreator
   public PartialSchema(
       @JsonProperty(value = "object", required = false) String objectType,
-      @JsonProperty(value = "created_at", required = false) String createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "json_schema", required = false) Map<String, Object> jsonSchema,
       @JsonProperty(value = "strict", required = false) Boolean strict) {
-    this.objectType = objectType;
+    this.objectType = objectType != null ? objectType : "schema";
     this.createdAt = createdAt;
     this.jsonSchema = jsonSchema;
-    this.strict = strict;
+    this.strict = strict != null ? strict : true;
   }
 
   @JsonProperty("object")
@@ -32,7 +33,7 @@ public final class PartialSchema {
   }
 
   @JsonProperty("created_at")
-  public String getCreatedAt() {
+  public OffsetDateTime getCreatedAt() {
     return createdAt;
   }
 

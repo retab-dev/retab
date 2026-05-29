@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @status = hash[:status]
+      @status = hash[:status].nil? ? "skipped" : hash[:status]
       @reason = hash[:reason]
     end
   end

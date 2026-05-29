@@ -110,8 +110,7 @@ class Workflows
      *
      * Create a new workflow.
      *
-     * The workflow starts unpublished and is scaffolded with a default
-     * "Document" input block in the live block collection.
+     * The workflow starts unpublished with a default "Document" input block.
      * @param string|null $name The name of the workflow
      * @param string|null $description Description of the workflow
      * @return \Retab\Resource\Workflow
@@ -191,11 +190,8 @@ class Workflows
      *
      * Delete a workflow and all its associated entities.
      *
-     * This deletes:
-     * - The workflow document
-     * - All blocks and edges (live collections)
-     * - All block and edge snapshots
-     * - All workflow snapshots
+     * This deletes the workflow, all of its blocks and edges, and all of their
+     * snapshots.
      * @param string $workflowId
      * @return void
      * @throws \Retab\Exception\RetabException

@@ -14,7 +14,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @status = hash[:status]
+      @status = hash[:status].nil? ? "queued" : hash[:status]
     end
   end
 end

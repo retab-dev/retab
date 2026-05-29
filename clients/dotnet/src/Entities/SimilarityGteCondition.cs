@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a similarity gte condition.</summary>
     public class SimilarityGteCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "similarity_gte";
         public object Reference { get; set; } = default!;
         public double Threshold { get; set; }
         public SimilarityGteConditionMethod? Method { get; set; }

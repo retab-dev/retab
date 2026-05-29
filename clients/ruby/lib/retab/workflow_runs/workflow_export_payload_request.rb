@@ -44,7 +44,7 @@ module Retab
       hash = self.class.normalize(json)
       @workflow_id = hash[:workflow_id]
       @block_id = hash[:block_id]
-      @export_source = hash[:export_source]
+      @export_source = hash[:export_source].nil? ? "outputs" : hash[:export_source]
       @selected_run_ids = (hash[:selected_run_ids] || [])
       @selected_doc_types = (hash[:selected_doc_types] || [])
       @status = hash[:status]
@@ -53,9 +53,9 @@ module Retab
       @to_date = hash[:to_date]
       @trigger_type = hash[:trigger_type]
       @preferred_columns = (hash[:preferred_columns] || [])
-      @delimiter = hash[:delimiter]
-      @line_delimiter = hash[:line_delimiter]
-      @quote = hash[:quote]
+      @delimiter = hash[:delimiter].nil? ? ";" : hash[:delimiter]
+      @line_delimiter = hash[:line_delimiter].nil? ? "\n" : hash[:line_delimiter]
+      @quote = hash[:quote].nil? ? "\"" : hash[:quote]
     end
   end
 end

@@ -35,8 +35,8 @@
       "outputs": {
         "key": {}
       },
-      "routing_decision": [
-        "test_routing_decision"
+      "routing_decisions": [
+        "test_routing_decisions"
       ],
       "warnings": [
         "test_warnings"
@@ -71,7 +71,7 @@
         }
       },
       "verdict_summary": {
-        "result": true,
+        "passed": true,
         "assertions_passed": 1,
         "assertions_failed": 1,
         "blocked_assertions": 1,

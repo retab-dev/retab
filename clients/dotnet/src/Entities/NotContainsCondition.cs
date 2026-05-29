@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a not contains condition.</summary>
     public class NotContainsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "not_contains";
         public object Expected { get; set; } = default!;
 
         /// <summary>

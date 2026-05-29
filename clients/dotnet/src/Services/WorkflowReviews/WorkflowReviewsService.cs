@@ -22,7 +22,7 @@ namespace Retab
 
         /// <summary>List Reviews Route</summary>
         /// <remarks>
-        /// List reviews — the review queue, oldest first by ``created_at``.
+        /// List reviews — the review queue, oldest first by `created_at`.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -70,11 +70,9 @@ namespace Retab
 
         /// <summary>Approve Review Route</summary>
         /// <remarks>
-        /// Approve one exact review version and resume the Temporal run.
-        /// Earns its action-verb shape per the four criteria in
-        /// ``meta-pattern-blueprint.md`` §2: precondition (``decision is None``),
-        /// side-effect dominates (Temporal resume signal), divergent request body vs
-        /// ``/reject``, divergent response (carries ``resume_status``).
+        /// Approve one review version and resume the workflow run.
+        /// The response carries `resume_status` so callers can see whether the run
+        /// resumed successfully.
         /// </remarks>
         /// <param name="reviewId">The review id.</param>
         /// <param name="options">Request options.</param>
@@ -94,9 +92,8 @@ namespace Retab
 
         /// <summary>Reject Review Route</summary>
         /// <remarks>
-        /// Reject one exact review version and resume the Temporal run.
-        /// ``reason`` is required by the request shape — "rejected without reason"
-        /// is unrepresentable on the wire.
+        /// Reject one review version and resume the workflow run.
+        /// A `reason` is required.
         /// </remarks>
         /// <param name="reviewId">The review id.</param>
         /// <param name="options">Request options.</param>

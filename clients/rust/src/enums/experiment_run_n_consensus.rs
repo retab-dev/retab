@@ -2,85 +2,61 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ExperimentRunNConsensus {
     V3,
     V5,
     V7,
     /// Wire value not recognized by this SDK version. The original
-    /// string is preserved verbatim. WorkOS may add new enum values
+    /// integer is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
     /// forward-compatible values without panicking.
-    Unknown(String),
+    Unknown(i64),
 }
 
 impl ExperimentRunNConsensus {
-    /// Canonical wire string for this value. For [`Self::Unknown`] returns the
+    /// Canonical wire integer for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
-    pub fn as_str(&self) -> &str {
+    pub fn as_i64(&self) -> i64 {
         match self {
-            Self::V3 => "3",
-            Self::V5 => "5",
-            Self::V7 => "7",
-            Self::Unknown(s) => s.as_str(),
+            Self::V3 => 3,
+            Self::V5 => 5,
+            Self::V7 => 7,
+            Self::Unknown(n) => *n,
         }
     }
 }
 
 impl fmt::Display for ExperimentRunNConsensus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        write!(f, "{}", self.as_i64())
     }
 }
 
-impl AsRef<str> for ExperimentRunNConsensus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl FromStr for ExperimentRunNConsensus {
-    type Err = std::convert::Infallible;
+impl From<i64> for ExperimentRunNConsensus {
     #[allow(deprecated)]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "3" => Self::V3,
-            "5" => Self::V5,
-            "7" => Self::V7,
-            other => Self::Unknown(other.to_string()),
-        })
-    }
-}
-
-impl From<String> for ExperimentRunNConsensus {
-    fn from(s: String) -> Self {
-        // Reuse the original `String` allocation in the fallback branch.
-        match Self::from_str(&s) {
-            Ok(Self::Unknown(_)) => Self::Unknown(s),
-            Ok(other) => other,
+    fn from(n: i64) -> Self {
+        match n {
+            3 => Self::V3,
+            5 => Self::V5,
+            7 => Self::V7,
+            other => Self::Unknown(other),
         }
-    }
-}
-
-impl From<&str> for ExperimentRunNConsensus {
-    fn from(s: &str) -> Self {
-        Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
 impl Serialize for ExperimentRunNConsensus {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.as_str())
+        serializer.serialize_i64(self.as_i64())
     }
 }
 
 impl<'de> Deserialize<'de> for ExperimentRunNConsensus {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        Ok(Self::from(s))
+        let n = i64::deserialize(deserializer)?;
+        Ok(Self::from(n))
     }
 }

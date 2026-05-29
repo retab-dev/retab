@@ -9,7 +9,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class VerdictSummary {
-  private final Boolean result;
+  private final Boolean passed;
   private final Long assertionsPassed;
   private final Long assertionsFailed;
   private final Long blockedAssertions;
@@ -17,22 +17,22 @@ public final class VerdictSummary {
 
   @JsonCreator
   public VerdictSummary(
-      @JsonProperty(value = "result", required = true) Boolean result,
+      @JsonProperty(value = "passed", required = true) Boolean passed,
       @JsonProperty(value = "assertions_passed", required = false) Long assertionsPassed,
       @JsonProperty(value = "assertions_failed", required = false) Long assertionsFailed,
       @JsonProperty(value = "blocked_assertions", required = false) Long blockedAssertions,
       @JsonProperty(value = "failed_assertion_ids", required = false)
           List<String> failedAssertionIds) {
-    this.result = result;
+    this.passed = passed;
     this.assertionsPassed = assertionsPassed;
     this.assertionsFailed = assertionsFailed;
     this.blockedAssertions = blockedAssertions;
     this.failedAssertionIds = failedAssertionIds;
   }
 
-  @JsonProperty("result")
-  public Boolean isResult() {
-    return result;
+  @JsonProperty("passed")
+  public Boolean isPassed() {
+    return passed;
   }
 
   @JsonProperty("assertions_passed")

@@ -13,7 +13,7 @@ public final class CompletedWorkflowExperimentRun implements WorkflowExperimentR
   @JsonCreator
   public CompletedWorkflowExperimentRun(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "completed";
   }
 
   @JsonProperty("status")

@@ -48,7 +48,7 @@ export interface ParseWorkflowArtifact {
   output: ParseOutput;
   /** Usage information for the parse operation */
   usage?: RetabUsage | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt: Date;
   /**
    * Artifact operation that determines the backing record type

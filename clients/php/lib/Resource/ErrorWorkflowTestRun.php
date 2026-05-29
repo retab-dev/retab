@@ -9,8 +9,8 @@ namespace Retab\Resource;
 /**
  * The test run failed. The error message lives on this variant.
  *
- * Carries the same structured ``details`` envelope as workflow runs so
- * consumers can branch on ``error_code`` / ``stage`` rather than parsing
+ * Carries the same structured `details` envelope as workflow runs so
+ * consumers can branch on `error_code` / `stage` rather than parsing
  * a free-text message.
  */
 readonly class ErrorWorkflowTestRun implements \JsonSerializable

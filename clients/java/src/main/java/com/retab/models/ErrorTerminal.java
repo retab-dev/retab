@@ -25,7 +25,7 @@ public final class ErrorTerminal implements WorkflowRunLifecycle {
       @JsonProperty(value = "category", required = false) ErrorTerminalCategory category,
       @JsonProperty(value = "details", required = false) ErrorDetails details,
       @JsonProperty(value = "failing_step_id", required = false) String failingStepId) {
-    this.status = status;
+    this.status = status != null ? status : "error";
     this.message = message;
     this.stage = stage;
     this.category = category;

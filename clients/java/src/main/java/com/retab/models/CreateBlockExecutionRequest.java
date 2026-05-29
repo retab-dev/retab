@@ -25,7 +25,7 @@ public final class CreateBlockExecutionRequest {
     this.blockId = blockId;
     this.stepId = stepId;
     this.nConsensus = nConsensus;
-    this.checkEligibility = checkEligibility;
+    this.checkEligibility = checkEligibility != null ? checkEligibility : true;
   }
 
   @JsonProperty("run_id")

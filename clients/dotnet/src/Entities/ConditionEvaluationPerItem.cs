@@ -20,7 +20,7 @@ namespace Retab
         public object? Actual { get; set; }
 
         /// <summary>Whether this item matched the condition</summary>
-        public bool? Matched { get; set; }
+        public bool? Matched { get; set; } = false;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

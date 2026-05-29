@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "any_split_pages_lt" : hash[:kind]
       @min_pages = hash[:min_pages]
     end
   end

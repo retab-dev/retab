@@ -20,7 +20,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @type = hash[:type]
+      @type = hash[:type].nil? ? "run_step" : hash[:type]
       @run_id = hash[:run_id]
       @step_id = hash[:step_id]
     end

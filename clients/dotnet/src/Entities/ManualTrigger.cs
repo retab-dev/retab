@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Manual run started by a user from the dashboard.</summary>
     public class ManualTrigger
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "manual";
 
         /// <summary>User who started the run, when known</summary>
         public string? UserId { get; set; }

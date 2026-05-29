@@ -6,8 +6,8 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Intersection-over-Union for split page assignments.
-/// ``expected`` is stored in the canonical split-eval payload shape:
-/// ``{"splits": [{"name", "pages"}]}``
+/// `expected` is stored in the canonical split-eval payload shape:
+/// `{"splits": [{"name", "pages"}]}`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SplitIouCondition {
     /// Defaults to `split_iou_gte`.

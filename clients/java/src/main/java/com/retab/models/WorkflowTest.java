@@ -64,7 +64,7 @@ public final class WorkflowTest {
     this.assertionDriftStatus = assertionDriftStatus;
     this.schemaDrift = schemaDrift;
     this.schemaDriftDetail = schemaDriftDetail;
-    this.validationStatus = validationStatus;
+    this.validationStatus = validationStatus != null ? validationStatus : "valid";
     this.validationIssues = validationIssues;
     this.latestRunSummary = latestRunSummary;
     this.latestPassingRunSummary = latestPassingRunSummary;

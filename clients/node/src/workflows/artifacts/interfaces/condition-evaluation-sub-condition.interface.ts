@@ -13,11 +13,8 @@ import {
 
 /** Evaluation result for a sub-condition in a compound condition. */
 export interface ConditionEvaluationSubCondition {
-  /**
-   * Identifier for this sub-condition
-   * @default ""
-   */
-  subConditionId?: string;
+  /** Identifier for this sub-condition */
+  subConditionId?: string | null;
   /**
    * JSON path that was evaluated
    * @default ""
@@ -44,27 +41,27 @@ export interface ConditionEvaluationSubCondition {
    */
   matched?: boolean;
   /** Per-item breakdown if this sub-condition used a wildcard path */
-  perItem?: ConditionEvaluationPerItem[] | null;
+  items?: ConditionEvaluationPerItem[] | null;
 }
 
 export interface ConditionEvaluationSubConditionResponse {
-  sub_condition_id?: string;
+  sub_condition_id?: string | null;
   path?: string;
   operator?: string;
   expected?: unknown;
   actual?: unknown;
   matched?: boolean;
-  per_item?: ConditionEvaluationPerItemResponse[] | null;
+  items?: ConditionEvaluationPerItemResponse[] | null;
 }
 
 export const ZConditionEvaluationSubCondition = z.object({
-  subConditionId: z.string().optional(),
+  subConditionId: z.string().nullable().optional(),
   path: z.string().optional(),
   operator: z.string().optional(),
   expected: z.unknown().optional(),
   actual: z.unknown().optional(),
   matched: z.boolean().optional(),
-  perItem: ZConditionEvaluationPerItem.array().nullable().optional(),
+  items: ZConditionEvaluationPerItem.array().nullable().optional(),
 }) as z.ZodType<ConditionEvaluationSubCondition>;
 
 export function deserializeConditionEvaluationSubCondition(
@@ -77,12 +74,12 @@ export function deserializeConditionEvaluationSubCondition(
     expected: wire['expected'],
     actual: wire['actual'],
     matched: wire['matched'],
-    perItem:
-      wire['per_item'] == null
-        ? (wire['per_item'] as undefined)
-        : wire['per_item'] == null
-          ? wire['per_item']
-          : wire['per_item'].map((__i) => deserializeConditionEvaluationPerItem(__i)),
+    items:
+      wire['items'] == null
+        ? (wire['items'] as undefined)
+        : wire['items'] == null
+          ? wire['items']
+          : wire['items'].map((__i) => deserializeConditionEvaluationPerItem(__i)),
   };
 }
 
@@ -96,11 +93,11 @@ export function serializeConditionEvaluationSubCondition(
     expected: domain['expected'],
     actual: domain['actual'],
     matched: domain['matched'],
-    per_item:
-      domain['perItem'] == null
-        ? (domain['perItem'] as undefined)
-        : domain['perItem'] == null
-          ? domain['perItem']
-          : domain['perItem'].map((__i) => serializeConditionEvaluationPerItem(__i)),
+    items:
+      domain['items'] == null
+        ? (domain['items'] as undefined)
+        : domain['items'] == null
+          ? domain['items']
+          : domain['items'].map((__i) => serializeConditionEvaluationPerItem(__i)),
   };
 }

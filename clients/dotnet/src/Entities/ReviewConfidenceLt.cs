@@ -8,7 +8,7 @@ namespace Retab
     /// </remarks>
     public class ReviewConfidenceLt
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "confidence_lt";
 
         /// <summary>Gate fires when confidence &lt; threshold</summary>
         public double Threshold { get; set; }

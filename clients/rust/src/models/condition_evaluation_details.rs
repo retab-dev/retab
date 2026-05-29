@@ -33,7 +33,7 @@ pub struct ConditionEvaluationDetails {
     pub matched: Option<bool>,
     /// Per-item breakdown for wildcard array conditions
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub per_item: Option<Vec<ConditionEvaluationPerItem>>,
+    pub items: Option<Vec<ConditionEvaluationPerItem>>,
     /// Sub-condition evaluations for compound conditions
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sub_conditions: Option<Vec<ConditionEvaluationSubCondition>>,

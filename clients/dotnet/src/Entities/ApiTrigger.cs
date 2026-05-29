@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Run started programmatically via the public API.</summary>
     public class ApiTrigger
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "api";
 
         /// <summary>API key id used to start the run, when known</summary>
         public string? ApiKeyId { get; set; }

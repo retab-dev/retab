@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.
+/// The terminal decision recorded against one review version.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewDecision {
     pub verdict: ReviewVerdict,

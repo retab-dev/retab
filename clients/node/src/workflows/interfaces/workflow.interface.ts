@@ -11,7 +11,7 @@ import {
   serializeWorkflowPublished,
 } from './workflow-published.interface.js';
 
-/** Public workflow resource returned by workflow metadata endpoints. */
+/** A workflow and its current configuration. */
 export interface Workflow {
   /** Unique ID for this workflow */
   id: string;

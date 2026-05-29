@@ -36,7 +36,7 @@ pub struct StoredBlockExecution {
     pub handle_outputs: Option<std::collections::HashMap<String, serde_json::Value>>,
     /// Active output handles for routing decisions
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub routing_decision: Option<Vec<String>>,
+    pub routing_decisions: Option<Vec<String>>,
     /// Duration of the block execution in milliseconds
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<f64>,
@@ -74,7 +74,7 @@ impl StoredBlockExecution {
             handle_inputs: Default::default(),
             artifact: Default::default(),
             handle_outputs: Default::default(),
-            routing_decision: Default::default(),
+            routing_decisions: Default::default(),
             duration_ms: Default::default(),
             created_at: Default::default(),
             block_config: Default::default(),

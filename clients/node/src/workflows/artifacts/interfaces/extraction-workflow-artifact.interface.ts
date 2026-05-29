@@ -57,7 +57,7 @@ export interface ExtractionWorkflowArtifact {
   metadata?: Record<string, string> | null;
   /** Usage information for the extraction */
   usage?: RetabUsage | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt?: Date;
   /**
    * Artifact operation that determines the backing record type

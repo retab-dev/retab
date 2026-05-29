@@ -22,7 +22,7 @@ module Retab
       hash = self.class.normalize(json)
       @version_id = hash[:version_id]
       @published_at = hash[:published_at]
-      @description = hash[:description]
+      @description = hash[:description].nil? ? "" : hash[:description]
     end
   end
 end

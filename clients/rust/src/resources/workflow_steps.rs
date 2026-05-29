@@ -36,9 +36,9 @@ pub struct ListParams {
     /// Step id cursor: return the page after this id (mutually exclusive with ``before``).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
-    /// Maximum number of steps to return per page (1-1000). Defaults to 200; raise it for run-scoped queries on large DAGs and rely on cursor pagination for the rest.
+    /// Maximum number of steps to return per page (1-20). Capped at 20 because each step hydrates its handle payloads from the artifact store; use cursor pagination for the rest.
     ///
-    /// Defaults to `200`.
+    /// Defaults to `20`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
 }
@@ -54,7 +54,7 @@ impl Default for ListParams {
             status: Default::default(),
             before: Default::default(),
             after: Default::default(),
-            limit: Some(200),
+            limit: Some(20),
         }
     }
 }

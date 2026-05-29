@@ -45,7 +45,7 @@ public final class ClassificationWorkflowArtifact implements WorkflowArtifactOpe
     this.consensus = consensus;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "classification";
   }
 
   @JsonProperty("id")

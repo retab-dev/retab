@@ -44,7 +44,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "review_trigger_evaluation" : hash[:operation]
       @id = hash[:id]
       @run_id = hash[:run_id]
       @step_id = hash[:step_id]
@@ -52,11 +52,11 @@ module Retab
       @selected_handles = (hash[:selected_handles] || [])
       @matched_branch_id = hash[:matched_branch_id]
       @matched_condition_ids = (hash[:matched_condition_ids] || [])
-      @requires_human_review = hash[:requires_human_review]
+      @requires_human_review = hash[:requires_human_review].nil? ? false : hash[:requires_human_review]
       @reviewer_id = hash[:reviewer_id]
       @review_decision = hash[:review_decision]
       @review_notes = hash[:review_notes]
-      @requested_revision = hash[:requested_revision]
+      @requested_revision = hash[:requested_revision].nil? ? false : hash[:requested_revision]
       @reviewed_at = hash[:reviewed_at]
       @created_at = hash[:created_at]
     end

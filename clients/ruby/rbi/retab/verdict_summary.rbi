@@ -10,10 +10,10 @@ module Retab
     def initialize(json); end
 
     sig { returns(T::Boolean) }
-    def result; end
+    def passed; end
 
     sig { params(value: T::Boolean).returns(T::Boolean) }
-    def result=(value); end
+    def passed=(value); end
 
     sig { returns(T.nilable(Integer)) }
     def assertions_passed; end

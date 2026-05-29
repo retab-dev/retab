@@ -31,7 +31,7 @@ public final class FunctionInvocation implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "duration_ms", required = false) Long durationMs,
       @JsonProperty(value = "error", required = false) ErrorDetails error,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
-    this.operation = operation;
+    this.operation = operation != null ? operation : "function_invocation";
     this.id = id;
     this.runId = runId;
     this.stepId = stepId;

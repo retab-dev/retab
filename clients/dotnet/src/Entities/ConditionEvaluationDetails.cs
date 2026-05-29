@@ -11,10 +11,10 @@ namespace Retab
     {
 
         /// <summary>JSON path that was evaluated</summary>
-        public string? Path { get; set; }
+        public string? Path { get; set; } = "";
 
         /// <summary>Comparison operator used</summary>
-        public string? Operator { get; set; }
+        public string? Operator { get; set; } = "";
 
         /// <summary>Expected value</summary>
         public object? Expected { get; set; }
@@ -23,10 +23,10 @@ namespace Retab
         public object? Actual { get; set; }
 
         /// <summary>Whether the condition matched</summary>
-        public bool? Matched { get; set; }
+        public bool? Matched { get; set; } = false;
 
         /// <summary>Per-item breakdown for wildcard array conditions</summary>
-        public List<ConditionEvaluationPerItem>? PerItem { get; set; }
+        public List<ConditionEvaluationPerItem>? Items { get; set; }
 
         /// <summary>Sub-condition evaluations for compound conditions</summary>
         public List<ConditionEvaluationSubCondition>? SubConditions { get; set; }

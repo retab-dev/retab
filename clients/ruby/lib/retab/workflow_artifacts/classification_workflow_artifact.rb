@@ -46,7 +46,7 @@ module Retab
       @consensus = hash[:consensus] ? Retab::ClassificationConsensus.new(hash[:consensus]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "classification" : hash[:operation]
     end
   end
 end

@@ -22,8 +22,8 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
-      @error = hash[:error]
+      @kind = hash[:kind].nil? ? "no_metrics" : hash[:kind]
+      @error = hash[:error].nil? ? "no_metrics" : hash[:error]
       @experiment_id = hash[:experiment_id]
       @message = hash[:message]
     end

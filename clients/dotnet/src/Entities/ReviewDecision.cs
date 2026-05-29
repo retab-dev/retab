@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.</summary>
+    /// <summary>The terminal decision recorded against one review version.</summary>
     public class ReviewDecision
     {
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]

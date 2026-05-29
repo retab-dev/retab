@@ -20,7 +20,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "split_iou_gte" : hash[:kind]
       @expected = hash[:expected] || {}
       @threshold = hash[:threshold]
     end

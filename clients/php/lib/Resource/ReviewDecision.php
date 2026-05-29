@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`. */
+/** The terminal decision recorded against one review version. */
 readonly class ReviewDecision implements \JsonSerializable
 {
     use JsonSerializableTrait;

@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a not exists condition.</summary>
     public class NotExistsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "not_exists";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

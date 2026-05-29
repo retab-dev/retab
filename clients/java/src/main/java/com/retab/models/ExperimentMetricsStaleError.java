@@ -27,8 +27,8 @@ public final class ExperimentMetricsStaleError implements Experiment {
       @JsonProperty(value = "current_config_fingerprint", required = false)
           String currentConfigFingerprint,
       @JsonProperty(value = "message", required = true) String message) {
-    this.kind = kind;
-    this.error = error;
+    this.kind = kind != null ? kind : "stale_metrics";
+    this.error = error != null ? error : "stale_metrics";
     this.experimentId = experimentId;
     this.staleReasons = staleReasons;
     this.lastRun = lastRun;

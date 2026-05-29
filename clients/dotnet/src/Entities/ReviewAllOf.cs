@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Gate fires only if ALL child predicates fire.</summary>
     public class ReviewAllOf
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "all_of";
         public List<object> Predicates { get; set; } = default!;
 
         /// <summary>

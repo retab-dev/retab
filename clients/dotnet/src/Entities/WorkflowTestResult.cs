@@ -23,10 +23,10 @@ namespace Retab
         [Newtonsoft.Json.JsonConverter(typeof(ManualWorkflowTestSourceDiscriminatorConverter))]
         public object Source { get; set; } = default!;
         public Dictionary<string, object>? Outputs { get; set; }
-        public List<string>? RoutingDecision { get; set; }
+        public List<string>? RoutingDecisions { get; set; }
         public List<string>? Warnings { get; set; }
         public ErrorDetails? Error { get; set; }
-        public bool? Skipped { get; set; }
+        public bool? Skipped { get; set; } = false;
         public AssertionResult? AssertionResult { get; set; }
         public VerdictSummary? VerdictSummary { get; set; }
 

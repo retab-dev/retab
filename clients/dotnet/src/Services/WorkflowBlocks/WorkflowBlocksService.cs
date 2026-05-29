@@ -56,7 +56,6 @@ namespace Retab
         /// <summary>Create Block</summary>
         /// <remarks>
         /// Create a new block in a workflow.
-        /// This creates a block in the live workflow_blocks collection.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

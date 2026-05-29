@@ -19,7 +19,7 @@ class WorkflowReviewVersions
      *
      * List versions for one review.
      *
-     * ``review_id`` is required by design — listing versions across all reviews
+     * `review_id` is required by design — listing versions across all reviews
      * has no product use and would expose a needlessly wide query surface.
      * @param string $reviewId Required: the review whose versions to list.
      * @param string|null $before

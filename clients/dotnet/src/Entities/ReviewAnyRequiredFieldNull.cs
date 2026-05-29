@@ -1,14 +1,10 @@
 namespace Retab
 {
 
-    /// <summary>Gate when any required field in the extract schema is null/missing.</summary>
-    /// <remarks>
-    /// First-class predicate because this is the most common real-world driver
-    /// for structured-extraction review.
-    /// </remarks>
+    /// <summary>Gate when any required field in the extract schema is null or missing.</summary>
     public class ReviewAnyRequiredFieldNull
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "any_required_field_null";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

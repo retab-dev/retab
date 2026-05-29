@@ -19,7 +19,7 @@ readonly class FunctionInvocation implements \JsonSerializable
         public mixed $output = null,
         public ?int $durationMs = null,
         public ?ErrorDetails $error = null,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'function_invocation',

@@ -3,7 +3,7 @@ namespace Retab
 
     /// <summary>Block-test assertion against one declared output handle.</summary>
     /// <remarks>
-    /// ``target`` is the only supported shape: an output handle id and an
+    /// `target` is the only supported shape: an output handle id and an
     /// optional relative path inside that handle's payload.
     /// </remarks>
     public class AssertionSpec

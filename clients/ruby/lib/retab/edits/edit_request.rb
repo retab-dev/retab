@@ -29,9 +29,9 @@ module Retab
       @instructions = hash[:instructions]
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @template_id = hash[:template_id]
-      @model = hash[:model]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @config = hash[:config] ? Retab::EditConfig.new(hash[:config]) : nil
-      @bust_cache = hash[:bust_cache]
+      @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
     end
   end
 end

@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a llm judged as condition.</summary>
     public class LlmJudgedAsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "llm_judged_as";
         public string Rubric { get; set; } = default!;
         public string? ExpectedLabel { get; set; }
 

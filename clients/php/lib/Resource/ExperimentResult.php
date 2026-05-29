@@ -9,8 +9,8 @@ namespace Retab\Resource;
 /**
  * Run-scoped per-document experiment result.
  *
- * The storage row is still named ``experiment_jobs`` internally, but the
- * public contract is a result row addressed by ``run_id`` + ``document_id``.
+ * The storage row is still named `experiment_jobs` internally, but the
+ * public contract is a result row addressed by `run_id` + `document_id`.
  */
 readonly class ExperimentResult implements \JsonSerializable
 {

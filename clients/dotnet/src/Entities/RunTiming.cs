@@ -2,14 +2,9 @@ namespace Retab
 {
     using System;
 
-    /// <summary>All timing information for a run.</summary>
+    /// <summary>Timing information for a run.</summary>
     /// <remarks>
-    /// ``duration_ms`` is backfilled at read time from
-    /// ``completed_at - started_at`` when both timestamps are present and the
-    /// stored value is ``None`` (the Mongo projection helpers in
-    /// ``run_duration.py`` compute and persist the canonical value). Records that
-    /// already store ``duration_ms`` are left untouched (idempotent), so backfill
-    /// cannot drift from the canonical value written by the projection.
+    /// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
     /// </remarks>
     public class RunTiming
     {
@@ -29,7 +24,7 @@ namespace Retab
         /// <summary>Accumulated time spent waiting for review across the run</summary>
         public long? AccumulatedReviewWaitingMs { get; set; }
 
-        /// <summary>Total run duration in milliseconds. Backfilled from ``completed_at - started_at`` on read when not stored.</summary>
+        /// <summary>Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.</summary>
         public long? DurationMs { get; set; }
 
         /// <summary>

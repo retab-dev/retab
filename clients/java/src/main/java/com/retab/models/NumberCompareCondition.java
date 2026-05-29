@@ -18,7 +18,7 @@ public final class NumberCompareCondition implements Condition {
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "op", required = true) NumberCompareConditionOp op,
       @JsonProperty(value = "expected", required = true) Object expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "number_compare";
     this.op = op;
     this.expected = expected;
   }

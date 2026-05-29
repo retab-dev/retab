@@ -20,7 +20,7 @@ public final class StoredBlockExecution {
   private final Map<String, Object> handleInputs;
   private final StepArtifactRef artifact;
   private final Map<String, Object> handleOutputs;
-  private final List<String> routingDecision;
+  private final List<String> routingDecisions;
   private final Double durationMs;
   private final OffsetDateTime createdAt;
   private final Map<String, Object> blockConfig;
@@ -38,7 +38,7 @@ public final class StoredBlockExecution {
       @JsonProperty(value = "handle_inputs", required = false) Map<String, Object> handleInputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "handle_outputs", required = false) Map<String, Object> handleOutputs,
-      @JsonProperty(value = "routing_decision", required = false) List<String> routingDecision,
+      @JsonProperty(value = "routing_decisions", required = false) List<String> routingDecisions,
       @JsonProperty(value = "duration_ms", required = false) Double durationMs,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
@@ -54,7 +54,7 @@ public final class StoredBlockExecution {
     this.handleInputs = handleInputs;
     this.artifact = artifact;
     this.handleOutputs = handleOutputs;
-    this.routingDecision = routingDecision;
+    this.routingDecisions = routingDecisions;
     this.durationMs = durationMs;
     this.createdAt = createdAt;
     this.blockConfig = blockConfig;
@@ -107,9 +107,9 @@ public final class StoredBlockExecution {
     return handleOutputs;
   }
 
-  @JsonProperty("routing_decision")
-  public List<String> getRoutingDecision() {
-    return routingDecision;
+  @JsonProperty("routing_decisions")
+  public List<String> getRoutingDecisions() {
+    return routingDecisions;
   }
 
   @JsonProperty("duration_ms")

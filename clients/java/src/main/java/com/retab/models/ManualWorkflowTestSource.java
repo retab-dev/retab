@@ -17,7 +17,7 @@ public final class ManualWorkflowTestSource implements WorkflowTestSource {
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "handle_inputs", required = false)
           Map<String, HandleInput> handleInputs) {
-    this.type = type;
+    this.type = type != null ? type : "manual";
     this.handleInputs = handleInputs;
   }
 

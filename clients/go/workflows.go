@@ -45,8 +45,7 @@ type WorkflowsCreateParams struct {
 
 // Create workflow
 // Create a new workflow.
-// The workflow starts unpublished and is scaffolded with a default
-// "Document" input block in the live block collection.
+// The workflow starts unpublished with a default "Document" input block.
 func (s *WorkflowService) Create(ctx context.Context, params *WorkflowsCreateParams, opts ...RequestOption) (*Workflow, error) {
 	var result Workflow
 	_, err := s.client.request(ctx, "POST", "/v1/workflows", nil, params, &result, opts)
@@ -95,11 +94,8 @@ func (s *WorkflowService) Update(ctx context.Context, workflowID string, params 
 
 // Delete workflow
 // Delete a workflow and all its associated entities.
-// This deletes:
-// - The workflow document
-// - All blocks and edges (live collections)
-// - All block and edge snapshots
-// - All workflow snapshots
+// This deletes the workflow, all of its blocks and edges, and all of their
+// snapshots.
 func (s *WorkflowService) Delete(ctx context.Context, workflowID string, opts ...RequestOption) error {
 	if workflowID == "" {
 		return fmt.Errorf("retab: workflow_id is required")

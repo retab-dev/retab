@@ -4,10 +4,10 @@ namespace Retab
     /// <summary>Represents a between condition.</summary>
     public class BetweenCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "between";
         public OneOf.OneOf<long, double> Lower { get; set; } = default!;
         public OneOf.OneOf<long, double> Upper { get; set; } = default!;
-        public bool? Inclusive { get; set; }
+        public bool? Inclusive { get; set; } = true;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

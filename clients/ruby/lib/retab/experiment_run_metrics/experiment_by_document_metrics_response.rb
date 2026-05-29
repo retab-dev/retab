@@ -31,8 +31,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @run_id = hash[:run_id]
-      @kind = hash[:kind]
-      @view = hash[:view]
+      @kind = hash[:kind].nil? ? "by_document" : hash[:kind]
+      @view = hash[:view].nil? ? "by_document" : hash[:view]
       @document = hash[:document] ? Retab::ExperimentMetricDocumentRef.new(hash[:document]) : nil
       @score = hash[:score]
       @prior_score = hash[:prior_score]

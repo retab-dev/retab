@@ -26,9 +26,9 @@ public final class EditRequest {
     this.instructions = instructions;
     this.document = document;
     this.templateId = templateId;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.config = config;
-    this.bustCache = bustCache;
+    this.bustCache = bustCache != null ? bustCache : false;
   }
 
   @JsonProperty("instructions")

@@ -31,8 +31,8 @@ public final class ExperimentByTargetMetricsResponse implements Experiment {
       @JsonProperty(value = "documents", required = false)
           List<ExperimentByTargetDocumentMetric> documents) {
     this.runId = runId;
-    this.kind = kind;
-    this.view = view;
+    this.kind = kind != null ? kind : "by_target";
+    this.view = view != null ? view : "by_target";
     this.target = target;
     this.score = score;
     this.priorScore = priorScore;

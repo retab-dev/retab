@@ -33,7 +33,7 @@ public final class ConditionalEvaluation implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "matched_condition_ids", required = false)
           List<String> matchedConditionIds,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
-    this.operation = operation;
+    this.operation = operation != null ? operation : "conditional_evaluation";
     this.id = id;
     this.runId = runId;
     this.stepId = stepId;

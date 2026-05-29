@@ -69,7 +69,7 @@ export interface ClassificationWorkflowArtifact {
   consensus?: ClassificationConsensus | null;
   /** Usage information for the classification */
   usage?: RetabUsage | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt: Date;
   /**
    * Artifact operation that determines the backing record type

@@ -19,7 +19,7 @@ class WorkflowTestRunResultsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Test Execution Results List workflow test results for a single run, page by page. Pagination strategy: the parent ``workflow_test_runs.result_run_record_ids`` document already holds the ordered list of child record IDs. ``workflow_block_test_runs`` rows do not carry a ``run_id`` field (the relationship lives only on the parent), so a direct keyset query on the child collection is not…"""
+        """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         params: dict[str, Any] = {
             "run_id": run_id,
             "before": before,
@@ -55,7 +55,7 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowTestResult]:
-        """List Test Execution Results List workflow test results for a single run, page by page. Pagination strategy: the parent ``workflow_test_runs.result_run_record_ids`` document already holds the ordered list of child record IDs. ``workflow_block_test_runs`` rows do not carry a ``run_id`` field (the relationship lives only on the parent), so a direct keyset query on the child collection is not…"""
+        """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowTestResult)
 
@@ -78,7 +78,7 @@ class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin)
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowTestResult]:
-        """List Test Execution Results List workflow test results for a single run, page by page. Pagination strategy: the parent ``workflow_test_runs.result_run_record_ids`` document already holds the ordered list of child record IDs. ``workflow_block_test_runs`` rows do not carry a ``run_id`` field (the relationship lives only on the parent), so a direct keyset query on the child collection is not…"""
+        """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowTestResult)
 

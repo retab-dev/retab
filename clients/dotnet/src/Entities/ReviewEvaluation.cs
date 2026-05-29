@@ -8,7 +8,7 @@ namespace Retab
     {
 
         /// <summary>Artifact operation that determines the backing record type</summary>
-        public string? Operation { get; set; }
+        public string? Operation { get; set; } = "review_trigger_evaluation";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;
         public string StepId { get; set; } = default!;
@@ -16,14 +16,14 @@ namespace Retab
         public List<string>? SelectedHandles { get; set; }
         public string? MatchedBranchId { get; set; }
         public List<string>? MatchedConditionIds { get; set; }
-        public bool? RequiresHumanReview { get; set; }
+        public bool? RequiresHumanReview { get; set; } = false;
         public string? ReviewerId { get; set; }
         public ReviewEvaluationReviewDecision? ReviewDecision { get; set; }
         public string? ReviewNotes { get; set; }
-        public bool? RequestedRevision { get; set; }
+        public bool? RequestedRevision { get; set; } = false;
         public DateTimeOffset? ReviewedAt { get; set; }
 
-        /// <summary>When this artifact was written by the orchestrator.</summary>
+        /// <summary>Timestamp when this artifact was created.</summary>
         public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>

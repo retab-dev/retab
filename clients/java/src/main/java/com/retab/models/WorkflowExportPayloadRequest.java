@@ -58,9 +58,9 @@ public final class WorkflowExportPayloadRequest {
     this.toDate = toDate;
     this.triggerType = triggerType;
     this.preferredColumns = preferredColumns;
-    this.delimiter = delimiter;
-    this.lineDelimiter = lineDelimiter;
-    this.quote = quote;
+    this.delimiter = delimiter != null ? delimiter : ";";
+    this.lineDelimiter = lineDelimiter != null ? lineDelimiter : "\n";
+    this.quote = quote != null ? quote : "\"";
   }
 
   @JsonProperty("workflow_id")
