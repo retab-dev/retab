@@ -8,7 +8,7 @@ namespace Retab\Resource;
 
 /**
  * Terminal: the block declared its inputs unsatisfied via
- * ``should_skip_block`` and was skipped. ``reason`` is the skip rationale
+ * `should_skip_block` and was skipped. `reason` is the skip rationale
  * surfaced by the block's input requirements registry.
  */
 readonly class SkippedBlockExecutionLifecycle implements \JsonSerializable

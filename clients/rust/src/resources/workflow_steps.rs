@@ -30,10 +30,10 @@ pub struct ListParams {
     /// Optional step lifecycle status filter. Repeat the query parameter for multiple values.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<Vec<String>>,
-    /// Step id cursor: return the page before this id (mutually exclusive with ``after``).
+    /// Step id cursor: return the page before this id (mutually exclusive with `after`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
-    /// Step id cursor: return the page after this id (mutually exclusive with ``before``).
+    /// Step id cursor: return the page after this id (mutually exclusive with `before`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
     /// Maximum number of steps to return per page (1-20). Capped at 20 because each step hydrates its handle payloads from the artifact store; use cursor pagination for the rest.
@@ -71,10 +71,10 @@ impl<'a> WorkflowStepsApi<'a> {
     ///
     /// List steps with status and artifact summaries.
     ///
-    /// Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker
-    /// (the same compound key the underlying index uses). Pass ``after`` for
-    /// the next page, ``before`` for the previous page — mutually exclusive.
-    /// ``run_id`` is optional; when omitted the list is scoped to the caller's
+    /// Sorted by `started_at` ascending with `step_id` as the tiebreaker
+    /// (the same compound key the underlying index uses). Pass `after` for
+    /// the next page, `before` for the previous page — mutually exclusive.
+    /// `run_id` is optional; when omitted the list is scoped to the caller's
     /// organization.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowStepList, Error> {
         self.list_with_options(params, None).await
@@ -95,11 +95,9 @@ impl<'a> WorkflowStepsApi<'a> {
 
     /// Get Workflow Step
     ///
-    /// Get one persisted step document by step id.
+    /// Get one step by its step id.
     ///
-    /// This is the canonical step object shape used by ``GET /workflows/steps``.
-    /// It intentionally does not join fingerprint rows or return experiment query
-    /// projections.
+    /// Returns the same step shape as `GET /workflows/steps`.
     pub async fn get(&self, step_id: &str, params: GetParams) -> Result<WorkflowRunStep, Error> {
         self.get_with_options(step_id, params, None).await
     }

@@ -23,6 +23,13 @@ class Edits
 
     /**
      * List Edits
+     *
+     * List edits.
+     *
+     * Returns a paginated list of edits. Filter by `filename` (case-insensitive
+     * prefix match), `template_id`, and a `from_date`/`to_date` creation range
+     * (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and
+     * `order`; an invalid date format responds with `400`.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
@@ -66,6 +73,14 @@ class Edits
 
     /**
      * Create Edit
+     *
+     * Create an edit.
+     *
+     * Fills the form fields of a document according to `instructions` and renders
+     * the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX,
+     * or PPTX) or `template_id` (an existing edit template) — supplying both or
+     * neither responds with `400`. Returns the created edit with the filled form
+     * data and rendered document; responds with `201`.
      * @param string $instructions Instructions describing how to fill the form fields.
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|null $document Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.
      * @param string|null $templateId EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document.
@@ -106,6 +121,12 @@ class Edits
 
     /**
      * Get Edit
+     *
+     * Retrieve an edit.
+     *
+     * Fetches a single edit by its `edit_id`. Returns the edit with its filled
+     * form data and rendered document; responds with `404` if no edit with that
+     * id exists.
      * @param string $editId
      * @return \Retab\Resource\Edit
      * @throws \Retab\Exception\RetabException
@@ -124,6 +145,11 @@ class Edits
 
     /**
      * Delete Edit
+     *
+     * Delete an edit.
+     *
+     * Permanently deletes the edit identified by `edit_id`. Returns `204` on
+     * success, or `404` if no edit with that id exists.
      * @param string $editId
      * @return void
      * @throws \Retab\Exception\RetabException

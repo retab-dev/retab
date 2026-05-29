@@ -62,6 +62,10 @@ func (s *WorkflowExperimentService) Create(ctx context.Context, params *Workflow
 }
 
 // Get experiment
+// Retrieve a single experiment.
+// Identified by `experiment_id`. Returns the experiment along with its
+// latest-run status, score, staleness, and schema-drift detection. Returns
+// 404 if no experiment with that ID exists.
 func (s *WorkflowExperimentService) Get(ctx context.Context, experimentID string, opts ...RequestOption) (*WorkflowExperiment, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experiment_id is required")
@@ -83,6 +87,10 @@ type WorkflowExperimentsUpdateParams struct {
 }
 
 // Update experiment
+// Update an experiment.
+// Identified by `experiment_id`. Send any of `name`, `n_consensus`,
+// `documents`, or `document_captures`; omitted fields are left unchanged.
+// Returns the updated experiment with its latest-run status and drift info.
 func (s *WorkflowExperimentService) Update(ctx context.Context, experimentID string, params *WorkflowExperimentsUpdateParams, opts ...RequestOption) (*WorkflowExperiment, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experiment_id is required")
@@ -96,6 +104,10 @@ func (s *WorkflowExperimentService) Update(ctx context.Context, experimentID str
 }
 
 // Delete experiment
+// Delete an experiment.
+// Identified by `experiment_id`. Also removes the experiment's runs and
+// results. Returns 204 on success, 404 if not found, and 409 if the latest
+// run is still pending or running (cancel it first).
 func (s *WorkflowExperimentService) Delete(ctx context.Context, experimentID string, opts ...RequestOption) error {
 	if experimentID == "" {
 		return fmt.Errorf("retab: experiment_id is required")

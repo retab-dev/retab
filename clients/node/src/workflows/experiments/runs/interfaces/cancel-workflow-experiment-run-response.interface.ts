@@ -56,6 +56,7 @@ import {
   serializeRunningWorkflowExperimentRun,
 } from './running-workflow-experiment-run.interface.js';
 
+/** Result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state. */
 export interface CancelWorkflowExperimentRunResponse {
   id: string;
   lifecycle:

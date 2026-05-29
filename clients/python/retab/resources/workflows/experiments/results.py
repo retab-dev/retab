@@ -19,7 +19,7 @@ class ExperimentRunResultsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Experiment Results"""
+        """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         params: dict[str, Any] = {
             "run_id": run_id,
             "before": before,
@@ -34,7 +34,7 @@ class ExperimentRunResultsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/experiments/results", params=params or None, data=data)
 
     def prepare_get(self, result_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Experiment Result"""
+        """Get Experiment Result Retrieve a single experiment result. Identified by `result_id`. Returns the per-document result with its lifecycle status, timing, and produced artifact. Returns 404 if no result with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -55,12 +55,12 @@ class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[ExperimentResult]:
-        """List Experiment Results"""
+        """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=ExperimentResult)
 
     def get(self, result_id: str, **extra_params: Any) -> ExperimentResult:
-        """Get Experiment Result"""
+        """Get Experiment Result Retrieve a single experiment result. Identified by `result_id`. Returns the per-document result with its lifecycle status, timing, and produced artifact. Returns 404 if no result with that ID exists."""
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return ExperimentResult.model_validate(response)
@@ -78,12 +78,12 @@ class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[ExperimentResult]:
-        """List Experiment Results"""
+        """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=ExperimentResult)
 
     async def get(self, result_id: str, **extra_params: Any) -> ExperimentResult:
-        """Get Experiment Result"""
+        """Get Experiment Result Retrieve a single experiment result. Identified by `result_id`. Returns the per-document result with its lifecycle status, timing, and produced artifact. Returns 404 if no result with that ID exists."""
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ExperimentResult.model_validate(response)

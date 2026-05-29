@@ -5,18 +5,11 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Request to update a block. Only provided fields are updated.
-/// `config_mode` is a request-level signal (not persisted) that controls
-/// how the route folds the `config` patch into the existing config doc:
-/// * `"merge"` (default): RFC 7396 JSON Merge Patch — dicts recurse,
-/// arrays/scalars replace, `null` deletes the key. This is what CLI
-/// callers pass via `--merge-config-file`.
-/// * `"replace"`: take `config` as the full new typed config. Top-level
-/// `null` values are pruned so the caller can wipe a key with one
-/// request. This is what CLI callers pass via `--config-file`.
-/// Pre-config_mode callers (legacy SDKs, the canvas, any code that doesn't
-/// send the field) keep the merge behavior; they were already sending
-/// full configs on every save, which is idempotent under merge.
+/// Update a block. Only the fields you provide are changed.
+/// `config_mode` controls how `config` is applied:
+/// * `"merge"` (default): the given `config` is merged into the existing
+/// one — nested objects are combined, and a `null` value deletes a key.
+/// * `"replace"`: the given `config` replaces the existing one entirely.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateWorkflowBlockRequest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -33,7 +26,7 @@ pub struct UpdateWorkflowBlockRequest {
     pub config: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_id: Option<String>,
-    /// How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
+    /// How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub config_mode: Option<UpdateWorkflowBlockRequestConfigMode>,
 }

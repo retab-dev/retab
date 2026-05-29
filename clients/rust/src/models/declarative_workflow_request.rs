@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body carrying a workflow's full YAML definition for validate, plan, apply, or export.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeWorkflowRequest {
     /// Workflow YAML definition

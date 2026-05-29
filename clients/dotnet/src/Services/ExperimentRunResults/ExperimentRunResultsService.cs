@@ -18,6 +18,12 @@ namespace Retab
         public ExperimentRunResultsService(Retab client) : base(client) { }
 
         /// <summary>List Experiment Results</summary>
+        /// <remarks>
+        /// List per-document results for an experiment run.
+        /// Requires the `run_id` query parameter. Returns one result row per document
+        /// in the run, with each row's lifecycle status, timing, and produced
+        /// artifact, as a cursor-paginated list.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +50,12 @@ namespace Retab
         }
 
         /// <summary>Get Experiment Result</summary>
+        /// <remarks>
+        /// Retrieve a single experiment result.
+        /// Identified by `result_id`. Returns the per-document result with its
+        /// lifecycle status, timing, and produced artifact. Returns 404 if no result
+        /// with that ID exists.
+        /// </remarks>
         /// <param name="resultId">The result id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

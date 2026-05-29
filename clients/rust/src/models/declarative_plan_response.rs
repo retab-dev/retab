@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativePlanResponse {
     pub workflow_id: String,

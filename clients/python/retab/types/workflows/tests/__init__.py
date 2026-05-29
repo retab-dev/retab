@@ -180,6 +180,8 @@ class ContainCondition(BaseModel):
 
 
 class CreateWorkflowTestRequest(BaseModel):
+    """Body to create a workflow test: the target block, an input `source`, and an `assertion` to evaluate its output."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
@@ -219,15 +221,10 @@ class JsonSchemaValidCondition(BaseModel):
 class LatestBlockTestRunSummary(BaseModel):
     """Summary of the most recent block-test run.
 
-    The two harmonized axes — execution status and verdict outcome — are
-    exposed as separate fields. The runner only writes the summary on
-    terminal-state transitions, so in practice `status` is one of
-    `completed | error | cancelled` and `outcome` is populated when
-    `status == "completed"`.
-
-    `status` is a flat enum — there's no per-state payload to carry on a
-    summary projection, so the API_DESIGN.md `lifecycle` vs `status`
-    convention says use `status` here."""
+    Execution status and verdict outcome are exposed as separate fields.
+    The summary is written on terminal-state transitions, so in practice
+    `status` is one of `completed | error | cancelled` and `outcome` is
+    populated when `status == "completed"`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -346,7 +343,7 @@ class SimilarityGteCondition(BaseModel):
 class SplitIouCondition(BaseModel):
     """Intersection-over-Union for split page assignments.
 
-    `expected` is stored in the canonical split-eval payload shape:
+    `expected` uses the split payload shape:
     `{"splits": [{"name", "pages"}]}`"""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -364,6 +361,8 @@ class StartWithCondition(BaseModel):
 
 
 class UpdateWorkflowTestRequest(BaseModel):
+    """Body for updating a workflow test. Only the supplied fields (`name`, `assertion`, `source`) are changed."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = None
@@ -372,6 +371,8 @@ class UpdateWorkflowTestRequest(BaseModel):
 
 
 class WorkflowTest(BaseModel):
+    """A saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str

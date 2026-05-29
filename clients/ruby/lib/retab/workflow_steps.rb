@@ -16,8 +16,8 @@ module Retab
     # @param step_id [String, nil] Optional step ID filter.
     # @param block_type [Array<String>, nil] Optional block type filter. Repeat the query parameter for multiple values.
     # @param status [Array<String>, nil] Optional step lifecycle status filter. Repeat the query parameter for multiple values.
-    # @param before [String, nil] Step id cursor: return the page before this id (mutually exclusive with ``after``).
-    # @param after [String, nil] Step id cursor: return the page after this id (mutually exclusive with ``before``).
+    # @param before [String, nil] Step id cursor: return the page before this id (mutually exclusive with `after`).
+    # @param after [String, nil] Step id cursor: return the page after this id (mutually exclusive with `before`).
     # @param limit [Integer, nil] Maximum number of steps to return per page (1-20). Capped at 20 because each step hydrates its handle payloads from the artifact store; use cursor pagination for the rest.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowRunStep>]

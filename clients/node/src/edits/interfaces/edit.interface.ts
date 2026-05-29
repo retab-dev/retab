@@ -32,6 +32,7 @@ import {
   serializeRetabUsage,
 } from '../../classifications/interfaces/retab-usage.interface.js';
 
+/** An edit result: form-field values written onto a document or template PDF. */
 export interface Edit {
   /** Unique identifier of the edit. */
   id: string;

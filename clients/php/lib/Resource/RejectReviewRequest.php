@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** POST /workflows/reviews/{review_id}/reject body. */
+/** Reject a specific version of a review, with a required reason. */
 readonly class RejectReviewRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

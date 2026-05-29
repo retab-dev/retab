@@ -19,18 +19,18 @@ class WorkflowSteps
      *
      * List steps with status and artifact summaries.
      *
-     * Sorted by ``started_at`` ascending with ``step_id`` as the tiebreaker
-     * (the same compound key the underlying index uses). Pass ``after`` for
-     * the next page, ``before`` for the previous page — mutually exclusive.
-     * ``run_id`` is optional; when omitted the list is scoped to the caller's
+     * Sorted by `started_at` ascending with `step_id` as the tiebreaker
+     * (the same compound key the underlying index uses). Pass `after` for
+     * the next page, `before` for the previous page — mutually exclusive.
+     * `run_id` is optional; when omitted the list is scoped to the caller's
      * organization.
      * @param string|null $runId Optional workflow run ID filter.
      * @param string|null $blockId Optional logical block ID filter.
      * @param string|null $stepId Optional step ID filter.
      * @param array<string>|null $blockType Optional block type filter. Repeat the query parameter for multiple values.
      * @param array<string>|null $status Optional step lifecycle status filter. Repeat the query parameter for multiple values.
-     * @param string|null $before Step id cursor: return the page before this id (mutually exclusive with ``after``).
-     * @param string|null $after Step id cursor: return the page after this id (mutually exclusive with ``before``).
+     * @param string|null $before Step id cursor: return the page before this id (mutually exclusive with `after`).
+     * @param string|null $after Step id cursor: return the page after this id (mutually exclusive with `before`).
      * @param int|null $limit Maximum number of steps to return per page (1-20). Capped at 20 because each step hydrates its handle payloads from the artifact store; use cursor pagination for the rest. Defaults to 20.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowRunStep>
      * @throws \Retab\Exception\RetabException
@@ -68,11 +68,9 @@ class WorkflowSteps
     /**
      * Get Workflow Step
      *
-     * Get one persisted step document by step id.
+     * Get one step by its step id.
      *
-     * This is the canonical step object shape used by ``GET /workflows/steps``.
-     * It intentionally does not join fingerprint rows or return experiment query
-     * projections.
+     * Returns the same step shape as `GET /workflows/steps`.
      * @param string $stepId
      * @param string|null $runId Optional workflow run ID disambiguator.
      * @return \Retab\Resource\WorkflowRunStep

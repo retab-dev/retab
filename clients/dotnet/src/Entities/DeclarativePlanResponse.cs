@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a declarative plan response.</summary>
+    /// <summary>A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`.</summary>
     public class DeclarativePlanResponse
     {
         public string WorkflowId { get; set; } = default!;

@@ -34,7 +34,7 @@ pub struct WorkflowRunStep {
     pub loop_containers: Option<Vec<ContainerContextData>>,
     /// Parent workflow run ID
     pub run_id: String,
-    /// When the step doc was first persisted
+    /// When the step was created
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
     /// Handle input payloads consumed by this step
@@ -47,7 +47,7 @@ pub struct WorkflowRunStep {
     /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_outputs: Option<std::collections::HashMap<String, PublicHandlePayload>>,
-    /// Canonical persisted result of this step
+    /// Reference to the result produced by this step, if any.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub artifact: Option<StepArtifactRef>,
     /// Number of retry attempts

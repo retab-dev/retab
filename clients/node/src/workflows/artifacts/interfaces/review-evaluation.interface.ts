@@ -13,9 +13,10 @@ import {
 import type { ReviewEvaluationReviewDecision } from './review-evaluation-review-decision.interface.js';
 import { ZReviewEvaluationReviewDecision } from './review-evaluation-review-decision.interface.js';
 
+/** Record of a review-gate evaluation during a workflow run. */
 export interface ReviewEvaluation {
   /**
-   * Artifact operation that determines the backing record type
+   * The operation that produced this artifact
    * @default "review_trigger_evaluation"
    */
   operation: 'review_trigger_evaluation';

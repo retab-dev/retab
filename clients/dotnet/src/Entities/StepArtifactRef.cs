@@ -16,7 +16,7 @@ namespace Retab
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public StepArtifactRefOperation Operation { get; set; }
 
-        /// <summary>Persisted resource identifier</summary>
+        /// <summary>Resource identifier</summary>
         public string Id { get; set; } = default!;
 
         /// <summary>

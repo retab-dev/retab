@@ -2,7 +2,7 @@ namespace Retab
 {
     using System.Collections.Generic;
 
-    /// <summary>Represents a workflow test result.</summary>
+    /// <summary>The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`.</summary>
     public class WorkflowTestResult
     {
         public string Id { get; set; } = default!;

@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Represents a file link.</summary>
+    /// <summary>A short-lived signed link to download a file, with its `filename` and expiry.</summary>
     public class FileLink
     {
 

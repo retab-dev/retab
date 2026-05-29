@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Result of validating a workflow YAML definition: whether it `is_valid`, block/edge counts, and `diagnostics`. */
 readonly class DeclarativeValidationResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

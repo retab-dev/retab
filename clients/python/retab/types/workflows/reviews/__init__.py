@@ -36,7 +36,7 @@ class Actor(BaseModel):
 
 
 class ApproveReviewRequest(BaseModel):
-    """POST /workflows/reviews/{review_id}/approve body."""
+    """Approve a specific version of a review."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -56,7 +56,7 @@ class ReviewDecision(BaseModel):
 
 
 class RejectReviewRequest(BaseModel):
-    """POST /workflows/reviews/{review_id}/reject body."""
+    """Reject a specific version of a review, with a required reason."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -231,7 +231,7 @@ class ReviewValidationFailed(BaseModel):
 
 
 class Review(BaseModel):
-    """Public API shape for one review. Strips internal fields."""
+    """One review and its current decision."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -265,11 +265,10 @@ class Review(BaseModel):
 
 
 class SubmitDecisionResponse(BaseModel):
-    """Response from POST /workflows/reviews/{review_id}/approve | /reject.
+    """Response to a review approve or reject request.
 
-    The shape carries ``resume_status`` so callers can see whether the
-    Temporal resume signal succeeded — meta-pattern §2 action-endpoint
-    criterion #4 (divergent response shape)."""
+    Carries `resume_status` so callers can see whether the run resumed
+    successfully."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

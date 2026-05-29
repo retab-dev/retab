@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** An uploaded file: its `id`, `filename`, MIME type, page count, and timestamps. */
 readonly class File implements \JsonSerializable
 {
     use JsonSerializableTrait;

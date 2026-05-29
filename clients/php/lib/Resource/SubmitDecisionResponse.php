@@ -7,11 +7,10 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Response from POST /workflows/reviews/{review_id}/approve | /reject.
+ * Response to a review approve or reject request.
  *
- * The shape carries ``resume_status`` so callers can see whether the
- * Temporal resume signal succeeded — meta-pattern §2 action-endpoint
- * criterion #4 (divergent response shape).
+ * Carries `resume_status` so callers can see whether the run resumed
+ * successfully.
  */
 readonly class SubmitDecisionResponse implements \JsonSerializable
 {

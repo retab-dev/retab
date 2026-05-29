@@ -18,6 +18,8 @@ class CreateEditTemplateRequest(BaseModel):
 
 
 class EditTemplate(BaseModel):
+    """A reusable edit template: an empty PDF and the `form_fields` defined on it."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the template.")
@@ -30,6 +32,8 @@ class EditTemplate(BaseModel):
 
 
 class UpdateEditTemplateRequest(BaseModel):
+    """Body for updating an edit template. Only the supplied fields (`name`, `form_fields`) are changed."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default=None, description="New name for the template.")

@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A workflow exported as its YAML definition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeExportResponse {
     pub workflow_id: String,

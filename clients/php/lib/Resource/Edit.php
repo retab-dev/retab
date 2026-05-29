@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** An edit result: form-field values written onto a document or template PDF. */
 readonly class Edit implements \JsonSerializable
 {
     use JsonSerializableTrait;

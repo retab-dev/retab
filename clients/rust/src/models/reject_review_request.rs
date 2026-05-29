@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// POST /workflows/reviews/{review_id}/reject body.
+/// Reject a specific version of a review, with a required reason.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RejectReviewRequest {
     /// Exact content-addressed key of the version to reject.

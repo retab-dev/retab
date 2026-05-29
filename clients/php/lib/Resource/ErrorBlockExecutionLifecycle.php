@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Terminal: the executed block raised. ``message`` is the executor's
+ * Terminal: the executed block raised. `message` is the executor's
  * error string.
  */
 readonly class ErrorBlockExecutionLifecycle implements \JsonSerializable

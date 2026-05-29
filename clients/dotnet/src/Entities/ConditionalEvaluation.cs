@@ -3,11 +3,16 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a conditional evaluation.</summary>
+    /// <summary>Record of how a conditional block routed during a workflow run.</summary>
+    /// <remarks>
+    /// Captures each condition that was evaluated (`evaluations`), which output
+    /// branches were chosen (`selected_handles`), and the branch and condition
+    /// IDs that matched (`matched_branch_id`, `matched_condition_ids`).
+    /// </remarks>
     public class ConditionalEvaluation
     {
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "conditional_evaluation";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;

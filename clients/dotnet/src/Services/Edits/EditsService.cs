@@ -21,6 +21,13 @@ namespace Retab
         public virtual EditTemplatesService Templates => new EditTemplatesService(this.Client);
 
         /// <summary>List Edits</summary>
+        /// <remarks>
+        /// List edits.
+        /// Returns a paginated list of edits. Filter by `filename` (case-insensitive
+        /// prefix match), `template_id`, and a `from_date`/`to_date` creation range
+        /// (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and
+        /// `order`; an invalid date format responds with `400`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -47,6 +54,14 @@ namespace Retab
         }
 
         /// <summary>Create Edit</summary>
+        /// <remarks>
+        /// Create an edit.
+        /// Fills the form fields of a document according to `instructions` and renders
+        /// the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX,
+        /// or PPTX) or `template_id` (an existing edit template) — supplying both or
+        /// neither responds with `400`. Returns the created edit with the filled form
+        /// data and rendered document; responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -63,6 +78,12 @@ namespace Retab
         }
 
         /// <summary>Get Edit</summary>
+        /// <remarks>
+        /// Retrieve an edit.
+        /// Fetches a single edit by its `edit_id`. Returns the edit with its filled
+        /// form data and rendered document; responds with `404` if no edit with that
+        /// id exists.
+        /// </remarks>
         /// <param name="editId">The edit id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -79,6 +100,11 @@ namespace Retab
         }
 
         /// <summary>Delete Edit</summary>
+        /// <remarks>
+        /// Delete an edit.
+        /// Permanently deletes the edit identified by `edit_id`. Returns `204` on
+        /// success, or `404` if no edit with that id exists.
+        /// </remarks>
         /// <param name="editId">The edit id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

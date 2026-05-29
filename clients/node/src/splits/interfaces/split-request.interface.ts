@@ -18,7 +18,7 @@ import {
   serializeSubdocument,
 } from './subdocument.interface.js';
 
-/** Canonical split request. */
+/** Request body to create a split. */
 export interface SplitRequest {
   /** The document to split */
   document: MIMEData | FileRef;

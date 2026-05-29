@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Request body for POST /v1/jobs.
+/// Create a job that runs a request against a supported endpoint asynchronously.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateJobRequest {
     pub endpoint: CreateJobRequestEndpoint,

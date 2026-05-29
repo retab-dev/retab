@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A parse produced by a workflow run, tagged with its artifact `operation` and creation time. */
 readonly class ParseWorkflowArtifact implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -29,7 +30,7 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
         public ?string $instructions = null,
         /** Usage information for the parse operation */
         public ?RetabUsage $usage = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'parse',
     ) {}
 

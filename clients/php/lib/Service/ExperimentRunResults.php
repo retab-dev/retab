@@ -16,6 +16,12 @@ class ExperimentRunResults
 
     /**
      * List Experiment Results
+     *
+     * List per-document results for an experiment run.
+     *
+     * Requires the `run_id` query parameter. Returns one result row per document
+     * in the run, with each row's lifecycle status, timing, and produced
+     * artifact, as a cursor-paginated list.
      * @param string $runId
      * @param string|null $before
      * @param string|null $after
@@ -50,6 +56,12 @@ class ExperimentRunResults
 
     /**
      * Get Experiment Result
+     *
+     * Retrieve a single experiment result.
+     *
+     * Identified by `result_id`. Returns the per-document result with its
+     * lifecycle status, timing, and produced artifact. Returns 404 if no result
+     * with that ID exists.
      * @param string $resultId
      * @return \Retab\Resource\ExperimentResult
      * @throws \Retab\Exception\RetabException

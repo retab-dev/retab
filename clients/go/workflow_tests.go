@@ -23,6 +23,11 @@ type WorkflowTestsListParams struct {
 }
 
 // List tests
+// List workflow tests.
+// Requires `workflow_id` and returns its saved tests as a cursor-paginated
+// list, each with its latest-run summaries and drift status. Optionally
+// filter to one block with `target_block_id`. Returns 404 if the workflow
+// does not exist.
 func (s *WorkflowTestService) List(ctx context.Context, params *WorkflowTestsListParams, opts ...RequestOption) (*PaginatedList[WorkflowTest], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")
@@ -43,6 +48,11 @@ type WorkflowTestsCreateParams struct {
 }
 
 // Create test
+// Create a workflow test.
+// Pins an expected outcome for one block in a workflow. Provide the
+// `workflow_id`, the `target` block, an `assertion` describing the expected
+// output, and a `source` of test inputs (explicit handle inputs or a capture
+// from a prior run/step). Returns the created test with status 201.
 func (s *WorkflowTestService) Create(ctx context.Context, params *WorkflowTestsCreateParams, opts ...RequestOption) (*WorkflowTest, error) {
 	var result WorkflowTest
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/tests", nil, params, &result, opts)
@@ -53,6 +63,10 @@ func (s *WorkflowTestService) Create(ctx context.Context, params *WorkflowTestsC
 }
 
 // Get test
+// Retrieve a single workflow test.
+// Identified by `test_id`. Returns the test with its target block,
+// assertion, input source, and latest-run summaries. Returns 404 if no test
+// with that ID exists.
 func (s *WorkflowTestService) Get(ctx context.Context, testID string, opts ...RequestOption) (*WorkflowTest, error) {
 	if testID == "" {
 		return nil, fmt.Errorf("retab: test_id is required")
@@ -73,6 +87,9 @@ type WorkflowTestsUpdateParams struct {
 }
 
 // Update test
+// Update a workflow test.
+// Identified by `test_id`. Send any of `name`, `assertion`, or `source`;
+// omitted fields are left unchanged. Returns the updated test.
 func (s *WorkflowTestService) Update(ctx context.Context, testID string, params *WorkflowTestsUpdateParams, opts ...RequestOption) (*WorkflowTest, error) {
 	if testID == "" {
 		return nil, fmt.Errorf("retab: test_id is required")
@@ -86,6 +103,9 @@ func (s *WorkflowTestService) Update(ctx context.Context, testID string, params 
 }
 
 // Delete test
+// Delete a workflow test.
+// Identified by `test_id`. Returns 204 on success and 404 if no test with
+// that ID exists.
 func (s *WorkflowTestService) Delete(ctx context.Context, testID string, opts ...RequestOption) error {
 	if testID == "" {
 		return fmt.Errorf("retab: test_id is required")

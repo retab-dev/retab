@@ -9,7 +9,7 @@ namespace Retab\Resource;
 /**
  * Run-level summary plus block-specific diagnostics.
  *
- * ``prior_run_id`` + ``prior_score`` populate when the request opts into
+ * `prior_run_id` + `prior_score` populate when the request opts into
  * prior-comparison and a completed prior run exists.
  */
 readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable

@@ -43,9 +43,11 @@ type APICallAttempt struct {
 	CompletedAt     *time.Time        `json:"completed_at,omitempty"`
 }
 
-// APICallInvocation represents an api call invocation.
+// APICallInvocation record of an API-call block's outbound HTTP request during a run.
+// Lists each request `attempts` made (including retries) and any `error`
+// if the call ultimately failed.
 type APICallInvocation struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string           `json:"operation,omitempty"`
 	ID        string            `json:"id"`
 	RunID     string            `json:"run_id"`
@@ -158,12 +160,9 @@ func (r *BetweenCondition) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// StoredBlockExecution public block execution result for a single workflow block.
-// Terminal state is carried by the discriminated “lifecycle“ union. The
-// legacy flat “success“ / “error“ / “skipped“ fields were removed in
-// the hard cutover — they let invalid combinations (“success=true“ with
-// a non-empty “error“) be representable on the wire and forced consumers
-// to know an undocumented field-precedence rule.
+// StoredBlockExecution the result of executing a single workflow block.
+// The terminal state is carried by the `lifecycle` field, which is one of
+// completed, error, or skipped.
 type StoredBlockExecution struct {
 	// ID is unique block execution ID
 	ID string `json:"id"`
@@ -175,11 +174,11 @@ type StoredBlockExecution struct {
 	BlockID string `json:"block_id"`
 	// BlockType is type of the block
 	BlockType string `json:"block_type"`
-	// Lifecycle is terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``.
+	// Lifecycle is terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.
 	Lifecycle BlockExecutionLifecycle `json:"lifecycle"`
 	// HandleInputs is input payloads keyed by handle ID (file metadata for files, data for json)
 	HandleInputs map[string]interface{} `json:"handle_inputs,omitempty"`
-	// Artifact is canonical persisted-ref artifact for this block execution (operation + id), if any
+	// Artifact is reference to the artifact produced by this block execution, if any.
 	Artifact *StepArtifactRef `json:"artifact,omitempty"`
 	// HandleOutputs is output payloads keyed by handle ID
 	HandleOutputs map[string]interface{} `json:"handle_outputs,omitempty"`
@@ -197,13 +196,10 @@ type StoredBlockExecution struct {
 	AvailableIterations []map[string]interface{} `json:"available_iterations,omitempty"`
 }
 
-// BlockTestBatchExecutionCounts denormalized counts surface, split along the canonical axes.
+// BlockTestBatchExecutionCounts aggregate counts for a batch of block-test runs.
 // Each individual run contributes to exactly one `lifecycle_counts`
 // bucket, and additionally to one `outcome` bucket when
 // `lifecycle_counts.completed` is incremented.
-// The `lifecycle_counts` name disambiguates from the API_DESIGN.md
-// `lifecycle` convention (which signals a discriminated union of
-// typed states). This field is a counts subdocument, not a union.
 type BlockTestBatchExecutionCounts struct {
 	LifecycleCounts *BlockTestLifecycleCounts `json:"lifecycle_counts,omitempty"`
 	Outcome         *BlockTestOutcomeCounts   `json:"outcome,omitempty"`
@@ -226,7 +222,7 @@ type BlockTestOutcomeCounts struct {
 	Blocked *int `json:"blocked,omitempty"`
 }
 
-// CancelWorkflowExperimentRunResponse represents a cancel workflow experiment run response.
+// CancelWorkflowExperimentRunResponse result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state.
 type CancelWorkflowExperimentRunResponse struct {
 	ID        string                `json:"id"`
 	Lifecycle WorkflowExperimentRun `json:"lifecycle"`
@@ -289,7 +285,7 @@ type Category struct {
 	Description *string `json:"description,omitempty"`
 }
 
-// Classification represents a classification.
+// Classification a classification result: the categories a document was scored against and the chosen `output` decision.
 type Classification struct {
 	// ID is unique identifier of the classification
 	ID string `json:"id"`
@@ -337,7 +333,7 @@ type ClassificationDecision struct {
 	Category string `json:"category"`
 }
 
-// ClassificationWorkflowArtifact represents a classification workflow artifact.
+// ClassificationWorkflowArtifact a classification produced by a workflow run, tagged with its artifact `operation` and creation time.
 type ClassificationWorkflowArtifact struct {
 	// ID is unique identifier of the classification
 	ID string `json:"id"`
@@ -359,7 +355,7 @@ type ClassificationWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
@@ -480,9 +476,12 @@ type ConditionEvaluationSubCondition struct {
 	Items []*ConditionEvaluationPerItem `json:"items,omitempty"`
 }
 
-// ConditionalEvaluation represents a conditional evaluation.
+// ConditionalEvaluation record of how a conditional block routed during a workflow run.
+// Captures each condition that was evaluated (`evaluations`), which output
+// branches were chosen (`selected_handles`), and the branch and condition
+// IDs that matched (`matched_branch_id`, `matched_condition_ids`).
 type ConditionalEvaluation struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation           *string                      `json:"operation,omitempty"`
 	ID                  string                       `json:"id"`
 	RunID               string                       `json:"run_id"`
@@ -513,7 +512,10 @@ type ContainCondition struct {
 	Expected interface{} `json:"expected"`
 }
 
-// CreateUploadResponse represents a create upload response.
+// CreateUploadResponse instructions for uploading file content to a reserved file record.
+// Returned when starting a file upload. Carries the new `file_id`, a
+// short-lived signed `upload_url` with the HTTP method and headers to use,
+// a durable reference to the file, and the URL's `expires_at` time.
 type CreateUploadResponse struct {
 	// FileID is underlying file ID
 	FileID string `json:"fileId"`
@@ -547,7 +549,7 @@ type ReviewDecision struct {
 	Reason    *string       `json:"reason,omitempty"`
 }
 
-// DeclarativeApplyResponse represents a declarative apply response.
+// DeclarativeApplyResponse the outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`.
 type DeclarativeApplyResponse struct {
 	WorkflowID      string                           `json:"workflow_id"`
 	Action          DeclarativeApplyResponseAction   `json:"action"`
@@ -571,7 +573,7 @@ func (r *DeclarativeApplyResponse) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// DeclarativeExportResponse represents a declarative export response.
+// DeclarativeExportResponse a workflow exported as its YAML definition.
 type DeclarativeExportResponse struct {
 	WorkflowID     string `json:"workflow_id"`
 	YamlDefinition string `json:"yaml_definition"`
@@ -604,7 +606,7 @@ type DeclarativePlanResourceChange struct {
 	Target   DeclarativePlanResourceChangeTarget `json:"target"`
 	TargetID string                              `json:"target_id"`
 	Name     string                              `json:"name"`
-	// Type is resource kind for this plan entry. ``workflow`` and ``edge`` are flat singletons; for ``target='block'`` this carries the block's concrete type (e.g. ``extract``, ``api_call``) so the plan summary can render type-specific labels.
+	// Type is resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels.
 	Type    DeclarativePlanResourceChangeType      `json:"type"`
 	Actions []DeclarativePlanResourceChangeActions `json:"actions"`
 	Summary string                                 `json:"summary"`
@@ -612,7 +614,7 @@ type DeclarativePlanResourceChange struct {
 	Path    *string                                `json:"path,omitempty"`
 }
 
-// DeclarativePlanResponse represents a declarative plan response.
+// DeclarativePlanResponse a preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`.
 type DeclarativePlanResponse struct {
 	WorkflowID      string                           `json:"workflow_id"`
 	Action          DeclarativePlanResponseAction    `json:"action"`
@@ -646,7 +648,7 @@ type DeclarativePlanSummary struct {
 	HasChanges *bool `json:"has_changes,omitempty"`
 }
 
-// DeclarativeValidationResponse represents a declarative validation response.
+// DeclarativeValidationResponse result of validating a workflow YAML definition: whether it `is_valid`, block/edge counts, and `diagnostics`.
 type DeclarativeValidationResponse struct {
 	WorkflowID  string                 `json:"workflow_id"`
 	BlockCount  int                    `json:"block_count"`
@@ -655,7 +657,7 @@ type DeclarativeValidationResponse struct {
 	Diagnostics map[string]interface{} `json:"diagnostics"`
 }
 
-// Edit represents an edit.
+// Edit an edit result: form-field values written onto a document or template PDF.
 type Edit struct {
 	// ID is unique identifier of the edit.
 	ID string `json:"id"`
@@ -692,7 +694,7 @@ type EditResult struct {
 	FilledDocument MIMEData `json:"filled_document"`
 }
 
-// EditTemplate represents an edit template.
+// EditTemplate a reusable edit template: an empty PDF and the `form_fields` defined on it.
 type EditTemplate struct {
 	// ID is unique identifier of the template.
 	ID string `json:"id"`
@@ -710,7 +712,7 @@ type EditTemplate struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
-// EditWorkflowArtifact represents an edit workflow artifact.
+// EditWorkflowArtifact an edit produced by a workflow run, tagged with its artifact `operation` and creation time.
 type EditWorkflowArtifact struct {
 	// ID is unique identifier of the edit.
 	ID string `json:"id"`
@@ -732,7 +734,7 @@ type EditWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
@@ -757,7 +759,7 @@ type EqualCondition struct {
 	Expected interface{} `json:"expected"`
 }
 
-// ErrorBlockExecutionLifecycle terminal: the executed block raised. “message“ is the executor's
+// ErrorBlockExecutionLifecycle terminal: the executed block raised. `message` is the executor's
 // error string.
 type ErrorBlockExecutionLifecycle struct {
 	Status *string `json:"status,omitempty"`
@@ -770,7 +772,7 @@ type ErrorBlockExecutionLifecycle struct {
 type ErrorDetails struct {
 	// Message is human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.
 	Message *string `json:"message,omitempty"`
-	// StackTrace is full Python stack trace
+	// StackTrace is full stack trace
 	StackTrace *string `json:"stack_trace,omitempty"`
 	// BlockID is id of the block that failed
 	BlockID *string `json:"block_id,omitempty"`
@@ -968,7 +970,7 @@ type ExperimentSummaryMetricDocument struct {
 }
 
 // ExperimentSummaryMetricsResponse run-level summary plus block-specific diagnostics.
-// “prior_run_id“ + “prior_score“ populate when the request opts into
+// `prior_run_id` + `prior_score` populate when the request opts into
 // prior-comparison and a completed prior run exists.
 type ExperimentSummaryMetricsResponse struct {
 	ExperimentID          string                                    `json:"experiment_id"`
@@ -1066,7 +1068,12 @@ type ExtractionConsensus struct {
 	Likelihoods map[string]interface{} `json:"likelihoods,omitempty"`
 }
 
-// SourcesResponse represents a sources response.
+// SourcesResponse an extraction's output annotated with the source that backs each value.
+// Returned when fetching the sources for an extraction. Carries the source
+// `file` and its detected `document_type`, the original `extraction` output,
+// and a parallel `sources` tree where each leaf is a `{value, source}` object
+// locating the value in the document (a page region for PDFs, a cell for
+// spreadsheets, a text span for plain text, and so on).
 type SourcesResponse struct {
 	Object *string `json:"object,omitempty"`
 	// ExtractionID is id of the extraction
@@ -1081,7 +1088,7 @@ type SourcesResponse struct {
 	Sources map[string]interface{} `json:"sources"`
 }
 
-// ExtractionWorkflowArtifact represents an extraction workflow artifact.
+// ExtractionWorkflowArtifact an extraction produced by a workflow run, tagged with its artifact `operation` and creation time.
 type ExtractionWorkflowArtifact struct {
 	// ID is unique identifier of the extraction
 	ID string `json:"id"`
@@ -1106,7 +1113,7 @@ type ExtractionWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
@@ -1120,7 +1127,7 @@ func (r *ExtractionWorkflowArtifact) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// File represents a file.
+// File an uploaded file: its `id`, `filename`, MIME type, page count, and timestamps.
 type File struct {
 	Object *string `json:"object,omitempty"`
 	// ID is the unique identifier of the file
@@ -1143,7 +1150,7 @@ type FileHandleInput struct {
 	Document MaterializedDocument `json:"document"`
 }
 
-// FileLink represents a file link.
+// FileLink a short-lived signed link to download a file, with its `filename` and expiry.
 type FileLink struct {
 	// DownloadURL is the signed URL to download the file
 	DownloadURL string `json:"download_url"`
@@ -1169,9 +1176,11 @@ type FormField struct {
 	Value *string `json:"value,omitempty"`
 }
 
-// FunctionInvocation represents a function invocation.
+// FunctionInvocation record of a function block's execution during a workflow run.
+// Captures the `inputs` passed to the function, the `output` it returned,
+// how long it ran (`duration_ms`), and any `error` if execution failed.
 type FunctionInvocation struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation  *string                `json:"operation,omitempty"`
 	ID         string                 `json:"id"`
 	RunID      string                 `json:"run_id"`
@@ -1193,7 +1202,7 @@ type HTTPValidationError struct {
 // Represents a single asynchronous job that can be polled for status
 // and result retrieval.
 type Job struct {
-	// ID is opaque job id (server-generated ``job_<nanoid>``).
+	// ID is job id, generated by the server.
 	ID              string                 `json:"id"`
 	Object          *string                `json:"object,omitempty"`
 	Status          *JobStatus             `json:"status,omitempty"`
@@ -1229,7 +1238,7 @@ type JobResponse struct {
 // JobWarning is an alias for JobError.
 type JobWarning = JobError
 
-// JSONHandleInput json payload for a handle input. “data“ is the raw JSON value.
+// JSONHandleInput json payload for a handle input. `data` is the raw JSON value.
 type JSONHandleInput struct {
 	Type *string      `json:"type,omitempty"`
 	Data *interface{} `json:"data,omitempty"`
@@ -1242,14 +1251,10 @@ type JSONSchemaValidCondition struct {
 }
 
 // LatestBlockTestRunSummary summary of the most recent block-test run.
-// The two harmonized axes — execution status and verdict outcome — are
-// exposed as separate fields. The runner only writes the summary on
-// terminal-state transitions, so in practice `status` is one of
-// `completed | error | cancelled` and `outcome` is populated when
-// `status == "completed"`.
-// `status` is a flat enum — there's no per-state payload to carry on a
-// summary projection, so the API_DESIGN.md `lifecycle` vs `status`
-// convention says use `status` here.
+// Execution status and verdict outcome are exposed as separate fields.
+// The summary is written on terminal-state transitions, so in practice
+// `status` is one of `completed | error | cancelled` and `outcome` is
+// populated when `status == "completed"`.
 type LatestBlockTestRunSummary struct {
 	RunRecordID              string                            `json:"run_record_id"`
 	Status                   LatestBlockTestRunSummaryStatus   `json:"status"`
@@ -1358,7 +1363,7 @@ type OutputTarget struct {
 	Path           *string `json:"path,omitempty"`
 }
 
-// Parse represents a parse.
+// Parse a parse result: the per-page and full-document text extracted from a document.
 type Parse struct {
 	// ID is unique identifier of the parse
 	ID string `json:"id"`
@@ -1387,7 +1392,7 @@ type ParseOutput struct {
 	Text string `json:"text"`
 }
 
-// ParseWorkflowArtifact represents a parse workflow artifact.
+// ParseWorkflowArtifact a parse produced by a workflow run, tagged with its artifact `operation` and creation time.
 type ParseWorkflowArtifact struct {
 	// ID is unique identifier of the parse
 	ID string `json:"id"`
@@ -1407,11 +1412,11 @@ type ParseWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
-// PartialSchema represents a partial schema.
+// PartialSchema a generated JSON schema with its `json_schema` body and `strict` flag.
 type PartialSchema struct {
 	Object     string                 `json:"object,omitempty"`
 	CreatedAt  *time.Time             `json:"created_at,omitempty"`
@@ -1429,7 +1434,7 @@ func (r *PartialSchema) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// Partition represents a partition.
+// Partition a partition result: a document segmented into chunks along the requested `key`.
 type Partition struct {
 	// ID is unique identifier of the partition
 	ID string `json:"id"`
@@ -1488,7 +1493,7 @@ type PartitionConsensus struct {
 	Likelihoods []*PartitionChunkLikelihood `json:"likelihoods,omitempty"`
 }
 
-// PartitionWorkflowArtifact represents a partition workflow artifact.
+// PartitionWorkflowArtifact a partition produced by a workflow run, tagged with its artifact `operation` and creation time.
 type PartitionWorkflowArtifact struct {
 	// ID is unique identifier of the partition
 	ID string `json:"id"`
@@ -1512,7 +1517,7 @@ type PartitionWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
@@ -1644,9 +1649,14 @@ type ReviewConfidenceLt struct {
 	Threshold float64 `json:"threshold"`
 }
 
-// ReviewEvaluation represents a review evaluation.
+// ReviewEvaluation record of a review-gate evaluation during a workflow run.
+// Captures the conditions evaluated against the block's output
+// (`evaluations`), whether the gate required human review
+// (`requires_human_review`), and, once a reviewer acts, the verdict
+// (`review_decision`), any notes, whether a revision was requested, and the
+// reviewer and timestamp.
 type ReviewEvaluation struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation           *string                         `json:"operation,omitempty"`
 	ID                  string                          `json:"id"`
 	RunID               string                          `json:"run_id"`
@@ -1766,7 +1776,7 @@ type SimilarityGteCondition struct {
 }
 
 // SkippedBlockExecutionLifecycle terminal: the block declared its inputs unsatisfied via
-// “should_skip_block“ and was skipped. “reason“ is the skip rationale
+// `should_skip_block` and was skipped. `reason` is the skip rationale
 // surfaced by the block's input requirements registry.
 type SkippedBlockExecutionLifecycle struct {
 	Status *string `json:"status,omitempty"`
@@ -1777,7 +1787,7 @@ type SkippedBlockExecutionLifecycle struct {
 // SkippedStepLifecycle is an alias for SkippedBlockExecutionLifecycle.
 type SkippedStepLifecycle = SkippedBlockExecutionLifecycle
 
-// Split represents a split.
+// Split a split result: a document divided into its constituent `subdocuments`.
 type Split struct {
 	// ID is unique identifier of the split result
 	ID string `json:"id"`
@@ -1818,7 +1828,7 @@ type SplitConsensus struct {
 }
 
 // SplitIouCondition intersection-over-Union for split page assignments.
-// `expected` is stored in the canonical split-eval payload shape:
+// `expected` uses the split payload shape:
 // `{"splits": [{"name", "pages"}]}`
 type SplitIouCondition struct {
 	Kind      *string                `json:"kind,omitempty"`
@@ -1851,7 +1861,7 @@ type SplitSubdocumentLikelihood struct {
 	Pages []float64 `json:"pages,omitempty"`
 }
 
-// SplitWorkflowArtifact represents a split workflow artifact.
+// SplitWorkflowArtifact a document split produced by a workflow run, tagged with its artifact `operation` and creation time.
 type SplitWorkflowArtifact struct {
 	// ID is unique identifier of the split result
 	ID string `json:"id"`
@@ -1873,7 +1883,7 @@ type SplitWorkflowArtifact struct {
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is timestamp when this artifact was created.
 	CreatedAt time.Time `json:"created_at"`
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 }
 
@@ -1898,7 +1908,7 @@ type StartWithCondition struct {
 type StepArtifactRef struct {
 	// Operation is the kind of resource this artifact references
 	Operation StepArtifactRefOperation `json:"operation"`
-	// ID is persisted resource identifier
+	// ID is resource identifier
 	ID string `json:"id"`
 }
 
@@ -1937,9 +1947,12 @@ type WebhookTrigger struct {
 	WebhookID *string `json:"webhook_id,omitempty"`
 }
 
-// WhileLoopTermination represents a while loop termination.
+// WhileLoopTermination record of why a while-loop block stopped iterating during a run.
+// Reports the `termination_reason` (`max_iterations_reached`,
+// `condition_matched`, or `error`) and the termination conditions that were
+// evaluated on the final iteration (`evaluations`).
 type WhileLoopTermination struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation *string `json:"operation,omitempty"`
 	ID        string  `json:"id"`
 	RunID     string  `json:"run_id"`
@@ -1976,9 +1989,9 @@ func (r *Workflow) UnmarshalJSON(data []byte) error {
 
 // WorkflowArtifact dereferenced workflow artifact with operation-specific fields preserved.
 type WorkflowArtifact struct {
-	// Operation is artifact operation that determines the backing record type
+	// Operation is the operation that produced this artifact
 	Operation WorkflowArtifactOperation `json:"operation"`
-	// ID is persisted resource identifier
+	// ID is resource identifier
 	ID string `json:"id"`
 }
 
@@ -2004,7 +2017,7 @@ type WorkflowBlock struct {
 	// ParentID is id of parent container (while_loop, for_each)
 	ParentID  *string   `json:"parent_id,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
-	// ResolvedSchemas is internal graph-derived schema sidecar.
+	// ResolvedSchemas is schemas resolved for this block from the workflow graph.
 	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
 }
 
@@ -2024,7 +2037,7 @@ type WorkflowEdgeDoc struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// WorkflowExperiment represents a workflow experiment.
+// WorkflowExperiment an experiment that evaluates a workflow block against a set of documents, with its latest run status and score.
 type WorkflowExperiment struct {
 	ID            string          `json:"id"`
 	WorkflowID    string          `json:"workflow_id"`
@@ -2045,9 +2058,7 @@ type WorkflowExperiment struct {
 	SchemaDriftDetail *string                      `json:"schema_drift_detail,omitempty"`
 }
 
-// ExperimentResult run-scoped per-document experiment result.
-// The storage row is still named `experiment_jobs` internally, but the
-// public contract is a result row addressed by `run_id` + `document_id`.
+// ExperimentResult one experiment result for a single document, addressed by `run_id` and `document_id`.
 type ExperimentResult struct {
 	ID           string                    `json:"id"`
 	RunID        string                    `json:"run_id"`
@@ -2061,9 +2072,7 @@ type ExperimentResult struct {
 	Attempt      *int                      `json:"attempt,omitempty"`
 }
 
-// ExperimentRun run-id-first public experiment run shape.
-// The canonical identity is `id`. Internal queue handles and duplicate
-// identity aliases are intentionally absent.
+// ExperimentRun a single execution of an experiment, identified by `id`.
 type ExperimentRun struct {
 	ID                     string                  `json:"id"`
 	Workflow               WorkflowSnapshotRef     `json:"workflow"`
@@ -2084,7 +2093,7 @@ type ExperimentRun struct {
 	ErrorCount             *int                    `json:"error_count,omitempty"`
 }
 
-// WorkflowExportPayloadResponse represents a workflow export payload response.
+// WorkflowExportPayloadResponse the exported data as CSV, with its row and column counts.
 type WorkflowExportPayloadResponse struct {
 	// CsvData is csv content
 	CsvData string `json:"csv_data"`
@@ -2104,7 +2113,7 @@ type WorkflowPublished struct {
 	Description *string `json:"description,omitempty"`
 }
 
-// Review public API shape for one review. Strips internal fields.
+// Review one review and its current decision.
 type Review struct {
 	ID                string          `json:"id"`
 	WorkflowID        string          `json:"workflow_id"`
@@ -2121,10 +2130,9 @@ type Review struct {
 	Decision  *ReviewDecision `json:"decision,omitempty"`
 }
 
-// SubmitDecisionResponse response from POST /workflows/reviews/{review_id}/approve | /reject.
-// The shape carries “resume_status“ so callers can see whether the
-// Temporal resume signal succeeded — meta-pattern §2 action-endpoint
-// criterion #4 (divergent response shape).
+// SubmitDecisionResponse response to a review approve or reject request.
+// Carries `resume_status` so callers can see whether the run resumed
+// successfully.
 type SubmitDecisionResponse struct {
 	SubmissionStatus *SubmissionStatus `json:"submission_status,omitempty"`
 	Review           Review            `json:"review"`
@@ -2153,7 +2161,7 @@ type WorkflowRun struct {
 	Workflow WorkflowSnapshotRef `json:"workflow"`
 	// Trigger is what started this run
 	Trigger Trigger `json:"trigger"`
-	// Lifecycle is discriminated lifecycle state.
+	// Lifecycle is lifecycle state of the run.
 	Lifecycle WorkflowRunLifecycle `json:"lifecycle"`
 	// Timing is all timing information
 	Timing RunTiming `json:"timing"`
@@ -2191,19 +2199,19 @@ type WorkflowRunStep struct {
 	LoopContainers []*ContainerContextData `json:"loop_containers,omitempty"`
 	// RunID is parent workflow run ID
 	RunID string `json:"run_id"`
-	// CreatedAt is when the step doc was first persisted
+	// CreatedAt is when the step was created
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// HandleInputs is handle input payloads consumed by this step
 	HandleInputs map[string]*PublicHandlePayload `json:"handle_inputs,omitempty"`
 	// HandleOutputs is handle output payloads produced by this step
 	HandleOutputs map[string]*PublicHandlePayload `json:"handle_outputs,omitempty"`
-	// Artifact is canonical persisted result of this step
+	// Artifact is reference to the result produced by this step, if any.
 	Artifact *StepArtifactRef `json:"artifact,omitempty"`
 	// RetryCount is number of retry attempts
 	RetryCount *int `json:"retry_count,omitempty"`
 }
 
-// WorkflowTest represents a workflow test.
+// WorkflowTest a saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output.
 type WorkflowTest struct {
 	ID                      string                     `json:"id"`
 	WorkflowID              string                     `json:"workflow_id"`
@@ -2243,7 +2251,7 @@ type WorkflowTestBlockTarget struct {
 	BlockID string  `json:"block_id"`
 }
 
-// WorkflowTestResult represents a workflow test result.
+// WorkflowTestResult the outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`.
 type WorkflowTestResult struct {
 	ID        string                 `json:"id"`
 	RunID     *string                `json:"run_id,omitempty"`
@@ -2268,7 +2276,7 @@ type WorkflowTestResult struct {
 	VerdictSummary           *VerdictSummary            `json:"verdict_summary,omitempty"`
 }
 
-// WorkflowTestRun represents a workflow test run.
+// WorkflowTestRun a batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`.
 type WorkflowTestRun struct {
 	ID         string                         `json:"id"`
 	Workflow   WorkflowSnapshotRef            `json:"workflow"`

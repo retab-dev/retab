@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs.
+/// Create a new workflow run from a workflow id, an optional version selector, and optional inputs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWorkflowRunRequest {
     /// Workflow id for the fresh run.

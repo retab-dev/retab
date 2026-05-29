@@ -19,7 +19,7 @@ readonly class StepArtifactRef implements \JsonSerializable
     public function __construct(
         /** The kind of resource this artifact references */
         public StepArtifactRefOperation $operation,
-        /** Persisted resource identifier */
+        /** Resource identifier */
         public string $id,
     ) {}
 

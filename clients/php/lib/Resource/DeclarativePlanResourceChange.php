@@ -15,7 +15,7 @@ readonly class DeclarativePlanResourceChange implements \JsonSerializable
         public DeclarativePlanResourceChangeTarget $target,
         public string $targetId,
         public string $name,
-        /** Resource kind for this plan entry. ``workflow`` and ``edge`` are flat singletons; for ``target='block'`` this carries the block's concrete type (e.g. ``extract``, ``api_call``) so the plan summary can render type-specific labels. */
+        /** Resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels. */
         public DeclarativePlanResourceChangeType $type,
         /** @var array<\Retab\Resource\DeclarativePlanFieldChangeAction> */
         public array $actions,

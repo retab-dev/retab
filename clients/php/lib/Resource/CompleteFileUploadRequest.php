@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body to finalize a file upload, optionally carrying the uploaded content's `sha256` checksum for verification. */
 readonly class CompleteFileUploadRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

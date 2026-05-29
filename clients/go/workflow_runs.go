@@ -91,7 +91,7 @@ type WorkflowRunsExportParams struct {
 	TriggerType *WorkflowExportPayloadRequestTriggerType `json:"trigger_type,omitempty" url:"-"`
 	// PreferredColumns is preferred data column order
 	PreferredColumns []string `json:"preferred_columns,omitempty" url:"-"`
-	// Delimiter is csv field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
+	// Delimiter is csv field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
 	Delimiter *string `json:"delimiter,omitempty" url:"-"`
 	// LineDelimiter is csv line delimiter
 	LineDelimiter *string `json:"line_delimiter,omitempty" url:"-"`

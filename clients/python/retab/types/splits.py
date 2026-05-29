@@ -8,7 +8,7 @@ from retab.types.mime import FileRef, MIMEData
 
 
 class SplitRequest(BaseModel):
-    """Canonical split request."""
+    """Request body to create a split."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -21,6 +21,8 @@ class SplitRequest(BaseModel):
 
 
 class Split(BaseModel):
+    """A split result: a document divided into its constituent `subdocuments`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the split result")

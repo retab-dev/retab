@@ -6,12 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Run-scoped per-document experiment result.
- *
- * The storage row is still named `experiment_jobs` internally, but the
- * public contract is a result row addressed by `run_id` + `document_id`.
- */
+/** One experiment result for a single document, addressed by `run_id` and `document_id`. */
 readonly class ExperimentResult implements \JsonSerializable
 {
     use JsonSerializableTrait;

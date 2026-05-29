@@ -34,7 +34,7 @@ class WorkflowTestRunResultsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/tests/results", params=params or None, data=data)
 
     def prepare_get(self, result_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Test Execution Result"""
+        """Get Test Execution Result Retrieve a single workflow test result. Identified by `result_id`. Returns the result for one test within a run, including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle, timing, and any error. Returns 404 if no result with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -60,7 +60,7 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
         return self.request_page(prepared_request, model=WorkflowTestResult)
 
     def get(self, result_id: str, **extra_params: Any) -> WorkflowTestResult:
-        """Get Test Execution Result"""
+        """Get Test Execution Result Retrieve a single workflow test result. Identified by `result_id`. Returns the result for one test within a run, including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle, timing, and any error. Returns 404 if no result with that ID exists."""
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTestResult.model_validate(response)
@@ -83,7 +83,7 @@ class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin)
         return await self.request_page(prepared_request, model=WorkflowTestResult)
 
     async def get(self, result_id: str, **extra_params: Any) -> WorkflowTestResult:
-        """Get Test Execution Result"""
+        """Get Test Execution Result Retrieve a single workflow test result. Identified by `result_id`. Returns the result for one test within a run, including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle, timing, and any error. Returns 404 if no result with that ID exists."""
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestResult.model_validate(response)

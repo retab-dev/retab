@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A partition result: a document segmented into chunks along the requested `key`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Partition {
     /// Unique identifier of the partition

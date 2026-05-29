@@ -5,7 +5,7 @@ import { z } from 'zod';
 export interface ErrorDetails {
   /** Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart. */
   message?: string | null;
-  /** Full Python stack trace */
+  /** Full stack trace */
   stackTrace?: string | null;
   /** ID of the block that failed */
   blockId?: string | null;

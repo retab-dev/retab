@@ -2,7 +2,7 @@ namespace Retab
 {
     using System.Collections.Generic;
 
-    /// <summary>Represents a declarative validation response.</summary>
+    /// <summary>Result of validating a workflow YAML definition: whether it `is_valid`, block/edge counts, and `diagnostics`.</summary>
     public class DeclarativeValidationResponse
     {
         public string WorkflowId { get; set; } = default!;

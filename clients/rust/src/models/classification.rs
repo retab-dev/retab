@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// A classification result: the categories a document was scored against and the chosen `output` decision.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Classification {
     /// Unique identifier of the classification

@@ -5,18 +5,15 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Body for POST /v1/workflows/experiments.
-/// Two modes:
+/// Create an experiment, in one of two modes.
 /// - **Create from scratch** — provide `block_id`, `name`, optional
-/// `document_captures`/`documents`/`n_consensus`. `source_experiment_id`
-/// is omitted.
+/// `document_captures`/`documents`/`n_consensus`. Leave
+/// `source_experiment_id` unset.
 /// - **Duplicate an existing experiment** — provide only
-/// `source_experiment_id`. The handler copies the source's block, name
-/// (with `(Copy)` suffix), n_consensus, and documents. All other fields
+/// `source_experiment_id`. The source's block, name (with a `(Copy)`
+/// suffix), `n_consensus`, and documents are copied. All other fields
 /// must be omitted.
-/// The discriminator is whether `source_experiment_id` is set. This is
-/// validated server-side: combining a source with any other field is
-/// rejected so the two modes stay structurally distinct.
+/// Combining `source_experiment_id` with any other field is rejected.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateExperimentRequest {
     pub workflow_id: String,

@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// POST /workflows/reviews/{review_id}/approve body.
+/// Approve a specific version of a review.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApproveReviewRequest {
     /// Exact content-addressed key of the version to approve.

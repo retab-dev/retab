@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A document split produced by a workflow run, tagged with its artifact `operation` and creation time. */
 readonly class SplitWorkflowArtifact implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -37,7 +38,7 @@ readonly class SplitWorkflowArtifact implements \JsonSerializable
         public ?SplitConsensus $consensus = null,
         /** Usage information for the split operation */
         public ?RetabUsage $usage = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'split',
     ) {}
 

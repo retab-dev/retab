@@ -115,6 +115,7 @@ import {
 import type { WorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 import { ZWorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 
+/** The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`. */
 export interface WorkflowTestResult {
   id: string;
   runId?: string | null;

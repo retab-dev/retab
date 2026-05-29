@@ -14,7 +14,7 @@ namespace Retab
         public string TargetId { get; set; } = default!;
         public string Name { get; set; } = default!;
 
-        /// <summary>Resource kind for this plan entry. ``workflow`` and ``edge`` are flat singletons; for ``target='block'`` this carries the block's concrete type (e.g. ``extract``, ``api_call``) so the plan summary can render type-specific labels.</summary>
+        /// <summary>Resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels.</summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public DeclarativePlanResourceChangeType Type { get; set; }

@@ -48,6 +48,12 @@ namespace Retab
         }
 
         /// <summary>Get Test Execution Result</summary>
+        /// <remarks>
+        /// Retrieve a single workflow test result.
+        /// Identified by `result_id`. Returns the result for one test within a run,
+        /// including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle,
+        /// timing, and any error. Returns 404 if no result with that ID exists.
+        /// </remarks>
         /// <param name="resultId">The result id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

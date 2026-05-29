@@ -54,6 +54,12 @@ class WorkflowTestRunResults
 
     /**
      * Get Test Execution Result
+     *
+     * Retrieve a single workflow test result.
+     *
+     * Identified by `result_id`. Returns the result for one test within a run,
+     * including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle,
+     * timing, and any error. Returns 404 if no result with that ID exists.
      * @param string $resultId
      * @return \Retab\Resource\WorkflowTestResult
      * @throws \Retab\Exception\RetabException

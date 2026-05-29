@@ -3,13 +3,10 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Public block execution result for a single workflow block.</summary>
+    /// <summary>The result of executing a single workflow block.</summary>
     /// <remarks>
-    /// Terminal state is carried by the discriminated ``lifecycle`` union. The
-    /// legacy flat ``success`` / ``error`` / ``skipped`` fields were removed in
-    /// the hard cutover — they let invalid combinations (``success=true`` with
-    /// a non-empty ``error``) be representable on the wire and forced consumers
-    /// to know an undocumented field-precedence rule.
+    /// The terminal state is carried by the `lifecycle` field, which is one of
+    /// completed, error, or skipped.
     /// </remarks>
     public class StoredBlockExecution
     {
@@ -29,14 +26,14 @@ namespace Retab
         /// <summary>Type of the block</summary>
         public string BlockType { get; set; } = default!;
 
-        /// <summary>Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``.</summary>
+        /// <summary>Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.</summary>
         [Newtonsoft.Json.JsonConverter(typeof(CompletedBlockExecutionLifecycleDiscriminatorConverter))]
         public object Lifecycle { get; set; } = default!;
 
         /// <summary>Input payloads keyed by handle ID (file metadata for files, data for json)</summary>
         public Dictionary<string, object>? HandleInputs { get; set; }
 
-        /// <summary>Canonical persisted-ref artifact for this block execution (operation + id), if any</summary>
+        /// <summary>Reference to the artifact produced by this block execution, if any.</summary>
         public StepArtifactRef? Artifact { get; set; }
 
         /// <summary>Output payloads keyed by handle ID</summary>

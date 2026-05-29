@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Represents a cancel workflow experiment run response.</summary>
+    /// <summary>Result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state.</summary>
     public class CancelWorkflowExperimentRunResponse
     {
         public string Id { get; set; } = default!;

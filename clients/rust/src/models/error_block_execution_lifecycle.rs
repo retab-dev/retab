@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Terminal: the executed block raised. ``message`` is the executor's
+/// Terminal: the executed block raised. `message` is the executor's
 /// error string.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorBlockExecutionLifecycle {

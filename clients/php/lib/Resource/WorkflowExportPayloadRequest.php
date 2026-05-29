@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body describing which block outputs (or inputs) across a workflow's runs to export as CSV, with optional run, doc-type, and status filters. */
 readonly class WorkflowExportPayloadRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -42,7 +43,7 @@ readonly class WorkflowExportPayloadRequest implements \JsonSerializable
          * @var array<string>|null
          */
         public ?array $preferredColumns = null,
-        /** CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180. */
+        /** CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180. */
         public ?string $delimiter = null,
         /** CSV line delimiter */
         public ?string $lineDelimiter = null,

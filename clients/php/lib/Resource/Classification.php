@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A classification result: the categories a document was scored against and the chosen `output` decision. */
 readonly class Classification implements \JsonSerializable
 {
     use JsonSerializableTrait;

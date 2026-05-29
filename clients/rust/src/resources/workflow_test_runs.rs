@@ -86,6 +86,13 @@ impl CreateParams {
 
 impl<'a> WorkflowTestRunsApi<'a> {
     /// List Test Execution Runs
+    ///
+    /// List workflow test runs.
+    ///
+    /// Optionally filter by `workflow_id`, `test_id`, `target_block_id`,
+    /// `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+    /// window. Returns a cursor-paginated list ordered by `sort_by` (default
+    /// newest first).
     pub async fn list(&self, params: ListParams) -> Result<WorkflowTestRunList, Error> {
         self.list_with_options(params, None).await
     }
@@ -107,7 +114,7 @@ impl<'a> WorkflowTestRunsApi<'a> {
     ///
     /// Create a workflow-scoped test run.
     ///
-    /// ``workflow_id`` is the execution context. Optional ``scope`` narrows the
+    /// `workflow_id` is the execution context. Optional `scope` narrows the
     /// run to one saved test or one block; omitted scope runs all workflow tests.
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowTestRun, Error> {
         self.create_with_options(params, None).await
@@ -127,6 +134,11 @@ impl<'a> WorkflowTestRunsApi<'a> {
     }
 
     /// Get Test Execution Run
+    ///
+    /// Retrieve a single workflow test run.
+    ///
+    /// Identified by `run_id`. Returns the run with its lifecycle status, timing,
+    /// and pass/fail counts. Returns 404 if no run with that ID exists.
     pub async fn get(&self, run_id: &str) -> Result<WorkflowTestRun, Error> {
         self.get_with_options(run_id, None).await
     }
@@ -146,6 +158,12 @@ impl<'a> WorkflowTestRunsApi<'a> {
     }
 
     /// Cancel Test Execution Run
+    ///
+    /// Cancel a workflow test run.
+    ///
+    /// Identified by `run_id`. Stops the run and returns it with its updated
+    /// cancelled lifecycle. Returns 404 if the run does not exist or is not in a
+    /// cancellable state.
     pub async fn cancel(&self, run_id: &str) -> Result<WorkflowTestRun, Error> {
         self.cancel_with_options(run_id, None).await
     }

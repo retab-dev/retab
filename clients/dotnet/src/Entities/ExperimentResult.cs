@@ -4,11 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Run-scoped per-document experiment result.</summary>
-    /// <remarks>
-    /// The storage row is still named `experiment_jobs` internally, but the
-    /// public contract is a result row addressed by `run_id` + `document_id`.
-    /// </remarks>
+    /// <summary>One experiment result for a single document, addressed by `run_id` and `document_id`.</summary>
     public class ExperimentResult
     {
         public string Id { get; set; } = default!;

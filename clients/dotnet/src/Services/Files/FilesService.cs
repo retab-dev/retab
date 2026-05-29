@@ -47,6 +47,13 @@ namespace Retab
         }
 
         /// <summary>Upload File</summary>
+        /// <remarks>
+        /// Start a file upload.
+        /// Reserves a file record for the given `filename`, `content_type`, and
+        /// `size_bytes`, and returns a short-lived signed `upload_url` the client uses
+        /// to `PUT` the file content directly. Call the complete-upload endpoint with
+        /// the returned `file_id` once the bytes have been uploaded.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -63,6 +70,14 @@ namespace Retab
         }
 
         /// <summary>Complete Upload File</summary>
+        /// <remarks>
+        /// Finalize a file upload.
+        /// Confirms that the content for `file_id` has been uploaded, verifying the
+        /// object's size and optional `sha256` checksum against the upload session,
+        /// and marks the file ready. Returns a durable reference to the stored file.
+        /// Responds with `404` if the upload session is unknown, `410` if it has
+        /// expired, and `422` if the size or checksum does not match.
+        /// </remarks>
         /// <param name="fileId">The file id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -80,6 +95,12 @@ namespace Retab
         }
 
         /// <summary>Get File</summary>
+        /// <remarks>
+        /// Retrieve a file.
+        /// Returns metadata for the file identified by `file_id`, including its
+        /// `filename`, `page_count`, and timestamps. Responds with `404` if no
+        /// matching file exists.
+        /// </remarks>
         /// <param name="fileId">The file id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -96,6 +117,12 @@ namespace Retab
         }
 
         /// <summary>Download Link</summary>
+        /// <remarks>
+        /// Get a temporary download link for a file.
+        /// Returns a short-lived signed `download_url` for the file identified by
+        /// `file_id`, along with its `filename` and expiration. Responds with `404`
+        /// if no matching file exists.
+        /// </remarks>
         /// <param name="fileId">The file id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

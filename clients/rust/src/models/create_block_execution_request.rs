@@ -5,18 +5,18 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Body for `POST /v1/workflows/blocks/executions`.
-/// `block_id` is the block to replay; `run_id` is the workflow run that
-/// sourced the original step's `handle_inputs`. `step_id` optionally pins
-/// a concrete step row whose inputs should be used, which is useful for
-/// iteration-prefixed for_each body steps.
+/// Re-run a single block.
+/// `block_id` is the block to run; `run_id` is the workflow run that
+/// supplied the original inputs. `step_id` optionally selects a specific
+/// step whose inputs should be used, which is useful for blocks inside a
+/// `for_each` loop.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBlockExecutionRequest {
     /// Workflow run id that owns the step.
     pub run_id: String,
     /// Workflow block id to execute.
     pub block_id: String,
-    /// Optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key.
+    /// Optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub step_id: Option<String>,
     /// Optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7.

@@ -16,35 +16,33 @@ type WorkflowArtifactService struct {
 // WorkflowArtifactsListParams contains the parameters for List.
 type WorkflowArtifactsListParams struct {
 	PaginationParams
-	// RunID is workflow run ID whose artifacts should be listed. Required unless ``step_id`` is provided.
+	// RunID is workflow run ID whose artifacts should be listed. Required unless `step_id` is provided.
 	RunID *string `url:"run_id,omitempty" json:"-"`
 	// Operation is optional artifact operation filter
 	Operation *WorkflowArtifactsOperation `url:"operation,omitempty" json:"-"`
 	// BlockID is optional block_id or step_id filter
 	BlockID *string `url:"block_id,omitempty" json:"-"`
-	// StepID is optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). ``run_id`` is not required when ``step_id`` is set — it is resolved from the step record.
+	// StepID is optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). `run_id` is not required when `step_id` is set — it is resolved from the step record.
 	StepID *string `url:"step_id,omitempty" json:"-"`
 }
 
 // List workflow Artifacts
 // List artifacts produced by a workflow run.
-// Paginated by the producing step's “step_id“ (sorted by “started_at“
-// ascending). Pass “after“ for the next page, “before“ for the previous
-// page — mutually exclusive. “step_id“ short-circuits pagination and
+// Paginated by the producing step's `step_id` (sorted by `started_at`
+// ascending). Pass `after` for the next page, `before` for the previous
+// page — mutually exclusive. `step_id` short-circuits pagination and
 // returns the single attached artifact.
-// Filters: provide either “run_id“ (list all artifacts in a run) or
-// “step_id“ (single-step lookup). When both are absent the request is
+// Filters: provide either `run_id` (list all artifacts in a run) or
+// `step_id` (single-step lookup). When both are absent the request is
 // rejected with 400.
 func (s *WorkflowArtifactService) List(ctx context.Context, params *WorkflowArtifactsListParams, opts ...RequestOption) (*PaginatedList[WorkflowArtifact], error) {
 	return doPaginated[WorkflowArtifact](ctx, s.client, "GET", "/v1/workflows/artifacts", params, nil, opts...)
 }
 
 // Get workflow Artifact By Id
-// Get one workflow artifact by id alone.
-// The operation is derived from the id prefix
-// (“extr_…“ → extraction, “clss_…“ → classification, etc.). This is
-// the flat-resource shape — callers do not need to know which collection
-// backs the id.
+// Get one workflow artifact by id.
+// The artifact kind is derived from the id prefix (`extr_…` → extraction,
+// `clss_…` → classification, etc.).
 func (s *WorkflowArtifactService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (interface{}, error) {
 	if artifactID == "" {
 		return nil, fmt.Errorf("retab: artifact_id is required")

@@ -18,6 +18,14 @@ namespace Retab
         public EditTemplatesService(Retab client) : base(client) { }
 
         /// <summary>List Templates</summary>
+        /// <remarks>
+        /// List edit templates.
+        /// Returns a paginated list of edit templates. Filter by `name`
+        /// (case-insensitive substring match) and order results by `sort_by`
+        /// (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and
+        /// `order`. Form fields are omitted from list items; fetch a single template to
+        /// retrieve them.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +52,13 @@ namespace Retab
         }
 
         /// <summary>Create Template</summary>
+        /// <remarks>
+        /// Create an edit template.
+        /// Stores a reusable form template from an empty `document` (PDF or Office
+        /// document) plus its `form_fields` and a `name`. Later edits can reference the
+        /// returned template id instead of re-uploading the document. An unsupported
+        /// document format responds with `400`; on success responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -60,6 +75,11 @@ namespace Retab
         }
 
         /// <summary>Get Template</summary>
+        /// <remarks>
+        /// Retrieve an edit template.
+        /// Fetches a single edit template by its `template_id`, including its form
+        /// fields. Responds with `404` if no template with that id exists.
+        /// </remarks>
         /// <param name="templateId">The template id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -76,6 +96,13 @@ namespace Retab
         }
 
         /// <summary>Update Template</summary>
+        /// <remarks>
+        /// Update an edit template.
+        /// Applies a partial update to the template identified by `template_id`. Set
+        /// `name` to rename it and/or `form_fields` to replace its field list; omitted
+        /// fields are left unchanged. Returns the updated template, or `404` if no
+        /// template with that id exists.
+        /// </remarks>
         /// <param name="templateId">The template id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -93,6 +120,11 @@ namespace Retab
         }
 
         /// <summary>Delete Template</summary>
+        /// <remarks>
+        /// Delete an edit template.
+        /// Permanently deletes the edit template identified by `template_id`. Returns
+        /// `204` on success, or `404` if no template with that id exists.
+        /// </remarks>
         /// <param name="templateId">The template id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

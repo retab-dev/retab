@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Request body for POST /v1/jobs. */
+/** Create a job that runs a request against a supported endpoint asynchronously. */
 readonly class CreateJobRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

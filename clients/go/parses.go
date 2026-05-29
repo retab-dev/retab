@@ -22,6 +22,11 @@ type ParsesListParams struct {
 }
 
 // List parses
+// List parses.
+// Returns a paginated list of parses for the authenticated environment, newest first by
+// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+// `limit`, and `order`.
 func (s *ParseService) List(ctx context.Context, params *ParsesListParams, opts ...RequestOption) (*PaginatedList[Parse], error) {
 	return doPaginated[Parse](ctx, s.client, "GET", "/v1/parses", params, nil, opts...)
 }
@@ -43,6 +48,11 @@ type ParsesCreateParams struct {
 }
 
 // Create parse
+// Create a parse.
+// Extracts the full text of a `document` into per-page and concatenated text using
+// the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and
+// optional `instructions` steer the parse. Returns the stored `Parse` with its `output`
+// and `usage`, and responds with `201`.
 func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, opts ...RequestOption) (*Parse, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: document is required")
@@ -89,6 +99,10 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 }
 
 // Get parse
+// Retrieve a parse.
+// Fetches a single parse by its `parse_id` within the authenticated environment and
+// returns the full `Parse` including its `output`. Responds with `404` if no parse with
+// that id exists.
 func (s *ParseService) Get(ctx context.Context, parseID string, opts ...RequestOption) (*Parse, error) {
 	if parseID == "" {
 		return nil, fmt.Errorf("retab: parse_id is required")
@@ -102,6 +116,10 @@ func (s *ParseService) Get(ctx context.Context, parseID string, opts ...RequestO
 }
 
 // Delete parse
+// Delete a parse.
+// Permanently deletes the parse identified by `parse_id` in the authenticated
+// environment. Returns `204` with no body on success, or `404` if the parse does not
+// exist.
 func (s *ParseService) Delete(ctx context.Context, parseID string, opts ...RequestOption) error {
 	if parseID == "" {
 		return fmt.Errorf("retab: parse_id is required")

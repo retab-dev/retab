@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state. */
 readonly class CancelWorkflowExperimentRunResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

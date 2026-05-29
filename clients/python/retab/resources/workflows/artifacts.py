@@ -36,7 +36,7 @@ class WorkflowArtifactsMixin:
         limit: int | None = 100,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
+        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's `step_id` (sorted by `started_at` ascending). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `step_id` short-circuits pagination and returns the single attached artifact. Filters: provide either `run_id` (list all artifacts in a run) or `step_id` (single-step…"""
         params: dict[str, Any] = {
             "run_id": run_id,
             "operation": operation,
@@ -53,7 +53,7 @@ class WorkflowArtifactsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/artifacts", params=params or None, data=data)
 
     def prepare_get(self, artifact_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
+        """Get Workflow Artifact By Id Get one workflow artifact by id. The artifact kind is derived from the id prefix (`extr_…` → extraction, `clss_…` → classification, etc.)."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -76,7 +76,7 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         limit: int | None = 100,
         **extra_params: Any,
     ) -> PaginatedList[WorkflowArtifact]:
-        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
+        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's `step_id` (sorted by `started_at` ascending). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `step_id` short-circuits pagination and returns the single attached artifact. Filters: provide either `run_id` (list all artifacts in a run) or `step_id` (single-step…"""
         prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowArtifact)
 
@@ -95,7 +95,7 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         | ApiCallInvocation
         | FunctionInvocation
     ):
-        """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
+        """Get Workflow Artifact By Id Get one workflow artifact by id. The artifact kind is derived from the id prefix (`extr_…` → extraction, `clss_…` → classification, etc.)."""
         prepared_request = self.prepare_get(artifact_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return TypeAdapter(
@@ -127,7 +127,7 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         limit: int | None = 100,
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowArtifact]:
-        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
+        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's `step_id` (sorted by `started_at` ascending). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `step_id` short-circuits pagination and returns the single attached artifact. Filters: provide either `run_id` (list all artifacts in a run) or `step_id` (single-step…"""
         prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowArtifact)
 
@@ -146,7 +146,7 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         | ApiCallInvocation
         | FunctionInvocation
     ):
-        """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
+        """Get Workflow Artifact By Id Get one workflow artifact by id. The artifact kind is derived from the id prefix (`extr_…` → extraction, `clss_…` → classification, etc.)."""
         prepared_request = self.prepare_get(artifact_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return TypeAdapter(

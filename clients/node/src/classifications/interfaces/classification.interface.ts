@@ -30,6 +30,7 @@ import {
   serializeRetabUsage,
 } from './retab-usage.interface.js';
 
+/** A classification result: the categories a document was scored against and the chosen `output` decision. */
 export interface Classification {
   /** Unique identifier of the classification */
   id: string;

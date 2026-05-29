@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Public API shape for one review. Strips internal fields. */
+/** One review and its current decision. */
 readonly class Review implements \JsonSerializable
 {
     use JsonSerializableTrait;

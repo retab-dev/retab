@@ -87,7 +87,7 @@ import { ZExperimentRunBlockType } from './experiment-run-block-type.interface.j
 import type { ExperimentRunNConsensus } from './experiment-run-n-consensus.interface.js';
 import { ZExperimentRunNConsensus } from './experiment-run-n-consensus.interface.js';
 
-/** Run-id-first public experiment run shape. */
+/** A single execution of an experiment, identified by `id`. */
 export interface ExperimentRun {
   id: string;
   workflow: WorkflowSnapshotRef;

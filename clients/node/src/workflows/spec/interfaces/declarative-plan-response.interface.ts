@@ -22,6 +22,7 @@ import {
 import type { DeclarativePlanResponseAction } from './declarative-plan-response-action.interface.js';
 import { ZDeclarativePlanResponseAction } from './declarative-plan-response-action.interface.js';
 
+/** A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`. */
 export interface DeclarativePlanResponse {
   workflowId: string;
   action: DeclarativePlanResponseAction;

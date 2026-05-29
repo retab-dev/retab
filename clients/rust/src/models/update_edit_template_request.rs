@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body for updating an edit template. Only the supplied fields (`name`, `form_fields`) are changed.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateEditTemplateRequest {
     /// New name for the template.

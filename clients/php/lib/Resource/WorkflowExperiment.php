@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** An experiment that evaluates a workflow block against a set of documents, with its latest run status and score. */
 readonly class WorkflowExperiment implements \JsonSerializable
 {
     use JsonSerializableTrait;

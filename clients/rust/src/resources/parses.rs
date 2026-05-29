@@ -80,6 +80,13 @@ impl CreateParams {
 
 impl<'a> ParsesApi<'a> {
     /// List Parses
+    ///
+    /// List parses.
+    ///
+    /// Returns a paginated list of parses for the authenticated environment, newest first by
+    /// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+    /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+    /// `limit`, and `order`.
     pub async fn list(&self, params: ListParams) -> Result<ParseList, Error> {
         self.list_with_options(params, None).await
     }
@@ -98,6 +105,13 @@ impl<'a> ParsesApi<'a> {
     }
 
     /// Create Parse
+    ///
+    /// Create a parse.
+    ///
+    /// Extracts the full text of a `document` into per-page and concatenated text using
+    /// the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and
+    /// optional `instructions` steer the parse. Returns the stored `Parse` with its `output`
+    /// and `usage`, and responds with `201`.
     pub async fn create(&self, params: CreateParams) -> Result<Parse, Error> {
         self.create_with_options(params, None).await
     }
@@ -116,6 +130,12 @@ impl<'a> ParsesApi<'a> {
     }
 
     /// Get Parse
+    ///
+    /// Retrieve a parse.
+    ///
+    /// Fetches a single parse by its `parse_id` within the authenticated environment and
+    /// returns the full `Parse` including its `output`. Responds with `404` if no parse with
+    /// that id exists.
     pub async fn get(&self, parse_id: &str) -> Result<Parse, Error> {
         self.get_with_options(parse_id, None).await
     }
@@ -135,6 +155,12 @@ impl<'a> ParsesApi<'a> {
     }
 
     /// Delete Parse
+    ///
+    /// Delete a parse.
+    ///
+    /// Permanently deletes the parse identified by `parse_id` in the authenticated
+    /// environment. Returns `204` with no body on success, or `404` if the parse does not
+    /// exist.
     pub async fn delete(&self, parse_id: &str) -> Result<(), Error> {
         self.delete_with_options(parse_id, None).await
     }

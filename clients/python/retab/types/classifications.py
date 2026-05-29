@@ -97,6 +97,8 @@ class Category(BaseModel):
 
 
 class Classification(BaseModel):
+    """A classification result: the categories a document was scored against and the chosen `output` decision."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique identifier of the classification")

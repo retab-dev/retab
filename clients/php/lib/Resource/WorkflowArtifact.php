@@ -12,9 +12,9 @@ readonly class WorkflowArtifact implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public StepArtifactRefOperation $operation,
-        /** Persisted resource identifier */
+        /** Resource identifier */
         public string $id,
     ) {}
 

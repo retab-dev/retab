@@ -22,6 +22,9 @@ type ClassificationsListParams struct {
 }
 
 // List classifications
+// List classifications.
+// Returns a paginated list of classifications, most recent first. Filter by
+// `filename` or a `from_date`/`to_date` range, and page with `before`/`after`.
 func (s *ClassificationService) List(ctx context.Context, params *ClassificationsListParams, opts ...RequestOption) (*PaginatedList[Classification], error) {
 	return doPaginated[Classification](ctx, s.client, "GET", "/v1/classifications", params, nil, opts...)
 }
@@ -45,6 +48,12 @@ type ClassificationsCreateParams struct {
 }
 
 // Create classification
+// Classify a document.
+// Runs a classification on the supplied `document` against the provided
+// `categories`. Tune the run with `model`, `instructions`, `first_n_pages`
+// (limit to the first pages), and `n_consensus` (number of votes to combine).
+// Returns the created classification with the chosen category and reasoning;
+// responds with `201`.
 func (s *ClassificationService) Create(ctx context.Context, params *ClassificationsCreateParams, opts ...RequestOption) (*Classification, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: document is required")
@@ -96,6 +105,10 @@ func (s *ClassificationService) Create(ctx context.Context, params *Classificati
 }
 
 // Get classification
+// Retrieve a classification.
+// Fetches a single classification by its `classification_id`. Returns the
+// classification with its file reference, categories, and result; responds
+// with `404` if no classification with that id exists.
 func (s *ClassificationService) Get(ctx context.Context, classificationID string, opts ...RequestOption) (*Classification, error) {
 	if classificationID == "" {
 		return nil, fmt.Errorf("retab: classification_id is required")
@@ -109,6 +122,9 @@ func (s *ClassificationService) Get(ctx context.Context, classificationID string
 }
 
 // Delete classification
+// Delete a classification.
+// Permanently deletes the classification identified by `classification_id`.
+// Responds with 204 on success, or 404 if no such classification exists.
 func (s *ClassificationService) Delete(ctx context.Context, classificationID string, opts ...RequestOption) error {
 	if classificationID == "" {
 		return fmt.Errorf("retab: classification_id is required")

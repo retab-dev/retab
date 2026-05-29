@@ -16,6 +16,11 @@ class Classifications
 
     /**
      * List Classifications
+     *
+     * List classifications.
+     *
+     * Returns a paginated list of classifications, most recent first. Filter by
+     * `filename` or a `from_date`/`to_date` range, and page with `before`/`after`.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
@@ -56,6 +61,14 @@ class Classifications
 
     /**
      * Create Classification
+     *
+     * Classify a document.
+     *
+     * Runs a classification on the supplied `document` against the provided
+     * `categories`. Tune the run with `model`, `instructions`, `first_n_pages`
+     * (limit to the first pages), and `n_consensus` (number of votes to combine).
+     * Returns the created classification with the chosen category and reasoning;
+     * responds with `201`.
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to classify
      * @param array<\Retab\Resource\Category> $categories The categories to classify the document into
      * @param string|null $model The model to use for classification
@@ -97,6 +110,12 @@ class Classifications
 
     /**
      * Get Classification
+     *
+     * Retrieve a classification.
+     *
+     * Fetches a single classification by its `classification_id`. Returns the
+     * classification with its file reference, categories, and result; responds
+     * with `404` if no classification with that id exists.
      * @param string $classificationId
      * @return \Retab\Resource\Classification
      * @throws \Retab\Exception\RetabException
@@ -115,6 +134,11 @@ class Classifications
 
     /**
      * Delete Classification
+     *
+     * Delete a classification.
+     *
+     * Permanently deletes the classification identified by `classification_id`.
+     * Responds with 204 on success, or 404 if no such classification exists.
      * @param string $classificationId
      * @return void
      * @throws \Retab\Exception\RetabException

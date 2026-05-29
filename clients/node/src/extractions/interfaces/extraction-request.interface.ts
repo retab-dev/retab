@@ -12,6 +12,7 @@ import type {
 } from '../../classifications/interfaces/mime-data.interface.js';
 import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
 
+/** Request to run a structured extraction on a single document. */
 export interface ExtractionRequest {
   document: MIMEData | FileRef;
   /** JSON schema describing the structured output */

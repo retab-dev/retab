@@ -35,6 +35,7 @@ import {
   serializeWorkflowTestBlockTarget,
 } from './workflow-test-block-target.interface.js';
 
+/** Body to create a workflow test: the target block, an input `source`, and an `assertion` to evaluate its output. */
 export interface CreateWorkflowTestRequest {
   workflowId: string;
   target: WorkflowTestBlockTarget;

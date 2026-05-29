@@ -18,6 +18,13 @@ namespace Retab
         public ExperimentRunsService(Retab client) : base(client) { }
 
         /// <summary>List Experiment Runs</summary>
+        /// <remarks>
+        /// List experiment runs.
+        /// Optionally filter by `workflow_id`, `experiment_id`, `block_id`,
+        /// `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+        /// window. Returns a cursor-paginated list ordered by `sort_by` (default
+        /// newest first).
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -66,6 +73,12 @@ namespace Retab
         }
 
         /// <summary>Get Experiment Run</summary>
+        /// <remarks>
+        /// Retrieve a single experiment run.
+        /// Identified by `run_id`. Returns the run with its lifecycle status, timing,
+        /// score, and document progress counts. Returns 404 if no run with that ID
+        /// exists.
+        /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -82,6 +95,13 @@ namespace Retab
         }
 
         /// <summary>Cancel Experiment Run</summary>
+        /// <remarks>
+        /// Cancel an experiment run.
+        /// Identified by `run_id`. Cancels the run and any of its pending or
+        /// in-flight results, returning the run's new `cancelled` lifecycle. Returns
+        /// 404 if the run does not exist or is not in a cancellable (pending, queued,
+        /// or running) state.
+        /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

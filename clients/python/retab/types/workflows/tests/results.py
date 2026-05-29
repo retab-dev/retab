@@ -113,6 +113,8 @@ class VerdictSummary(BaseModel):
 
 
 class WorkflowTestResult(BaseModel):
+    """The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str

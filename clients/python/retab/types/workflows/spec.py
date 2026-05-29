@@ -49,6 +49,8 @@ DeclarativePlanResponseAction = DeclarativeApplyResponseAction
 
 
 class DeclarativeApplyResponse(BaseModel):
+    """The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
@@ -64,6 +66,8 @@ class DeclarativeApplyResponse(BaseModel):
 
 
 class DeclarativeExportResponse(BaseModel):
+    """A workflow exported as its YAML definition."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
@@ -102,7 +106,7 @@ class DeclarativePlanResourceChange(BaseModel):
     name: str
     type: DeclarativePlanResourceChangeType = Field(
         ...,
-        description="Resource kind for this plan entry. ``workflow`` and ``edge`` are flat singletons; for ``target='block'`` this carries the block's concrete type (e.g. ``extract``, ``api_call``) so the plan summary can render type-specific labels.",
+        description="Resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels.",
     )
     actions: list[DeclarativePlanFieldChangeAction]
     summary: str
@@ -111,6 +115,8 @@ class DeclarativePlanResourceChange(BaseModel):
 
 
 class DeclarativePlanResponse(BaseModel):
+    """A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
@@ -137,6 +143,8 @@ class DeclarativePlanSummary(BaseModel):
 
 
 class DeclarativeValidationResponse(BaseModel):
+    """Result of validating a workflow YAML definition: whether it `is_valid`, block/edge counts, and `diagnostics`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
@@ -147,6 +155,8 @@ class DeclarativeValidationResponse(BaseModel):
 
 
 class DeclarativeWorkflowRequest(BaseModel):
+    """Body carrying a workflow's full YAML definition for validate, plan, apply, or export."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     yaml_definition: str = Field(..., description="Workflow YAML definition")

@@ -38,7 +38,7 @@ class ParsesMixin:
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Parses"""
+        """List Parses List parses. Returns a paginated list of parses for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         params: dict[str, Any] = {
             "before": before,
             "after": after,
@@ -64,7 +64,7 @@ class ParsesMixin:
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Parse"""
+        """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -84,7 +84,7 @@ class ParsesMixin:
         return PreparedRequest(method="POST", url="/v1/parses", params=params or None, data=data)
 
     def prepare_get(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Parse"""
+        """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -93,7 +93,7 @@ class ParsesMixin:
         return PreparedRequest(method="GET", url=f"/v1/parses/{parse_id}", params=params or None, data=data)
 
     def prepare_delete(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Parse"""
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the parse does not exist."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -116,7 +116,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[Parse]:
-        """List Parses"""
+        """List Parses List parses. Returns a paginated list of parses for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, from_date=from_date, to_date=to_date, **extra_params)
         return self.request_page(prepared_request, model=Parse)
 
@@ -130,7 +130,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Parse:
-        """Create Parse"""
+        """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
         prepared_request = self.prepare_create(
             document=document,
             model=model,
@@ -144,13 +144,13 @@ class Parses(SyncAPIResource, ParsesMixin):
         return Parse.model_validate(response)
 
     def get(self, parse_id: str, **extra_params: Any) -> Parse:
-        """Get Parse"""
+        """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
         prepared_request = self.prepare_get(parse_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
     def delete(self, parse_id: str, **extra_params: Any) -> None:
-        """Delete Parse"""
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the parse does not exist."""
         prepared_request = self.prepare_delete(parse_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -170,7 +170,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Parse]:
-        """List Parses"""
+        """List Parses List parses. Returns a paginated list of parses for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, from_date=from_date, to_date=to_date, **extra_params)
         return await self.request_page(prepared_request, model=Parse)
 
@@ -184,7 +184,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Parse:
-        """Create Parse"""
+        """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
         prepared_request = self.prepare_create(
             document=document,
             model=model,
@@ -198,13 +198,13 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         return Parse.model_validate(response)
 
     async def get(self, parse_id: str, **extra_params: Any) -> Parse:
-        """Get Parse"""
+        """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
         prepared_request = self.prepare_get(parse_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
     async def delete(self, parse_id: str, **extra_params: Any) -> None:
-        """Delete Parse"""
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the parse does not exist."""
         prepared_request = self.prepare_delete(parse_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

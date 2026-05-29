@@ -18,6 +18,13 @@ namespace Retab
         public SplitsService(Retab client) : base(client) { }
 
         /// <summary>List Splits</summary>
+        /// <remarks>
+        /// List splits.
+        /// Returns a paginated list of splits for the authenticated environment, newest first by
+        /// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+        /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+        /// `limit`, and `order`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +51,13 @@ namespace Retab
         }
 
         /// <summary>Create Split</summary>
+        /// <remarks>
+        /// Create a split.
+        /// Divides a `document` into the named `subdocuments`, assigning each its set of pages,
+        /// using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to
+        /// run multiple votes and consolidate them. Returns the stored `Split` with its `output`
+        /// page assignments, and responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -60,6 +74,12 @@ namespace Retab
         }
 
         /// <summary>Get Split</summary>
+        /// <remarks>
+        /// Retrieve a split.
+        /// Fetches a single split by its `split_id` within the authenticated environment and
+        /// returns the full `Split` including its `output` page assignments. Responds with `404`
+        /// if no split with that id exists.
+        /// </remarks>
         /// <param name="splitId">The split id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -76,6 +96,12 @@ namespace Retab
         }
 
         /// <summary>Delete Split</summary>
+        /// <remarks>
+        /// Delete a split.
+        /// Permanently deletes the split identified by `split_id` in the authenticated
+        /// environment. Returns `204` with no body on success, or `404` if the split does not
+        /// exist.
+        /// </remarks>
         /// <param name="splitId">The split id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

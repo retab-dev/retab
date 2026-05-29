@@ -8,7 +8,7 @@ import { ZStepArtifactRefOperation } from './step-artifact-ref-operation.interfa
 export interface StepArtifactRef {
   /** The kind of resource this artifact references */
   operation: StepArtifactRefOperation;
-  /** Persisted resource identifier */
+  /** Resource identifier */
   id: string;
 }
 

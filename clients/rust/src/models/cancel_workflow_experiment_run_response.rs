@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CancelWorkflowExperimentRunResponse {
     pub id: String,

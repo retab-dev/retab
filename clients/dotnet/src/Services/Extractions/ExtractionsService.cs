@@ -49,6 +49,13 @@ namespace Retab
         }
 
         /// <summary>Create Extraction</summary>
+        /// <remarks>
+        /// Run a structured extraction on a document.
+        /// Extracts structured data from the `document` according to the supplied
+        /// `json_schema`, using the requested `model`. Returns the extraction
+        /// with its `output`, consensus details, and usage on `201`. When
+        /// `stream` is `true`, partial results are streamed back as they are produced.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -65,6 +72,12 @@ namespace Retab
         }
 
         /// <summary>Get Extraction</summary>
+        /// <remarks>
+        /// Retrieve an extraction.
+        /// Returns the extraction identified by `extraction_id`, including its source
+        /// file, schema, `output`, and consensus details. Responds with `404` if no
+        /// matching extraction exists.
+        /// </remarks>
         /// <param name="extractionId">The extraction id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

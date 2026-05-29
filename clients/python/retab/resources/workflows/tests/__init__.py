@@ -32,7 +32,7 @@ class WorkflowTestsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Tests"""
+        """List Tests List workflow tests. Requires `workflow_id` and returns its saved tests as a cursor-paginated list, each with its latest-run summaries and drift status. Optionally filter to one block with `target_block_id`. Returns 404 if the workflow does not exist."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "target_block_id": target_block_id,
@@ -56,7 +56,7 @@ class WorkflowTestsMixin:
         name: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Test"""
+        """Create Test Create a workflow test. Pins an expected outcome for one block in a workflow. Provide the `workflow_id`, the `target` block, an `assertion` describing the expected output, and a `source` of test inputs (explicit handle inputs or a capture from a prior run/step). Returns the created test with status 201."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -68,7 +68,7 @@ class WorkflowTestsMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/tests", params=params or None, data=data)
 
     def prepare_get(self, test_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Test"""
+        """Get Test Retrieve a single workflow test. Identified by `test_id`. Returns the test with its target block, assertion, input source, and latest-run summaries. Returns 404 if no test with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -84,7 +84,7 @@ class WorkflowTestsMixin:
         source: ManualWorkflowTestSource | RunStepWorkflowTestSource | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Update Test"""
+        """Update Test Update a workflow test. Identified by `test_id`. Send any of `name`, `assertion`, or `source`; omitted fields are left unchanged. Returns the updated test."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -94,7 +94,7 @@ class WorkflowTestsMixin:
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/tests/{test_id}", params=params or None, data=data)
 
     def prepare_delete(self, test_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Test"""
+        """Delete Test Delete a workflow test. Identified by `test_id`. Returns 204 on success and 404 if no test with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -121,7 +121,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowTest]:
-        """List Tests"""
+        """List Tests List workflow tests. Requires `workflow_id` and returns its saved tests as a cursor-paginated list, each with its latest-run summaries and drift status. Optionally filter to one block with `target_block_id`. Returns 404 if the workflow does not exist."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowTest)
 
@@ -134,13 +134,13 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         name: str | None = None,
         **extra_params: Any,
     ) -> WorkflowTest:
-        """Create Test"""
+        """Create Test Create a workflow test. Pins an expected outcome for one block in a workflow. Provide the `workflow_id`, the `target` block, an `assertion` describing the expected output, and a `source` of test inputs (explicit handle inputs or a capture from a prior run/step). Returns the created test with status 201."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     def get(self, test_id: str, **extra_params: Any) -> WorkflowTest:
-        """Get Test"""
+        """Get Test Retrieve a single workflow test. Identified by `test_id`. Returns the test with its target block, assertion, input source, and latest-run summaries. Returns 404 if no test with that ID exists."""
         prepared_request = self.prepare_get(test_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
@@ -153,13 +153,13 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         source: ManualWorkflowTestSource | RunStepWorkflowTestSource | None = None,
         **extra_params: Any,
     ) -> WorkflowTest:
-        """Update Test"""
+        """Update Test Update a workflow test. Identified by `test_id`. Send any of `name`, `assertion`, or `source`; omitted fields are left unchanged. Returns the updated test."""
         prepared_request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     def delete(self, test_id: str, **extra_params: Any) -> None:
-        """Delete Test"""
+        """Delete Test Delete a workflow test. Identified by `test_id`. Returns 204 on success and 404 if no test with that ID exists."""
         prepared_request = self.prepare_delete(test_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -183,7 +183,7 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowTest]:
-        """List Tests"""
+        """List Tests List workflow tests. Requires `workflow_id` and returns its saved tests as a cursor-paginated list, each with its latest-run summaries and drift status. Optionally filter to one block with `target_block_id`. Returns 404 if the workflow does not exist."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, target_block_id=target_block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowTest)
 
@@ -196,13 +196,13 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         name: str | None = None,
         **extra_params: Any,
     ) -> WorkflowTest:
-        """Create Test"""
+        """Create Test Create a workflow test. Pins an expected outcome for one block in a workflow. Provide the `workflow_id`, the `target` block, an `assertion` describing the expected output, and a `source` of test inputs (explicit handle inputs or a capture from a prior run/step). Returns the created test with status 201."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, target=target, source=source, name=name, assertion=assertion, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     async def get(self, test_id: str, **extra_params: Any) -> WorkflowTest:
-        """Get Test"""
+        """Get Test Retrieve a single workflow test. Identified by `test_id`. Returns the test with its target block, assertion, input source, and latest-run summaries. Returns 404 if no test with that ID exists."""
         prepared_request = self.prepare_get(test_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
@@ -215,13 +215,13 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         source: ManualWorkflowTestSource | RunStepWorkflowTestSource | None = None,
         **extra_params: Any,
     ) -> WorkflowTest:
-        """Update Test"""
+        """Update Test Update a workflow test. Identified by `test_id`. Send any of `name`, `assertion`, or `source`; omitted fields are left unchanged. Returns the updated test."""
         prepared_request = self.prepare_update(test_id, name=name, assertion=assertion, source=source, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTest.model_validate(response)
 
     async def delete(self, test_id: str, **extra_params: Any) -> None:
-        """Delete Test"""
+        """Delete Test Delete a workflow test. Identified by `test_id`. Returns 204 on success and 404 if no test with that ID exists."""
         prepared_request = self.prepare_delete(test_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

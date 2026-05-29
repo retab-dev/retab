@@ -6,14 +6,10 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Summary of the most recent block-test run.
-/// The two harmonized axes — execution status and verdict outcome — are
-/// exposed as separate fields. The runner only writes the summary on
-/// terminal-state transitions, so in practice `status` is one of
-/// `completed | error | cancelled` and `outcome` is populated when
-/// `status == "completed"`.
-/// `status` is a flat enum — there's no per-state payload to carry on a
-/// summary projection, so the API_DESIGN.md `lifecycle` vs `status`
-/// convention says use `status` here.
+/// Execution status and verdict outcome are exposed as separate fields.
+/// The summary is written on terminal-state transitions, so in practice
+/// `status` is one of `completed | error | cancelled` and `outcome` is
+/// populated when `status == "completed"`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LatestBlockTestRunSummary {
     pub run_record_id: String,

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body to create a workflow test: the target block, an input `source`, and an `assertion` to evaluate its output. */
 readonly class CreateWorkflowTestRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

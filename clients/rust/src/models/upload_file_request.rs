@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body to start a file upload: the `filename`, expected `size_bytes`, and optional content type and checksum.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UploadFileRequest {
     /// Filename to store

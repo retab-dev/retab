@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateWorkflowRequest {
     /// The name of the workflow

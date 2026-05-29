@@ -94,7 +94,7 @@ import {
 import type { ExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 import { ZExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 
-/** Run-scoped per-document experiment result. */
+/** One experiment result for a single document, addressed by `run_id` and `document_id`. */
 export interface ExperimentResult {
   id: string;
   runId: string;

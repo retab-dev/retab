@@ -28,7 +28,7 @@ class ExperimentRunMetricsMixin:
         prior_run_id: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Get Experiment Metrics For Run"""
+        """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
         params: dict[str, Any] = {
             "run_id": run_id,
             "view": view,
@@ -64,7 +64,7 @@ class ExperimentRunMetrics(SyncAPIResource, ExperimentRunMetricsMixin):
         | ExperimentMetricsStaleError
         | ExperimentMetricsMissingError
     ):
-        """Get Experiment Metrics For Run"""
+        """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
         prepared_request = self.prepare_get(
             run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params
         )
@@ -99,7 +99,7 @@ class AsyncExperimentRunMetrics(AsyncAPIResource, ExperimentRunMetricsMixin):
         | ExperimentMetricsStaleError
         | ExperimentMetricsMissingError
     ):
-        """Get Experiment Metrics For Run"""
+        """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
         prepared_request = self.prepare_get(
             run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params
         )

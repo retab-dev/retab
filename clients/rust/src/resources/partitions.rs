@@ -85,6 +85,13 @@ impl CreateParams {
 
 impl<'a> PartitionsApi<'a> {
     /// List Partitions
+    ///
+    /// List partitions.
+    ///
+    /// Returns a paginated list of partitions for the authenticated environment, newest first
+    /// by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+    /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+    /// `limit`, and `order`.
     pub async fn list(&self, params: ListParams) -> Result<PartitionList, Error> {
         self.list_with_options(params, None).await
     }
@@ -103,6 +110,13 @@ impl<'a> PartitionsApi<'a> {
     }
 
     /// Create Partitions
+    ///
+    /// Create a partition.
+    ///
+    /// Groups the pages of a `document` into chunks by a partition `key`, guided by
+    /// `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple
+    /// votes and consolidate them, and `allow_overlap` to let a page belong to more than one
+    /// chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`.
     pub async fn create(&self, params: CreateParams) -> Result<Partition, Error> {
         self.create_with_options(params, None).await
     }
@@ -121,6 +135,12 @@ impl<'a> PartitionsApi<'a> {
     }
 
     /// Get Partition
+    ///
+    /// Retrieve a partition.
+    ///
+    /// Fetches a single partition by its `partition_id` within the authenticated environment
+    /// and returns the full `Partition` including its `output` chunks. Responds with `404` if
+    /// no partition with that id exists.
     pub async fn get(&self, partition_id: &str) -> Result<Partition, Error> {
         self.get_with_options(partition_id, None).await
     }
@@ -140,6 +160,12 @@ impl<'a> PartitionsApi<'a> {
     }
 
     /// Delete Partition
+    ///
+    /// Delete a partition.
+    ///
+    /// Permanently deletes the partition identified by `partition_id` in the authenticated
+    /// environment. Returns `204` with no body on success, or `404` if the partition does not
+    /// exist.
     pub async fn delete(&self, partition_id: &str) -> Result<(), Error> {
         self.delete_with_options(partition_id, None).await
     }

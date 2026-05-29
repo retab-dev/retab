@@ -36,7 +36,7 @@ readonly class WorkflowBlock implements \JsonSerializable
         /** ID of parent container (while_loop, for_each) */
         public ?string $parentId = null,
         /**
-         * Internal graph-derived schema sidecar.
+         * Schemas resolved for this block from the workflow graph.
          * @var array<string, mixed>|null
          */
         public ?array $resolvedSchemas = null,

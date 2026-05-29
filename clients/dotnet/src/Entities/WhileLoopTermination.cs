@@ -5,11 +5,16 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a while loop termination.</summary>
+    /// <summary>Record of why a while-loop block stopped iterating during a run.</summary>
+    /// <remarks>
+    /// Reports the `termination_reason` (`max_iterations_reached`,
+    /// `condition_matched`, or `error`) and the termination conditions that were
+    /// evaluated on the final iteration (`evaluations`).
+    /// </remarks>
     public class WhileLoopTermination
     {
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "while_loop_termination";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;

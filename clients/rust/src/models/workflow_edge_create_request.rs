@@ -5,12 +5,12 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Body for POST /v1/workflows/edges.
+/// Create a new edge connecting two blocks in a workflow.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowEdgeCreateRequest {
     /// Workflow to create the edge in.
     pub workflow_id: String,
-    /// If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one.
+    /// Edge ID. Omit to let the server generate one (recommended).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub id: Option<String>,
     /// Source block ID

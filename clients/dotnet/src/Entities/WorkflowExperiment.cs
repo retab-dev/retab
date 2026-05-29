@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a workflow experiment.</summary>
+    /// <summary>An experiment that evaluates a workflow block against a set of documents, with its latest run status and score.</summary>
     public class WorkflowExperiment
     {
         public string Id { get; set; } = default!;

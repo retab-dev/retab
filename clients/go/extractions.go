@@ -19,7 +19,7 @@ type ExtractionsListParams struct {
 	Filename *string `url:"filename,omitempty" json:"-"`
 	// FilenameRegex is deprecated alias for prefix filename filtering. Regex patterns are rejected.
 	FilenameRegex *string `url:"filename_regex,omitempty" json:"-"`
-	// FilenameContains is plain text filename text search powered by Atlas Search when available.
+	// FilenameContains is plain-text search over the filename.
 	FilenameContains *string `url:"filename_contains,omitempty" json:"-"`
 	// DocumentType is filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
 	DocumentType []string `url:"document_type,omitempty" json:"-"`
@@ -60,6 +60,11 @@ type ExtractionsCreateParams struct {
 }
 
 // Create extraction
+// Run a structured extraction on a document.
+// Extracts structured data from the `document` according to the supplied
+// `json_schema`, using the requested `model`. Returns the extraction
+// with its `output`, consensus details, and usage on `201`. When
+// `stream` is `true`, partial results are streamed back as they are produced.
 func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreateParams, opts ...RequestOption) (*Extraction, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: document is required")
@@ -119,6 +124,10 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 }
 
 // Get extraction
+// Retrieve an extraction.
+// Returns the extraction identified by `extraction_id`, including its source
+// file, schema, `output`, and consensus details. Responds with `404` if no
+// matching extraction exists.
 func (s *ExtractionService) Get(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
 	if extractionID == "" {
 		return nil, fmt.Errorf("retab: extraction_id is required")

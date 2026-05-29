@@ -13,6 +13,7 @@ import {
 import type { SourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 import { ZSourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 
+/** An extraction's output annotated with the source that backs each value. */
 export interface SourcesResponse {
   /** @default "extraction.sources" */
   object: 'extraction.sources';

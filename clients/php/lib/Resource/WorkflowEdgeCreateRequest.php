@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Body for POST /v1/workflows/edges. */
+/** Create a new edge connecting two blocks in a workflow. */
 readonly class WorkflowEdgeCreateRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -18,7 +18,7 @@ readonly class WorkflowEdgeCreateRequest implements \JsonSerializable
         public string $sourceBlock,
         /** Target block ID */
         public string $targetBlock,
-        /** If omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one. */
+        /** Edge ID. Omit to let the server generate one (recommended). */
         public ?string $id = null,
         /** Output handle */
         public ?string $sourceHandle = null,

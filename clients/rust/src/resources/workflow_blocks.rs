@@ -18,10 +18,10 @@ pub struct WorkflowBlocksApi<'a> {
 pub struct ListParams {
     /// Required.
     pub workflow_id: String,
-    /// Block id cursor: return the page before this id (mutually exclusive with ``after``).
+    /// Block id cursor: return the page before this id (mutually exclusive with `after`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
-    /// Block id cursor: return the page after this id (mutually exclusive with ``before``).
+    /// Block id cursor: return the page after this id (mutually exclusive with `before`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
     /// Maximum number of blocks to return per page (1-200).
@@ -63,14 +63,14 @@ impl CreateParams {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct GetParams {
-    /// Optional disambiguator for legacy duplicate block IDs. Required only when the block id is not unique within the org — in that case the unqualified call returns 409 listing the colliding workflow_ids. Newly-created blocks use server-generated opaque IDs and never need this.
+    /// Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization — otherwise the call returns 409 listing the colliding workflow_ids. Server-generated block IDs are always unique and never need this.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UpdateParams {
-    /// Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+    /// Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
     /// Request body sent with this call.
@@ -93,7 +93,7 @@ impl UpdateParams {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct DeleteParams {
-    /// Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+    /// Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
 }
@@ -110,9 +110,9 @@ impl<'a> WorkflowBlocksApi<'a> {
     ///
     /// List blocks for a workflow with keyset cursor pagination.
     ///
-    /// Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass
-    /// ``after`` (the previous response's ``list_metadata.after``) for the next
-    /// page, ``before`` for the previous page. They are mutually exclusive; the
+    /// Sorted by `updated_at` descending with `id` as the tiebreaker. Pass
+    /// `after` (the previous response's `list_metadata.after`) for the next
+    /// page, `before` for the previous page. They are mutually exclusive; the
     /// 400 cleanly tells the caller which to drop.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowBlockList, Error> {
         self.list_with_options(params, None).await

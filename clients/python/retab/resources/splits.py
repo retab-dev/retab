@@ -38,7 +38,7 @@ class SplitsMixin:
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Splits"""
+        """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         params: dict[str, Any] = {
             "before": before,
             "after": after,
@@ -64,7 +64,7 @@ class SplitsMixin:
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Split"""
+        """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -84,7 +84,7 @@ class SplitsMixin:
         return PreparedRequest(method="POST", url="/v1/splits", params=params or None, data=data)
 
     def prepare_get(self, split_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Split"""
+        """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -93,7 +93,7 @@ class SplitsMixin:
         return PreparedRequest(method="GET", url=f"/v1/splits/{split_id}", params=params or None, data=data)
 
     def prepare_delete(self, split_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Split"""
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the split does not exist."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -116,7 +116,7 @@ class Splits(SyncAPIResource, SplitsMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[Split]:
-        """List Splits"""
+        """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, from_date=from_date, to_date=to_date, **extra_params)
         return self.request_page(prepared_request, model=Split)
 
@@ -130,7 +130,7 @@ class Splits(SyncAPIResource, SplitsMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Split:
-        """Create Split"""
+        """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
         prepared_request = self.prepare_create(
             document=document, subdocuments=subdocuments, model=model, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, **extra_params
         )
@@ -138,13 +138,13 @@ class Splits(SyncAPIResource, SplitsMixin):
         return Split.model_validate(response)
 
     def get(self, split_id: str, **extra_params: Any) -> Split:
-        """Get Split"""
+        """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""
         prepared_request = self.prepare_get(split_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
     def delete(self, split_id: str, **extra_params: Any) -> None:
-        """Delete Split"""
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the split does not exist."""
         prepared_request = self.prepare_delete(split_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -164,7 +164,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Split]:
-        """List Splits"""
+        """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, from_date=from_date, to_date=to_date, **extra_params)
         return await self.request_page(prepared_request, model=Split)
 
@@ -178,7 +178,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         bust_cache: bool = False,
         **extra_params: Any,
     ) -> Split:
-        """Create Split"""
+        """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
         prepared_request = self.prepare_create(
             document=document, subdocuments=subdocuments, model=model, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, **extra_params
         )
@@ -186,13 +186,13 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         return Split.model_validate(response)
 
     async def get(self, split_id: str, **extra_params: Any) -> Split:
-        """Get Split"""
+        """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""
         prepared_request = self.prepare_get(split_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
     async def delete(self, split_id: str, **extra_params: Any) -> None:
-        """Delete Split"""
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the split does not exist."""
         prepared_request = self.prepare_delete(split_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

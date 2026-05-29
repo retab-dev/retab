@@ -7,11 +7,10 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * POST /workflows/reviews/versions body.
+ * Create a corrected version of a review.
  *
- * Public callers create corrections, not seeds. ``parent_id`` must
- * reference an existing version under the same ``review_id``; seed versions
- * are created by the runtime through the store path.
+ * `parent_id` must reference an existing version under the same
+ * `review_id`.
  */
 readonly class CreateReviewVersionRequest implements \JsonSerializable
 {

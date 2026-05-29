@@ -7,12 +7,12 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /**
- * Body for `POST /v1/workflows/blocks/executions`.
+ * Re-run a single block.
  *
- * `block_id` is the block to replay; `run_id` is the workflow run that
- * sourced the original step's `handle_inputs`. `step_id` optionally pins
- * a concrete step row whose inputs should be used, which is useful for
- * iteration-prefixed for_each body steps.
+ * `block_id` is the block to run; `run_id` is the workflow run that
+ * supplied the original inputs. `step_id` optionally selects a specific
+ * step whose inputs should be used, which is useful for blocks inside a
+ * `for_each` loop.
  */
 readonly class CreateBlockExecutionRequest implements \JsonSerializable
 {
@@ -23,7 +23,7 @@ readonly class CreateBlockExecutionRequest implements \JsonSerializable
         public string $runId,
         /** Workflow block id to execute. */
         public string $blockId,
-        /** Optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key. */
+        /** Optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step. */
         public ?string $stepId = null,
         /** Optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7. */
         public ?int $nConsensus = null,

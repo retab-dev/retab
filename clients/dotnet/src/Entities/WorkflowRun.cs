@@ -15,7 +15,7 @@ namespace Retab
         [Newtonsoft.Json.JsonConverter(typeof(ManualTriggerDiscriminatorConverter))]
         public object Trigger { get; set; } = default!;
 
-        /// <summary>Discriminated lifecycle state.</summary>
+        /// <summary>Lifecycle state of the run.</summary>
         [Newtonsoft.Json.JsonConverter(typeof(PendingRunDiscriminatorConverter))]
         public object Lifecycle { get; set; } = default!;
 

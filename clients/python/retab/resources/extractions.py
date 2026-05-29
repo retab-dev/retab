@@ -77,7 +77,7 @@ class ExtractionsMixin:
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Extraction"""
+        """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -102,7 +102,7 @@ class ExtractionsMixin:
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
 
     def prepare_get(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Extraction"""
+        """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -179,7 +179,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
-        """Create Extraction"""
+        """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
         prepared_request = self.prepare_create(
             document=document,
             json_schema=json_schema,
@@ -198,7 +198,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         return Extraction.model_validate(response)
 
     def get(self, extraction_id: str, **extra_params: Any) -> Extraction:
-        """Get Extraction"""
+        """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
         prepared_request = self.prepare_get(extraction_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
@@ -266,7 +266,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
-        """Create Extraction"""
+        """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
         prepared_request = self.prepare_create(
             document=document,
             json_schema=json_schema,
@@ -285,7 +285,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         return Extraction.model_validate(response)
 
     async def get(self, extraction_id: str, **extra_params: Any) -> Extraction:
-        """Get Extraction"""
+        """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
         prepared_request = self.prepare_get(extraction_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)

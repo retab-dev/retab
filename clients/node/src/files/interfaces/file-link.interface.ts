@@ -11,6 +11,7 @@ import {
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
 
+/** A short-lived signed link to download a file, with its `filename` and expiry. */
 export interface FileLink {
   /** The signed URL to download the file */
   downloadUrl: string;

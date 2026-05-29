@@ -22,13 +22,10 @@ class StepArtifactRefOperation(str, Enum):
 
 
 class StoredBlockExecution(BaseModel):
-    """Public block execution result for a single workflow block.
+    """The result of executing a single workflow block.
 
-    Terminal state is carried by the discriminated ``lifecycle`` union. The
-    legacy flat ``success`` / ``error`` / ``skipped`` fields were removed in
-    the hard cutover — they let invalid combinations (``success=true`` with
-    a non-empty ``error``) be representable on the wire and forced consumers
-    to know an undocumented field-precedence rule."""
+    The terminal state is carried by the `lifecycle` field, which is one of
+    completed, error, or skipped."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -39,11 +36,11 @@ class StoredBlockExecution(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     lifecycle: CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle = Field(
         ...,
-        description="Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``.",
+        description="Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.",
         discriminator="status",
     )
     handle_inputs: dict[str, Any] | None = Field(default=None, description="Input payloads keyed by handle ID (file metadata for files, data for json)")
-    artifact: StepArtifactRef | None = Field(default=None, description="Canonical persisted-ref artifact for this block execution (operation + id), if any")
+    artifact: StepArtifactRef | None = Field(default=None, description="Reference to the artifact produced by this block execution, if any.")
     handle_outputs: dict[str, Any] | None = Field(default=None, description="Output payloads keyed by handle ID")
     routing_decisions: list[str] | None = Field(default=None, description="Active output handles for routing decisions")
     duration_ms: float | None = Field(default=None, description="Duration of the block execution in milliseconds")
@@ -62,20 +59,18 @@ class CompletedBlockExecutionLifecycle(BaseModel):
 
 
 class CreateBlockExecutionRequest(BaseModel):
-    """Body for `POST /v1/workflows/blocks/executions`.
+    """Re-run a single block.
 
-    `block_id` is the block to replay; `run_id` is the workflow run that
-    sourced the original step's `handle_inputs`. `step_id` optionally pins
-    a concrete step row whose inputs should be used, which is useful for
-    iteration-prefixed for_each body steps."""
+    `block_id` is the block to run; `run_id` is the workflow run that
+    supplied the original inputs. `step_id` optionally selects a specific
+    step whose inputs should be used, which is useful for blocks inside a
+    `for_each` loop."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     run_id: str = Field(..., description="Workflow run id that owns the step.")
     block_id: str = Field(..., description="Workflow block id to execute.")
-    step_id: str | None = Field(
-        default=None, description="Optional concrete step id whose inputs should be used. When omitted, the block id is used as the canonical step lookup key."
-    )
+    step_id: str | None = Field(default=None, description="Optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step.")
     n_consensus: int | None = Field(default=None, description="Optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7.")
     check_eligibility: bool | None = Field(
         default=True, description="Whether to verify the upstream subgraph hasn't drifted since the source run. Disable only for explicit force-rerun flows."
@@ -83,7 +78,7 @@ class CreateBlockExecutionRequest(BaseModel):
 
 
 class ErrorBlockExecutionLifecycle(BaseModel):
-    """Terminal: the executed block raised. ``message`` is the executor's
+    """Terminal: the executed block raised. `message` is the executor's
     error string."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -94,7 +89,7 @@ class ErrorBlockExecutionLifecycle(BaseModel):
 
 class SkippedBlockExecutionLifecycle(BaseModel):
     """Terminal: the block declared its inputs unsatisfied via
-    ``should_skip_block`` and was skipped. ``reason`` is the skip rationale
+    `should_skip_block` and was skipped. `reason` is the skip rationale
     surfaced by the block's input requirements registry."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -112,7 +107,7 @@ class StepArtifactRef(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     operation: StepArtifactRefOperation = Field(..., description="The kind of resource this artifact references")
-    id: str = Field(..., description="Persisted resource identifier")
+    id: str = Field(..., description="Resource identifier")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

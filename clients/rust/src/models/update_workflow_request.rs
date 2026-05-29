@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Body for updating a workflow. Only the supplied fields (`name`, `description`) are changed.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdateWorkflowRequest {
     /// The name of the workflow

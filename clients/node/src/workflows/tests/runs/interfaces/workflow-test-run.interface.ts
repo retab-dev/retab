@@ -146,6 +146,7 @@ import {
   serializeWorkflowTestRunTiming,
 } from '../../../../workflows/tests/results/interfaces/workflow-test-run-timing.interface.js';
 
+/** A batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`. */
 export interface WorkflowTestRun {
   id: string;
   workflow: WorkflowSnapshotRef;

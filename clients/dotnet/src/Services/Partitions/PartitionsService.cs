@@ -18,6 +18,13 @@ namespace Retab
         public PartitionsService(Retab client) : base(client) { }
 
         /// <summary>List Partitions</summary>
+        /// <remarks>
+        /// List partitions.
+        /// Returns a paginated list of partitions for the authenticated environment, newest first
+        /// by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+        /// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+        /// `limit`, and `order`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -44,6 +51,13 @@ namespace Retab
         }
 
         /// <summary>Create Partitions</summary>
+        /// <remarks>
+        /// Create a partition.
+        /// Groups the pages of a `document` into chunks by a partition `key`, guided by
+        /// `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple
+        /// votes and consolidate them, and `allow_overlap` to let a page belong to more than one
+        /// chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -60,6 +74,12 @@ namespace Retab
         }
 
         /// <summary>Get Partition</summary>
+        /// <remarks>
+        /// Retrieve a partition.
+        /// Fetches a single partition by its `partition_id` within the authenticated environment
+        /// and returns the full `Partition` including its `output` chunks. Responds with `404` if
+        /// no partition with that id exists.
+        /// </remarks>
         /// <param name="partitionId">The partition id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -76,6 +96,12 @@ namespace Retab
         }
 
         /// <summary>Delete Partition</summary>
+        /// <remarks>
+        /// Delete a partition.
+        /// Permanently deletes the partition identified by `partition_id` in the authenticated
+        /// environment. Returns `204` with no body on success, or `404` if the partition does not
+        /// exist.
+        /// </remarks>
         /// <param name="partitionId">The partition id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

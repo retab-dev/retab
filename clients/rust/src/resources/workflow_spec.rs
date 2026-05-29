@@ -67,12 +67,10 @@ impl ValidateParams {
 impl<'a> WorkflowSpecApi<'a> {
     /// Apply Workflow Spec
     ///
-    /// Apply declarative YAML to draft workflow state.
+    /// Apply a declarative YAML spec to the draft workflow.
     ///
-    /// Contract:
-    /// - apply writes canonical draft state, not authored formatting
-    /// - re-applying canonical exported YAML against unchanged draft state should
-    /// return an empty resource_changes list
+    /// Re-applying a spec that already matches the draft makes no changes and
+    /// returns an empty `resource_changes` list.
     pub async fn apply(&self, params: ApplyParams) -> Result<DeclarativeApplyResponse, Error> {
         self.apply_with_options(params, None).await
     }
@@ -92,11 +90,11 @@ impl<'a> WorkflowSpecApi<'a> {
 
     /// Plan Workflow Spec
     ///
-    /// Compute the declarative reconcile plan against the current draft workflow.
+    /// Preview the changes a declarative YAML spec would make to the draft workflow.
     ///
-    /// Contract:
-    /// - plan compares authored YAML against current draft state
-    /// - canonical exported YAML should plan as `noop` against the same draft
+    /// Compares the spec against the current draft and returns the resulting
+    /// changes without applying them. A spec that already matches the draft
+    /// plans as a no-op.
     pub async fn plan(&self, params: PlanParams) -> Result<DeclarativePlanResponse, Error> {
         self.plan_with_options(params, None).await
     }
@@ -116,16 +114,11 @@ impl<'a> WorkflowSpecApi<'a> {
 
     /// Validate Workflow Spec
     ///
-    /// Validate declarative YAML without mutating workflow state.
+    /// Validate declarative YAML without changing the workflow.
     ///
-    /// Contract:
-    /// - validate, plan, and apply agree on whether a spec is acceptable: any
-    /// severity=error diagnostic — whether emitted at parse time as a
-    /// DeclarativeWorkflowError or bumped during compile/diagnose — raises
-    /// HTTP 400 with the structured error issues
-    /// - warnings do not make the document invalid; warning-only specs return
-    /// HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
-    /// - counts reflect the canonical compiled graph, not raw authored block count
+    /// Any error-level diagnostic responds with 400 and the structured issues.
+    /// Warnings do not make a spec invalid: a warning-only spec responds with
+    /// 200, `is_valid=True`, and the warnings in `diagnostics`.
     pub async fn validate(
         &self,
         params: ValidateParams,

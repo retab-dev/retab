@@ -75,7 +75,7 @@ class JobsMixin:
         return PreparedRequest(method="POST", url="/v1/jobs", params=params or None, data=data)
 
     def prepare_get(self, job_id: str, include_request: bool | None = False, include_response: bool | None = False, **extra_params: Any) -> PreparedRequest:
-        """Retrieve Job"""
+        """Retrieve Job Retrieve a job. Returns the job identified by `job_id`, including its current status, timestamps, and result (when completed) or error (when failed). Set `include_request` or `include_response` to embed the original request or the response payload. Responds with `404` if no matching job exists."""
         params: dict[str, Any] = {
             "include_request": include_request,
             "include_response": include_response,
@@ -165,7 +165,7 @@ class Jobs(SyncAPIResource, JobsMixin):
         return Job.model_validate(response)
 
     def get(self, job_id: str, include_request: bool | None = False, include_response: bool | None = False, **extra_params: Any) -> Job:
-        """Retrieve Job"""
+        """Retrieve Job Retrieve a job. Returns the job identified by `job_id`, including its current status, timestamps, and result (when completed) or error (when failed). Set `include_request` or `include_response` to embed the original request or the response payload. Responds with `404` if no matching job exists."""
         prepared_request = self.prepare_get(job_id, include_request=include_request, include_response=include_response, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Job.model_validate(response)
@@ -243,7 +243,7 @@ class AsyncJobs(AsyncAPIResource, JobsMixin):
         return Job.model_validate(response)
 
     async def get(self, job_id: str, include_request: bool | None = False, include_response: bool | None = False, **extra_params: Any) -> Job:
-        """Retrieve Job"""
+        """Retrieve Job Retrieve a job. Returns the job identified by `job_id`, including its current status, timestamps, and result (when completed) or error (when failed). Set `include_request` or `include_response` to embed the original request or the response payload. Responds with `404` if no matching job exists."""
         prepared_request = self.prepare_get(job_id, include_request=include_request, include_response=include_response, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Job.model_validate(response)

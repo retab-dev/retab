@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`. */
 readonly class WorkflowTestRun implements \JsonSerializable
 {
     use JsonSerializableTrait;

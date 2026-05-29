@@ -83,7 +83,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="DELETE", url=f"/v1/workflows/{workflow_id}", params=params or None, data=data)
 
     def prepare_discard_draft(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
-        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. The workflow must already be published."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -155,7 +155,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return None
 
     def discard_draft(self, workflow_id: str, **extra_params: Any) -> Workflow:
-        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. The workflow must already be published."""
         prepared_request = self.prepare_discard_draft(workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
@@ -220,7 +220,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return None
 
     async def discard_draft(self, workflow_id: str, **extra_params: Any) -> Workflow:
-        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. The workflow must already be published."""
         prepared_request = self.prepare_discard_draft(workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)

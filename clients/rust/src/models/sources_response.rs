@@ -5,6 +5,12 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// An extraction's output annotated with the source that backs each value.
+/// Returned when fetching the sources for an extraction. Carries the source
+/// `file` and its detected `document_type`, the original `extraction` output,
+/// and a parallel `sources` tree where each leaf is a `{value, source}` object
+/// locating the value in the document (a page region for PDFs, a cell for
+/// spreadsheets, a text span for plain text, and so on).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourcesResponse {
     /// Defaults to `extraction.sources`.

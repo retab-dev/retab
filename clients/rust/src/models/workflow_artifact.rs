@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 /// Dereferenced workflow artifact with operation-specific fields preserved.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowArtifact {
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     pub operation: WorkflowArtifactOperation,
-    /// Persisted resource identifier
+    /// Resource identifier
     pub id: String,
 }
 impl WorkflowArtifact {

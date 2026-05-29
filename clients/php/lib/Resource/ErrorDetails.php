@@ -18,7 +18,7 @@ readonly class ErrorDetails implements \JsonSerializable
     public function __construct(
         /** Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart. */
         public ?string $message = null,
-        /** Full Python stack trace */
+        /** Full stack trace */
         public ?string $stackTrace = null,
         /** ID of the block that failed */
         public ?string $blockId = null,

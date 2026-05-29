@@ -22,9 +22,9 @@ type WorkflowBlocksListParams struct {
 
 // List blocks
 // List blocks for a workflow with keyset cursor pagination.
-// Sorted by “updated_at“ descending with “id“ as the tiebreaker. Pass
-// “after“ (the previous response's “list_metadata.after“) for the next
-// page, “before“ for the previous page. They are mutually exclusive; the
+// Sorted by `updated_at` descending with `id` as the tiebreaker. Pass
+// `after` (the previous response's `list_metadata.after`) for the next
+// page, `before` for the previous page. They are mutually exclusive; the
 // 400 cleanly tells the caller which to drop.
 func (s *WorkflowBlockService) List(ctx context.Context, params *WorkflowBlocksListParams, opts ...RequestOption) (*PaginatedList[WorkflowBlock], error) {
 	if params == nil {
@@ -40,7 +40,7 @@ func (s *WorkflowBlockService) List(ctx context.Context, params *WorkflowBlocksL
 type WorkflowBlocksCreateParams struct {
 	// WorkflowID is workflow to create the block in.
 	WorkflowID string `json:"workflow_id" url:"-"`
-	// ID is if omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.
+	// ID is block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409.
 	ID *string `json:"id,omitempty" url:"-"`
 	// Type is block type
 	Type WorkflowBlockCreateRequestType `json:"type" url:"-"`
@@ -73,7 +73,7 @@ func (s *WorkflowBlockService) Create(ctx context.Context, params *WorkflowBlock
 
 // WorkflowBlocksGetParams contains the parameters for Get.
 type WorkflowBlocksGetParams struct {
-	// WorkflowID is optional disambiguator for legacy duplicate block IDs. Required only when the block id is not unique within the org — in that case the unqualified call returns 409 listing the colliding workflow_ids. Newly-created blocks use server-generated opaque IDs and never need this.
+	// WorkflowID is disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization — otherwise the call returns 409 listing the colliding workflow_ids. Server-generated block IDs are always unique and never need this.
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 }
 
@@ -100,9 +100,9 @@ type WorkflowBlocksUpdateParams struct {
 	Height    *float64               `json:"height,omitempty" url:"-"`
 	Config    map[string]interface{} `json:"config,omitempty" url:"-"`
 	ParentID  *string                `json:"parent_id,omitempty" url:"-"`
-	// ConfigMode is how to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
+	// ConfigMode is how to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.
 	ConfigMode *UpdateWorkflowBlockRequestConfigMode `json:"config_mode,omitempty" url:"-"`
-	// WorkflowID is optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+	// WorkflowID is disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 }
 
@@ -124,7 +124,7 @@ func (s *WorkflowBlockService) Update(ctx context.Context, blockID string, param
 
 // WorkflowBlocksDeleteParams contains the parameters for Delete.
 type WorkflowBlocksDeleteParams struct {
-	// WorkflowID is optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
+	// WorkflowID is disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 }
 

@@ -15,7 +15,7 @@ pub struct WorkflowArtifactsApi<'a> {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ListParams {
-    /// Workflow run ID whose artifacts should be listed. Required unless ``step_id`` is provided.
+    /// Workflow run ID whose artifacts should be listed. Required unless `step_id` is provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
     /// Optional artifact operation filter
@@ -24,16 +24,16 @@ pub struct ListParams {
     /// Optional block_id or step_id filter
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
-    /// Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). ``run_id`` is not required when ``step_id`` is set — it is resolved from the step record.
+    /// Optional step id filter. When provided, returns the single artifact attached to that step (or an empty list if the step has no artifact). `run_id` is not required when `step_id` is set — it is resolved from the step record.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub step_id: Option<String>,
-    /// Step id cursor: return the page before this step (mutually exclusive with ``after``). Ignored when ``step_id`` is set.
+    /// Step id cursor: return the page before this step (mutually exclusive with `after`). Ignored when `step_id` is set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
-    /// Step id cursor: return the page after this step (mutually exclusive with ``before``). Ignored when ``step_id`` is set.
+    /// Step id cursor: return the page after this step (mutually exclusive with `before`). Ignored when `step_id` is set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
-    /// Maximum number of artifacts to return per page (1-200). Ignored when ``step_id`` is set (that path returns the single attached artifact).
+    /// Maximum number of artifacts to return per page (1-200). Ignored when `step_id` is set (that path returns the single attached artifact).
     ///
     /// Defaults to `100`.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -60,13 +60,13 @@ impl<'a> WorkflowArtifactsApi<'a> {
     ///
     /// List artifacts produced by a workflow run.
     ///
-    /// Paginated by the producing step's ``step_id`` (sorted by ``started_at``
-    /// ascending). Pass ``after`` for the next page, ``before`` for the previous
-    /// page — mutually exclusive. ``step_id`` short-circuits pagination and
+    /// Paginated by the producing step's `step_id` (sorted by `started_at`
+    /// ascending). Pass `after` for the next page, `before` for the previous
+    /// page — mutually exclusive. `step_id` short-circuits pagination and
     /// returns the single attached artifact.
     ///
-    /// Filters: provide either ``run_id`` (list all artifacts in a run) or
-    /// ``step_id`` (single-step lookup). When both are absent the request is
+    /// Filters: provide either `run_id` (list all artifacts in a run) or
+    /// `step_id` (single-step lookup). When both are absent the request is
     /// rejected with 400.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowArtifactList, Error> {
         self.list_with_options(params, None).await
@@ -87,12 +87,10 @@ impl<'a> WorkflowArtifactsApi<'a> {
 
     /// Get Workflow Artifact By Id
     ///
-    /// Get one workflow artifact by id alone.
+    /// Get one workflow artifact by id.
     ///
-    /// The operation is derived from the id prefix
-    /// (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
-    /// the flat-resource shape — callers do not need to know which collection
-    /// backs the id.
+    /// The artifact kind is derived from the id prefix (`extr_…` → extraction,
+    /// `clss_…` → classification, etc.).
     pub async fn get(
         &self,
         artifact_id: &str,

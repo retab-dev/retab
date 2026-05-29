@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty. */
 readonly class CreateWorkflowRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

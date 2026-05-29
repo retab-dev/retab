@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Canonical split request. */
+/** Request body to create a split. */
 readonly class SplitRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

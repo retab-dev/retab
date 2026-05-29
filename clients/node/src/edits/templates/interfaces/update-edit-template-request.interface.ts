@@ -11,6 +11,7 @@ import {
   serializeFormField,
 } from '../../../edits/interfaces/form-field.interface.js';
 
+/** Body for updating an edit template. Only the supplied fields (`name`, `form_fields`) are changed. */
 export interface UpdateEditTemplateRequest {
   /** New name for the template. */
   name?: string | null;

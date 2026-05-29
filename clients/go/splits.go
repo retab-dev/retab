@@ -22,6 +22,11 @@ type SplitsListParams struct {
 }
 
 // List splits
+// List splits.
+// Returns a paginated list of splits for the authenticated environment, newest first by
+// default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window
+// using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`,
+// `limit`, and `order`.
 func (s *SplitService) List(ctx context.Context, params *SplitsListParams, opts ...RequestOption) (*PaginatedList[Split], error) {
 	return doPaginated[Split](ctx, s.client, "GET", "/v1/splits", params, nil, opts...)
 }
@@ -43,6 +48,11 @@ type SplitsCreateParams struct {
 }
 
 // Create split
+// Create a split.
+// Divides a `document` into the named `subdocuments`, assigning each its set of pages,
+// using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to
+// run multiple votes and consolidate them. Returns the stored `Split` with its `output`
+// page assignments, and responds with `201`.
 func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, opts ...RequestOption) (*Split, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: document is required")
@@ -89,6 +99,10 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 }
 
 // Get split
+// Retrieve a split.
+// Fetches a single split by its `split_id` within the authenticated environment and
+// returns the full `Split` including its `output` page assignments. Responds with `404`
+// if no split with that id exists.
 func (s *SplitService) Get(ctx context.Context, splitID string, opts ...RequestOption) (*Split, error) {
 	if splitID == "" {
 		return nil, fmt.Errorf("retab: split_id is required")
@@ -102,6 +116,10 @@ func (s *SplitService) Get(ctx context.Context, splitID string, opts ...RequestO
 }
 
 // Delete split
+// Delete a split.
+// Permanently deletes the split identified by `split_id` in the authenticated
+// environment. Returns `204` with no body on success, or `404` if the split does not
+// exist.
 func (s *SplitService) Delete(ctx context.Context, splitID string, opts ...RequestOption) error {
 	if splitID == "" {
 		return fmt.Errorf("retab: split_id is required")

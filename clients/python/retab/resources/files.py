@@ -45,7 +45,7 @@ class FilesMixin:
         return PreparedRequest(method="GET", url="/v1/files", params=params or None, data=data)
 
     def prepare_create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Upload File"""
+        """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -55,7 +55,7 @@ class FilesMixin:
         return PreparedRequest(method="POST", url="/v1/files/upload", params=params or None, data=data)
 
     def prepare_complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Complete Upload File"""
+        """Complete Upload File Finalize a file upload. Confirms that the content for `file_id` has been uploaded, verifying the object's size and optional `sha256` checksum against the upload session, and marks the file ready. Returns a durable reference to the stored file. Responds with `404` if the upload session is unknown, `410` if it has expired, and `422` if the size or checksum does not match."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -65,7 +65,7 @@ class FilesMixin:
         return PreparedRequest(method="POST", url=f"/v1/files/upload/{file_id}/complete", params=params or None, data=data)
 
     def prepare_get(self, file_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get File"""
+        """Get File Retrieve a file. Returns metadata for the file identified by `file_id`, including its `filename`, `page_count`, and timestamps. Responds with `404` if no matching file exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -74,7 +74,7 @@ class FilesMixin:
         return PreparedRequest(method="GET", url=f"/v1/files/{file_id}", params=params or None, data=data)
 
     def prepare_get_download_link(self, file_id: str, **extra_params: Any) -> PreparedRequest:
-        """Download Link"""
+        """Download Link Get a temporary download link for a file. Returns a short-lived signed `download_url` for the file identified by `file_id`, along with its `filename` and expiration. Responds with `404` if no matching file exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -117,25 +117,25 @@ class Files(SyncAPIResource, FilesMixin):
         return self.request_page(prepared_request, model=File)
 
     def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
-        """Upload File"""
+        """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
         prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return CreateUploadResponse.model_validate(response)
 
     def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
-        """Complete Upload File"""
+        """Complete Upload File Finalize a file upload. Confirms that the content for `file_id` has been uploaded, verifying the object's size and optional `sha256` checksum against the upload session, and marks the file ready. Returns a durable reference to the stored file. Responds with `404` if the upload session is unknown, `410` if it has expired, and `422` if the size or checksum does not match."""
         prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return MIMEData.model_validate(response)
 
     def get(self, file_id: str, **extra_params: Any) -> File:
-        """Get File"""
+        """Get File Retrieve a file. Returns metadata for the file identified by `file_id`, including its `filename`, `page_count`, and timestamps. Responds with `404` if no matching file exists."""
         prepared_request = self.prepare_get(file_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return File.model_validate(response)
 
     def get_download_link(self, file_id: str, **extra_params: Any) -> FileLink:
-        """Download Link"""
+        """Download Link Get a temporary download link for a file. Returns a short-lived signed `download_url` for the file identified by `file_id`, along with its `filename` and expiration. Responds with `404` if no matching file exists."""
         prepared_request = self.prepare_get_download_link(file_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return FileLink.model_validate(response)
@@ -175,25 +175,25 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         return await self.request_page(prepared_request, model=File)
 
     async def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
-        """Upload File"""
+        """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
         prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return CreateUploadResponse.model_validate(response)
 
     async def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
-        """Complete Upload File"""
+        """Complete Upload File Finalize a file upload. Confirms that the content for `file_id` has been uploaded, verifying the object's size and optional `sha256` checksum against the upload session, and marks the file ready. Returns a durable reference to the stored file. Responds with `404` if the upload session is unknown, `410` if it has expired, and `422` if the size or checksum does not match."""
         prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return MIMEData.model_validate(response)
 
     async def get(self, file_id: str, **extra_params: Any) -> File:
-        """Get File"""
+        """Get File Retrieve a file. Returns metadata for the file identified by `file_id`, including its `filename`, `page_count`, and timestamps. Responds with `404` if no matching file exists."""
         prepared_request = self.prepare_get(file_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return File.model_validate(response)
 
     async def get_download_link(self, file_id: str, **extra_params: Any) -> FileLink:
-        """Download Link"""
+        """Download Link Get a temporary download link for a file. Returns a short-lived signed `download_url` for the file identified by `file_id`, along with its `filename` and expiration. Responds with `404` if no matching file exists."""
         prepared_request = self.prepare_get_download_link(file_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return FileLink.model_validate(response)

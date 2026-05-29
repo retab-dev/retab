@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Represents a workflow test run.</summary>
+    /// <summary>A batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`.</summary>
     public class WorkflowTestRun
     {
         public string Id { get; set; } = default!;

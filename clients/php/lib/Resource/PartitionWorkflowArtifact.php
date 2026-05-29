@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A partition produced by a workflow run, tagged with its artifact `operation` and creation time. */
 readonly class PartitionWorkflowArtifact implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -36,7 +37,7 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
         public ?RetabUsage $usage = null,
         /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
-        /** Artifact operation that determines the backing record type */
+        /** The operation that produced this artifact */
         public string $operation = 'partition',
     ) {}
 

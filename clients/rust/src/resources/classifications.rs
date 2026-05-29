@@ -81,6 +81,11 @@ impl CreateParams {
 
 impl<'a> ClassificationsApi<'a> {
     /// List Classifications
+    ///
+    /// List classifications.
+    ///
+    /// Returns a paginated list of classifications, most recent first. Filter by
+    /// `filename` or a `from_date`/`to_date` range, and page with `before`/`after`.
     pub async fn list(&self, params: ListParams) -> Result<ClassificationList, Error> {
         self.list_with_options(params, None).await
     }
@@ -99,6 +104,14 @@ impl<'a> ClassificationsApi<'a> {
     }
 
     /// Create Classification
+    ///
+    /// Classify a document.
+    ///
+    /// Runs a classification on the supplied `document` against the provided
+    /// `categories`. Tune the run with `model`, `instructions`, `first_n_pages`
+    /// (limit to the first pages), and `n_consensus` (number of votes to combine).
+    /// Returns the created classification with the chosen category and reasoning;
+    /// responds with `201`.
     pub async fn create(&self, params: CreateParams) -> Result<Classification, Error> {
         self.create_with_options(params, None).await
     }
@@ -117,6 +130,12 @@ impl<'a> ClassificationsApi<'a> {
     }
 
     /// Get Classification
+    ///
+    /// Retrieve a classification.
+    ///
+    /// Fetches a single classification by its `classification_id`. Returns the
+    /// classification with its file reference, categories, and result; responds
+    /// with `404` if no classification with that id exists.
     pub async fn get(&self, classification_id: &str) -> Result<Classification, Error> {
         self.get_with_options(classification_id, None).await
     }
@@ -136,6 +155,11 @@ impl<'a> ClassificationsApi<'a> {
     }
 
     /// Delete Classification
+    ///
+    /// Delete a classification.
+    ///
+    /// Permanently deletes the classification identified by `classification_id`.
+    /// Responds with 204 on success, or 404 if no such classification exists.
     pub async fn delete(&self, classification_id: &str) -> Result<(), Error> {
         self.delete_with_options(classification_id, None).await
     }

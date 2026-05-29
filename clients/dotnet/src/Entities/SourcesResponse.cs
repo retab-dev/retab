@@ -4,7 +4,14 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents a sources response.</summary>
+    /// <summary>An extraction's output annotated with the source that backs each value.</summary>
+    /// <remarks>
+    /// Returned when fetching the sources for an extraction. Carries the source
+    /// `file` and its detected `document_type`, the original `extraction` output,
+    /// and a parallel `sources` tree where each leaf is a `{value, source}` object
+    /// locating the value in the document (a page region for PDFs, a cell for
+    /// spreadsheets, a text span for plain text, and so on).
+    /// </remarks>
     public class SourcesResponse
     {
         public string? Object { get; set; } = "extraction.sources";

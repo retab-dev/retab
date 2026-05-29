@@ -3,7 +3,12 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a create upload response.</summary>
+    /// <summary>Instructions for uploading file content to a reserved file record.</summary>
+    /// <remarks>
+    /// Returned when starting a file upload. Carries the new `file_id`, a
+    /// short-lived signed `upload_url` with the HTTP method and headers to use,
+    /// a durable reference to the file, and the URL's `expires_at` time.
+    /// </remarks>
     public class CreateUploadResponse
     {
 

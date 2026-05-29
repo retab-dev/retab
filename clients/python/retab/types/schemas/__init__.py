@@ -8,6 +8,8 @@ from retab.types.mime import MIMEData
 
 
 class GenerateSchemaRequest(BaseModel):
+    """Body to generate a JSON schema from example `documents`, optionally steered by `instructions`."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     documents: list[MIMEData]
@@ -18,6 +20,8 @@ class GenerateSchemaRequest(BaseModel):
 
 
 class PartialSchema(BaseModel):
+    """A generated JSON schema with its `json_schema` body and `strict` flag."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     object: str | None = Field(default="schema")

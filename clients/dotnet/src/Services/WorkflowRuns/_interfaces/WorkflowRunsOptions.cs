@@ -92,7 +92,7 @@ namespace Retab
         /// <summary>Preferred data column order</summary>
         public List<string>? PreferredColumns { get; set; }
 
-        /// <summary>CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.</summary>
+        /// <summary>CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.</summary>
         public string? Delimiter { get; set; }
 
         /// <summary>CSV line delimiter</summary>

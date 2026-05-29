@@ -48,6 +48,15 @@ impl GetParams {
 
 impl<'a> ExperimentRunMetricsApi<'a> {
     /// Get Experiment Metrics For Run
+    ///
+    /// Get metrics for an experiment run.
+    ///
+    /// Requires the `run_id` query parameter. Use `view` to choose the breakdown
+    /// (`summary`, `by_document`, `by_target`, or `votes`), and narrow with
+    /// `document_id` or `target_path`. By default each score-bearing row also
+    /// carries a `prior_score` from the previous completed run; pass
+    /// `include_prior=false` to omit it or `prior_run_id` to compare against a
+    /// specific run.
     pub async fn get(
         &self,
         params: GetParams,

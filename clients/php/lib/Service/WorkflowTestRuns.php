@@ -16,6 +16,13 @@ class WorkflowTestRuns
 
     /**
      * List Test Execution Runs
+     *
+     * List workflow test runs.
+     *
+     * Optionally filter by `workflow_id`, `test_id`, `target_block_id`,
+     * `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date`
+     * window. Returns a cursor-paginated list ordered by `sort_by` (default
+     * newest first).
      * @param string|null $workflowId
      * @param string|null $testId
      * @param string|null $targetBlockId
@@ -77,7 +84,7 @@ class WorkflowTestRuns
      *
      * Create a workflow-scoped test run.
      *
-     * ``workflow_id`` is the execution context. Optional ``scope`` narrows the
+     * `workflow_id` is the execution context. Optional `scope` narrows the
      * run to one saved test or one block; omitted scope runs all workflow tests.
      * @param string $workflowId
      * @param \Retab\Resource\WorkflowTestRunSingleScope|\Retab\Resource\WorkflowTestRunWorkflowScope|\Retab\Resource\WorkflowTestRunBlockScope|null $scope Optional execution scope. Omit (or pass null) to run every saved test in the workflow.
@@ -104,6 +111,11 @@ class WorkflowTestRuns
 
     /**
      * Get Test Execution Run
+     *
+     * Retrieve a single workflow test run.
+     *
+     * Identified by `run_id`. Returns the run with its lifecycle status, timing,
+     * and pass/fail counts. Returns 404 if no run with that ID exists.
      * @param string $runId
      * @return \Retab\Resource\WorkflowTestRun
      * @throws \Retab\Exception\RetabException
@@ -122,6 +134,12 @@ class WorkflowTestRuns
 
     /**
      * Cancel Test Execution Run
+     *
+     * Cancel a workflow test run.
+     *
+     * Identified by `run_id`. Stops the run and returns it with its updated
+     * cancelled lifecycle. Returns 404 if the run does not exist or is not in a
+     * cancellable state.
      * @param string $runId
      * @return \Retab\Resource\WorkflowTestRun
      * @throws \Retab\Exception\RetabException

@@ -75,7 +75,7 @@ class WorkflowExperimentsMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/experiments", params=params or None, data=data)
 
     def prepare_get(self, experiment_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Experiment"""
+        """Get Experiment Retrieve a single experiment. Identified by `experiment_id`. Returns the experiment along with its latest-run status, score, staleness, and schema-drift detection. Returns 404 if no experiment with that ID exists."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -92,7 +92,7 @@ class WorkflowExperimentsMixin:
         name: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Update Experiment"""
+        """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -102,7 +102,7 @@ class WorkflowExperimentsMixin:
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/experiments/{experiment_id}", params=params or None, data=data)
 
     def prepare_delete(self, experiment_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Experiment"""
+        """Delete Experiment Delete an experiment. Identified by `experiment_id`. Also removes the experiment's runs and results. Returns 204 on success, 404 if not found, and 409 if the latest run is still pending or running (cancel it first)."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -159,7 +159,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         return WorkflowExperiment.model_validate(response)
 
     def get(self, experiment_id: str, **extra_params: Any) -> WorkflowExperiment:
-        """Get Experiment"""
+        """Get Experiment Retrieve a single experiment. Identified by `experiment_id`. Returns the experiment along with its latest-run status, score, staleness, and schema-drift detection. Returns 404 if no experiment with that ID exists."""
         prepared_request = self.prepare_get(experiment_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
@@ -173,13 +173,13 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         name: str | None = None,
         **extra_params: Any,
     ) -> WorkflowExperiment:
-        """Update Experiment"""
+        """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
         prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     def delete(self, experiment_id: str, **extra_params: Any) -> None:
-        """Delete Experiment"""
+        """Delete Experiment Delete an experiment. Identified by `experiment_id`. Also removes the experiment's runs and results. Returns 204 on success, 404 if not found, and 409 if the latest run is still pending or running (cancel it first)."""
         prepared_request = self.prepare_delete(experiment_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -233,7 +233,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         return WorkflowExperiment.model_validate(response)
 
     async def get(self, experiment_id: str, **extra_params: Any) -> WorkflowExperiment:
-        """Get Experiment"""
+        """Get Experiment Retrieve a single experiment. Identified by `experiment_id`. Returns the experiment along with its latest-run status, score, staleness, and schema-drift detection. Returns 404 if no experiment with that ID exists."""
         prepared_request = self.prepare_get(experiment_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
@@ -247,13 +247,13 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         name: str | None = None,
         **extra_params: Any,
     ) -> WorkflowExperiment:
-        """Update Experiment"""
+        """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
         prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
     async def delete(self, experiment_id: str, **extra_params: Any) -> None:
-        """Delete Experiment"""
+        """Delete Experiment Delete an experiment. Identified by `experiment_id`. Also removes the experiment's runs and results. Returns 204 on success, 404 if not found, and 409 if the latest run is still pending or running (cancel it first)."""
         prepared_request = self.prepare_delete(experiment_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

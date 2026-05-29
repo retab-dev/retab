@@ -160,7 +160,7 @@ class ExperimentSummaryMetricDocument(BaseModel):
 class ExperimentSummaryMetricsResponse(BaseModel):
     """Run-level summary plus block-specific diagnostics.
 
-    ``prior_run_id`` + ``prior_score`` populate when the request opts into
+    `prior_run_id` + `prior_score` populate when the request opts into
     prior-comparison and a completed prior run exists."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())

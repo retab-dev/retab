@@ -23,9 +23,9 @@ namespace Retab
         /// <summary>List Blocks</summary>
         /// <remarks>
         /// List blocks for a workflow with keyset cursor pagination.
-        /// Sorted by ``updated_at`` descending with ``id`` as the tiebreaker. Pass
-        /// ``after`` (the previous response's ``list_metadata.after``) for the next
-        /// page, ``before`` for the previous page. They are mutually exclusive; the
+        /// Sorted by `updated_at` descending with `id` as the tiebreaker. Pass
+        /// `after` (the previous response's `list_metadata.after`) for the next
+        /// page, `before` for the previous page. They are mutually exclusive; the
         /// 400 cleanly tells the caller which to drop.
         /// </remarks>
         /// <param name="options">Request options.</param>

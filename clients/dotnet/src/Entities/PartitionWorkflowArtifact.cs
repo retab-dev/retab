@@ -3,7 +3,7 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a partition workflow artifact.</summary>
+    /// <summary>A partition produced by a workflow run, tagged with its artifact `operation` and creation time.</summary>
     public class PartitionWorkflowArtifact
     {
 
@@ -40,7 +40,7 @@ namespace Retab
         /// <summary>Timestamp when this artifact was created.</summary>
         public DateTimeOffset? CreatedAt { get; set; }
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "partition";
 
         /// <summary>

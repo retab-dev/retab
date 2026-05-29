@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** A parse result: the per-page and full-document text extracted from a document. */
 readonly class Parse implements \JsonSerializable
 {
     use JsonSerializableTrait;

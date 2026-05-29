@@ -157,7 +157,7 @@ module Retab
     # @param to_date [String, nil] Optional end date filter (YYYY-MM-DD)
     # @param trigger_type [Retab::Types::WorkflowExportPayloadRequestTriggerType, nil] Optional trigger type filter
     # @param preferred_columns [Array<String>, nil] Preferred data column order
-    # @param delimiter [String, nil] CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
+    # @param delimiter [String, nil] CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
     # @param line_delimiter [String, nil] CSV line delimiter
     # @param quote [String, nil] CSV quote character
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

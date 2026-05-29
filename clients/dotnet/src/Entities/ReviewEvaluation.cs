@@ -3,11 +3,18 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Represents a review evaluation.</summary>
+    /// <summary>Record of a review-gate evaluation during a workflow run.</summary>
+    /// <remarks>
+    /// Captures the conditions evaluated against the block's output
+    /// (`evaluations`), whether the gate required human review
+    /// (`requires_human_review`), and, once a reviewer acts, the verdict
+    /// (`review_decision`), any notes, whether a revision was requested, and the
+    /// reviewer and timestamp.
+    /// </remarks>
     public class ReviewEvaluation
     {
 
-        /// <summary>Artifact operation that determines the backing record type</summary>
+        /// <summary>The operation that produced this artifact</summary>
         public string? Operation { get; set; } = "review_trigger_evaluation";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** The exported data as CSV, with its row and column counts. */
 readonly class WorkflowExportPayloadResponse implements \JsonSerializable
 {
     use JsonSerializableTrait;

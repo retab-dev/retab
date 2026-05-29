@@ -5,9 +5,15 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Record of a review-gate evaluation during a workflow run.
+/// Captures the conditions evaluated against the block's output
+/// (`evaluations`), whether the gate required human review
+/// (`requires_human_review`), and, once a reviewer acts, the verdict
+/// (`review_decision`), any notes, whether a revision was requested, and the
+/// reviewer and timestamp.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewEvaluation {
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `review_trigger_evaluation`.
     #[serde(skip_serializing_if = "Option::is_none", default)]

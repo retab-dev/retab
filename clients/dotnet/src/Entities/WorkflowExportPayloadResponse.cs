@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Represents a workflow export payload response.</summary>
+    /// <summary>The exported data as CSV, with its row and column counts.</summary>
     public class WorkflowExportPayloadResponse
     {
 

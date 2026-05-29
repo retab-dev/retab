@@ -57,6 +57,7 @@ import { ZAssertionDriftStatus } from './assertion-drift-status.interface.js';
 import type { WorkflowTestSchemaDrift } from './workflow-test-schema-drift.interface.js';
 import { ZWorkflowTestSchemaDrift } from './workflow-test-schema-drift.interface.js';
 
+/** A saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output. */
 export interface WorkflowTest {
   id: string;
   workflowId: string;

@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Body for POST /v1/workflows/blocks. */
+/** Create a new block in a workflow. */
 readonly class WorkflowBlockCreateRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -16,7 +16,7 @@ readonly class WorkflowBlockCreateRequest implements \JsonSerializable
         public string $workflowId,
         /** Block type */
         public WorkflowBlockCreateRequestType $type,
-        /** If omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability. */
+        /** Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409. */
         public ?string $id = null,
         /** Display label */
         public ?string $label = null,

@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** POST /workflows/reviews/{review_id}/approve body. */
+/** Approve a specific version of a review. */
 readonly class ApproveReviewRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;

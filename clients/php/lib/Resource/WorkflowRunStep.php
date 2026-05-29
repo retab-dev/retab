@@ -35,7 +35,7 @@ readonly class WorkflowRunStep implements \JsonSerializable
          * @var array<\Retab\Resource\ContainerContextData>|null
          */
         public ?array $loopContainers = null,
-        /** When the step doc was first persisted */
+        /** When the step was created */
         public ?\DateTimeImmutable $createdAt = null,
         /**
          * Handle input payloads consumed by this step
@@ -47,7 +47,7 @@ readonly class WorkflowRunStep implements \JsonSerializable
          * @var array<string, \Retab\Resource\PublicHandlePayload>|null
          */
         public ?array $handleOutputs = null,
-        /** Canonical persisted result of this step */
+        /** Reference to the result produced by this step, if any. */
         public ?StepArtifactRef $artifact = null,
         /** Number of retry attempts */
         public ?int $retryCount = null,

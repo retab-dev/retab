@@ -121,7 +121,7 @@ import {
 import type { ReviewBlockType } from './review-block-type.interface.js';
 import { ZReviewBlockType } from './review-block-type.interface.js';
 
-/** Public API shape for one review. Strips internal fields. */
+/** One review and its current decision. */
 export interface Review {
   id: string;
   workflowId: string;

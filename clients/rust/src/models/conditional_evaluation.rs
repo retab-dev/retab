@@ -5,9 +5,13 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Record of how a conditional block routed during a workflow run.
+/// Captures each condition that was evaluated (`evaluations`), which output
+/// branches were chosen (`selected_handles`), and the branch and condition
+/// IDs that matched (`matched_branch_id`, `matched_condition_ids`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConditionalEvaluation {
-    /// Artifact operation that determines the backing record type
+    /// The operation that produced this artifact
     ///
     /// Defaults to `conditional_evaluation`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
