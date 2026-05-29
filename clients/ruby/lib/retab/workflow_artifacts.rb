@@ -10,23 +10,6 @@ module Retab
       @client = client
     end
 
-    # Get Workflow Artifact By Id
-    # @param artifact_id [String]
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::ExtractionWorkflowArtifact, Retab::SplitWorkflowArtifact, Retab::ClassificationWorkflowArtifact, Retab::ParseWorkflowArtifact, Retab::EditWorkflowArtifact, Retab::PartitionWorkflowArtifact, Retab::ConditionalEvaluation, Retab::ReviewEvaluation, Retab::WhileLoopTermination, Retab::ApiCallInvocation, Retab::FunctionInvocation]
-    def get(
-      artifact_id:,
-      request_options: {}
-    )
-      response = @client.request(
-        method: :get,
-        path: "/v1/workflows/artifacts/#{Retab::Util.encode_path(artifact_id)}",
-        auth: true,
-        request_options: request_options
-      )
-      JSON.parse(response.body)
-    end
-
     # List Workflow Artifacts
     # @param run_id [String, nil] Workflow run ID whose artifacts should be listed. Required unless ``step_id`` is provided.
     # @param operation [Retab::Types::WorkflowArtifactsOperation, nil] Optional artifact operation filter
@@ -88,6 +71,23 @@ module Retab
         },
         fetch_next: fetch_next
       )
+    end
+
+    # Get Workflow Artifact By Id
+    # @param artifact_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::ExtractionWorkflowArtifact, Retab::SplitWorkflowArtifact, Retab::ClassificationWorkflowArtifact, Retab::ParseWorkflowArtifact, Retab::EditWorkflowArtifact, Retab::PartitionWorkflowArtifact, Retab::ConditionalEvaluation, Retab::ReviewEvaluation, Retab::WhileLoopTermination, Retab::ApiCallInvocation, Retab::FunctionInvocation]
+    def get(
+      artifact_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/artifacts/#{Retab::Util.encode_path(artifact_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      JSON.parse(response.body)
     end
   end
 end

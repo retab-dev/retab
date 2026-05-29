@@ -15,10 +15,8 @@ module Retab
     # @param experiment_id [String, nil]
     # @param block_id [String, nil]
     # @param status [Retab::Types::WorkflowExperimentsStatus, nil]
-    # @param statuses [String, nil]
     # @param exclude_status [Retab::Types::WorkflowExperimentsExcludeStatus, nil]
     # @param trigger_type [String, nil]
-    # @param trigger_types [String, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param sort_by [String, nil]
@@ -33,10 +31,8 @@ module Retab
       experiment_id: nil,
       block_id: nil,
       status: nil,
-      statuses: nil,
       exclude_status: nil,
       trigger_type: nil,
-      trigger_types: nil,
       from_date: nil,
       to_date: nil,
       sort_by: "created_at",
@@ -51,10 +47,8 @@ module Retab
         "experiment_id" => experiment_id,
         "block_id" => block_id,
         "status" => status,
-        "statuses" => statuses,
         "exclude_status" => exclude_status,
         "trigger_type" => trigger_type,
-        "trigger_types" => trigger_types,
         "from_date" => from_date,
         "to_date" => to_date,
         "sort_by" => sort_by,
@@ -76,10 +70,8 @@ module Retab
           experiment_id: experiment_id,
           block_id: block_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           sort_by: sort_by,
@@ -98,10 +90,8 @@ module Retab
           experiment_id: experiment_id,
           block_id: block_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           sort_by: sort_by,

@@ -19,8 +19,7 @@ from retab.resources.workflows.experiments import (
     ExperimentRuns,
     WorkflowExperiments,
 )
-from retab.types.workflows.experiments import ExperimentByDocumentMetricsResponse
-from retab.types.workflows.tests.results import FileHandleInput
+from retab.types.workflows.experiments import ExperimentByDocumentMetricsResponse, FileHandleInput
 
 
 _NOW = "2026-05-01T14:30:00Z"
@@ -392,7 +391,6 @@ def test_experiments_runs_list_exposes_workflow_run_style_filters() -> None:
         statuses=["completed", "error"],
         exclude_status="cancelled",
         trigger_type="api",
-        trigger_types=["api", "manual_run"],
         from_date="2026-05-01",
         to_date="2026-05-18",
         sort_by="created_at",
@@ -412,7 +410,6 @@ def test_experiments_runs_list_exposes_workflow_run_style_filters() -> None:
         "statuses": ["completed", "error"],
         "exclude_status": "cancelled",
         "trigger_type": "api",
-        "trigger_types": ["api", "manual_run"],
         "from_date": "2026-05-01",
         "to_date": "2026-05-18",
         "sort_by": "created_at",

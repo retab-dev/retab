@@ -29,7 +29,7 @@ CreateJobRequestEndpoint = SupportedEndpoint
 class CreateJobRequest(BaseModel):
     """Request body for POST /v1/jobs."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     endpoint: SupportedEndpoint
     request: dict[str, Any]
@@ -44,7 +44,7 @@ class Job(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    id: str | None = None
+    id: str = Field(..., description="Opaque job id (server-generated ``job_<nanoid>``).")
     object: Literal["job"] = Field(default="job")
     status: JobStatus | None = Field(default=cast(JobStatus, "validating"))
     endpoint: SupportedEndpoint
@@ -73,6 +73,15 @@ class JobError(BaseModel):
     details: dict[str, Any] | None = None
 
 
+class JobResponse(BaseModel):
+    """Public response returned when job completes successfully."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status_code: int
+    body: dict[str, Any]
+
+
 class JobWarning(BaseModel):
     """Warning details when non-fatal issues occur."""
 
@@ -83,15 +92,6 @@ class JobWarning(BaseModel):
     details: dict[str, Any] | None = None
 
 
-class JobResponse(BaseModel):
-    """Public response returned when job completes successfully."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    status_code: int
-    body: dict[str, Any]
-
-
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -100,5 +100,5 @@ class JobResponse(BaseModel):
 CreateJobRequest.model_rebuild()
 Job.model_rebuild()
 JobError.model_rebuild()
-JobWarning.model_rebuild()
 JobResponse.model_rebuild()
+JobWarning.model_rebuild()

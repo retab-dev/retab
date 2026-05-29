@@ -55,12 +55,12 @@ class WorkflowBlockType(str, Enum):
 class WorkflowBlockCreateRequest(BaseModel):
     """Body for POST /v1/workflows/blocks."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow to create the block in.")
     id: str | None = Field(
         default=None,
-        description="Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.",
+        description="If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.",
     )
     type: WorkflowBlockCreateRequestType = Field(..., description="Block type")
     label: str | None = Field(default="", description="Display label")
@@ -92,7 +92,7 @@ class UpdateWorkflowBlockRequest(BaseModel):
     send the field) keep the merge behavior; they were already sending
     full configs on every save, which is idempotent under merge."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     label: str | None = None
     position_x: float | None = None
@@ -139,6 +139,8 @@ __all__ = [
     "CreateBlockExecutionRequest",
     "ErrorBlockExecutionLifecycle",
     "SkippedBlockExecutionLifecycle",
+    "StepArtifactRef",
+    "StepArtifactRefOperation",
     "StoredBlockExecution",
     "UpdateWorkflowBlockRequest",
     "UpdateWorkflowBlockRequestConfigMode",

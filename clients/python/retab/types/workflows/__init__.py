@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateWorkflowRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
@@ -16,13 +16,13 @@ class CreateWorkflowRequest(BaseModel):
 class PublishWorkflowRequest(BaseModel):
     """Optional request body for publishing a workflow."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     description: str | None = Field(default="", description="Optional description for this published version")
 
 
 class UpdateWorkflowRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default=None, description="The name of the workflow")
     description: str | None = Field(default=None, description="Description of the workflow")
@@ -93,7 +93,6 @@ __all__ = [
     "AssertionSpec",
     "AwaitingReviewRun",
     "AwaitingReviewStepLifecycle",
-    "BBox",
     "BetweenCondition",
     "CancelWorkflowRequest",
     "CancelWorkflowResponse",
@@ -132,8 +131,6 @@ __all__ = [
     "DeclarativePlanSummary",
     "DeclarativeValidationResponse",
     "DeclarativeWorkflowRequest",
-    "EditConfig",
-    "EditResult",
     "EditWorkflowArtifact",
     "EmailTrigger",
     "EndsWithCondition",
@@ -153,9 +150,9 @@ __all__ = [
     "ExperimentSchemaDriftStatus",
     "ExplicitExperimentDocumentRequest",
     "ExtractionWorkflowArtifact",
-    "FieldType",
-    "FormField",
+    "FileHandleInput",
     "FunctionInvocation",
+    "JsonHandleInput",
     "JsonSchemaValidCondition",
     "LatestBlockTestRunSummary",
     "LatestBlockTestRunSummaryOutcome",
@@ -165,7 +162,9 @@ __all__ = [
     "LlmJudgedAsCondition",
     "LlmNotJudgedAsCondition",
     "ManualTrigger",
+    "ManualWorkflowTestSource",
     "MatcheRegexCondition",
+    "MaterializedDocument",
     "NConsensusValue",
     "NotContainsCondition",
     "NotEqualsCondition",
@@ -208,6 +207,7 @@ __all__ = [
     "ReviewValidationFailed",
     "ReviewVerdict",
     "RunInputs",
+    "RunStepWorkflowTestSource",
     "RunTiming",
     "RunningRun",
     "RunningStepLifecycle",
@@ -218,8 +218,6 @@ __all__ = [
     "SplitIouCondition",
     "SplitWorkflowArtifact",
     "StartWithCondition",
-    "StepArtifactRef",
-    "StepArtifactRefOperation",
     "SubmissionStatus",
     "SubmitDecisionResponse",
     "UpdateExperimentRequest",
@@ -245,14 +243,14 @@ __all__ = [
     "WorkflowExportPayloadRequestExcludeStatus",
     "WorkflowExportPayloadRequestExportSource",
     "WorkflowExportPayloadRequestStatus",
-    "WorkflowExportPayloadRequestTriggerTypes",
+    "WorkflowExportPayloadRequestTriggerType",
     "WorkflowExportPayloadResponse",
     "WorkflowPublished",
     "WorkflowRun",
     "WorkflowRunStep",
     "WorkflowRunStepBlockType",
-    "WorkflowSnapshotRef",
     "WorkflowTest",
+    "WorkflowTestBlockTarget",
     "WorkflowTestSchemaDrift",
 ]
 

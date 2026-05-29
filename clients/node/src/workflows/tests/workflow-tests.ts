@@ -4,25 +4,21 @@ import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
 import type {
   AssertionSpec,
-  WorkflowTest,
-  WorkflowTestResponse,
-} from '../../workflows/tests/interfaces/index.js';
-import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
   RunStepWorkflowTestSource,
   RunStepWorkflowTestSourceResponse,
-} from '../../workflows/tests/results/interfaces/index.js';
-import type { WorkflowTestBlockTarget } from '../../workflows/tests/runs/interfaces/index.js';
+  WorkflowTest,
+  WorkflowTestBlockTarget,
+  WorkflowTestResponse,
+} from '../../workflows/tests/interfaces/index.js';
 import {
   deserializeWorkflowTest,
   serializeAssertionSpec,
-} from '../../workflows/tests/interfaces/index.js';
-import {
   serializeManualWorkflowTestSource,
   serializeRunStepWorkflowTestSource,
-} from '../../workflows/tests/results/interfaces/index.js';
-import { serializeWorkflowTestBlockTarget } from '../../workflows/tests/runs/interfaces/index.js';
+  serializeWorkflowTestBlockTarget,
+} from '../../workflows/tests/interfaces/index.js';
 import { WorkflowTestRunResults } from './results/workflow-test-run-results.js';
 import { WorkflowTestRuns } from './runs/workflow-test-runs.js';
 

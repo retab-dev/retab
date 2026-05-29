@@ -4,4 +4,6 @@ export * from './completed-block-execution-lifecycle.interface.js';
 export * from './create-block-execution-request.interface.js';
 export * from './error-block-execution-lifecycle.interface.js';
 export * from './skipped-block-execution-lifecycle.interface.js';
+export * from './step-artifact-ref.interface.js';
+export * from './step-artifact-ref-operation.interface.js';
 export * from './stored-block-execution.interface.js';

@@ -3,21 +3,21 @@
 import { z } from 'zod';
 export interface WorkflowTestRunTiming {
   /** When the workflow-test run was created. */
-  createdAt: Date;
+  createdAt?: Date;
   startedAt?: Date | null;
   completedAt?: Date | null;
   durationMs?: number | null;
 }
 
 export interface WorkflowTestRunTimingResponse {
-  created_at: string;
+  created_at?: string;
   started_at?: string | null;
   completed_at?: string | null;
   duration_ms?: number | null;
 }
 
 export const ZWorkflowTestRunTiming = z.object({
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
   startedAt: z.coerce.date().nullable().optional(),
   completedAt: z.coerce.date().nullable().optional(),
   durationMs: z.number().int().nullable().optional(),
@@ -27,7 +27,8 @@ export function deserializeWorkflowTestRunTiming(
   wire: WorkflowTestRunTimingResponse
 ): WorkflowTestRunTiming {
   return {
-    createdAt: new Date(wire['created_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
     startedAt:
       wire['started_at'] == null
         ? (wire['started_at'] as undefined)
@@ -48,7 +49,10 @@ export function serializeWorkflowTestRunTiming(
   domain: WorkflowTestRunTiming
 ): WorkflowTestRunTimingResponse {
   return {
-    created_at: domain['createdAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
     started_at:
       domain['startedAt'] == null
         ? (domain['startedAt'] as undefined)

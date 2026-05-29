@@ -6,6 +6,8 @@ from enum import Enum
 from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import FileRef, MIMEData
+from retab.types.workflows.artifacts import ErrorDetails
+from retab.types.workflows.experiments.runs import WorkflowSnapshotRef
 
 
 class CancelWorkflowResponseCancellationStatus(str, Enum):
@@ -46,7 +48,7 @@ class WorkflowExportPayloadRequestStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class WorkflowExportPayloadRequestTriggerTypes(str, Enum):
+class WorkflowExportPayloadRequestTriggerType(str, Enum):
     MANUAL = "manual"
     API = "api"
     SCHEDULE = "schedule"
@@ -73,13 +75,13 @@ class AwaitingReviewRun(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     status: Literal["awaiting_review"] = Field(default="awaiting_review")
-    waiting_for_block_ids: list[str] | None = Field(default=None, description="Block IDs that are waiting for review")
+    waiting_for_block_ids: list[str] | None = Field(default=[], description="Block IDs that are waiting for review")
 
 
 class CancelWorkflowRequest(BaseModel):
     """Optional request payload for cancel workflow command idempotency."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     command_id: str | None = Field(default=None, description="Optional idempotency key for deduplicating cancel commands")
 
@@ -116,11 +118,11 @@ class CompletedTerminal(BaseModel):
 class CreateWorkflowRunRequest(BaseModel):
     """Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow id for the fresh run.")
-    documents: dict[str, FileRef | MIMEData] | None = Field(default=None, description="Mapping of start_document block IDs to their input documents.")
-    json_inputs: dict[str, Any] | None = Field(default=None, description="Mapping of start-json block IDs to their input JSON data.")
+    documents: dict[str, FileRef | MIMEData] | None = Field(default={}, description="Mapping of start_document block IDs to their input documents.")
+    json_inputs: dict[str, Any] | None = Field(default={}, description="Mapping of start-json block IDs to their input JSON data.")
     version: str | None = Field(
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
     )
@@ -134,21 +136,6 @@ class EmailTrigger(BaseModel):
     type: Literal["email"] = Field(default="email")
     sender: str | None = Field(default="", description="Sender email address, when known")
     subject: str | None = Field(default=None, description="Email subject, when known")
-
-
-class ErrorDetails(BaseModel):
-    """Detailed error information for debugging.
-
-    Captures stack traces and context about where and why an error occurred."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    message: str | None = Field(default=None, description="Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.")
-    stack_trace: str | None = Field(default=None, description="Full Python stack trace")
-    block_id: str | None = Field(default=None, description="ID of the block that failed")
-    block_name: str | None = Field(default=None, description="Name/label of the block that failed")
-    error_code: str | None = Field(default=None, description="Error code if available")
-    context: dict[str, Any] | None = Field(default=None, description="Additional context about the error")
 
 
 class ErrorTerminal(BaseModel):
@@ -195,8 +182,8 @@ class RunInputs(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    documents: dict[str, FileRef] | None = Field(default=None, description="start_document block ID -> input document reference")
-    json_data: dict[str, Any] | None = Field(default=None, description="start-json block ID -> input JSON data")
+    documents: dict[str, FileRef] | None = Field(default={}, description="start_document block ID -> input document reference")
+    json_data: dict[str, Any] | None = Field(default={}, description="start-json block ID -> input JSON data")
 
 
 class RunTiming(BaseModel):
@@ -204,12 +191,10 @@ class RunTiming(BaseModel):
 
     ``duration_ms`` is backfilled at read time from
     ``completed_at - started_at`` when both timestamps are present and the
-    stored value is ``None``. The field is ``init=False`` so producers cannot
-    pass it through ``__init__`` — they must round-trip through
-    ``model_validate`` (or persist via the Mongo projection helpers in
-    ``run_duration.py``). Records that already store ``duration_ms`` are left
-    untouched (idempotent), so backfill cannot drift from the canonical value
-    written by the projection."""
+    stored value is ``None`` (the Mongo projection helpers in
+    ``run_duration.py`` compute and persist the canonical value). Records that
+    already store ``duration_ms`` are left untouched (idempotent), so backfill
+    cannot drift from the canonical value written by the projection."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -250,7 +235,7 @@ class WebhookTrigger(BaseModel):
 
 
 class WorkflowExportPayloadRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow ID to export")
     block_id: str = Field(..., description="Block ID to export")
@@ -263,8 +248,8 @@ class WorkflowExportPayloadRequest(BaseModel):
     exclude_status: WorkflowExportPayloadRequestStatus | None = Field(default=None, description="Optional status exclusion filter (intersects with completed-only export scope)")
     from_date: str | None = Field(default=None, description="Optional start date filter (YYYY-MM-DD)")
     to_date: str | None = Field(default=None, description="Optional end date filter (YYYY-MM-DD)")
-    trigger_types: list[WorkflowExportPayloadRequestTriggerTypes] | None = Field(default=None, description="Optional trigger type filters")
-    preferred_columns: list[str] | None = Field(default=None, description="Preferred data column order")
+    trigger_type: WorkflowExportPayloadRequestTriggerType | None = Field(default=None, description="Optional trigger type filter")
+    preferred_columns: list[str] | None = Field(default=[], description="Preferred data column order")
     delimiter: str | None = Field(
         default=";",
         description="CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.",
@@ -301,20 +286,7 @@ class WorkflowRun(BaseModel):
         ..., description="Discriminated lifecycle state.", discriminator="status"
     )
     timing: RunTiming = Field(..., description="All timing information")
-    inputs: RunInputs | None = Field(default=None, description="Input payloads supplied at run creation time")
-
-
-class WorkflowSnapshotRef(BaseModel):
-    """Reference to the workflow + immutable version that drove the run.
-
-    The class name is retained temporarily for compatibility with surrounding
-    run-model code, but public API output uses ``version_id`` rather than
-    snapshot identity."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    workflow_id: str = Field(..., description="ID of the workflow that was run")
-    version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
+    inputs: RunInputs | None = Field(default={"documents": {}, "json_data": {}}, validate_default=True, description="Input payloads supplied at run creation time")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -330,7 +302,6 @@ CancelledTerminal.model_rebuild()
 CompletedTerminal.model_rebuild()
 CreateWorkflowRunRequest.model_rebuild()
 EmailTrigger.model_rebuild()
-ErrorDetails.model_rebuild()
 ErrorTerminal.model_rebuild()
 ManualTrigger.model_rebuild()
 PendingRun.model_rebuild()
@@ -343,4 +314,3 @@ WebhookTrigger.model_rebuild()
 WorkflowExportPayloadRequest.model_rebuild()
 WorkflowExportPayloadResponse.model_rebuild()
 WorkflowRun.model_rebuild()
-WorkflowSnapshotRef.model_rebuild()

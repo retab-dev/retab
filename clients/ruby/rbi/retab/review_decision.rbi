@@ -27,11 +27,11 @@ module Retab
     sig { params(value: Retab::Actor).returns(Retab::Actor) }
     def author=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def decided_at; end
+    sig { returns(String) }
+    def created_at; end
 
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def decided_at=(value); end
+    sig { params(value: String).returns(String) }
+    def created_at=(value); end
 
     sig { returns(T.nilable(String)) }
     def reason; end

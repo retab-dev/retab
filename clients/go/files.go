@@ -13,6 +13,26 @@ type FileService struct {
 	client *Client
 }
 
+// FilesListParams contains the parameters for List.
+type FilesListParams struct {
+	PaginationParams
+	Filename *string `url:"filename,omitempty" json:"-"`
+	MIMEType *string `url:"mime_type,omitempty" json:"-"`
+	FromDate *string `url:"from_date,omitempty" json:"-"`
+	ToDate   *string `url:"to_date,omitempty" json:"-"`
+	// IncludeEmbeddings is include embeddings in the response
+	// Defaults to false.
+	IncludeEmbeddings *bool `url:"include_embeddings,omitempty" json:"-"`
+	// Defaults to "created_at".
+	SortBy *string `url:"sort_by,omitempty" json:"-"`
+}
+
+// List files
+// List files with pagination and optional filtering.
+func (s *FileService) List(ctx context.Context, params *FilesListParams, opts ...RequestOption) (*PaginatedList[File], error) {
+	return doPaginated[File](ctx, s.client, "GET", "/v1/files", params, nil, opts...)
+}
+
 // FilesCreateUploadParams contains the parameters for CreateUpload.
 type FilesCreateUploadParams struct {
 	// Filename is filename to store
@@ -52,26 +72,6 @@ func (s *FileService) CompleteUpload(ctx context.Context, fileID string, params 
 		return nil, err
 	}
 	return &result, nil
-}
-
-// FilesListParams contains the parameters for List.
-type FilesListParams struct {
-	PaginationParams
-	Filename *string `url:"filename,omitempty" json:"-"`
-	MIMEType *string `url:"mime_type,omitempty" json:"-"`
-	FromDate *string `url:"from_date,omitempty" json:"-"`
-	ToDate   *string `url:"to_date,omitempty" json:"-"`
-	// IncludeEmbeddings is include embeddings in the response
-	// Defaults to false.
-	IncludeEmbeddings *bool `url:"include_embeddings,omitempty" json:"-"`
-	// Defaults to "created_at".
-	SortBy *string `url:"sort_by,omitempty" json:"-"`
-}
-
-// List files
-// List files with pagination and optional filtering.
-func (s *FileService) List(ctx context.Context, params *FilesListParams, opts ...RequestOption) (*PaginatedList[File], error) {
-	return doPaginated[File](ctx, s.client, "GET", "/v1/files", params, nil, opts...)
 }
 
 // Get file

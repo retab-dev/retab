@@ -63,11 +63,11 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def to_date=(value); end
 
-    sig { returns(T.nilable(T::Array[String])) }
-    def trigger_types; end
+    sig { returns(T.nilable(String)) }
+    def trigger_type; end
 
-    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
-    def trigger_types=(value); end
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def trigger_type=(value); end
 
     sig { returns(T.nilable(T::Array[String])) }
     def preferred_columns; end

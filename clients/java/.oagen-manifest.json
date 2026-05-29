@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-29T00:26:28.397Z",
+  "generatedAt": "2026-05-29T05:45:59.545Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -341,7 +341,7 @@
     "src/main/java/com/retab/types/WorkflowExportPayloadRequestExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowExportPayloadRequestExportSource.java",
     "src/main/java/com/retab/types/WorkflowExportPayloadRequestStatus.java",
-    "src/main/java/com/retab/types/WorkflowExportPayloadRequestTriggerTypes.java",
+    "src/main/java/com/retab/types/WorkflowExportPayloadRequestTriggerType.java",
     "src/main/java/com/retab/types/WorkflowRunStepBlockType.java",
     "src/main/java/com/retab/types/WorkflowRunsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsStatus.java",

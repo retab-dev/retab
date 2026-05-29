@@ -11,11 +11,8 @@ namespace Retab
         /// <summary>Optional workflow run ID filter.</summary>
         public string? RunId { get; set; }
 
-        /// <summary>Optional logical block ID filter (deprecated; prefer ``block_ids`` for multi-value filtering).</summary>
+        /// <summary>Optional logical block ID filter.</summary>
         public string? BlockId { get; set; }
-
-        /// <summary>Optional logical block ID filter — multi-value. Repeat the query parameter (``?block_ids=a&amp;block_ids=b``) to match any of several blocks. An empty list is treated as no filter. Preferred over the singular ``block_id``.</summary>
-        public List<string>? BlockIds { get; set; }
 
         /// <summary>Optional step ID filter.</summary>
         public string? StepId { get; set; }

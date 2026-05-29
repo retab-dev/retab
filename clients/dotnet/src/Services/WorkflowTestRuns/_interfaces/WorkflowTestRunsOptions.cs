@@ -16,13 +16,9 @@ namespace Retab
 
         public string? Status { get; set; }
 
-        public List<string>? Statuses { get; set; }
-
         public string? ExcludeStatus { get; set; }
 
         public string? TriggerType { get; set; }
-
-        public List<string>? TriggerTypes { get; set; }
 
         public DateTimeOffset? FromDate { get; set; }
 

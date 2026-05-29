@@ -20,10 +20,8 @@ type ExperimentRunsListParams struct {
 	ExperimentID  *string                           `url:"experiment_id,omitempty" json:"-"`
 	BlockID       *string                           `url:"block_id,omitempty" json:"-"`
 	Status        *WorkflowExperimentsStatus        `url:"status,omitempty" json:"-"`
-	Statuses      *string                           `url:"statuses,omitempty" json:"-"`
 	ExcludeStatus *WorkflowExperimentsExcludeStatus `url:"exclude_status,omitempty" json:"-"`
 	TriggerType   *string                           `url:"trigger_type,omitempty" json:"-"`
-	TriggerTypes  *string                           `url:"trigger_types,omitempty" json:"-"`
 	FromDate      *string                           `url:"from_date,omitempty" json:"-"`
 	ToDate        *string                           `url:"to_date,omitempty" json:"-"`
 	// Defaults to "created_at".

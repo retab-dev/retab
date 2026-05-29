@@ -21,18 +21,18 @@ import {
 export class WorkflowSpec {
   constructor(private readonly client: Retab) {}
 
-  /** Validate Workflow Spec */
-  async validate(yamlDefinition: string): Promise<DeclarativeValidationResponse> {
+  /** Apply Workflow Spec */
+  async apply(yamlDefinition: string): Promise<DeclarativeApplyResponse> {
     const body = {
       yaml_definition: yamlDefinition,
     };
-    const __wire = await this.client.request<DeclarativeValidationResponseResponse>({
+    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
       method: 'POST',
-      path: '/v1/workflows/spec/validate',
+      path: '/v1/workflows/spec/apply',
       query: undefined,
       body: body,
     });
-    return deserializeDeclarativeValidationResponse(__wire);
+    return deserializeDeclarativeApplyResponse(__wire);
   }
 
   /** Plan Workflow Spec */
@@ -49,18 +49,18 @@ export class WorkflowSpec {
     return deserializeDeclarativePlanResponse(__wire);
   }
 
-  /** Apply Workflow Spec */
-  async apply(yamlDefinition: string): Promise<DeclarativeApplyResponse> {
+  /** Validate Workflow Spec */
+  async validate(yamlDefinition: string): Promise<DeclarativeValidationResponse> {
     const body = {
       yaml_definition: yamlDefinition,
     };
-    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
+    const __wire = await this.client.request<DeclarativeValidationResponseResponse>({
       method: 'POST',
-      path: '/v1/workflows/spec/apply',
+      path: '/v1/workflows/spec/validate',
       query: undefined,
       body: body,
     });
-    return deserializeDeclarativeApplyResponse(__wire);
+    return deserializeDeclarativeValidationResponse(__wire);
   }
 
   /** Export Workflow Spec */

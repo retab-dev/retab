@@ -28,16 +28,16 @@ type Client struct {
 	// implement transparent refresh without rebuilding the Client.
 	tokenProvider func(context.Context) (string, error)
 
-	Schemas         *SchemaService
-	Extractions     *ExtractionService
 	Classifications *ClassificationService
+	Edits           *EditService
+	Extractions     *ExtractionService
+	Files           *FileService
+	Jobs            *JobService
 	Parses          *ParseService
 	Partitions      *PartitionService
+	Schemas         *SchemaService
 	Splits          *SplitService
-	Files           *FileService
 	Workflows       *WorkflowService
-	Edits           *EditService
-	Jobs            *JobService
 }
 
 // Option customizes a Retab client.
@@ -125,33 +125,33 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	if c.apiKey == "" && c.tokenProvider == nil {
 		return nil, fmt.Errorf("retab: no credentials; pass an API key, set RETAB_API_KEY, or use WithBearerToken/WithBearerTokenProvider")
 	}
-	c.Schemas = &SchemaService{client: c}
-	c.Extractions = &ExtractionService{client: c}
 	c.Classifications = &ClassificationService{client: c}
+	c.Edits = &EditService{client: c}
+	editTemplates := &EditTemplateService{client: c}
+	c.Extractions = &ExtractionService{client: c}
+	c.Files = &FileService{client: c}
+	c.Jobs = &JobService{client: c}
 	c.Parses = &ParseService{client: c}
 	c.Partitions = &PartitionService{client: c}
+	c.Schemas = &SchemaService{client: c}
 	c.Splits = &SplitService{client: c}
-	c.Files = &FileService{client: c}
-	workflowRuns := &WorkflowRunService{client: c}
-	workflowSteps := &WorkflowStepService{client: c}
+	c.Workflows = &WorkflowService{client: c}
+	workflowArtifacts := &WorkflowArtifactService{client: c}
+	workflowBlocks := &WorkflowBlockService{client: c}
+	workflowBlockExecutions := &WorkflowBlockExecutionService{client: c}
+	workflowEdges := &WorkflowEdgeService{client: c}
+	workflowExperiments := &WorkflowExperimentService{client: c}
+	experimentRunMetrics := &ExperimentRunMetricService{client: c}
+	experimentRunResults := &ExperimentRunResultService{client: c}
+	experimentRuns := &ExperimentRunService{client: c}
 	workflowReviews := &WorkflowReviewService{client: c}
 	workflowReviewVersions := &WorkflowReviewVersionService{client: c}
-	workflowArtifacts := &WorkflowArtifactService{client: c}
-	workflowTestRuns := &WorkflowTestRunService{client: c}
-	workflowTestRunResults := &WorkflowTestRunResultService{client: c}
-	workflowBlocks := &WorkflowBlockService{client: c}
-	workflowEdges := &WorkflowEdgeService{client: c}
-	workflowTests := &WorkflowTestService{client: c}
-	experimentRuns := &ExperimentRunService{client: c}
-	experimentRunResults := &ExperimentRunResultService{client: c}
-	experimentRunMetrics := &ExperimentRunMetricService{client: c}
-	workflowExperiments := &WorkflowExperimentService{client: c}
-	workflowBlockExecutions := &WorkflowBlockExecutionService{client: c}
-	c.Workflows = &WorkflowService{client: c}
+	workflowRuns := &WorkflowRunService{client: c}
 	workflowSpec := &WorkflowSpecService{client: c}
-	editTemplates := &EditTemplateService{client: c}
-	c.Edits = &EditService{client: c}
-	c.Jobs = &JobService{client: c}
+	workflowSteps := &WorkflowStepService{client: c}
+	workflowTests := &WorkflowTestService{client: c}
+	workflowTestRunResults := &WorkflowTestRunResultService{client: c}
+	workflowTestRuns := &WorkflowTestRunService{client: c}
 	c.Edits.Templates = editTemplates
 	workflowBlocks.Executions = workflowBlockExecutions
 	workflowExperiments.Metrics = experimentRunMetrics

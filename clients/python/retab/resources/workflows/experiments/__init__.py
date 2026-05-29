@@ -259,21 +259,21 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         return None
 
 
-from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
-from .results import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .metrics import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
+from .results import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
+from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
 __all__ = [
     "WorkflowExperiments",
     "AsyncWorkflowExperiments",
     "WorkflowExperimentsMixin",
-    "ExperimentRuns",
-    "AsyncExperimentRuns",
-    "ExperimentRunsMixin",
-    "ExperimentRunResults",
-    "AsyncExperimentRunResults",
-    "ExperimentRunResultsMixin",
     "ExperimentRunMetrics",
     "AsyncExperimentRunMetrics",
     "ExperimentRunMetricsMixin",
+    "ExperimentRunResults",
+    "AsyncExperimentRunResults",
+    "ExperimentRunResultsMixin",
+    "ExperimentRuns",
+    "AsyncExperimentRuns",
+    "ExperimentRunsMixin",
 ]

@@ -32,8 +32,6 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public string $blockType,
         /** Terminal lifecycle state for this block execution. One of ``{status: 'completed'}``, ``{status: 'error', message: ...}``, or ``{status: 'skipped', reason: ...}``. */
         public CompletedBlockExecutionLifecycle|ErrorBlockExecutionLifecycle|SkippedBlockExecutionLifecycle $lifecycle,
-        /** When the block execution record was created */
-        public \DateTimeImmutable $createdAt,
         /**
          * Input payloads keyed by handle ID (file metadata for files, data for json)
          * @var array<string, mixed>|null
@@ -53,6 +51,8 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public ?array $routingDecision = null,
         /** Duration of the block execution in milliseconds */
         public ?float $durationMs = null,
+        /** When the block execution record was created */
+        public ?\DateTimeImmutable $createdAt = null,
         /**
          * The draft block config used for this block execution
          * @var array<string, mixed>|null
@@ -77,7 +77,6 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'block_id',
             'block_type',
             'lifecycle',
-            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for StoredBlockExecution::fromArray()");
@@ -92,12 +91,12 @@ readonly class StoredBlockExecution implements \JsonSerializable
             lifecycle: match ($data['lifecycle']['status'] ?? null) {
                 'completed' => CompletedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'error' => ErrorBlockExecutionLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedBlockExecutionLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
             },
-            createdAt: new \DateTimeImmutable($data['created_at']),
             handleInputs: $data['handle_inputs'] ?? null,
             artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,
             handleOutputs: $data['handle_outputs'] ?? null,
             routingDecision: $data['routing_decision'] ?? null,
             durationMs: $data['duration_ms'] ?? null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             blockConfig: $data['block_config'] ?? null,
             stepId: $data['step_id'] ?? null,
             availableIterations: $data['available_iterations'] ?? null,
@@ -114,12 +113,12 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'block_id' => $this->blockId,
             'block_type' => $this->blockType,
             'lifecycle' => $this->lifecycle->toArray(),
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'handle_inputs' => $this->handleInputs,
             'artifact' => $this->artifact?->toArray(),
             'handle_outputs' => $this->handleOutputs,
             'routing_decision' => $this->routingDecision,
             'duration_ms' => $this->durationMs,
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'block_config' => $this->blockConfig,
             'step_id' => $this->stepId,
             'available_iterations' => $this->availableIterations,

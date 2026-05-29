@@ -11,9 +11,9 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
+from retab.types.edits import FormField
 from retab.types.edits.templates import CreateEditTemplateRequest, EditTemplate, UpdateEditTemplateRequest
 from retab.types.mime import FileRef, MIMEData
-from retab.types.workflows.artifacts import FormField
 
 
 def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:

@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.tests.results import FileHandleInput, JsonHandleInput
 
 
 NConsensusValue: TypeAlias = Literal[3, 5, 7]
@@ -43,7 +42,7 @@ class CreateExperimentRequest(BaseModel):
     validated server-side: combining a source with any other field is
     rejected so the two modes stay structurally distinct."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
     block_id: str | None = None
@@ -79,8 +78,37 @@ class ExplicitExperimentDocumentRequest(BaseModel):
     provenance: ExperimentDocumentProvenance | None = None
 
 
+class FileHandleInput(BaseModel):
+    """File reference for a handle input."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["file"] = Field(default="file")
+    document: MaterializedDocument
+
+
+class JsonHandleInput(BaseModel):
+    """JSON payload for a handle input. ``data`` is the raw JSON value."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["json"] = Field(default="json")
+    data: Any | None = Field(default=None)
+
+
+class MaterializedDocument(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    original_id: str
+    filename: str
+    mime_type: str
+    gcs_uri: str
+    size_bytes: int | None = Field(default=0)
+    content_fingerprint: str | None = None
+
+
 class UpdateExperimentRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document_captures: list[ExperimentDocumentCaptureRequest] | None = None
     documents: list[ExplicitExperimentDocumentRequest] | None = None
@@ -98,8 +126,8 @@ class WorkflowExperiment(BaseModel):
     document_count: int | None = Field(default=0)
     name: str
     last_run_id: str | None = None
-    created_at: datetime.datetime | None = None
-    updated_at: datetime.datetime | None = None
+    created_at: datetime.datetime | None = Field(default=None, description="When the experiment was created")
+    updated_at: datetime.datetime | None = Field(default=None, description="When the experiment was last updated")
     status: ExperimentPublicStatus | None = Field(default=cast(ExperimentPublicStatus, "draft"))
     block_type: ExperimentBlockType
     score: float | None = None
@@ -159,6 +187,9 @@ __all__ = [
     "ExperimentVotesMetricDocument",
     "ExperimentVotesMetricsResponse",
     "ExplicitExperimentDocumentRequest",
+    "FileHandleInput",
+    "JsonHandleInput",
+    "MaterializedDocument",
     "NConsensusValue",
     "PendingWorkflowExperimentResult",
     "PendingWorkflowExperimentRun",
@@ -169,6 +200,7 @@ __all__ = [
     "UpdateExperimentRequest",
     "UpdateExperimentRequestNConsensus",
     "WorkflowExperiment",
+    "WorkflowSnapshotRef",
     "_MetricsStaleErrorLastRun",
 ]
 
@@ -182,5 +214,8 @@ CreateExperimentRequest.model_rebuild()
 ExperimentDocumentCaptureRequest.model_rebuild()
 ExperimentDocumentProvenance.model_rebuild()
 ExplicitExperimentDocumentRequest.model_rebuild()
+FileHandleInput.model_rebuild()
+JsonHandleInput.model_rebuild()
+MaterializedDocument.model_rebuild()
 UpdateExperimentRequest.model_rebuild()
 WorkflowExperiment.model_rebuild()

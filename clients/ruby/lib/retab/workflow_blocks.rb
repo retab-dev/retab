@@ -60,7 +60,7 @@ module Retab
 
     # Create Block
     # @param workflow_id [String] Workflow to create the block in.
-    # @param id [String, nil] Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+    # @param id [String, nil] If omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
     # @param type [Retab::Types::WorkflowBlockCreateRequestType] Block type
     # @param label [String, nil] Display label
     # @param position_x [Float, nil] X position

@@ -18,21 +18,15 @@ pub struct ListParams {
     /// Filter by workflow ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
-    /// Filter by single run status (deprecated, use 'statuses')
+    /// Filter by run status
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowRunsStatus>,
-    /// Filter by multiple statuses (comma-separated: pending,queued,running,completed,error,failed,awaiting_review,cancelled)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub statuses: Option<String>,
     /// Exclude runs with this status
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_status: Option<WorkflowRunsExcludeStatus>,
-    /// Filter by single trigger type (deprecated, use 'trigger_types')
+    /// Filter by trigger type
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<WorkflowRunsTriggerType>,
-    /// Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger_types: Option<String>,
     /// Filter runs created on or after this date (YYYY-MM-DD)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
@@ -71,10 +65,8 @@ impl Default for ListParams {
         Self {
             workflow_id: Default::default(),
             status: Default::default(),
-            statuses: Default::default(),
             exclude_status: Default::default(),
             trigger_type: Default::default(),
-            trigger_types: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
             min_duration_ms: Default::default(),

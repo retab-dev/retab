@@ -3,10 +3,10 @@
 import { z } from 'zod';
 import type { Category, CategoryResponse } from './category.interface.js';
 import { ZCategory, deserializeCategory, serializeCategory } from './category.interface.js';
-import type { FileRef, FileRefResponse } from '../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../extractions/interfaces/file-ref.interface.js';
-import type { MIMEData, MIMEDataResponse } from '../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../schemas/interfaces/mime-data.interface.js';
+import type { FileRef, FileRefResponse } from './file-ref.interface.js';
+import { ZFileRef } from './file-ref.interface.js';
+import type { MIMEData, MIMEDataResponse } from './mime-data.interface.js';
+import { ZMIMEData } from './mime-data.interface.js';
 
 /** Public create-classification request body. */
 export interface ClassificationRequest {

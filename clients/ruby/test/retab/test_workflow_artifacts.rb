@@ -11,13 +11,6 @@ class WorkflowArtifactsTest < Minitest::Test
     @client = Retab::Client.new(api_key: "sk_test_123")
   end
 
-  def test_get_returns_expected_result
-    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.workflows.artifacts.get(artifact_id: "stub")
-    refute_nil(result)
-  end
-
   def test_list_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
@@ -25,15 +18,22 @@ class WorkflowArtifactsTest < Minitest::Test
     assert_kind_of(Retab::PaginatedList, result)
   end
 
+  def test_get_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts/stub(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.artifacts.get(artifact_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
+    {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts(\?|\z)}},
     {
       name: :get,
       verb: :get,
       url: %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts/stub(\?|\z)},
       args: {artifact_id: "stub"}
-    },
-    {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows/artifacts(\?|\z)}}
+    }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do
       stub_request(spec[:verb], spec[:url])

@@ -9,10 +9,10 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(String) }
+    sig { returns(T.nilable(String)) }
     def created_at; end
 
-    sig { params(value: String).returns(String) }
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def created_at=(value); end
 
     sig { returns(T.nilable(String)) }

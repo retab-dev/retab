@@ -17,7 +17,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->runs()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflows()->runs()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -25,10 +25,8 @@ class WorkflowRunsTest extends TestCase
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['workflow_id']);
         $this->assertSame('pending', $query['status']);
-        $this->assertSame('test_value', $query['statuses']);
         $this->assertSame('pending', $query['exclude_status']);
         $this->assertSame('manual', $query['trigger_type']);
-        $this->assertSame('test_value', $query['trigger_types']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
         $this->assertArrayHasKey('min_duration_ms', $query);

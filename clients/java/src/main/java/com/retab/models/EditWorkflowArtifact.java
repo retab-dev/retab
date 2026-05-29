@@ -32,7 +32,7 @@ public final class EditWorkflowArtifact implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "output", required = true) EditResult output,
       @JsonProperty(value = "filled_document_ref", required = false) FileRef filledDocumentRef,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "operation", required = false) String operation) {
     this.id = id;
     this.file = file;

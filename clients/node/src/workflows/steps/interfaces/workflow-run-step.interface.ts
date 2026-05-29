@@ -91,12 +91,15 @@ import {
   deserializeSkippedStepLifecycle,
   serializeSkippedStepLifecycle,
 } from './skipped-step-lifecycle.interface.js';
-import type { StepArtifactRef, StepArtifactRefResponse } from './step-artifact-ref.interface.js';
+import type {
+  StepArtifactRef,
+  StepArtifactRefResponse,
+} from '../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
 import {
   ZStepArtifactRef,
   deserializeStepArtifactRef,
   serializeStepArtifactRef,
-} from './step-artifact-ref.interface.js';
+} from '../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
 import type { WorkflowRunStepBlockType } from './workflow-run-step-block-type.interface.js';
 import { ZWorkflowRunStepBlockType } from './workflow-run-step-block-type.interface.js';
 

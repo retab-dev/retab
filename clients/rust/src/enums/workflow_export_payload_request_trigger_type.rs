@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum WorkflowExportPayloadRequestTriggerTypes {
+pub enum WorkflowExportPayloadRequestTriggerType {
     Manual,
     Api,
     Schedule,
@@ -20,7 +20,7 @@ pub enum WorkflowExportPayloadRequestTriggerTypes {
     Unknown(String),
 }
 
-impl WorkflowExportPayloadRequestTriggerTypes {
+impl WorkflowExportPayloadRequestTriggerType {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
@@ -37,19 +37,19 @@ impl WorkflowExportPayloadRequestTriggerTypes {
     }
 }
 
-impl fmt::Display for WorkflowExportPayloadRequestTriggerTypes {
+impl fmt::Display for WorkflowExportPayloadRequestTriggerType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for WorkflowExportPayloadRequestTriggerTypes {
+impl AsRef<str> for WorkflowExportPayloadRequestTriggerType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for WorkflowExportPayloadRequestTriggerTypes {
+impl FromStr for WorkflowExportPayloadRequestTriggerType {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -65,7 +65,7 @@ impl FromStr for WorkflowExportPayloadRequestTriggerTypes {
     }
 }
 
-impl From<String> for WorkflowExportPayloadRequestTriggerTypes {
+impl From<String> for WorkflowExportPayloadRequestTriggerType {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -75,19 +75,19 @@ impl From<String> for WorkflowExportPayloadRequestTriggerTypes {
     }
 }
 
-impl From<&str> for WorkflowExportPayloadRequestTriggerTypes {
+impl From<&str> for WorkflowExportPayloadRequestTriggerType {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for WorkflowExportPayloadRequestTriggerTypes {
+impl Serialize for WorkflowExportPayloadRequestTriggerType {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for WorkflowExportPayloadRequestTriggerTypes {
+impl<'de> Deserialize<'de> for WorkflowExportPayloadRequestTriggerType {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

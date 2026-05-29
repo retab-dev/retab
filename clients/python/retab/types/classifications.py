@@ -2,9 +2,90 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
+from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
+
+
+class JobsStatus(str, Enum):
+    VALIDATING = "validating"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+
+
+class JobsEndpoint(str, Enum):
+    V_1_EXTRACTIONS = "/v1/extractions"
+    V_1_PARSES = "/v1/parses"
+    V_1_SPLITS = "/v1/splits"
+    V_1_PARTITIONS = "/v1/partitions"
+    V_1_CLASSIFICATIONS = "/v1/classifications"
+    V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
+    V_1_EDITS = "/v1/edits"
+    V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
+    V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
+    V_1_EVALS_EXTRACT_EXTRACT = "/v1/evals/extract/extract"
+    V_1_EVALS_EXTRACT_SPLIT = "/v1/evals/extract/split"
+
+
+class JobsSource(str, Enum):
+    API = "api"
+    PROJECT = "project"
+    WORKFLOW = "workflow"
+
+
+class WorkflowArtifactsOperation(str, Enum):
+    EXTRACTION = "extraction"
+    SPLIT = "split"
+    CLASSIFICATION = "classification"
+    PARSE = "parse"
+    EDIT = "edit"
+    PARTITION = "partition"
+    CONDITIONAL_EVALUATION = "conditional_evaluation"
+    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
+    WHILE_LOOP_TERMINATION = "while_loop_termination"
+    API_CALL_INVOCATION = "api_call_invocation"
+    FUNCTION_INVOCATION = "function_invocation"
+
+
+class WorkflowExperimentsStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+    CANCELLED = "cancelled"
+
+
+class WorkflowRunsStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+    FAILED = "failed"
+    AWAITING_REVIEW = "awaiting_review"
+    CANCELLED = "cancelled"
+
+
+class WorkflowRunsTriggerType(str, Enum):
+    MANUAL = "manual"
+    API = "api"
+    SCHEDULE = "schedule"
+    WEBHOOK = "webhook"
+    EMAIL = "email"
+    RESTART = "restart"
+
+
+WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
+
+
+WorkflowRunsExcludeStatus = WorkflowRunsStatus
 
 
 class Category(BaseModel):
@@ -33,7 +114,7 @@ class Classification(BaseModel):
 class ClassificationConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    choices: list[ClassificationDecision] | None = Field(default=None, description="Alternative classification vote outputs used to build the consolidated result.")
+    choices: list[ClassificationDecision] | None = Field(default=[], description="Alternative classification vote outputs used to build the consolidated result.")
     likelihoods: float | None = Field(default=0, description="Consensus likelihood score (0.0-1.0) of the winning classification.")
 
 
@@ -47,7 +128,7 @@ class ClassificationDecision(BaseModel):
 class ClassificationRequest(BaseModel):
     """Public create-classification request body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
@@ -61,6 +142,22 @@ class ClassificationRequest(BaseModel):
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
+class HttpValidationError(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    detail: list[ValidationError] | None = Field(default=[])
+
+
+class ValidationError(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    loc: list[str | int]
+    msg: str
+    type: str
+    input: Any | None = Field(default=None)
+    ctx: dict[str, Any] | None = Field(default={})
+
+
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -71,3 +168,5 @@ Classification.model_rebuild()
 ClassificationConsensus.model_rebuild()
 ClassificationDecision.model_rebuild()
 ClassificationRequest.model_rebuild()
+HttpValidationError.model_rebuild()
+ValidationError.model_rebuild()

@@ -5,7 +5,7 @@ import datetime
 from enum import Enum, IntEnum
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.runs import ErrorDetails, WorkflowSnapshotRef
+from retab.types.workflows.artifacts import ErrorDetails
 
 
 class ExperimentRunBlockType(str, Enum):
@@ -60,7 +60,7 @@ class CreateExperimentRunRequest(BaseModel):
     derivable from the experiment record; when supplied it is validated
     against the experiment's stored workflow."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     experiment_id: str = Field(..., description="The experiment to create a run for.")
     workflow_id: str | None = Field(
@@ -85,7 +85,7 @@ class ErrorWorkflowExperimentRun(BaseModel):
 class ExperimentRunTiming(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    created_at: datetime.datetime | None = None
+    created_at: datetime.datetime | None = Field(default=None, description="When the experiment run record was created")
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
@@ -155,6 +155,19 @@ class ExperimentRun(BaseModel):
     error_count: int | None = Field(default=0)
 
 
+class WorkflowSnapshotRef(BaseModel):
+    """Reference to the workflow + immutable version that drove the run.
+
+    The class name is retained temporarily for compatibility with surrounding
+    run-model code, but public API output uses ``version_id`` rather than
+    snapshot identity."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    workflow_id: str = Field(..., description="ID of the workflow that was run")
+    version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
+
+
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -171,3 +184,4 @@ PendingWorkflowExperimentRun.model_rebuild()
 QueuedWorkflowExperimentRun.model_rebuild()
 RunningWorkflowExperimentRun.model_rebuild()
 ExperimentRun.model_rebuild()
+WorkflowSnapshotRef.model_rebuild()

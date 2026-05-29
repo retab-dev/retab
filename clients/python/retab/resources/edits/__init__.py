@@ -12,9 +12,8 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
-from retab.types.edits import Edit, EditRequest
+from retab.types.edits import Edit, EditConfig, EditRequest
 from retab.types.mime import FileRef, MIMEData
-from retab.types.workflows.artifacts import EditConfig
 
 from .templates import EditTemplates, AsyncEditTemplates
 

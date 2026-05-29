@@ -11,20 +11,14 @@ namespace Retab
         /// <summary>Filter by workflow ID</summary>
         public string? WorkflowId { get; set; }
 
-        /// <summary>Filter by single run status (deprecated, use 'statuses')</summary>
+        /// <summary>Filter by run status</summary>
         public WorkflowExportPayloadRequestExcludeStatus? Status { get; set; }
-
-        /// <summary>Filter by multiple statuses (comma-separated: pending,queued,running,completed,error,failed,awaiting_review,cancelled)</summary>
-        public string? Statuses { get; set; }
 
         /// <summary>Exclude runs with this status</summary>
         public WorkflowExportPayloadRequestExcludeStatus? ExcludeStatus { get; set; }
 
-        /// <summary>Filter by single trigger type (deprecated, use 'trigger_types')</summary>
-        public WorkflowExportPayloadRequestTriggerTypes? TriggerType { get; set; }
-
-        /// <summary>Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)</summary>
-        public string? TriggerTypes { get; set; }
+        /// <summary>Filter by trigger type</summary>
+        public WorkflowExportPayloadRequestTriggerType? TriggerType { get; set; }
 
         /// <summary>Filter runs created on or after this date (YYYY-MM-DD)</summary>
         public string? FromDate { get; set; }
@@ -92,8 +86,8 @@ namespace Retab
         /// <summary>Optional end date filter (YYYY-MM-DD)</summary>
         public string? ToDate { get; set; }
 
-        /// <summary>Optional trigger type filters</summary>
-        public List<WorkflowExportPayloadRequestTriggerTypes>? TriggerTypes { get; set; }
+        /// <summary>Optional trigger type filter</summary>
+        public WorkflowExportPayloadRequestTriggerType? TriggerType { get; set; }
 
         /// <summary>Preferred data column order</summary>
         public List<string>? PreferredColumns { get; set; }

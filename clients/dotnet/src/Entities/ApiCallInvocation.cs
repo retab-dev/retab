@@ -16,7 +16,7 @@ namespace Retab
         public ErrorDetails? Error { get; set; }
 
         /// <summary>When this artifact was written by the orchestrator.</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

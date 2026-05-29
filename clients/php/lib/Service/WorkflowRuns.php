@@ -21,11 +21,9 @@ class WorkflowRuns
      *
      * List workflow runs with pagination and optional filters.
      * @param string|null $workflowId Filter by workflow ID
-     * @param \Retab\Resource\WorkflowRunsStatus|null $status Filter by single run status (deprecated, use 'statuses')
-     * @param string|null $statuses Filter by multiple statuses (comma-separated: pending,queued,running,completed,error,failed,awaiting_review,cancelled)
+     * @param \Retab\Resource\WorkflowRunsStatus|null $status Filter by run status
      * @param \Retab\Resource\WorkflowRunsStatus|null $excludeStatus Exclude runs with this status
-     * @param \Retab\Resource\WorkflowRunsTriggerType|null $triggerType Filter by single trigger type (deprecated, use 'trigger_types')
-     * @param string|null $triggerTypes Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
+     * @param \Retab\Resource\WorkflowRunsTriggerType|null $triggerType Filter by trigger type
      * @param string|null $fromDate Filter runs created on or after this date (YYYY-MM-DD)
      * @param string|null $toDate Filter runs created on or before this date (YYYY-MM-DD)
      * @param int|null $minDurationMs Filter runs with duration >= this value in milliseconds
@@ -42,10 +40,8 @@ class WorkflowRuns
     public function list(
         ?string $workflowId = null,
         ?\Retab\Resource\WorkflowRunsStatus $status = null,
-        ?string $statuses = null,
         ?\Retab\Resource\WorkflowRunsStatus $excludeStatus = null,
         ?\Retab\Resource\WorkflowRunsTriggerType $triggerType = null,
-        ?string $triggerTypes = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?int $minDurationMs = null,
@@ -61,10 +57,8 @@ class WorkflowRuns
         $query = array_filter([
             'workflow_id' => $workflowId,
             'status' => $status?->value,
-            'statuses' => $statuses,
             'exclude_status' => $excludeStatus?->value,
             'trigger_type' => $triggerType?->value,
-            'trigger_types' => $triggerTypes,
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'min_duration_ms' => $minDurationMs,
@@ -134,7 +128,7 @@ class WorkflowRuns
      * @param \Retab\Resource\WorkflowRunsStatus|null $excludeStatus Optional status exclusion filter (intersects with completed-only export scope)
      * @param string|null $fromDate Optional start date filter (YYYY-MM-DD)
      * @param string|null $toDate Optional end date filter (YYYY-MM-DD)
-     * @param array<\Retab\Resource\WorkflowRunsTriggerType>|null $triggerTypes Optional trigger type filters
+     * @param \Retab\Resource\WorkflowRunsTriggerType|null $triggerType Optional trigger type filter
      * @param array<string>|null $preferredColumns Preferred data column order
      * @param string|null $delimiter CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
      * @param string|null $lineDelimiter CSV line delimiter
@@ -152,7 +146,7 @@ class WorkflowRuns
         ?\Retab\Resource\WorkflowRunsStatus $excludeStatus = null,
         ?string $fromDate = null,
         ?string $toDate = null,
-        ?array $triggerTypes = null,
+        ?\Retab\Resource\WorkflowRunsTriggerType $triggerType = null,
         ?array $preferredColumns = null,
         ?string $delimiter = null,
         ?string $lineDelimiter = null,
@@ -169,7 +163,7 @@ class WorkflowRuns
             'exclude_status' => $excludeStatus?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
-            'trigger_types' => $triggerTypes !== null ? array_map(fn($item) => $item->value, $triggerTypes) : null,
+            'trigger_type' => $triggerType?->value,
             'preferred_columns' => $preferredColumns,
             'delimiter' => $delimiter,
             'line_delimiter' => $lineDelimiter,

@@ -13,9 +13,9 @@ module Retab
       params(
         yaml_definition: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::DeclarativeValidationResponse)
+      ).returns(Retab::DeclarativeApplyResponse)
     end
-    def validate(yaml_definition:, request_options:); end
+    def apply(yaml_definition:, request_options:); end
 
     sig do
       params(
@@ -29,9 +29,9 @@ module Retab
       params(
         yaml_definition: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::DeclarativeApplyResponse)
+      ).returns(Retab::DeclarativeValidationResponse)
     end
-    def apply(yaml_definition:, request_options:); end
+    def validate(yaml_definition:, request_options:); end
 
     sig do
       params(

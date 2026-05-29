@@ -6,12 +6,12 @@ import { ZActor, deserializeActor, serializeActor } from './actor.interface.js';
 import type { ReviewVerdict } from './review-verdict.interface.js';
 import { ZReviewVerdict } from './review-verdict.interface.js';
 
-/** The one terminal decision recorded against one exact :class:`ReviewVersion`. */
+/** The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`. */
 export interface ReviewDecision {
   verdict: ReviewVerdict;
   versionId: string;
   author: Actor;
-  decidedAt: Date;
+  createdAt: Date;
   reason?: string | null;
 }
 
@@ -19,7 +19,7 @@ export interface ReviewDecisionResponse {
   verdict: ReviewVerdict;
   version_id: string;
   author: ActorResponse;
-  decided_at: string;
+  created_at: string;
   reason?: string | null;
 }
 
@@ -27,7 +27,7 @@ export const ZReviewDecision = z.object({
   verdict: ZReviewVerdict,
   versionId: z.string(),
   author: ZActor,
-  decidedAt: z.coerce.date(),
+  createdAt: z.coerce.date(),
   reason: z.string().nullable().optional(),
 }) as z.ZodType<ReviewDecision>;
 
@@ -36,7 +36,7 @@ export function deserializeReviewDecision(wire: ReviewDecisionResponse): ReviewD
     verdict: wire['verdict'],
     versionId: wire['version_id'],
     author: deserializeActor(wire['author']),
-    decidedAt: new Date(wire['decided_at']),
+    createdAt: new Date(wire['created_at']),
     reason: wire['reason'],
   };
 }
@@ -46,7 +46,7 @@ export function serializeReviewDecision(domain: ReviewDecision): ReviewDecisionR
     verdict: domain['verdict'],
     version_id: domain['versionId'],
     author: serializeActor(domain['author']),
-    decided_at: domain['decidedAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
     reason: domain['reason'],
   };
 }

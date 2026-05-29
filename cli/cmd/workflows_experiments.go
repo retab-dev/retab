@@ -544,18 +544,12 @@ positional, filters are flags — same convention as the rest of the
 			status := retab.WorkflowExperimentsStatus(value)
 			params.Status = &status
 		}
-		if value, _ := cmd.Flags().GetString("statuses"); value != "" {
-			params.Statuses = &value
-		}
 		if value, _ := cmd.Flags().GetString("exclude-status"); value != "" {
 			status := retab.WorkflowExperimentsExcludeStatus(value)
 			params.ExcludeStatus = &status
 		}
 		if value, _ := cmd.Flags().GetString("trigger-type"); value != "" {
 			params.TriggerType = &value
-		}
-		if value, _ := cmd.Flags().GetString("trigger-types"); value != "" {
-			params.TriggerTypes = &value
 		}
 		if value, _ := cmd.Flags().GetString("from-date"); value != "" {
 			params.FromDate = &value
@@ -768,10 +762,8 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("experiment-id", "", "filter by experiment id")
 	workflowsExperimentsRunsListCmd.Flags().String("block-id", "", "filter by block id")
 	workflowsExperimentsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
-	workflowsExperimentsRunsListCmd.Flags().String("statuses", "", "comma-separated lifecycle statuses")
 	workflowsExperimentsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
 	workflowsExperimentsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
-	workflowsExperimentsRunsListCmd.Flags().String("trigger-types", "", "comma-separated trigger types")
 	workflowsExperimentsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")

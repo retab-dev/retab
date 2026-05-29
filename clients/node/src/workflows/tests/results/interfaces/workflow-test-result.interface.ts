@@ -10,84 +10,84 @@ import {
 import type {
   CancelledWorkflowTestRun,
   CancelledWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
+} from './cancelled-workflow-test-run.interface.js';
 import {
   ZCancelledWorkflowTestRun,
   deserializeCancelledWorkflowTestRun,
   serializeCancelledWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/cancelled-workflow-test-run.interface.js';
+} from './cancelled-workflow-test-run.interface.js';
 import type {
   CompletedWorkflowTestRun,
   CompletedWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
+} from './completed-workflow-test-run.interface.js';
 import {
   ZCompletedWorkflowTestRun,
   deserializeCompletedWorkflowTestRun,
   serializeCompletedWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/completed-workflow-test-run.interface.js';
+} from './completed-workflow-test-run.interface.js';
 import type {
   ErrorDetails,
   ErrorDetailsResponse,
-} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
 import {
   ZErrorDetails,
   deserializeErrorDetails,
   serializeErrorDetails,
-} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
 import type {
   ErrorWorkflowTestRun,
   ErrorWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
+} from './error-workflow-test-run.interface.js';
 import {
   ZErrorWorkflowTestRun,
   deserializeErrorWorkflowTestRun,
   serializeErrorWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/error-workflow-test-run.interface.js';
+} from './error-workflow-test-run.interface.js';
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
-} from './manual-workflow-test-source.interface.js';
+} from '../../../../workflows/tests/interfaces/manual-workflow-test-source.interface.js';
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
   serializeManualWorkflowTestSource,
-} from './manual-workflow-test-source.interface.js';
+} from '../../../../workflows/tests/interfaces/manual-workflow-test-source.interface.js';
 import type {
   PendingWorkflowTestRun,
   PendingWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
+} from './pending-workflow-test-run.interface.js';
 import {
   ZPendingWorkflowTestRun,
   deserializePendingWorkflowTestRun,
   serializePendingWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/pending-workflow-test-run.interface.js';
+} from './pending-workflow-test-run.interface.js';
 import type {
   QueuedWorkflowTestRun,
   QueuedWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
+} from './queued-workflow-test-run.interface.js';
 import {
   ZQueuedWorkflowTestRun,
   deserializeQueuedWorkflowTestRun,
   serializeQueuedWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/queued-workflow-test-run.interface.js';
+} from './queued-workflow-test-run.interface.js';
 import type {
   RunningWorkflowTestRun,
   RunningWorkflowTestRunResponse,
-} from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
+} from './running-workflow-test-run.interface.js';
 import {
   ZRunningWorkflowTestRun,
   deserializeRunningWorkflowTestRun,
   serializeRunningWorkflowTestRun,
-} from '../../../../workflows/tests/runs/interfaces/running-workflow-test-run.interface.js';
+} from './running-workflow-test-run.interface.js';
 import type {
   RunStepWorkflowTestSource,
   RunStepWorkflowTestSourceResponse,
-} from './run-step-workflow-test-source.interface.js';
+} from '../../../../workflows/tests/interfaces/run-step-workflow-test-source.interface.js';
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
   serializeRunStepWorkflowTestSource,
-} from './run-step-workflow-test-source.interface.js';
+} from '../../../../workflows/tests/interfaces/run-step-workflow-test-source.interface.js';
 import type { VerdictSummary, VerdictSummaryResponse } from './verdict-summary.interface.js';
 import {
   ZVerdictSummary,
@@ -97,21 +97,21 @@ import {
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
-} from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
   serializeWorkflowTestBlockTarget,
-} from '../../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
 import type {
   WorkflowTestRunTiming,
   WorkflowTestRunTimingResponse,
-} from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
+} from './workflow-test-run-timing.interface.js';
 import {
   ZWorkflowTestRunTiming,
   deserializeWorkflowTestRunTiming,
   serializeWorkflowTestRunTiming,
-} from '../../../../workflows/tests/runs/interfaces/workflow-test-run-timing.interface.js';
+} from './workflow-test-run-timing.interface.js';
 import type { WorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 import { ZWorkflowTestResultVerdict } from './workflow-test-result-verdict.interface.js';
 

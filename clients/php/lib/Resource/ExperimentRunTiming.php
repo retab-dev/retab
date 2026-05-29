@@ -12,7 +12,7 @@ readonly class ExperimentRunTiming implements \JsonSerializable
 
     public function __construct(
         /** When the experiment run record was created */
-        public \DateTimeImmutable $createdAt,
+        public ?\DateTimeImmutable $createdAt = null,
         public ?\DateTimeImmutable $startedAt = null,
         public ?\DateTimeImmutable $completedAt = null,
         public ?int $durationMs = null,
@@ -21,15 +21,8 @@ readonly class ExperimentRunTiming implements \JsonSerializable
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
-        foreach ([
-            'created_at',
-        ] as $__required) {
-            if (!array_key_exists($__required, $data)) {
-                throw new \UnexpectedValueException("Missing required field '$__required' for ExperimentRunTiming::fromArray()");
-            }
-        }
         return new self(
-            createdAt: new \DateTimeImmutable($data['created_at']),
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             startedAt: isset($data['started_at']) ? new \DateTimeImmutable($data['started_at']) : null,
             completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
             durationMs: $data['duration_ms'] ?? null,
@@ -40,7 +33,7 @@ readonly class ExperimentRunTiming implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'started_at' => $this->startedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'duration_ms' => $this->durationMs,

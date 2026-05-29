@@ -14,7 +14,7 @@ import com.retab.types.SortOrder;
 import com.retab.types.WorkflowExportPayloadRequestExcludeStatus;
 import com.retab.types.WorkflowExportPayloadRequestExportSource;
 import com.retab.types.WorkflowExportPayloadRequestStatus;
-import com.retab.types.WorkflowExportPayloadRequestTriggerTypes;
+import com.retab.types.WorkflowExportPayloadRequestTriggerType;
 import com.retab.types.WorkflowRunsExcludeStatus;
 import com.retab.types.WorkflowRunsStatus;
 import com.retab.types.WorkflowRunsTriggerType;
@@ -42,10 +42,8 @@ public final class WorkflowRunsApi {
   public List<WorkflowRun> list(
       String workflowId,
       WorkflowRunsStatus status,
-      String statuses,
       WorkflowRunsExcludeStatus excludeStatus,
       WorkflowRunsTriggerType triggerType,
-      String triggerTypes,
       String fromDate,
       String toDate,
       Long minDurationMs,
@@ -61,10 +59,8 @@ public final class WorkflowRunsApi {
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "status", status);
-    appendQueryParam(query, "statuses", statuses);
     appendQueryParam(query, "exclude_status", excludeStatus);
     appendQueryParam(query, "trigger_type", triggerType);
-    appendQueryParam(query, "trigger_types", triggerTypes);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     appendQueryParam(query, "min_duration_ms", minDurationMs);
@@ -158,7 +154,7 @@ public final class WorkflowRunsApi {
         request == null ? null : request.getExcludeStatus(),
         request == null ? null : request.getFromDate(),
         request == null ? null : request.getToDate(),
-        request == null ? null : request.getTriggerTypes(),
+        request == null ? null : request.getTriggerType(),
         request == null ? null : request.getPreferredColumns(),
         request == null ? null : request.getDelimiter(),
         request == null ? null : request.getLineDelimiter(),
@@ -175,7 +171,7 @@ public final class WorkflowRunsApi {
       WorkflowExportPayloadRequestExcludeStatus excludeStatus,
       String fromDate,
       String toDate,
-      List<WorkflowExportPayloadRequestTriggerTypes> triggerTypes,
+      WorkflowExportPayloadRequestTriggerType triggerType,
       List<String> preferredColumns,
       String delimiter,
       String lineDelimiter,
@@ -208,8 +204,8 @@ public final class WorkflowRunsApi {
     if (toDate != null) {
       body.put("to_date", toDate);
     }
-    if (triggerTypes != null) {
-      body.put("trigger_types", triggerTypes);
+    if (triggerType != null) {
+      body.put("trigger_type", triggerType);
     }
     if (preferredColumns != null) {
       body.put("preferred_columns", preferredColumns);

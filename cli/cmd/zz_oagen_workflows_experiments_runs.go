@@ -14,7 +14,7 @@ var workflowsExperimentsRunsCmd = &cobra.Command{
 	Use:     "runs",
 	Short:   "Manage experiment runs",
 	Long:    "Create, list, and inspect individual experiment runs.\nEach run processes every document in the experiment's document set\nagainst the candidate block config and stores per-document outputs.\n\nThese runs are isolated from production workflow runs - they don't appear\nin `retab workflows runs list` and don't affect downstream consumers.",
-	Example: "  # Create a new experiment run\n  retab workflows experiments runs create exp_pqr678\n\n  # Inspect a run\n  retab workflows experiments runs get exprun_aaa\n\n  # Inspect run results\n  retab workflows experiments runs results list exprun_aaa",
+	Example: "  # Create a new experiment run\n  retab workflows experiments runs create exp_pqr678\n\n  # Inspect a run\n  retab workflows experiments runs get exprun_aaa\n\n  # Inspect run results\n  retab workflows experiments results list exprun_aaa",
 }
 
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
@@ -94,18 +94,12 @@ var workflowsExperimentsRunsListCmd = &cobra.Command{
 			status := retab.WorkflowExperimentsStatus(value)
 			params.Status = &status
 		}
-		if value, _ := cmd.Flags().GetString("statuses"); value != "" {
-			params.Statuses = &value
-		}
 		if value, _ := cmd.Flags().GetString("exclude-status"); value != "" {
 			status := retab.WorkflowExperimentsExcludeStatus(value)
 			params.ExcludeStatus = &status
 		}
 		if value, _ := cmd.Flags().GetString("trigger-type"); value != "" {
 			params.TriggerType = &value
-		}
-		if value, _ := cmd.Flags().GetString("trigger-types"); value != "" {
-			params.TriggerTypes = &value
 		}
 		if value, _ := cmd.Flags().GetString("from-date"); value != "" {
 			params.FromDate = &value
@@ -178,10 +172,8 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("experiment-id", "", "filter by experiment id")
 	workflowsExperimentsRunsListCmd.Flags().String("block-id", "", "filter by block id")
 	workflowsExperimentsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
-	workflowsExperimentsRunsListCmd.Flags().String("statuses", "", "comma-separated lifecycle statuses")
 	workflowsExperimentsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
 	workflowsExperimentsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
-	workflowsExperimentsRunsListCmd.Flags().String("trigger-types", "", "comma-separated trigger types")
 	workflowsExperimentsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")

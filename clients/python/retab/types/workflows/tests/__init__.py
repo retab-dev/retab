@@ -6,8 +6,7 @@ import datetime
 from enum import Enum
 from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.tests.results import ManualWorkflowTestSource, RunStepWorkflowTestSource
-from retab.types.workflows.tests.runs import WorkflowTestBlockTarget
+from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
 
 
 AssertionDriftStatus: TypeAlias = Literal["valid", "drifted", "broken"]
@@ -181,7 +180,7 @@ class ContainCondition(BaseModel):
 
 
 class CreateWorkflowTestRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
     target: WorkflowTestBlockTarget
@@ -269,6 +268,13 @@ class LlmNotJudgedAsCondition(BaseModel):
     expected_label: str | None = None
 
 
+class ManualWorkflowTestSource(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["manual"] = Field(default="manual")
+    handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
+
+
 class MatcheRegexCondition(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -320,6 +326,14 @@ class OutputTarget(BaseModel):
     path: str | None = None
 
 
+class RunStepWorkflowTestSource(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["run_step"] = Field(default="run_step")
+    run_id: str
+    step_id: str | None = None
+
+
 class SimilarityGteCondition(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -350,7 +364,7 @@ class StartWithCondition(BaseModel):
 
 
 class UpdateWorkflowTestRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = None
     assertion: AssertionSpec | None = None
@@ -371,12 +385,24 @@ class WorkflowTest(BaseModel):
     schema_drift: WorkflowTestSchemaDrift | None = Field(default=cast(WorkflowTestSchemaDrift, "unknown"))
     schema_drift_detail: str | None = None
     validation_status: str | None = Field(default="valid")
-    validation_issues: list[Any] | None = None
+    validation_issues: list[Any] | None = Field(default=[])
     latest_run_summary: LatestBlockTestRunSummary | None = None
     latest_passing_run_summary: LatestBlockTestRunSummary | None = None
     latest_failing_run_summary: LatestBlockTestRunSummary | None = None
-    created_at: datetime.datetime | None = None
-    updated_at: datetime.datetime | None = None
+    created_at: datetime.datetime | None = Field(default=None, description="When the workflow test was created")
+    updated_at: datetime.datetime | None = Field(default=None, description="When the workflow test was last updated")
+
+
+class WorkflowTestBlockTarget(BaseModel):
+    """Public workflow-test target.
+
+    The storage layer remains block-scoped today, but the API shape names the
+    tested entity explicitly so workflow-level targets can be added later."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    type: Literal["block"] = Field(default="block")
+    block_id: str
 
 
 from .results import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
@@ -406,8 +432,6 @@ __all__ = [
     "EqualCondition",
     "ErrorWorkflowTestRun",
     "ExistCondition",
-    "FileHandleInput",
-    "JsonHandleInput",
     "JsonSchemaValidCondition",
     "LatestBlockTestRunSummary",
     "LatestBlockTestRunSummaryOutcome",
@@ -418,7 +442,6 @@ __all__ = [
     "LlmNotJudgedAsCondition",
     "ManualWorkflowTestSource",
     "MatcheRegexCondition",
-    "MaterializedDocument",
     "NotContainsCondition",
     "NotEqualsCondition",
     "NotExistsCondition",
@@ -470,6 +493,7 @@ LatestBlockTestRunSummary.model_rebuild()
 LengthCompareCondition.model_rebuild()
 LlmJudgedAsCondition.model_rebuild()
 LlmNotJudgedAsCondition.model_rebuild()
+ManualWorkflowTestSource.model_rebuild()
 MatcheRegexCondition.model_rebuild()
 NotContainsCondition.model_rebuild()
 NotEqualsCondition.model_rebuild()
@@ -477,8 +501,10 @@ NotExistsCondition.model_rebuild()
 NumberCompareCondition.model_rebuild()
 ObjectContainsCondition.model_rebuild()
 OutputTarget.model_rebuild()
+RunStepWorkflowTestSource.model_rebuild()
 SimilarityGteCondition.model_rebuild()
 SplitIouCondition.model_rebuild()
 StartWithCondition.model_rebuild()
 UpdateWorkflowTestRequest.model_rebuild()
 WorkflowTest.model_rebuild()
+WorkflowTestBlockTarget.model_rebuild()

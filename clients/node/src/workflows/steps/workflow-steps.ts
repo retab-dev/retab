@@ -15,7 +15,6 @@ export class WorkflowSteps {
   async list(options?: {
     runId?: string | null | undefined;
     blockId?: string | null | undefined;
-    blockIds?: string[] | null | undefined;
     stepId?: string | null | undefined;
     blockType?: string[] | null | undefined;
     status?: string[] | null | undefined;
@@ -30,7 +29,6 @@ export class WorkflowSteps {
       query: {
         run_id: options?.runId,
         block_id: options?.blockId,
-        block_ids: options?.blockIds,
         step_id: options?.stepId,
         block_type: options?.blockType,
         status: options?.status,

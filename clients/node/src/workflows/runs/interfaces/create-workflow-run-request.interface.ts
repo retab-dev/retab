@@ -4,13 +4,13 @@ import { z } from 'zod';
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
+import { ZFileRef } from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   MIMEData,
   MIMEDataResponse,
-} from '../../../schemas/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../../schemas/interfaces/mime-data.interface.js';
+} from '../../../classifications/interfaces/mime-data.interface.js';
+import { ZMIMEData } from '../../../classifications/interfaces/mime-data.interface.js';
 
 /** Request body for POST /v1/workflows/runs. Creates a fresh workflow run from a workflow id, optional version selector, and optional inputs. */
 export interface CreateWorkflowRunRequest {

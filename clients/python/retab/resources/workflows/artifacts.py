@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
-from retab.types.schemas import WorkflowArtifactsOperation
+from retab.types.classifications import WorkflowArtifactsOperation
 from retab.types.workflows.artifacts import (
     ApiCallInvocation,
     ClassificationWorkflowArtifact,
@@ -25,15 +25,6 @@ from retab.types.workflows.artifacts import (
 
 
 class WorkflowArtifactsMixin:
-    def prepare_get(self, artifact_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="GET", url=f"/v1/workflows/artifacts/{artifact_id}", params=params or None, data=data)
-
     def prepare_list(
         self,
         run_id: str | None = None,
@@ -61,9 +52,33 @@ class WorkflowArtifactsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/artifacts", params=params or None, data=data)
 
+    def prepare_get(self, artifact_id: str, **extra_params: Any) -> PreparedRequest:
+        """Get Workflow Artifact By Id Get one workflow artifact by id alone. The operation is derived from the id prefix (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is the flat-resource shape — callers do not need to know which collection backs the id."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url=f"/v1/workflows/artifacts/{artifact_id}", params=params or None, data=data)
+
 
 class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
     """WorkflowArtifacts API wrapper."""
+
+    def list(
+        self,
+        run_id: str | None = None,
+        operation: WorkflowArtifactsOperation | None = None,
+        block_id: str | None = None,
+        step_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 100,
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowArtifact]:
+        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
+        prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowArtifact)
 
     def get(
         self, artifact_id: str, **extra_params: Any
@@ -97,7 +112,11 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
             | FunctionInvocation
         ).validate_python(response)
 
-    def list(
+
+class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
+    """Async WorkflowArtifacts API wrapper."""
+
+    async def list(
         self,
         run_id: str | None = None,
         operation: WorkflowArtifactsOperation | None = None,
@@ -107,14 +126,10 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         after: str | None = None,
         limit: int | None = 100,
         **extra_params: Any,
-    ) -> PaginatedList[WorkflowArtifact]:
+    ) -> AsyncPaginatedList[WorkflowArtifact]:
         """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
         prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
-        return self.request_page(prepared_request, model=WorkflowArtifact)
-
-
-class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
-    """Async WorkflowArtifacts API wrapper."""
+        return await self.request_page(prepared_request, model=WorkflowArtifact)
 
     async def get(
         self, artifact_id: str, **extra_params: Any
@@ -147,21 +162,6 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
             | ApiCallInvocation
             | FunctionInvocation
         ).validate_python(response)
-
-    async def list(
-        self,
-        run_id: str | None = None,
-        operation: WorkflowArtifactsOperation | None = None,
-        block_id: str | None = None,
-        step_id: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 100,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[WorkflowArtifact]:
-        """List Workflow Artifacts List artifacts produced by a workflow run. Paginated by the producing step's ``step_id`` (sorted by ``started_at`` ascending). Pass ``after`` for the next page, ``before`` for the previous page — mutually exclusive. ``step_id`` short-circuits pagination and returns the single attached artifact. Filters: provide either ``run_id`` (list all artifacts in a run) or ``step_id``…"""
-        prepared_request = self.prepare_list(run_id=run_id, operation=operation, block_id=block_id, step_id=step_id, before=before, after=after, limit=limit, **extra_params)
-        return await self.request_page(prepared_request, model=WorkflowArtifact)
 
 
 __all__ = ["WorkflowArtifacts", "AsyncWorkflowArtifacts", "WorkflowArtifactsMixin"]

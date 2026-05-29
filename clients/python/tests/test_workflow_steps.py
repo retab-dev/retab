@@ -1,5 +1,4 @@
 # pyright: reportArgumentType=false, reportOptionalSubscript=false
-import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -9,7 +8,7 @@ from retab.resources.workflows import AsyncWorkflows, Workflows
 from retab.resources.workflows.runs import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.steps import AsyncWorkflowSteps, WorkflowSteps
 from retab.types.workflows import model as workflow_model
-from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
+from retab.types.workflows.model import StepExecutionResponse
 
 
 def _workflow_run_step_payload(**overrides) -> dict:
@@ -296,13 +295,8 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     assert payload.data == {"payload": {"ok": True}}
 
 
-def test_workflow_steps_list_with_block_ids_pushes_to_server() -> None:
-    """list(block_ids=[...]) now filters server-side via the `block_ids` query param.
-
-    The server returns only matching rows — the SDK no longer applies a
-    client-side filter, so auto-pagination preserves the filter on every
-    subsequent page (the closure re-sends the same params).
-    """
+def test_workflow_steps_list_with_block_id_pushes_to_server() -> None:
+    """list(block_id=...) filters server-side via the `block_id` query param."""
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [
@@ -320,20 +314,20 @@ def test_workflow_steps_list_with_block_ids_pushes_to_server() -> None:
         "list_metadata": {"before": None, "after": None},
     }
 
-    result = WorkflowSteps(client=client).list("run_123", block_ids=["extract-1"])
+    result = WorkflowSteps(client=client).list("run_123", block_id="extract-1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/v1/workflows/steps"
-    assert request.params == {"run_id": "run_123", "block_ids": ["extract-1"], "limit": 200}
+    assert request.params == {"run_id": "run_123", "block_id": "extract-1", "limit": 200}
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
     assert result[0].artifact is not None
     assert result[0].artifact.operation == "extraction"
 
 
-def test_workflow_steps_list_without_block_ids_omits_param() -> None:
-    """When `block_ids` is None, it must not appear in the request params."""
+def test_workflow_steps_list_without_block_id_omits_param() -> None:
+    """When `block_id` is None, it must not appear in the request params."""
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [],
@@ -344,65 +338,6 @@ def test_workflow_steps_list_without_block_ids_omits_param() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.params == {"run_id": "run_123", "limit": 200}
-
-
-def test_workflow_steps_list_block_ids_auto_paging_carries_filter() -> None:
-    """Regression: pages 2+ must still carry `block_ids` (the old client-side filter dropped it).
-
-    The original implementation applied `block_ids` via a `transform=`
-    callback after `_prepared_request` returned. The closure that fetches
-    page 2 never re-sent `block_ids` in the wire request, so the server
-    returned every row for the run on subsequent pages. Pushing the filter
-    server-side means every page closure carries the param.
-    """
-    client = MagicMock()
-    client._prepared_request.side_effect = [
-        {
-            "data": [
-                {
-                    "run_id": "run_123",
-                    "organization_id": "org_123",
-                    "block_id": "extract-1",
-                    "step_id": "step_p1",
-                    "block_type": "extract",
-                    "block_label": "Extract",
-                    "lifecycle": {"status": "completed"},
-                },
-            ],
-            "list_metadata": {"before": None, "after": "cursor_p2"},
-        },
-        {
-            "data": [
-                {
-                    "run_id": "run_123",
-                    "organization_id": "org_123",
-                    "block_id": "extract-1",
-                    "step_id": "step_p2",
-                    "block_type": "extract",
-                    "block_label": "Extract",
-                    "lifecycle": {"status": "completed"},
-                },
-            ],
-            "list_metadata": {"before": None, "after": None},
-        },
-    ]
-
-    page = WorkflowSteps(client=client).list("run_123", block_ids=["extract-1"])
-    walked = [step.step_id for step in page.auto_paging_iter()]
-
-    assert walked == ["step_p1", "step_p2"]
-    assert client._prepared_request.call_count == 2
-    # Page 1 carries the filter alongside run_id.
-    page1_request = client._prepared_request.call_args_list[0].args[0]
-    assert page1_request.params == {"run_id": "run_123", "block_ids": ["extract-1"], "limit": 200}
-    # Page 2 must still carry the filter, plus the next-page cursor (after).
-    page2_request = client._prepared_request.call_args_list[1].args[0]
-    assert page2_request.params == {
-        "run_id": "run_123",
-        "block_ids": ["extract-1"],
-        "limit": 200,
-        "after": "cursor_p2",
-    }
 
 
 def test_workflow_steps_get_requires_step_id() -> None:
@@ -488,36 +423,9 @@ def test_step_execution_response_has_no_compatibility_error_field() -> None:
             "block_type": "extract",
             "block_label": "Extract",
             "lifecycle": {"status": "completed"},
+            "created_at": "2026-01-01T00:00:00+00:00",
         }
     )
     assert "error" not in response.model_dump()
     assert "status" not in response.model_dump()
     assert "terminal" not in response.model_dump()
-
-
-def _minimal_run_payload(**overrides) -> dict:
-    """Build a minimal v2 ``WorkflowRun`` payload.
-
-    ``overrides`` may set ``lifecycle`` directly; otherwise pass
-    ``lifecycle_kind`` (and any extra lifecycle fields like ``message``)
-    as a convenience.
-    """
-    now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc).isoformat()
-    lifecycle_kind = overrides.pop("lifecycle_kind", "completed")
-    lifecycle: dict = {"status": lifecycle_kind}
-    if lifecycle_kind == "error":
-        lifecycle.setdefault("message", overrides.pop("error_message", "boom"))
-    payload: dict = {
-        "id": "run_123",
-        "organization_id": "org_1",
-        "workflow": {
-            "workflow_id": "wf_1",
-            "version_id": "wv_1",
-        },
-        "trigger": {"type": "manual"},
-        "lifecycle": overrides.pop("lifecycle", lifecycle),
-        "timing": {"created_at": now, "started_at": now, "completed_at": now},
-        "inputs": {"documents": {}, "json_data": {}},
-    }
-    payload.update(overrides)
-    return payload

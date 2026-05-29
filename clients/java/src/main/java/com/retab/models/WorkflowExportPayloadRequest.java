@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.WorkflowExportPayloadRequestExcludeStatus;
 import com.retab.types.WorkflowExportPayloadRequestExportSource;
 import com.retab.types.WorkflowExportPayloadRequestStatus;
-import com.retab.types.WorkflowExportPayloadRequestTriggerTypes;
+import com.retab.types.WorkflowExportPayloadRequestTriggerType;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,7 +22,7 @@ public final class WorkflowExportPayloadRequest {
   private final WorkflowExportPayloadRequestExcludeStatus excludeStatus;
   private final String fromDate;
   private final String toDate;
-  private final List<WorkflowExportPayloadRequestTriggerTypes> triggerTypes;
+  private final WorkflowExportPayloadRequestTriggerType triggerType;
   private final List<String> preferredColumns;
   private final String delimiter;
   private final String lineDelimiter;
@@ -41,8 +41,8 @@ public final class WorkflowExportPayloadRequest {
           WorkflowExportPayloadRequestExcludeStatus excludeStatus,
       @JsonProperty(value = "from_date", required = false) String fromDate,
       @JsonProperty(value = "to_date", required = false) String toDate,
-      @JsonProperty(value = "trigger_types", required = false)
-          List<WorkflowExportPayloadRequestTriggerTypes> triggerTypes,
+      @JsonProperty(value = "trigger_type", required = false)
+          WorkflowExportPayloadRequestTriggerType triggerType,
       @JsonProperty(value = "preferred_columns", required = false) List<String> preferredColumns,
       @JsonProperty(value = "delimiter", required = false) String delimiter,
       @JsonProperty(value = "line_delimiter", required = false) String lineDelimiter,
@@ -56,7 +56,7 @@ public final class WorkflowExportPayloadRequest {
     this.excludeStatus = excludeStatus;
     this.fromDate = fromDate;
     this.toDate = toDate;
-    this.triggerTypes = triggerTypes;
+    this.triggerType = triggerType;
     this.preferredColumns = preferredColumns;
     this.delimiter = delimiter;
     this.lineDelimiter = lineDelimiter;
@@ -108,9 +108,9 @@ public final class WorkflowExportPayloadRequest {
     return toDate;
   }
 
-  @JsonProperty("trigger_types")
-  public List<WorkflowExportPayloadRequestTriggerTypes> getTriggerTypes() {
-    return triggerTypes;
+  @JsonProperty("trigger_type")
+  public WorkflowExportPayloadRequestTriggerType getTriggerType() {
+    return triggerType;
   }
 
   @JsonProperty("preferred_columns")

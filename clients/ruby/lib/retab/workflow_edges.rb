@@ -70,7 +70,7 @@ module Retab
 
     # Create Edge
     # @param workflow_id [String] Workflow to create the edge in.
-    # @param id [String, nil] Opaque edge ID. Omit to let the server generate one.
+    # @param id [String, nil] If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one.
     # @param source_block [String] Source block ID
     # @param target_block [String] Target block ID
     # @param source_handle [String, nil] Output handle

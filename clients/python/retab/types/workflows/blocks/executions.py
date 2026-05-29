@@ -2,9 +2,23 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.steps import StepArtifactRef
+
+
+class StepArtifactRefOperation(str, Enum):
+    EXTRACTION = "extraction"
+    SPLIT = "split"
+    CLASSIFICATION = "classification"
+    PARSE = "parse"
+    EDIT = "edit"
+    PARTITION = "partition"
+    CONDITIONAL_EVALUATION = "conditional_evaluation"
+    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
+    WHILE_LOOP_TERMINATION = "while_loop_termination"
+    API_CALL_INVOCATION = "api_call_invocation"
+    FUNCTION_INVOCATION = "function_invocation"
 
 
 class StoredBlockExecution(BaseModel):
@@ -33,7 +47,7 @@ class StoredBlockExecution(BaseModel):
     handle_outputs: dict[str, Any] | None = Field(default=None, description="Output payloads keyed by handle ID")
     routing_decision: list[str] | None = Field(default=None, description="Active output handles for routing decisions")
     duration_ms: float | None = Field(default=None, description="Duration of the block execution in milliseconds")
-    created_at: datetime.datetime | None = None
+    created_at: datetime.datetime | None = Field(default=None, description="When the block execution record was created")
     block_config: dict[str, Any] | None = Field(default=None, description="The draft block config used for this block execution")
     step_id: str | None = Field(default=None, description="The step ID that was used for inputs (includes iteration prefix if applicable)")
     available_iterations: list[dict[str, Any]] | None = Field(default=None, description="When the block has multiple iterations, lists all available ones")
@@ -55,7 +69,7 @@ class CreateBlockExecutionRequest(BaseModel):
     a concrete step row whose inputs should be used, which is useful for
     iteration-prefixed for_each body steps."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     run_id: str = Field(..., description="Workflow run id that owns the step.")
     block_id: str = Field(..., description="Workflow block id to execute.")
@@ -89,6 +103,19 @@ class SkippedBlockExecutionLifecycle(BaseModel):
     reason: str = Field(..., description="Reason the block was skipped")
 
 
+class StepArtifactRef(BaseModel):
+    """Canonical persisted resource produced by a workflow step.
+
+    Uniformly a `(operation, id)` ref into a backing collection. The artifact
+    itself carries no payload — consumers dispatch on ``operation`` and fetch
+    the backing record by ``id``."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    operation: StepArtifactRefOperation = Field(..., description="Persisted resource operation; identifies the backing collection")
+    id: str = Field(..., description="Persisted resource identifier")
+
+
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -99,3 +126,4 @@ CompletedBlockExecutionLifecycle.model_rebuild()
 CreateBlockExecutionRequest.model_rebuild()
 ErrorBlockExecutionLifecycle.model_rebuild()
 SkippedBlockExecutionLifecycle.model_rebuild()
+StepArtifactRef.model_rebuild()

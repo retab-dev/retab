@@ -33,7 +33,7 @@ class ExperimentByDocumentMetricsResponse(BaseModel):
     score: float | None = None
     prior_score: float | None = None
     confusion: ExperimentDocumentConfusionMetric | None = None
-    targets: list[ExperimentByDocumentTargetMetric] | None = None
+    targets: list[ExperimentByDocumentTargetMetric] | None = Field(default=[])
 
 
 class ExperimentByDocumentTargetMetric(BaseModel):
@@ -71,7 +71,7 @@ class ExperimentByTargetMetricsResponse(BaseModel):
     score: float | None = None
     prior_score: float | None = None
     confusion: ExperimentTargetConfusionMetric | None = None
-    documents: list[ExperimentByTargetDocumentMetric] | None = None
+    documents: list[ExperimentByTargetDocumentMetric] | None = Field(default=[])
 
 
 class ExperimentConfusionFlowMetric(BaseModel):
@@ -89,8 +89,8 @@ class ExperimentConfusionSummaryAggregate(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    diag: dict[str, float] | None = None
-    flows: list[ExperimentConfusionFlowMetric] | None = None
+    diag: dict[str, float] | None = Field(default={})
+    flows: list[ExperimentConfusionFlowMetric] | None = Field(default=[])
 
 
 class ExperimentDocumentConfusionMetric(BaseModel):
@@ -98,8 +98,8 @@ class ExperimentDocumentConfusionMetric(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    diag: dict[str, float] | None = None
-    flows: list[ExperimentConfusionFlowMetric] | None = None
+    diag: dict[str, float] | None = Field(default={})
+    flows: list[ExperimentConfusionFlowMetric] | None = Field(default=[])
 
 
 class ExperimentExtractSummaryAggregate(BaseModel):
@@ -107,7 +107,7 @@ class ExperimentExtractSummaryAggregate(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    likelihoods: dict[str, float] | None = None
+    likelihoods: dict[str, float] | None = Field(default={})
 
 
 class ExperimentMetricDocumentRef(BaseModel):
@@ -140,7 +140,7 @@ class ExperimentMetricsStaleError(BaseModel):
     kind: Literal["stale_metrics"] = Field(default="stale_metrics")
     error: Literal["stale_metrics"] = Field(default="stale_metrics")
     experiment_id: str
-    stale_reasons: list[str] | None = None
+    stale_reasons: list[str] | None = Field(default=[])
     last_run: _MetricsStaleErrorLastRun
     current_config_fingerprint: str | None = None
     message: str
@@ -173,7 +173,7 @@ class ExperimentSummaryMetricsResponse(BaseModel):
     block_type: ExperimentSummaryMetricsResponseBlockType
     score: float | None = None
     prior_score: float | None = None
-    documents: list[ExperimentSummaryMetricDocument] | None = None
+    documents: list[ExperimentSummaryMetricDocument] | None = Field(default=[])
     aggregate: ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate | None = None
     prior_run_id: str | None = None
 
@@ -184,8 +184,8 @@ class ExperimentTargetConfusionMetric(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     self: float | None = None
-    flow_from: dict[str, float] | None = None
-    flow_to: dict[str, float] | None = None
+    flow_from: dict[str, float] | None = Field(default={})
+    flow_to: dict[str, float] | None = Field(default={})
 
 
 class ExperimentVoteRow(BaseModel):
@@ -194,7 +194,7 @@ class ExperimentVoteRow(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     consensus: Any | None = None
-    votes: list[Any] | None = None
+    votes: list[Any] | None = Field(default=[])
     score: float | None = None
     row_presence_score: float | None = None
     present_voter_count: int | None = None
@@ -222,7 +222,7 @@ class ExperimentVotesMetricsResponse(BaseModel):
     target: str
     score: float | None = None
     prior_score: float | None = None
-    rows: list[ExperimentVoteRow] | None = None
+    rows: list[ExperimentVoteRow] | None = Field(default=[])
 
 
 class _MetricsStaleErrorLastRun(BaseModel):

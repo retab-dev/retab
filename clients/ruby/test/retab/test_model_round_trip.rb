@@ -82,7 +82,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
     assert_equal(fixture["step_id"], json[:step_id])
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -414,7 +413,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => {},
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
     }
@@ -459,7 +458,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => {},
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",
       "operation" => "classification"
@@ -629,7 +628,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
     assert_equal(fixture["step_id"], json[:step_id])
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -866,7 +864,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_workflow_block_create_request_round_trip
     fixture = {
       "workflow_id" => "stub",
-      "id" => "stub",
+      "id" => nil,
       "type" => "stub",
       "label" => "stub",
       "position_x" => 1.0,
@@ -886,7 +884,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_workflow_edge_create_request_round_trip
     fixture = {
       "workflow_id" => "stub",
-      "id" => "stub",
+      "id" => nil,
       "source_block" => "stub",
       "target_block" => "stub",
       "source_handle" => nil,
@@ -944,7 +942,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_create_workflow_test_run_request_round_trip
     fixture = {
       "workflow_id" => "stub",
-      "scope" => {}
+      "scope" => nil
     }
     model = Retab::CreateWorkflowTestRunRequest.new(fixture.to_json)
     json = model.to_h
@@ -958,13 +956,14 @@ class ModelRoundTripTest < Minitest::Test
       "verdict" => "stub",
       "version_id" => "stub",
       "author" => {},
-      "decided_at" => "stub",
+      "created_at" => "stub",
       "reason" => nil
     }
     model = Retab::ReviewDecision.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["version_id"], json[:version_id])
+    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1203,7 +1202,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["model"], json[:model])
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1683,7 +1681,7 @@ class ModelRoundTripTest < Minitest::Test
       "image_resolution_dpi" => 1,
       "instructions" => nil,
       "output" => {},
-      "consensus" => {},
+      "consensus" => nil,
       "metadata" => nil,
       "usage" => nil,
       "created_at" => nil
@@ -1707,6 +1705,22 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_sources_response_round_trip
+    fixture = {
+      "object" => "extraction.sources",
+      "extraction_id" => "stub",
+      "document_type" => "stub",
+      "file" => {},
+      "extraction" => {},
+      "sources" => {}
+    }
+    model = Retab::SourcesResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["extraction_id"], json[:extraction_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_extraction_workflow_artifact_round_trip
     fixture = {
       "id" => "stub",
@@ -1717,7 +1731,7 @@ class ModelRoundTripTest < Minitest::Test
       "image_resolution_dpi" => 1,
       "instructions" => nil,
       "output" => {},
-      "consensus" => {},
+      "consensus" => nil,
       "metadata" => nil,
       "usage" => nil,
       "created_at" => "stub",
@@ -1728,7 +1742,24 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["model"], json[:model])
-    assert_equal(fixture["created_at"], json[:created_at])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_file_round_trip
+    fixture = {
+      "object" => "file",
+      "id" => "stub",
+      "filename" => "stub",
+      "mime_type" => nil,
+      "created_at" => nil,
+      "updated_at" => nil,
+      "page_count" => nil
+    }
+    model = Retab::FileModel.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["filename"], json[:filename])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1808,7 +1839,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
     assert_equal(fixture["step_id"], json[:step_id])
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1860,6 +1890,7 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::Job.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1874,6 +1905,18 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["code"], json[:code])
     assert_equal(fixture["message"], json[:message])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_job_response_round_trip
+    fixture = {
+      "status_code" => 1,
+      "body" => {}
+    }
+    model = Retab::JobResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["status_code"], json[:status_code])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1971,6 +2014,19 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["rubric"], json[:rubric])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_mime_data_round_trip
+    fixture = {
+      "filename" => "stub",
+      "url" => "stub"
+    }
+    model = Retab::MimeData.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["filename"], json[:filename])
+    assert_equal(fixture["url"], json[:url])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2189,7 +2245,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "allow_overlap" => true,
       "output" => [],
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
     }
@@ -2246,7 +2302,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "allow_overlap" => true,
       "output" => [],
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",
       "operation" => "partition"
@@ -2257,7 +2313,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["model"], json[:model])
     assert_equal(fixture["key"], json[:key])
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2745,7 +2800,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => [],
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
     }
@@ -2812,7 +2867,7 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => [],
-      "consensus" => {},
+      "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",
       "operation" => "split"
@@ -3173,7 +3228,7 @@ class ModelRoundTripTest < Minitest::Test
       "exclude_status" => nil,
       "from_date" => nil,
       "to_date" => nil,
-      "trigger_types" => nil,
+      "trigger_type" => nil,
       "preferred_columns" => [],
       "delimiter" => "stub",
       "line_delimiter" => "stub",
@@ -3457,7 +3512,6 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::WorkflowTestRunTiming.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -3468,66 +3522,6 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::WorkflowTestRunWorkflowScope.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_file_round_trip
-    fixture = {
-      "object" => "file",
-      "id" => "stub",
-      "filename" => "stub",
-      "mime_type" => nil,
-      "created_at" => nil,
-      "updated_at" => nil,
-      "page_count" => nil
-    }
-    model = Retab::FileModel.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["filename"], json[:filename])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_sources_response_round_trip
-    fixture = {
-      "object" => "extraction.sources",
-      "extraction_id" => "stub",
-      "document_type" => "stub",
-      "file" => {},
-      "extraction" => {},
-      "sources" => {}
-    }
-    model = Retab::SourcesResponse.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["extraction_id"], json[:extraction_id])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_job_response_round_trip
-    fixture = {
-      "status_code" => 1,
-      "body" => {}
-    }
-    model = Retab::JobResponse.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["status_code"], json[:status_code])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_mime_data_round_trip
-    fixture = {
-      "filename" => "stub",
-      "url" => "stub",
-      "mime_type" => "stub"
-    }
-    model = Retab::MimeData.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["filename"], json[:filename])
-    assert_equal(fixture["url"], json[:url])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 end

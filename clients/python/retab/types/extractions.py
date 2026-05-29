@@ -19,7 +19,7 @@ class SourcesResponseDocumentType(str, Enum):
 
 
 class ExtractionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
@@ -56,7 +56,7 @@ class Extraction(BaseModel):
 class ExtractionConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    choices: list[dict[str, Any]] | None = Field(default=None, description="Alternative extraction vote outputs used to build the consolidated result.")
+    choices: list[dict[str, Any]] | None = Field(default=[], description="Alternative extraction vote outputs used to build the consolidated result.")
     likelihoods: dict[str, Any] | None = Field(
         default=None,
         description="Consensus likelihood tree mirroring the extraction output. Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves carry one entry per matched list item.",

@@ -22,21 +22,21 @@ import {
 import type {
   CancelledWorkflowTestRun,
   CancelledWorkflowTestRunResponse,
-} from './cancelled-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/cancelled-workflow-test-run.interface.js';
 import {
   ZCancelledWorkflowTestRun,
   deserializeCancelledWorkflowTestRun,
   serializeCancelledWorkflowTestRun,
-} from './cancelled-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/cancelled-workflow-test-run.interface.js';
 import type {
   CompletedWorkflowTestRun,
   CompletedWorkflowTestRunResponse,
-} from './completed-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/completed-workflow-test-run.interface.js';
 import {
   ZCompletedWorkflowTestRun,
   deserializeCompletedWorkflowTestRun,
   serializeCompletedWorkflowTestRun,
-} from './completed-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/completed-workflow-test-run.interface.js';
 import type {
   EmailTrigger,
   EmailTriggerResponse,
@@ -49,12 +49,12 @@ import {
 import type {
   ErrorWorkflowTestRun,
   ErrorWorkflowTestRunResponse,
-} from './error-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/error-workflow-test-run.interface.js';
 import {
   ZErrorWorkflowTestRun,
   deserializeErrorWorkflowTestRun,
   serializeErrorWorkflowTestRun,
-} from './error-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/error-workflow-test-run.interface.js';
 import type {
   ManualTrigger,
   ManualTriggerResponse,
@@ -67,21 +67,21 @@ import {
 import type {
   PendingWorkflowTestRun,
   PendingWorkflowTestRunResponse,
-} from './pending-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/pending-workflow-test-run.interface.js';
 import {
   ZPendingWorkflowTestRun,
   deserializePendingWorkflowTestRun,
   serializePendingWorkflowTestRun,
-} from './pending-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/pending-workflow-test-run.interface.js';
 import type {
   QueuedWorkflowTestRun,
   QueuedWorkflowTestRunResponse,
-} from './queued-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/queued-workflow-test-run.interface.js';
 import {
   ZQueuedWorkflowTestRun,
   deserializeQueuedWorkflowTestRun,
   serializeQueuedWorkflowTestRun,
-} from './queued-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/queued-workflow-test-run.interface.js';
 import type {
   RestartTrigger,
   RestartTriggerResponse,
@@ -94,12 +94,12 @@ import {
 import type {
   RunningWorkflowTestRun,
   RunningWorkflowTestRunResponse,
-} from './running-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/running-workflow-test-run.interface.js';
 import {
   ZRunningWorkflowTestRun,
   deserializeRunningWorkflowTestRun,
   serializeRunningWorkflowTestRun,
-} from './running-workflow-test-run.interface.js';
+} from '../../../../workflows/tests/results/interfaces/running-workflow-test-run.interface.js';
 import type {
   ScheduleTrigger,
   ScheduleTriggerResponse,
@@ -121,30 +121,30 @@ import {
 import type {
   WorkflowSnapshotRef,
   WorkflowSnapshotRefResponse,
-} from '../../../../workflows/runs/interfaces/workflow-snapshot-ref.interface.js';
+} from '../../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
 import {
   ZWorkflowSnapshotRef,
   deserializeWorkflowSnapshotRef,
   serializeWorkflowSnapshotRef,
-} from '../../../../workflows/runs/interfaces/workflow-snapshot-ref.interface.js';
+} from '../../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
-} from './workflow-test-block-target.interface.js';
+} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
   serializeWorkflowTestBlockTarget,
-} from './workflow-test-block-target.interface.js';
+} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
 import type {
   WorkflowTestRunTiming,
   WorkflowTestRunTimingResponse,
-} from './workflow-test-run-timing.interface.js';
+} from '../../../../workflows/tests/results/interfaces/workflow-test-run-timing.interface.js';
 import {
   ZWorkflowTestRunTiming,
   deserializeWorkflowTestRunTiming,
   serializeWorkflowTestRunTiming,
-} from './workflow-test-run-timing.interface.js';
+} from '../../../../workflows/tests/results/interfaces/workflow-test-run-timing.interface.js';
 
 export interface WorkflowTestRun {
   id: string;

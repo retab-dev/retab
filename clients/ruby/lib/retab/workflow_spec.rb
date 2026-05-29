@@ -10,11 +10,11 @@ module Retab
       @client = client
     end
 
-    # Validate Workflow Spec
+    # Apply Workflow Spec
     # @param yaml_definition [String] Workflow YAML definition
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativeValidationResponse]
-    def validate(
+    # @return [Retab::DeclarativeApplyResponse]
+    def apply(
       yaml_definition:,
       request_options: {}
     )
@@ -23,12 +23,12 @@ module Retab
       }
       response = @client.request(
         method: :post,
-        path: "/v1/workflows/spec/validate",
+        path: "/v1/workflows/spec/apply",
         auth: true,
         body: body,
         request_options: request_options
       )
-      result = Retab::DeclarativeValidationResponse.new(response.body)
+      result = Retab::DeclarativeApplyResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,
@@ -64,11 +64,11 @@ module Retab
       result
     end
 
-    # Apply Workflow Spec
+    # Validate Workflow Spec
     # @param yaml_definition [String] Workflow YAML definition
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativeApplyResponse]
-    def apply(
+    # @return [Retab::DeclarativeValidationResponse]
+    def validate(
       yaml_definition:,
       request_options: {}
     )
@@ -77,12 +77,12 @@ module Retab
       }
       response = @client.request(
         method: :post,
-        path: "/v1/workflows/spec/apply",
+        path: "/v1/workflows/spec/validate",
         auth: true,
         body: body,
         request_options: request_options
       )
-      result = Retab::DeclarativeApplyResponse.new(response.body)
+      result = Retab::DeclarativeValidationResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,

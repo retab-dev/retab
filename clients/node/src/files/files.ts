@@ -2,6 +2,7 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
+import type { MIMEData, MIMEDataResponse } from '../classifications/interfaces/index.js';
 import type {
   CreateUploadResponse,
   CreateUploadResponseResponse,
@@ -10,16 +11,47 @@ import type {
   FileLinkResponse,
   FileResponse,
 } from '../files/interfaces/index.js';
-import type { MIMEData, MIMEDataResponse } from '../schemas/interfaces/index.js';
+import { deserializeMIMEData } from '../classifications/interfaces/index.js';
 import {
   deserializeCreateUploadResponse,
   deserializeFile,
   deserializeFileLink,
 } from '../files/interfaces/index.js';
-import { deserializeMIMEData } from '../schemas/interfaces/index.js';
 
 export class Files {
   constructor(private readonly client: Retab) {}
+
+  /** List Files */
+  async list(options?: {
+    filename?: string | null | undefined;
+    mimeType?: string | null | undefined;
+    fromDate?: string | null | undefined;
+    toDate?: string | null | undefined;
+    includeEmbeddings?: boolean | undefined;
+    sortBy?: string | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<File>> {
+    return this.client._fetchPage(deserializeFile, {
+      method: 'GET',
+      path: '/v1/files',
+      query: {
+        filename: options?.filename,
+        mime_type: options?.mimeType,
+        from_date: options?.fromDate,
+        to_date: options?.toDate,
+        include_embeddings: options?.includeEmbeddings,
+        sort_by: options?.sortBy,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
+  }
 
   /** Upload File */
   async create_upload(
@@ -55,38 +87,6 @@ export class Files {
       body: body,
     });
     return deserializeMIMEData(__wire);
-  }
-
-  /** List Files */
-  async list(options?: {
-    filename?: string | null | undefined;
-    mimeType?: string | null | undefined;
-    fromDate?: string | null | undefined;
-    toDate?: string | null | undefined;
-    includeEmbeddings?: boolean | undefined;
-    sortBy?: string | undefined;
-    limit?: number;
-    before?: string;
-    after?: string;
-    order?: 'asc' | 'desc';
-  }): Promise<PaginatedList<File>> {
-    return this.client._fetchPage(deserializeFile, {
-      method: 'GET',
-      path: '/v1/files',
-      query: {
-        filename: options?.filename,
-        mime_type: options?.mimeType,
-        from_date: options?.fromDate,
-        to_date: options?.toDate,
-        include_embeddings: options?.includeEmbeddings,
-        sort_by: options?.sortBy,
-        limit: options?.limit,
-        before: options?.before,
-        after: options?.after,
-        order: options?.order,
-      },
-      body: undefined,
-    });
   }
 
   /** Get File */

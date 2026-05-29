@@ -782,13 +782,11 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 		wantError string
 	}{
 		{name: "list invalid status", cmd: workflowsRunsListCmd, flag: "status", value: "banana", wantError: "invalid --status"},
-		{name: "list invalid statuses", cmd: workflowsRunsListCmd, flag: "statuses", value: "running,banana", wantError: "invalid --statuses"},
 		{name: "list invalid exclude status", cmd: workflowsRunsListCmd, flag: "exclude-status", value: "banana", wantError: "invalid --exclude-status"},
 		{name: "list invalid trigger type", cmd: workflowsRunsListCmd, flag: "trigger-type", value: "banana", wantError: "invalid --trigger-type"},
-		{name: "list invalid trigger types", cmd: workflowsRunsListCmd, flag: "trigger-types", value: "api,banana", wantError: "invalid --trigger-types"},
 		{name: "export invalid status", cmd: workflowsRunsExportCmd, flag: "status", value: "banana", wantError: "invalid --status"},
 		{name: "export invalid exclude status", cmd: workflowsRunsExportCmd, flag: "exclude-status", value: "banana", wantError: "invalid --exclude-status"},
-		{name: "export invalid trigger types", cmd: workflowsRunsExportCmd, flag: "trigger-types", value: "api,banana", wantError: "invalid --trigger-types"},
+		{name: "export invalid trigger type", cmd: workflowsRunsExportCmd, flag: "trigger-type", value: "banana", wantError: "invalid --trigger-type"},
 		{name: "export invalid export source", cmd: workflowsRunsExportCmd, flag: "export-source", value: "banana", wantError: "invalid --export-source"},
 	}
 	for _, tc := range cases {
@@ -1322,7 +1320,7 @@ func TestWorkflowsRunsExportRejectsInvalidDateFlagsLocally(t *testing.T) {
 	}
 }
 
-func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
+func TestWorkflowsRunsExportSendsTriggerType(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -1345,8 +1343,8 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	flags := map[string]string{
-		"block-id":      "blk_123",
-		"trigger-types": "api, webhook",
+		"block-id":     "blk_123",
+		"trigger-type": "api",
 	}
 	for flag, value := range flags {
 		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
@@ -1365,18 +1363,12 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	triggerTypes, ok := body["trigger_types"].([]any)
+	triggerType, ok := body["trigger_type"].(string)
 	if !ok {
-		t.Fatalf("trigger_types = %#v", body["trigger_types"])
+		t.Fatalf("trigger_type = %#v", body["trigger_type"])
 	}
-	want := []string{"api", "webhook"}
-	if len(triggerTypes) != len(want) {
-		t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
-	}
-	for i, value := range want {
-		if triggerTypes[i] != value {
-			t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
-		}
+	if triggerType != "api" {
+		t.Fatalf("trigger_type = %q, want %q", triggerType, "api")
 	}
 }
 
@@ -1804,117 +1796,6 @@ func TestParseDocumentArgs_NilWarnSinkDoesNotPanic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-}
-
-// Bug A: `--status` and `--statuses` (and `--trigger-type` vs `--trigger-types`)
-// silently overrode each other — the array form would win and the scalar form
-// would be dropped without a warning. The fix detects the conflict locally
-// before any request is issued.
-//
-// These tests use a fresh cobra.Command wrapper so the `Changed(...)` state
-// does not leak between tests via the package-level `workflowsRunsListCmd`
-// (which is shared singleton state — pflag's `Changed` flag is sticky once
-// any test sets the flag, and the `resetWorkflowRunsFlag` helper only resets
-// values, not the `Changed` bit).
-func TestWorkflowsRunsListRejectsStatusAndStatusesTogetherLocally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		t.Fatalf("server should not be reached when both --status and --statuses are set, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newRunsListTestCmd()
-	if err := cmd.Flags().Set("status", "running"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("statuses", "completed"); err != nil {
-		t.Fatal(err)
-	}
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = cmd.RunE(cmd, nil)
-	})
-	if err == nil {
-		t.Fatal("expected error when both --status and --statuses are set")
-	}
-	for _, want := range []string{"--status", "--statuses"} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr %q should name conflicting flag %q", stderr, want)
-		}
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
-	}
-}
-
-func TestWorkflowsRunsListRejectsTriggerTypeAndTriggerTypesTogetherLocally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		t.Fatalf("server should not be reached when both --trigger-type and --trigger-types are set, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newRunsListTestCmd()
-	if err := cmd.Flags().Set("trigger-type", "api"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("trigger-types", "manual"); err != nil {
-		t.Fatal(err)
-	}
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = cmd.RunE(cmd, nil)
-	})
-	if err == nil {
-		t.Fatal("expected error when both --trigger-type and --trigger-types are set")
-	}
-	for _, want := range []string{"--trigger-type", "--trigger-types"} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr %q should name conflicting flag %q", stderr, want)
-		}
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
-	}
-}
-
-// newRunsListTestCmd returns a fresh wrapper around the runs list RunE,
-// declaring just the flag surface needed for the mutual-exclusion checks.
-// Using a fresh cobra.Command keeps `Changed(...)` state isolated from
-// other tests that also poke the package-level `workflowsRunsListCmd`.
-func newRunsListTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "test-runs-list", RunE: workflowsRunsListCmd.RunE}
-	cmd.Flags().String("workflow-id", "", "")
-	cmd.Flags().String("status", "", "")
-	cmd.Flags().StringArray("statuses", nil, "")
-	cmd.Flags().String("exclude-status", "", "")
-	cmd.Flags().String("trigger-type", "", "")
-	cmd.Flags().StringArray("trigger-types", nil, "")
-	cmd.Flags().String("from-date", "", "")
-	cmd.Flags().String("to-date", "", "")
-	cmd.Flags().String("search", "", "")
-	cmd.Flags().String("sort-by", "", "")
-	cmd.Flags().String("before", "", "")
-	cmd.Flags().String("after", "", "")
-	cmd.Flags().Int("limit", 0, "")
-	cmd.Flags().String("order", "", "")
-	cmd.Flags().Float64("min-cost", 0, "")
-	cmd.Flags().Float64("max-cost", 0, "")
-	cmd.Flags().Int("min-duration", 0, "")
-	cmd.Flags().Int("max-duration", 0, "")
-	return cmd
 }
 
 // Bug B: `workflows runs export` is the only `runs` command that historically

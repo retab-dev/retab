@@ -13,7 +13,7 @@ public final class ReviewDecision {
   private final ReviewVerdict verdict;
   private final String versionId;
   private final Actor author;
-  private final OffsetDateTime decidedAt;
+  private final OffsetDateTime createdAt;
   private final String reason;
 
   @JsonCreator
@@ -21,12 +21,12 @@ public final class ReviewDecision {
       @JsonProperty(value = "verdict", required = true) ReviewVerdict verdict,
       @JsonProperty(value = "version_id", required = true) String versionId,
       @JsonProperty(value = "author", required = true) Actor author,
-      @JsonProperty(value = "decided_at", required = true) OffsetDateTime decidedAt,
+      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "reason", required = false) String reason) {
     this.verdict = verdict;
     this.versionId = versionId;
     this.author = author;
-    this.decidedAt = decidedAt;
+    this.createdAt = createdAt;
     this.reason = reason;
   }
 
@@ -45,9 +45,9 @@ public final class ReviewDecision {
     return author;
   }
 
-  @JsonProperty("decided_at")
-  public OffsetDateTime getDecidedAt() {
-    return decidedAt;
+  @JsonProperty("created_at")
+  public OffsetDateTime getCreatedAt() {
+    return createdAt;
   }
 
   @JsonProperty("reason")

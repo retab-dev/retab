@@ -28,7 +28,6 @@ public final class WorkflowStepsApi {
   public List<WorkflowRunStep> list(
       String runId,
       String blockId,
-      List<String> blockIds,
       String stepId,
       List<String> blockType,
       List<String> status,
@@ -40,7 +39,6 @@ public final class WorkflowStepsApi {
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "run_id", runId);
     appendQueryParam(query, "block_id", blockId);
-    appendQueryParam(query, "block_ids", blockIds);
     appendQueryParam(query, "step_id", stepId);
     appendQueryParam(query, "block_type", blockType);
     appendQueryParam(query, "status", status);

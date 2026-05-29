@@ -10,7 +10,7 @@ from retab.types.mime import FileRef, MIMEData
 class PartitionRequest(BaseModel):
     """Public create-partition request body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef = Field(..., description="The document to partition")
     key: str = Field(..., description="The key to partition the document by")
@@ -31,7 +31,7 @@ class Partition(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the partition request")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool | None = Field(default=True, description="Whether pages were allowed to appear in more than one partition chunk")
-    output: list[PartitionChunk] | None = Field(default=None, description="The list of partition chunks with their assigned pages")
+    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages")
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
     created_at: datetime.datetime | None = None
@@ -41,21 +41,21 @@ class PartitionChunk(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     key: str = Field(..., description="The partition key value for this chunk")
-    pages: list[int] | None = Field(default=None, description="The pages assigned to this partition chunk (1-indexed)")
+    pages: list[int] | None = Field(default=[], description="The pages assigned to this partition chunk (1-indexed)")
 
 
 class PartitionChunkLikelihood(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     key: float | None = Field(default=None, description="Confidence that this partition key value is correct")
-    pages: list[float] | None = Field(default=None, description="Confidence for each page in the corresponding partition chunk.pages array")
+    pages: list[float] | None = Field(default=[], description="Confidence for each page in the corresponding partition chunk.pages array")
 
 
 class PartitionConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    choices: list[list[PartitionChunk]] | None = Field(default=None, description="Alternative partition vote outputs used to build the consolidated result.")
-    likelihoods: list[PartitionChunkLikelihood] | None = Field(default=None, description="Consensus likelihoods aligned with the partition output.")
+    choices: list[list[PartitionChunk]] | None = Field(default=[], description="Alternative partition vote outputs used to build the consolidated result.")
+    likelihoods: list[PartitionChunkLikelihood] | None = Field(default=[], description="Consensus likelihoods aligned with the partition output.")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

@@ -58,8 +58,8 @@ class DeclarativeApplyResponse(BaseModel):
     edge_count: int
     diagnostics: dict[str, Any]
     format_version: str | None = Field(default="workflows-plan/v1")
-    summary: DeclarativePlanSummary | None = None
-    resource_changes: list[DeclarativePlanResourceChange] | None = None
+    summary: DeclarativePlanSummary | None = Field(default={"add": 0, "change": 0, "destroy": 0, "replace": 0, "noop": 0, "total": 0, "has_changes": False}, validate_default=True)
+    resource_changes: list[DeclarativePlanResourceChange] | None = Field(default=[])
     rendered_plan: str | None = Field(default="No changes. Workflow spec is up to date.")
 
 
@@ -75,9 +75,9 @@ class DeclarativePlanChange(BaseModel):
 
     before: Any | None = None
     after: Any | None = None
-    before_sensitive: Any | None = None
-    after_sensitive: Any | None = None
-    field_changes: list[DeclarativePlanFieldChange] | None = None
+    before_sensitive: Any | None = Field(default=None)
+    after_sensitive: Any | None = Field(default=None)
+    field_changes: list[DeclarativePlanFieldChange] | None = Field(default=[])
 
 
 class DeclarativePlanFieldChange(BaseModel):
@@ -119,8 +119,8 @@ class DeclarativePlanResponse(BaseModel):
     edge_count: int
     diagnostics: dict[str, Any]
     format_version: str | None = Field(default="workflows-plan/v1")
-    summary: DeclarativePlanSummary | None = None
-    resource_changes: list[DeclarativePlanResourceChange] | None = None
+    summary: DeclarativePlanSummary | None = Field(default={"add": 0, "change": 0, "destroy": 0, "replace": 0, "noop": 0, "total": 0, "has_changes": False}, validate_default=True)
+    resource_changes: list[DeclarativePlanResourceChange] | None = Field(default=[])
     rendered_plan: str | None = Field(default="No changes. Workflow spec is up to date.")
 
 
@@ -147,7 +147,7 @@ class DeclarativeValidationResponse(BaseModel):
 
 
 class DeclarativeWorkflowRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     yaml_definition: str = Field(..., description="Workflow YAML definition")
 

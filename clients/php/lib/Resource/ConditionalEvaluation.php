@@ -14,8 +14,6 @@ readonly class ConditionalEvaluation implements \JsonSerializable
         public string $id,
         public string $workflowRunId,
         public string $stepId,
-        /** When this artifact was written by the orchestrator. */
-        public \DateTimeImmutable $createdAt,
         /** @var array<\Retab\Resource\ConditionEvaluationResult>|null */
         public ?array $evaluations = null,
         /** @var array<string>|null */
@@ -23,6 +21,8 @@ readonly class ConditionalEvaluation implements \JsonSerializable
         public ?string $matchedBranchId = null,
         /** @var array<string>|null */
         public ?array $matchedConditionIds = null,
+        /** When this artifact was written by the orchestrator. */
+        public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'conditional_evaluation',
     ) {}
@@ -34,7 +34,6 @@ readonly class ConditionalEvaluation implements \JsonSerializable
             'id',
             'workflow_run_id',
             'step_id',
-            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for ConditionalEvaluation::fromArray()");
@@ -44,11 +43,11 @@ readonly class ConditionalEvaluation implements \JsonSerializable
             id: $data['id'],
             workflowRunId: $data['workflow_run_id'],
             stepId: $data['step_id'],
-            createdAt: new \DateTimeImmutable($data['created_at']),
             evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
             selectedHandles: $data['selected_handles'] ?? null,
             matchedBranchId: $data['matched_branch_id'] ?? null,
             matchedConditionIds: $data['matched_condition_ids'] ?? null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             operation: $data['operation'] ?? 'conditional_evaluation',
         );
     }
@@ -60,11 +59,11 @@ readonly class ConditionalEvaluation implements \JsonSerializable
             'id' => $this->id,
             'workflow_run_id' => $this->workflowRunId,
             'step_id' => $this->stepId,
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,
             'selected_handles' => $this->selectedHandles,
             'matched_branch_id' => $this->matchedBranchId,
             'matched_condition_ids' => $this->matchedConditionIds,
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'operation' => $this->operation,
         ];
     }

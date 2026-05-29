@@ -18,7 +18,7 @@ public final class RunTiming {
 
   @JsonCreator
   public RunTiming(
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
       @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
       @JsonProperty(value = "review_waiting_started_at", required = false)

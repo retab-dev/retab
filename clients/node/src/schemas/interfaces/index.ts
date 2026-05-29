@@ -2,5 +2,4 @@
 
 export * from './generate-schema-request.interface.js';
 export * from './generate-schema-request-reasoning-effort.interface.js';
-export * from './mime-data.interface.js';
 export * from './partial-schema.interface.js';

@@ -57,10 +57,10 @@ module Retab
     sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
     def matched_condition_ids=(value); end
 
-    sig { returns(String) }
+    sig { returns(T.nilable(String)) }
     def created_at; end
 
-    sig { params(value: String).returns(String) }
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def created_at=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }

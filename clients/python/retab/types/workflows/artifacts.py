@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.classifications import Category, ClassificationConsensus, ClassificationDecision
 from retab.types.documents.usage import RetabUsage
+from retab.types.edits import EditConfig, EditResult
 from retab.types.extractions import ExtractionConsensus
-from retab.types.mime import FileRef, MIMEData
+from retab.types.mime import FileRef
 from retab.types.parses import ParseOutput
 from retab.types.partitions import PartitionChunk, PartitionConsensus
 from retab.types.splits import SplitConsensus, SplitResult, Subdocument
-from retab.types.workflows.runs import ErrorDetails
 
 
 ConditionEvaluationDetailsLogicalOperator: TypeAlias = Literal["and", "or"]
@@ -31,11 +31,6 @@ WorkflowArtifactOperation: TypeAlias = Literal[
     "api_call_invocation",
     "function_invocation",
 ]
-
-
-class FieldType(str, Enum):
-    TEXT = "text"
-    CHECKBOX = "checkbox"
 
 
 class ParseWorkflowArtifactTableParsingFormat(str, Enum):
@@ -67,10 +62,10 @@ class ApiCallAttempt(BaseModel):
     attempt_number: int = Field(..., description="0-based attempt index")
     request_method: str
     request_url: str
-    request_headers: dict[str, str] | None = None
+    request_headers: dict[str, str] | None = Field(default={})
     request_body: Any | None = None
     response_status: int | None = None
-    response_headers: dict[str, str] | None = None
+    response_headers: dict[str, str] | None = Field(default={})
     response_body: Any | None = None
     duration_ms: int | None = None
     error: ErrorDetails | None = None
@@ -85,19 +80,9 @@ class ApiCallInvocation(BaseModel):
     id: str
     workflow_run_id: str
     step_id: str
-    attempts: list[ApiCallAttempt] | None = None
+    attempts: list[ApiCallAttempt] | None = Field(default=[])
     error: ErrorDetails | None = None
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
-
-
-class BBox(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    left: float = Field(..., description="Left coordinate of the bounding box, relative to page width (0.0 = left edge, 1.0 = right edge).")
-    top: float = Field(..., description="Top coordinate of the bounding box, relative to page height (0.0 = top edge, 1.0 = bottom edge).")
-    width: float = Field(..., description="Width of the bounding box, relative to page width (0.0–1.0).")
-    height: float = Field(..., description="Height of the bounding box, relative to page height (0.0–1.0).")
-    page: int = Field(..., description="1-based index of the page where this field appears.")
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
 
 
 class ClassificationWorkflowArtifact(BaseModel):
@@ -143,7 +128,7 @@ class ConditionEvaluationPerItem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     index: int = Field(..., description="Index of this item in the array")
-    indices: list[int] | None = Field(default=None, description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])")
+    indices: list[int] | None = Field(default=[], description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])")
     actual: Any | None = Field(default=None, description="Actual value at this index")
     matched: bool | None = Field(default=False, description="Whether this item matched the condition")
 
@@ -195,24 +180,11 @@ class ConditionalEvaluation(BaseModel):
     id: str
     workflow_run_id: str
     step_id: str
-    evaluations: list[ConditionEvaluationResult] | None = None
-    selected_handles: list[str] | None = None
+    evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
+    selected_handles: list[str] | None = Field(default=[])
     matched_branch_id: str | None = None
-    matched_condition_ids: list[str] | None = None
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
-
-
-class EditConfig(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    color: str | None = Field(default=cast(str, "#000080"), description="Hex code of the color to use for the filled text.")
-
-
-class EditResult(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    form_data: list[FormField] = Field(..., description="Filled form fields (positions, descriptions, and filled values).")
-    filled_document: MIMEData = Field(..., description="PDF with the filled form values rendered in.")
+    matched_condition_ids: list[str] | None = Field(default=[])
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
 
 
 class EditWorkflowArtifact(BaseModel):
@@ -227,8 +199,23 @@ class EditWorkflowArtifact(BaseModel):
     output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
     operation: Literal["edit"] = Field(default="edit", description="Artifact operation that determines the backing record type")
+
+
+class ErrorDetails(BaseModel):
+    """Detailed error information for debugging.
+
+    Captures stack traces and context about where and why an error occurred."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    message: str | None = Field(default=None, description="Human-readable error message. Free-text; the structured fields below are the machine-readable counterpart.")
+    stack_trace: str | None = Field(default=None, description="Full Python stack trace")
+    block_id: str | None = Field(default=None, description="ID of the block that failed")
+    block_name: str | None = Field(default=None, description="Name/label of the block that failed")
+    error_code: str | None = Field(default=None, description="Error code if available")
+    context: dict[str, Any] | None = Field(default=None, description="Additional context about the error")
 
 
 class ExtractionWorkflowArtifact(BaseModel):
@@ -245,18 +232,8 @@ class ExtractionWorkflowArtifact(BaseModel):
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
     operation: Literal["extraction"] = Field(default="extraction", description="Artifact operation that determines the backing record type")
-
-
-class FormField(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    bbox: BBox = Field(..., description="Position and size of this field on the page.")
-    description: str = Field(..., description="Human-readable description of the field, including label and instructions.")
-    type: FieldType = Field(..., description="Type of field. Currently supported: 'text' and 'checkbox'.")
-    key: str = Field(..., description="Stable key identifying the field in the form data.")
-    value: str | None = Field(default=None, description="Filled value of the field as text. Null when no filled value is set.")
 
 
 class FunctionInvocation(BaseModel):
@@ -266,11 +243,11 @@ class FunctionInvocation(BaseModel):
     id: str
     workflow_run_id: str
     step_id: str
-    inputs: dict[str, Any] | None = None
+    inputs: dict[str, Any] | None = Field(default={})
     output: Any | None = None
     duration_ms: int | None = None
     error: ErrorDetails | None = None
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
 
 
 class ParseWorkflowArtifact(BaseModel):
@@ -298,10 +275,10 @@ class PartitionWorkflowArtifact(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the partition request")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool | None = Field(default=True, description="Whether pages were allowed to appear in more than one partition chunk")
-    output: list[PartitionChunk] | None = Field(default=None, description="The list of partition chunks with their assigned pages")
+    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages")
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
     operation: Literal["partition"] = Field(default="partition", description="Artifact operation that determines the backing record type")
 
 
@@ -312,10 +289,10 @@ class ReviewEvaluation(BaseModel):
     id: str
     workflow_run_id: str
     step_id: str
-    evaluations: list[ConditionEvaluationResult] | None = None
-    selected_handles: list[str] | None = None
+    evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
+    selected_handles: list[str] | None = Field(default=[])
     matched_branch_id: str | None = None
-    matched_condition_ids: list[str] | None = None
+    matched_condition_ids: list[str] | None = Field(default=[])
     requires_human_review: bool | None = Field(default=False)
     reviewer_id: str | None = None
     review_decision: ReviewEvaluationReviewDecision | None = None
@@ -349,7 +326,7 @@ class WhileLoopTermination(BaseModel):
     workflow_run_id: str
     step_id: str
     termination_reason: WhileLoopTerminationTerminationReason = Field(..., description="Why the while-loop terminated")
-    evaluations: list[ConditionEvaluationResult] | None = None
+    evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
     created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
 
 
@@ -369,18 +346,15 @@ class WorkflowArtifact(BaseModel):
 # generated module via a TYPE_CHECKING-guarded import.
 ApiCallAttempt.model_rebuild()
 ApiCallInvocation.model_rebuild()
-BBox.model_rebuild()
 ClassificationWorkflowArtifact.model_rebuild()
 ConditionEvaluationDetails.model_rebuild()
 ConditionEvaluationPerItem.model_rebuild()
 ConditionEvaluationResult.model_rebuild()
 ConditionEvaluationSubCondition.model_rebuild()
 ConditionalEvaluation.model_rebuild()
-EditConfig.model_rebuild()
-EditResult.model_rebuild()
 EditWorkflowArtifact.model_rebuild()
+ErrorDetails.model_rebuild()
 ExtractionWorkflowArtifact.model_rebuild()
-FormField.model_rebuild()
 FunctionInvocation.model_rebuild()
 ParseWorkflowArtifact.model_rebuild()
 PartitionWorkflowArtifact.model_rebuild()

@@ -8,7 +8,7 @@ from retab.types.mime import MIMEData
 
 
 class CompleteFileUploadRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     sha256: str | None = Field(default=None, description="Optional SHA-256 checksum")
 
@@ -19,27 +19,9 @@ class CreateUploadResponse(BaseModel):
     file_id: str = Field(..., alias="fileId", description="Underlying file ID")
     upload_url: str = Field(..., alias="uploadUrl", description="Short-lived signed upload URL")
     upload_method: str | None = Field(default="PUT", alias="uploadMethod", description="HTTP method for upload")
-    upload_headers: dict[str, str] | None = Field(default=None, alias="uploadHeaders", description="Headers required by the signed upload URL")
+    upload_headers: dict[str, str] | None = Field(default={}, alias="uploadHeaders", description="Headers required by the signed upload URL")
     mime_data: MIMEData = Field(..., alias="mimeData", description="Durable Retab MIMEData reference")
     expires_at: datetime.datetime = Field(..., alias="expiresAt", description="Upload URL expiration")
-
-
-class FileLink(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    download_url: str = Field(..., description="The signed URL to download the file")
-    expires_in: str = Field(..., description="The expiration time of the signed URL")
-    filename: str = Field(..., description="The name of the file")
-    mime_data: MIMEData | None = Field(default=None, description="Durable Retab MIMEData reference for API reuse")
-
-
-class UploadFileRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
-
-    filename: str = Field(..., description="Filename to store")
-    content_type: str | None = Field(default=None, description="MIME type the client will upload")
-    size_bytes: int = Field(..., description="Expected upload size in bytes")
-    sha256: str | None = Field(default=None, description="Optional SHA-256 checksum")
 
 
 class File(BaseModel):
@@ -54,6 +36,24 @@ class File(BaseModel):
     page_count: int | None = Field(default=None, description="Number of pages in the file")
 
 
+class FileLink(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    download_url: str = Field(..., description="The signed URL to download the file")
+    expires_in: str = Field(..., description="The expiration time of the signed URL")
+    filename: str = Field(..., description="The name of the file")
+    mime_data: MIMEData | None = Field(default=None, description="Durable Retab MIMEData reference for API reuse")
+
+
+class UploadFileRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    filename: str = Field(..., description="Filename to store")
+    content_type: str | None = Field(default=None, description="MIME type the client will upload")
+    size_bytes: int = Field(..., description="Expected upload size in bytes")
+    sha256: str | None = Field(default=None, description="Optional SHA-256 checksum")
+
+
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -61,6 +61,6 @@ class File(BaseModel):
 # generated module via a TYPE_CHECKING-guarded import.
 CompleteFileUploadRequest.model_rebuild()
 CreateUploadResponse.model_rebuild()
+File.model_rebuild()
 FileLink.model_rebuild()
 UploadFileRequest.model_rebuild()
-File.model_rebuild()

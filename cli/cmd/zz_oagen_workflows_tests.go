@@ -218,8 +218,7 @@ var workflowsTestsCreateCmd = &cobra.Command{
 		if err := decodeJSONInto("target-file", target, &req.Target); err != nil {
 			return err
 		}
-		req.Source = &retab.ManualWorkflowTestSource{}
-		if err := decodeJSONInto("source-file", source, req.Source); err != nil {
+		if err := decodeJSONInto("source-file", source, &req.Source); err != nil {
 			return err
 		}
 		if err := decodeJSONInto("assertion-file", assertion, &req.Assertion); err != nil {
@@ -325,7 +324,7 @@ var workflowsTestsUpdateCmd = &cobra.Command{
 			if err := validateWorkflowTestSource(source); err != nil {
 				return fmt.Errorf("--source-file: %w", err)
 			}
-			req.Source = &retab.ManualWorkflowTestSource{}
+			req.Source = &retab.WorkflowTestSource{}
 			if err := decodeJSONInto("source-file", source, req.Source); err != nil {
 				return err
 			}

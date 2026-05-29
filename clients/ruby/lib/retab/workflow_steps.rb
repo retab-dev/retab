@@ -12,8 +12,7 @@ module Retab
 
     # List Workflow Run Steps
     # @param run_id [String, nil] Optional workflow run ID filter.
-    # @param block_id [String, nil] Optional logical block ID filter (deprecated; prefer ``block_ids`` for multi-value filtering).
-    # @param block_ids [Array<String>, nil] Optional logical block ID filter — multi-value. Repeat the query parameter (``?block_ids=a&block_ids=b``) to match any of several blocks. An empty list is treated as no filter. Preferred over the singular ``block_id``.
+    # @param block_id [String, nil] Optional logical block ID filter.
     # @param step_id [String, nil] Optional step ID filter.
     # @param block_type [Array<String>, nil] Optional block type filter. Repeat the query parameter for multiple values.
     # @param status [Array<String>, nil] Optional step lifecycle status filter. Repeat the query parameter for multiple values.
@@ -25,7 +24,6 @@ module Retab
     def list(
       run_id: nil,
       block_id: nil,
-      block_ids: nil,
       step_id: nil,
       block_type: nil,
       status: nil,
@@ -37,7 +35,6 @@ module Retab
       params = {
         "run_id" => run_id,
         "block_id" => block_id,
-        "block_ids" => block_ids,
         "step_id" => step_id,
         "block_type" => block_type,
         "status" => status,
@@ -56,7 +53,6 @@ module Retab
         list(
           run_id: run_id,
           block_id: block_id,
-          block_ids: block_ids,
           step_id: step_id,
           block_type: block_type,
           status: status,
@@ -72,7 +68,6 @@ module Retab
         filters: {
           run_id: run_id,
           block_id: block_id,
-          block_ids: block_ids,
           step_id: step_id,
           block_type: block_type,
           status: status,

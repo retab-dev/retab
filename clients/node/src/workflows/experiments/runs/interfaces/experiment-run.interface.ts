@@ -76,12 +76,12 @@ import {
 import type {
   WorkflowSnapshotRef,
   WorkflowSnapshotRefResponse,
-} from '../../../../workflows/runs/interfaces/workflow-snapshot-ref.interface.js';
+} from './workflow-snapshot-ref.interface.js';
 import {
   ZWorkflowSnapshotRef,
   deserializeWorkflowSnapshotRef,
   serializeWorkflowSnapshotRef,
-} from '../../../../workflows/runs/interfaces/workflow-snapshot-ref.interface.js';
+} from './workflow-snapshot-ref.interface.js';
 import type { ExperimentRunBlockType } from './experiment-run-block-type.interface.js';
 import { ZExperimentRunBlockType } from './experiment-run-block-type.interface.js';
 import type { ExperimentRunNConsensus } from './experiment-run-n-consensus.interface.js';

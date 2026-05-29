@@ -18,16 +18,12 @@ type WorkflowRunsListParams struct {
 	PaginationParams
 	// WorkflowID is filter by workflow ID
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
-	// Status is filter by single run status (deprecated, use 'statuses')
+	// Status is filter by run status
 	Status *WorkflowRunsStatus `url:"status,omitempty" json:"-"`
-	// Statuses is filter by multiple statuses (comma-separated: pending,queued,running,completed,error,failed,awaiting_review,cancelled)
-	Statuses *string `url:"statuses,omitempty" json:"-"`
 	// ExcludeStatus is exclude runs with this status
 	ExcludeStatus *WorkflowRunsExcludeStatus `url:"exclude_status,omitempty" json:"-"`
-	// TriggerType is filter by single trigger type (deprecated, use 'trigger_types')
+	// TriggerType is filter by trigger type
 	TriggerType *WorkflowRunsTriggerType `url:"trigger_type,omitempty" json:"-"`
-	// TriggerTypes is filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
-	TriggerTypes *string `url:"trigger_types,omitempty" json:"-"`
 	// FromDate is filter runs created on or after this date (YYYY-MM-DD)
 	FromDate *string `url:"from_date,omitempty" json:"-"`
 	// ToDate is filter runs created on or before this date (YYYY-MM-DD)
@@ -91,8 +87,8 @@ type WorkflowRunsExportParams struct {
 	FromDate *string `json:"from_date,omitempty" url:"-"`
 	// ToDate is optional end date filter (YYYY-MM-DD)
 	ToDate *string `json:"to_date,omitempty" url:"-"`
-	// TriggerTypes is optional trigger type filters
-	TriggerTypes []WorkflowExportPayloadRequestTriggerTypes `json:"trigger_types,omitempty" url:"-"`
+	// TriggerType is optional trigger type filter
+	TriggerType *WorkflowExportPayloadRequestTriggerType `json:"trigger_type,omitempty" url:"-"`
 	// PreferredColumns is preferred data column order
 	PreferredColumns []string `json:"preferred_columns,omitempty" url:"-"`
 	// Delimiter is csv field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.

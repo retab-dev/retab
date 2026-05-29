@@ -30,7 +30,8 @@ pub struct EditWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
     /// When this artifact was written by the orchestrator.
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
     /// Artifact operation that determines the backing record type
     ///
     /// Defaults to `edit`.
@@ -46,7 +47,6 @@ impl EditWorkflowArtifact {
         model: impl Into<String>,
         config: EditConfig,
         output: EditResult,
-        created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -58,7 +58,7 @@ impl EditWorkflowArtifact {
             output,
             filled_document_ref: Default::default(),
             usage: Default::default(),
-            created_at: created_at.into(),
+            created_at: Default::default(),
             operation: Default::default(),
         }
     }

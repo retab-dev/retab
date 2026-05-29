@@ -4,21 +4,21 @@ import { z } from 'zod';
 import type {
   FormField,
   FormFieldResponse,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 import {
   ZFormField,
   deserializeFormField,
   serializeFormField,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 import type {
   MIMEData,
   MIMEDataResponse,
-} from '../../../schemas/interfaces/mime-data.interface.js';
+} from '../../../classifications/interfaces/mime-data.interface.js';
 import {
   ZMIMEData,
   deserializeMIMEData,
   serializeMIMEData,
-} from '../../../schemas/interfaces/mime-data.interface.js';
+} from '../../../classifications/interfaces/mime-data.interface.js';
 
 /** Public create-edit-template request body. */
 export interface CreateEditTemplateRequest {

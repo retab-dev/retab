@@ -10,21 +10,21 @@ import {
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
   serializeManualWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
   RunStepWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
   serializeRunStepWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 
 export interface UpdateWorkflowTestRequest {
   name?: string | null;

@@ -125,22 +125,10 @@ func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	if err := validateEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
-		return err
-	}
-	if err := validateMutuallyExclusiveChangedFlags(cmd, "status", "statuses"); err != nil {
-		return err
-	}
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	if err := validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
-		return err
-	}
-	if err := validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
-		return err
-	}
-	return validateMutuallyExclusiveChangedFlags(cmd, "trigger-type", "trigger-types")
+	return validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 }
 
 func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
@@ -153,7 +141,7 @@ func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+	return validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 }
 
 func validateMutuallyExclusiveChangedFlags(cmd *cobra.Command, left string, right string) error {
@@ -172,29 +160,6 @@ func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bo
 		return fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
 	}
 	return nil
-}
-
-func validateEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
-	_, err := normalizeEnumArrayFlag(cmd, flagName, allowed, allowedValues)
-	return err
-}
-
-func normalizeEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) ([]string, error) {
-	rawValues, _ := cmd.Flags().GetStringArray(flagName)
-	values := make([]string, 0, len(rawValues))
-	for _, raw := range rawValues {
-		for value := range strings.SplitSeq(raw, ",") {
-			value = strings.TrimSpace(value)
-			if value == "" {
-				continue
-			}
-			if !allowed[value] {
-				return nil, fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
-			}
-			values = append(values, value)
-		}
-	}
-	return values, nil
 }
 
 type workflowRunCreateParams struct {

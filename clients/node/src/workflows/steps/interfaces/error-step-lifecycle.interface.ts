@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   ErrorDetails,
   ErrorDetailsResponse,
-} from '../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../workflows/artifacts/interfaces/error-details.interface.js';
 import {
   ZErrorDetails,
   deserializeErrorDetails,
   serializeErrorDetails,
-} from '../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../workflows/artifacts/interfaces/error-details.interface.js';
 import type { ErrorStepLifecycleCategory } from './error-step-lifecycle-category.interface.js';
 import { ZErrorStepLifecycleCategory } from './error-step-lifecycle-category.interface.js';
 import type { ErrorStepLifecycleStage } from './error-step-lifecycle-stage.interface.js';

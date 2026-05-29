@@ -14,13 +14,13 @@ readonly class FunctionInvocation implements \JsonSerializable
         public string $id,
         public string $workflowRunId,
         public string $stepId,
-        /** When this artifact was written by the orchestrator. */
-        public \DateTimeImmutable $createdAt,
         /** @var array<string, mixed>|null */
         public ?array $inputs = null,
         public mixed $output = null,
         public ?int $durationMs = null,
         public ?ErrorDetails $error = null,
+        /** When this artifact was written by the orchestrator. */
+        public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'function_invocation',
     ) {}
@@ -32,7 +32,6 @@ readonly class FunctionInvocation implements \JsonSerializable
             'id',
             'workflow_run_id',
             'step_id',
-            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for FunctionInvocation::fromArray()");
@@ -42,11 +41,11 @@ readonly class FunctionInvocation implements \JsonSerializable
             id: $data['id'],
             workflowRunId: $data['workflow_run_id'],
             stepId: $data['step_id'],
-            createdAt: new \DateTimeImmutable($data['created_at']),
             inputs: $data['inputs'] ?? null,
             output: $data['output'] ?? null,
             durationMs: $data['duration_ms'] ?? null,
             error: isset($data['error']) ? ErrorDetails::fromArray($data['error']) : null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             operation: $data['operation'] ?? 'function_invocation',
         );
     }
@@ -58,11 +57,11 @@ readonly class FunctionInvocation implements \JsonSerializable
             'id' => $this->id,
             'workflow_run_id' => $this->workflowRunId,
             'step_id' => $this->stepId,
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'inputs' => $this->inputs,
             'output' => $this->output,
             'duration_ms' => $this->durationMs,
             'error' => $this->error?->toArray(),
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'operation' => $this->operation,
         ];
     }

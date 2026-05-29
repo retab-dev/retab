@@ -11,10 +11,10 @@ class WorkflowSpecTest < Minitest::Test
     @client = Retab::Client.new(api_key: "sk_test_123")
   end
 
-  def test_validate_returns_expected_result
-    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/validate(\?|\z)})
+  def test_apply_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflows.spec.validate(yaml_definition: "stub")
+    result = @client.workflows.spec.apply(yaml_definition: "stub")
     refute_nil(result)
   end
 
@@ -25,10 +25,10 @@ class WorkflowSpecTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_apply_returns_expected_result
-    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)})
+  def test_validate_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/validate(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflows.spec.apply(yaml_definition: "stub")
+    result = @client.workflows.spec.validate(yaml_definition: "stub")
     refute_nil(result)
   end
 
@@ -42,9 +42,9 @@ class WorkflowSpecTest < Minitest::Test
   # Parameterized authentication error tests (one per endpoint).
   [
     {
-      name: :validate,
+      name: :apply,
       verb: :post,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/validate(\?|\z)},
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)},
       args: {yaml_definition: "stub"}
     },
     {
@@ -54,9 +54,9 @@ class WorkflowSpecTest < Minitest::Test
       args: {yaml_definition: "stub"}
     },
     {
-      name: :apply,
+      name: :validate,
       verb: :post,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)},
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/validate(\?|\z)},
       args: {yaml_definition: "stub"}
     },
     {

@@ -34,9 +34,9 @@ pub struct WorkflowExportPayloadRequest {
     /// Optional end date filter (YYYY-MM-DD)
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub to_date: Option<String>,
-    /// Optional trigger type filters
+    /// Optional trigger type filter
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub trigger_types: Option<Vec<WorkflowExportPayloadRequestTriggerTypes>>,
+    pub trigger_type: Option<WorkflowExportPayloadRequestTriggerType>,
     /// Preferred data column order
     ///
     /// Defaults to `[]`.
@@ -72,7 +72,7 @@ impl WorkflowExportPayloadRequest {
             exclude_status: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
-            trigger_types: Default::default(),
+            trigger_type: Default::default(),
             preferred_columns: Default::default(),
             delimiter: Default::default(),
             line_delimiter: Default::default(),

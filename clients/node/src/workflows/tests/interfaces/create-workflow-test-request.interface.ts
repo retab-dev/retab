@@ -10,30 +10,30 @@ import {
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
   serializeManualWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
   RunStepWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
   serializeRunStepWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
-} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from './workflow-test-block-target.interface.js';
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
   serializeWorkflowTestBlockTarget,
-} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from './workflow-test-block-target.interface.js';
 
 export interface CreateWorkflowTestRequest {
   workflowId: string;

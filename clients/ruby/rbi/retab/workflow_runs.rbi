@@ -13,10 +13,8 @@ module Retab
       params(
         workflow_id: T.nilable(String),
         status: T.nilable(String),
-        statuses: T.nilable(String),
         exclude_status: T.nilable(String),
         trigger_type: T.nilable(String),
-        trigger_types: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         min_duration_ms: T.nilable(Integer),
@@ -30,7 +28,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowRun])
     end
-    def list(workflow_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, min_duration_ms:, max_duration_ms:, search:, before:, after:, limit:, order:, sort_by:, request_options:); end
+    def list(workflow_id:, status:, exclude_status:, trigger_type:, from_date:, to_date:, min_duration_ms:, max_duration_ms:, search:, before:, after:, limit:, order:, sort_by:, request_options:); end
 
     sig do
       params(
@@ -54,7 +52,7 @@ module Retab
         exclude_status: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
-        trigger_types: T.nilable(T::Array[String]),
+        trigger_type: T.nilable(String),
         preferred_columns: T.nilable(T::Array[String]),
         delimiter: T.nilable(String),
         line_delimiter: T.nilable(String),
@@ -62,7 +60,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowExportPayloadResponse)
     end
-    def export(workflow_id:, block_id:, export_source:, selected_run_ids:, selected_doc_types:, status:, exclude_status:, from_date:, to_date:, trigger_types:, preferred_columns:, delimiter:, line_delimiter:, quote:, request_options:); end
+    def export(workflow_id:, block_id:, export_source:, selected_run_ids:, selected_doc_types:, status:, exclude_status:, from_date:, to_date:, trigger_type:, preferred_columns:, delimiter:, line_delimiter:, quote:, request_options:); end
 
     sig do
       params(

@@ -580,14 +580,14 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	}
 
 	workflowID := "wf_123"
-	statuses := "running,awaiting_review"
-	triggerTypes := "api,email"
+	status := WorkflowRunsStatus("running")
+	triggerType := WorkflowRunsTriggerType("api")
 	limit := 5
 	order := "asc"
 	runs, err := client.Workflows.Runs.List(context.Background(), &WorkflowRunsListParams{
-		WorkflowID:   &workflowID,
-		Statuses:     &statuses,
-		TriggerTypes: &triggerTypes,
+		WorkflowID:  &workflowID,
+		Status:      &status,
+		TriggerType: &triggerType,
 		PaginationParams: PaginationParams{
 			Limit: &limit,
 			Order: &order,
@@ -599,7 +599,7 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	if len(runs.Data) != 1 || runs.Data[0].Workflow.WorkflowID != "wf_123" {
 		t.Fatalf("runs = %#v", runs)
 	}
-	if !strings.Contains(listQuery, "statuses=running%2Cawaiting_review") {
+	if !strings.Contains(listQuery, "status=running") {
 		t.Fatalf("list query = %s", listQuery)
 	}
 
@@ -646,8 +646,8 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	if exported.Rows != 1 || exportBody["export_source"] != "outputs" {
 		t.Fatalf("exported = %#v body = %#v", exported, exportBody)
 	}
-	if _, ok := exportBody["trigger_types"]; ok {
-		t.Fatalf("export body should omit empty trigger_types filter, got %#v", exportBody["trigger_types"])
+	if _, ok := exportBody["trigger_type"]; ok {
+		t.Fatalf("export body should omit empty trigger_type filter, got %#v", exportBody["trigger_type"])
 	}
 }
 
@@ -756,12 +756,12 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	manualTrigger := WorkflowExportPayloadRequestTriggerTypesManual
+	manualTrigger := WorkflowExportPayloadRequestTriggerTypeManual
 	_, err = client.Workflows.Runs.Export(context.Background(), &WorkflowRunsExportParams{
 		WorkflowID:     "wf_123",
 		BlockID:        "block_1",
 		SelectedRunIDs: []string{},
-		TriggerTypes:   []WorkflowExportPayloadRequestTriggerTypes{manualTrigger},
+		TriggerType:    &manualTrigger,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -769,9 +769,9 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	if _, ok := exportBody["selected_run_ids"]; ok {
 		t.Fatalf("export body should omit empty selected_run_ids filter, got %#v", exportBody["selected_run_ids"])
 	}
-	triggerTypes, ok := exportBody["trigger_types"].([]any)
-	if !ok || len(triggerTypes) != 1 || triggerTypes[0] != "manual" {
-		t.Fatalf("trigger_types = %#v", exportBody["trigger_types"])
+	triggerType, ok := exportBody["trigger_type"].(string)
+	if !ok || triggerType != "manual" {
+		t.Fatalf("trigger_type = %#v", exportBody["trigger_type"])
 	}
 }
 

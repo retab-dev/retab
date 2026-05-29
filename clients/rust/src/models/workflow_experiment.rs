@@ -18,9 +18,11 @@ pub struct WorkflowExperiment {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub last_run_id: Option<String>,
     /// When the experiment was created
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
     /// When the experiment was last updated
-    pub updated_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub updated_at: Option<String>,
     /// Defaults to `draft`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub status: Option<ExperimentPublicStatus>,
@@ -45,8 +47,6 @@ impl WorkflowExperiment {
         block_id: impl Into<String>,
         n_consensus: NConsensusValue,
         name: impl Into<String>,
-        created_at: impl Into<String>,
-        updated_at: impl Into<String>,
         block_type: ExperimentBlockType,
     ) -> Self {
         Self {
@@ -57,8 +57,8 @@ impl WorkflowExperiment {
             document_count: Default::default(),
             name: name.into(),
             last_run_id: Default::default(),
-            created_at: created_at.into(),
-            updated_at: updated_at.into(),
+            created_at: Default::default(),
+            updated_at: Default::default(),
             status: Default::default(),
             block_type,
             score: Default::default(),

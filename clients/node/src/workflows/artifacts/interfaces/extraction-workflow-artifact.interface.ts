@@ -13,21 +13,21 @@ import {
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 
 export interface ExtractionWorkflowArtifact {
   /** Unique identifier of the extraction */
@@ -58,7 +58,7 @@ export interface ExtractionWorkflowArtifact {
   /** Usage information for the extraction */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
-  createdAt: Date;
+  createdAt?: Date;
   /**
    * Artifact operation that determines the backing record type
    * @default "extraction"
@@ -78,7 +78,7 @@ export interface ExtractionWorkflowArtifactResponse {
   consensus?: ExtractionConsensusResponse | null;
   metadata?: Record<string, string> | null;
   usage?: RetabUsageResponse | null;
-  created_at: string;
+  created_at?: string;
   operation: 'extraction';
 }
 
@@ -94,7 +94,7 @@ export const ZExtractionWorkflowArtifact = z.object({
   consensus: ZExtractionConsensus.nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
   operation: z.literal('extraction'),
 }) as z.ZodType<ExtractionWorkflowArtifact>;
 
@@ -123,7 +123,8 @@ export function deserializeExtractionWorkflowArtifact(
         : wire['usage'] == null
           ? wire['usage']
           : deserializeRetabUsage(wire['usage']),
-    createdAt: new Date(wire['created_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
     operation: wire['operation'],
   };
 }
@@ -153,7 +154,10 @@ export function serializeExtractionWorkflowArtifact(
         : domain['usage'] == null
           ? domain['usage']
           : serializeRetabUsage(domain['usage']),
-    created_at: domain['createdAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
     operation: domain['operation'],
   };
 }

@@ -5,3 +5,6 @@ export * from './classification.interface.js';
 export * from './classification-consensus.interface.js';
 export * from './classification-decision.interface.js';
 export * from './classification-request.interface.js';
+export * from './file-ref.interface.js';
+export * from './mime-data.interface.js';
+export * from './retab-usage.interface.js';

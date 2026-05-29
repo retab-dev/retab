@@ -24,10 +24,10 @@ namespace Retab
         public LatestBlockTestRunSummary? LatestFailingRunSummary { get; set; }
 
         /// <summary>When the workflow test was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>When the workflow test was last updated</summary>
-        public DateTimeOffset UpdatedAt { get; set; }
+        public DateTimeOffset? UpdatedAt { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

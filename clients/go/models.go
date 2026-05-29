@@ -53,7 +53,7 @@ type APICallInvocation struct {
 	Attempts      []*APICallAttempt `json:"attempts,omitempty"`
 	Error         *ErrorDetails     `json:"error,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // APITrigger run started programmatically via the public API.
@@ -188,7 +188,7 @@ type StoredBlockExecution struct {
 	// DurationMs is duration of the block execution in milliseconds
 	DurationMs *float64 `json:"duration_ms,omitempty"`
 	// CreatedAt is when the block execution record was created
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// BlockConfig is the draft block config used for this block execution
 	BlockConfig map[string]interface{} `json:"block_config,omitempty"`
 	// StepID is the step ID that was used for inputs (includes iteration prefix if applicable)
@@ -492,7 +492,7 @@ type ConditionalEvaluation struct {
 	MatchedBranchID     *string                      `json:"matched_branch_id,omitempty"`
 	MatchedConditionIDs []string                     `json:"matched_condition_ids,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // ContainerContextData structured context for a single container in the hierarchy.
@@ -538,12 +538,12 @@ func (r *CreateUploadResponse) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// ReviewDecision the one terminal decision recorded against one exact :class:`ReviewVersion`.
+// ReviewDecision the one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.
 type ReviewDecision struct {
 	Verdict   ReviewVerdict `json:"verdict"`
 	VersionID string        `json:"version_id"`
 	Author    Actor         `json:"author"`
-	DecidedAt time.Time     `json:"decided_at"`
+	CreatedAt time.Time     `json:"created_at"`
 	Reason    *string       `json:"reason,omitempty"`
 }
 
@@ -731,7 +731,7 @@ type EditWorkflowArtifact struct {
 	// Usage is usage information for the edit operation.
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
 }
@@ -948,7 +948,7 @@ type ExperimentResultTiming struct {
 // ExperimentRunTiming represents an experiment run timing.
 type ExperimentRunTiming struct {
 	// CreatedAt is when the experiment run record was created
-	CreatedAt   time.Time  `json:"created_at"`
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
 	StartedAt   *time.Time `json:"started_at,omitempty"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 	DurationMs  *int       `json:"duration_ms,omitempty"`
@@ -1066,6 +1066,21 @@ type ExtractionConsensus struct {
 	Likelihoods map[string]interface{} `json:"likelihoods,omitempty"`
 }
 
+// SourcesResponse represents a sources response.
+type SourcesResponse struct {
+	Object *string `json:"object,omitempty"`
+	// ExtractionID is id of the extraction
+	ExtractionID string `json:"extraction_id"`
+	// DocumentType is detected document type of the source file
+	DocumentType SourcesResponseDocumentType `json:"document_type"`
+	// File is file metadata (id, filename, mime_type)
+	File FileRef `json:"file"`
+	// Extraction is original extraction output
+	Extraction map[string]interface{} `json:"extraction"`
+	// Sources is same shape as extraction but leaves are {value, source} objects
+	Sources map[string]interface{} `json:"sources"`
+}
+
 // ExtractionWorkflowArtifact represents an extraction workflow artifact.
 type ExtractionWorkflowArtifact struct {
 	// ID is unique identifier of the extraction
@@ -1090,7 +1105,7 @@ type ExtractionWorkflowArtifact struct {
 	// Usage is usage information for the extraction
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
 }
@@ -1103,6 +1118,23 @@ func (r *ExtractionWorkflowArtifact) UnmarshalJSON(data []byte) error {
 	r.ImageResolutionDpi = 192
 	type alias ExtractionWorkflowArtifact
 	return json.Unmarshal(data, (*alias)(r))
+}
+
+// File represents a file.
+type File struct {
+	Object *string `json:"object,omitempty"`
+	// ID is the unique identifier of the file
+	ID string `json:"id"`
+	// Filename is the name of the file
+	Filename string `json:"filename"`
+	// MIMEType is the MIME type of the file
+	MIMEType *string `json:"mime_type,omitempty"`
+	// CreatedAt is when the file was created
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	// UpdatedAt is when the file was last updated
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	// PageCount is number of pages in the file
+	PageCount *int `json:"page_count,omitempty"`
 }
 
 // FileHandleInput file reference for a handle input.
@@ -1149,7 +1181,7 @@ type FunctionInvocation struct {
 	DurationMs    *int                   `json:"duration_ms,omitempty"`
 	Error         *ErrorDetails          `json:"error,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // HTTPValidationError represents a http validation error.
@@ -1186,6 +1218,12 @@ type JobError struct {
 	Code    string                 `json:"code"`
 	Message string                 `json:"message"`
 	Details map[string]interface{} `json:"details,omitempty"`
+}
+
+// JobResponse public response returned when job completes successfully.
+type JobResponse struct {
+	StatusCode int                    `json:"status_code"`
+	Body       map[string]interface{} `json:"body"`
 }
 
 // JobWarning is an alias for JobError.
@@ -1473,7 +1511,7 @@ type PartitionWorkflowArtifact struct {
 	// Usage is usage information for the partition operation
 	Usage *RetabUsage `json:"usage,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Operation is artifact operation that determines the backing record type
 	Operation *string `json:"operation,omitempty"`
 }
@@ -1689,7 +1727,7 @@ type RunStepWorkflowTestSource struct {
 // cannot drift from the canonical value written by the projection.
 type RunTiming struct {
 	// CreatedAt is when the run record was created
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// StartedAt is when the run started executing
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// CompletedAt is when the run finished executing
@@ -2011,9 +2049,9 @@ type WorkflowExperiment struct {
 	Name          string          `json:"name"`
 	LastRunID     *string         `json:"last_run_id,omitempty"`
 	// CreatedAt is when the experiment was created
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// UpdatedAt is when the experiment was last updated
-	UpdatedAt         time.Time                    `json:"updated_at"`
+	UpdatedAt         *time.Time                   `json:"updated_at,omitempty"`
 	Status            *ExperimentPublicStatus      `json:"status,omitempty"`
 	BlockType         ExperimentBlockType          `json:"block_type"`
 	Score             *float64                     `json:"score,omitempty"`
@@ -2209,9 +2247,9 @@ type WorkflowTest struct {
 	LatestPassingRunSummary *LatestBlockTestRunSummary `json:"latest_passing_run_summary,omitempty"`
 	LatestFailingRunSummary *LatestBlockTestRunSummary `json:"latest_failing_run_summary,omitempty"`
 	// CreatedAt is when the workflow test was created
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// UpdatedAt is when the workflow test was last updated
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2287,44 +2325,6 @@ type WorkflowTestRunTiming = ExperimentRunTiming
 // WorkflowTestRunWorkflowScope run every saved test in the workflow.
 type WorkflowTestRunWorkflowScope struct {
 	Type string `json:"type"`
-}
-
-// File represents a file.
-type File struct {
-	Object *string `json:"object,omitempty"`
-	// ID is the unique identifier of the file
-	ID string `json:"id"`
-	// Filename is the name of the file
-	Filename string `json:"filename"`
-	// MIMEType is the MIME type of the file
-	MIMEType *string `json:"mime_type,omitempty"`
-	// CreatedAt is when the file was created
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	// UpdatedAt is when the file was last updated
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-	// PageCount is number of pages in the file
-	PageCount *int `json:"page_count,omitempty"`
-}
-
-// SourcesResponse represents a sources response.
-type SourcesResponse struct {
-	Object *string `json:"object,omitempty"`
-	// ExtractionID is id of the extraction
-	ExtractionID string `json:"extraction_id"`
-	// DocumentType is detected document type of the source file
-	DocumentType SourcesResponseDocumentType `json:"document_type"`
-	// File is file metadata (id, filename, mime_type)
-	File FileRef `json:"file"`
-	// Extraction is original extraction output
-	Extraction map[string]interface{} `json:"extraction"`
-	// Sources is same shape as extraction but leaves are {value, source} objects
-	Sources map[string]interface{} `json:"sources"`
-}
-
-// JobResponse public response returned when job completes successfully.
-type JobResponse struct {
-	StatusCode int                    `json:"status_code"`
-	Body       map[string]interface{} `json:"body"`
 }
 
 // WorkflowTestRunScope execution scope for a workflow-test run. Omit scope to run every saved test in the workflow.

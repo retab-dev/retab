@@ -21,10 +21,8 @@ class ExperimentRuns
      * @param string|null $experimentId
      * @param string|null $blockId
      * @param \Retab\Resource\WorkflowExperimentsStatus|null $status
-     * @param string|null $statuses
      * @param \Retab\Resource\WorkflowExperimentsStatus|null $excludeStatus
      * @param string|null $triggerType
-     * @param string|null $triggerTypes
      * @param string|null $fromDate
      * @param string|null $toDate
      * @param string|null $sortBy Defaults to "created_at".
@@ -40,10 +38,8 @@ class ExperimentRuns
         ?string $experimentId = null,
         ?string $blockId = null,
         ?\Retab\Resource\WorkflowExperimentsStatus $status = null,
-        ?string $statuses = null,
         ?\Retab\Resource\WorkflowExperimentsStatus $excludeStatus = null,
         ?string $triggerType = null,
-        ?string $triggerTypes = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?string $sortBy = null,
@@ -58,10 +54,8 @@ class ExperimentRuns
             'experiment_id' => $experimentId,
             'block_id' => $blockId,
             'status' => $status?->value,
-            'statuses' => $statuses,
             'exclude_status' => $excludeStatus?->value,
             'trigger_type' => $triggerType,
-            'trigger_types' => $triggerTypes,
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'sort_by' => $sortBy,

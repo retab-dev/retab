@@ -28,30 +28,30 @@ import {
 import type {
   ManualWorkflowTestSource,
   ManualWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import {
   ZManualWorkflowTestSource,
   deserializeManualWorkflowTestSource,
   serializeManualWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/manual-workflow-test-source.interface.js';
+} from './manual-workflow-test-source.interface.js';
 import type {
   RunStepWorkflowTestSource,
   RunStepWorkflowTestSourceResponse,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 import {
   ZRunStepWorkflowTestSource,
   deserializeRunStepWorkflowTestSource,
   serializeRunStepWorkflowTestSource,
-} from '../../../workflows/tests/results/interfaces/run-step-workflow-test-source.interface.js';
+} from './run-step-workflow-test-source.interface.js';
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
-} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from './workflow-test-block-target.interface.js';
 import {
   ZWorkflowTestBlockTarget,
   deserializeWorkflowTestBlockTarget,
   serializeWorkflowTestBlockTarget,
-} from '../../../workflows/tests/runs/interfaces/workflow-test-block-target.interface.js';
+} from './workflow-test-block-target.interface.js';
 import type { AssertionDriftStatus } from './assertion-drift-status.interface.js';
 import { ZAssertionDriftStatus } from './assertion-drift-status.interface.js';
 import type { WorkflowTestSchemaDrift } from './workflow-test-schema-drift.interface.js';
@@ -77,9 +77,9 @@ export interface WorkflowTest {
   latestPassingRunSummary?: LatestBlockTestRunSummary | null;
   latestFailingRunSummary?: LatestBlockTestRunSummary | null;
   /** When the workflow test was created */
-  createdAt: Date;
+  createdAt?: Date;
   /** When the workflow test was last updated */
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface WorkflowTestResponse {
@@ -98,8 +98,8 @@ export interface WorkflowTestResponse {
   latest_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_passing_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_failing_run_summary?: LatestBlockTestRunSummaryResponse | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const ZWorkflowTest = z.object({
@@ -118,8 +118,8 @@ export const ZWorkflowTest = z.object({
   latestRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestPassingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestFailingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
 }) as z.ZodType<WorkflowTest>;
 
 export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTest {
@@ -175,8 +175,10 @@ export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTes
         : wire['latest_failing_run_summary'] == null
           ? wire['latest_failing_run_summary']
           : deserializeLatestBlockTestRunSummary(wire['latest_failing_run_summary']),
-    createdAt: new Date(wire['created_at']),
-    updatedAt: new Date(wire['updated_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    updatedAt:
+      wire['updated_at'] == null ? (wire['updated_at'] as undefined) : new Date(wire['updated_at']),
   };
 }
 
@@ -236,7 +238,13 @@ export function serializeWorkflowTest(domain: WorkflowTest): WorkflowTestRespons
         : domain['latestFailingRunSummary'] == null
           ? domain['latestFailingRunSummary']
           : serializeLatestBlockTestRunSummary(domain['latestFailingRunSummary']),
-    created_at: domain['createdAt'].toISOString(),
-    updated_at: domain['updatedAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'].toISOString(),
   };
 }

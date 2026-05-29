@@ -6,6 +6,6 @@
     "id": "01234",
     "display_name": "Test"
   },
-  "decided_at": "2023-01-01T00:00:00.000Z",
+  "created_at": "2023-01-01T00:00:00.000Z",
   "reason": "test_reason"
 }
