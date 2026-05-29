@@ -31,16 +31,16 @@ export interface Job {
   endpoint: SupportedEndpoint;
   error?: JobError | null;
   warnings?: JobWarning[] | null;
-  createdAt?: string | null;
-  startedAt?: string | null;
-  completedAt?: string | null;
-  expiresAt?: string | null;
+  createdAt?: Date | null;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  expiresAt?: Date | null;
   metadata?: Record<string, string> | null;
   /** @default false */
   cancelled?: boolean;
   /** @default 0 */
   attemptCount?: number;
-  lastAttemptAt?: string | null;
+  lastAttemptAt?: Date | null;
   lastFailureCode?: string | null;
   request?: Record<string, unknown> | null;
   response?: JobResponse | null;
@@ -73,14 +73,14 @@ export const ZJob = z.object({
   endpoint: ZSupportedEndpoint,
   error: ZJobError.nullable().optional(),
   warnings: ZJobWarning.array().nullable().optional(),
-  createdAt: z.string().nullable().optional(),
-  startedAt: z.string().nullable().optional(),
-  completedAt: z.string().nullable().optional(),
-  expiresAt: z.string().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
+  startedAt: z.coerce.date().nullable().optional(),
+  completedAt: z.coerce.date().nullable().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
   cancelled: z.boolean().optional(),
   attemptCount: z.number().int().optional(),
-  lastAttemptAt: z.string().nullable().optional(),
+  lastAttemptAt: z.coerce.date().nullable().optional(),
   lastFailureCode: z.string().nullable().optional(),
   request: z.record(z.string(), z.unknown()).nullable().optional(),
   response: ZJobResponse.nullable().optional(),
@@ -104,14 +104,39 @@ export function deserializeJob(wire: JobWire): Job {
         : wire['warnings'] == null
           ? wire['warnings']
           : wire['warnings'].map((__i) => deserializeJobWarning(__i)),
-    createdAt: wire['created_at'],
-    startedAt: wire['started_at'],
-    completedAt: wire['completed_at'],
-    expiresAt: wire['expires_at'],
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
+    startedAt:
+      wire['started_at'] == null
+        ? (wire['started_at'] as undefined)
+        : wire['started_at'] == null
+          ? wire['started_at']
+          : new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : wire['completed_at'] == null
+          ? wire['completed_at']
+          : new Date(wire['completed_at']),
+    expiresAt:
+      wire['expires_at'] == null
+        ? (wire['expires_at'] as undefined)
+        : wire['expires_at'] == null
+          ? wire['expires_at']
+          : new Date(wire['expires_at']),
     metadata: wire['metadata'],
     cancelled: wire['cancelled'],
     attemptCount: wire['attempt_count'],
-    lastAttemptAt: wire['last_attempt_at'],
+    lastAttemptAt:
+      wire['last_attempt_at'] == null
+        ? (wire['last_attempt_at'] as undefined)
+        : wire['last_attempt_at'] == null
+          ? wire['last_attempt_at']
+          : new Date(wire['last_attempt_at']),
     lastFailureCode: wire['last_failure_code'],
     request: wire['request'],
     response:
@@ -141,14 +166,39 @@ export function serializeJob(domain: Job): JobWire {
         : domain['warnings'] == null
           ? domain['warnings']
           : domain['warnings'].map((__i) => serializeJobWarning(__i)),
-    created_at: domain['createdAt'],
-    started_at: domain['startedAt'],
-    completed_at: domain['completedAt'],
-    expires_at: domain['expiresAt'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'] == null
+          ? domain['startedAt']
+          : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'] == null
+          ? domain['completedAt']
+          : domain['completedAt'].toISOString(),
+    expires_at:
+      domain['expiresAt'] == null
+        ? (domain['expiresAt'] as undefined)
+        : domain['expiresAt'] == null
+          ? domain['expiresAt']
+          : domain['expiresAt'].toISOString(),
     metadata: domain['metadata'],
     cancelled: domain['cancelled'],
     attempt_count: domain['attemptCount'],
-    last_attempt_at: domain['lastAttemptAt'],
+    last_attempt_at:
+      domain['lastAttemptAt'] == null
+        ? (domain['lastAttemptAt'] as undefined)
+        : domain['lastAttemptAt'] == null
+          ? domain['lastAttemptAt']
+          : domain['lastAttemptAt'].toISOString(),
     last_failure_code: domain['lastFailureCode'],
     request: domain['request'],
     response:

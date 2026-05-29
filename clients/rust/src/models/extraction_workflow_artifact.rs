@@ -38,7 +38,7 @@ pub struct ExtractionWorkflowArtifact {
     /// Usage information for the extraction
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
     /// Artifact operation that determines the backing record type

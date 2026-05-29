@@ -19,8 +19,8 @@ public final class Subdocument {
       @JsonProperty(value = "allow_multiple_instances", required = false)
           Boolean allowMultipleInstances) {
     this.name = name;
-    this.description = description;
-    this.allowMultipleInstances = allowMultipleInstances;
+    this.description = description != null ? description : "";
+    this.allowMultipleInstances = allowMultipleInstances != null ? allowMultipleInstances : false;
   }
 
   @JsonProperty("name")

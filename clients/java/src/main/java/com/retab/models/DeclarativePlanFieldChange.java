@@ -34,8 +34,8 @@ public final class DeclarativePlanFieldChange {
     this.action = action;
     this.before = before;
     this.after = after;
-    this.beforeSensitive = beforeSensitive;
-    this.afterSensitive = afterSensitive;
+    this.beforeSensitive = beforeSensitive != null ? beforeSensitive : false;
+    this.afterSensitive = afterSensitive != null ? afterSensitive : false;
     this.unifiedDiff = unifiedDiff;
   }
 

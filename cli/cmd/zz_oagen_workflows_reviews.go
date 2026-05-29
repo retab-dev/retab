@@ -309,14 +309,20 @@ var workflowsReviewsCmd = &cobra.Command{
 }
 
 var workflowsReviewsListCmd = &cobra.Command{
-	Use:     "list",
+	Use:     "list [workflow-id]",
 	Short:   "List block runs awaiting review",
-	Long:    "List the review queue - block runs awaiting review and their lifecycle,\noldest-created first. Version history and the terminal decision payload\nare omitted; pull one item with `reviews get` to see it.\n\nUse `--decision-status` to control which slice of the queue is returned.\n`--decision-status pending` (the default) returns the open queue. Use\napproved, rejected, decided, or all to inspect past decisions.",
-	Example: "  # The whole org's awaiting-review queue\n  retab workflows reviews list\n\n  # Only one workflow\n  retab workflows reviews list --workflow-id wf_abc123\n\n  # Include every review in the listing\n  retab workflows reviews list --decision-status all",
-	Args:    cobra.NoArgs,
+	Long:    "List the review queue - block runs awaiting review and their lifecycle,\noldest-created first. Version history and the terminal decision payload\nare omitted; pull one item with `reviews get` to see it.\n\nUse `--decision-status` to control which slice of the queue is returned.\n`--decision-status pending` (the default) returns the open queue. Use\napproved, rejected, decided, or all to inspect past decisions.\n\nWithout a workflow id the queue spans the whole workspace; scope it to one\nworkflow either positionally (`list <workflow-id>`) or with the\n`--workflow-id` flag - the two forms are equivalent and may be\ncombined when they agree.",
+	Example: "  # The whole org's awaiting-review queue\n  retab workflows reviews list\n\n  # Only one workflow (positional, matches the rest of workflows)\n  retab workflows reviews list wf_abc123\n\n  # Same, with the flag form\n  retab workflows reviews list --workflow-id wf_abc123\n\n  # Include every review in the listing\n  retab workflows reviews list --decision-status all",
+	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := &retab.WorkflowReviewsListParams{PaginationParams: collectListParams(cmd)}
-		if workflowID, _ := cmd.Flags().GetString("workflow-id"); workflowID != "" {
+		// Scope by workflow positionally OR via --workflow-id (co-equal forms);
+		// optional here — no id lists the whole org's review queue.
+		workflowID, err := resolveWorkflowScope(cmd, args, false)
+		if err != nil {
+			return err
+		}
+		if workflowID != "" {
 			params.WorkflowID = ptr(workflowID)
 		}
 		if runID, _ := cmd.Flags().GetString("run-id"); runID != "" {

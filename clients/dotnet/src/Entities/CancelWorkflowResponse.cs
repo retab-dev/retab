@@ -7,7 +7,7 @@ namespace Retab
         public WorkflowRun Run { get; set; } = default!;
 
         /// <summary>Whether immediate cancellation signaling was available</summary>
-        public bool? RedisAvailable { get; set; }
+        public bool? RedisAvailable { get; set; } = true;
 
         /// <summary>Cancellation delivery state from this request</summary>
         public CancelWorkflowResponseCancellationStatus? CancellationStatus { get; set; }

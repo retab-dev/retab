@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents an array contains condition.</summary>
     public class ArrayContainsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "array_contains";
         public Dictionary<string, object> Expected { get; set; } = default!;
 
         /// <summary>

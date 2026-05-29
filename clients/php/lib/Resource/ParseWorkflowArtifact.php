@@ -23,7 +23,7 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
         public int $imageResolutionDpi,
         /** The parsed document content */
         public ParseOutput $output,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public \DateTimeImmutable $createdAt,
         /** Free-form instructions supplied with the parse request. */
         public ?string $instructions = null,

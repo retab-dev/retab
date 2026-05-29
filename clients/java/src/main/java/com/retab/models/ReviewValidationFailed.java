@@ -12,7 +12,7 @@ public final class ReviewValidationFailed implements ReviewKind {
 
   @JsonCreator
   public ReviewValidationFailed(@JsonProperty(value = "kind", required = false) String kind) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "validation_failed";
   }
 
   @JsonProperty("kind")

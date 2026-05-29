@@ -15,7 +15,7 @@ public final class ReviewTopMarginLt implements ReviewKind {
   public ReviewTopMarginLt(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "margin", required = true) Double margin) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "top_margin_lt";
     this.margin = margin;
   }
 

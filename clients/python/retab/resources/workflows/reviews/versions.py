@@ -11,7 +11,7 @@ from retab.types.workflows.reviews.versions import CreateReviewVersionRequest, R
 
 class WorkflowReviewVersionsMixin:
     def prepare_list(self, review_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
-        """List Review Versions Route List versions for one review. ``review_id`` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
+        """List Review Versions Route List versions for one review. `review_id` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
         params: dict[str, Any] = {
             "review_id": review_id,
             "before": before,
@@ -48,7 +48,7 @@ class WorkflowReviewVersions(SyncAPIResource, WorkflowReviewVersionsMixin):
     """WorkflowReviewVersions API wrapper."""
 
     def list(self, review_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PaginatedList[ReviewVersion]:
-        """List Review Versions Route List versions for one review. ``review_id`` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
+        """List Review Versions Route List versions for one review. `review_id` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
         prepared_request = self.prepare_list(review_id=review_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=ReviewVersion)
 
@@ -69,7 +69,7 @@ class AsyncWorkflowReviewVersions(AsyncAPIResource, WorkflowReviewVersionsMixin)
     """Async WorkflowReviewVersions API wrapper."""
 
     async def list(self, review_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[ReviewVersion]:
-        """List Review Versions Route List versions for one review. ``review_id`` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
+        """List Review Versions Route List versions for one review. `review_id` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
         prepared_request = self.prepare_list(review_id=review_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=ReviewVersion)
 

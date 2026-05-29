@@ -472,8 +472,12 @@ func TestPrintResultTableEnvelopeFieldNavigable(t *testing.T) {
 		Data []runRow `json:"data"`
 	}
 	runs := runList{Data: []runRow{{
-		ID:        "run_1",
-		Lifecycle: retab.WorkflowRunLifecycleFromPendingRun(retab.PendingRun{Status: &status}),
+		ID: "run_1",
+		// Build a coherent completed variant: the union's From* constructors force
+		// the "status" discriminator to match the chosen variant, so the asserted
+		// value must be the real discriminator ("completed"), not an arbitrary
+		// string pinned onto a mismatched variant.
+		Lifecycle: retab.WorkflowRunLifecycleFromCompletedTerminal(retab.CompletedTerminal{Status: &status}),
 	}}}
 
 	stdout, stderr := captureStd(t, func() {

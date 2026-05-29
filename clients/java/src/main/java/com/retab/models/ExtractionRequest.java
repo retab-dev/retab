@@ -38,14 +38,14 @@ public final class ExtractionRequest {
       @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys) {
     this.document = document;
     this.jsonSchema = jsonSchema;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.nConsensus = nConsensus;
     this.metadata = metadata;
     this.additionalMessages = additionalMessages;
-    this.bustCache = bustCache;
-    this.stream = stream;
+    this.bustCache = bustCache != null ? bustCache : false;
+    this.stream = stream != null ? stream : false;
     this.chunkingKeys = chunkingKeys;
   }
 

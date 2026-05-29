@@ -8,7 +8,7 @@ namespace Retab
     /// </remarks>
     public class SkippedBlockExecutionLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "skipped";
 
         /// <summary>Reason the block was skipped</summary>
         public string Reason { get; set; } = default!;

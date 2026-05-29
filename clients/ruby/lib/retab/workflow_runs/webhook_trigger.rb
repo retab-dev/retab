@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @type = hash[:type]
+      @type = hash[:type].nil? ? "webhook" : hash[:type]
       @webhook_id = hash[:webhook_id]
     end
   end

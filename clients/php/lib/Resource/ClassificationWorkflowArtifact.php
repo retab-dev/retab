@@ -24,7 +24,7 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
         public array $categories,
         /** The classification result with reasoning */
         public ClassificationDecision $output,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public \DateTimeImmutable $createdAt,
         /** Number of consensus votes used */
         public ?int $nConsensus = null,

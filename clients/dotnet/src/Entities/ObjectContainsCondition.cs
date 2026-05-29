@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents an object contains condition.</summary>
     public class ObjectContainsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "object_contains";
         public Dictionary<string, object> Expected { get; set; } = default!;
 
         /// <summary>

@@ -6,7 +6,7 @@ namespace Retab
     /// <summary>Represents a number compare condition.</summary>
     public class NumberCompareCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "number_compare";
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public LengthCompareConditionOp Op { get; set; }

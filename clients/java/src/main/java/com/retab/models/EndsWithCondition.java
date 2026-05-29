@@ -15,7 +15,7 @@ public final class EndsWithCondition implements Condition {
   public EndsWithCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) String expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "ends_with";
     this.expected = expected;
   }
 

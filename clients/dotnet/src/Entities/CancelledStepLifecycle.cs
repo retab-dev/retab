@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The step was cancelled.</summary>
     public class CancelledStepLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "cancelled";
 
         /// <summary>Reason the step was cancelled</summary>
         public string Reason { get; set; } = default!;

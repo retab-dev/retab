@@ -4,10 +4,10 @@ namespace Retab
     /// <summary>The result row failed. Per-job error message is bundled into lifecycle.</summary>
     public class ErrorWorkflowExperimentResult
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "error";
 
         /// <summary>Human-readable error message</summary>
-        public string? Message { get; set; }
+        public string? Message { get; set; } = "(no message)";
 
         /// <summary>Structured error context including stack trace</summary>
         public ErrorDetails? Details { get; set; }

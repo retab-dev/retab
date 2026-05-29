@@ -9,7 +9,7 @@ namespace Retab\Resource;
 /**
  * Block-test assertion against one declared output handle.
  *
- * ``target`` is the only supported shape: an output handle id and an
+ * `target` is the only supported shape: an output handle id and an
  * optional relative path inside that handle's payload.
  */
 readonly class AssertionSpec implements \JsonSerializable

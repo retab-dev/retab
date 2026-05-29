@@ -13,7 +13,7 @@ export interface UpdateWorkflowBlockRequest {
   height?: number | null;
   config?: Record<string, unknown> | null;
   parentId?: string | null;
-  /** How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted. */
+  /** How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted. */
   configMode?: UpdateWorkflowBlockRequestConfigMode | null;
 }
 

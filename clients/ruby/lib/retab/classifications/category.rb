@@ -22,7 +22,7 @@ module Retab
       hash = self.class.normalize(json)
       @name = hash[:name]
       @handle_key = hash[:handle_key]
-      @description = hash[:description]
+      @description = hash[:description].nil? ? "" : hash[:description]
     end
   end
 end

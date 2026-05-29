@@ -15,7 +15,7 @@ public final class ErrorBlockExecutionLifecycle implements BlockExecutionLifecyc
   public ErrorBlockExecutionLifecycle(
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "message", required = true) String message) {
-    this.status = status;
+    this.status = status != null ? status : "error";
     this.message = message;
   }
 

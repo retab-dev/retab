@@ -12,7 +12,7 @@ public final class PendingStepLifecycle implements StepLifecycle {
 
   @JsonCreator
   public PendingStepLifecycle(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "pending";
   }
 
   @JsonProperty("status")

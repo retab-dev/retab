@@ -5,10 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Reference to the workflow + immutable version that drove the run.
-/// The class name is retained temporarily for compatibility with surrounding
-/// run-model code, but public API output uses ``version_id`` rather than
-/// snapshot identity.
+/// Reference to the workflow and immutable version that drove the run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowSnapshotRef {
     /// ID of the workflow that was run

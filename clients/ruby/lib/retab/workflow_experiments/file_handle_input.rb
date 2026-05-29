@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @type = hash[:type]
+      @type = hash[:type].nil? ? "file" : hash[:type]
       @document = hash[:document] ? Retab::MaterializedDocument.new(hash[:document]) : nil
     end
   end

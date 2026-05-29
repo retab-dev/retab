@@ -15,7 +15,7 @@ public final class WebhookTrigger implements Trigger {
   public WebhookTrigger(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "webhook_id", required = false) String webhookId) {
-    this.type = type;
+    this.type = type != null ? type : "webhook";
     this.webhookId = webhookId;
   }
 

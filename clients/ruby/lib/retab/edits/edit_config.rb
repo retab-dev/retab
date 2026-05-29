@@ -14,7 +14,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @color = hash[:color]
+      @color = hash[:color].nil? ? "#000080" : hash[:color]
     end
   end
 end

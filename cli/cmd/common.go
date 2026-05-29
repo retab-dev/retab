@@ -1165,6 +1165,51 @@ func ptr[T any](value T) *T {
 	return &value
 }
 
+// resolveWorkflowScope reconciles the two co-equal ways a workflow-scoped
+// `list` command names its workflow: a positional `[workflow-id]` argument and
+// a `--workflow-id` flag. Both forms are first-class — neither is deprecated —
+// so a user can pick whichever reads better. This is the list-command
+// counterpart to resolveWorkflowIDArg, which keeps a deprecation warning on the
+// flag for create-style commands.
+//
+// Resolution rules:
+//
+//   - both set, agreeing → that id.
+//   - both set, disagreeing → error (never silently pick one; a mismatch is
+//     almost always a typo, and masking it would query the wrong workflow).
+//   - exactly one set → that id (whitespace-trimmed).
+//   - an explicitly-blank flag (`--workflow-id ""`) → error, since pflag
+//     returns "" which would otherwise silently widen the query.
+//   - neither set:
+//   - required=false → "" (the caller lists workspace-wide, e.g. runs/reviews).
+//   - required=true  → error (the command has no org-wide view, e.g.
+//     blocks/edges/tests/experiments).
+func resolveWorkflowScope(cmd *cobra.Command, args []string, required bool) (string, error) {
+	flagID, _ := cmd.Flags().GetString("workflow-id")
+	if cmd.Flags().Changed("workflow-id") && strings.TrimSpace(flagID) == "" {
+		return "", fmt.Errorf("--workflow-id must not be blank")
+	}
+	flagID = strings.TrimSpace(flagID)
+
+	posID := ""
+	if len(args) > 0 {
+		posID = strings.TrimSpace(args[0])
+	}
+
+	switch {
+	case posID != "" && flagID != "" && posID != flagID:
+		return "", fmt.Errorf("workflow id specified twice (positional %q, --workflow-id %q)", posID, flagID)
+	case posID != "":
+		return posID, nil
+	case flagID != "":
+		return flagID, nil
+	}
+	if required {
+		return "", fmt.Errorf("workflow id required")
+	}
+	return "", nil
+}
+
 func collectListParams(cmd *cobra.Command) retab.PaginationParams {
 	params := retab.PaginationParams{}
 	if v, _ := cmd.Flags().GetString("before"); v != "" {

@@ -6,8 +6,8 @@ namespace Retab
     public class ExperimentByDocumentMetricsResponse
     {
         public string RunId { get; set; } = default!;
-        public string? Kind { get; set; }
-        public string? View { get; set; }
+        public string? Kind { get; set; } = "by_document";
+        public string? View { get; set; } = "by_document";
         public ExperimentMetricDocumentRef Document { get; set; } = default!;
         public double? Score { get; set; }
         public double? PriorScore { get; set; }

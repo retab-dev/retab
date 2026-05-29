@@ -5,13 +5,12 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Canonical persisted resource produced by a workflow step.
-/// Uniformly a `(operation, id)` ref into a backing collection. The artifact
-/// itself carries no payload — consumers dispatch on ``operation`` and fetch
-/// the backing record by ``id``.
+/// A resource produced by a workflow step.
+/// An `(operation, id)` reference. The artifact itself carries no payload —
+/// consumers dispatch on `operation` and fetch the referenced record by `id`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StepArtifactRef {
-    /// Persisted resource operation; identifies the backing collection
+    /// The kind of resource this artifact references
     pub operation: StepArtifactRefOperation,
     /// Persisted resource identifier
     pub id: String,

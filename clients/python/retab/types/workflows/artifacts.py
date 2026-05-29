@@ -82,7 +82,7 @@ class ApiCallInvocation(BaseModel):
     step_id: str
     attempts: list[ApiCallAttempt] | None = Field(default=[])
     error: ErrorDetails | None = None
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
 
 
 class ClassificationWorkflowArtifact(BaseModel):
@@ -97,7 +97,7 @@ class ClassificationWorkflowArtifact(BaseModel):
     output: ClassificationDecision = Field(..., description="The classification result with reasoning")
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
     operation: Literal["classification"] = Field(default="classification", description="Artifact operation that determines the backing record type")
 
 
@@ -114,7 +114,7 @@ class ConditionEvaluationDetails(BaseModel):
     expected: Any | None = Field(default=None, description="Expected value")
     actual: Any | None = Field(default=None, description="Actual value found")
     matched: bool | None = Field(default=False, description="Whether the condition matched")
-    per_item: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown for wildcard array conditions")
+    items: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown for wildcard array conditions")
     sub_conditions: list[ConditionEvaluationSubCondition] | None = Field(default=None, description="Sub-condition evaluations for compound conditions")
     logical_operator: ConditionEvaluationDetailsLogicalOperator | None = Field(default=None, description="Logical operator combining sub-conditions")
 
@@ -152,7 +152,7 @@ class ConditionEvaluationResult(BaseModel):
     matched: bool | None = Field(default=False, description="Whether the condition matched")
     branch_name: str | None = Field(default="exit", description="Branch name (always 'exit' for while-loop termination)")
     logical_operator: ConditionEvaluationDetailsLogicalOperator | None = Field(default=None, description="Logical operator for compound conditions")
-    per_item: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown for wildcard array conditions")
+    items: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown for wildcard array conditions")
     sub_evaluations: list[ConditionEvaluationSubCondition] | None = Field(default=None, description="Sub-condition evaluations for compound conditions")
     details: ConditionEvaluationDetails = Field(..., description="Nested details object for frontend compatibility")
 
@@ -164,13 +164,13 @@ class ConditionEvaluationSubCondition(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    sub_condition_id: str | None = Field(default="", description="Identifier for this sub-condition")
+    sub_condition_id: str | None = Field(default=None, description="Identifier for this sub-condition")
     path: str | None = Field(default="", description="JSON path that was evaluated")
     operator: str | None = Field(default="", description="Comparison operator used")
     expected: Any | None = Field(default=None, description="Expected value")
     actual: Any | None = Field(default=None, description="Actual value found")
     matched: bool | None = Field(default=False, description="Whether this sub-condition matched")
-    per_item: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown if this sub-condition used a wildcard path")
+    items: list[ConditionEvaluationPerItem] | None = Field(default=None, description="Per-item breakdown if this sub-condition used a wildcard path")
 
 
 class ConditionalEvaluation(BaseModel):
@@ -184,7 +184,7 @@ class ConditionalEvaluation(BaseModel):
     selected_handles: list[str] | None = Field(default=[])
     matched_branch_id: str | None = None
     matched_condition_ids: list[str] | None = Field(default=[])
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
 
 
 class EditWorkflowArtifact(BaseModel):
@@ -199,7 +199,7 @@ class EditWorkflowArtifact(BaseModel):
     output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
     operation: Literal["edit"] = Field(default="edit", description="Artifact operation that determines the backing record type")
 
 
@@ -232,7 +232,7 @@ class ExtractionWorkflowArtifact(BaseModel):
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
     operation: Literal["extraction"] = Field(default="extraction", description="Artifact operation that determines the backing record type")
 
 
@@ -247,7 +247,7 @@ class FunctionInvocation(BaseModel):
     output: Any | None = None
     duration_ms: int | None = None
     error: ErrorDetails | None = None
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
 
 
 class ParseWorkflowArtifact(BaseModel):
@@ -261,7 +261,7 @@ class ParseWorkflowArtifact(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
     operation: Literal["parse"] = Field(default="parse", description="Artifact operation that determines the backing record type")
 
 
@@ -278,7 +278,7 @@ class PartitionWorkflowArtifact(BaseModel):
     output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages")
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
-    created_at: datetime.datetime | None = Field(default=None, description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
     operation: Literal["partition"] = Field(default="partition", description="Artifact operation that determines the backing record type")
 
 
@@ -299,7 +299,7 @@ class ReviewEvaluation(BaseModel):
     review_notes: str | None = None
     requested_revision: bool | None = Field(default=False)
     reviewed_at: datetime.datetime | None = None
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
 
 
 class SplitWorkflowArtifact(BaseModel):
@@ -314,7 +314,7 @@ class SplitWorkflowArtifact(BaseModel):
     output: list[SplitResult] = Field(..., description="The list of document splits with their assigned pages")
     consensus: SplitConsensus | None = Field(default=None, description="Consensus metadata for multi-vote split runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the split operation")
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
     operation: Literal["split"] = Field(default="split", description="Artifact operation that determines the backing record type")
 
 
@@ -327,7 +327,7 @@ class WhileLoopTermination(BaseModel):
     step_id: str
     termination_reason: WhileLoopTerminationTerminationReason = Field(..., description="Why the while-loop terminated")
     evaluations: list[ConditionEvaluationResult] | None = Field(default=[])
-    created_at: datetime.datetime = Field(..., description="When this artifact was written by the orchestrator.")
+    created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
 
 
 class WorkflowArtifact(BaseModel):

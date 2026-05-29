@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The step failed. Error details are bundled into lifecycle.</summary>
     public class ErrorStepLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "error";
 
         /// <summary>Human-readable error message</summary>
         public string Message { get; set; } = default!;

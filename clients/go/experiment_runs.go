@@ -43,11 +43,9 @@ type ExperimentRunsCreateParams struct {
 
 // Create experiment Run Flat
 // Create an experiment run.
-// The “experiment_id“ and (optionally) “workflow_id“ live in the
-// body — flat-resource shape per meta-pattern-blueprint §1. When
-// “workflow_id“ is absent the experiment's stored workflow is used;
-// when present it must match (the validation rejects mismatched pairs
-// with 404, defending against confused-deputy callers).
+// The `experiment_id` and an optional `workflow_id` are supplied in the body.
+// When `workflow_id` is omitted, the experiment's workflow is used; when
+// supplied, it must match that workflow or the request is rejected with 404.
 func (s *ExperimentRunService) Create(ctx context.Context, params *ExperimentRunsCreateParams, opts ...RequestOption) (*ExperimentRun, error) {
 	var result ExperimentRun
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/experiments/runs", nil, params, &result, opts)

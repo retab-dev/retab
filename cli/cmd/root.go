@@ -34,7 +34,9 @@ var rootCmd = &cobra.Command{
 
 func Execute() error {
 	hardenGroupCommands(rootCmd)
+	notify := startUpdateNotifier()
 	err := rootCmd.Execute()
+	notify()
 	if err == nil {
 		return nil
 	}

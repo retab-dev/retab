@@ -17,7 +17,7 @@ public final class AwaitingReviewRun implements WorkflowRunLifecycle {
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "waiting_for_block_ids", required = false)
           List<String> waitingForBlockIds) {
-    this.status = status;
+    this.status = status != null ? status : "awaiting_review";
     this.waitingForBlockIds = waitingForBlockIds;
   }
 

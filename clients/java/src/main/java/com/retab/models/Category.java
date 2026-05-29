@@ -19,7 +19,7 @@ public final class Category {
       @JsonProperty(value = "description", required = false) String description) {
     this.name = name;
     this.handleKey = handleKey;
-    this.description = description;
+    this.description = description != null ? description : "";
   }
 
   @JsonProperty("name")

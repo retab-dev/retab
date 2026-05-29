@@ -43,7 +43,7 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
     this.output = output;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "parse";
   }
 
   @JsonProperty("id")

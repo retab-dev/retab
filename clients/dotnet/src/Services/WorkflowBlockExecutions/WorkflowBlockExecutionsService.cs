@@ -21,9 +21,9 @@ namespace Retab
         /// <remarks>
         /// List recent block executions for one workflow run block.
         /// Cursor pagination matches the conventions used by
-        /// ``GET /v1/extractions`` — pass ``after`` from the previous page's
-        /// ``list_metadata.after`` to advance, ``before`` to step backwards, and
-        /// ``order`` to flip the sort direction. ``run_id`` + ``block_id`` are
+        /// `GET /v1/extractions` — pass `after` from the previous page's
+        /// `list_metadata.after` to advance, `before` to step backwards, and
+        /// `order` to flip the sort direction. `run_id` + `block_id` are
         /// required scope filters; without them this endpoint would expose
         /// cross-run cursors that walk arbitrary block executions.
         /// </remarks>
@@ -54,7 +54,7 @@ namespace Retab
 
         /// <summary>Create Block Execution</summary>
         /// <remarks>
-        /// Create a block execution for ``block_id`` against the current draft.
+        /// Create a block execution for `block_id` against the current draft.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

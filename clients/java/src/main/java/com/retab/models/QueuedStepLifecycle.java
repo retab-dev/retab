@@ -12,7 +12,7 @@ public final class QueuedStepLifecycle implements StepLifecycle {
 
   @JsonCreator
   public QueuedStepLifecycle(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "queued";
   }
 
   @JsonProperty("status")

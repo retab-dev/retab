@@ -4,12 +4,12 @@ namespace Retab
 
     /// <summary>Intersection-over-Union for split page assignments.</summary>
     /// <remarks>
-    /// ``expected`` is stored in the canonical split-eval payload shape:
-    /// ``{"splits": [{"name", "pages"}]}``
+    /// `expected` is stored in the canonical split-eval payload shape:
+    /// `{"splits": [{"name", "pages"}]}`
     /// </remarks>
     public class SplitIouCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "split_iou_gte";
         public Dictionary<string, object> Expected { get; set; } = default!;
         public double? Threshold { get; set; }
 

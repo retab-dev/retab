@@ -26,7 +26,7 @@ public final class SourcesResponse {
       @JsonProperty(value = "file", required = true) FileRef file,
       @JsonProperty(value = "extraction", required = true) Map<String, Object> extraction,
       @JsonProperty(value = "sources", required = true) Map<String, Object> sources) {
-    this.objectType = objectType;
+    this.objectType = objectType != null ? objectType : "extraction.sources";
     this.extractionId = extractionId;
     this.documentType = documentType;
     this.file = file;

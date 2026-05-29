@@ -31,10 +31,10 @@ module Retab
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @key = hash[:key]
       @instructions = hash[:instructions]
-      @model = hash[:model]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @n_consensus = hash[:n_consensus]
-      @allow_overlap = hash[:allow_overlap]
-      @bust_cache = hash[:bust_cache]
+      @allow_overlap = hash[:allow_overlap].nil? ? true : hash[:allow_overlap]
+      @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
     end
   end
 end

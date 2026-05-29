@@ -12,7 +12,7 @@ public final class CompletedWorkflowTestRun implements WorkflowTestRunStatus {
 
   @JsonCreator
   public CompletedWorkflowTestRun(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "completed";
   }
 
   @JsonProperty("status")

@@ -43,12 +43,12 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
     this.key = key;
     this.instructions = instructions;
     this.nConsensus = nConsensus;
-    this.allowOverlap = allowOverlap;
+    this.allowOverlap = allowOverlap != null ? allowOverlap : true;
     this.output = output;
     this.consensus = consensus;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "partition";
   }
 
   @JsonProperty("id")

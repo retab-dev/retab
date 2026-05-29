@@ -48,7 +48,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
          * Active output handles for routing decisions
          * @var array<string>|null
          */
-        public ?array $routingDecision = null,
+        public ?array $routingDecisions = null,
         /** Duration of the block execution in milliseconds */
         public ?float $durationMs = null,
         /** When the block execution record was created */
@@ -94,7 +94,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             handleInputs: $data['handle_inputs'] ?? null,
             artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,
             handleOutputs: $data['handle_outputs'] ?? null,
-            routingDecision: $data['routing_decision'] ?? null,
+            routingDecisions: $data['routing_decisions'] ?? null,
             durationMs: $data['duration_ms'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             blockConfig: $data['block_config'] ?? null,
@@ -116,7 +116,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'handle_inputs' => $this->handleInputs,
             'artifact' => $this->artifact?->toArray(),
             'handle_outputs' => $this->handleOutputs,
-            'routing_decision' => $this->routingDecision,
+            'routing_decisions' => $this->routingDecisions,
             'duration_ms' => $this->durationMs,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'block_config' => $this->blockConfig,

@@ -12,7 +12,7 @@ namespace Retab
         public string? HandleKey { get; set; }
 
         /// <summary>The description of the category</summary>
-        public string? Description { get; set; }
+        public string? Description { get; set; } = "";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

@@ -17,7 +17,7 @@ namespace Retab
         public AssertionDriftStatus? AssertionDriftStatus { get; set; }
         public ExperimentSchemaDriftStatus? SchemaDrift { get; set; }
         public string? SchemaDriftDetail { get; set; }
-        public string? ValidationStatus { get; set; }
+        public string? ValidationStatus { get; set; } = "valid";
         public List<string>? ValidationIssues { get; set; }
         public LatestBlockTestRunSummary? LatestRunSummary { get; set; }
         public LatestBlockTestRunSummary? LatestPassingRunSummary { get; set; }

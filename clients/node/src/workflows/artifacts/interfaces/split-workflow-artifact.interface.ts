@@ -69,7 +69,7 @@ export interface SplitWorkflowArtifact {
   consensus?: SplitConsensus | null;
   /** Usage information for the split operation */
   usage?: RetabUsage | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt: Date;
   /**
    * Artifact operation that determines the backing record type

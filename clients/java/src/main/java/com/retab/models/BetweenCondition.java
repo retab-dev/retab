@@ -19,10 +19,10 @@ public final class BetweenCondition implements Condition {
       @JsonProperty(value = "lower", required = true) Object lower,
       @JsonProperty(value = "upper", required = true) Object upper,
       @JsonProperty(value = "inclusive", required = false) Boolean inclusive) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "between";
     this.lower = lower;
     this.upper = upper;
-    this.inclusive = inclusive;
+    this.inclusive = inclusive != null ? inclusive : true;
   }
 
   @JsonProperty("kind")

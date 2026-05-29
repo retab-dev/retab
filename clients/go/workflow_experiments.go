@@ -24,9 +24,8 @@ type WorkflowExperimentsListParams struct {
 
 // List experiments
 // List experiments under one workflow with cursor pagination.
-// The enrichment passes (latest-run snapshot, block info, drift detection)
-// run on the paginated page, not the full collection — so they scale with
-// “limit“, not with the total experiment count under the workflow.
+// Each experiment is returned with its latest-run snapshot, block info, and
+// drift detection.
 func (s *WorkflowExperimentService) List(ctx context.Context, params *WorkflowExperimentsListParams, opts ...RequestOption) (*PaginatedList[WorkflowExperiment], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")
@@ -50,7 +49,7 @@ type WorkflowExperimentsCreateParams struct {
 
 // Create experiment
 // Create an experiment.
-// When “source_experiment_id“ is set, duplicates the source experiment
+// When `source_experiment_id` is set, duplicates the source experiment
 // (block, name + "(Copy)", n_consensus, documents) and rejects any other
 // field. Otherwise creates a fresh experiment from the provided fields.
 func (s *WorkflowExperimentService) Create(ctx context.Context, params *WorkflowExperimentsCreateParams, opts ...RequestOption) (*WorkflowExperiment, error) {

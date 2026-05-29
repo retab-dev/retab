@@ -5,24 +5,21 @@ import { z } from 'zod';
 export interface EmailTrigger {
   /** @default "email" */
   type: 'email';
-  /**
-   * Sender email address, when known
-   * @default ""
-   */
-  sender?: string;
+  /** Sender email address, when known */
+  sender?: string | null;
   /** Email subject, when known */
   subject?: string | null;
 }
 
 export interface EmailTriggerResponse {
   type: 'email';
-  sender?: string;
+  sender?: string | null;
   subject?: string | null;
 }
 
 export const ZEmailTrigger = z.object({
   type: z.literal('email'),
-  sender: z.string().optional(),
+  sender: z.string().nullable().optional(),
   subject: z.string().nullable().optional(),
 }) as z.ZodType<EmailTrigger>;
 

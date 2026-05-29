@@ -13,8 +13,6 @@ pub struct EmailTrigger {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub type_: Option<String>,
     /// Sender email address, when known
-    ///
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sender: Option<String>,
     /// Email subject, when known

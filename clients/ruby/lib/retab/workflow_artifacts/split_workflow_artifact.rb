@@ -46,7 +46,7 @@ module Retab
       @consensus = hash[:consensus] ? Retab::SplitConsensus.new(hash[:consensus]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "split" : hash[:operation]
     end
   end
 end

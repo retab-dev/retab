@@ -16,7 +16,7 @@ public final class JsonSchemaValidCondition implements Condition {
   public JsonSchemaValidCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "schema", required = false) Map<String, Object> schema) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "json_schema_valid";
     this.schema = schema;
   }
 

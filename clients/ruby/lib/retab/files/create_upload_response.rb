@@ -28,7 +28,7 @@ module Retab
       hash = self.class.normalize(json)
       @file_id = hash[:fileId]
       @upload_url = hash[:uploadUrl]
-      @upload_method = hash[:uploadMethod]
+      @upload_method = hash[:uploadMethod].nil? ? "PUT" : hash[:uploadMethod]
       @upload_headers = hash[:uploadHeaders] || {}
       @mime_data = hash[:mimeData] ? Retab::MimeData.new(hash[:mimeData]) : nil
       @expires_at = hash[:expiresAt]

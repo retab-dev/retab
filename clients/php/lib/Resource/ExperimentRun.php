@@ -9,7 +9,7 @@ namespace Retab\Resource;
 /**
  * Run-id-first public experiment run shape.
  *
- * The canonical identity is ``id``. Internal queue handles and duplicate
+ * The canonical identity is `id`. Internal queue handles and duplicate
  * identity aliases are intentionally absent.
  */
 readonly class ExperimentRun implements \JsonSerializable

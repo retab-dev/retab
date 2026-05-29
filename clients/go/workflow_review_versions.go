@@ -22,7 +22,7 @@ type WorkflowReviewVersionsListParams struct {
 
 // List review Versions Route
 // List versions for one review.
-// “review_id“ is required by design — listing versions across all reviews
+// `review_id` is required by design — listing versions across all reviews
 // has no product use and would expose a needlessly wide query surface.
 func (s *WorkflowReviewVersionService) List(ctx context.Context, params *WorkflowReviewVersionsListParams, opts ...RequestOption) (*PaginatedList[ReviewVersion], error) {
 	if params == nil {

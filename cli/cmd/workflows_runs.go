@@ -650,31 +650,12 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if err := validateWorkflowRunsListFilters(cmd); err != nil {
 			return err
 		}
-		// Honour <workflow-id> positional (matches blocks list / edges
-		// create convention). The flag form stays supported. If both are
-		// set and they disagree, error
-		// — silently picking one would mask real user mistakes.
-		flagID, _ := cmd.Flags().GetString("workflow-id")
-		// Reject an explicitly-empty flag (e.g. ``--workflow-id ""``). pflag
-		// happily returns ``""``, which would silently disable the filter
-		// and return runs from every workflow in the org — the opposite of
-		// what the user typed. Matches the SDK's guard on the positional
-		// form (``workflowID is required``).
-		if cmd.Flags().Changed("workflow-id") && strings.TrimSpace(flagID) == "" {
-			return fmt.Errorf("--workflow-id must not be blank")
-		}
-		var posID string
-		if len(args) == 1 {
-			posID = args[0]
-		}
-		effectiveID := ""
-		switch {
-		case posID != "" && flagID != "" && posID != flagID:
-			return fmt.Errorf("workflow id specified twice (positional %q, --workflow-id %q)", posID, flagID)
-		case posID != "":
-			effectiveID = posID
-		case flagID != "":
-			effectiveID = flagID
+		// Honour <workflow-id> positionally OR via --workflow-id (the two
+		// forms are co-equal across every workflow-scoped list). Scope is
+		// optional here: with no id the listing spans the whole workspace.
+		effectiveID, err := resolveWorkflowScope(cmd, args, false)
+		if err != nil {
+			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {

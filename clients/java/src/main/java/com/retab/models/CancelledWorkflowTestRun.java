@@ -15,7 +15,7 @@ public final class CancelledWorkflowTestRun implements WorkflowTestRunStatus {
   public CancelledWorkflowTestRun(
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "reason", required = false) String reason) {
-    this.status = status;
+    this.status = status != null ? status : "cancelled";
     this.reason = reason;
   }
 

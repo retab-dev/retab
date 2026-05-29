@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents an any item matches condition.</summary>
     public class AnyItemMatchesCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "any_item_matches";
         [Newtonsoft.Json.JsonConverter(typeof(ExistConditionDiscriminatorConverter))]
         public object Condition { get; set; } = default!;
 

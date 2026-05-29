@@ -5,13 +5,13 @@ namespace Retab
 
     /// <summary>Result of evaluating ONE assertion against a block's output.</summary>
     /// <remarks>
-    /// ``outcome`` is a verdict only — pass / fail / blocked. An execution
+    /// `outcome` is a verdict only — pass / fail / blocked. An execution
     /// error (the assertion couldn't be evaluated because of a type error,
     /// invalid regex, schema validation crash, block execution crash, etc.) is
-    /// expressed by ``outcome="blocked"`` with a populated ``failure`` whose
-    /// ``code`` identifies the specific failure mode (``execution_error``,
-    /// ``type_error``, ``invalid_regex``, ``schema_invalid``,
-    /// ``block_execution_failed``, ...).
+    /// expressed by `outcome="blocked"` with a populated `failure` whose
+    /// `code` identifies the specific failure mode (`execution_error`,
+    /// `type_error`, `invalid_regex`, `schema_invalid`,
+    /// `block_execution_failed`, ...).
     /// </remarks>
     public class AssertionResult
     {

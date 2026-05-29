@@ -42,7 +42,7 @@ func (s *WorkflowEdgeService) List(ctx context.Context, params *WorkflowEdgesLis
 type WorkflowEdgesCreateParams struct {
 	// WorkflowID is workflow to create the edge in.
 	WorkflowID string `json:"workflow_id" url:"-"`
-	// ID is if omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one.
+	// ID is if omitted, the server generates an opaque `edg_<nanoid>`. Opaque edge ID. Omit to let the server generate one.
 	ID *string `json:"id,omitempty" url:"-"`
 	// SourceBlock is source block ID
 	SourceBlock string `json:"source_block" url:"-"`

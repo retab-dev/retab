@@ -40,7 +40,7 @@ pub struct ReviewEvaluation {
     pub requested_revision: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reviewed_at: Option<String>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     pub created_at: String,
 }
 impl ReviewEvaluation {

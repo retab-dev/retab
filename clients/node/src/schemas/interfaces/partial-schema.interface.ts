@@ -4,8 +4,7 @@ import { z } from 'zod';
 export interface PartialSchema {
   /** @default "schema" */
   object?: string;
-  /** @default "" */
-  createdAt?: string;
+  createdAt?: Date | null;
   /** @default {} */
   jsonSchema?: Record<string, unknown>;
   /** @default true */
@@ -14,14 +13,14 @@ export interface PartialSchema {
 
 export interface PartialSchemaResponse {
   object?: string;
-  created_at?: string;
+  created_at?: string | null;
   json_schema?: Record<string, unknown>;
   strict?: boolean;
 }
 
 export const ZPartialSchema = z.object({
   object: z.string().optional(),
-  createdAt: z.string().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
   jsonSchema: z.record(z.string(), z.unknown()).optional(),
   strict: z.boolean().optional(),
 }) as z.ZodType<PartialSchema>;
@@ -29,7 +28,12 @@ export const ZPartialSchema = z.object({
 export function deserializePartialSchema(wire: PartialSchemaResponse): PartialSchema {
   return {
     object: wire['object'],
-    createdAt: wire['created_at'],
+    createdAt:
+      wire['created_at'] == null
+        ? (wire['created_at'] as undefined)
+        : wire['created_at'] == null
+          ? wire['created_at']
+          : new Date(wire['created_at']),
     jsonSchema: wire['json_schema'],
     strict: wire['strict'],
   };
@@ -38,7 +42,12 @@ export function deserializePartialSchema(wire: PartialSchemaResponse): PartialSc
 export function serializePartialSchema(domain: PartialSchema): PartialSchemaResponse {
   return {
     object: domain['object'],
-    created_at: domain['createdAt'],
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'] == null
+          ? domain['createdAt']
+          : domain['createdAt'].toISOString(),
     json_schema: domain['jsonSchema'],
     strict: domain['strict'],
   };

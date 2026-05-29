@@ -19,7 +19,7 @@ namespace Retab
         public WorkflowBlockType Type { get; set; }
 
         /// <summary>Display label for the block</summary>
-        public string? Label { get; set; }
+        public string? Label { get; set; } = "";
 
         /// <summary>X position on canvas</summary>
         public double? PositionX { get; set; }

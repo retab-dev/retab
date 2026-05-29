@@ -40,7 +40,7 @@ func (s *WorkflowBlockService) List(ctx context.Context, params *WorkflowBlocksL
 type WorkflowBlocksCreateParams struct {
 	// WorkflowID is workflow to create the block in.
 	WorkflowID string `json:"workflow_id" url:"-"`
-	// ID is if omitted, the server generates an opaque ``blk_<nanoid>``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_<nanoid>`` form for predictability.
+	// ID is if omitted, the server generates an opaque `blk_<nanoid>`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_<nanoid>` form for predictability.
 	ID *string `json:"id,omitempty" url:"-"`
 	// Type is block type
 	Type WorkflowBlockCreateRequestType `json:"type" url:"-"`
@@ -62,7 +62,6 @@ type WorkflowBlocksCreateParams struct {
 
 // Create block
 // Create a new block in a workflow.
-// This creates a block in the live workflow_blocks collection.
 func (s *WorkflowBlockService) Create(ctx context.Context, params *WorkflowBlocksCreateParams, opts ...RequestOption) (*WorkflowBlock, error) {
 	var result WorkflowBlock
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/blocks", nil, params, &result, opts)
@@ -101,7 +100,7 @@ type WorkflowBlocksUpdateParams struct {
 	Height    *float64               `json:"height,omitempty" url:"-"`
 	Config    map[string]interface{} `json:"config,omitempty" url:"-"`
 	ParentID  *string                `json:"parent_id,omitempty" url:"-"`
-	// ConfigMode is how to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
+	// ConfigMode is how to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.
 	ConfigMode *UpdateWorkflowBlockRequestConfigMode `json:"config_mode,omitempty" url:"-"`
 	// WorkflowID is optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`

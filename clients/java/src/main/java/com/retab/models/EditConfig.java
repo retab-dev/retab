@@ -12,7 +12,7 @@ public final class EditConfig {
 
   @JsonCreator
   public EditConfig(@JsonProperty(value = "color", required = false) String color) {
-    this.color = color;
+    this.color = color != null ? color : "#000080";
   }
 
   @JsonProperty("color")

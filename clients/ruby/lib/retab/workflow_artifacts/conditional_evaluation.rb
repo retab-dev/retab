@@ -32,7 +32,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "conditional_evaluation" : hash[:operation]
       @id = hash[:id]
       @run_id = hash[:run_id]
       @step_id = hash[:step_id]

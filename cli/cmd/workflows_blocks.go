@@ -116,16 +116,25 @@ func mergeWorkflowBlockConfig(existing map[string]any, patch map[string]any) map
 }
 
 var workflowsBlocksListCmd = &cobra.Command{
-	Use:   "list <workflow-id>",
+	Use:   "list [workflow-id]",
 	Short: "List blocks in a workflow",
 	Long: `List every block in a workflow's draft graph, including id, type,
 label, position, and config.
 
+Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
+the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
+is accepted when they agree; an error is raised only when they disagree, so a
+typo isn't silently masked. The workflow id is required: blocks have no
+org-wide listing.
+
 Paginate by passing the cursor from a previous response's
 ` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
 ` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
-	Example: `  # List all blocks
+	Example: `  # List all blocks (positional)
   retab workflows blocks list wf_abc123
+
+  # Same, with the flag form
+  retab workflows blocks list --workflow-id wf_abc123
 
   # First page of 50
   retab workflows blocks list wf_abc123 --limit 50
@@ -136,13 +145,19 @@ Paginate by passing the cursor from a previous response's
 
   # Get the ids only
   retab workflows blocks list wf_abc123 | jq -r '.data[].id'`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — blocks have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
-		params := workflowBlocksListParams(cmd, args[0])
+		params := workflowBlocksListParams(cmd, workflowID)
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		result, err := client.Workflows.Blocks.List(ctx, params)
@@ -552,6 +567,7 @@ func init() {
 
 	workflowsBlocksDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
+	workflowsBlocksListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsBlocksListCmd.Flags().String("before", "", "block id: return the page before this id (mutually exclusive with --after)")
 	workflowsBlocksListCmd.Flags().String("after", "", "block id: return the page after this id (mutually exclusive with --before)")
 	workflowsBlocksListCmd.MarkFlagsMutuallyExclusive("before", "after")

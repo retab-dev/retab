@@ -31,7 +31,7 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
          * Per-item breakdown for wildcard array conditions
          * @var array<\Retab\Resource\ConditionEvaluationPerItem>|null
          */
-        public ?array $perItem = null,
+        public ?array $items = null,
         /**
          * Sub-condition evaluations for compound conditions
          * @var array<\Retab\Resource\ConditionEvaluationSubCondition>|null
@@ -50,7 +50,7 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
             expected: $data['expected'] ?? null,
             actual: $data['actual'] ?? null,
             matched: $data['matched'] ?? null,
-            perItem: isset($data['per_item']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['per_item']) : null,
+            items: isset($data['items']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
             subConditions: isset($data['sub_conditions']) ? array_map(fn($item) => ConditionEvaluationSubCondition::fromArray($item), $data['sub_conditions']) : null,
             logicalOperator: isset($data['logical_operator']) ? ConditionEvaluationResultLogicalOperator::from($data['logical_operator']) : null,
         );
@@ -65,7 +65,7 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
             'expected' => $this->expected,
             'actual' => $this->actual,
             'matched' => $this->matched,
-            'per_item' => $this->perItem !== null ? array_map(fn($item) => $item->toArray(), $this->perItem) : null,
+            'items' => $this->items !== null ? array_map(fn($item) => $item->toArray(), $this->items) : null,
             'sub_conditions' => $this->subConditions !== null ? array_map(fn($item) => $item->toArray(), $this->subConditions) : null,
             'logical_operator' => $this->logicalOperator?->value,
         ];

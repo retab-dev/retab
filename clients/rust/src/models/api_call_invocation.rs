@@ -20,7 +20,7 @@ pub struct ApiCallInvocation {
     pub attempts: Option<Vec<ApiCallAttempt>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub error: Option<ErrorDetails>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
 }

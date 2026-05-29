@@ -6,7 +6,7 @@ namespace Retab
     /// <summary>Represents a length compare condition.</summary>
     public class LengthCompareCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "length_compare";
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public LengthCompareConditionOp Op { get; set; }

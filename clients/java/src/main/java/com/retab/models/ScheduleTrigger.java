@@ -15,7 +15,7 @@ public final class ScheduleTrigger implements Trigger {
   public ScheduleTrigger(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "schedule_id", required = true) String scheduleId) {
-    this.type = type;
+    this.type = type != null ? type : "schedule";
     this.scheduleId = scheduleId;
   }
 

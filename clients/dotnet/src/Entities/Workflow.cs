@@ -2,16 +2,7 @@ namespace Retab
 {
     using System;
 
-    /// <summary>Public workflow resource returned by workflow metadata endpoints.</summary>
-    /// <remarks>
-    /// This is the API response shape — distinct from the internal storage
-    /// model (:class:`StoredWorkflow`), which carries persistence-only fields
-    /// that never appear in API responses. Routes call
-    /// :func:`serialize_workflow_response` to convert the storage shape into
-    /// this response shape; constructing this class directly for persistence
-    /// would drop those storage-only fields silently. The two classes were
-    /// deliberately renamed to avoid the prior name collision.
-    /// </remarks>
+    /// <summary>A workflow and its current configuration.</summary>
     public class Workflow
     {
 
@@ -19,10 +10,10 @@ namespace Retab
         public string Id { get; set; } = default!;
 
         /// <summary>The name of the workflow</summary>
-        public string? Name { get; set; }
+        public string? Name { get; set; } = "Untitled Workflow";
 
         /// <summary>Description of the workflow</summary>
-        public string? Description { get; set; }
+        public string? Description { get; set; } = "";
 
         /// <summary>Published workflow metadata when a published version exists</summary>
         public WorkflowPublished? Published { get; set; }

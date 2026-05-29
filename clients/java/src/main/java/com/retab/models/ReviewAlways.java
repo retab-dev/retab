@@ -12,7 +12,7 @@ public final class ReviewAlways implements ReviewKind {
 
   @JsonCreator
   public ReviewAlways(@JsonProperty(value = "kind", required = false) String kind) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "always";
   }
 
   @JsonProperty("kind")

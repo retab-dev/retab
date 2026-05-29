@@ -26,7 +26,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @object = hash[:object]
+      @object = hash[:object].nil? ? "extraction.sources" : hash[:object]
       @extraction_id = hash[:extraction_id]
       @document_type = hash[:document_type]
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil

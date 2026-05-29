@@ -15,7 +15,7 @@ public final class RestartTrigger implements Trigger {
   public RestartTrigger(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "parent_run_id", required = true) String parentRunId) {
-    this.type = type;
+    this.type = type != null ? type : "restart";
     this.parentRunId = parentRunId;
   }
 

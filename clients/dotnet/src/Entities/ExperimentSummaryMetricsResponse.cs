@@ -13,8 +13,8 @@ namespace Retab
     {
         public string ExperimentId { get; set; } = default!;
         public string RunId { get; set; } = default!;
-        public string? Kind { get; set; }
-        public string? View { get; set; }
+        public string? Kind { get; set; } = "summary";
+        public string? View { get; set; } = "summary";
         public string? DefinitionFingerprint { get; set; }
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]

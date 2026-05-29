@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "boundary_confidence_lt" : hash[:kind]
       @threshold = hash[:threshold]
     end
   end

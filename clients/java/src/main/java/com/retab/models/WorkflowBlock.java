@@ -42,7 +42,7 @@ public final class WorkflowBlock {
     this.id = id;
     this.workflowId = workflowId;
     this.type = type;
-    this.label = label;
+    this.label = label != null ? label : "";
     this.positionX = positionX;
     this.positionY = positionY;
     this.width = width;

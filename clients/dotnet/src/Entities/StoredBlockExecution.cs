@@ -43,7 +43,7 @@ namespace Retab
         public Dictionary<string, object>? HandleOutputs { get; set; }
 
         /// <summary>Active output handles for routing decisions</summary>
-        public List<string>? RoutingDecision { get; set; }
+        public List<string>? RoutingDecisions { get; set; }
 
         /// <summary>Duration of the block execution in milliseconds</summary>
         public double? DurationMs { get; set; }

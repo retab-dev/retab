@@ -22,7 +22,7 @@ public final class AssertionSchemaDep {
     this.outputHandleId = outputHandleId;
     this.schemaPath = schemaPath;
     this.subtreeHash = subtreeHash;
-    this.dependsOnRoot = dependsOnRoot;
+    this.dependsOnRoot = dependsOnRoot != null ? dependsOnRoot : false;
   }
 
   @JsonProperty("output_handle_id")

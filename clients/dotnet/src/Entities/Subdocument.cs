@@ -9,10 +9,10 @@ namespace Retab
         public string Name { get; set; } = default!;
 
         /// <summary>The description of the subdocument</summary>
-        public string? Description { get; set; }
+        public string? Description { get; set; } = "";
 
         /// <summary>When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass).</summary>
-        public bool? AllowMultipleInstances { get; set; }
+        public bool? AllowMultipleInstances { get; set; } = false;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

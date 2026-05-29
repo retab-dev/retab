@@ -28,7 +28,7 @@ type WorkflowReviewsListParams struct {
 }
 
 // List reviews Route
-// List reviews — the review queue, oldest first by “created_at“.
+// List reviews — the review queue, oldest first by `created_at`.
 func (s *WorkflowReviewService) List(ctx context.Context, params *WorkflowReviewsListParams, opts ...RequestOption) (*PaginatedList[Review], error) {
 	return doPaginated[Review](ctx, s.client, "GET", "/v1/workflows/reviews", params, nil, opts...)
 }
@@ -54,11 +54,9 @@ type WorkflowReviewsApproveParams struct {
 }
 
 // Approve review Route
-// Approve one exact review version and resume the Temporal run.
-// Earns its action-verb shape per the four criteria in
-// “meta-pattern-blueprint.md“ §2: precondition (“decision is None“),
-// side-effect dominates (Temporal resume signal), divergent request body vs
-// “/reject“, divergent response (carries “resume_status“).
+// Approve one review version and resume the workflow run.
+// The response carries `resume_status` so callers can see whether the run
+// resumed successfully.
 func (s *WorkflowReviewService) Approve(ctx context.Context, reviewID string, params *WorkflowReviewsApproveParams, opts ...RequestOption) (*SubmitDecisionResponse, error) {
 	if reviewID == "" {
 		return nil, fmt.Errorf("retab: review_id is required")
@@ -80,9 +78,8 @@ type WorkflowReviewsRejectParams struct {
 }
 
 // Reject review Route
-// Reject one exact review version and resume the Temporal run.
-// “reason“ is required by the request shape — "rejected without reason"
-// is unrepresentable on the wire.
+// Reject one review version and resume the workflow run.
+// A `reason` is required.
 func (s *WorkflowReviewService) Reject(ctx context.Context, reviewID string, params *WorkflowReviewsRejectParams, opts ...RequestOption) (*SubmitDecisionResponse, error) {
 	if reviewID == "" {
 		return nil, fmt.Errorf("retab: review_id is required")

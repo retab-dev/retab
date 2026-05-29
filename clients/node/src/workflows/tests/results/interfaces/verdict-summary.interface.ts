@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 export interface VerdictSummary {
-  result: boolean;
+  passed: boolean;
   /** @default 0 */
   assertionsPassed?: number;
   /** @default 0 */
@@ -14,7 +14,7 @@ export interface VerdictSummary {
 }
 
 export interface VerdictSummaryResponse {
-  result: boolean;
+  passed: boolean;
   assertions_passed?: number;
   assertions_failed?: number;
   blocked_assertions?: number;
@@ -22,7 +22,7 @@ export interface VerdictSummaryResponse {
 }
 
 export const ZVerdictSummary = z.object({
-  result: z.boolean(),
+  passed: z.boolean(),
   assertionsPassed: z.number().int().optional(),
   assertionsFailed: z.number().int().optional(),
   blockedAssertions: z.number().int().optional(),
@@ -31,7 +31,7 @@ export const ZVerdictSummary = z.object({
 
 export function deserializeVerdictSummary(wire: VerdictSummaryResponse): VerdictSummary {
   return {
-    result: wire['result'],
+    passed: wire['passed'],
     assertionsPassed: wire['assertions_passed'],
     assertionsFailed: wire['assertions_failed'],
     blockedAssertions: wire['blocked_assertions'],
@@ -41,7 +41,7 @@ export function deserializeVerdictSummary(wire: VerdictSummaryResponse): Verdict
 
 export function serializeVerdictSummary(domain: VerdictSummary): VerdictSummaryResponse {
   return {
-    result: domain['result'],
+    passed: domain['passed'],
     assertions_passed: domain['assertionsPassed'],
     assertions_failed: domain['assertionsFailed'],
     blocked_assertions: domain['blockedAssertions'],

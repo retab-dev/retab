@@ -12,7 +12,7 @@ public final class RunningStepLifecycle implements StepLifecycle {
 
   @JsonCreator
   public RunningStepLifecycle(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "running";
   }
 
   @JsonProperty("status")

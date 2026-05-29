@@ -12,7 +12,7 @@ readonly class PartialSchema implements \JsonSerializable
 
     public function __construct(
         public ?string $object = null,
-        public ?string $createdAt = null,
+        public ?\DateTimeImmutable $createdAt = null,
         /** @var array<string, mixed>|null */
         public ?array $jsonSchema = null,
         public ?bool $strict = null,
@@ -23,7 +23,7 @@ readonly class PartialSchema implements \JsonSerializable
     {
         return new self(
             object: $data['object'] ?? null,
-            createdAt: $data['created_at'] ?? null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             jsonSchema: $data['json_schema'] ?? null,
             strict: $data['strict'] ?? null,
         );
@@ -34,7 +34,7 @@ readonly class PartialSchema implements \JsonSerializable
     {
         return [
             'object' => $this->object,
-            'created_at' => $this->createdAt,
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'json_schema' => $this->jsonSchema,
             'strict' => $this->strict,
         ];

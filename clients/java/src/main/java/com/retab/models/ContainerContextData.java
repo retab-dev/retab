@@ -21,7 +21,7 @@ public final class ContainerContextData {
       @JsonProperty(value = "parallel_item_index", required = false) Long parallelItemIndex) {
     this.containerId = containerId;
     this.iteration = iteration;
-    this.isParallel = isParallel;
+    this.isParallel = isParallel != null ? isParallel : false;
     this.parallelItemIndex = parallelItemIndex;
   }
 

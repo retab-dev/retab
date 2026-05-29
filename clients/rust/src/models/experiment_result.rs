@@ -6,8 +6,8 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Run-scoped per-document experiment result.
-/// The storage row is still named ``experiment_jobs`` internally, but the
-/// public contract is a result row addressed by ``run_id`` + ``document_id``.
+/// The storage row is still named `experiment_jobs` internally, but the
+/// public contract is a result row addressed by `run_id` + `document_id`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentResult {
     pub id: String,

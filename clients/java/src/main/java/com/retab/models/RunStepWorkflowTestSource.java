@@ -17,7 +17,7 @@ public final class RunStepWorkflowTestSource implements WorkflowTestSource {
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "step_id", required = false) String stepId) {
-    this.type = type;
+    this.type = type != null ? type : "run_step";
     this.runId = runId;
     this.stepId = stepId;
   }

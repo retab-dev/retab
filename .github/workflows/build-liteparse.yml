@@ -1,0 +1,237 @@
+# Build + release the LiteParse `lit` CLI bundles for all 6 platforms Retab
+# supports (linux/darwin/windows x amd64/arm64).
+#
+# Why this exists
+# ---------------
+# The Retab CLI's local-first `files parse|grep|inspect` commands shell out to
+# `lit` (LiteParse, Apache-2.0). Upstream LiteParse only publishes 3 platform
+# tarballs, and those contain ONLY the `lit` binary — not the libpdfium that
+# `lit` dlopen()s at runtime. This workflow builds `lit` from a pinned source
+# tag on native runners for all 6 targets and bundles each `lit` together with
+# the matching prebuilt libpdfium, so the Retab CLI can download a single
+# self-contained, checksum-verified archive per platform on demand.
+#
+# The heavy lifting (cargo build + pdfium fetch + staging) lives in
+# scripts/build-liteparse.sh; this workflow handles per-OS toolchain/dep setup,
+# archiving, checksums, and the GitHub release.
+#
+# Cut a release of the bundles:
+#   git tag lit-v2.0.3        # match the LiteParse source ref you're building
+#   git push origin lit-v2.0.3
+#
+# Or run manually from the Actions UI (workflow_dispatch) to produce artifacts
+# without publishing a release.
+name: Build LiteParse bundles
+
+on:
+  push:
+    tags:
+      - "lit-v*"
+  workflow_dispatch:
+    inputs:
+      liteparse_ref:
+        description: "LiteParse git tag/branch/sha to build (e.g. crates-v2.0.3)"
+        required: true
+        default: "crates-v2.0.3"
+        type: string
+      publish:
+        description: "Create a GitHub release with the bundles"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write # required to create the release + upload assets
+
+env:
+  # PDFium prebuilt tag. MUST match the tag LiteParse pins in
+  # crates/pdfium-sys/build.rs (PDFIUM_RELEASE_TAG) so the dlopen'd library is
+  # ABI-compatible with the `lit` we build.
+  PDFIUM_TAG: "chromium/7847"
+  # Default source ref when triggered by a tag (overridden by dispatch input).
+  DEFAULT_LITEPARSE_REF: "crates-v2.0.3"
+
+jobs:
+  build:
+    name: lit ${{ matrix.os }}/${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            runner: ubuntu-latest
+            ocr: "1"
+          - os: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+            ocr: "1"
+          - os: darwin
+            arch: amd64
+            runner: macos-13
+            ocr: "1"
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+            ocr: "1"
+          - os: windows
+            arch: amd64
+            runner: windows-latest
+            ocr: "1"
+          # windows/arm64: build natively on windows-11-arm. OCR (Tesseract's
+          # vendored CMake build) is the least-proven combination here, so we
+          # ship this target OCR-less for now — matching the precedent of
+          # LiteParse's own linux-arm64 release. Flip to "1" once the OCR build
+          # is validated on this runner.
+          - os: windows
+            arch: arm64
+            runner: windows-11-arm
+            ocr: "0"
+    steps:
+      - name: Checkout (Retab SDK repo, for the build script)
+        uses: actions/checkout@v4
+
+      - name: Resolve LiteParse ref
+        id: ref
+        shell: bash
+        run: |
+          set -eu
+          if [ -n "${{ github.event.inputs.liteparse_ref }}" ]; then
+            REF="${{ github.event.inputs.liteparse_ref }}"
+          elif [ "${GITHUB_REF}" != "${GITHUB_REF#refs/tags/lit-v}" ]; then
+            # Tag lit-vX.Y.Z -> build LiteParse crates-vX.Y.Z by convention.
+            REF="crates-v${GITHUB_REF#refs/tags/lit-v}"
+          else
+            REF="${DEFAULT_LITEPARSE_REF}"
+          fi
+          echo "liteparse_ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Building LiteParse ref: $REF"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install CMake + Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libtesseract-dev libleptonica-dev
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'darwin'
+        run: brew install tesseract leptonica
+
+      - name: Cache cargo + pdfium
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cache/pdfium-rs
+            ~/Library/Caches/pdfium-rs
+          key: lit-${{ matrix.os }}-${{ matrix.arch }}-${{ steps.ref.outputs.liteparse_ref }}
+
+      - name: Build + stage lit bundle
+        id: stage
+        shell: bash
+        env:
+          LIT_OS: ${{ matrix.os }}
+          LIT_ARCH: ${{ matrix.arch }}
+          LIT_OCR: ${{ matrix.ocr }}
+          LITEPARSE_REF: ${{ steps.ref.outputs.liteparse_ref }}
+          STAGE_DIR: dist/lit-${{ matrix.os }}-${{ matrix.arch }}
+        run: bash scripts/build-liteparse.sh
+
+      - name: Archive bundle (unix tar.gz)
+        if: matrix.os != 'windows'
+        shell: bash
+        run: |
+          set -eu
+          mkdir -p out
+          base="lit-${{ matrix.os }}-${{ matrix.arch }}"
+          tar -C dist -czf "out/${base}.tar.gz" "${base}"
+          ( cd out && shasum -a 256 "${base}.tar.gz" > "${base}.tar.gz.sha256" )
+          cat "out/${base}.tar.gz.sha256"
+
+      - name: Archive bundle (windows zip)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          $base = "lit-${{ matrix.os }}-${{ matrix.arch }}"
+          Compress-Archive -Path "dist/$base/*" -DestinationPath "out/$base.zip" -Force
+          $hash = (Get-FileHash "out/$base.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $base.zip" | Out-File -Encoding ascii "out/$base.zip.sha256"
+          Get-Content "out/$base.zip.sha256"
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lit-${{ matrix.os }}-${{ matrix.arch }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    # Only publish when triggered by a tag, or when the dispatch input opts in.
+    if: startsWith(github.ref, 'refs/tags/lit-v') || github.event.inputs.publish == 'true'
+    steps:
+      - name: Download all bundle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect bundles + combined checksums
+        id: collect
+        run: |
+          set -eu
+          mkdir -p release
+          # Flatten the per-target artifact dirs into one release dir.
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
+          ( cd release && sha256sum lit-*.tar.gz lit-*.zip 2>/dev/null > checksums.txt || true )
+          echo "Release contents:"
+          ls -lh release/
+          echo "checksums.txt:"
+          cat release/checksums.txt
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          set -eu
+          if [ "${GITHUB_REF}" != "${GITHUB_REF#refs/tags/}" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            # Manual dispatch with publish=true: synthesize a tag from the ref.
+            TAG="lit-${{ github.event.inputs.liteparse_ref }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -eu
+          NOTES=$(cat <<'EOF'
+          LiteParse `lit` bundles for the Retab CLI local-first `files` commands.
+
+          Each archive contains the `lit` binary plus the matching libpdfium
+          (PDFium shared library) it dlopen()s at runtime. The Retab CLI
+          downloads the bundle for the current platform on demand, verifies its
+          sha256 against a pinned manifest, and sets `PDFIUM_LIB_PATH` to the
+          extracted directory before invoking `lit`.
+
+          See `checksums.txt` for sha256 sums.
+          EOF
+          )
+          gh release create "$TAG" \
+            --title "LiteParse bundles $TAG" \
+            --notes "$NOTES" \
+            release/*

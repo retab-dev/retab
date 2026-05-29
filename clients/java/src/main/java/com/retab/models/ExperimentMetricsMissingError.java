@@ -19,8 +19,8 @@ public final class ExperimentMetricsMissingError implements Experiment {
       @JsonProperty(value = "error", required = false) String error,
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
       @JsonProperty(value = "message", required = true) String message) {
-    this.kind = kind;
-    this.error = error;
+    this.kind = kind != null ? kind : "no_metrics";
+    this.error = error != null ? error : "no_metrics";
     this.experimentId = experimentId;
     this.message = message;
   }

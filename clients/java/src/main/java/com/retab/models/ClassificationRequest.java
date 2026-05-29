@@ -28,11 +28,11 @@ public final class ClassificationRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
     this.document = document;
     this.categories = categories;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.firstNPages = firstNPages;
     this.instructions = instructions;
     this.nConsensus = nConsensus;
-    this.bustCache = bustCache;
+    this.bustCache = bustCache != null ? bustCache : false;
   }
 
   @JsonProperty("document")

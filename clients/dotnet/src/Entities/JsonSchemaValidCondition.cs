@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a json schema valid condition.</summary>
     public class JsonSchemaValidCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "json_schema_valid";
         public Dictionary<string, object>? Schema { get; set; }
 
         /// <summary>

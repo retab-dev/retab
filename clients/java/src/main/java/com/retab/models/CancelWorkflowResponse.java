@@ -20,7 +20,7 @@ public final class CancelWorkflowResponse {
       @JsonProperty(value = "cancellation_status", required = false)
           CancelWorkflowResponseCancellationStatus cancellationStatus) {
     this.run = run;
-    this.redisAvailable = redisAvailable;
+    this.redisAvailable = redisAvailable != null ? redisAvailable : true;
     this.cancellationStatus = cancellationStatus;
   }
 

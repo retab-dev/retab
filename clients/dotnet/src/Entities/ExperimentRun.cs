@@ -5,7 +5,7 @@ namespace Retab
 
     /// <summary>Run-id-first public experiment run shape.</summary>
     /// <remarks>
-    /// The canonical identity is ``id``. Internal queue handles and duplicate
+    /// The canonical identity is `id`. Internal queue handles and duplicate
     /// identity aliases are intentionally absent.
     /// </remarks>
     public class ExperimentRun

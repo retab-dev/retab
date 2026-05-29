@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a not equals condition.</summary>
     public class NotEqualsCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "not_equals";
         public object Expected { get; set; } = default!;
 
         /// <summary>

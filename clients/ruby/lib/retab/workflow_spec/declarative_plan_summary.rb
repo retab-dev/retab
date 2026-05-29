@@ -34,7 +34,7 @@ module Retab
       @replace = hash[:replace]
       @noop = hash[:noop]
       @total = hash[:total]
-      @has_changes = hash[:has_changes]
+      @has_changes = hash[:has_changes].nil? ? false : hash[:has_changes]
     end
   end
 end

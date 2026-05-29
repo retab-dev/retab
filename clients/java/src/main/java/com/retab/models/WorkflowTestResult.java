@@ -25,7 +25,7 @@ public final class WorkflowTestResult {
   private final String blockConfigFingerprint;
   private final WorkflowTestSource source;
   private final Map<String, Object> outputs;
-  private final List<String> routingDecision;
+  private final List<String> routingDecisions;
   private final List<String> warnings;
   private final ErrorDetails error;
   private final Boolean skipped;
@@ -51,7 +51,7 @@ public final class WorkflowTestResult {
           String blockConfigFingerprint,
       @JsonProperty(value = "source", required = true) WorkflowTestSource source,
       @JsonProperty(value = "outputs", required = false) Map<String, Object> outputs,
-      @JsonProperty(value = "routing_decision", required = false) List<String> routingDecision,
+      @JsonProperty(value = "routing_decisions", required = false) List<String> routingDecisions,
       @JsonProperty(value = "warnings", required = false) List<String> warnings,
       @JsonProperty(value = "error", required = false) ErrorDetails error,
       @JsonProperty(value = "skipped", required = false) Boolean skipped,
@@ -71,10 +71,10 @@ public final class WorkflowTestResult {
     this.blockConfigFingerprint = blockConfigFingerprint;
     this.source = source;
     this.outputs = outputs;
-    this.routingDecision = routingDecision;
+    this.routingDecisions = routingDecisions;
     this.warnings = warnings;
     this.error = error;
-    this.skipped = skipped;
+    this.skipped = skipped != null ? skipped : false;
     this.assertionResult = assertionResult;
     this.verdictSummary = verdictSummary;
   }
@@ -149,9 +149,9 @@ public final class WorkflowTestResult {
     return outputs;
   }
 
-  @JsonProperty("routing_decision")
-  public List<String> getRoutingDecision() {
-    return routingDecision;
+  @JsonProperty("routing_decisions")
+  public List<String> getRoutingDecisions() {
+    return routingDecisions;
   }
 
   @JsonProperty("warnings")

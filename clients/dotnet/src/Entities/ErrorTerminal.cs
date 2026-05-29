@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The run failed. All loose error fields are bundled here.</summary>
     public class ErrorTerminal
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "error";
 
         /// <summary>Human-readable error message</summary>
         public string Message { get; set; } = default!;

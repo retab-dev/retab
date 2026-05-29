@@ -22,9 +22,9 @@ type WorkflowBlockExecutionsListParams struct {
 // List block Executions
 // List recent block executions for one workflow run block.
 // Cursor pagination matches the conventions used by
-// “GET /v1/extractions“ — pass “after“ from the previous page's
-// “list_metadata.after“ to advance, “before“ to step backwards, and
-// “order“ to flip the sort direction. “run_id“ + “block_id“ are
+// `GET /v1/extractions` — pass `after` from the previous page's
+// `list_metadata.after` to advance, `before` to step backwards, and
+// `order` to flip the sort direction. `run_id` + `block_id` are
 // required scope filters; without them this endpoint would expose
 // cross-run cursors that walk arbitrary block executions.
 func (s *WorkflowBlockExecutionService) List(ctx context.Context, params *WorkflowBlockExecutionsListParams, opts ...RequestOption) (*PaginatedList[StoredBlockExecution], error) {
@@ -55,7 +55,7 @@ type WorkflowBlockExecutionsCreateParams struct {
 }
 
 // Create block Execution
-// Create a block execution for “block_id“ against the current draft.
+// Create a block execution for `block_id` against the current draft.
 func (s *WorkflowBlockExecutionService) Create(ctx context.Context, params *WorkflowBlockExecutionsCreateParams, opts ...RequestOption) (*StoredBlockExecution, error) {
 	var result StoredBlockExecution
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/blocks/executions", nil, params, &result, opts)

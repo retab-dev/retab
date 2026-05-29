@@ -50,7 +50,7 @@ and one terminal ` + "`decision`" + `. Decisions approve or reject one exact
 }
 
 var workflowsReviewsListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list [workflow-id]",
 	Short: "List block runs awaiting review",
 	Long: `List the review queue — block runs awaiting review and their lifecycle,
 oldest-created first. Version history and the terminal decision payload are omitted; pull
@@ -60,6 +60,11 @@ Use ` + "`--decision-status`" + ` to control which slice of the queue is returne
 ` + "`--decision-status pending`" + ` (the default) returns the open queue.
 Use approved, rejected, decided, or all to inspect past decisions.
 
+Without a workflow id the queue spans the whole workspace; scope it to one
+workflow either positionally (` + "`list <workflow-id>`" + `) or with the
+` + "`--workflow-id`" + ` flag — the two forms are equivalent and may be
+combined when they agree.
+
 Paginate by passing the cursor from a previous response's
 ` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
 ` + "`--before`" + ` for the previous one. The two are mutually
@@ -67,7 +72,10 @@ exclusive.`,
 	Example: `  # The whole org's awaiting-review queue
   retab workflows reviews list
 
-  # Only one workflow
+  # Only one workflow (positional, matches the rest of workflows)
+  retab workflows reviews list wf_abc123
+
+  # Same, with the flag form
   retab workflows reviews list --workflow-id wf_abc123
 
   # Include every review in the listing
@@ -75,10 +83,16 @@ exclusive.`,
 
   # Paginate: take the cursor from the first page and feed it back as --after
   retab workflows reviews list --after $(retab workflows reviews list --limit 50 --output json | jq -r '.list_metadata.after')`,
-	Args: cobra.NoArgs,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := &retab.WorkflowReviewsListParams{PaginationParams: collectListParams(cmd)}
-		if workflowID, _ := cmd.Flags().GetString("workflow-id"); workflowID != "" {
+		// Scope by workflow positionally OR via --workflow-id (co-equal forms);
+		// optional here — no id lists the whole org's review queue.
+		workflowID, err := resolveWorkflowScope(cmd, args, false)
+		if err != nil {
+			return err
+		}
+		if workflowID != "" {
 			params.WorkflowID = ptr(workflowID)
 		}
 		if runID, _ := cmd.Flags().GetString("run-id"); runID != "" {

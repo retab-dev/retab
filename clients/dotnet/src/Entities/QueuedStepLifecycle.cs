@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The step is queued for execution.</summary>
     public class QueuedStepLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "queued";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

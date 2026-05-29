@@ -13,7 +13,7 @@ public final class RunningWorkflowExperimentRun implements WorkflowExperimentRun
   @JsonCreator
   public RunningWorkflowExperimentRun(
       @JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "running";
   }
 
   @JsonProperty("status")

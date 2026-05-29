@@ -20,7 +20,7 @@ public final class WorkflowPublished {
       @JsonProperty(value = "description", required = false) String description) {
     this.versionId = versionId;
     this.publishedAt = publishedAt;
-    this.description = description;
+    this.description = description != null ? description : "";
   }
 
   @JsonProperty("version_id")

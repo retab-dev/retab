@@ -43,7 +43,7 @@ module Retab
       @output = hash[:output] ? Retab::ParseOutput.new(hash[:output]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "parse" : hash[:operation]
     end
   end
 end

@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @status = hash[:status]
+      @status = hash[:status].nil? ? "awaiting_review" : hash[:status]
       @waiting_for_block_ids = (hash[:waiting_for_block_ids] || [])
     end
   end

@@ -15,7 +15,7 @@ public final class ReviewAnySplitPagesLt implements ReviewKind {
   public ReviewAnySplitPagesLt(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "min_pages", required = true) Long minPages) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "any_split_pages_lt";
     this.minPages = minPages;
   }
 

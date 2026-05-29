@@ -106,9 +106,8 @@ impl<'a> WorkflowExperimentsApi<'a> {
     ///
     /// List experiments under one workflow with cursor pagination.
     ///
-    /// The enrichment passes (latest-run snapshot, block info, drift detection)
-    /// run on the paginated page, not the full collection — so they scale with
-    /// ``limit``, not with the total experiment count under the workflow.
+    /// Each experiment is returned with its latest-run snapshot, block info, and
+    /// drift detection.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowExperimentList, Error> {
         self.list_with_options(params, None).await
     }
@@ -130,7 +129,7 @@ impl<'a> WorkflowExperimentsApi<'a> {
     ///
     /// Create an experiment.
     ///
-    /// When ``source_experiment_id`` is set, duplicates the source experiment
+    /// When `source_experiment_id` is set, duplicates the source experiment
     /// (block, name + "(Copy)", n_consensus, documents) and rejects any other
     /// field. Otherwise creates a fresh experiment from the provided fields.
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowExperiment, Error> {

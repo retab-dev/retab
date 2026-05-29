@@ -28,7 +28,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "api_call_invocation" : hash[:operation]
       @id = hash[:id]
       @run_id = hash[:run_id]
       @step_id = hash[:step_id]

@@ -26,10 +26,10 @@ public final class SplitRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
     this.document = document;
     this.subdocuments = subdocuments;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.instructions = instructions;
     this.nConsensus = nConsensus;
-    this.bustCache = bustCache;
+    this.bustCache = bustCache != null ? bustCache : false;
   }
 
   @JsonProperty("document")

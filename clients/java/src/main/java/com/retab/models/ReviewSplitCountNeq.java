@@ -15,7 +15,7 @@ public final class ReviewSplitCountNeq implements ReviewKind {
   public ReviewSplitCountNeq(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Long expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "split_count_neq";
     this.expected = expected;
   }
 

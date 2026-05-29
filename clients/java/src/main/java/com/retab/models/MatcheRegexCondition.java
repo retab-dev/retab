@@ -15,7 +15,7 @@ public final class MatcheRegexCondition implements Condition {
   public MatcheRegexCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "pattern", required = true) String pattern) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "matches_regex";
     this.pattern = pattern;
   }
 

@@ -183,8 +183,7 @@ impl<'a> WorkflowsApi<'a> {
     ///
     /// Create a new workflow.
     ///
-    /// The workflow starts unpublished and is scaffolded with a default
-    /// "Document" input block in the live block collection.
+    /// The workflow starts unpublished with a default "Document" input block.
     pub async fn create(&self, params: CreateParams) -> Result<Workflow, Error> {
         self.create_with_options(params, None).await
     }
@@ -251,11 +250,8 @@ impl<'a> WorkflowsApi<'a> {
     ///
     /// Delete a workflow and all its associated entities.
     ///
-    /// This deletes:
-    /// - The workflow document
-    /// - All blocks and edges (live collections)
-    /// - All block and edge snapshots
-    /// - All workflow snapshots
+    /// This deletes the workflow, all of its blocks and edges, and all of their
+    /// snapshots.
     pub async fn delete(&self, workflow_id: &str) -> Result<(), Error> {
         self.delete_with_options(workflow_id, None).await
     }

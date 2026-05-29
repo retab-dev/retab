@@ -26,7 +26,7 @@ export interface ApiCallInvocation {
   /** @default [] */
   attempts?: ApiCallAttempt[];
   error?: ErrorDetails | null;
-  /** When this artifact was written by the orchestrator. */
+  /** Timestamp when this artifact was created. */
   createdAt?: Date;
 }
 

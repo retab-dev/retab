@@ -18,7 +18,7 @@ public final class ConditionEvaluationResult {
   private final Boolean matched;
   private final String branchName;
   private final ConditionEvaluationResultLogicalOperator logicalOperator;
-  private final List<ConditionEvaluationPerItem> perItem;
+  private final List<ConditionEvaluationPerItem> items;
   private final List<ConditionEvaluationSubCondition> subEvaluations;
   private final ConditionEvaluationDetails details;
 
@@ -33,19 +33,19 @@ public final class ConditionEvaluationResult {
       @JsonProperty(value = "branch_name", required = false) String branchName,
       @JsonProperty(value = "logical_operator", required = false)
           ConditionEvaluationResultLogicalOperator logicalOperator,
-      @JsonProperty(value = "per_item", required = false) List<ConditionEvaluationPerItem> perItem,
+      @JsonProperty(value = "items", required = false) List<ConditionEvaluationPerItem> items,
       @JsonProperty(value = "sub_evaluations", required = false)
           List<ConditionEvaluationSubCondition> subEvaluations,
       @JsonProperty(value = "details", required = true) ConditionEvaluationDetails details) {
     this.conditionId = conditionId;
-    this.path = path;
-    this.operator = operator;
+    this.path = path != null ? path : "";
+    this.operator = operator != null ? operator : "";
     this.expected = expected;
     this.actual = actual;
-    this.matched = matched;
-    this.branchName = branchName;
+    this.matched = matched != null ? matched : false;
+    this.branchName = branchName != null ? branchName : "exit";
     this.logicalOperator = logicalOperator;
-    this.perItem = perItem;
+    this.items = items;
     this.subEvaluations = subEvaluations;
     this.details = details;
   }
@@ -90,9 +90,9 @@ public final class ConditionEvaluationResult {
     return logicalOperator;
   }
 
-  @JsonProperty("per_item")
-  public List<ConditionEvaluationPerItem> getPerItem() {
-    return perItem;
+  @JsonProperty("items")
+  public List<ConditionEvaluationPerItem> getItems() {
+    return items;
   }
 
   @JsonProperty("sub_evaluations")

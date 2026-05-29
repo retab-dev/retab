@@ -19,7 +19,7 @@ namespace Retab
         /// <summary>List Review Versions Route</summary>
         /// <remarks>
         /// List versions for one review.
-        /// ``review_id`` is required by design — listing versions across all reviews
+        /// `review_id` is required by design — listing versions across all reviews
         /// has no product use and would expose a needlessly wide query surface.
         /// </remarks>
         /// <param name="options">Request options.</param>

@@ -15,7 +15,7 @@ public final class NotContainsCondition implements Condition {
   public NotContainsCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Object expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "not_contains";
     this.expected = expected;
   }
 

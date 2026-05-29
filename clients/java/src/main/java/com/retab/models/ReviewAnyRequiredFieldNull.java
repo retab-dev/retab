@@ -12,7 +12,7 @@ public final class ReviewAnyRequiredFieldNull implements ReviewKind {
 
   @JsonCreator
   public ReviewAnyRequiredFieldNull(@JsonProperty(value = "kind", required = false) String kind) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "any_required_field_null";
   }
 
   @JsonProperty("kind")

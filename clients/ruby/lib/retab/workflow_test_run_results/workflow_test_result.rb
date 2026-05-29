@@ -20,7 +20,7 @@ module Retab
       block_config_fingerprint: :block_config_fingerprint,
       source: :source,
       outputs: :outputs,
-      routing_decision: :routing_decision,
+      routing_decisions: :routing_decisions,
       warnings: :warnings,
       error: :error,
       skipped: :skipped,
@@ -43,7 +43,7 @@ module Retab
       :block_config_fingerprint,
       :source,
       :outputs,
-      :routing_decision,
+      :routing_decisions,
       :warnings,
       :error,
       :skipped,
@@ -94,10 +94,10 @@ module Retab
         end
       ) : nil
       @outputs = hash[:outputs] || {}
-      @routing_decision = (hash[:routing_decision] || [])
+      @routing_decisions = (hash[:routing_decisions] || [])
       @warnings = (hash[:warnings] || [])
       @error = hash[:error] ? Retab::ErrorDetails.new(hash[:error]) : nil
-      @skipped = hash[:skipped]
+      @skipped = hash[:skipped].nil? ? false : hash[:skipped]
       @assertion_result = hash[:assertion_result] ? Retab::AssertionResult.new(hash[:assertion_result]) : nil
       @verdict_summary = hash[:verdict_summary] ? Retab::VerdictSummary.new(hash[:verdict_summary]) : nil
     end

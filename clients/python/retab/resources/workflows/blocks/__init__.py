@@ -41,7 +41,7 @@ class WorkflowBlocksMixin:
         parent_id: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Block Create a new block in a workflow. This creates a block in the live workflow_blocks collection."""
+        """Create Block Create a new block in a workflow."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -144,7 +144,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         parent_id: str | None = None,
         **extra_params: Any,
     ) -> WorkflowBlock:
-        """Create Block Create a new block in a workflow. This creates a block in the live workflow_blocks collection."""
+        """Create Block Create a new block in a workflow."""
         prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             id=id,
@@ -231,7 +231,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         parent_id: str | None = None,
         **extra_params: Any,
     ) -> WorkflowBlock:
-        """Create Block Create a new block in a workflow. This creates a block in the live workflow_blocks collection."""
+        """Create Block Create a new block in a workflow."""
         prepared_request = self.prepare_create(
             workflow_id=workflow_id,
             id=id,

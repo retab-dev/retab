@@ -9,8 +9,8 @@ namespace Retab\Resource;
 /**
  * Intersection-over-Union for split page assignments.
  *
- * ``expected`` is stored in the canonical split-eval payload shape:
- * ``{"splits": [{"name", "pages"}]}``
+ * `expected` is stored in the canonical split-eval payload shape:
+ * `{"splits": [{"name", "pages"}]}`
  */
 readonly class SplitIouCondition implements \JsonSerializable
 {

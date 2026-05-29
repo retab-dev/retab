@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The step is paused on a human review decision.</summary>
     public class AwaitingReviewStepLifecycle
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "awaiting_review";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

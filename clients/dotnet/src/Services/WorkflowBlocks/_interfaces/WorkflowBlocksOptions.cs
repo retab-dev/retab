@@ -18,7 +18,7 @@ namespace Retab
         /// <summary>Workflow to create the block in.</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>If omitted, the server generates an opaque ``blk_&lt;nanoid&gt;``. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated ``blk_&lt;nanoid&gt;`` form for predictability.</summary>
+        /// <summary>If omitted, the server generates an opaque `blk_&lt;nanoid&gt;`. Opaque block ID. Omit to let the server generate one. Block IDs are unique per ORGANIZATION (not per workflow) — reusing a human-friendly id like 'block_extract' across multiple workflows in the same org will fail with 409. Prefer the server-generated `blk_&lt;nanoid&gt;` form for predictability.</summary>
         public string? Id { get; set; }
 
         /// <summary>Block type</summary>
@@ -74,7 +74,7 @@ namespace Retab
 
         public string? ParentId { get; set; }
 
-        /// <summary>How to apply the ``config`` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.</summary>
+        /// <summary>How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. Not persisted.</summary>
         public UpdateWorkflowBlockRequestConfigMode? ConfigMode { get; set; }
 
         /// <summary>Optional disambiguator for legacy duplicate block IDs. See ``GET /blocks/{block_id}`` for the full rationale.</summary>

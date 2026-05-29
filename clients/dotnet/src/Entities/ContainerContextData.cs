@@ -12,7 +12,7 @@ namespace Retab
         public long Iteration { get; set; }
 
         /// <summary>Whether this container represents a parallel item</summary>
-        public bool? IsParallel { get; set; }
+        public bool? IsParallel { get; set; } = false;
 
         /// <summary>Parallel item index if is_parallel</summary>
         public long? ParallelItemIndex { get; set; }

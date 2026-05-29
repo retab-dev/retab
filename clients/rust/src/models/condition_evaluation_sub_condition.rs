@@ -10,8 +10,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ConditionEvaluationSubCondition {
     /// Identifier for this sub-condition
-    ///
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sub_condition_id: Option<String>,
     /// JSON path that was evaluated
@@ -37,5 +35,5 @@ pub struct ConditionEvaluationSubCondition {
     pub matched: Option<bool>,
     /// Per-item breakdown if this sub-condition used a wildcard path
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub per_item: Option<Vec<ConditionEvaluationPerItem>>,
+    pub items: Option<Vec<ConditionEvaluationPerItem>>,
 }

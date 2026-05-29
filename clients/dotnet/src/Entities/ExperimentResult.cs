@@ -6,8 +6,8 @@ namespace Retab
 
     /// <summary>Run-scoped per-document experiment result.</summary>
     /// <remarks>
-    /// The storage row is still named ``experiment_jobs`` internally, but the
-    /// public contract is a result row addressed by ``run_id`` + ``document_id``.
+    /// The storage row is still named `experiment_jobs` internally, but the
+    /// public contract is a result row addressed by `run_id` + `document_id`.
     /// </remarks>
     public class ExperimentResult
     {

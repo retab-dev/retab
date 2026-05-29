@@ -10,7 +10,7 @@ namespace Retab
     {
 
         /// <summary>Artifact operation that determines the backing record type</summary>
-        public string? Operation { get; set; }
+        public string? Operation { get; set; } = "while_loop_termination";
         public string Id { get; set; } = default!;
         public string RunId { get; set; } = default!;
         public string StepId { get; set; } = default!;
@@ -21,7 +21,7 @@ namespace Retab
         public WhileLoopTerminationTerminationReason TerminationReason { get; set; }
         public List<ConditionEvaluationResult>? Evaluations { get; set; }
 
-        /// <summary>When this artifact was written by the orchestrator.</summary>
+        /// <summary>Timestamp when this artifact was created.</summary>
         public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>

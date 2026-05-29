@@ -49,8 +49,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @object = hash[:object]
-      @status = hash[:status]
+      @object = hash[:object].nil? ? "job" : hash[:object]
+      @status = hash[:status].nil? ? "validating" : hash[:status]
       @endpoint = hash[:endpoint]
       @error = hash[:error] ? Retab::JobError.new(hash[:error]) : nil
       @warnings = (hash[:warnings] || []).map { |item| item ? Retab::JobWarning.new(item) : nil }
@@ -59,7 +59,7 @@ module Retab
       @completed_at = hash[:completed_at]
       @expires_at = hash[:expires_at]
       @metadata = hash[:metadata] || {}
-      @cancelled = hash[:cancelled]
+      @cancelled = hash[:cancelled].nil? ? false : hash[:cancelled]
       @attempt_count = hash[:attempt_count]
       @last_attempt_at = hash[:last_attempt_at]
       @last_failure_code = hash[:last_failure_code]

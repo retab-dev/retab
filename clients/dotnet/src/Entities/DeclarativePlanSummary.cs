@@ -10,7 +10,7 @@ namespace Retab
         public long? Replace { get; set; }
         public long? Noop { get; set; }
         public long? Total { get; set; }
-        public bool? HasChanges { get; set; }
+        public bool? HasChanges { get; set; } = false;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

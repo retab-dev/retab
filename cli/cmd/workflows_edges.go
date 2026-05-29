@@ -192,16 +192,24 @@ func derefString(s *string) string {
 }
 
 var workflowsEdgesListCmd = &cobra.Command{
-	Use:   "list <workflow-id>",
+	Use:   "list [workflow-id]",
 	Short: "List edges in a workflow",
 	Long: `List edges in a workflow's draft graph. Filter by either endpoint
 to focus on a single block's wiring.
 
+Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
+the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
+is accepted when they agree; an error is raised only when they disagree. The
+workflow id is required: edges have no org-wide listing.
+
 Paginate by passing the cursor from a previous response's
 ` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
 ` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
-	Example: `  # All edges
+	Example: `  # All edges (positional)
   retab workflows edges list wf_abc123
+
+  # Same, with the flag form
+  retab workflows edges list --workflow-id wf_abc123
 
   # Just the edges that fan out of one block
   retab workflows edges list wf_abc123 --source-block blk_def456
@@ -212,8 +220,14 @@ Paginate by passing the cursor from a previous response's
   # Next page
   retab workflows edges list wf_abc123 --limit 50 \
     --after $(retab workflows edges list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — edges have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -222,7 +236,7 @@ Paginate by passing the cursor from a previous response's
 		defer cancel()
 		params := retab.WorkflowEdgesListParams{
 			PaginationParams: collectListParams(cmd),
-			WorkflowID:       args[0],
+			WorkflowID:       workflowID,
 		}
 		if v, _ := cmd.Flags().GetString("source-block"); v != "" {
 			params.SourceBlock = ptr(v)
@@ -440,6 +454,7 @@ is not a terminal.`,
 }
 
 func init() {
+	workflowsEdgesListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsEdgesListCmd.Flags().String("source-block", "", "filter by source block")
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
 	workflowsEdgesListCmd.Flags().String("before", "", "edge id: return the page before this id (mutually exclusive with --after)")

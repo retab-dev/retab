@@ -20,7 +20,7 @@ pub struct WhileLoopTermination {
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub evaluations: Option<Vec<ConditionEvaluationResult>>,
-    /// When this artifact was written by the orchestrator.
+    /// Timestamp when this artifact was created.
     pub created_at: String,
 }
 impl WhileLoopTermination {

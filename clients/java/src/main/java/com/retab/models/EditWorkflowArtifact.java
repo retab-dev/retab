@@ -44,7 +44,7 @@ public final class EditWorkflowArtifact implements WorkflowArtifactOperation2 {
     this.filledDocumentRef = filledDocumentRef;
     this.usage = usage;
     this.createdAt = createdAt;
-    this.operation = operation;
+    this.operation = operation != null ? operation : "edit";
   }
 
   @JsonProperty("id")

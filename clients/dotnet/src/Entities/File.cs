@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a file.</summary>
     public class File
     {
-        public string? Object { get; set; }
+        public string? Object { get; set; } = "file";
 
         /// <summary>The unique identifier of the file</summary>
         public string Id { get; set; } = default!;

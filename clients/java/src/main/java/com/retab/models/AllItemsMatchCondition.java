@@ -15,7 +15,7 @@ public final class AllItemsMatchCondition implements Condition {
   public AllItemsMatchCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "condition", required = true) Condition condition) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "all_items_match";
     this.condition = condition;
   }
 

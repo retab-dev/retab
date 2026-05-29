@@ -12,8 +12,8 @@ namespace Retab
         /// <summary>When the workflow was last published</summary>
         public DateTimeOffset? PublishedAt { get; set; }
 
-        /// <summary>Release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch.</summary>
-        public string? Description { get; set; }
+        /// <summary>Release note attached to the currently published version. Echoes the `description` body passed to `POST /v1/workflows/{id}/publish` so the caller can confirm it was stored without a separate fetch.</summary>
+        public string? Description { get; set; } = "";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

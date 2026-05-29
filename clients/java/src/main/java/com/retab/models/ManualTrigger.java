@@ -15,7 +15,7 @@ public final class ManualTrigger implements Trigger {
   public ManualTrigger(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "user_id", required = false) String userId) {
-    this.type = type;
+    this.type = type != null ? type : "manual";
     this.userId = userId;
   }
 

@@ -45,7 +45,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows", params=params or None, data=data)
 
     def prepare_create(self, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> PreparedRequest:
-        """Create Workflow Create a new workflow. The workflow starts unpublished and is scaffolded with a default "Document" input block in the live block collection."""
+        """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -74,7 +74,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/{workflow_id}", params=params or None, data=data)
 
     def prepare_delete(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Workflow Delete a workflow and all its associated entities. This deletes: - The workflow document - All blocks and edges (live collections) - All block and edge snapshots - All workflow snapshots"""
+        """Delete Workflow Delete a workflow and all its associated entities. This deletes the workflow, all of its blocks and edges, and all of their snapshots."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -131,7 +131,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return self.request_page(prepared_request, model=Workflow)
 
     def create(self, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
-        """Create Workflow Create a new workflow. The workflow starts unpublished and is scaffolded with a default "Document" input block in the live block collection."""
+        """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         prepared_request = self.prepare_create(name=name, description=description, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
@@ -149,7 +149,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     def delete(self, workflow_id: str, **extra_params: Any) -> None:
-        """Delete Workflow Delete a workflow and all its associated entities. This deletes: - The workflow document - All blocks and edges (live collections) - All block and edge snapshots - All workflow snapshots"""
+        """Delete Workflow Delete a workflow and all its associated entities. This deletes the workflow, all of its blocks and edges, and all of their snapshots."""
         prepared_request = self.prepare_delete(workflow_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -196,7 +196,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return await self.request_page(prepared_request, model=Workflow)
 
     async def create(self, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
-        """Create Workflow Create a new workflow. The workflow starts unpublished and is scaffolded with a default "Document" input block in the live block collection."""
+        """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         prepared_request = self.prepare_create(name=name, description=description, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
@@ -214,7 +214,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     async def delete(self, workflow_id: str, **extra_params: Any) -> None:
-        """Delete Workflow Delete a workflow and all its associated entities. This deletes: - The workflow document - All blocks and edges (live collections) - All block and edge snapshots - All workflow snapshots"""
+        """Delete Workflow Delete a workflow and all its associated entities. This deletes the workflow, all of its blocks and edges, and all of their snapshots."""
         prepared_request = self.prepare_delete(workflow_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

@@ -26,11 +26,11 @@ public final class ParseRequest {
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
     this.document = document;
-    this.model = model;
+    this.model = model != null ? model : "retab-small";
     this.tableParsingFormat = tableParsingFormat;
     this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
-    this.bustCache = bustCache;
+    this.bustCache = bustCache != null ? bustCache : false;
   }
 
   @JsonProperty("document")

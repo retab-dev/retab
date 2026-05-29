@@ -9,7 +9,7 @@ namespace Retab
     /// </remarks>
     public class ReviewBranchIn
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "branch_in";
         public List<string> Branches { get; set; } = default!;
 
         /// <summary>

@@ -17,8 +17,8 @@ public final class ErrorWorkflowExperimentRun implements WorkflowExperimentRun {
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "message", required = false) String message,
       @JsonProperty(value = "details", required = false) ErrorDetails details) {
-    this.status = status;
-    this.message = message;
+    this.status = status != null ? status : "error";
+    this.message = message != null ? message : "(no message)";
     this.details = details;
   }
 

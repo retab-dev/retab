@@ -53,11 +53,11 @@ module Retab
       @last_run_id = hash[:last_run_id]
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]
-      @status = hash[:status]
+      @status = hash[:status].nil? ? "draft" : hash[:status]
       @block_type = hash[:block_type]
       @score = hash[:score]
-      @is_stale = hash[:is_stale]
-      @schema_drift = hash[:schema_drift]
+      @is_stale = hash[:is_stale].nil? ? false : hash[:is_stale]
+      @schema_drift = hash[:schema_drift].nil? ? "unknown" : hash[:schema_drift]
       @schema_drift_detail = hash[:schema_drift_detail]
     end
   end

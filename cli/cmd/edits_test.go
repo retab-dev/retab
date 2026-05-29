@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +14,113 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+// TestEditsCreateSendsCoercibleDocument pins the regression where
+// `edits create` wrapped the resolved document in an extra pointer
+// (`Document: &document`, i.e. *interface{}) before handing it to the SDK.
+// The SDK's MIMEData coercion then rejected it with
+// "unsupported MIME input type *interface {}", so every document-bearing
+// `edits create` failed client-side before any request was dispatched.
+// Every other primitive passes the resolved `doc` (an `any`) straight
+// through; edits must too.
+func TestEditsCreateSendsCoercibleDocument(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	var gotDocURL string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		body, _ := io.ReadAll(r.Body)
+		var parsed struct {
+			Document struct {
+				URL string `json:"url"`
+			} `json:"document"`
+		}
+		_ = json.Unmarshal(body, &parsed)
+		gotDocURL = parsed.Document.URL
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"edt_test","object":"edit"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	const docURL = "https://example.com/contract.pdf"
+	if err := editsCreateCmd.Flags().Set("url", docURL); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsCreateCmd.Flags().Set("url", "") })
+	if err := editsCreateCmd.Flags().Set("instructions", "Redact phones"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsCreateCmd.Flags().Set("instructions", "") })
+
+	_, err := captureStdAndRun(t, func() error {
+		return editsCreateCmd.RunE(editsCreateCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("edits create returned error: %v", err)
+	}
+	if got := hits.Load(); got != 1 {
+		t.Fatalf("server hit %d time(s), want 1", got)
+	}
+	if gotDocURL != docURL {
+		t.Fatalf("request document.url = %q, want %q", gotDocURL, docURL)
+	}
+}
+
+// TestEditsCreateTemplateOnlyOmitsDocument pins the template-only path:
+// with `--template-id` and no document, the SDK must not reject the call
+// for a missing document (document is optional in the spec — only
+// `instructions` is required, and document is mutually exclusive with
+// template_id). The request body must carry template_id and omit document.
+func TestEditsCreateTemplateOnlyOmitsDocument(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	var hasDocument bool
+	var gotTemplateID string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		body, _ := io.ReadAll(r.Body)
+		var parsed map[string]json.RawMessage
+		_ = json.Unmarshal(body, &parsed)
+		_, hasDocument = parsed["document"]
+		if raw, ok := parsed["template_id"]; ok {
+			_ = json.Unmarshal(raw, &gotTemplateID)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"edt_test","object":"edit"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := editsCreateCmd.Flags().Set("template-id", "edittplt_abc"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsCreateCmd.Flags().Set("template-id", "") })
+	if err := editsCreateCmd.Flags().Set("instructions", "Fill the fields"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsCreateCmd.Flags().Set("instructions", "") })
+
+	_, err := captureStdAndRun(t, func() error {
+		return editsCreateCmd.RunE(editsCreateCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("edits create (template-only) returned error: %v", err)
+	}
+	if got := hits.Load(); got != 1 {
+		t.Fatalf("server hit %d time(s), want 1", got)
+	}
+	if hasDocument {
+		t.Fatalf("request body included a document field for a template-only edit")
+	}
+	if gotTemplateID != "edittplt_abc" {
+		t.Fatalf("request template_id = %q, want %q", gotTemplateID, "edittplt_abc")
+	}
+}
 
 func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")

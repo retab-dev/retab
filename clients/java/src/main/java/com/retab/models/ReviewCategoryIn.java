@@ -16,7 +16,7 @@ public final class ReviewCategoryIn implements ReviewKind {
   public ReviewCategoryIn(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "categories", required = true) List<String> categories) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "category_in";
     this.categories = categories;
   }
 

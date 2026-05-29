@@ -45,7 +45,7 @@ class StoredBlockExecution(BaseModel):
     handle_inputs: dict[str, Any] | None = Field(default=None, description="Input payloads keyed by handle ID (file metadata for files, data for json)")
     artifact: StepArtifactRef | None = Field(default=None, description="Canonical persisted-ref artifact for this block execution (operation + id), if any")
     handle_outputs: dict[str, Any] | None = Field(default=None, description="Output payloads keyed by handle ID")
-    routing_decision: list[str] | None = Field(default=None, description="Active output handles for routing decisions")
+    routing_decisions: list[str] | None = Field(default=None, description="Active output handles for routing decisions")
     duration_ms: float | None = Field(default=None, description="Duration of the block execution in milliseconds")
     created_at: datetime.datetime | None = Field(default=None, description="When the block execution record was created")
     block_config: dict[str, Any] | None = Field(default=None, description="The draft block config used for this block execution")
@@ -62,10 +62,10 @@ class CompletedBlockExecutionLifecycle(BaseModel):
 
 
 class CreateBlockExecutionRequest(BaseModel):
-    """Body for ``POST /v1/workflows/blocks/executions``.
+    """Body for `POST /v1/workflows/blocks/executions`.
 
-    ``block_id`` is the block to replay; ``run_id`` is the workflow run that
-    sourced the original step's ``handle_inputs``. ``step_id`` optionally pins
+    `block_id` is the block to replay; `run_id` is the workflow run that
+    sourced the original step's `handle_inputs`. `step_id` optionally pins
     a concrete step row whose inputs should be used, which is useful for
     iteration-prefixed for_each body steps."""
 
@@ -104,15 +104,14 @@ class SkippedBlockExecutionLifecycle(BaseModel):
 
 
 class StepArtifactRef(BaseModel):
-    """Canonical persisted resource produced by a workflow step.
+    """A resource produced by a workflow step.
 
-    Uniformly a `(operation, id)` ref into a backing collection. The artifact
-    itself carries no payload — consumers dispatch on ``operation`` and fetch
-    the backing record by ``id``."""
+    An `(operation, id)` reference. The artifact itself carries no payload —
+    consumers dispatch on `operation` and fetch the referenced record by `id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    operation: StepArtifactRefOperation = Field(..., description="Persisted resource operation; identifies the backing collection")
+    operation: StepArtifactRefOperation = Field(..., description="The kind of resource this artifact references")
     id: str = Field(..., description="Persisted resource identifier")
 
 

@@ -46,11 +46,9 @@ namespace Retab
         /// <summary>Create Experiment Run Flat</summary>
         /// <remarks>
         /// Create an experiment run.
-        /// The ``experiment_id`` and (optionally) ``workflow_id`` live in the
-        /// body — flat-resource shape per meta-pattern-blueprint §1. When
-        /// ``workflow_id`` is absent the experiment's stored workflow is used;
-        /// when present it must match (the validation rejects mismatched pairs
-        /// with 404, defending against confused-deputy callers).
+        /// The `experiment_id` and an optional `workflow_id` are supplied in the body.
+        /// When `workflow_id` is omitted, the experiment's workflow is used; when
+        /// supplied, it must match that workflow or the request is rejected with 404.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

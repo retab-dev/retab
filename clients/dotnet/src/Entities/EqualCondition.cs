@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents an equal condition.</summary>
     public class EqualCondition
     {
-        public string? Kind { get; set; }
+        public string? Kind { get; set; } = "equals";
         public object Expected { get; set; } = default!;
 
         /// <summary>

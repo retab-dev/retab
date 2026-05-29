@@ -1,22 +1,16 @@
 namespace Retab
 {
-    using System.Runtime.Serialization;
     using Newtonsoft.Json;
-    using STJS = System.Text.Json.Serialization;
 
     /// <summary>Represents create experiment request n consensus values.</summary>
-    [JsonConverter(typeof(RetabNewtonsoftStringEnumConverter))]
-    [STJS.JsonConverter(typeof(RetabStringEnumConverterFactory))]
+    [RetabNumberEnum]
+    [JsonConverter(typeof(RetabNewtonsoftNumberEnumConverter))]
     public enum CreateExperimentRequestNConsensus
     {
-        [EnumMember(Value = "unknown")]
-        Unknown,
+        Unknown = int.MinValue,
 
-        [EnumMember(Value = "3")]
-        Value3,
-        [EnumMember(Value = "5")]
-        Value5,
-        [EnumMember(Value = "7")]
-        Value7,
+        Value3 = 3,
+        Value5 = 5,
+        Value7 = 7,
     }
 }

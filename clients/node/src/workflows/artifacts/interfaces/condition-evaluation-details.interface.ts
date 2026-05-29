@@ -50,7 +50,7 @@ export interface ConditionEvaluationDetails {
    */
   matched?: boolean;
   /** Per-item breakdown for wildcard array conditions */
-  perItem?: ConditionEvaluationPerItem[] | null;
+  items?: ConditionEvaluationPerItem[] | null;
   /** Sub-condition evaluations for compound conditions */
   subConditions?: ConditionEvaluationSubCondition[] | null;
   /** Logical operator combining sub-conditions */
@@ -63,7 +63,7 @@ export interface ConditionEvaluationDetailsResponse {
   expected?: unknown;
   actual?: unknown;
   matched?: boolean;
-  per_item?: ConditionEvaluationPerItemResponse[] | null;
+  items?: ConditionEvaluationPerItemResponse[] | null;
   sub_conditions?: ConditionEvaluationSubConditionResponse[] | null;
   logical_operator?: ConditionEvaluationDetailsLogicalOperator | null;
 }
@@ -74,7 +74,7 @@ export const ZConditionEvaluationDetails = z.object({
   expected: z.unknown().optional(),
   actual: z.unknown().optional(),
   matched: z.boolean().optional(),
-  perItem: ZConditionEvaluationPerItem.array().nullable().optional(),
+  items: ZConditionEvaluationPerItem.array().nullable().optional(),
   subConditions: ZConditionEvaluationSubCondition.array().nullable().optional(),
   logicalOperator: ZConditionEvaluationDetailsLogicalOperator.nullable().optional(),
 }) as z.ZodType<ConditionEvaluationDetails>;
@@ -88,12 +88,12 @@ export function deserializeConditionEvaluationDetails(
     expected: wire['expected'],
     actual: wire['actual'],
     matched: wire['matched'],
-    perItem:
-      wire['per_item'] == null
-        ? (wire['per_item'] as undefined)
-        : wire['per_item'] == null
-          ? wire['per_item']
-          : wire['per_item'].map((__i) => deserializeConditionEvaluationPerItem(__i)),
+    items:
+      wire['items'] == null
+        ? (wire['items'] as undefined)
+        : wire['items'] == null
+          ? wire['items']
+          : wire['items'].map((__i) => deserializeConditionEvaluationPerItem(__i)),
     subConditions:
       wire['sub_conditions'] == null
         ? (wire['sub_conditions'] as undefined)
@@ -113,12 +113,12 @@ export function serializeConditionEvaluationDetails(
     expected: domain['expected'],
     actual: domain['actual'],
     matched: domain['matched'],
-    per_item:
-      domain['perItem'] == null
-        ? (domain['perItem'] as undefined)
-        : domain['perItem'] == null
-          ? domain['perItem']
-          : domain['perItem'].map((__i) => serializeConditionEvaluationPerItem(__i)),
+    items:
+      domain['items'] == null
+        ? (domain['items'] as undefined)
+        : domain['items'] == null
+          ? domain['items']
+          : domain['items'].map((__i) => serializeConditionEvaluationPerItem(__i)),
     sub_conditions:
       domain['subConditions'] == null
         ? (domain['subConditions'] as undefined)

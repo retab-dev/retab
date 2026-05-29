@@ -15,7 +15,7 @@ public final class JsonHandleInput implements HandleInput {
   public JsonHandleInput(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "data", required = false) Object data) {
-    this.type = type;
+    this.type = type != null ? type : "json";
     this.data = data;
   }
 

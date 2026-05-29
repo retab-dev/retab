@@ -65,9 +65,9 @@ module Retab
       @assertion = hash[:assertion] ? Retab::AssertionSpec.new(hash[:assertion]) : nil
       @assertion_schema_dep = hash[:assertion_schema_dep] ? Retab::AssertionSchemaDep.new(hash[:assertion_schema_dep]) : nil
       @assertion_drift_status = hash[:assertion_drift_status]
-      @schema_drift = hash[:schema_drift]
+      @schema_drift = hash[:schema_drift].nil? ? "unknown" : hash[:schema_drift]
       @schema_drift_detail = hash[:schema_drift_detail]
-      @validation_status = hash[:validation_status]
+      @validation_status = hash[:validation_status].nil? ? "valid" : hash[:validation_status]
       @validation_issues = (hash[:validation_issues] || [])
       @latest_run_summary = hash[:latest_run_summary] ? Retab::LatestBlockTestRunSummary.new(hash[:latest_run_summary]) : nil
       @latest_passing_run_summary = hash[:latest_passing_run_summary] ? Retab::LatestBlockTestRunSummary.new(

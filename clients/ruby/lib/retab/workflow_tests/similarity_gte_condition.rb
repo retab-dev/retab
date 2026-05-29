@@ -22,10 +22,10 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "similarity_gte" : hash[:kind]
       @reference = hash[:reference]
       @threshold = hash[:threshold]
-      @method = hash[:method]
+      @method = hash[:method].nil? ? "levenshtein" : hash[:method]
     end
   end
 end

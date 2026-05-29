@@ -14,8 +14,8 @@ namespace Retab
         public DeclarativePlanFieldChangeAction Action { get; set; }
         public object? Before { get; set; }
         public object? After { get; set; }
-        public bool? BeforeSensitive { get; set; }
-        public bool? AfterSensitive { get; set; }
+        public bool? BeforeSensitive { get; set; } = false;
+        public bool? AfterSensitive { get; set; } = false;
         public string? UnifiedDiff { get; set; }
 
         /// <summary>

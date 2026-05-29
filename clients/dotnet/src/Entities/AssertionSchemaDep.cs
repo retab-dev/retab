@@ -7,7 +7,7 @@ namespace Retab
         public string? OutputHandleId { get; set; }
         public string SchemaPath { get; set; } = default!;
         public string SubtreeHash { get; set; } = default!;
-        public bool? DependsOnRoot { get; set; }
+        public bool? DependsOnRoot { get; set; } = false;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

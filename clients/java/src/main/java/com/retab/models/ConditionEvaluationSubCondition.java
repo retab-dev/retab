@@ -15,7 +15,7 @@ public final class ConditionEvaluationSubCondition {
   private final Object expected;
   private final Object actual;
   private final Boolean matched;
-  private final List<ConditionEvaluationPerItem> perItem;
+  private final List<ConditionEvaluationPerItem> items;
 
   @JsonCreator
   public ConditionEvaluationSubCondition(
@@ -25,15 +25,14 @@ public final class ConditionEvaluationSubCondition {
       @JsonProperty(value = "expected", required = false) Object expected,
       @JsonProperty(value = "actual", required = false) Object actual,
       @JsonProperty(value = "matched", required = false) Boolean matched,
-      @JsonProperty(value = "per_item", required = false)
-          List<ConditionEvaluationPerItem> perItem) {
+      @JsonProperty(value = "items", required = false) List<ConditionEvaluationPerItem> items) {
     this.subConditionId = subConditionId;
-    this.path = path;
-    this.operator = operator;
+    this.path = path != null ? path : "";
+    this.operator = operator != null ? operator : "";
     this.expected = expected;
     this.actual = actual;
-    this.matched = matched;
-    this.perItem = perItem;
+    this.matched = matched != null ? matched : false;
+    this.items = items;
   }
 
   @JsonProperty("sub_condition_id")
@@ -66,8 +65,8 @@ public final class ConditionEvaluationSubCondition {
     return matched;
   }
 
-  @JsonProperty("per_item")
-  public List<ConditionEvaluationPerItem> getPerItem() {
-    return perItem;
+  @JsonProperty("items")
+  public List<ConditionEvaluationPerItem> getItems() {
+    return items;
   }
 }

@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Run started by a workflow schedule.</summary>
     public class ScheduleTrigger
     {
-        public string? Type { get; set; }
+        public string? Type { get; set; } = "schedule";
 
         /// <summary>ID of the schedule that fired this run</summary>
         public string ScheduleId { get; set; } = default!;

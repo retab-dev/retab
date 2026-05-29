@@ -15,7 +15,7 @@ public final class SkippedStepLifecycle implements StepLifecycle {
   public SkippedStepLifecycle(
       @JsonProperty(value = "status", required = false) String status,
       @JsonProperty(value = "reason", required = true) String reason) {
-    this.status = status;
+    this.status = status != null ? status : "skipped";
     this.reason = reason;
   }
 

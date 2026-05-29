@@ -12,7 +12,7 @@ public final class RunningRun implements WorkflowRunLifecycle {
 
   @JsonCreator
   public RunningRun(@JsonProperty(value = "status", required = false) String status) {
-    this.status = status;
+    this.status = status != null ? status : "running";
   }
 
   @JsonProperty("status")

@@ -80,8 +80,8 @@ class RunningWorkflowExperimentResult(BaseModel):
 class ExperimentResult(BaseModel):
     """Run-scoped per-document experiment result.
 
-    The storage row is still named ``experiment_jobs`` internally, but the
-    public contract is a result row addressed by ``run_id`` + ``document_id``."""
+    The storage row is still named `experiment_jobs` internally, but the
+    public contract is a result row addressed by `run_id` + `document_id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

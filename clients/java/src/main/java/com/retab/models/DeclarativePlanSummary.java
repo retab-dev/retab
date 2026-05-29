@@ -31,7 +31,7 @@ public final class DeclarativePlanSummary {
     this.replace = replace;
     this.noop = noop;
     this.total = total;
-    this.hasChanges = hasChanges;
+    this.hasChanges = hasChanges != null ? hasChanges : false;
   }
 
   @JsonProperty("add")

@@ -14,10 +14,8 @@ export interface LatestBlockTestRunSummary {
   startedAt: Date;
   completedAt?: Date | null;
   durationMs?: number | null;
-  /** @default "" */
-  workflowDraftFingerprint?: string;
-  /** @default "" */
-  blockConfigFingerprint?: string;
+  workflowDraftFingerprint?: string | null;
+  blockConfigFingerprint?: string | null;
   /** @default 0 */
   assertionsPassed?: number;
   /** @default 0 */
@@ -33,8 +31,8 @@ export interface LatestBlockTestRunSummaryResponse {
   started_at: string;
   completed_at?: string | null;
   duration_ms?: number | null;
-  workflow_draft_fingerprint?: string;
-  block_config_fingerprint?: string;
+  workflow_draft_fingerprint?: string | null;
+  block_config_fingerprint?: string | null;
   assertions_passed?: number;
   assertions_failed?: number;
   blocked_assertions?: number;
@@ -47,8 +45,8 @@ export const ZLatestBlockTestRunSummary = z.object({
   startedAt: z.coerce.date(),
   completedAt: z.coerce.date().nullable().optional(),
   durationMs: z.number().int().nullable().optional(),
-  workflowDraftFingerprint: z.string().optional(),
-  blockConfigFingerprint: z.string().optional(),
+  workflowDraftFingerprint: z.string().nullable().optional(),
+  blockConfigFingerprint: z.string().nullable().optional(),
   assertionsPassed: z.number().int().optional(),
   assertionsFailed: z.number().int().optional(),
   blockedAssertions: z.number().int().optional(),

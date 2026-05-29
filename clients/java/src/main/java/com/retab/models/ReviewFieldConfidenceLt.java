@@ -17,7 +17,7 @@ public final class ReviewFieldConfidenceLt implements ReviewKind {
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "path", required = true) String path,
       @JsonProperty(value = "threshold", required = true) Double threshold) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "field_confidence_lt";
     this.path = path;
     this.threshold = threshold;
   }

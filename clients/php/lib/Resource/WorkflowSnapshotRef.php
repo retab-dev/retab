@@ -6,13 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Reference to the workflow + immutable version that drove the run.
- *
- * The class name is retained temporarily for compatibility with surrounding
- * run-model code, but public API output uses ``version_id`` rather than
- * snapshot identity.
- */
+/** Reference to the workflow and immutable version that drove the run. */
 readonly class WorkflowSnapshotRef implements \JsonSerializable
 {
     use JsonSerializableTrait;

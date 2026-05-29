@@ -8,12 +8,12 @@ use serde::{Deserialize, Serialize};
 /// Summary of the most recent block-test run.
 /// The two harmonized axes — execution status and verdict outcome — are
 /// exposed as separate fields. The runner only writes the summary on
-/// terminal-state transitions, so in practice ``status`` is one of
-/// ``completed | error | cancelled`` and ``outcome`` is populated when
-/// ``status == "completed"``.
-/// ``status`` is a flat enum — there's no per-state payload to carry on a
-/// summary projection, so the API_DESIGN.md ``lifecycle`` vs ``status``
-/// convention says use ``status`` here.
+/// terminal-state transitions, so in practice `status` is one of
+/// `completed | error | cancelled` and `outcome` is populated when
+/// `status == "completed"`.
+/// `status` is a flat enum — there's no per-state payload to carry on a
+/// summary projection, so the API_DESIGN.md `lifecycle` vs `status`
+/// convention says use `status` here.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LatestBlockTestRunSummary {
     pub run_record_id: String,
@@ -25,10 +25,8 @@ pub struct LatestBlockTestRunSummary {
     pub completed_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_draft_fingerprint: Option<String>,
-    /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config_fingerprint: Option<String>,
     /// Defaults to `0`.

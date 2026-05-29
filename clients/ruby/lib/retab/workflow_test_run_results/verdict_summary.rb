@@ -6,7 +6,7 @@ module Retab
   class VerdictSummary < Retab::Types::BaseModel
 
     HASH_ATTRS = {
-      result: :result,
+      passed: :passed,
       assertions_passed: :assertions_passed,
       assertions_failed: :assertions_failed,
       blocked_assertions: :blocked_assertions,
@@ -14,7 +14,7 @@ module Retab
     }.freeze
 
     attr_accessor(
-      :result,
+      :passed,
       :assertions_passed,
       :assertions_failed,
       :blocked_assertions,
@@ -24,7 +24,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @result = hash[:result]
+      @passed = hash[:passed]
       @assertions_passed = hash[:assertions_passed]
       @assertions_failed = hash[:assertions_failed]
       @blocked_assertions = hash[:blocked_assertions]

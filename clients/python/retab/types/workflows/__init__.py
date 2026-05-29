@@ -29,15 +29,7 @@ class UpdateWorkflowRequest(BaseModel):
 
 
 class Workflow(BaseModel):
-    """Public workflow resource returned by workflow metadata endpoints.
-
-    This is the API response shape — distinct from the internal storage
-    model (:class:`StoredWorkflow`), which carries persistence-only fields
-    that never appear in API responses. Routes call
-    :func:`serialize_workflow_response` to convert the storage shape into
-    this response shape; constructing this class directly for persistence
-    would drop those storage-only fields silently. The two classes were
-    deliberately renamed to avoid the prior name collision."""
+    """A workflow and its current configuration."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -56,7 +48,7 @@ class WorkflowPublished(BaseModel):
     published_at: datetime.datetime | None = Field(default=None, description="When the workflow was last published")
     description: str | None = Field(
         default="",
-        description="Release note attached to the currently published version. Echoes the ``description`` body passed to ``POST /v1/workflows/{id}/publish`` so the caller can confirm it was stored without a separate fetch.",
+        description="Release note attached to the currently published version. Echoes the `description` body passed to `POST /v1/workflows/{id}/publish` so the caller can confirm it was stored without a separate fetch.",
     )
 
 

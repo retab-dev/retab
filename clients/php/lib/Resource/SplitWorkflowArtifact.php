@@ -27,7 +27,7 @@ readonly class SplitWorkflowArtifact implements \JsonSerializable
          * @var array<\Retab\Resource\SplitResult>
          */
         public array $output,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public \DateTimeImmutable $createdAt,
         /** Number of consensus votes used */
         public ?int $nConsensus = null,

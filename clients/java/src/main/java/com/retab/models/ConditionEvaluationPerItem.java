@@ -23,7 +23,7 @@ public final class ConditionEvaluationPerItem {
     this.index = index;
     this.indices = indices;
     this.actual = actual;
-    this.matched = matched;
+    this.matched = matched != null ? matched : false;
   }
 
   @JsonProperty("index")

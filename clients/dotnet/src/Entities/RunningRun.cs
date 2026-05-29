@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The run is currently executing.</summary>
     public class RunningRun
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "running";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

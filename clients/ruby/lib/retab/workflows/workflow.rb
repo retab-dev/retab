@@ -27,8 +27,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @name = hash[:name]
-      @description = hash[:description]
+      @name = hash[:name].nil? ? "Untitled Workflow" : hash[:name]
+      @description = hash[:description].nil? ? "" : hash[:description]
       @published = hash[:published] ? Retab::WorkflowPublished.new(hash[:published]) : nil
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]

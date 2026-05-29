@@ -16,7 +16,7 @@ public final class ReviewJsonCondition implements ReviewKind {
   public ReviewJsonCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "condition", required = true) Map<String, Object> condition) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "json_condition";
     this.condition = condition;
   }
 

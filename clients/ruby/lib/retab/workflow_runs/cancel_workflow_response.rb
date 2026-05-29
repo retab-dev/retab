@@ -21,8 +21,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @run = hash[:run] ? Retab::WorkflowRun.new(hash[:run]) : nil
-      @redis_available = hash[:redis_available]
-      @cancellation_status = hash[:cancellation_status]
+      @redis_available = hash[:redis_available].nil? ? true : hash[:redis_available]
+      @cancellation_status = hash[:cancellation_status].nil? ? "cancellation_requested" : hash[:cancellation_status]
     end
   end
 end

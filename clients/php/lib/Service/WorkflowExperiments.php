@@ -38,9 +38,8 @@ class WorkflowExperiments
      *
      * List experiments under one workflow with cursor pagination.
      *
-     * The enrichment passes (latest-run snapshot, block info, drift detection)
-     * run on the paginated page, not the full collection — so they scale with
-     * ``limit``, not with the total experiment count under the workflow.
+     * Each experiment is returned with its latest-run snapshot, block info, and
+     * drift detection.
      * @param string $workflowId
      * @param string|null $before
      * @param string|null $after
@@ -78,7 +77,7 @@ class WorkflowExperiments
      *
      * Create an experiment.
      *
-     * When ``source_experiment_id`` is set, duplicates the source experiment
+     * When `source_experiment_id` is set, duplicates the source experiment
      * (block, name + "(Copy)", n_consensus, documents) and rejects any other
      * field. Otherwise creates a fresh experiment from the provided fields.
      * @param string $workflowId

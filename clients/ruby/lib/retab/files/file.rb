@@ -28,7 +28,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @object = hash[:object]
+      @object = hash[:object].nil? ? "file" : hash[:object]
       @id = hash[:id]
       @filename = hash[:filename]
       @mime_type = hash[:mime_type]

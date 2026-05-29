@@ -38,14 +38,14 @@ module Retab
       hash = self.class.normalize(json)
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @json_schema = hash[:json_schema] || {}
-      @model = hash[:model]
+      @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @n_consensus = hash[:n_consensus]
       @metadata = hash[:metadata] || {}
       @additional_messages = (hash[:additional_messages] || []).map { |item| item || {} }
-      @bust_cache = hash[:bust_cache]
-      @stream = hash[:stream]
+      @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
+      @stream = hash[:stream].nil? ? false : hash[:stream]
       @chunking_keys = hash[:chunking_keys] || {}
     end
   end

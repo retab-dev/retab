@@ -45,7 +45,7 @@ pub struct ConditionEvaluationResult {
     pub logical_operator: Option<ConditionEvaluationResultLogicalOperator>,
     /// Per-item breakdown for wildcard array conditions
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub per_item: Option<Vec<ConditionEvaluationPerItem>>,
+    pub items: Option<Vec<ConditionEvaluationPerItem>>,
     /// Sub-condition evaluations for compound conditions
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sub_evaluations: Option<Vec<ConditionEvaluationSubCondition>>,
@@ -65,7 +65,7 @@ impl ConditionEvaluationResult {
             matched: Default::default(),
             branch_name: Default::default(),
             logical_operator: Default::default(),
-            per_item: Default::default(),
+            items: Default::default(),
             sub_evaluations: Default::default(),
             details,
         }

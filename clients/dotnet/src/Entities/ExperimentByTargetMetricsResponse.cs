@@ -6,8 +6,8 @@ namespace Retab
     public class ExperimentByTargetMetricsResponse
     {
         public string RunId { get; set; } = default!;
-        public string? Kind { get; set; }
-        public string? View { get; set; }
+        public string? Kind { get; set; } = "by_target";
+        public string? View { get; set; } = "by_target";
         public string Target { get; set; } = default!;
         public double? Score { get; set; }
         public double? PriorScore { get; set; }

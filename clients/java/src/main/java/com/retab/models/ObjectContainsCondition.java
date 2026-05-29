@@ -16,7 +16,7 @@ public final class ObjectContainsCondition implements Condition {
   public ObjectContainsCondition(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "expected", required = true) Map<String, Object> expected) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "object_contains";
     this.expected = expected;
   }
 

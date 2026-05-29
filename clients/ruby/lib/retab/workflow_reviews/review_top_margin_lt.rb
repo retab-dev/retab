@@ -18,7 +18,7 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @kind = hash[:kind]
+      @kind = hash[:kind].nil? ? "top_margin_lt" : hash[:kind]
       @margin = hash[:margin]
     end
   end

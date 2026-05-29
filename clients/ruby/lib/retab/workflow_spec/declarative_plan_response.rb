@@ -37,12 +37,12 @@ module Retab
       @block_count = hash[:block_count]
       @edge_count = hash[:edge_count]
       @diagnostics = hash[:diagnostics] || {}
-      @format_version = hash[:format_version]
+      @format_version = hash[:format_version].nil? ? "workflows-plan/v1" : hash[:format_version]
       @summary = hash[:summary] ? Retab::DeclarativePlanSummary.new(hash[:summary]) : nil
       @resource_changes = (hash[:resource_changes] || []).map { |item|
         item ? Retab::DeclarativePlanResourceChange.new(item) : nil
       }
-      @rendered_plan = hash[:rendered_plan]
+      @rendered_plan = hash[:rendered_plan].nil? ? "No changes. Workflow spec is up to date." : hash[:rendered_plan]
     end
   end
 end

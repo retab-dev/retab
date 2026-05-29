@@ -44,7 +44,7 @@ class ApproveReviewRequest(BaseModel):
 
 
 class ReviewDecision(BaseModel):
-    """The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`."""
+    """The terminal decision recorded against one review version."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -122,10 +122,7 @@ class ReviewAnyOf(BaseModel):
 
 
 class ReviewAnyRequiredFieldNull(BaseModel):
-    """Gate when any required field in the extract schema is null/missing.
-
-    First-class predicate because this is the most common real-world driver
-    for structured-extraction review."""
+    """Gate when any required field in the extract schema is null or missing."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

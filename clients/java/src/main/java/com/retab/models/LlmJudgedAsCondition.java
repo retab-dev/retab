@@ -17,7 +17,7 @@ public final class LlmJudgedAsCondition implements Condition {
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "rubric", required = true) String rubric,
       @JsonProperty(value = "expected_label", required = false) String expectedLabel) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "llm_judged_as";
     this.rubric = rubric;
     this.expectedLabel = expectedLabel;
   }

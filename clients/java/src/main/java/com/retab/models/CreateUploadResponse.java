@@ -27,7 +27,7 @@ public final class CreateUploadResponse {
       @JsonProperty(value = "expiresAt", required = true) OffsetDateTime expiresAt) {
     this.fileId = fileId;
     this.uploadUrl = uploadUrl;
-    this.uploadMethod = uploadMethod;
+    this.uploadMethod = uploadMethod != null ? uploadMethod : "PUT";
     this.uploadHeaders = uploadHeaders;
     this.mimeData = mimeData;
     this.expiresAt = expiresAt;

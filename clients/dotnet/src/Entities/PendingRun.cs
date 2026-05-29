@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>The run has been created but execution has not started.</summary>
     public class PendingRun
     {
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "pending";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

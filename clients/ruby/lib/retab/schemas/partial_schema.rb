@@ -22,10 +22,10 @@ module Retab
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @object = hash[:object]
+      @object = hash[:object].nil? ? "schema" : hash[:object]
       @created_at = hash[:created_at]
       @json_schema = hash[:json_schema] || {}
-      @strict = hash[:strict]
+      @strict = hash[:strict].nil? ? true : hash[:strict]
     end
   end
 end

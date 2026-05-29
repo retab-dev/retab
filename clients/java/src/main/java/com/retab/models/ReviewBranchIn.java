@@ -16,7 +16,7 @@ public final class ReviewBranchIn implements ReviewKind {
   public ReviewBranchIn(
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "branches", required = true) List<String> branches) {
-    this.kind = kind;
+    this.kind = kind != null ? kind : "branch_in";
     this.branches = branches;
   }
 

@@ -29,7 +29,7 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
         public ?FileRef $filledDocumentRef = null,
         /** Usage information for the edit operation. */
         public ?RetabUsage $usage = null,
-        /** When this artifact was written by the orchestrator. */
+        /** Timestamp when this artifact was created. */
         public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'edit',

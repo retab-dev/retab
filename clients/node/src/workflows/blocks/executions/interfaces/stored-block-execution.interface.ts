@@ -59,7 +59,7 @@ export interface StoredBlockExecution {
   /** Output payloads keyed by handle ID */
   handleOutputs?: Record<string, unknown> | null;
   /** Active output handles for routing decisions */
-  routingDecision?: string[] | null;
+  routingDecisions?: string[] | null;
   /** Duration of the block execution in milliseconds */
   durationMs?: number | null;
   /** When the block execution record was created */
@@ -85,7 +85,7 @@ export interface StoredBlockExecutionResponse {
   handle_inputs?: Record<string, unknown> | null;
   artifact?: StepArtifactRefResponse | null;
   handle_outputs?: Record<string, unknown> | null;
-  routing_decision?: string[] | null;
+  routing_decisions?: string[] | null;
   duration_ms?: number | null;
   created_at?: string;
   block_config?: Record<string, unknown> | null;
@@ -107,7 +107,7 @@ export const ZStoredBlockExecution = z.object({
   handleInputs: z.record(z.string(), z.unknown()).nullable().optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
   handleOutputs: z.record(z.string(), z.unknown()).nullable().optional(),
-  routingDecision: z.string().array().nullable().optional(),
+  routingDecisions: z.string().array().nullable().optional(),
   durationMs: z.number().nullable().optional(),
   createdAt: z.coerce.date().optional(),
   blockConfig: z.record(z.string(), z.unknown()).nullable().optional(),
@@ -159,7 +159,7 @@ export function deserializeStoredBlockExecution(
           ? wire['artifact']
           : deserializeStepArtifactRef(wire['artifact']),
     handleOutputs: wire['handle_outputs'],
-    routingDecision: wire['routing_decision'],
+    routingDecisions: wire['routing_decisions'],
     durationMs: wire['duration_ms'],
     createdAt:
       wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
@@ -213,7 +213,7 @@ export function serializeStoredBlockExecution(
           ? domain['artifact']
           : serializeStepArtifactRef(domain['artifact']),
     handle_outputs: domain['handleOutputs'],
-    routing_decision: domain['routingDecision'],
+    routing_decisions: domain['routingDecisions'],
     duration_ms: domain['durationMs'],
     created_at:
       domain['createdAt'] == null

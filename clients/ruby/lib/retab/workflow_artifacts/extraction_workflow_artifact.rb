@@ -52,7 +52,7 @@ module Retab
       @metadata = hash[:metadata] || {}
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
-      @operation = hash[:operation]
+      @operation = hash[:operation].nil? ? "extraction" : hash[:operation]
     end
   end
 end

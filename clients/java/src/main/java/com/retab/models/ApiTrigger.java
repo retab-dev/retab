@@ -15,7 +15,7 @@ public final class ApiTrigger implements Trigger {
   public ApiTrigger(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "api_key_id", required = false) String apiKeyId) {
-    this.type = type;
+    this.type = type != null ? type : "api";
     this.apiKeyId = apiKeyId;
   }
 

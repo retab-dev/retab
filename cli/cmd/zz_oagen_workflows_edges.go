@@ -228,12 +228,18 @@ var workflowsEdgesCmd = &cobra.Command{
 }
 
 var workflowsEdgesListCmd = &cobra.Command{
-	Use:     "list <workflow-id>",
+	Use:     "list [workflow-id]",
 	Short:   "List edges in a workflow",
-	Long:    "List edges in a workflow's draft graph. Filter by either endpoint\nto focus on a single block's wiring.\n\nPaginate by passing the cursor from a previous response's list_metadata:\n--after for the next page, --before for the previous one. The two are\nmutually exclusive.",
-	Example: "  # All edges\n  retab workflows edges list wf_abc123\n\n  # Just the edges that fan out of one block\n  retab workflows edges list wf_abc123 --source-block blk_def456\n\n  # First page of 50\n  retab workflows edges list wf_abc123 --limit 50\n\n  # Next page\n  retab workflows edges list wf_abc123 --limit 50 \\\n    --after $(retab workflows edges list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')",
-	Args:    cobra.ExactArgs(1),
+	Long:    "List edges in a workflow's draft graph. Filter by either endpoint\nto focus on a single block's wiring.\n\nName the workflow either positionally (`list <workflow-id>`) or with\nthe `--workflow-id` flag - the two forms are equivalent. Passing both\nis accepted when they agree; an error is raised only when they disagree. The\nworkflow id is required: edges have no org-wide listing.\n\nPaginate by passing the cursor from a previous response's list_metadata:\n--after for the next page, --before for the previous one. The two are\nmutually exclusive.",
+	Example: "  # All edges (positional)\n  retab workflows edges list wf_abc123\n\n  # Same, with the flag form\n  retab workflows edges list --workflow-id wf_abc123\n\n  # Just the edges that fan out of one block\n  retab workflows edges list wf_abc123 --source-block blk_def456\n\n  # First page of 50\n  retab workflows edges list wf_abc123 --limit 50\n\n  # Next page\n  retab workflows edges list wf_abc123 --limit 50 \\\n    --after $(retab workflows edges list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')",
+	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — edges have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
@@ -245,7 +251,7 @@ var workflowsEdgesListCmd = &cobra.Command{
 		defer cancel()
 		params := retab.WorkflowEdgesListParams{
 			PaginationParams: collectListParams(cmd),
-			WorkflowID:       args[0],
+			WorkflowID:       workflowID,
 		}
 		if v, _ := cmd.Flags().GetString("source-block"); v != "" {
 			params.SourceBlock = ptr(v)
@@ -350,6 +356,7 @@ var workflowsEdgesDeleteCmd = &cobra.Command{
 }
 
 func init() {
+	workflowsEdgesListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsEdgesListCmd.Flags().String("before", "", "edge id: return the page before this id (mutually exclusive with --after)")
 	workflowsEdgesListCmd.Flags().String("after", "", "edge id: return the page after this id (mutually exclusive with --before)")
 	workflowsEdgesListCmd.MarkFlagsMutuallyExclusive("before", "after")

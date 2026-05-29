@@ -196,19 +196,25 @@ var workflowsExperimentsCreateCmd = &cobra.Command{
 }
 
 var workflowsExperimentsListCmd = &cobra.Command{
-	Use:     "list",
+	Use:     "list [workflow-id]",
 	Short:   "List experiments for a workflow",
-	Long:    "List every experiment attached to a workflow, across all its\nblocks.",
-	Example: "  # List experiments in a workflow\n  retab workflows experiments list wf_abc123",
-	Args:    cobra.NoArgs,
+	Long:    "List every experiment attached to a workflow, across all its\nblocks.\n\nName the workflow either positionally (`list <workflow-id>`) or with\nthe `--workflow-id` flag - the two forms are equivalent. Passing both\nis accepted when they agree; an error is raised only when they disagree. The\nworkflow id is required: experiments have no org-wide listing.",
+	Example: "  # List experiments in a workflow (positional)\n  retab workflows experiments list wf_abc123\n\n  # Same, with the flag form\n  retab workflows experiments list --workflow-id wf_abc123",
+	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// required here — experiments have no org-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, true)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: args[0]})
+		result, err := client.Workflows.Experiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: workflowID})
 		if err != nil {
 			return err
 		}
@@ -316,6 +322,7 @@ func init() {
 	_ = workflowsExperimentsCreateCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("block-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
+	workflowsExperimentsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	workflowsExperimentsUpdateCmd.Flags().String("captures-file", "", "JSON array of {run_id, step_id} captures (or - for stdin)")
