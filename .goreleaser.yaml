@@ -28,6 +28,12 @@ before:
   hooks:
     # `go -C cli` requires Go 1.20+; CI pins via cli/go.mod (go 1.26.1).
     - go -C cli mod tidy
+    # Stage the 6 prebuilt lit bundles into cli/cmd/assets/ so the
+    # `-tags retab_embed_lit` build below can go:embed them into the fat
+    # binary. The assets are gitignored (~150MB total) and fetched from the
+    # pinned `lit-v*` GitHub release. Override the tag via LIT_BUNDLE_TAG if
+    # building against a different bundle release.
+    - bash scripts/fetch-lit-assets.sh
 
 builds:
   - id: retab
@@ -38,6 +44,11 @@ builds:
       - CGO_ENABLED=0
     flags:
       - -trimpath
+      # Embed the per-platform lit bundle (lit + libpdfium + eng.traineddata)
+      # into `retab` so the local-first `files` commands work fully offline.
+      # The matching litembed_<os>_<arch>.go is selected by GOOS/GOARCH; this
+      # tag turns on the embed (vs. the litembed_off.go download-fallback stub).
+      - -tags=retab_embed_lit
     ldflags:
       - -s -w
       - -X github.com/retab-dev/retab/cli/cmd.version={{.Version}}

@@ -367,9 +367,17 @@ func renderGrepTable(cmd *cobra.Command, result grepResult) error {
 	columns := []TableColumn{
 		{Header: "LOCATION", Extract: func(r any) string { return r.(map[string]any)["location"].(string) }},
 		{Header: "MATCH", Extract: func(r any) string { return r.(map[string]any)["match"].(string) }},
-		{Header: "CONTENT", Extract: func(r any) string { return r.(map[string]any)["content"].(string) }},
+		{Header: "CONTENT", Extract: func(r any) string { return flattenWhitespace(r.(map[string]any)["content"].(string)) }},
 	}
 	return renderAutoTable(cmd.OutOrStdout(), rows, columns)
+}
+
+// flattenWhitespace collapses runs of whitespace (including the newlines that
+// the context window pulls in) into single spaces so a match renders on one
+// table row instead of wrapping and breaking column alignment. The JSON output
+// keeps the original content verbatim; this is table-view-only cosmetics.
+func flattenWhitespace(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
 
 // anchorLocation renders a short human-readable location for an anchor, used

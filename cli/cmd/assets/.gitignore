@@ -1,0 +1,6 @@
+# Staged lit bundles (lit + libpdfium + eng.traineddata) are large (~25MB each)
+# and are NOT committed. scripts/fetch-lit-assets.sh downloads them here before
+# the goreleaser release build (which compiles with -tags retab_embed_lit and
+# go:embeds them). Everything except this file and .gitkeep is ignored.
+*.tar.gz
+*.zip

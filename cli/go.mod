@@ -6,6 +6,7 @@ require (
 	github.com/retab-dev/retab/clients/go v0.0.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
+	golang.org/x/image v0.41.0
 	golang.org/x/term v0.43.0
 )
 

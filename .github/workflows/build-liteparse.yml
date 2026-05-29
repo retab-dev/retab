@@ -8,8 +8,9 @@
 # tarballs, and those contain ONLY the `lit` binary — not the libpdfium that
 # `lit` dlopen()s at runtime. This workflow builds `lit` from a pinned source
 # tag on native runners for all 6 targets and bundles each `lit` together with
-# the matching prebuilt libpdfium, so the Retab CLI can download a single
-# self-contained, checksum-verified archive per platform on demand.
+# the matching prebuilt libpdfium plus the English Tesseract model
+# (eng.traineddata), so the Retab CLI can embed or download a single
+# self-contained, checksum-verified `.tar.gz` per platform.
 #
 # The heavy lifting (cargo build + pdfium fetch + staging) lives in
 # scripts/build-liteparse.sh; this workflow handles per-OS toolchain/dep setup,
@@ -145,28 +146,25 @@ jobs:
           STAGE_DIR: dist/lit-${{ matrix.os }}-${{ matrix.arch }}
         run: bash scripts/build-liteparse.sh
 
-      - name: Archive bundle (unix tar.gz)
-        if: matrix.os != 'windows'
+      # All six platforms archive as a single .tar.gz for uniform extraction by
+      # the Go side (go:embed + tar/gzip). Windows runners run this under Git
+      # Bash, which provides tar; the embedded pdfium.dll/lit.exe extract just
+      # like the unix members.
+      - name: Archive bundle (tar.gz)
         shell: bash
         run: |
           set -eu
           mkdir -p out
           base="lit-${{ matrix.os }}-${{ matrix.arch }}"
           tar -C dist -czf "out/${base}.tar.gz" "${base}"
-          ( cd out && shasum -a 256 "${base}.tar.gz" > "${base}.tar.gz.sha256" )
+          # Portable sha256: coreutils sha256sum (Linux, Git-Bash on Windows)
+          # or BSD shasum (macOS).
+          if command -v sha256sum >/dev/null 2>&1; then
+            ( cd out && sha256sum "${base}.tar.gz" > "${base}.tar.gz.sha256" )
+          else
+            ( cd out && shasum -a 256 "${base}.tar.gz" > "${base}.tar.gz.sha256" )
+          fi
           cat "out/${base}.tar.gz.sha256"
-
-      - name: Archive bundle (windows zip)
-        if: matrix.os == 'windows'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          New-Item -ItemType Directory -Force -Path out | Out-Null
-          $base = "lit-${{ matrix.os }}-${{ matrix.arch }}"
-          Compress-Archive -Path "dist/$base/*" -DestinationPath "out/$base.zip" -Force
-          $hash = (Get-FileHash "out/$base.zip" -Algorithm SHA256).Hash.ToLower()
-          "$hash  $base.zip" | Out-File -Encoding ascii "out/$base.zip.sha256"
-          Get-Content "out/$base.zip.sha256"
 
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
@@ -193,8 +191,8 @@ jobs:
           set -eu
           mkdir -p release
           # Flatten the per-target artifact dirs into one release dir.
-          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
-          ( cd release && sha256sum lit-*.tar.gz lit-*.zip 2>/dev/null > checksums.txt || true )
+          find artifacts -type f -name '*.tar.gz' -exec cp {} release/ \;
+          ( cd release && sha256sum lit-*.tar.gz > checksums.txt )
           echo "Release contents:"
           ls -lh release/
           echo "checksums.txt:"
@@ -222,11 +220,16 @@ jobs:
           NOTES=$(cat <<'EOF'
           LiteParse `lit` bundles for the Retab CLI local-first `files` commands.
 
-          Each archive contains the `lit` binary plus the matching libpdfium
-          (PDFium shared library) it dlopen()s at runtime. The Retab CLI
-          downloads the bundle for the current platform on demand, verifies its
-          sha256 against a pinned manifest, and sets `PDFIUM_LIB_PATH` to the
-          extracted directory before invoking `lit`.
+          Each `.tar.gz` contains the `lit` binary, the matching libpdfium
+          (PDFium shared library) it dlopen()s at runtime, and — on OCR builds —
+          the English Tesseract model (`eng.traineddata`, tessdata_best). The
+          Retab CLI either embeds these bundles directly (single fat binary,
+          built with `-tags retab_embed_lit`) or downloads the per-platform
+          bundle on demand, verifies its sha256 against a pinned manifest, sets
+          `PDFIUM_LIB_PATH` to the extracted directory, and passes
+          `--tessdata-path` for OCR before invoking `lit`.
+
+          windows/arm64 ships OCR-less (no `eng.traineddata`).
 
           See `checksums.txt` for sha256 sums.
           EOF

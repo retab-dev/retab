@@ -226,6 +226,50 @@ func TestRenderRootHelp_RouterSubcommandsAreExpanded(t *testing.T) {
 	}
 }
 
+func TestRenderRootHelp_FeaturedFilesSubcommandsAreTeased(t *testing.T) {
+	// The local-first `files` commands (parse/grep/inspect) are leaves, so the
+	// generic router expansion won't surface them. featuredSubcommands should
+	// tease exactly those three under the `files` row, and NOT the API-facing
+	// leaves like `upload`.
+	root := &cobra.Command{Use: "retab", Short: "x"}
+	files := &cobra.Command{Use: "files", Short: "Manage files"}
+	files.AddCommand(
+		&cobra.Command{Use: "parse <path>", Short: "Parse a local document"},
+		&cobra.Command{Use: "grep <path> <pattern>", Short: "Search a local document"},
+		&cobra.Command{Use: "inspect <path>", Short: "Inspect a region of a local document"},
+		&cobra.Command{Use: "upload <path>", Short: "Upload — should NOT be teased"},
+		&cobra.Command{Use: "doctor", Short: "Doctor — not in the featured list"},
+	)
+	root.AddCommand(files)
+
+	var buf bytes.Buffer
+	renderRootHelp(&buf, root)
+	out := buf.String()
+
+	// The three featured leaves appear at col 4 (one level under `files`).
+	for _, want := range []string{"parse", "grep", "inspect"} {
+		if !strings.Contains(out, "    "+want+" ") {
+			t.Errorf("featured files subcommand %q should be teased at col 4:\n%s", want, out)
+		}
+	}
+	// They sit *under* the files row, in curated (not alphabetical) order.
+	filesIdx := strings.Index(out, "files ")
+	parseIdx := strings.Index(out, "    parse ")
+	grepIdx := strings.Index(out, "    grep ")
+	inspectIdx := strings.Index(out, "    inspect ")
+	if filesIdx < 0 || parseIdx < filesIdx || grepIdx < parseIdx || inspectIdx < grepIdx {
+		t.Errorf("featured order should be files -> parse -> grep -> inspect (files=%d parse=%d grep=%d inspect=%d):\n%s",
+			filesIdx, parseIdx, grepIdx, inspectIdx, out)
+	}
+	// Non-featured leaves must not be teased.
+	if strings.Contains(out, "Upload — should NOT be teased") {
+		t.Errorf("non-featured leaf `upload` was teased (it shouldn't be):\n%s", out)
+	}
+	if strings.Contains(out, "Doctor — not in the featured list") {
+		t.Errorf("non-featured leaf `doctor` was teased (it shouldn't be):\n%s", out)
+	}
+}
+
 func TestRenderRootHelp_VersionFormatting(t *testing.T) {
 	cases := []struct {
 		in   string
