@@ -1,0 +1,66 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# Hermetic php-cs-fixer step for the sandboxed PHP SDK drift check.
+#
+# The generator (//.oagen-workspace/retab-gen:generated_php_sdk_raw) emits an
+# UNFORMATTED PHP tree (lib/ + tests/ + composer.json + manifest). php-cs-fixer is
+# a PHP program, not in the oagen (Node) generator closure, so this step formats
+# the raw tree with //tools/bazel/php_cs_fixer_sdk_tree -- the vendored, pinned
+# static PHP 8.5.6 CLI running the pinned php-cs-fixer 3.95.2 PHAR -- mirroring how
+# the Node SDK reformats with vendored prettier, Go with gofmt, and Ruby with
+# rubyfmt. The committed .php-cs-fixer.dist.php config is passed in (it is NOT
+# generated) so php-cs-fixer's __DIR__-rooted Finder reproduces the generator's
+# local `php-cs-fixer fix` step. The output is scoped to the reproducible
+# generated set (lib/ + tests/ + manifest) so it diffs cleanly against the
+# committed snapshot.
+run_binary(
+    name = "generated_php_sdk_formatted",
+    srcs = [
+        "//.oagen-workspace/retab-gen:generated_php_sdk_raw",
+        "//tools/bazel/php_cs_fixer_sdk_tree:static_php",
+        "@php_cs_fixer_phar//file",
+        ".php-cs-fixer.dist.php",
+    ],
+    args = [
+        "$(execpath //tools/bazel/php_cs_fixer_sdk_tree:static_php)",
+        "$(execpath @php_cs_fixer_phar//file)",
+        "$(execpath .php-cs-fixer.dist.php)",
+        "$(execpath //.oagen-workspace/retab-gen:generated_php_sdk_raw)",
+        "$@",
+    ],
+    out_dirs = ["generated-php-formatted"],
+    tool = "//tools/bazel/php_cs_fixer_sdk_tree:format_php_sdk_tree",
+)
+
+# Stage the committed PHP SDK generated paths into a single TreeArtifact so the
+# drift check can diff it against the generated tree entirely inside the sandbox,
+# without reading the live working tree. The generated set is exactly the
+# generator-emitted lib/ + tests/ files plus the manifest. The hand-maintained
+# runtime/test helpers (lib/HttpClient.php, lib/PaginatedResponse.php,
+# lib/RequestOptions.php, lib/TestHelper.php) and hand-written tests
+# (DiscriminatedUnionResponseTest, MimeSmokeTest, PaginationContractTest) are NOT
+# emitted by the generator and are excluded -- as are composer.json (hand-extended
+# with dev deps), composer.lock, vendor/, .phpunit.cache/, phpstan.neon,
+# phpunit.xml, .php-cs-fixer.dist.php, README.md, LICENSE and .gitignore.
+copy_to_directory(
+    name = "committed_php_sdk_tree",
+    srcs = glob(
+        [
+            "lib/**",
+            "tests/**",
+        ],
+        exclude = [
+            "lib/HttpClient.php",
+            "lib/PaginatedResponse.php",
+            "lib/RequestOptions.php",
+            "lib/TestHelper.php",
+            "tests/DiscriminatedUnionResponseTest.php",
+            "tests/MimeSmokeTest.php",
+            "tests/PaginationContractTest.php",
+        ],
+    ) + [".oagen-manifest.json"],
+    out = "committed-php-sdk-tree",
+)

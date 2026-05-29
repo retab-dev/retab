@@ -1,0 +1,32 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//tools/bazel:java_format.bzl", "java_format_tree")
+
+package(default_visibility = ["//visibility:public"])
+
+# Run google-java-format (the engine behind the pom.xml Spotless config,
+# googleJavaFormat 1.35.0) over the raw generated Java tree using a hermetic JDK
+# and the pinned -all-deps jar, producing a formatted tree byte-identical to the
+# committed src/. See //tools/bazel:java_format.bzl and the http_file in
+# //MODULE.bazel.
+java_format_tree(
+    name = "generated_java_sdk_formatted",
+    src = "//.oagen-workspace/retab-gen:generated_java_sdk_raw",
+    formatter_jar = "@google_java_format_jar//file",
+    out_name = "generated-java-formatted",
+)
+
+# Stage the committed Java SDK generated paths (src/ + the build/config files +
+# manifest) into a single TreeArtifact so the drift check can diff it against the
+# generated+formatted tree entirely inside the sandbox, without reading the live
+# working tree.
+copy_to_directory(
+    name = "committed_java_sdk_tree",
+    srcs = glob(["src/**"]) + [
+        ".oagen-manifest.json",
+        "build.gradle.kts",
+        "checkstyle.xml",
+        "pom.xml",
+        "settings.gradle.kts",
+    ],
+    out = "committed-java-sdk-tree",
+)

@@ -1,0 +1,33 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+package(default_visibility = ["//visibility:public"])
+
+# Stage the committed .NET SDK generated source (src/ + manifest) into a single
+# TreeArtifact so the hermetic drift check can diff it against the freshly
+# generated tree entirely inside the sandbox, without reading the live working
+# tree. Scoped to src/** + .oagen-manifest.json (Node parity): the dotnet
+# emitter also emits README.md / Retab.csproj / Retab.sln / tests/, but the
+# csproj carries a release Version that is bumped out-of-band and the tests/
+# files are hand-extended after generation, so neither belongs in a
+# regenerate-and-diff drift check.
+copy_to_directory(
+    name = "committed_dotnet_sdk_tree",
+    srcs = glob(["src/**"]) + [".oagen-manifest.json"],
+    out = "committed-dotnet-sdk-tree",
+)
+
+# Scope the raw generated tree (which also contains README/csproj/sln/tests) down
+# to exactly the same src/** + manifest set as committed_dotnet_sdk_tree. The
+# dotnet emitter already emits correctly-formatted C# (verified: raw src/** is
+# byte-identical to the committed src/**), so unlike Node/Go/Java there is NO
+# downstream formatter step and NO .NET SDK toolchain in the closure.
+copy_to_directory(
+    name = "generated_dotnet_sdk_formatted",
+    srcs = ["//.oagen-workspace/retab-gen:generated_dotnet_sdk_raw"],
+    include_srcs_patterns = [
+        "**/src/**",
+        "**/.oagen-manifest.json",
+    ],
+    out = "generated-dotnet-sdk-tree",
+    root_paths = ["**/generated-retab-dotnet-raw"],
+)

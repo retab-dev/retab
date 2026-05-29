@@ -1,3 +1,5 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
 load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS", "PYTHON_VENV_TAGS")
 
 package(default_visibility = ["//visibility:public"])
@@ -44,4 +46,46 @@ sh_test(
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
     timeout = "long",
+)
+
+# Hermetic ruff step for the sandboxed Python SDK drift check.
+#
+# The generator (//.oagen-workspace/retab-gen:generated_python_sdk_raw) emits an
+# UNFORMATTED Python tree (retab/resources/** + retab/types/** + manifest). ruff
+# is not in the oagen generator closure (it is a self-contained native binary,
+# not a requirements.txt pin), so this step formats the raw tree with the
+# lockfile-pinned, vendored ruff binary via //tools/bazel/ruff_sdk_tree --
+# mirroring how the Node SDK reformats with its own vendored prettier and the Go
+# SDK with gofmt. The ruff binary is passed as a run_binary src + first arg so
+# host-platform selection stays at the //tools/bazel/ruff_sdk_tree:ruff alias.
+run_binary(
+    name = "generated_python_sdk_formatted",
+    srcs = [
+        "//.oagen-workspace/retab-gen:generated_python_sdk_raw",
+        "//tools/bazel/ruff_sdk_tree:ruff",
+    ],
+    args = [
+        "$(execpath //tools/bazel/ruff_sdk_tree:ruff)",
+        "$(execpath //.oagen-workspace/retab-gen:generated_python_sdk_raw)",
+        "$@",
+    ],
+    out_dirs = ["generated-python-formatted"],
+    tool = "//tools/bazel/ruff_sdk_tree:format_python_sdk_tree",
+)
+
+# Stage the committed Python SDK generated paths into a single TreeArtifact so
+# the drift check can diff it against the generated tree entirely inside the
+# sandbox, without reading the live working tree. The generated set is exactly
+# the .py files under retab/resources/ + retab/types/ plus the manifest --
+# hand-written code elsewhere in retab/, tests/, docs/, pyproject.toml,
+# setup.py, requirements.txt and README.md are NOT generated and are excluded.
+copy_to_directory(
+    name = "committed_python_sdk_tree",
+    srcs = glob([
+        "retab/resources/**/*.py",
+        "retab/types/**/*.py",
+    ]) + [
+        ".oagen-manifest.json",
+    ],
+    out = "committed-python-sdk-tree",
 )

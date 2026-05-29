@@ -29,6 +29,10 @@ type MIMEData struct {
 	MIMEType string `json:"mime_type,omitempty"`
 }
 
+// MIMEDataInput is kept as a source-compatible alias for older generated
+// request types that used the input-specific schema name.
+type MIMEDataInput = MIMEData
+
 func (m MIMEData) MarshalJSON() ([]byte, error) {
 	type publicMIMEData struct {
 		Filename string `json:"filename,omitempty"`

@@ -89,19 +89,34 @@ filegroup(
     ],
 )
 
+# Fully hermetic Python SDK drift check (blueprint Phase 4, Python; mirrors
+# check_node): runs SANDBOXED with no network and is cached on no-op reruns. Both
+# inputs are Bazel-declared TreeArtifacts:
+#   * generated_python_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure) re-formatted with the
+#     lockfile-pinned, vendored ruff 0.15.13 binary via
+#     //tools/bazel/ruff_sdk_tree (line-length 180, target-version py312,
+#     --isolated -- the committed pyproject.toml [tool.ruff] config).
+#   * committed_python_sdk_tree -- the committed retab/resources/** +
+#     retab/types/** generated .py files + manifest staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_python",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "python",
-        "$(location :generated_python_sdk)",
-        "open-source/sdk/clients/python",
+        "$(location //open-source/sdk/clients/python:generated_python_sdk_formatted)",
+        "$(location //open-source/sdk/clients/python:committed_python_sdk_tree)",
     ],
     data = [
-        ":generated_python_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/python:committed_python_sdk_tree",
+        "//open-source/sdk/clients/python:generated_python_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
 # Fully hermetic Node SDK drift check (blueprint Phase 4, gold standard): runs
@@ -153,19 +168,32 @@ sdk_generation_tree(
     tags = LOCAL_TAGS + ["generated-artifact"],
 )
 
+# Fully hermetic Go SDK drift check (blueprint Phase 4, Go): mirrors check_node.
+# Runs SANDBOXED with no network and is cached on no-op reruns. Both inputs are
+# Bazel-declared TreeArtifacts:
+#   * generated_go_sdk_formatted -- the raw generator output (sandboxed, from the
+#     committed OpenAPI contract on the pinned Node toolchain via the lockfile-
+#     materialized oagen_npm closure) re-formatted with //tools/bazel/gofmt_sdk_tree
+#     (a rules_go go_binary running the gofmt engine on the pinned Go toolchain).
+#   * committed_go_sdk_tree -- the committed non-test root *.go + go.mod + manifest
+#     staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_go",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "go",
-        "$(location :generated_go_sdk)",
-        "open-source/sdk/clients/go",
+        "$(location //open-source/sdk/clients/go:generated_go_sdk_formatted)",
+        "$(location //open-source/sdk/clients/go:committed_go_sdk_tree)",
     ],
     data = [
-        ":generated_go_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/go:committed_go_sdk_tree",
+        "//open-source/sdk/clients/go:generated_go_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
 sh_test(
@@ -183,64 +211,124 @@ sh_test(
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
+# Fully hermetic .NET SDK drift check (blueprint Phase 4, gold standard): runs
+# SANDBOXED with no network and is cached on no-op reruns. Both inputs are
+# Bazel-declared TreeArtifacts:
+#   * generated_dotnet_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure), scoped to src/ + manifest. The
+#     dotnet emitter already emits correctly-formatted C#, so unlike Node/Go/Java
+#     there is NO downstream formatter step and NO .NET SDK toolchain.
+#   * committed_dotnet_sdk_tree -- the committed src/ + manifest staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp). The release Version in Retab.csproj and the
+# hand-extended tests/ are intentionally out of scope (Node parity excludes
+# package.json + tests). The retab-dotnet-oagen-emitter service boundary selects
+# this target for real regenerate-and-diff drift coverage instead of the
+# //api-quality:unit_tests proxy.
 sh_test(
     name = "check_dotnet",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "dotnet",
-        "$(location :generated_dotnet_sdk)",
-        "open-source/sdk/clients/dotnet",
+        "$(location //open-source/sdk/clients/dotnet:generated_dotnet_sdk_formatted)",
+        "$(location //open-source/sdk/clients/dotnet:committed_dotnet_sdk_tree)",
     ],
     data = [
-        ":generated_dotnet_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/dotnet:committed_dotnet_sdk_tree",
+        "//open-source/sdk/clients/dotnet:generated_dotnet_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
+# Fully hermetic PHP SDK drift check (blueprint Phase 4, PHP; mirrors check_node):
+# runs SANDBOXED with no network and is cached on no-op reruns. Both inputs are
+# Bazel-declared TreeArtifacts:
+#   * generated_php_sdk_formatted -- the raw generator output (sandboxed, from the
+#     committed OpenAPI contract on the pinned Node toolchain via the lockfile-
+#     materialized oagen_npm closure) re-formatted with //tools/bazel/php_cs_fixer_sdk_tree
+#     (the vendored, pinned static PHP 8.5.6 CLI running php-cs-fixer 3.95.2),
+#     scoped to the generated lib/ + tests/ + manifest set.
+#   * committed_php_sdk_tree -- the committed generated lib/ + tests/ + manifest
+#     staged into a tree (hand-maintained runtime/test helpers, composer.*,
+#     phpstan/phpunit config, .php-cs-fixer.dist.php, README/LICENSE excluded).
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT. The retab-php-oagen-emitter service
+# boundary selects this target for real regenerate-and-diff drift coverage instead
+# of the //api-quality:unit_tests proxy.
 sh_test(
     name = "check_php",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "php",
-        "$(location :generated_php_sdk)",
-        "open-source/sdk/clients/php",
+        "$(location //open-source/sdk/clients/php:generated_php_sdk_formatted)",
+        "$(location //open-source/sdk/clients/php:committed_php_sdk_tree)",
     ],
     data = [
-        ":generated_php_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/php:committed_php_sdk_tree",
+        "//open-source/sdk/clients/php:generated_php_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
+# Fully hermetic Ruby SDK drift check (blueprint Phase 4, gold standard; mirrors
+# check_node): runs SANDBOXED with no network and is cached on no-op reruns. Both
+# inputs are Bazel-declared TreeArtifacts:
+#   * generated_ruby_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure) re-formatted with the vendored,
+#     lockfile-pinned rubyfmt binary (//tools/bazel/rubyfmt_sdk_tree:rubyfmt).
+#   * committed_ruby_sdk_tree -- the committed lib/ + rbi/ + generated test/ +
+#     Gemfile + retab.gemspec + manifest staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. The
+# retab-ruby-oagen-emitter service boundary selects this target for real
+# regenerate-and-diff drift coverage, instead of the //api-quality:unit_tests
+# proxy other (still-manual) languages use.
 sh_test(
     name = "check_ruby",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "ruby",
-        "$(location :generated_ruby_sdk)",
-        "open-source/sdk/clients/ruby",
+        "$(location //open-source/sdk/clients/ruby:generated_ruby_sdk_formatted)",
+        "$(location //open-source/sdk/clients/ruby:committed_ruby_sdk_tree)",
     ],
     data = [
-        ":generated_ruby_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/ruby:committed_ruby_sdk_tree",
+        "//open-source/sdk/clients/ruby:generated_ruby_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
+# Fully hermetic Java SDK drift check (blueprint Phase 4, Java; mirrors
+# check_node): runs SANDBOXED with no network and is cached on no-op reruns. Both
+# inputs are Bazel-declared TreeArtifacts:
+#   * generated_java_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure) re-formatted with google-java-format
+#     1.35.0 (the Spotless engine, pinned via http_file) run under Bazel's hermetic
+#     JDK toolchain.
+#   * committed_java_sdk_tree -- the committed src/ + build/config files + manifest
+#     staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_java",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "java",
-        "$(location :generated_java_sdk)",
-        "open-source/sdk/clients/java",
+        "$(location //open-source/sdk/clients/java:generated_java_sdk_formatted)",
+        "$(location //open-source/sdk/clients/java:committed_java_sdk_tree)",
     ],
     data = [
-        ":generated_java_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/java:committed_java_sdk_tree",
+        "//open-source/sdk/clients/java:generated_java_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
 sdk_generation_tree(
