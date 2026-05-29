@@ -41,6 +41,7 @@
     "delete_test",
     "delete_workflow",
     "delete_workflow_run",
+    "discard_draft_workflow",
     "download_link",
     "export_workflow_spec",
     "generate_schema_from_examples",
