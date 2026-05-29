@@ -80,7 +80,21 @@ class FormField(BaseModel):
 
 from .templates import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["BBox", "CreateEditTemplateRequest", "Edit", "EditConfig", "EditRequest", "EditResult", "EditTemplate", "FieldType", "FormField", "UpdateEditTemplateRequest"]
+__all__ = [
+    "BBox",
+    "CreateEditTemplateRequest",
+    "Edit",
+    "EditConfig",
+    "EditRequest",
+    "EditResult",
+    "EditTemplate",
+    "FieldType",
+    "FileRef",
+    "FormField",
+    "MIMEData",
+    "RetabUsage",
+    "UpdateEditTemplateRequest",
+]
 
 from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 
