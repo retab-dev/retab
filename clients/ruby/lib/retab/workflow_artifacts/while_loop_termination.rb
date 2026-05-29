@@ -8,7 +8,7 @@ module Retab
     HASH_ATTRS = {
       operation: :operation,
       id: :id,
-      workflow_run_id: :workflow_run_id,
+      run_id: :run_id,
       step_id: :step_id,
       termination_reason: :termination_reason,
       evaluations: :evaluations,
@@ -18,7 +18,7 @@ module Retab
     attr_accessor(
       :operation,
       :id,
-      :workflow_run_id,
+      :run_id,
       :step_id,
       :termination_reason,
       :evaluations,
@@ -30,7 +30,7 @@ module Retab
       hash = self.class.normalize(json)
       @operation = hash[:operation]
       @id = hash[:id]
-      @workflow_run_id = hash[:workflow_run_id]
+      @run_id = hash[:run_id]
       @step_id = hash[:step_id]
       @termination_reason = hash[:termination_reason]
       @evaluations = (hash[:evaluations] || []).map { |item| item ? Retab::ConditionEvaluationResult.new(item) : nil }

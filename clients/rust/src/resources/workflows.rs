@@ -274,6 +274,33 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
+    /// Discard Draft Workflow
+    ///
+    /// Discard all draft changes and restore the workflow to its published state.
+    ///
+    /// This operation:
+    /// 1. Recreates blocks and edges from the published version
+    /// 2. Updates the workflow's updated_at timestamp and current draft graph
+    ///
+    /// Requires the workflow to be published (have a published_version_id).
+    pub async fn discard_draft(&self, workflow_id: &str) -> Result<Workflow, Error> {
+        self.discard_draft_with_options(workflow_id, None).await
+    }
+
+    /// Variant of [`Self::discard_draft`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn discard_draft_with_options(
+        &self,
+        workflow_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Workflow, Error> {
+        let workflow_id = crate::client::path_segment(workflow_id);
+        let path = format!("/v1/workflows/{workflow_id}/discard-draft");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
+            .await
+    }
+
     /// Publish Workflow
     ///
     /// Publish a workflow.

@@ -9,7 +9,7 @@ module Retab
       id: :id,
       workflow_id: :workflow_id,
       workflow_version_id: :workflow_version_id,
-      workflow_run_id: :workflow_run_id,
+      run_id: :run_id,
       block_id: :block_id,
       step_id: :step_id,
       parent_step_id: :parent_step_id,
@@ -24,7 +24,7 @@ module Retab
       :id,
       :workflow_id,
       :workflow_version_id,
-      :workflow_run_id,
+      :run_id,
       :block_id,
       :step_id,
       :parent_step_id,
@@ -41,7 +41,7 @@ module Retab
       @id = hash[:id]
       @workflow_id = hash[:workflow_id]
       @workflow_version_id = hash[:workflow_version_id]
-      @workflow_run_id = hash[:workflow_run_id]
+      @run_id = hash[:run_id]
       @block_id = hash[:block_id]
       @step_id = hash[:step_id]
       @parent_step_id = hash[:parent_step_id]

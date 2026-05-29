@@ -368,6 +368,41 @@ Before publishing, the CLI warns when the draft appears empty (a draft with only
 	}),
 }
 
+var workflowsDiscardDraftCmd = &cobra.Command{
+	Use:   "discard-draft <workflow-id>",
+	Short: "Discard draft changes",
+	Long: `Discard all unpublished draft changes and restore the workflow to its
+last published state. The draft blocks and edges are recreated from the
+published version, so any in-progress edits are lost.
+
+This requires the workflow to be published (it must have a published
+version). It is destructive to draft edits. Pass ` + "`--yes`" + ` to skip the
+confirmation prompt in scripts and CI — otherwise the command refuses to
+discard when stdin is not a terminal.`,
+	Example: `  # Revert the draft to the published version (interactive, asks to confirm)
+  retab workflows discard-draft wf_abc123
+
+  # Skip the prompt in scripts
+  retab workflows discard-draft wf_abc123 --yes`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "workflow draft", args[0]); err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.DiscardDraft(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 func init() {
 	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id (mutually exclusive with --after)")
 	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id (mutually exclusive with --before)")
@@ -386,6 +421,8 @@ func init() {
 
 	workflowsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd)
+	workflowsDiscardDraftCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
+	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDiscardDraftCmd)
 	rootCmd.AddCommand(workflowsCmd)
 }

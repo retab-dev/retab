@@ -102,7 +102,6 @@ class ExperimentResult(BaseModel):
     handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
     artifact: StepArtifactRef | None = None
     attempt: int | None = Field(default=0)
-    is_placeholder: bool | None = Field(default=False)
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

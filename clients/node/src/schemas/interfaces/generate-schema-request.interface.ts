@@ -10,15 +10,11 @@ import {
   deserializeMIMEData,
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import type { GenerateSchemaRequestReasoningEffort } from './generate-schema-request-reasoning-effort.interface.js';
-import { ZGenerateSchemaRequestReasoningEffort } from './generate-schema-request-reasoning-effort.interface.js';
 
 export interface GenerateSchemaRequest {
   documents: MIMEData[];
   /** @default "retab-small" */
   model?: string;
-  /** @default "minimal" */
-  reasoningEffort?: GenerateSchemaRequestReasoningEffort | null;
   instructions?: string | null;
   /**
    * Resolution of the image sent to the LLM
@@ -32,7 +28,6 @@ export interface GenerateSchemaRequest {
 export interface GenerateSchemaRequestResponse {
   documents: MIMEDataResponse[];
   model?: string;
-  reasoning_effort?: GenerateSchemaRequestReasoningEffort | null;
   instructions?: string | null;
   image_resolution_dpi?: number;
   stream?: boolean;
@@ -41,7 +36,6 @@ export interface GenerateSchemaRequestResponse {
 export const ZGenerateSchemaRequest = z.object({
   documents: ZMIMEData.array(),
   model: z.string().optional(),
-  reasoningEffort: ZGenerateSchemaRequestReasoningEffort.nullable().optional(),
   instructions: z.string().nullable().optional(),
   imageResolutionDpi: z.number().int().optional(),
   stream: z.boolean().optional(),
@@ -53,7 +47,6 @@ export function deserializeGenerateSchemaRequest(
   return {
     documents: wire['documents'].map((__i) => deserializeMIMEData(__i)),
     model: wire['model'],
-    reasoningEffort: wire['reasoning_effort'],
     instructions: wire['instructions'],
     imageResolutionDpi: wire['image_resolution_dpi'],
     stream: wire['stream'],
@@ -66,7 +59,6 @@ export function serializeGenerateSchemaRequest(
   return {
     documents: domain['documents'].map((__i) => serializeMIMEData(__i)),
     model: domain['model'],
-    reasoning_effort: domain['reasoningEffort'],
     instructions: domain['instructions'],
     image_resolution_dpi: domain['imageResolutionDpi'],
     stream: domain['stream'],

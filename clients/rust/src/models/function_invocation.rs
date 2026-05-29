@@ -13,7 +13,7 @@ pub struct FunctionInvocation {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub operation: Option<String>,
     pub id: String,
-    pub workflow_run_id: String,
+    pub run_id: String,
     pub step_id: String,
     /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -33,13 +33,13 @@ impl FunctionInvocation {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        workflow_run_id: impl Into<String>,
+        run_id: impl Into<String>,
         step_id: impl Into<String>,
     ) -> Self {
         Self {
             operation: Default::default(),
             id: id.into(),
-            workflow_run_id: workflow_run_id.into(),
+            run_id: run_id.into(),
             step_id: step_id.into(),
             inputs: Default::default(),
             output: Default::default(),

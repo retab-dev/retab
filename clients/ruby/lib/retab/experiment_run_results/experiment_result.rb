@@ -15,8 +15,7 @@ module Retab
       block_type: :block_type,
       handle_inputs: :handle_inputs,
       artifact: :artifact,
-      attempt: :attempt,
-      is_placeholder: :is_placeholder
+      attempt: :attempt
     }.freeze
 
     attr_accessor(
@@ -29,8 +28,7 @@ module Retab
       :block_type,
       :handle_inputs,
       :artifact,
-      :attempt,
-      :is_placeholder
+      :attempt
     )
 
     def initialize(json)
@@ -63,7 +61,6 @@ module Retab
       @handle_inputs = hash[:handle_inputs] || {}
       @artifact = hash[:artifact] ? Retab::StepArtifactRef.new(hash[:artifact]) : nil
       @attempt = hash[:attempt]
-      @is_placeholder = hash[:is_placeholder]
     end
   end
 end

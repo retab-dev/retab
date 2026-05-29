@@ -48,9 +48,10 @@ var sdkResourceCommandAliases = map[string]string{
 }
 
 var workflowCLIOnlyCommands = map[string]string{
-	"workflows reviews schema": "local schema helper composed from reviews get",
-	"workflows runs restart":   "local restart alias composed from runs create",
-	"workflows view":           "terminal graph renderer composed from workflow graph reads",
+	"workflows reviews schema":        "local schema helper composed from reviews get",
+	"workflows runs restart":          "local restart alias composed from runs create",
+	"workflows experiments runs wait": "local poll loop composed from experiments runs get (mirrors `jobs wait`)",
+	"workflows view":                  "terminal graph renderer composed from workflow graph reads",
 }
 
 func TestCLIExposesGoSDKOperationSurface(t *testing.T) {

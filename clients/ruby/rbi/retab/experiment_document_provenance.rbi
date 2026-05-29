@@ -10,10 +10,10 @@ module Retab
     def initialize(json); end
 
     sig { returns(T.nilable(String)) }
-    def workflow_run_id; end
+    def run_id; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def workflow_run_id=(value); end
+    def run_id=(value); end
 
     sig { returns(T.nilable(String)) }
     def step_id; end

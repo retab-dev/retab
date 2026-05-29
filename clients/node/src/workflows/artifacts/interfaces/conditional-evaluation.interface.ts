@@ -18,7 +18,7 @@ export interface ConditionalEvaluation {
    */
   operation: 'conditional_evaluation';
   id: string;
-  workflowRunId: string;
+  runId: string;
   stepId: string;
   /** @default [] */
   evaluations?: ConditionEvaluationResult[];
@@ -34,7 +34,7 @@ export interface ConditionalEvaluation {
 export interface ConditionalEvaluationResponse {
   operation: 'conditional_evaluation';
   id: string;
-  workflow_run_id: string;
+  run_id: string;
   step_id: string;
   evaluations?: ConditionEvaluationResultResponse[];
   selected_handles?: string[];
@@ -46,7 +46,7 @@ export interface ConditionalEvaluationResponse {
 export const ZConditionalEvaluation = z.object({
   operation: z.literal('conditional_evaluation'),
   id: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string(),
   evaluations: ZConditionEvaluationResult.array().optional(),
   selectedHandles: z.string().array().optional(),
@@ -61,7 +61,7 @@ export function deserializeConditionalEvaluation(
   return {
     operation: wire['operation'],
     id: wire['id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
     evaluations:
       wire['evaluations'] == null
@@ -81,7 +81,7 @@ export function serializeConditionalEvaluation(
   return {
     operation: domain['operation'],
     id: domain['id'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
     evaluations:
       domain['evaluations'] == null

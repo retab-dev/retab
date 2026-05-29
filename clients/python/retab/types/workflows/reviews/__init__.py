@@ -241,7 +241,7 @@ class Review(BaseModel):
     id: str
     workflow_id: str
     workflow_version_id: str
-    workflow_run_id: str
+    run_id: str
     block_id: str
     step_id: str
     parent_step_id: str | None = None

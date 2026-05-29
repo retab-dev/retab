@@ -12,7 +12,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public string $workflowRunId,
+        public string $runId,
         public string $stepId,
         /** When this artifact was written by the orchestrator. */
         public \DateTimeImmutable $createdAt,
@@ -38,7 +38,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow_run_id',
+            'run_id',
             'step_id',
             'created_at',
         ] as $__required) {
@@ -48,7 +48,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflowRunId: $data['workflow_run_id'],
+            runId: $data['run_id'],
             stepId: $data['step_id'],
             createdAt: new \DateTimeImmutable($data['created_at']),
             evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
@@ -70,7 +70,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,

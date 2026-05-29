@@ -28,10 +28,10 @@ module Retab
     def workflow_version_id=(value); end
 
     sig { returns(String) }
-    def workflow_run_id; end
+    def run_id; end
 
     sig { params(value: String).returns(String) }
-    def workflow_run_id=(value); end
+    def run_id=(value); end
 
     sig { returns(String) }
     def block_id; end

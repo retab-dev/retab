@@ -12,7 +12,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public string $workflowRunId,
+        public string $runId,
         public string $stepId,
         /** Why the while-loop terminated */
         public WhileLoopTerminationTerminationReason $terminationReason,
@@ -29,7 +29,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow_run_id',
+            'run_id',
             'step_id',
             'termination_reason',
             'created_at',
@@ -40,7 +40,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflowRunId: $data['workflow_run_id'],
+            runId: $data['run_id'],
             stepId: $data['step_id'],
             terminationReason: WhileLoopTerminationTerminationReason::from($data['termination_reason']),
             createdAt: new \DateTimeImmutable($data['created_at']),
@@ -54,7 +54,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'termination_reason' => $this->terminationReason->value,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),

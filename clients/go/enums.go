@@ -210,18 +210,6 @@ const (
 	SourcesResponseDocumentTypeTxt   SourcesResponseDocumentType = "txt"
 )
 
-// GenerateSchemaRequestReasoningEffort represents generate schema request reasoning effort values.
-type GenerateSchemaRequestReasoningEffort string
-
-const (
-	GenerateSchemaRequestReasoningEffortNone    GenerateSchemaRequestReasoningEffort = "none"
-	GenerateSchemaRequestReasoningEffortMinimal GenerateSchemaRequestReasoningEffort = "minimal"
-	GenerateSchemaRequestReasoningEffortLow     GenerateSchemaRequestReasoningEffort = "low"
-	GenerateSchemaRequestReasoningEffortMedium  GenerateSchemaRequestReasoningEffort = "medium"
-	GenerateSchemaRequestReasoningEffortHigh    GenerateSchemaRequestReasoningEffort = "high"
-	GenerateSchemaRequestReasoningEffortXhigh   GenerateSchemaRequestReasoningEffort = "xhigh"
-)
-
 // JobStatus represents job status values.
 type JobStatus string
 

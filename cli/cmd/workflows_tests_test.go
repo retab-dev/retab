@@ -773,7 +773,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 	for path, body := range map[string]string{
 		emptyCaptures:       `[]`,
 		missingRunID:        `[{"step_id":"step_123"}]`,
-		missingHandleInputs: `[{"provenance":{"workflow_run_id":"run_123"}}]`,
+		missingHandleInputs: `[{"provenance":{"run_id":"run_123"}}]`,
 	} {
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
@@ -787,7 +787,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 	}{
 		{name: "no documents", flags: nil, wantError: "at least one document"},
 		{name: "empty captures", flags: map[string]string{"captures-file": emptyCaptures}, wantError: "at least one document"},
-		{name: "missing capture run id", flags: map[string]string{"captures-file": missingRunID}, wantError: "workflow_run_id is required"},
+		{name: "missing capture run id", flags: map[string]string{"captures-file": missingRunID}, wantError: "run_id is required"},
 		{name: "missing explicit handle inputs", flags: map[string]string{"documents-file": missingHandleInputs}, wantError: "handle_inputs is required"},
 	}
 
@@ -858,7 +858,7 @@ func TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether(t *testing.T) 
 	dir := t.TempDir()
 	capturesFile := filepath.Join(dir, "captures.json")
 	documentsFile := filepath.Join(dir, "documents.json")
-	if err := os.WriteFile(capturesFile, []byte(`[{"workflow_run_id":"run_123","step_id":"step_123"}]`), 0o600); err != nil {
+	if err := os.WriteFile(capturesFile, []byte(`[{"run_id":"run_123","step_id":"step_123"}]`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(documentsFile, []byte(`[{"handle_inputs":{"foo":"bar"}}]`), 0o600); err != nil {

@@ -10,7 +10,7 @@ namespace Retab
         /// <summary>Artifact operation that determines the backing record type</summary>
         public string? Operation { get; set; }
         public string Id { get; set; } = default!;
-        public string WorkflowRunId { get; set; } = default!;
+        public string RunId { get; set; } = default!;
         public string StepId { get; set; } = default!;
         public List<ApiCallAttempt>? Attempts { get; set; }
         public ErrorDetails? Error { get; set; }

@@ -15,7 +15,7 @@ export interface FunctionInvocation {
    */
   operation: 'function_invocation';
   id: string;
-  workflowRunId: string;
+  runId: string;
   stepId: string;
   /** @default {} */
   inputs?: Record<string, unknown>;
@@ -29,7 +29,7 @@ export interface FunctionInvocation {
 export interface FunctionInvocationResponse {
   operation: 'function_invocation';
   id: string;
-  workflow_run_id: string;
+  run_id: string;
   step_id: string;
   inputs?: Record<string, unknown>;
   output?: unknown | null;
@@ -41,7 +41,7 @@ export interface FunctionInvocationResponse {
 export const ZFunctionInvocation = z.object({
   operation: z.literal('function_invocation'),
   id: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   stepId: z.string(),
   inputs: z.record(z.string(), z.unknown()).optional(),
   output: z.unknown().nullable().optional(),
@@ -56,7 +56,7 @@ export function deserializeFunctionInvocation(
   return {
     operation: wire['operation'],
     id: wire['id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     stepId: wire['step_id'],
     inputs: wire['inputs'],
     output: wire['output'],
@@ -78,7 +78,7 @@ export function serializeFunctionInvocation(
   return {
     operation: domain['operation'],
     id: domain['id'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     step_id: domain['stepId'],
     inputs: domain['inputs'],
     output: domain['output'],

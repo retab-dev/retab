@@ -12,7 +12,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public string $workflowRunId,
+        public string $runId,
         public string $stepId,
         /** @var array<\Retab\Resource\ApiCallAttempt>|null */
         public ?array $attempts = null,
@@ -28,7 +28,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow_run_id',
+            'run_id',
             'step_id',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -37,7 +37,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflowRunId: $data['workflow_run_id'],
+            runId: $data['run_id'],
             stepId: $data['step_id'],
             attempts: isset($data['attempts']) ? array_map(fn($item) => ApiCallAttempt::fromArray($item), $data['attempts']) : null,
             error: isset($data['error']) ? ErrorDetails::fromArray($data['error']) : null,
@@ -51,7 +51,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow_run_id' => $this->workflowRunId,
+            'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'attempts' => $this->attempts !== null ? array_map(fn($item) => $item->toArray(), $this->attempts) : null,
             'error' => $this->error?->toArray(),

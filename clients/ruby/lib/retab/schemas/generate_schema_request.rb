@@ -8,7 +8,6 @@ module Retab
     HASH_ATTRS = {
       documents: :documents,
       model: :model,
-      reasoning_effort: :reasoning_effort,
       instructions: :instructions,
       image_resolution_dpi: :image_resolution_dpi,
       stream: :stream
@@ -17,7 +16,6 @@ module Retab
     attr_accessor(
       :documents,
       :model,
-      :reasoning_effort,
       :instructions,
       :image_resolution_dpi,
       :stream
@@ -28,7 +26,6 @@ module Retab
       hash = self.class.normalize(json)
       @documents = (hash[:documents] || []).map { |item| item ? Retab::MimeData.new(item) : nil }
       @model = hash[:model]
-      @reasoning_effort = hash[:reasoning_effort]
       @instructions = hash[:instructions]
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @stream = hash[:stream]

@@ -20,7 +20,6 @@ public final class ExperimentResult {
   private final Map<String, HandleInput> handleInputs;
   private final StepArtifactRef artifact;
   private final Long attempt;
-  private final Boolean isPlaceholder;
 
   @JsonCreator
   public ExperimentResult(
@@ -34,8 +33,7 @@ public final class ExperimentResult {
       @JsonProperty(value = "handle_inputs", required = false)
           Map<String, HandleInput> handleInputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
-      @JsonProperty(value = "attempt", required = false) Long attempt,
-      @JsonProperty(value = "is_placeholder", required = false) Boolean isPlaceholder) {
+      @JsonProperty(value = "attempt", required = false) Long attempt) {
     this.id = id;
     this.runId = runId;
     this.experimentId = experimentId;
@@ -46,7 +44,6 @@ public final class ExperimentResult {
     this.handleInputs = handleInputs;
     this.artifact = artifact;
     this.attempt = attempt;
-    this.isPlaceholder = isPlaceholder;
   }
 
   @JsonProperty("id")
@@ -97,10 +94,5 @@ public final class ExperimentResult {
   @JsonProperty("attempt")
   public Long getAttempt() {
     return attempt;
-  }
-
-  @JsonProperty("is_placeholder")
-  public Boolean isPlaceholder() {
-    return isPlaceholder;
   }
 }

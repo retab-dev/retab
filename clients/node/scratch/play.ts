@@ -170,7 +170,7 @@ async function main() {
       WORKFLOW_ID,
       expBlockId,
       // capture documents from the run we just made
-      [{ workflowRunId: created.id }],
+      [{ runId: created.id }],
       null,
       3, // n_consensus must be 3, 5, or 7
       `sdk-play-exp-${Date.now()}`

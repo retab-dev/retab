@@ -114,6 +114,17 @@ export class Workflows {
     });
   }
 
+  /** Discard Draft Workflow */
+  async discard_draft(workflowId: string): Promise<Workflow> {
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'POST',
+      path: `/v1/workflows/${workflowId}/discard-draft`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeWorkflow(__wire);
+  }
+
   /** Publish Workflow */
   async publish(workflowId: string, description?: string): Promise<Workflow> {
     const body = {

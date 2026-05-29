@@ -22,12 +22,6 @@ module Retab
     def model=(value); end
 
     sig { returns(T.nilable(String)) }
-    def reasoning_effort; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def reasoning_effort=(value); end
-
-    sig { returns(T.nilable(String)) }
     def instructions; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }

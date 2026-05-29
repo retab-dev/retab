@@ -82,6 +82,15 @@ class WorkflowsMixin:
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/workflows/{workflow_id}", params=params or None, data=data)
 
+    def prepare_discard_draft(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/discard-draft", params=params or None, data=data)
+
     def prepare_publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> PreparedRequest:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
         params: dict[str, Any] = {}
@@ -145,6 +154,12 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self._client._prepared_request(prepared_request)
         return None
 
+    def discard_draft(self, workflow_id: str, **extra_params: Any) -> Workflow:
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        prepared_request = self.prepare_discard_draft(workflow_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return Workflow.model_validate(response)
+
     def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
         prepared_request = self.prepare_publish(workflow_id, description=description, **extra_params)
@@ -203,6 +218,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         prepared_request = self.prepare_delete(workflow_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def discard_draft(self, workflow_id: str, **extra_params: Any) -> Workflow:
+        """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. This operation: 1. Recreates blocks and edges from the published version 2. Updates the workflow's updated_at timestamp and current draft graph Requires the workflow to be published (have a published_version_id)."""
+        prepared_request = self.prepare_discard_draft(workflow_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return Workflow.model_validate(response)
 
     async def publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> Workflow:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""

@@ -6,19 +6,19 @@ module Retab
   class ExperimentDocumentProvenance < Retab::Types::BaseModel
 
     HASH_ATTRS = {
-      workflow_run_id: :workflow_run_id,
+      run_id: :run_id,
       step_id: :step_id
     }.freeze
 
     attr_accessor(
-      :workflow_run_id,
+      :run_id,
       :step_id
     )
 
     def initialize(json)
       super()
       hash = self.class.normalize(json)
-      @workflow_run_id = hash[:workflow_run_id]
+      @run_id = hash[:run_id]
       @step_id = hash[:step_id]
     end
   end

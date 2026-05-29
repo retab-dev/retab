@@ -6,7 +6,6 @@ import com.retab.RetabClient;
 import com.retab.models.GenerateSchemaRequest;
 import com.retab.models.MimeData;
 import com.retab.models.PartialSchema;
-import com.retab.types.GenerateSchemaRequestReasoningEffort;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -33,7 +32,6 @@ public final class SchemasApi {
     return generate(
         request == null ? null : request.getDocuments(),
         request == null ? null : request.getModel(),
-        request == null ? null : request.getReasoningEffort(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.isStream());
@@ -42,7 +40,6 @@ public final class SchemasApi {
   public PartialSchema generate(
       List<MimeData> documents,
       String model,
-      GenerateSchemaRequestReasoningEffort reasoningEffort,
       String instructions,
       Long imageResolutionDpi,
       Boolean stream)
@@ -54,9 +51,6 @@ public final class SchemasApi {
     body.put("documents", documents);
     if (model != null) {
       body.put("model", model);
-    }
-    if (reasoningEffort != null) {
-      body.put("reasoning_effort", reasoningEffort);
     }
     if (instructions != null) {
       body.put("instructions", instructions);

@@ -8,20 +8,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ExperimentDocumentCaptureRequest {
-  private final String workflowRunId;
+  private final String runId;
   private final String stepId;
 
   @JsonCreator
   public ExperimentDocumentCaptureRequest(
-      @JsonProperty(value = "workflow_run_id", required = true) String workflowRunId,
+      @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "step_id", required = false) String stepId) {
-    this.workflowRunId = workflowRunId;
+    this.runId = runId;
     this.stepId = stepId;
   }
 
-  @JsonProperty("workflow_run_id")
-  public String getWorkflowRunId() {
-    return workflowRunId;
+  @JsonProperty("run_id")
+  public String getRunId() {
+    return runId;
   }
 
   @JsonProperty("step_id")

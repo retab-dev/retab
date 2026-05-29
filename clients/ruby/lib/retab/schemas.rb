@@ -13,7 +13,6 @@ module Retab
     # Generate Schema From Examples
     # @param documents [Array<Retab::MimeData, Pathname, IO, String, Hash>]
     # @param model [String, nil]
-    # @param reasoning_effort [Retab::Types::GenerateSchemaRequestReasoningEffort, nil]
     # @param instructions [String, nil]
     # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
     # @param stream [Boolean, nil]
@@ -22,7 +21,6 @@ module Retab
     def generate(
       documents:,
       model: nil,
-      reasoning_effort: nil,
       instructions: nil,
       image_resolution_dpi: nil,
       stream: nil,
@@ -32,7 +30,6 @@ module Retab
       body = {
         "documents" => documents,
         "model" => model,
-        "reasoning_effort" => reasoning_effort,
         "instructions" => instructions,
         "image_resolution_dpi" => image_resolution_dpi,
         "stream" => stream

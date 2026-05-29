@@ -6,8 +6,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -207,7 +209,7 @@ var workflowsRunsCreateCmd = &cobra.Command{
 	Long: `Start one run of a workflow against the supplied inputs.
 
 Inputs are keyed by the id of the input block they target. There are
-three ways to supply them, mix and match as needed:
+four ways to supply them, mix and match as needed:
 
   ` + "`--document BLOCK=PATH`" + ` — upload a local file. The MIME
   type is inferred from the file extension. Repeatable.
@@ -215,9 +217,15 @@ three ways to supply them, mix and match as needed:
   ` + "`--document-url BLOCK=URL`" + ` — pass a remote URL the server will
   fetch. Repeatable.
 
+  ` + "`--document-id BLOCK=FILE_ID`" + ` — reference a file you already
+  uploaded (e.g. via ` + "`retab files upload`" + `) by its file id. The
+  filename and MIME type are resolved from the stored file. Repeatable.
+
   ` + "`--documents-file PATH`" + ` — a JSON object mapping block ids to
-  pre-built MIME-data payloads. Use this for advanced cases or when the
-  documents come from upstream pipelines.
+  pre-built document payloads. Use this for advanced cases or when the
+  documents come from upstream pipelines. Each value may be a MIME-data
+  payload (` + "`filename`/`url`/`content`/`mime_type`" + `) or a file
+  reference (` + "`id`/`filename`/`mime_type`" + `).
 
 Add ` + "`--json-inputs-file PATH`" + ` for blocks that accept structured
 JSON instead of (or alongside) documents.
@@ -232,6 +240,10 @@ removed in a future release.`,
 	Example: `  # Upload a local file into the start_document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
+
+  # Reference a previously-uploaded file by its id
+  retab workflows runs create wf_abc123 \
+    --document-id start=file_LPjuee2tTZgfM_Km5yh_G
 
   # Multiple inputs across different blocks
   retab workflows runs create wf_abc123 \
@@ -272,9 +284,29 @@ removed in a future release.`,
 			return err
 		}
 		urlFlags, _ := cmd.Flags().GetStringArray("document-url")
-		// Reject overlap between --document and --document-url for the
-		// same block id. Without this guard the second flag silently
-		// overwrites the first in req.Documents, producing surprising
+		idFlags, _ := cmd.Flags().GetStringArray("document-id")
+		// Parse --document-id BLOCK=FILE_ID into a block-id → file-id map,
+		// rejecting duplicates and cross-flag collisions the same way
+		// parseDocumentArgs does for --document / --document-file. A block
+		// id may be claimed by exactly one source.
+		docIDs := map[string]string{}
+		for _, raw := range idFlags {
+			key, fileID, ok := splitKV(raw)
+			if !ok || strings.TrimSpace(key) == "" || strings.TrimSpace(fileID) == "" {
+				return fmt.Errorf("--document-id expects block-id=file-id, got %q", raw)
+			}
+			key = strings.TrimSpace(key)
+			if _, dup := docIDs[key]; dup {
+				return fmt.Errorf("block %q passed twice via --document-id; each block id must appear at most once", key)
+			}
+			if _, conflict := fileEntries[key]; conflict {
+				return fmt.Errorf("block %q has both --document and --document-id; pass exactly one source per block", key)
+			}
+			docIDs[key] = strings.TrimSpace(fileID)
+		}
+		// Reject overlap between --document/--document-id and --document-url
+		// for the same block id. Without this guard a later flag silently
+		// overwrites the earlier one in req.Documents, producing surprising
 		// "which one won?" behavior and (when the URL was the loser) a
 		// 500 from the document-fetch path. Flag the conflict up-front.
 		for _, raw := range urlFlags {
@@ -289,6 +321,12 @@ removed in a future release.`,
 			if _, conflict := fileEntries[key]; conflict {
 				return fmt.Errorf(
 					"block %q has both --document and --document-url; pass exactly one source per block",
+					key,
+				)
+			}
+			if _, conflict := docIDs[key]; conflict {
+				return fmt.Errorf(
+					"block %q has both --document-id and --document-url; pass exactly one source per block",
 					key,
 				)
 			}
@@ -324,6 +362,25 @@ removed in a future release.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		// Resolve each --document-id to a FileRef. The workflow runs API
+		// accepts `FileRef {id, filename, mime_type}` as a documents entry
+		// (the union is FileRef | MIMEData server-side). FileRef requires
+		// filename and mime_type, so look the file up to populate them
+		// rather than forcing the user to repeat metadata they already
+		// uploaded. Done after client/ctx creation since it needs a round
+		// trip; alias resolution below then handles the `start` shorthand.
+		if len(docIDs) > 0 {
+			if req.Documents == nil {
+				req.Documents = map[string]any{}
+			}
+			for key, fileID := range docIDs {
+				ref, err := resolveFileRef(ctx, client, fileID)
+				if err != nil {
+					return fmt.Errorf("--document-id %s=%s: %w", key, fileID, err)
+				}
+				req.Documents[key] = ref
+			}
+		}
 		if req.Documents != nil {
 			req.Documents, err = resolveWorkflowRunDocumentAliases(ctx, client, args[0], req.Documents)
 			if err != nil {
@@ -384,8 +441,41 @@ func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[s
 	return body, nil
 }
 
+// resolveFileRef fetches metadata for fileID and builds a FileRef suitable
+// for a workflow run documents entry. FileRef requires filename and
+// mime_type server-side; we source them from the stored file, guessing the
+// MIME type from the filename extension when the server didn't record one.
+func resolveFileRef(ctx context.Context, client *retab.Client, fileID string) (retab.FileRef, error) {
+	file, err := client.Files.Get(ctx, fileID)
+	if err != nil {
+		return retab.FileRef{}, err
+	}
+	filename := file.Filename
+	if filename == "" {
+		filename = "document"
+	}
+	mimeType := ""
+	if file.MIMEType != nil {
+		mimeType = *file.MIMEType
+	}
+	if mimeType == "" {
+		mimeType = mime.TypeByExtension(filepath.Ext(filename))
+	}
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+	return retab.FileRef{ID: file.ID, Filename: filename, MIMEType: mimeType}, nil
+}
+
 func workflowRunDocumentRequestBody(blockID string, document any) (map[string]string, error) {
 	switch value := document.(type) {
+	case retab.FileRef:
+		return workflowRunFileRefRequestBody(blockID, value), nil
+	case *retab.FileRef:
+		if value == nil {
+			return nil, fmt.Errorf("workflow run document %s must not be nil", blockID)
+		}
+		return workflowRunFileRefRequestBody(blockID, *value), nil
 	case retab.MIMEData:
 		return workflowRunMIMEDataRequestBody(blockID, value), nil
 	case *retab.MIMEData:
@@ -397,7 +487,7 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 		return normalizeWorkflowRunDocumentRequestBody(blockID, value), nil
 	case map[string]any:
 		descriptor := map[string]string{}
-		for _, key := range []string{"filename", "url", "content", "mime_type"} {
+		for _, key := range []string{"id", "filename", "url", "content", "mime_type"} {
 			raw, ok := value[key]
 			if !ok {
 				continue
@@ -418,6 +508,23 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 		}
 		return workflowRunMIMEDataRequestBody(blockID, mimeData), nil
 	}
+}
+
+func workflowRunFileRefRequestBody(blockID string, ref retab.FileRef) map[string]string {
+	descriptor := map[string]string{}
+	if ref.ID != "" {
+		descriptor["id"] = ref.ID
+	}
+	if ref.Filename != "" {
+		descriptor["filename"] = ref.Filename
+	}
+	if ref.Content != "" {
+		descriptor["content"] = ref.Content
+	}
+	if ref.MIMEType != "" {
+		descriptor["mime_type"] = ref.MIMEType
+	}
+	return normalizeWorkflowRunDocumentRequestBody(blockID, descriptor)
 }
 
 func workflowRunMIMEDataRequestBody(blockID string, mimeData retab.MIMEData) map[string]string {
@@ -495,7 +602,7 @@ var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
 	Long: `Fetch a run's metadata: status, trigger type, timestamps,
-duration, cost, error info, final outputs. For per-block detail use
+duration, cost, error info. For per-block detail and outputs use
 ` + "`workflows steps list`" + `.`,
 	Example: `  # Inspect a run
   retab workflows runs get run_xyz789
@@ -986,6 +1093,7 @@ func init() {
 	workflowsRunsCreateCmd.Flags().StringArray("document-file", nil, "deprecated alias for --document")
 	_ = workflowsRunsCreateCmd.Flags().MarkHidden("document-file")
 	workflowsRunsCreateCmd.Flags().StringArray("document-url", nil, "document url as block-id=url (repeatable)")
+	workflowsRunsCreateCmd.Flags().StringArray("document-id", nil, "previously-uploaded file as block-id=file-id (repeatable)")
 	workflowsRunsCreateCmd.Flags().String("json-inputs-file", "", "JSON inputs object (or - for stdin)")
 
 	workflowsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")

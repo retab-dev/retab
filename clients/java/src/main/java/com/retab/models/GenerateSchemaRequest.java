@@ -5,14 +5,12 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.GenerateSchemaRequestReasoningEffort;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class GenerateSchemaRequest {
   private final List<MimeData> documents;
   private final String model;
-  private final GenerateSchemaRequestReasoningEffort reasoningEffort;
   private final String instructions;
   private final Long imageResolutionDpi;
   private final Boolean stream;
@@ -21,14 +19,11 @@ public final class GenerateSchemaRequest {
   public GenerateSchemaRequest(
       @JsonProperty(value = "documents", required = true) List<MimeData> documents,
       @JsonProperty(value = "model", required = false) String model,
-      @JsonProperty(value = "reasoning_effort", required = false)
-          GenerateSchemaRequestReasoningEffort reasoningEffort,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "stream", required = false) Boolean stream) {
     this.documents = documents;
     this.model = model;
-    this.reasoningEffort = reasoningEffort;
     this.instructions = instructions;
     this.imageResolutionDpi = imageResolutionDpi;
     this.stream = stream;
@@ -42,11 +37,6 @@ public final class GenerateSchemaRequest {
   @JsonProperty("model")
   public String getModel() {
     return model;
-  }
-
-  @JsonProperty("reasoning_effort")
-  public GenerateSchemaRequestReasoningEffort getReasoningEffort() {
-    return reasoningEffort;
   }
 
   @JsonProperty("instructions")

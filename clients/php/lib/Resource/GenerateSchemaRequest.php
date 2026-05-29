@@ -14,7 +14,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         /** @var array<\Retab\Resource\MimeData> */
         public array $documents,
         public ?string $model = null,
-        public ?GenerateSchemaRequestReasoningEffort $reasoningEffort = null,
         public ?string $instructions = null,
         /** Resolution of the image sent to the LLM */
         public ?int $imageResolutionDpi = null,
@@ -34,7 +33,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         return new self(
             documents: array_map(fn($item) => MimeData::fromArray($item), $data['documents']),
             model: $data['model'] ?? null,
-            reasoningEffort: isset($data['reasoning_effort']) ? GenerateSchemaRequestReasoningEffort::from($data['reasoning_effort']) : null,
             instructions: $data['instructions'] ?? null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             stream: $data['stream'] ?? null,
@@ -47,7 +45,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         return [
             'documents' => array_map(fn($item) => $item->toArray(), $this->documents),
             'model' => $this->model,
-            'reasoning_effort' => $this->reasoningEffort?->value,
             'instructions' => $this->instructions,
             'image_resolution_dpi' => $this->imageResolutionDpi,
             'stream' => $this->stream,

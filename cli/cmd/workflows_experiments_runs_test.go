@@ -9,6 +9,173 @@ import (
 	"testing"
 )
 
+// resetExperimentRunWaitFlags restores the shared --wait/--poll/--timeout
+// flags on the create + wait commands to their defaults. The commands are
+// package-level singletons, so a test that mutates a flag must hand it back.
+func resetExperimentRunWaitFlags(t *testing.T) {
+	t.Helper()
+	_ = workflowsExperimentsRunsCreateCmd.Flags().Set("wait", "false")
+	_ = workflowsExperimentsRunsCreateCmd.Flags().Set("poll-interval-ms", "2000")
+	_ = workflowsExperimentsRunsCreateCmd.Flags().Set("timeout-seconds", "600")
+	_ = workflowsExperimentsRunsWaitCmd.Flags().Set("poll-interval-ms", "2000")
+	_ = workflowsExperimentsRunsWaitCmd.Flags().Set("timeout-seconds", "600")
+}
+
+// TestWorkflowsExperimentsRunsCreateWaitPollsUntilTerminal pins the new
+// `--wait` behavior: after POSTing the run, the CLI polls GET .../runs/<id>
+// on the configured interval until the lifecycle reaches a terminal status
+// (here: queued → running → completed) and prints the FINAL run record, not
+// the freshly-queued one. This removes the hand-rolled `until` poll loop.
+func TestWorkflowsExperimentsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posts, gets atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/experiments/runs":
+			posts.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":        "exprun_wait",
+				"lifecycle": map[string]any{"status": "queued"},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/experiments/runs/exprun_wait":
+			// First GET still running, second GET is terminal.
+			status := "running"
+			if gets.Add(1) >= 2 {
+				status = "completed"
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":        "exprun_wait",
+				"score":     0.9889,
+				"lifecycle": map[string]any{"status": status},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsRunsCreateCmd.Flags().Set("wait", "true"); err != nil {
+		t.Fatalf("set --wait: %v", err)
+	}
+	if err := workflowsExperimentsRunsCreateCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() { resetExperimentRunWaitFlags(t) })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsExperimentsRunsCreateCmd.RunE(workflowsExperimentsRunsCreateCmd, []string{"exp_123"}); err != nil {
+			t.Fatalf("experiment runs create --wait: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if got := posts.Load(); got != 1 {
+		t.Fatalf("expected exactly 1 POST, got %d", got)
+	}
+	if got := gets.Load(); got < 2 {
+		t.Fatalf("expected the CLI to poll at least twice before terminal, got %d GET(s)", got)
+	}
+	if !strings.Contains(stdout, `"status": "completed"`) {
+		t.Fatalf("expected final completed run on stdout, got:\n%s", stdout)
+	}
+	// The printed record must be the polled terminal one (carries the score),
+	// not the freshly-queued POST response.
+	if !strings.Contains(stdout, "0.9889") {
+		t.Fatalf("expected the final polled run (with score) on stdout, got:\n%s", stdout)
+	}
+}
+
+// TestWorkflowsExperimentsRunsWaitStandalone pins `runs wait <run-id>`:
+// it polls GET until terminal and prints the final run.
+func TestWorkflowsExperimentsRunsWaitStandalone(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gets atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments/runs/exprun_wait" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		status := "running"
+		if gets.Add(1) >= 2 {
+			status = "completed"
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "exprun_wait",
+			"lifecycle": map[string]any{"status": status},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() { resetExperimentRunWaitFlags(t) })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsExperimentsRunsWaitCmd.RunE(workflowsExperimentsRunsWaitCmd, []string{"exprun_wait"}); err != nil {
+			t.Fatalf("experiment runs wait: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if got := gets.Load(); got < 2 {
+		t.Fatalf("expected at least 2 polls, got %d", got)
+	}
+	if !strings.Contains(stdout, `"status": "completed"`) {
+		t.Fatalf("expected final completed run on stdout, got:\n%s", stdout)
+	}
+}
+
+// TestWorkflowsExperimentsRunsWaitErrorStatusExitsNonZero pins that a run
+// that settles in a non-success terminal status (error/cancelled) surfaces a
+// non-nil error so the shell sees a non-zero exit — the run record is still
+// printed for forensic context.
+func TestWorkflowsExperimentsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments/runs/exprun_bad" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "exprun_bad",
+			"lifecycle": map[string]any{"status": "error"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() { resetExperimentRunWaitFlags(t) })
+
+	var runErr error
+	stdout, _ := captureStd(t, func() {
+		runErr = workflowsExperimentsRunsWaitCmd.RunE(workflowsExperimentsRunsWaitCmd, []string{"exprun_bad"})
+	})
+	if runErr == nil {
+		t.Fatalf("expected non-nil error for a run that ended in error status")
+	}
+	if !strings.Contains(runErr.Error(), "exprun_bad") || !strings.Contains(runErr.Error(), "error") {
+		t.Fatalf("error %q should name the run and its terminal status", runErr.Error())
+	}
+	if !strings.Contains(stdout, `"status": "error"`) {
+		t.Fatalf("expected the failed run record on stdout for context, got:\n%s", stdout)
+	}
+}
+
 // TestWorkflowsExperimentsRunsCreateSingleArg pins the new single-argument
 // form: `retab workflows experiments runs create exp_abc` should POST to
 // /v1/workflows/experiments/runs with `experiment_id=exp_abc` in the body and
@@ -216,12 +383,17 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID(t *testing.T) {
 // request that the server would reject with a 400.
 func TestWorkflowsExperimentsMetricsGetRequiresDependentFlags(t *testing.T) {
 	cases := []struct {
-		name      string
-		view      string
-		wantError string
+		name string
+		view string
+		// documentID is pre-set before invoking so we can exercise the *next*
+		// missing dependent flag (e.g. votes still needs --target-path once
+		// --document-id is present).
+		documentID string
+		wantError  string
 	}{
 		{name: "by_document requires --document-id", view: "by_document", wantError: "--document-id"},
 		{name: "votes requires --document-id", view: "votes", wantError: "--document-id"},
+		{name: "votes requires --target-path even with --document-id", view: "votes", documentID: "expdoc_abc", wantError: "--target-path"},
 		{name: "by_target requires --target-path", view: "by_target", wantError: "--target-path"},
 	}
 	for _, tc := range cases {
@@ -239,6 +411,11 @@ func TestWorkflowsExperimentsMetricsGetRequiresDependentFlags(t *testing.T) {
 
 			if err := workflowsExperimentsMetricsGetCmd.Flags().Set("view", tc.view); err != nil {
 				t.Fatalf("set --view: %v", err)
+			}
+			if tc.documentID != "" {
+				if err := workflowsExperimentsMetricsGetCmd.Flags().Set("document-id", tc.documentID); err != nil {
+					t.Fatalf("set --document-id: %v", err)
+				}
 			}
 			t.Cleanup(func() {
 				_ = workflowsExperimentsMetricsGetCmd.Flags().Set("view", "summary")

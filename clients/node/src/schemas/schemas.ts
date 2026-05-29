@@ -2,11 +2,7 @@
 
 import type { Retab } from '../retab.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
-import type {
-  GenerateSchemaRequestReasoningEffort,
-  PartialSchema,
-  PartialSchemaResponse,
-} from '../schemas/interfaces/index.js';
+import type { PartialSchema, PartialSchemaResponse } from '../schemas/interfaces/index.js';
 import { deserializePartialSchema } from '../schemas/interfaces/index.js';
 
 export class Schemas {
@@ -16,7 +12,6 @@ export class Schemas {
   async generate(
     documents: DocumentInput[],
     model?: string,
-    reasoningEffort?: GenerateSchemaRequestReasoningEffort | null,
     instructions?: string | null,
     imageResolutionDpi?: number,
     stream?: boolean
@@ -25,7 +20,6 @@ export class Schemas {
     const body = {
       documents: documentsCoerced,
       model: model,
-      reasoning_effort: reasoningEffort,
       instructions: instructions,
       image_resolution_dpi: imageResolutionDpi,
       stream: stream,

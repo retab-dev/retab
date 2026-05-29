@@ -6,7 +6,6 @@
     }
   ],
   "model": "test_model",
-  "reasoning_effort": "none",
   "instructions": "test_instructions",
   "image_resolution_dpi": 1,
   "stream": true

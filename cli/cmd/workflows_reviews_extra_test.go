@@ -315,7 +315,7 @@ func reviewQueueRowJSON(blockRunID string) map[string]any {
 		"id":                  blockRunID,
 		"workflow_id":         "wf_1",
 		"workflow_version_id": "wfv_1",
-		"workflow_run_id":     "run_1",
+		"run_id":              "run_1",
 		"block_id":            "blk_1",
 		"step_id":             "step_1",
 		"parent_step_id":      nil,

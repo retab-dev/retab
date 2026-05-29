@@ -112,7 +112,7 @@ def test_workflow_artifacts_get_uses_flat_artifact_id_route() -> None:
     client._prepared_request.return_value = {
         "operation": "function_invocation",
         "id": "func_123",
-        "workflow_run_id": "run_123",
+        "run_id": "run_123",
         "step_id": "function-1",
         "created_at": "2026-03-12T10:00:00Z",
     }
@@ -165,7 +165,7 @@ async def test_async_workflow_artifacts_get_uses_flat_artifact_id_route() -> Non
         return_value={
             "operation": "function_invocation",
             "id": "func_123",
-            "workflow_run_id": "run_123",
+            "run_id": "run_123",
             "step_id": "function-1",
             "created_at": "2026-03-12T10:00:00Z",
         }

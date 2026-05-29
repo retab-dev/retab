@@ -70,7 +70,7 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "operation" => "api_call_invocation",
       "id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => "stub",
       "attempts" => [],
       "error" => nil,
@@ -80,7 +80,7 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["step_id"], json[:step_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
@@ -614,7 +614,7 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "operation" => "conditional_evaluation",
       "id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => "stub",
       "evaluations" => [],
       "selected_handles" => [],
@@ -626,7 +626,7 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["step_id"], json[:step_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
@@ -1440,13 +1440,13 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_experiment_document_capture_request_round_trip
     fixture = {
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => nil
     }
     model = Retab::ExperimentDocumentCaptureRequest.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1463,7 +1463,7 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_experiment_document_provenance_round_trip
     fixture = {
-      "workflow_run_id" => nil,
+      "run_id" => nil,
       "step_id" => nil
     }
     model = Retab::ExperimentDocumentProvenance.new(fixture.to_json)
@@ -1825,7 +1825,7 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "operation" => "function_invocation",
       "id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => "stub",
       "inputs" => {},
       "output" => nil,
@@ -1837,7 +1837,7 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["step_id"], json[:step_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
@@ -1846,7 +1846,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "documents" => [],
       "model" => "stub",
-      "reasoning_effort" => nil,
       "instructions" => nil,
       "image_resolution_dpi" => 1,
       "stream" => true
@@ -2568,7 +2567,7 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "operation" => "review_trigger_evaluation",
       "id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => "stub",
       "evaluations" => [],
       "selected_handles" => [],
@@ -2586,7 +2585,7 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["step_id"], json[:step_id])
     assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -3043,7 +3042,7 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "operation" => "while_loop_termination",
       "id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "step_id" => "stub",
       "termination_reason" => "stub",
       "evaluations" => [],
@@ -3053,7 +3052,7 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["step_id"], json[:step_id])
     assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -3173,8 +3172,7 @@ class ModelRoundTripTest < Minitest::Test
       "block_type" => "stub",
       "handle_inputs" => {},
       "artifact" => nil,
-      "attempt" => 1,
-      "is_placeholder" => true
+      "attempt" => 1
     }
     model = Retab::ExperimentResult.new(fixture.to_json)
     json = model.to_h
@@ -3274,7 +3272,7 @@ class ModelRoundTripTest < Minitest::Test
       "id" => "stub",
       "workflow_id" => "stub",
       "workflow_version_id" => "stub",
-      "workflow_run_id" => "stub",
+      "run_id" => "stub",
       "block_id" => "stub",
       "step_id" => "stub",
       "parent_step_id" => nil,
@@ -3290,7 +3288,7 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
     assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
-    assert_equal(fixture["workflow_run_id"], json[:workflow_run_id])
+    assert_equal(fixture["run_id"], json[:run_id])
     assert_equal(fixture["block_id"], json[:block_id])
     assert_equal(fixture["step_id"], json[:step_id])
     assert_equal(fixture["created_at"], json[:created_at])

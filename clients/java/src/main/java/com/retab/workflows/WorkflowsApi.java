@@ -227,6 +227,27 @@ public final class WorkflowsApi {
     return client.getObjectMapper().readValue(response.body(), Object.class);
   }
 
+  public Workflow discardDraft(String workflowId) throws IOException, InterruptedException {
+    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/discard-draft";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Workflow.class);
+  }
+
   public Workflow publish(String workflowId) throws IOException, InterruptedException {
     String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/publish";
     StringBuilder query = new StringBuilder();

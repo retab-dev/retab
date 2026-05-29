@@ -3,9 +3,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -56,11 +58,11 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 				return nil, nil, fmt.Errorf("--captures-file[%d]: must be a JSON object", i)
 			}
 			cap := &retab.ExperimentDocumentCaptureRequest{}
-			if v, ok := obj["workflow_run_id"].(string); ok {
-				cap.WorkflowRunID = v
+			if v, ok := obj["run_id"].(string); ok {
+				cap.RunID = v
 			}
-			if cap.WorkflowRunID == "" {
-				return nil, nil, fmt.Errorf("--captures-file[%d]: workflow_run_id is required", i)
+			if cap.RunID == "" {
+				return nil, nil, fmt.Errorf("--captures-file[%d]: run_id is required", i)
 			}
 			if v, ok := obj["step_id"].(string); ok && v != "" {
 				stepID := v
@@ -88,9 +90,9 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 			}
 			if v, ok := obj["provenance"].(map[string]any); ok {
 				prov := &retab.ExperimentDocumentProvenance{}
-				if s, ok := v["workflow_run_id"].(string); ok && s != "" {
+				if s, ok := v["run_id"].(string); ok && s != "" {
 					runID := s
-					prov.WorkflowRunID = &runID
+					prov.RunID = &runID
 				}
 				if s, ok := v["step_id"].(string); ok && s != "" {
 					stepID := s
@@ -135,6 +137,33 @@ func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleIn
 	return out
 }
 
+// resolveExperimentIDArg implements the uniform positional contract shared
+// across the `experiments` command group. Sibling commands had diverged:
+// `runs create` (RangeArgs 1-2) and `runs list` (MaximumNArgs 2) already
+// accepted the convenience `<workflow-id> <experiment-id>` form, while
+// `get` / `update` / `delete` were ExactArgs(1) and rejected it with cobra's
+// opaque "accepts 1 arg(s), received 2". That made the two-positional form
+// non-uniform across the group and surfaced as a confusing failure — and,
+// when piped (`... 2>/dev/null | jq`), as a silent empty result.
+//
+// The experiment id is globally unique and is the SOLE selector the SDK
+// Get/Update/Delete methods accept, so it is always the LAST positional.
+// A leading `<workflow-id>`, when supplied, is accepted purely for symmetry
+// with `runs create`: unlike `runs list` (where workflow-id is a server-side
+// FILTER that changes which rows return) the experiment id alone fully
+// determines the resource here, so a workflow id in the first slot cannot
+// misroute to a different experiment and is intentionally not forwarded.
+func resolveExperimentIDArg(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("experiment id required")
+	}
+	id := strings.TrimSpace(args[len(args)-1])
+	if id == "" {
+		return "", fmt.Errorf("experiment id required")
+	}
+	return id, nil
+}
+
 func validateExperimentMetricsView(view string) error {
 	switch view {
 	case "", "summary", "by_document", "by_target", "votes":
@@ -164,7 +193,7 @@ var workflowsExperimentsCreateCmd = &cobra.Command{
 documents in one of two ways:
 
   ` + "`--captures-file`" + `  — a JSON array of
-  ` + `{"workflow_run_id": ..., "step_id": ...}` + ` entries pointing at
+  ` + `{"run_id": ..., "step_id": ...}` + ` entries pointing at
   existing production runs. The exact input that block saw will be
   replayed.
 
@@ -296,21 +325,33 @@ func workflowExperimentCell(row any, key string) string {
 }
 
 var workflowsExperimentsGetCmd = &cobra.Command{
-	Use:   "get <experiment-id>",
+	Use:   "get [workflow-id] <experiment-id>",
 	Short: "Get an experiment",
 	Long: `Fetch an experiment's definition: target block, document set,
-consensus count, recent run status.`,
+consensus count, recent run status.
+
+The experiment id is the only required positional. A leading
+` + "`<workflow-id>`" + ` is also accepted for symmetry with
+` + "`workflows experiments runs create`" + `, so the same
+` + "`<workflow-id> <experiment-id>`" + ` pair works across the group.`,
 	Example: `  # Inspect an experiment
-  retab workflows experiments get exp_pqr678`,
-	Args: cobra.ExactArgs(1),
+  retab workflows experiments get exp_pqr678
+
+  # Two-positional form (matches ` + "`runs create`" + `) also works
+  retab workflows experiments get wf_abc123 exp_pqr678`,
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		experimentID, err := resolveExperimentIDArg(args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Get(ctx, args[0])
+		result, err := client.Workflows.Experiments.Get(ctx, experimentID)
 		if err != nil {
 			return err
 		}
@@ -319,19 +360,27 @@ consensus count, recent run status.`,
 }
 
 var workflowsExperimentsUpdateCmd = &cobra.Command{
-	Use:   "update <experiment-id>",
+	Use:   "update [workflow-id] <experiment-id>",
 	Short: "Update an experiment",
 	Long: `Rename an experiment, adjust its consensus count, or replace
 its document set. Note that updating the document set invalidates
-previously-captured results for that experiment.`,
+previously-captured results for that experiment.
+
+The experiment id is the only required positional. A leading
+` + "`<workflow-id>`" + ` is also accepted for symmetry with
+` + "`workflows experiments runs create`" + `.`,
 	Example: `  # Increase consensus to measure stability
   retab workflows experiments update exp_pqr678 --n-consensus 5
 
   # Add more documents from production
   retab workflows experiments update exp_pqr678 \
     --captures-file ./more-captures.json`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		experimentID, err := resolveExperimentIDArg(args)
+		if err != nil {
+			return err
+		}
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
 		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("n-consensus") &&
@@ -364,7 +413,7 @@ previously-captured results for that experiment.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Update(ctx, args[0], &req)
+		result, err := client.Workflows.Experiments.Update(ctx, experimentID, &req)
 		if err != nil {
 			return err
 		}
@@ -373,10 +422,14 @@ previously-captured results for that experiment.`,
 }
 
 var workflowsExperimentsDeleteCmd = &cobra.Command{
-	Use:   "delete <experiment-id>",
+	Use:   "delete [workflow-id] <experiment-id>",
 	Short: "Delete an experiment",
 	Long: `Permanently delete an experiment and its run history. Captured
 production runs and artifacts are unaffected.
+
+The experiment id is the only required positional. A leading
+` + "`<workflow-id>`" + ` is also accepted for symmetry with
+` + "`workflows experiments runs create`" + `.
 
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
@@ -387,9 +440,13 @@ definition.`,
 
   # Skip the prompt in scripts
   retab workflows experiments delete exp_pqr678 --yes`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "experiment", args[0]); err != nil {
+		experimentID, err := resolveExperimentIDArg(args)
+		if err != nil {
+			return err
+		}
+		if err := confirmDestructive(cmd, "experiment", experimentID); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -398,10 +455,10 @@ definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Experiments.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Experiments.Delete(ctx, experimentID); err != nil {
 			return err
 		}
-		confirmDeleted("experiment", args[0])
+		confirmDeleted("experiment", experimentID)
 		return nil
 	}),
 }
@@ -440,9 +497,24 @@ two-argument form (` + "`<workflow-id> <experiment-id>`" + `) is still
 accepted for backward compatibility — when supplied, the workflow id is
 forwarded to the server for cross-checking against the experiment's own
 ` + "`workflow_id`" + ` so a mismatched pairing surfaces as a 404 instead
-of being silently dropped.`,
+of being silently dropped.
+
+By default the command returns as soon as the run is queued. Pass
+` + "`--wait`" + ` to block until the run reaches a terminal status
+(` + "`completed`" + `, ` + "`error`" + `, or ` + "`cancelled`" + `) and
+print the final run record — saving you from scripting a poll loop around
+` + "`runs get`" + `. With ` + "`--wait`" + ` the command exits non-zero if
+the run ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout
+elapses.`,
 	Example: `  # Create an experiment run
-  retab workflows experiments runs create exp_pqr678`,
+  retab workflows experiments runs create exp_pqr678
+
+  # Create and block until it finishes (2s polls, 10m timeout)
+  retab workflows experiments runs create exp_pqr678 --wait
+
+  # Tune the polling cadence and ceiling
+  retab workflows experiments runs create exp_pqr678 \
+    --wait --poll-interval-ms 1000 --timeout-seconds 1800`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Backward compat: the historical shape was
@@ -470,8 +542,159 @@ of being silently dropped.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		if wait, _ := cmd.Flags().GetBool("wait"); !wait {
+			return printResult(cmd, result)
+		}
+		// --wait: poll the freshly-created run until it settles. A
+		// consensus run over a document set takes 30s–2min, so blocking
+		// here removes the most common hand-rolled `until` loop.
+		pollInterval, timeout := experimentWaitDurations(cmd)
+		final, waitErr := waitForExperimentRun(ctx, client, result.ID, pollInterval, timeout)
+		if final != nil {
+			if err := printResult(cmd, final); err != nil {
+				return err
+			}
+		}
+		if waitErr != nil {
+			return waitErr
+		}
+		return experimentRunTerminalError(final)
 	}),
+}
+
+var workflowsExperimentsRunsWaitCmd = &cobra.Command{
+	Use:   "wait <run-id>",
+	Short: "Poll until an experiment run reaches a terminal status",
+	Long: `Block until an experiment run hits a terminal status
+(` + "`completed`" + `, ` + "`error`" + `, or ` + "`cancelled`" + `),
+polling on a configurable interval. Defaults: 2-second polls, 10-minute
+timeout.
+
+Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
+handles the interval and timeout, and exits non-zero if the run ends in
+` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses. Pair with
+` + "`runs create --wait`" + ` to create and block in a single step.`,
+	Example: `  # Wait with defaults (2s polls, 600s timeout)
+  retab workflows experiments runs wait exprun_aaa
+
+  # Faster polls, longer ceiling
+  retab workflows experiments runs wait exprun_aaa \
+    --poll-interval-ms 1000 --timeout-seconds 1800`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		pollInterval, timeout := experimentWaitDurations(cmd)
+		final, waitErr := waitForExperimentRun(ctx, client, args[0], pollInterval, timeout)
+		if final != nil {
+			if err := printResult(cmd, final); err != nil {
+				return err
+			}
+		}
+		if waitErr != nil {
+			return waitErr
+		}
+		return experimentRunTerminalError(final)
+	}),
+}
+
+// experimentWaitDurations resolves the poll cadence and timeout from the
+// shared --poll-interval-ms / --timeout-seconds flags, applying the same
+// defaults as `jobs wait` (2s polls, 10m timeout).
+func experimentWaitDurations(cmd *cobra.Command) (pollInterval, timeout time.Duration) {
+	pollMS, _ := cmd.Flags().GetInt("poll-interval-ms")
+	timeoutS, _ := cmd.Flags().GetInt("timeout-seconds")
+	pollInterval = 2 * time.Second
+	if pollMS > 0 {
+		pollInterval = time.Duration(pollMS) * time.Millisecond
+	}
+	timeout = 10 * time.Minute
+	if timeoutS > 0 {
+		timeout = time.Duration(timeoutS) * time.Second
+	}
+	return pollInterval, timeout
+}
+
+// experimentRunStatus reads the lifecycle discriminator off an experiment
+// run. The lifecycle is a discriminated-union envelope, so the status string
+// comes from its `Status()` getter rather than a plain field.
+func experimentRunStatus(run *retab.ExperimentRun) string {
+	if run == nil {
+		return ""
+	}
+	return run.Lifecycle.Status()
+}
+
+// isTerminalExperimentRun reports whether the run has settled — completed,
+// error, or cancelled. pending/queued/running are still in flight.
+func isTerminalExperimentRun(run *retab.ExperimentRun) bool {
+	switch experimentRunStatus(run) {
+	case "completed", "error", "cancelled":
+		return true
+	default:
+		return false
+	}
+}
+
+// experimentRunTerminalError maps a settled-but-unsuccessful run to a non-zero
+// exit. completed (or an unknown/empty status) is success; error/cancelled is
+// failure.
+func experimentRunTerminalError(run *retab.ExperimentRun) error {
+	if run == nil {
+		return nil
+	}
+	status := experimentRunStatus(run)
+	switch status {
+	case "", "completed":
+		return nil
+	case "error", "cancelled":
+		if run.ID == "" {
+			return fmt.Errorf("experiment run ended with status %s", status)
+		}
+		return fmt.Errorf("experiment run %s ended with status %s", run.ID, status)
+	default:
+		return nil
+	}
+}
+
+// waitForExperimentRun polls Runs.Get until the run reaches a terminal status
+// or the timeout elapses. On timeout it returns the last-observed (non-final)
+// run alongside the error so callers can still surface partial state.
+func waitForExperimentRun(
+	ctx context.Context,
+	client *retab.Client,
+	runID string,
+	pollInterval time.Duration,
+	timeout time.Duration,
+) (*retab.ExperimentRun, error) {
+	if pollInterval <= 0 {
+		pollInterval = 2 * time.Second
+	}
+	if timeout <= 0 {
+		timeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	for {
+		run, err := client.Workflows.Experiments.Runs.Get(ctx, runID)
+		if err != nil {
+			return nil, err
+		}
+		if isTerminalExperimentRun(run) {
+			return run, nil
+		}
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return run, fmt.Errorf("timed out waiting for experiment run %s: %w", runID, ctx.Err())
+		case <-timer.C:
+		}
+	}
 }
 
 var workflowsExperimentsRunsListCmd = &cobra.Command{
@@ -676,10 +899,15 @@ var workflowsExperimentsMetricsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get metrics for an experiment run",
 	Long: `Aggregate quality metrics for an experiment run. Pivot the
-view with ` + "`--view`" + ` (` + "`summary`" + ` | ` + "`by_document`" + ` |
-` + "`by_target`" + ` | ` + "`votes`" + `) to drill from headline
-numbers down to individual fields. Compare against a prior run with
-` + "`--prior-run-id`" + `.`,
+view with ` + "`--view`" + ` to drill from headline numbers down to
+individual fields. Each view requires different flags:
+
+  summary      headline numbers           (no extra flags)
+  by_document  per-document breakdown      --document-id
+  by_target    per-field breakdown         --target-path
+  votes        raw per-pass consensus      --document-id AND --target-path
+
+Compare against a prior run with ` + "`--prior-run-id`" + `.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		view, _ := cmd.Flags().GetString("view")
@@ -692,12 +920,22 @@ numbers down to individual fields. Compare against a prior run with
 		// the server's raw 400. The legal combinations are:
 		//   summary     — no extra requirement
 		//   by_document — --document-id required
-		//   votes       — --document-id required
 		//   by_target   — --target-path required
+		//   votes       — BOTH --document-id and --target-path required
+		//                 (the server rejects either one missing; check
+		//                 --document-id first so the error matches the
+		//                 most-likely-forgotten flag)
 		switch view {
-		case "by_document", "votes":
+		case "by_document":
 			if strings.TrimSpace(documentID) == "" {
 				return fmt.Errorf("--document-id is required when --view is %s", view)
+			}
+		case "votes":
+			if strings.TrimSpace(documentID) == "" {
+				return fmt.Errorf("--document-id is required when --view is %s", view)
+			}
+			if strings.TrimSpace(targetPath) == "" {
+				return fmt.Errorf("--target-path is required when --view is %s", view)
 			}
 		case "by_target":
 			if strings.TrimSpace(targetPath) == "" {
@@ -738,7 +976,7 @@ numbers down to individual fields. Compare against a prior run with
 
 func init() {
 	addExperimentDocFlags := func(c *cobra.Command) {
-		c.Flags().String("captures-file", "", "JSON array of {workflow_run_id, step_id} captures (or - for stdin)")
+		c.Flags().String("captures-file", "", "JSON array of {run_id, step_id} captures (or - for stdin)")
 		c.Flags().String("documents-file", "", "JSON array of {handle_inputs, provenance} (or - for stdin)")
 	}
 
@@ -771,15 +1009,23 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsExperimentsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
-	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
-	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id")
-	workflowsExperimentsMetricsGetCmd.Flags().String("target-path", "", "target path")
+	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view: summary | by_document (needs --document-id) | by_target (needs --target-path) | votes (needs both)")
+	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id (required for by_document and votes views)")
+	workflowsExperimentsMetricsGetCmd.Flags().String("target-path", "", "target path (required for by_target and votes views)")
 	workflowsExperimentsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
 	workflowsExperimentsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
+	// `runs create --wait` and the standalone `runs wait` share the same
+	// poll/timeout knobs (mirroring `jobs wait`).
+	workflowsExperimentsRunsCreateCmd.Flags().Bool("wait", false, "block until the run reaches a terminal status, then print the final run")
+	workflowsExperimentsRunsCreateCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds while --wait is set")
+	workflowsExperimentsRunsCreateCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait while --wait is set")
+	workflowsExperimentsRunsWaitCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds")
+	workflowsExperimentsRunsWaitCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait before giving up")
+
 	workflowsExperimentsResultsCmd.AddCommand(workflowsExperimentsResultsListCmd, workflowsExperimentsResultsGetCmd)
 	workflowsExperimentsMetricsCmd.AddCommand(workflowsExperimentsMetricsGetCmd)
-	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd)
+	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd, workflowsExperimentsRunsWaitCmd)
 	workflowsExperimentsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd, workflowsExperimentsResultsCmd, workflowsExperimentsMetricsCmd)

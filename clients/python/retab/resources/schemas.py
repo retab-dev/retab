@@ -11,7 +11,7 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.utils.mime import prepare_mime_document
 from retab.types.mime import FileRef, MIMEData
-from retab.types.schemas import GenerateSchemaRequest, GenerateSchemaRequestReasoningEffort, PartialSchema
+from retab.types.schemas import GenerateSchemaRequest, PartialSchema
 
 
 def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
@@ -30,7 +30,6 @@ class SchemasMixin:
         self,
         documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
-        reasoning_effort: GenerateSchemaRequestReasoningEffort | None = cast(GenerateSchemaRequestReasoningEffort, "minimal"),
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
@@ -47,7 +46,6 @@ class SchemasMixin:
         payload = GenerateSchemaRequest(
             documents=cast(Any, documents_payload),
             model=cast(Any, model),
-            reasoning_effort=cast(Any, reasoning_effort),
             instructions=cast(Any, instructions),
             image_resolution_dpi=cast(Any, image_resolution_dpi),
             stream=cast(Any, stream),
@@ -63,7 +61,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
         self,
         documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
-        reasoning_effort: GenerateSchemaRequestReasoningEffort | None = cast(GenerateSchemaRequestReasoningEffort, "minimal"),
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
@@ -71,7 +68,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
     ) -> PartialSchema:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, reasoning_effort=reasoning_effort, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
         )
         response = self._client._prepared_request(prepared_request)
         return PartialSchema.model_validate(response)
@@ -84,7 +81,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         self,
         documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
-        reasoning_effort: GenerateSchemaRequestReasoningEffort | None = cast(GenerateSchemaRequestReasoningEffort, "minimal"),
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
@@ -92,7 +88,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     ) -> PartialSchema:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, reasoning_effort=reasoning_effort, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
         )
         response = await self._client._prepared_request(prepared_request)
         return PartialSchema.model_validate(response)

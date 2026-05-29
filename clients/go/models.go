@@ -46,12 +46,12 @@ type APICallAttempt struct {
 // APICallInvocation represents an api call invocation.
 type APICallInvocation struct {
 	// Operation is artifact operation that determines the backing record type
-	Operation     *string           `json:"operation,omitempty"`
-	ID            string            `json:"id"`
-	WorkflowRunID string            `json:"workflow_run_id"`
-	StepID        string            `json:"step_id"`
-	Attempts      []*APICallAttempt `json:"attempts,omitempty"`
-	Error         *ErrorDetails     `json:"error,omitempty"`
+	Operation *string           `json:"operation,omitempty"`
+	ID        string            `json:"id"`
+	RunID     string            `json:"run_id"`
+	StepID    string            `json:"step_id"`
+	Attempts  []*APICallAttempt `json:"attempts,omitempty"`
+	Error     *ErrorDetails     `json:"error,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
@@ -485,7 +485,7 @@ type ConditionalEvaluation struct {
 	// Operation is artifact operation that determines the backing record type
 	Operation           *string                      `json:"operation,omitempty"`
 	ID                  string                       `json:"id"`
-	WorkflowRunID       string                       `json:"workflow_run_id"`
+	RunID               string                       `json:"run_id"`
 	StepID              string                       `json:"step_id"`
 	Evaluations         []*ConditionEvaluationResult `json:"evaluations,omitempty"`
 	SelectedHandles     []string                     `json:"selected_handles,omitempty"`
@@ -892,8 +892,8 @@ type ExperimentConfusionSummaryAggregate struct {
 
 // ExperimentDocumentCaptureRequest capture one experiment document from workflow execution provenance.
 type ExperimentDocumentCaptureRequest struct {
-	WorkflowRunID string  `json:"workflow_run_id"`
-	StepID        *string `json:"step_id,omitempty"`
+	RunID  string  `json:"run_id"`
+	StepID *string `json:"step_id,omitempty"`
 }
 
 // ExperimentDocumentConfusionMetric is an alias for ExperimentConfusionSummaryAggregate.
@@ -901,8 +901,8 @@ type ExperimentDocumentConfusionMetric = ExperimentConfusionSummaryAggregate
 
 // ExperimentDocumentProvenance workflow execution metadata attached to a captured document.
 type ExperimentDocumentProvenance struct {
-	WorkflowRunID *string `json:"workflow_run_id,omitempty"`
-	StepID        *string `json:"step_id,omitempty"`
+	RunID  *string `json:"run_id,omitempty"`
+	StepID *string `json:"step_id,omitempty"`
 }
 
 // ExperimentExtractSummaryAggregate extract-only diagnostics attached to the summary response.
@@ -1172,14 +1172,14 @@ type FormField struct {
 // FunctionInvocation represents a function invocation.
 type FunctionInvocation struct {
 	// Operation is artifact operation that determines the backing record type
-	Operation     *string                `json:"operation,omitempty"`
-	ID            string                 `json:"id"`
-	WorkflowRunID string                 `json:"workflow_run_id"`
-	StepID        string                 `json:"step_id"`
-	Inputs        map[string]interface{} `json:"inputs,omitempty"`
-	Output        *interface{}           `json:"output,omitempty"`
-	DurationMs    *int                   `json:"duration_ms,omitempty"`
-	Error         *ErrorDetails          `json:"error,omitempty"`
+	Operation  *string                `json:"operation,omitempty"`
+	ID         string                 `json:"id"`
+	RunID      string                 `json:"run_id"`
+	StepID     string                 `json:"step_id"`
+	Inputs     map[string]interface{} `json:"inputs,omitempty"`
+	Output     *interface{}           `json:"output,omitempty"`
+	DurationMs *int                   `json:"duration_ms,omitempty"`
+	Error      *ErrorDetails          `json:"error,omitempty"`
 	// CreatedAt is when this artifact was written by the orchestrator.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
@@ -1651,7 +1651,7 @@ type ReviewEvaluation struct {
 	// Operation is artifact operation that determines the backing record type
 	Operation           *string                         `json:"operation,omitempty"`
 	ID                  string                          `json:"id"`
-	WorkflowRunID       string                          `json:"workflow_run_id"`
+	RunID               string                          `json:"run_id"`
 	StepID              string                          `json:"step_id"`
 	Evaluations         []*ConditionEvaluationResult    `json:"evaluations,omitempty"`
 	SelectedHandles     []string                        `json:"selected_handles,omitempty"`
@@ -1948,10 +1948,10 @@ type WebhookTrigger struct {
 // WhileLoopTermination represents a while loop termination.
 type WhileLoopTermination struct {
 	// Operation is artifact operation that determines the backing record type
-	Operation     *string `json:"operation,omitempty"`
-	ID            string  `json:"id"`
-	WorkflowRunID string  `json:"workflow_run_id"`
-	StepID        string  `json:"step_id"`
+	Operation *string `json:"operation,omitempty"`
+	ID        string  `json:"id"`
+	RunID     string  `json:"run_id"`
+	StepID    string  `json:"step_id"`
 	// TerminationReason is why the while-loop terminated
 	TerminationReason WhileLoopTerminationTerminationReason `json:"termination_reason"`
 	Evaluations       []*ConditionEvaluationResult          `json:"evaluations,omitempty"`
@@ -2064,17 +2064,16 @@ type WorkflowExperiment struct {
 // The storage row is still named “experiment_jobs“ internally, but the
 // public contract is a result row addressed by “run_id“ + “document_id“.
 type ExperimentResult struct {
-	ID            string                    `json:"id"`
-	RunID         string                    `json:"run_id"`
-	ExperimentID  string                    `json:"experiment_id"`
-	DocumentID    string                    `json:"document_id"`
-	Lifecycle     WorkflowExperimentResult  `json:"lifecycle"`
-	Timing        ExperimentResultTiming    `json:"timing"`
-	BlockType     ExperimentResultBlockType `json:"block_type"`
-	HandleInputs  map[string]HandleInput    `json:"handle_inputs,omitempty"`
-	Artifact      *StepArtifactRef          `json:"artifact,omitempty"`
-	Attempt       *int                      `json:"attempt,omitempty"`
-	IsPlaceholder *bool                     `json:"is_placeholder,omitempty"`
+	ID           string                    `json:"id"`
+	RunID        string                    `json:"run_id"`
+	ExperimentID string                    `json:"experiment_id"`
+	DocumentID   string                    `json:"document_id"`
+	Lifecycle    WorkflowExperimentResult  `json:"lifecycle"`
+	Timing       ExperimentResultTiming    `json:"timing"`
+	BlockType    ExperimentResultBlockType `json:"block_type"`
+	HandleInputs map[string]HandleInput    `json:"handle_inputs,omitempty"`
+	Artifact     *StepArtifactRef          `json:"artifact,omitempty"`
+	Attempt      *int                      `json:"attempt,omitempty"`
 }
 
 // ExperimentRun run-id-first public experiment run shape.
@@ -2125,7 +2124,7 @@ type Review struct {
 	ID                string          `json:"id"`
 	WorkflowID        string          `json:"workflow_id"`
 	WorkflowVersionID string          `json:"workflow_version_id"`
-	WorkflowRunID     string          `json:"workflow_run_id"`
+	RunID             string          `json:"run_id"`
 	BlockID           string          `json:"block_id"`
 	StepID            string          `json:"step_id"`
 	ParentStepID      *string         `json:"parent_step_id,omitempty"`

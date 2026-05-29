@@ -13,7 +13,7 @@ public final class Review {
   private final String id;
   private final String workflowId;
   private final String workflowVersionId;
-  private final String workflowRunId;
+  private final String runId;
   private final String blockId;
   private final String stepId;
   private final String parentStepId;
@@ -28,7 +28,7 @@ public final class Review {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
       @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
-      @JsonProperty(value = "workflow_run_id", required = true) String workflowRunId,
+      @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "step_id", required = true) String stepId,
       @JsonProperty(value = "parent_step_id", required = false) String parentStepId,
@@ -40,7 +40,7 @@ public final class Review {
     this.id = id;
     this.workflowId = workflowId;
     this.workflowVersionId = workflowVersionId;
-    this.workflowRunId = workflowRunId;
+    this.runId = runId;
     this.blockId = blockId;
     this.stepId = stepId;
     this.parentStepId = parentStepId;
@@ -66,9 +66,9 @@ public final class Review {
     return workflowVersionId;
   }
 
-  @JsonProperty("workflow_run_id")
-  public String getWorkflowRunId() {
-    return workflowRunId;
+  @JsonProperty("run_id")
+  public String getRunId() {
+    return runId;
   }
 
   @JsonProperty("block_id")

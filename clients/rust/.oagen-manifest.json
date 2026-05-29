@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-29T05:54:58.246Z",
+  "generatedAt": "2026-05-29T11:27:43.289Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -41,7 +41,6 @@
     "src/enums/extractions_order.rs",
     "src/enums/field_type.rs",
     "src/enums/files_order.rs",
-    "src/enums/generate_schema_request_reasoning_effort.rs",
     "src/enums/job_status.rs",
     "src/enums/jobs_endpoint.rs",
     "src/enums/jobs_order.rs",
@@ -586,6 +585,10 @@
     },
     "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/discard-draft": {
+      "sdkMethod": "discard_draft",
       "service": "workflows"
     },
     "POST /v1/workflows/{workflow_id}/publish": {

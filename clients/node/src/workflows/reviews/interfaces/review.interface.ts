@@ -126,7 +126,7 @@ export interface Review {
   id: string;
   workflowId: string;
   workflowVersionId: string;
-  workflowRunId: string;
+  runId: string;
   blockId: string;
   stepId: string;
   parentStepId?: string | null;
@@ -156,7 +156,7 @@ export interface ReviewResponse {
   id: string;
   workflow_id: string;
   workflow_version_id: string;
-  workflow_run_id: string;
+  run_id: string;
   block_id: string;
   step_id: string;
   parent_step_id?: string | null;
@@ -185,7 +185,7 @@ export const ZReview = z.object({
   id: z.string(),
   workflowId: z.string(),
   workflowVersionId: z.string(),
-  workflowRunId: z.string(),
+  runId: z.string(),
   blockId: z.string(),
   stepId: z.string(),
   parentStepId: z.string().nullable().optional(),
@@ -216,7 +216,7 @@ export function deserializeReview(wire: ReviewResponse): Review {
     id: wire['id'],
     workflowId: wire['workflow_id'],
     workflowVersionId: wire['workflow_version_id'],
-    workflowRunId: wire['workflow_run_id'],
+    runId: wire['run_id'],
     blockId: wire['block_id'],
     stepId: wire['step_id'],
     parentStepId: wire['parent_step_id'],
@@ -307,7 +307,7 @@ export function serializeReview(domain: Review): ReviewResponse {
     id: domain['id'],
     workflow_id: domain['workflowId'],
     workflow_version_id: domain['workflowVersionId'],
-    workflow_run_id: domain['workflowRunId'],
+    run_id: domain['runId'],
     block_id: domain['blockId'],
     step_id: domain['stepId'],
     parent_step_id: domain['parentStepId'],

@@ -1173,10 +1173,10 @@ func TestWorkflowsStepsGetUsesStepIDRoute(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"step_id":         "step_123",
-			"workflow_run_id": "run_123",
-			"block_id":        "blk_123",
-			"handle_inputs":   map[string]any{},
+			"step_id":       "step_123",
+			"run_id":        "run_123",
+			"block_id":      "blk_123",
+			"handle_inputs": map[string]any{},
 		})
 	}))
 	defer server.Close()

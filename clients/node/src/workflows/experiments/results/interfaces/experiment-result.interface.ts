@@ -114,8 +114,6 @@ export interface ExperimentResult {
   artifact?: StepArtifactRef | null;
   /** @default 0 */
   attempt?: number;
-  /** @default false */
-  isPlaceholder?: boolean;
 }
 
 export interface ExperimentResultResponse {
@@ -135,7 +133,6 @@ export interface ExperimentResultResponse {
   handle_inputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
   artifact?: StepArtifactRefResponse | null;
   attempt?: number;
-  is_placeholder?: boolean;
 }
 
 export const ZExperimentResult = z.object({
@@ -156,7 +153,6 @@ export const ZExperimentResult = z.object({
   handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
   attempt: z.number().int().optional(),
-  isPlaceholder: z.boolean().optional(),
 }) as z.ZodType<ExperimentResult>;
 
 export function deserializeExperimentResult(wire: ExperimentResultResponse): ExperimentResult {
@@ -234,7 +230,6 @@ export function deserializeExperimentResult(wire: ExperimentResultResponse): Exp
           ? wire['artifact']
           : deserializeStepArtifactRef(wire['artifact']),
     attempt: wire['attempt'],
-    isPlaceholder: wire['is_placeholder'],
   };
 }
 
@@ -313,6 +308,5 @@ export function serializeExperimentResult(domain: ExperimentResult): ExperimentR
           ? domain['artifact']
           : serializeStepArtifactRef(domain['artifact']),
     attempt: domain['attempt'],
-    is_placeholder: domain['isPlaceholder'],
   };
 }

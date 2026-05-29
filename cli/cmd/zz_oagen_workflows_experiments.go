@@ -26,11 +26,11 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 				return nil, nil, fmt.Errorf("--captures-file[%d]: must be a JSON object", i)
 			}
 			cap := &retab.ExperimentDocumentCaptureRequest{}
-			if v, ok := obj["workflow_run_id"].(string); ok {
-				cap.WorkflowRunID = v
+			if v, ok := obj["run_id"].(string); ok {
+				cap.RunID = v
 			}
-			if cap.WorkflowRunID == "" {
-				return nil, nil, fmt.Errorf("--captures-file[%d]: workflow_run_id is required", i)
+			if cap.RunID == "" {
+				return nil, nil, fmt.Errorf("--captures-file[%d]: run_id is required", i)
 			}
 			if v, ok := obj["step_id"].(string); ok && v != "" {
 				stepID := v
@@ -58,9 +58,9 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 			}
 			if v, ok := obj["provenance"].(map[string]any); ok {
 				prov := &retab.ExperimentDocumentProvenance{}
-				if s, ok := v["workflow_run_id"].(string); ok && s != "" {
+				if s, ok := v["run_id"].(string); ok && s != "" {
 					runID := s
-					prov.WorkflowRunID = &runID
+					prov.RunID = &runID
 				}
 				if s, ok := v["step_id"].(string); ok && s != "" {
 					stepID := s
@@ -143,7 +143,7 @@ var workflowsExperimentsCmd = &cobra.Command{
 var workflowsExperimentsCreateCmd = &cobra.Command{
 	Use:     "create <workflow-id> [flags]",
 	Short:   "Create an experiment",
-	Long:    "Create an experiment scoped to one block. Provide the input\ndocuments in one of two ways:\n\n  `--captures-file`  - a JSON array of\n  {\"workflow_run_id\": ..., \"step_id\": ...} entries pointing at existing\n  production runs. The exact input that block saw will be replayed.\n\n  `--documents-file` - a JSON array of explicit\n  {\"handle_inputs\": ..., \"provenance\": ...} entries.\n\nAfter creation, create a run with\n`workflows experiments runs create`.",
+	Long:    "Create an experiment scoped to one block. Provide the input\ndocuments in one of two ways:\n\n  `--captures-file`  - a JSON array of\n  {\"run_id\": ..., \"step_id\": ...} entries pointing at existing\n  production runs. The exact input that block saw will be replayed.\n\n  `--documents-file` - a JSON array of explicit\n  {\"handle_inputs\": ..., \"provenance\": ...} entries.\n\nAfter creation, create a run with\n`workflows experiments runs create`.",
 	Example: "  # Capture documents from real production runs\n  retab workflows experiments create wf_abc123 \\\n    --block-id blk_extract_1 \\\n    --name \"Try gpt-4o-mini\" \\\n    --captures-file ./captures.json \\\n    --n-consensus 3",
 	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -311,14 +311,14 @@ func init() {
 	workflowsExperimentsCreateCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required)")
 	workflowsExperimentsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
-	workflowsExperimentsCreateCmd.Flags().String("captures-file", "", "JSON array of {workflow_run_id, step_id} captures (or - for stdin)")
+	workflowsExperimentsCreateCmd.Flags().String("captures-file", "", "JSON array of {run_id, step_id} captures (or - for stdin)")
 	workflowsExperimentsCreateCmd.Flags().String("documents-file", "", "JSON array of {handle_inputs, provenance} (or - for stdin)")
 	_ = workflowsExperimentsCreateCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("block-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
-	workflowsExperimentsUpdateCmd.Flags().String("captures-file", "", "JSON array of {workflow_run_id, step_id} captures (or - for stdin)")
+	workflowsExperimentsUpdateCmd.Flags().String("captures-file", "", "JSON array of {run_id, step_id} captures (or - for stdin)")
 	workflowsExperimentsUpdateCmd.Flags().String("documents-file", "", "JSON array of {handle_inputs, provenance} (or - for stdin)")
 	workflowsExperimentsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 

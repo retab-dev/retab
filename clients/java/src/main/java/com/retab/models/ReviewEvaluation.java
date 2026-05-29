@@ -13,7 +13,7 @@ import java.util.List;
 public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
   private final String operation;
   private final String id;
-  private final String workflowRunId;
+  private final String runId;
   private final String stepId;
   private final List<ConditionEvaluationResult> evaluations;
   private final List<String> selectedHandles;
@@ -31,7 +31,7 @@ public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
   public ReviewEvaluation(
       @JsonProperty(value = "operation", required = false) String operation,
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "workflow_run_id", required = true) String workflowRunId,
+      @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "step_id", required = true) String stepId,
       @JsonProperty(value = "evaluations", required = false)
           List<ConditionEvaluationResult> evaluations,
@@ -49,7 +49,7 @@ public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
     this.operation = operation;
     this.id = id;
-    this.workflowRunId = workflowRunId;
+    this.runId = runId;
     this.stepId = stepId;
     this.evaluations = evaluations;
     this.selectedHandles = selectedHandles;
@@ -74,9 +74,9 @@ public final class ReviewEvaluation implements WorkflowArtifactOperation2 {
     return id;
   }
 
-  @JsonProperty("workflow_run_id")
-  public String getWorkflowRunId() {
-    return workflowRunId;
+  @JsonProperty("run_id")
+  public String getRunId() {
+    return runId;
   }
 
   @JsonProperty("step_id")

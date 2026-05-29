@@ -20,7 +20,6 @@ class Schemas
      * Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
      * @param array<\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}> $documents
      * @param string|null $model
-     * @param \Retab\Resource\GenerateSchemaRequestReasoningEffort|null $reasoningEffort
      * @param string|null $instructions
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param bool|null $stream
@@ -30,7 +29,6 @@ class Schemas
     public function generate(
         mixed $documents,
         ?string $model = null,
-        ?\Retab\Resource\GenerateSchemaRequestReasoningEffort $reasoningEffort = null,
         ?string $instructions = null,
         ?int $imageResolutionDpi = null,
         ?bool $stream = null,
@@ -40,7 +38,6 @@ class Schemas
         $body = array_filter([
             'documents' => $documents,
             'model' => $model,
-            'reasoning_effort' => $reasoningEffort?->value,
             'instructions' => $instructions,
             'image_resolution_dpi' => $imageResolutionDpi,
             'stream' => $stream,
