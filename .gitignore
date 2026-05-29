@@ -66,10 +66,7 @@
 **/.gradle/
 
 # Bundler local installs
-**/.bundle/ruby/*/cache/
-**/.bundle/ruby/*/extensions/
-**/.bundle/ruby/*/gems/
-**/.bundle/ruby/*/specifications/
+**/.bundle/
 
 # Rust
 **/target/

@@ -200,7 +200,6 @@ __all__ = [
     "UpdateExperimentRequest",
     "UpdateExperimentRequestNConsensus",
     "WorkflowExperiment",
-    "WorkflowSnapshotRef",
     "_MetricsStaleErrorLastRun",
 ]
 

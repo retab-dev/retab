@@ -8,12 +8,14 @@ namespace Retab
         /// <summary>Unique ID for this run</summary>
         public string Id { get; set; } = default!;
 
-        /// <summary>Workflow + version reference</summary>
-        public WorkflowSnapshotRef Workflow { get; set; } = default!;
+        /// <summary>ID of the workflow that was run</summary>
+        public string WorkflowId { get; set; } = default!;
+
+        /// <summary>Content-addressed workflow version used for this run.</summary>
+        public string WorkflowVersionId { get; set; } = default!;
 
         /// <summary>What started this run</summary>
-        [Newtonsoft.Json.JsonConverter(typeof(ManualTriggerDiscriminatorConverter))]
-        public object Trigger { get; set; } = default!;
+        public TriggerInfo Trigger { get; set; } = default!;
 
         /// <summary>Lifecycle state of the run.</summary>
         [Newtonsoft.Json.JsonConverter(typeof(PendingRunDiscriminatorConverter))]

@@ -58,13 +58,6 @@ type APICallInvocation struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
-// APITrigger run started programmatically via the public API.
-type APITrigger struct {
-	Type *string `json:"type,omitempty"`
-	// APIKeyID is api key id used to start the run, when known
-	APIKeyID *string `json:"api_key_id,omitempty"`
-}
-
 // ArrayContainsCondition represents an array contains condition.
 type ArrayContainsCondition struct {
 	Kind     *string                `json:"kind,omitempty"`
@@ -738,15 +731,6 @@ type EditWorkflowArtifact struct {
 	Operation *string `json:"operation,omitempty"`
 }
 
-// EmailTrigger run started by an inbound email.
-type EmailTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// Sender is sender email address, when known
-	Sender *string `json:"sender,omitempty"`
-	// Subject is email subject, when known
-	Subject *string `json:"subject,omitempty"`
-}
-
 // EndsWithCondition represents an ends with condition.
 type EndsWithCondition struct {
 	Kind     *string `json:"kind,omitempty"`
@@ -1290,13 +1274,6 @@ type LlmNotJudgedAsCondition struct {
 	ExpectedLabel *string `json:"expected_label,omitempty"`
 }
 
-// ManualTrigger manual run started by a user from the dashboard.
-type ManualTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// UserID is user who started the run, when known
-	UserID *string `json:"user_id,omitempty"`
-}
-
 // ManualWorkflowTestSource represents a manual workflow test source.
 type ManualWorkflowTestSource struct {
 	Type         *string                `json:"type,omitempty"`
@@ -1578,13 +1555,6 @@ type QueuedWorkflowExperimentRun = QueuedStepLifecycle
 // QueuedWorkflowTestRun is an alias for QueuedStepLifecycle.
 type QueuedWorkflowTestRun = QueuedStepLifecycle
 
-// RestartTrigger run created by restarting a parent run.
-type RestartTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// ParentRunID is id of the parent run that was restarted
-	ParentRunID string `json:"parent_run_id"`
-}
-
 // RetabUsage usage information for document processing.
 type RetabUsage struct {
 	// Credits is credits consumed for processing
@@ -1727,7 +1697,9 @@ type RunStepWorkflowTestSource struct {
 }
 
 // RunTiming timing information for a run.
-// `duration_ms` is the elapsed time between `started_at` and `completed_at`.
+// Three event timestamps that consumers cannot reconstruct on their own.
+// Wall-clock duration is a trivial `completed_at - started_at` subtraction
+// done client-side; it is not stored or exposed.
 type RunTiming struct {
 	// CreatedAt is when the run record was created
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -1735,12 +1707,6 @@ type RunTiming struct {
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// CompletedAt is when the run finished executing
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
-	// ReviewWaitingStartedAt is when the current awaiting_review period started
-	ReviewWaitingStartedAt *time.Time `json:"review_waiting_started_at,omitempty"`
-	// AccumulatedReviewWaitingMs is accumulated time spent waiting for review across the run
-	AccumulatedReviewWaitingMs *int `json:"accumulated_review_waiting_ms,omitempty"`
-	// DurationMs is total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored.
-	DurationMs *int `json:"duration_ms,omitempty"`
 }
 
 // RunningRun the run is currently executing.
@@ -1759,13 +1725,6 @@ type RunningWorkflowExperimentRun = RunningRun
 
 // RunningWorkflowTestRun is an alias for RunningRun.
 type RunningWorkflowTestRun = RunningRun
-
-// ScheduleTrigger run started by a workflow schedule.
-type ScheduleTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// ScheduleID is id of the schedule that fired this run
-	ScheduleID string `json:"schedule_id"`
-}
 
 // SimilarityGteCondition represents a similarity gte condition.
 type SimilarityGteCondition struct {
@@ -1922,6 +1881,15 @@ type Subdocument struct {
 	AllowMultipleInstances *bool `json:"allow_multiple_instances,omitempty"`
 }
 
+// TriggerInfo public summary of what started a run: just the trigger category.
+// The full per-variant detail (schedule_id, parent_run_id, sender, ...) is
+// kept internally on `StoredWorkflowRun.trigger` but intentionally not
+// exposed in the public API surface.
+type TriggerInfo struct {
+	// Type is what started this run
+	Type TriggerInfoType `json:"type"`
+}
+
 // ValidationError represents a validation error.
 type ValidationError struct {
 	Loc   []interface{}          `json:"loc"`
@@ -1938,13 +1906,6 @@ type VerdictSummary struct {
 	AssertionsFailed   *int     `json:"assertions_failed,omitempty"`
 	BlockedAssertions  *int     `json:"blocked_assertions,omitempty"`
 	FailedAssertionIDs []string `json:"failed_assertion_ids,omitempty"`
-}
-
-// WebhookTrigger run started by an inbound webhook.
-type WebhookTrigger struct {
-	Type *string `json:"type,omitempty"`
-	// WebhookID is id of the webhook configuration, when known
-	WebhookID *string `json:"webhook_id,omitempty"`
 }
 
 // WhileLoopTermination record of why a while-loop block stopped iterating during a run.
@@ -2075,7 +2036,8 @@ type ExperimentResult struct {
 // ExperimentRun a single execution of an experiment, identified by `id`.
 type ExperimentRun struct {
 	ID                     string                  `json:"id"`
-	Workflow               WorkflowSnapshotRef     `json:"workflow"`
+	WorkflowID             string                  `json:"workflow_id"`
+	WorkflowVersionID      string                  `json:"workflow_version_id"`
 	Trigger                ExperimentRunTrigger    `json:"trigger"`
 	ExperimentID           string                  `json:"experiment_id"`
 	BlockID                string                  `json:"block_id"`
@@ -2157,24 +2119,18 @@ type ReviewVersion struct {
 type WorkflowRun struct {
 	// ID is unique ID for this run
 	ID string `json:"id"`
-	// Workflow is workflow + version reference
-	Workflow WorkflowSnapshotRef `json:"workflow"`
+	// WorkflowID is id of the workflow that was run
+	WorkflowID string `json:"workflow_id"`
+	// WorkflowVersionID is content-addressed workflow version used for this run.
+	WorkflowVersionID string `json:"workflow_version_id"`
 	// Trigger is what started this run
-	Trigger Trigger `json:"trigger"`
+	Trigger TriggerInfo `json:"trigger"`
 	// Lifecycle is lifecycle state of the run.
 	Lifecycle WorkflowRunLifecycle `json:"lifecycle"`
 	// Timing is all timing information
 	Timing RunTiming `json:"timing"`
 	// Inputs is input payloads supplied at run creation time
 	Inputs *RunInputs `json:"inputs,omitempty"`
-}
-
-// WorkflowSnapshotRef reference to the workflow and immutable version that drove the run.
-type WorkflowSnapshotRef struct {
-	// WorkflowID is id of the workflow that was run
-	WorkflowID string `json:"workflow_id"`
-	// VersionID is content-addressed workflow version used for this run.
-	VersionID string `json:"version_id"`
 }
 
 // WorkflowRunStep public step status object.
@@ -2278,15 +2234,16 @@ type WorkflowTestResult struct {
 
 // WorkflowTestRun a batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`.
 type WorkflowTestRun struct {
-	ID         string                         `json:"id"`
-	Workflow   WorkflowSnapshotRef            `json:"workflow"`
-	Trigger    Trigger                        `json:"trigger"`
-	Lifecycle  WorkflowTestRunStatus          `json:"lifecycle"`
-	Timing     WorkflowTestRunTiming          `json:"timing"`
-	Target     *WorkflowTestBlockTarget       `json:"target,omitempty"`
-	TestID     *string                        `json:"test_id,omitempty"`
-	TotalTests int                            `json:"total_tests"`
-	Counts     *BlockTestBatchExecutionCounts `json:"counts,omitempty"`
+	ID                string                         `json:"id"`
+	WorkflowID        string                         `json:"workflow_id"`
+	WorkflowVersionID string                         `json:"workflow_version_id"`
+	Trigger           TriggerInfo                    `json:"trigger"`
+	Lifecycle         WorkflowTestRunStatus          `json:"lifecycle"`
+	Timing            WorkflowTestRunTiming          `json:"timing"`
+	Target            *WorkflowTestBlockTarget       `json:"target,omitempty"`
+	TestID            *string                        `json:"test_id,omitempty"`
+	TotalTests        int                            `json:"total_tests"`
+	Counts            *BlockTestBatchExecutionCounts `json:"counts,omitempty"`
 }
 
 // WorkflowTestRunBlockScope run every workflow test for one block in the workflow.
@@ -3579,152 +3536,6 @@ func StepLifecycleFromSkippedStepLifecycle(v SkippedStepLifecycle) StepLifecycle
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "status", "skipped")
 	return StepLifecycle{raw: data}
-}
-
-// Trigger is a discriminated union keyed by the "type" field.
-// It stores the exact wire payload so round-trips never drop variant fields;
-// inspect it with Type()/As*() and build one with TriggerFrom*().
-// Variants: APITrigger, EmailTrigger, ManualTrigger, RestartTrigger, ScheduleTrigger, WebhookTrigger.
-type Trigger struct {
-	raw json.RawMessage
-}
-
-// MarshalJSON returns the stored payload verbatim (null when unset).
-func (u Trigger) MarshalJSON() ([]byte, error) {
-	if len(u.raw) == 0 {
-		return []byte("null"), nil
-	}
-	return u.raw, nil
-}
-
-// UnmarshalJSON captures the raw payload for lossless re-encoding.
-func (u *Trigger) UnmarshalJSON(data []byte) error {
-	u.raw = append(u.raw[:0], data...)
-	return nil
-}
-
-// Raw returns the underlying JSON payload of the union.
-func (u Trigger) Raw() json.RawMessage {
-	return u.raw
-}
-
-// Type returns the discriminator value, or "" when the union is unset.
-func (u Trigger) Type() string {
-	return unionDiscriminator(u.raw, "type")
-}
-
-// AsAPITrigger decodes the union payload as APITrigger.
-func (u Trigger) AsAPITrigger() (*APITrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v APITrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromAPITrigger builds a Trigger from a APITrigger.
-func TriggerFromAPITrigger(v APITrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "api")
-	return Trigger{raw: data}
-}
-
-// AsEmailTrigger decodes the union payload as EmailTrigger.
-func (u Trigger) AsEmailTrigger() (*EmailTrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v EmailTrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromEmailTrigger builds a Trigger from a EmailTrigger.
-func TriggerFromEmailTrigger(v EmailTrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "email")
-	return Trigger{raw: data}
-}
-
-// AsManualTrigger decodes the union payload as ManualTrigger.
-func (u Trigger) AsManualTrigger() (*ManualTrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v ManualTrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromManualTrigger builds a Trigger from a ManualTrigger.
-func TriggerFromManualTrigger(v ManualTrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "manual")
-	return Trigger{raw: data}
-}
-
-// AsRestartTrigger decodes the union payload as RestartTrigger.
-func (u Trigger) AsRestartTrigger() (*RestartTrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v RestartTrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromRestartTrigger builds a Trigger from a RestartTrigger.
-func TriggerFromRestartTrigger(v RestartTrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "restart")
-	return Trigger{raw: data}
-}
-
-// AsScheduleTrigger decodes the union payload as ScheduleTrigger.
-func (u Trigger) AsScheduleTrigger() (*ScheduleTrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v ScheduleTrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromScheduleTrigger builds a Trigger from a ScheduleTrigger.
-func TriggerFromScheduleTrigger(v ScheduleTrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "schedule")
-	return Trigger{raw: data}
-}
-
-// AsWebhookTrigger decodes the union payload as WebhookTrigger.
-func (u Trigger) AsWebhookTrigger() (*WebhookTrigger, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v WebhookTrigger
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// TriggerFromWebhookTrigger builds a Trigger from a WebhookTrigger.
-func TriggerFromWebhookTrigger(v WebhookTrigger) Trigger {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "webhook")
-	return Trigger{raw: data}
 }
 
 // WorkflowExperimentResult is a discriminated union keyed by the "status" field.

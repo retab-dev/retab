@@ -9,33 +9,18 @@ export interface RunTiming {
   startedAt?: Date | null;
   /** When the run finished executing */
   completedAt?: Date | null;
-  /** When the current awaiting_review period started */
-  reviewWaitingStartedAt?: Date | null;
-  /**
-   * Accumulated time spent waiting for review across the run
-   * @default 0
-   */
-  accumulatedReviewWaitingMs?: number;
-  /** Total run duration in milliseconds. Backfilled from `completed_at - started_at` on read when not stored. */
-  durationMs?: number | null;
 }
 
 export interface RunTimingResponse {
   created_at?: string;
   started_at?: string | null;
   completed_at?: string | null;
-  review_waiting_started_at?: string | null;
-  accumulated_review_waiting_ms?: number;
-  duration_ms?: number | null;
 }
 
 export const ZRunTiming = z.object({
   createdAt: z.coerce.date().optional(),
   startedAt: z.coerce.date().nullable().optional(),
   completedAt: z.coerce.date().nullable().optional(),
-  reviewWaitingStartedAt: z.coerce.date().nullable().optional(),
-  accumulatedReviewWaitingMs: z.number().int().optional(),
-  durationMs: z.number().int().nullable().optional(),
 }) as z.ZodType<RunTiming>;
 
 export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
@@ -54,14 +39,6 @@ export function deserializeRunTiming(wire: RunTimingResponse): RunTiming {
         : wire['completed_at'] == null
           ? wire['completed_at']
           : new Date(wire['completed_at']),
-    reviewWaitingStartedAt:
-      wire['review_waiting_started_at'] == null
-        ? (wire['review_waiting_started_at'] as undefined)
-        : wire['review_waiting_started_at'] == null
-          ? wire['review_waiting_started_at']
-          : new Date(wire['review_waiting_started_at']),
-    accumulatedReviewWaitingMs: wire['accumulated_review_waiting_ms'],
-    durationMs: wire['duration_ms'],
   };
 }
 
@@ -83,13 +60,5 @@ export function serializeRunTiming(domain: RunTiming): RunTimingResponse {
         : domain['completedAt'] == null
           ? domain['completedAt']
           : domain['completedAt'].toISOString(),
-    review_waiting_started_at:
-      domain['reviewWaitingStartedAt'] == null
-        ? (domain['reviewWaitingStartedAt'] as undefined)
-        : domain['reviewWaitingStartedAt'] == null
-          ? domain['reviewWaitingStartedAt']
-          : domain['reviewWaitingStartedAt'].toISOString(),
-    accumulated_review_waiting_ms: domain['accumulatedReviewWaitingMs'],
-    duration_ms: domain['durationMs'],
   };
 }

@@ -73,15 +73,6 @@ import {
   deserializeRunningWorkflowExperimentRun,
   serializeRunningWorkflowExperimentRun,
 } from './running-workflow-experiment-run.interface.js';
-import type {
-  WorkflowSnapshotRef,
-  WorkflowSnapshotRefResponse,
-} from './workflow-snapshot-ref.interface.js';
-import {
-  ZWorkflowSnapshotRef,
-  deserializeWorkflowSnapshotRef,
-  serializeWorkflowSnapshotRef,
-} from './workflow-snapshot-ref.interface.js';
 import type { ExperimentRunBlockType } from './experiment-run-block-type.interface.js';
 import { ZExperimentRunBlockType } from './experiment-run-block-type.interface.js';
 import type { ExperimentRunNConsensus } from './experiment-run-n-consensus.interface.js';
@@ -90,7 +81,8 @@ import { ZExperimentRunNConsensus } from './experiment-run-n-consensus.interface
 /** A single execution of an experiment, identified by `id`. */
 export interface ExperimentRun {
   id: string;
-  workflow: WorkflowSnapshotRef;
+  workflowId: string;
+  workflowVersionId: string;
   trigger: ExperimentRunTrigger;
   experimentId: string;
   blockId: string;
@@ -120,7 +112,8 @@ export interface ExperimentRun {
 
 export interface ExperimentRunResponse {
   id: string;
-  workflow: WorkflowSnapshotRefResponse;
+  workflow_id: string;
+  workflow_version_id: string;
   trigger: ExperimentRunTriggerResponse;
   experiment_id: string;
   block_id: string;
@@ -146,7 +139,8 @@ export interface ExperimentRunResponse {
 
 export const ZExperimentRun = z.object({
   id: z.string(),
-  workflow: ZWorkflowSnapshotRef,
+  workflowId: z.string(),
+  workflowVersionId: z.string(),
   trigger: ZExperimentRunTrigger,
   experimentId: z.string(),
   blockId: z.string(),
@@ -174,7 +168,8 @@ export const ZExperimentRun = z.object({
 export function deserializeExperimentRun(wire: ExperimentRunResponse): ExperimentRun {
   return {
     id: wire['id'],
-    workflow: deserializeWorkflowSnapshotRef(wire['workflow']),
+    workflowId: wire['workflow_id'],
+    workflowVersionId: wire['workflow_version_id'],
     trigger: deserializeExperimentRunTrigger(wire['trigger']),
     experimentId: wire['experiment_id'],
     blockId: wire['block_id'],
@@ -240,7 +235,8 @@ export function deserializeExperimentRun(wire: ExperimentRunResponse): Experimen
 export function serializeExperimentRun(domain: ExperimentRun): ExperimentRunResponse {
   return {
     id: domain['id'],
-    workflow: serializeWorkflowSnapshotRef(domain['workflow']),
+    workflow_id: domain['workflowId'],
+    workflow_version_id: domain['workflowVersionId'],
     trigger: serializeExperimentRunTrigger(domain['trigger']),
     experiment_id: domain['experimentId'],
     block_id: domain['blockId'],

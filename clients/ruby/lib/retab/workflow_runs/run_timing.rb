@@ -8,19 +8,13 @@ module Retab
     HASH_ATTRS = {
       created_at: :created_at,
       started_at: :started_at,
-      completed_at: :completed_at,
-      review_waiting_started_at: :review_waiting_started_at,
-      accumulated_review_waiting_ms: :accumulated_review_waiting_ms,
-      duration_ms: :duration_ms
+      completed_at: :completed_at
     }.freeze
 
     attr_accessor(
       :created_at,
       :started_at,
-      :completed_at,
-      :review_waiting_started_at,
-      :accumulated_review_waiting_ms,
-      :duration_ms
+      :completed_at
     )
 
     def initialize(json)
@@ -29,9 +23,6 @@ module Retab
       @created_at = hash[:created_at]
       @started_at = hash[:started_at]
       @completed_at = hash[:completed_at]
-      @review_waiting_started_at = hash[:review_waiting_started_at]
-      @accumulated_review_waiting_ms = hash[:accumulated_review_waiting_ms]
-      @duration_ms = hash[:duration_ms]
     end
   end
 end

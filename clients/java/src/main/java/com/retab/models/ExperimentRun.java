@@ -11,7 +11,8 @@ import com.retab.types.ExperimentRunNConsensus;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ExperimentRun {
   private final String id;
-  private final WorkflowSnapshotRef workflow;
+  private final String workflowId;
+  private final String workflowVersionId;
   private final ExperimentRunTrigger trigger;
   private final String experimentId;
   private final String blockId;
@@ -31,7 +32,8 @@ public final class ExperimentRun {
   @JsonCreator
   public ExperimentRun(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
+      @JsonProperty(value = "workflow_id", required = true) String workflowId,
+      @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
       @JsonProperty(value = "trigger", required = true) ExperimentRunTrigger trigger,
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
       @JsonProperty(value = "block_id", required = true) String blockId,
@@ -49,7 +51,8 @@ public final class ExperimentRun {
       @JsonProperty(value = "document_count", required = false) Long documentCount,
       @JsonProperty(value = "error_count", required = false) Long errorCount) {
     this.id = id;
-    this.workflow = workflow;
+    this.workflowId = workflowId;
+    this.workflowVersionId = workflowVersionId;
     this.trigger = trigger;
     this.experimentId = experimentId;
     this.blockId = blockId;
@@ -72,9 +75,14 @@ public final class ExperimentRun {
     return id;
   }
 
-  @JsonProperty("workflow")
-  public WorkflowSnapshotRef getWorkflow() {
-    return workflow;
+  @JsonProperty("workflow_id")
+  public String getWorkflowId() {
+    return workflowId;
+  }
+
+  @JsonProperty("workflow_version_id")
+  public String getWorkflowVersionId() {
+    return workflowVersionId;
   }
 
   @JsonProperty("trigger")

@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowTestRun {
     pub id: String,
-    pub workflow: WorkflowSnapshotRef,
-    pub trigger: WorkflowRunTriggerOneOf,
+    pub workflow_id: String,
+    pub workflow_version_id: String,
+    pub trigger: TriggerInfo,
     pub lifecycle: WorkflowTestResultLifecycleOneOf,
     pub timing: WorkflowTestRunTiming,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -27,15 +28,17 @@ impl WorkflowTestRun {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        workflow: WorkflowSnapshotRef,
-        trigger: WorkflowRunTriggerOneOf,
+        workflow_id: impl Into<String>,
+        workflow_version_id: impl Into<String>,
+        trigger: TriggerInfo,
         lifecycle: WorkflowTestResultLifecycleOneOf,
         timing: WorkflowTestRunTiming,
         total_tests: i64,
     ) -> Self {
         Self {
             id: id.into(),
-            workflow,
+            workflow_id: workflow_id.into(),
+            workflow_version_id: workflow_version_id.into(),
             trigger,
             lifecycle,
             timing,

@@ -2,15 +2,6 @@
 
 import { z } from 'zod';
 import type {
-  ApiTrigger,
-  ApiTriggerResponse,
-} from '../../../../workflows/runs/interfaces/api-trigger.interface.js';
-import {
-  ZApiTrigger,
-  deserializeApiTrigger,
-  serializeApiTrigger,
-} from '../../../../workflows/runs/interfaces/api-trigger.interface.js';
-import type {
   BlockTestBatchExecutionCounts,
   BlockTestBatchExecutionCountsResponse,
 } from './block-test-batch-execution-counts.interface.js';
@@ -38,15 +29,6 @@ import {
   serializeCompletedWorkflowTestRun,
 } from '../../../../workflows/tests/results/interfaces/completed-workflow-test-run.interface.js';
 import type {
-  EmailTrigger,
-  EmailTriggerResponse,
-} from '../../../../workflows/runs/interfaces/email-trigger.interface.js';
-import {
-  ZEmailTrigger,
-  deserializeEmailTrigger,
-  serializeEmailTrigger,
-} from '../../../../workflows/runs/interfaces/email-trigger.interface.js';
-import type {
   ErrorWorkflowTestRun,
   ErrorWorkflowTestRunResponse,
 } from '../../../../workflows/tests/results/interfaces/error-workflow-test-run.interface.js';
@@ -55,15 +37,6 @@ import {
   deserializeErrorWorkflowTestRun,
   serializeErrorWorkflowTestRun,
 } from '../../../../workflows/tests/results/interfaces/error-workflow-test-run.interface.js';
-import type {
-  ManualTrigger,
-  ManualTriggerResponse,
-} from '../../../../workflows/runs/interfaces/manual-trigger.interface.js';
-import {
-  ZManualTrigger,
-  deserializeManualTrigger,
-  serializeManualTrigger,
-} from '../../../../workflows/runs/interfaces/manual-trigger.interface.js';
 import type {
   PendingWorkflowTestRun,
   PendingWorkflowTestRunResponse,
@@ -83,15 +56,6 @@ import {
   serializeQueuedWorkflowTestRun,
 } from '../../../../workflows/tests/results/interfaces/queued-workflow-test-run.interface.js';
 import type {
-  RestartTrigger,
-  RestartTriggerResponse,
-} from '../../../../workflows/runs/interfaces/restart-trigger.interface.js';
-import {
-  ZRestartTrigger,
-  deserializeRestartTrigger,
-  serializeRestartTrigger,
-} from '../../../../workflows/runs/interfaces/restart-trigger.interface.js';
-import type {
   RunningWorkflowTestRun,
   RunningWorkflowTestRunResponse,
 } from '../../../../workflows/tests/results/interfaces/running-workflow-test-run.interface.js';
@@ -101,32 +65,14 @@ import {
   serializeRunningWorkflowTestRun,
 } from '../../../../workflows/tests/results/interfaces/running-workflow-test-run.interface.js';
 import type {
-  ScheduleTrigger,
-  ScheduleTriggerResponse,
-} from '../../../../workflows/runs/interfaces/schedule-trigger.interface.js';
+  TriggerInfo,
+  TriggerInfoResponse,
+} from '../../../../workflows/runs/interfaces/trigger-info.interface.js';
 import {
-  ZScheduleTrigger,
-  deserializeScheduleTrigger,
-  serializeScheduleTrigger,
-} from '../../../../workflows/runs/interfaces/schedule-trigger.interface.js';
-import type {
-  WebhookTrigger,
-  WebhookTriggerResponse,
-} from '../../../../workflows/runs/interfaces/webhook-trigger.interface.js';
-import {
-  ZWebhookTrigger,
-  deserializeWebhookTrigger,
-  serializeWebhookTrigger,
-} from '../../../../workflows/runs/interfaces/webhook-trigger.interface.js';
-import type {
-  WorkflowSnapshotRef,
-  WorkflowSnapshotRefResponse,
-} from '../../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
-import {
-  ZWorkflowSnapshotRef,
-  deserializeWorkflowSnapshotRef,
-  serializeWorkflowSnapshotRef,
-} from '../../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
+  ZTriggerInfo,
+  deserializeTriggerInfo,
+  serializeTriggerInfo,
+} from '../../../../workflows/runs/interfaces/trigger-info.interface.js';
 import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
@@ -149,14 +95,9 @@ import {
 /** A batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`. */
 export interface WorkflowTestRun {
   id: string;
-  workflow: WorkflowSnapshotRef;
-  trigger:
-    | ManualTrigger
-    | ApiTrigger
-    | ScheduleTrigger
-    | WebhookTrigger
-    | EmailTrigger
-    | RestartTrigger;
+  workflowId: string;
+  workflowVersionId: string;
+  trigger: TriggerInfo;
   lifecycle:
     | PendingWorkflowTestRun
     | QueuedWorkflowTestRun
@@ -174,14 +115,9 @@ export interface WorkflowTestRun {
 
 export interface WorkflowTestRunResponse {
   id: string;
-  workflow: WorkflowSnapshotRefResponse;
-  trigger:
-    | ManualTriggerResponse
-    | ApiTriggerResponse
-    | ScheduleTriggerResponse
-    | WebhookTriggerResponse
-    | EmailTriggerResponse
-    | RestartTriggerResponse;
+  workflow_id: string;
+  workflow_version_id: string;
+  trigger: TriggerInfoResponse;
   lifecycle:
     | PendingWorkflowTestRunResponse
     | QueuedWorkflowTestRunResponse
@@ -198,15 +134,9 @@ export interface WorkflowTestRunResponse {
 
 export const ZWorkflowTestRun = z.object({
   id: z.string(),
-  workflow: ZWorkflowSnapshotRef,
-  trigger: z.union([
-    ZManualTrigger,
-    ZApiTrigger,
-    ZScheduleTrigger,
-    ZWebhookTrigger,
-    ZEmailTrigger,
-    ZRestartTrigger,
-  ]),
+  workflowId: z.string(),
+  workflowVersionId: z.string(),
+  trigger: ZTriggerInfo,
   lifecycle: z.union([
     ZPendingWorkflowTestRun,
     ZQueuedWorkflowTestRun,
@@ -225,34 +155,9 @@ export const ZWorkflowTestRun = z.object({
 export function deserializeWorkflowTestRun(wire: WorkflowTestRunResponse): WorkflowTestRun {
   return {
     id: wire['id'],
-    workflow: deserializeWorkflowSnapshotRef(wire['workflow']),
-    trigger:
-      (
-        {
-          api: () => deserializeApiTrigger(wire['trigger'] as ApiTriggerResponse),
-          email: () => deserializeEmailTrigger(wire['trigger'] as EmailTriggerResponse),
-          manual: () => deserializeManualTrigger(wire['trigger'] as ManualTriggerResponse),
-          restart: () => deserializeRestartTrigger(wire['trigger'] as RestartTriggerResponse),
-          schedule: () => deserializeScheduleTrigger(wire['trigger'] as ScheduleTriggerResponse),
-          webhook: () => deserializeWebhookTrigger(wire['trigger'] as WebhookTriggerResponse),
-        } as Record<
-          string,
-          () =>
-            | ManualTrigger
-            | ApiTrigger
-            | ScheduleTrigger
-            | WebhookTrigger
-            | EmailTrigger
-            | RestartTrigger
-        >
-      )[(wire['trigger'] as unknown as Record<string, string>)['type']]?.() ??
-      (wire['trigger'] as unknown as
-        | ManualTrigger
-        | ApiTrigger
-        | ScheduleTrigger
-        | WebhookTrigger
-        | EmailTrigger
-        | RestartTrigger),
+    workflowId: wire['workflow_id'],
+    workflowVersionId: wire['workflow_version_id'],
+    trigger: deserializeTriggerInfo(wire['trigger']),
     lifecycle:
       (
         {
@@ -309,34 +214,9 @@ export function deserializeWorkflowTestRun(wire: WorkflowTestRunResponse): Workf
 export function serializeWorkflowTestRun(domain: WorkflowTestRun): WorkflowTestRunResponse {
   return {
     id: domain['id'],
-    workflow: serializeWorkflowSnapshotRef(domain['workflow']),
-    trigger:
-      (
-        {
-          api: () => serializeApiTrigger(domain['trigger'] as ApiTrigger),
-          email: () => serializeEmailTrigger(domain['trigger'] as EmailTrigger),
-          manual: () => serializeManualTrigger(domain['trigger'] as ManualTrigger),
-          restart: () => serializeRestartTrigger(domain['trigger'] as RestartTrigger),
-          schedule: () => serializeScheduleTrigger(domain['trigger'] as ScheduleTrigger),
-          webhook: () => serializeWebhookTrigger(domain['trigger'] as WebhookTrigger),
-        } as Record<
-          string,
-          () =>
-            | ManualTriggerResponse
-            | ApiTriggerResponse
-            | ScheduleTriggerResponse
-            | WebhookTriggerResponse
-            | EmailTriggerResponse
-            | RestartTriggerResponse
-        >
-      )[(domain['trigger'] as unknown as Record<string, string>)['type']]?.() ??
-      (domain['trigger'] as unknown as
-        | ManualTriggerResponse
-        | ApiTriggerResponse
-        | ScheduleTriggerResponse
-        | WebhookTriggerResponse
-        | EmailTriggerResponse
-        | RestartTriggerResponse),
+    workflow_id: domain['workflowId'],
+    workflow_version_id: domain['workflowVersionId'],
+    trigger: serializeTriggerInfo(domain['trigger']),
     lifecycle:
       (
         {

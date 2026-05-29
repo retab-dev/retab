@@ -303,6 +303,19 @@ const (
 	StepArtifactRefOperationFunctionInvocation      StepArtifactRefOperation = "function_invocation"
 )
 
+// TriggerInfoType represents trigger info type values.
+type TriggerInfoType string
+
+const (
+	TriggerInfoTypeManual   TriggerInfoType = "manual"
+	TriggerInfoTypeAPI      TriggerInfoType = "api"
+	TriggerInfoTypeSchedule TriggerInfoType = "schedule"
+	TriggerInfoTypeWebhook  TriggerInfoType = "webhook"
+	TriggerInfoTypeEmail    TriggerInfoType = "email"
+	TriggerInfoTypeCustom   TriggerInfoType = "custom"
+	TriggerInfoTypeRestart  TriggerInfoType = "restart"
+)
+
 // UpdateExperimentRequestNConsensus is an alias for CreateExperimentRequestNConsensus.
 type UpdateExperimentRequestNConsensus = CreateExperimentRequestNConsensus
 

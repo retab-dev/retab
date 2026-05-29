@@ -104,27 +104,34 @@ sh_test(
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )
 
-# Hermetic Node SDK drift check (blueprint Phase 4): non-manual so it joins the
-# commit gate and `bazel test //...`. Generation runs on the pinned Node 24.13.0
-# toolchain (threaded through sdk_generation_tree) against the committed OpenAPI
-# contract, so this is reproducible like the //api-quality:unit_tests proof gate
-# (also local + no-sandbox + non-manual). The retab-node-oagen-emitter service
+# Fully hermetic Node SDK drift check (blueprint Phase 4, gold standard): runs
+# SANDBOXED with no network and is cached on no-op reruns. Both inputs are
+# Bazel-declared TreeArtifacts:
+#   * generated_node_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure) re-formatted with the Node SDK
+#     client's own vendored prettier (node_sdk_npm).
+#   * committed_node_sdk_tree -- the committed src/ + manifest staged into a tree.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT. The retab-node-oagen-emitter service
 # boundary selects this target for real regenerate-and-diff drift coverage,
 # instead of the //api-quality:unit_tests proxy other (still-manual) languages
 # use.
 sh_test(
     name = "check_node",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "node",
-        "$(location :generated_node_sdk)",
-        "open-source/sdk/clients/node",
+        "$(location //open-source/sdk/clients/node:generated_node_sdk_formatted)",
+        "$(location //open-source/sdk/clients/node:committed_node_sdk_tree)",
     ],
     data = [
-        ":generated_node_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/node:committed_node_sdk_tree",
+        "//open-source/sdk/clients/node:generated_node_sdk_formatted",
     ],
-    tags = LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
 sdk_generation_tree(

@@ -10,10 +10,12 @@ use serde::{Deserialize, Serialize};
 pub struct WorkflowRun {
     /// Unique ID for this run
     pub id: String,
-    /// Workflow + version reference
-    pub workflow: WorkflowSnapshotRef,
+    /// ID of the workflow that was run
+    pub workflow_id: String,
+    /// Content-addressed workflow version used for this run.
+    pub workflow_version_id: String,
     /// What started this run
-    pub trigger: WorkflowRunTriggerOneOf,
+    pub trigger: TriggerInfo,
     /// Lifecycle state of the run.
     pub lifecycle: WorkflowRunLifecycleOneOf,
     /// All timing information
@@ -29,14 +31,16 @@ impl WorkflowRun {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        workflow: WorkflowSnapshotRef,
-        trigger: WorkflowRunTriggerOneOf,
+        workflow_id: impl Into<String>,
+        workflow_version_id: impl Into<String>,
+        trigger: TriggerInfo,
         lifecycle: WorkflowRunLifecycleOneOf,
         timing: RunTiming,
     ) -> Self {
         Self {
             id: id.into(),
-            workflow,
+            workflow_id: workflow_id.into(),
+            workflow_version_id: workflow_version_id.into(),
             trigger,
             lifecycle,
             timing,

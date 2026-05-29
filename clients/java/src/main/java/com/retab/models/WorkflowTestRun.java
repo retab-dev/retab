@@ -9,8 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowTestRun {
   private final String id;
-  private final WorkflowSnapshotRef workflow;
-  private final Trigger trigger;
+  private final String workflowId;
+  private final String workflowVersionId;
+  private final TriggerInfo trigger;
   private final WorkflowTestRunStatus lifecycle;
   private final WorkflowTestRunTiming timing;
   private final WorkflowTestBlockTarget target;
@@ -21,8 +22,9 @@ public final class WorkflowTestRun {
   @JsonCreator
   public WorkflowTestRun(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
-      @JsonProperty(value = "trigger", required = true) Trigger trigger,
+      @JsonProperty(value = "workflow_id", required = true) String workflowId,
+      @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
+      @JsonProperty(value = "trigger", required = true) TriggerInfo trigger,
       @JsonProperty(value = "lifecycle", required = true) WorkflowTestRunStatus lifecycle,
       @JsonProperty(value = "timing", required = true) WorkflowTestRunTiming timing,
       @JsonProperty(value = "target", required = false) WorkflowTestBlockTarget target,
@@ -30,7 +32,8 @@ public final class WorkflowTestRun {
       @JsonProperty(value = "total_tests", required = true) Long totalTests,
       @JsonProperty(value = "counts", required = false) BlockTestBatchExecutionCounts counts) {
     this.id = id;
-    this.workflow = workflow;
+    this.workflowId = workflowId;
+    this.workflowVersionId = workflowVersionId;
     this.trigger = trigger;
     this.lifecycle = lifecycle;
     this.timing = timing;
@@ -45,13 +48,18 @@ public final class WorkflowTestRun {
     return id;
   }
 
-  @JsonProperty("workflow")
-  public WorkflowSnapshotRef getWorkflow() {
-    return workflow;
+  @JsonProperty("workflow_id")
+  public String getWorkflowId() {
+    return workflowId;
+  }
+
+  @JsonProperty("workflow_version_id")
+  public String getWorkflowVersionId() {
+    return workflowVersionId;
   }
 
   @JsonProperty("trigger")
-  public Trigger getTrigger() {
+  public TriggerInfo getTrigger() {
     return trigger;
   }
 

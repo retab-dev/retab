@@ -1012,15 +1012,11 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "run_123",
-				"workflow": map[string]any{
-					"workflow_id":       "wf_123",
-					"version_id":        "ver_old",
-					"name_at_run_time":  "Workflow",
-					"requested_version": "production",
-				},
-				"trigger":   map[string]any{"type": "manual"},
-				"lifecycle": map[string]any{"status": "error"},
+				"id":                  "run_123",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_old",
+				"trigger":             map[string]any{"type": "manual"},
+				"lifecycle":           map[string]any{"status": "error"},
 				"inputs": map[string]any{
 					"documents": map[string]any{
 						"start_doc": map[string]any{
@@ -1039,16 +1035,12 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 				t.Fatalf("decode request body: %v", err)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "run_456",
-				"workflow": map[string]any{
-					"workflow_id":       "wf_123",
-					"version_id":        "ver_123",
-					"name_at_run_time":  "Workflow",
-					"requested_version": "production",
-				},
-				"trigger":   map[string]any{"type": "api"},
-				"lifecycle": map[string]any{"status": "running"},
-				"timing":    map[string]any{"created_at": "2026-05-15T00:00:00Z"},
+				"id":                  "run_456",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_123",
+				"trigger":             map[string]any{"type": "api"},
+				"lifecycle":           map[string]any{"status": "running"},
+				"timing":              map[string]any{"created_at": "2026-05-15T00:00:00Z"},
 				"inputs": map[string]any{
 					"documents": map[string]any{},
 					"json_data": map[string]any{},
@@ -1120,15 +1112,11 @@ func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "run_123",
-				"workflow": map[string]any{
-					"workflow_id":       "wf_123",
-					"version_id":        "ver_old",
-					"name_at_run_time":  "Workflow",
-					"requested_version": "production",
-				},
-				"trigger":   map[string]any{"type": "manual"},
-				"lifecycle": map[string]any{"status": "error"},
+				"id":                  "run_123",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_old",
+				"trigger":             map[string]any{"type": "manual"},
+				"lifecycle":           map[string]any{"status": "error"},
 				"inputs": map[string]any{
 					"documents": map[string]any{},
 					"json_data": map[string]any{},
@@ -1139,15 +1127,11 @@ func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 				t.Fatalf("decode request body: %v", err)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "run_456",
-				"workflow": map[string]any{
-					"workflow_id":       "wf_123",
-					"version_id":        "ver_draft",
-					"name_at_run_time":  "Workflow",
-					"requested_version": "draft",
-				},
-				"trigger":   map[string]any{"type": "api"},
-				"lifecycle": map[string]any{"status": "running"},
+				"id":                  "run_456",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_draft",
+				"trigger":             map[string]any{"type": "api"},
+				"lifecycle":           map[string]any{"status": "running"},
 			})
 		default:
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)

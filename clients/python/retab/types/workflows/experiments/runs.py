@@ -127,7 +127,8 @@ class ExperimentRun(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
-    workflow: WorkflowSnapshotRef
+    workflow_id: str
+    workflow_version_id: str
     trigger: ExperimentRunTrigger
     experiment_id: str
     block_id: str
@@ -152,15 +153,6 @@ class ExperimentRun(BaseModel):
     error_count: int | None = Field(default=0)
 
 
-class WorkflowSnapshotRef(BaseModel):
-    """Reference to the workflow and immutable version that drove the run."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    workflow_id: str = Field(..., description="ID of the workflow that was run")
-    version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
-
-
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -177,4 +169,3 @@ PendingWorkflowExperimentRun.model_rebuild()
 QueuedWorkflowExperimentRun.model_rebuild()
 RunningWorkflowExperimentRun.model_rebuild()
 ExperimentRun.model_rebuild()
-WorkflowSnapshotRef.model_rebuild()

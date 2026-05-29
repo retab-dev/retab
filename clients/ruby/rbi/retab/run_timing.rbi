@@ -27,24 +27,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def completed_at=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def review_waiting_started_at; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def review_waiting_started_at=(value); end
-
-    sig { returns(T.nilable(Integer)) }
-    def accumulated_review_waiting_ms; end
-
-    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
-    def accumulated_review_waiting_ms=(value); end
-
-    sig { returns(T.nilable(Integer)) }
-    def duration_ms; end
-
-    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
-    def duration_ms=(value); end
-
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

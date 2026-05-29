@@ -13,8 +13,9 @@ readonly class WorkflowTestRun implements \JsonSerializable
 
     public function __construct(
         public string $id,
-        public WorkflowSnapshotRef $workflow,
-        public ManualTrigger|ApiTrigger|ScheduleTrigger|WebhookTrigger|EmailTrigger|RestartTrigger $trigger,
+        public string $workflowId,
+        public string $workflowVersionId,
+        public TriggerInfo $trigger,
         public PendingWorkflowTestRun|QueuedWorkflowTestRun|RunningWorkflowTestRun|CompletedWorkflowTestRun|ErrorWorkflowTestRun|CancelledWorkflowTestRun $lifecycle,
         public WorkflowTestRunTiming $timing,
         public int $totalTests,
@@ -28,7 +29,8 @@ readonly class WorkflowTestRun implements \JsonSerializable
     {
         foreach ([
             'id',
-            'workflow',
+            'workflow_id',
+            'workflow_version_id',
             'trigger',
             'lifecycle',
             'timing',
@@ -40,10 +42,9 @@ readonly class WorkflowTestRun implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            workflow: WorkflowSnapshotRef::fromArray($data['workflow']),
-            trigger: match ($data['trigger']['type'] ?? null) {
-                'api' => ApiTrigger::fromArray($data['trigger']), 'email' => EmailTrigger::fromArray($data['trigger']), 'manual' => ManualTrigger::fromArray($data['trigger']), 'restart' => RestartTrigger::fromArray($data['trigger']), 'schedule' => ScheduleTrigger::fromArray($data['trigger']), 'webhook' => WebhookTrigger::fromArray($data['trigger']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['trigger']['type'] ?? null))),
-            },
+            workflowId: $data['workflow_id'],
+            workflowVersionId: $data['workflow_version_id'],
+            trigger: TriggerInfo::fromArray($data['trigger']),
             lifecycle: match ($data['lifecycle']['status'] ?? null) {
                 'cancelled' => CancelledWorkflowTestRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowTestRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowTestRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowTestRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowTestRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowTestRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
             },
@@ -60,7 +61,8 @@ readonly class WorkflowTestRun implements \JsonSerializable
     {
         return [
             'id' => $this->id,
-            'workflow' => $this->workflow->toArray(),
+            'workflow_id' => $this->workflowId,
+            'workflow_version_id' => $this->workflowVersionId,
             'trigger' => $this->trigger->toArray(),
             'lifecycle' => $this->lifecycle->toArray(),
             'timing' => $this->timing->toArray(),
