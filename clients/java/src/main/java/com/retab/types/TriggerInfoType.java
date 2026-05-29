@@ -14,6 +14,7 @@ public enum TriggerInfoType {
   SCHEDULE("schedule"),
   WEBHOOK("webhook"),
   EMAIL("email"),
+  CUSTOM("custom"),
   RESTART("restart");
 
   private final String value;

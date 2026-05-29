@@ -1,0 +1,55 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# Hermetic rubyfmt step for the sandboxed Ruby SDK drift check.
+#
+# The generator (//.oagen-workspace/retab-gen:generated_ruby_sdk_raw) emits an
+# UNFORMATTED lib/ + rbi/ + test/ + Gemfile + retab.gemspec + manifest tree.
+# rubyfmt is not in the generator closure (it is a self-contained native binary,
+# not a gem), so this step formats that raw tree with the lockfile-pinned,
+# vendored rubyfmt binary (//MODULE.bazel: rubyfmt v0.14.0, platform-selected at
+# //tools/bazel/rubyfmt_sdk_tree:rubyfmt) -- mirroring how the Node SDK reformats
+# with its own vendored prettier and the Go SDK with gofmt. Only lib/ + test/ are
+# formatted (exactly the generator's rubyfmt command); rbi/ is emitted formatted.
+run_binary(
+    name = "generated_ruby_sdk_formatted",
+    srcs = [
+        "//.oagen-workspace/retab-gen:generated_ruby_sdk_raw",
+        "//tools/bazel/rubyfmt_sdk_tree:rubyfmt",
+    ],
+    args = [
+        "$(execpath //tools/bazel/rubyfmt_sdk_tree:rubyfmt)",
+        "$(execpath //.oagen-workspace/retab-gen:generated_ruby_sdk_raw)",
+        "$@",
+    ],
+    out_dirs = ["generated-ruby-formatted"],
+    tool = "//tools/bazel/rubyfmt_sdk_tree:format_ruby_sdk_tree",
+)
+
+# Stage the committed Ruby SDK generated paths into a single TreeArtifact so the
+# drift check can diff it against the generated tree entirely inside the sandbox,
+# without reading the live working tree. The diffable set is all of lib/ + rbi/,
+# the generated test/ files, plus the manifest. Gemfile and retab.gemspec are
+# emitted by the generator but then mutated by the release process (gemspec
+# version bumped to 0.1.3, Gemfile dev-deps hand-maintained), so -- exactly like
+# the Node check excludes package.json and the Go check excludes go.sum/README --
+# they are excluded here too (the format step strips them from the generated tree
+# so both sides match). The single hand-written test file
+# (test/test_pagination_contract.rb) and the non-generated repo files
+# (Gemfile.lock, .rubocop.yml, .ruby-version, RELEASING.md, *.gem, .bundle/) are
+# NOT generated and are excluded.
+copy_to_directory(
+    name = "committed_ruby_sdk_tree",
+    srcs = glob([
+        "lib/**",
+        "rbi/**",
+    ]) + glob(
+        ["test/**"],
+        exclude = ["test/test_pagination_contract.rb"],
+    ) + [
+        ".oagen-manifest.json",
+    ],
+    out = "committed-ruby-sdk-tree",
+)
