@@ -9,7 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class PartitionWorkflowArtifact {
+public final class PartitionWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final String id;
   private final FileRef file;
   private final String model;

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.NumberCompareConditionOp;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class NumberCompareCondition {
+public final class NumberCompareCondition implements Condition {
   private final String kind;
   private final NumberCompareConditionOp op;
   private final Object expected;

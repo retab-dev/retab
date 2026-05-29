@@ -16,7 +16,7 @@ public final class WorkflowRunStep {
   private final String stepId;
   private final WorkflowRunStepBlockType blockType;
   private final String blockLabel;
-  private final PendingStepLifecycle lifecycle;
+  private final StepLifecycle lifecycle;
   private final OffsetDateTime startedAt;
   private final OffsetDateTime completedAt;
   private final String model;
@@ -34,7 +34,7 @@ public final class WorkflowRunStep {
       @JsonProperty(value = "step_id", required = true) String stepId,
       @JsonProperty(value = "block_type", required = true) WorkflowRunStepBlockType blockType,
       @JsonProperty(value = "block_label", required = true) String blockLabel,
-      @JsonProperty(value = "lifecycle", required = true) PendingStepLifecycle lifecycle,
+      @JsonProperty(value = "lifecycle", required = true) StepLifecycle lifecycle,
       @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
       @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
       @JsonProperty(value = "model", required = false) String model,
@@ -86,7 +86,7 @@ public final class WorkflowRunStep {
   }
 
   @JsonProperty("lifecycle")
-  public PendingStepLifecycle getLifecycle() {
+  public StepLifecycle getLifecycle() {
     return lifecycle;
   }
 

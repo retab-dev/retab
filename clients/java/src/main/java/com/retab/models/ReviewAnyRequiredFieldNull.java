@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewAnyRequiredFieldNull {
+public final class ReviewAnyRequiredFieldNull implements ReviewKind {
   private final String kind;
 
   @JsonCreator

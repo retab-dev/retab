@@ -47,7 +47,7 @@ func TestResolveWorkflowIDArg_PositionalAlone(t *testing.T) {
 	}
 }
 
-func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
+func TestWorkflowsTestsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -68,7 +68,7 @@ func TestWorkflowsTestsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsTestsRunsResultsGetCmd.RunE(workflowsTestsRunsResultsGetCmd, []string{"wfresult_123"}); err != nil {
+		if err := workflowsTestsResultsGetCmd.RunE(workflowsTestsResultsGetCmd, []string{"wfresult_123"}); err != nil {
 			t.Fatalf("test result get: %v", err)
 		}
 	})
@@ -410,9 +410,9 @@ func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 	}{
 		{name: "tests list", cmd: workflowsTestsListCmd},
 		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
-		{name: "test run results list", cmd: workflowsTestsRunsResultsListCmd},
+		{name: "test run results list", cmd: workflowsTestsResultsListCmd},
 		{name: "experiment runs list", cmd: workflowsExperimentsRunsListCmd},
-		{name: "experiment run results list", cmd: workflowsExperimentsRunsResultsListCmd},
+		{name: "experiment run results list", cmd: workflowsExperimentsResultsListCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("limit", "-1")
@@ -436,9 +436,9 @@ func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
 	}{
 		{name: "tests list", cmd: workflowsTestsListCmd},
 		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
-		{name: "test run results list", cmd: workflowsTestsRunsResultsListCmd},
+		{name: "test run results list", cmd: workflowsTestsResultsListCmd},
 		{name: "experiment runs list", cmd: workflowsExperimentsRunsListCmd},
-		{name: "experiment run results list", cmd: workflowsExperimentsRunsResultsListCmd},
+		{name: "experiment run results list", cmd: workflowsExperimentsResultsListCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("limit", "101")
@@ -472,7 +472,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 		},
 		{
 			name:     "test run results list",
-			cmd:      workflowsTestsRunsResultsListCmd,
+			cmd:      workflowsTestsResultsListCmd,
 			args:     []string{"wftestrun_123"},
 			wantPath: "/v1/workflows/tests/results",
 		},
@@ -483,7 +483,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 		},
 		{
 			name:     "experiment run results list",
-			cmd:      workflowsExperimentsRunsResultsListCmd,
+			cmd:      workflowsExperimentsResultsListCmd,
 			args:     []string{"exprun_123"},
 			wantPath: "/v1/workflows/experiments/results",
 		},
@@ -543,7 +543,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 		},
 		{
 			name:     "test run results list",
-			cmd:      workflowsTestsRunsResultsListCmd,
+			cmd:      workflowsTestsResultsListCmd,
 			args:     []string{"wftestrun_123"},
 			wantPath: "/v1/workflows/tests/results",
 		},
@@ -554,7 +554,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 		},
 		{
 			name:     "experiment run results list",
-			cmd:      workflowsExperimentsRunsResultsListCmd,
+			cmd:      workflowsExperimentsResultsListCmd,
 			args:     []string{"exprun_123"},
 			wantPath: "/v1/workflows/experiments/results",
 		},
@@ -1250,16 +1250,16 @@ func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background())
-	t.Cleanup(func() { workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background()) })
-	if err := workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "banana"); err != nil {
+	workflowsExperimentsMetricsGetCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsExperimentsMetricsGetCmd.SetContext(context.Background()) })
+	if err := workflowsExperimentsMetricsGetCmd.Flags().Set("view", "banana"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "summary") })
+	t.Cleanup(func() { _ = workflowsExperimentsMetricsGetCmd.Flags().Set("view", "summary") })
 
 	var err error
 	_, stderr := captureStd(t, func() {
-		err = workflowsExperimentsRunsMetricsGetCmd.RunE(workflowsExperimentsRunsMetricsGetCmd, []string{"exprun_123"})
+		err = workflowsExperimentsMetricsGetCmd.RunE(workflowsExperimentsMetricsGetCmd, []string{"exprun_123"})
 	})
 	if err == nil {
 		t.Fatal("expected invalid view error")

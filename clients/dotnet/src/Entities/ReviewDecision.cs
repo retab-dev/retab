@@ -12,7 +12,16 @@ namespace Retab
         public ReviewEvaluationReviewDecision Verdict { get; set; }
         public string VersionId { get; set; } = default!;
         public Actor Author { get; set; } = default!;
-        public DateTimeOffset? DecidedAt { get; set; }
+        public DateTimeOffset DecidedAt { get; set; }
         public string? Reason { get; set; }
+
+        /// <summary>
+        /// Wire fields not modeled by this SDK version, preserved verbatim so a
+        /// deserialize → serialize round-trip never drops data (e.g. variant-
+        /// specific fields on a discriminated-union response).
+        /// </summary>
+        [Newtonsoft.Json.JsonExtensionData]
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalData { get; set; } = new System.Collections.Generic.Dictionary<string, object>();
     }
 }

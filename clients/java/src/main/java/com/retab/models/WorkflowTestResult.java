@@ -14,7 +14,7 @@ public final class WorkflowTestResult {
   private final String id;
   private final String runId;
   private final String testId;
-  private final PendingWorkflowTestRun lifecycle;
+  private final WorkflowTestRunStatus lifecycle;
   private final WorkflowTestRunTiming timing;
   private final WorkflowTestResultVerdict verdict;
   private final String workflowId;
@@ -23,7 +23,7 @@ public final class WorkflowTestResult {
   private final String handleInputsFingerprint;
   private final String workflowDraftFingerprint;
   private final String blockConfigFingerprint;
-  private final ManualWorkflowTestSource source;
+  private final WorkflowTestSource source;
   private final Map<String, Object> outputs;
   private final List<String> routingDecision;
   private final List<String> warnings;
@@ -37,7 +37,7 @@ public final class WorkflowTestResult {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "run_id", required = false) String runId,
       @JsonProperty(value = "test_id", required = true) String testId,
-      @JsonProperty(value = "lifecycle", required = false) PendingWorkflowTestRun lifecycle,
+      @JsonProperty(value = "lifecycle", required = false) WorkflowTestRunStatus lifecycle,
       @JsonProperty(value = "timing", required = false) WorkflowTestRunTiming timing,
       @JsonProperty(value = "verdict", required = false) WorkflowTestResultVerdict verdict,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
@@ -49,7 +49,7 @@ public final class WorkflowTestResult {
           String workflowDraftFingerprint,
       @JsonProperty(value = "block_config_fingerprint", required = false)
           String blockConfigFingerprint,
-      @JsonProperty(value = "source", required = true) ManualWorkflowTestSource source,
+      @JsonProperty(value = "source", required = true) WorkflowTestSource source,
       @JsonProperty(value = "outputs", required = false) Map<String, Object> outputs,
       @JsonProperty(value = "routing_decision", required = false) List<String> routingDecision,
       @JsonProperty(value = "warnings", required = false) List<String> warnings,
@@ -95,7 +95,7 @@ public final class WorkflowTestResult {
   }
 
   @JsonProperty("lifecycle")
-  public PendingWorkflowTestRun getLifecycle() {
+  public WorkflowTestRunStatus getLifecycle() {
     return lifecycle;
   }
 
@@ -140,7 +140,7 @@ public final class WorkflowTestResult {
   }
 
   @JsonProperty("source")
-  public ManualWorkflowTestSource getSource() {
+  public WorkflowTestSource getSource() {
     return source;
   }
 

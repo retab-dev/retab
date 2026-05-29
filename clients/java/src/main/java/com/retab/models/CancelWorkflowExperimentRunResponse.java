@@ -9,12 +9,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class CancelWorkflowExperimentRunResponse {
   private final String id;
-  private final PendingWorkflowExperimentRun lifecycle;
+  private final WorkflowExperimentRun lifecycle;
 
   @JsonCreator
   public CancelWorkflowExperimentRunResponse(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "lifecycle", required = true) PendingWorkflowExperimentRun lifecycle) {
+      @JsonProperty(value = "lifecycle", required = true) WorkflowExperimentRun lifecycle) {
     this.id = id;
     this.lifecycle = lifecycle;
   }
@@ -25,7 +25,7 @@ public final class CancelWorkflowExperimentRunResponse {
   }
 
   @JsonProperty("lifecycle")
-  public PendingWorkflowExperimentRun getLifecycle() {
+  public WorkflowExperimentRun getLifecycle() {
     return lifecycle;
   }
 }

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ExperimentMetricsStaleError {
+public final class ExperimentMetricsStaleError implements Experiment {
   private final String kind;
   private final String error;
   private final String experimentId;

@@ -6,7 +6,12 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\ExperimentByDocumentMetricsResponse;
+use Retab\Resource\ExperimentByTargetMetricsResponse;
+use Retab\Resource\ExperimentMetricsMissingError;
+use Retab\Resource\ExperimentMetricsStaleError;
 use Retab\Resource\ExperimentSummaryMetricsResponse;
+use Retab\Resource\ExperimentVotesMetricsResponse;
 
 class ExperimentRunMetrics
 {
@@ -22,7 +27,7 @@ class ExperimentRunMetrics
      * @param string|null $targetPath
      * @param bool|null $includePrior Defaults to true.
      * @param string|null $priorRunId
-     * @return \Retab\Resource\ExperimentSummaryMetricsResponse
+     * @return \Retab\Resource\ExperimentSummaryMetricsResponse|\Retab\Resource\ExperimentByDocumentMetricsResponse|\Retab\Resource\ExperimentByTargetMetricsResponse|\Retab\Resource\ExperimentVotesMetricsResponse|\Retab\Resource\ExperimentMetricsStaleError|\Retab\Resource\ExperimentMetricsMissingError
      * @throws \Retab\Exception\RetabException
      */
     public function get(
@@ -33,7 +38,7 @@ class ExperimentRunMetrics
         ?bool $includePrior = null,
         ?string $priorRunId = null,
         ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\ExperimentSummaryMetricsResponse {
+    ): \Retab\Resource\ExperimentSummaryMetricsResponse|\Retab\Resource\ExperimentByDocumentMetricsResponse|\Retab\Resource\ExperimentByTargetMetricsResponse|\Retab\Resource\ExperimentVotesMetricsResponse|\Retab\Resource\ExperimentMetricsStaleError|\Retab\Resource\ExperimentMetricsMissingError {
         $query = array_filter([
             'run_id' => $runId,
             'view' => $view->value,
@@ -48,6 +53,8 @@ class ExperimentRunMetrics
             query: $query,
             options: $options,
         );
-        return ExperimentSummaryMetricsResponse::fromArray($response);
+        return match ($response['kind'] ?? null) {
+            'summary' => ExperimentSummaryMetricsResponse::fromArray($response), 'by_document' => ExperimentByDocumentMetricsResponse::fromArray($response), 'by_target' => ExperimentByTargetMetricsResponse::fromArray($response), 'votes' => ExperimentVotesMetricsResponse::fromArray($response), 'stale_metrics' => ExperimentMetricsStaleError::fromArray($response), 'no_metrics' => ExperimentMetricsMissingError::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown kind: %s', json_encode($response['kind'] ?? null))),
+        };
     }
 }

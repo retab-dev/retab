@@ -9,7 +9,7 @@ import com.retab.types.ExperimentSummaryMetricsResponseBlockType;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ExperimentSummaryMetricsResponse {
+public final class ExperimentSummaryMetricsResponse implements Experiment {
   private final String experimentId;
   private final String runId;
   private final String kind;

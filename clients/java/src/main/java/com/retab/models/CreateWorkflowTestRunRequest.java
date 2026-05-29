@@ -9,12 +9,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class CreateWorkflowTestRunRequest {
   private final String workflowId;
-  private final WorkflowTestRunSingleScope scope;
+  private final Scope scope;
 
   @JsonCreator
   public CreateWorkflowTestRunRequest(
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "scope", required = false) WorkflowTestRunSingleScope scope) {
+      @JsonProperty(value = "scope", required = false) Scope scope) {
     this.workflowId = workflowId;
     this.scope = scope;
   }
@@ -25,7 +25,7 @@ public final class CreateWorkflowTestRunRequest {
   }
 
   @JsonProperty("scope")
-  public WorkflowTestRunSingleScope getScope() {
+  public Scope getScope() {
     return scope;
   }
 }

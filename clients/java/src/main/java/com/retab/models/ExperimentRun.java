@@ -17,7 +17,7 @@ public final class ExperimentRun {
   private final String blockId;
   private final ExperimentRunBlockType blockType;
   private final ExperimentRunNConsensus nConsensus;
-  private final PendingWorkflowExperimentRun lifecycle;
+  private final WorkflowExperimentRun lifecycle;
   private final ExperimentRunTiming timing;
   private final String parentRunId;
   private final String definitionFingerprint;
@@ -37,7 +37,7 @@ public final class ExperimentRun {
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "block_type", required = true) ExperimentRunBlockType blockType,
       @JsonProperty(value = "n_consensus", required = true) ExperimentRunNConsensus nConsensus,
-      @JsonProperty(value = "lifecycle", required = true) PendingWorkflowExperimentRun lifecycle,
+      @JsonProperty(value = "lifecycle", required = true) WorkflowExperimentRun lifecycle,
       @JsonProperty(value = "timing", required = true) ExperimentRunTiming timing,
       @JsonProperty(value = "parent_run_id", required = false) String parentRunId,
       @JsonProperty(value = "definition_fingerprint", required = true) String definitionFingerprint,
@@ -103,7 +103,7 @@ public final class ExperimentRun {
   }
 
   @JsonProperty("lifecycle")
-  public PendingWorkflowExperimentRun getLifecycle() {
+  public WorkflowExperimentRun getLifecycle() {
     return lifecycle;
   }
 

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class CreateWorkflowTestRequest {
   private final String workflowId;
   private final WorkflowTestBlockTarget target;
-  private final ManualWorkflowTestSource source;
+  private final WorkflowTestSource source;
   private final String name;
   private final AssertionSpec assertion;
 
@@ -18,7 +18,7 @@ public final class CreateWorkflowTestRequest {
   public CreateWorkflowTestRequest(
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
       @JsonProperty(value = "target", required = true) WorkflowTestBlockTarget target,
-      @JsonProperty(value = "source", required = true) ManualWorkflowTestSource source,
+      @JsonProperty(value = "source", required = true) WorkflowTestSource source,
       @JsonProperty(value = "name", required = false) String name,
       @JsonProperty(value = "assertion", required = true) AssertionSpec assertion) {
     this.workflowId = workflowId;
@@ -39,7 +39,7 @@ public final class CreateWorkflowTestRequest {
   }
 
   @JsonProperty("source")
-  public ManualWorkflowTestSource getSource() {
+  public WorkflowTestSource getSource() {
     return source;
   }
 

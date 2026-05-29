@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-28T16:33:20.763Z",
+  "generatedAt": "2026-05-29T04:09:56.923Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -19,6 +19,8 @@
     "src/Common/Service.cs",
     "src/Converters/CompletedBlockExecutionLifecycleDiscriminatorConverter.cs",
     "src/Converters/ExistConditionDiscriminatorConverter.cs",
+    "src/Converters/ExperimentSummaryMetricsResponseDiscriminatorConverter.cs",
+    "src/Converters/ExtractionWorkflowArtifactDiscriminatorConverter.cs",
     "src/Converters/JsonHandleInputDiscriminatorConverter.cs",
     "src/Converters/ManualTriggerDiscriminatorConverter.cs",
     "src/Converters/ManualWorkflowTestSourceDiscriminatorConverter.cs",
@@ -28,6 +30,7 @@
     "src/Converters/PendingWorkflowExperimentRunDiscriminatorConverter.cs",
     "src/Converters/PendingWorkflowTestRunDiscriminatorConverter.cs",
     "src/Converters/ReviewAlwaysDiscriminatorConverter.cs",
+    "src/Converters/WorkflowTestRunSingleScopeDiscriminatorConverter.cs",
     "src/Entities/Actor.cs",
     "src/Entities/AllItemsMatchCondition.cs",
     "src/Entities/AnyItemMatchesCondition.cs",
@@ -211,7 +214,6 @@
     "src/Entities/WorkflowTestRun.cs",
     "src/Entities/WorkflowTestRunBlockScope.cs",
     "src/Entities/WorkflowTestRunSingleScope.cs",
-    "src/Entities/WorkflowTestRunTiming.cs",
     "src/Entities/WorkflowTestRunWorkflowScope.cs",
     "src/Enums/ActorKind.cs",
     "src/Enums/AssertionDriftStatus.cs",
@@ -316,9 +318,57 @@
     "tests/SmokeTests.cs"
   ],
   "operations": {
-    "POST /v1/schemas/generate": {
-      "sdkMethod": "GenerateAsync",
-      "service": "schemas"
+    "GET /v1/classifications": {
+      "sdkMethod": "ListAsync",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "CreateAsync",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "classifications"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "ListAsync",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "CreateAsync",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "edits"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "ListAsync",
+      "service": "edits.templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "CreateAsync",
+      "service": "edits.templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "edits.templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "edits.templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "edits.templates"
     },
     "GET /v1/extractions": {
       "sdkMethod": "ListAsync",
@@ -340,21 +390,45 @@
       "sdkMethod": "SourcesAsync",
       "service": "extractions"
     },
-    "GET /v1/classifications": {
+    "GET /v1/files": {
       "sdkMethod": "ListAsync",
-      "service": "classifications"
+      "service": "files"
     },
-    "POST /v1/classifications": {
-      "sdkMethod": "CreateAsync",
-      "service": "classifications"
+    "POST /v1/files/upload": {
+      "sdkMethod": "CreateUploadAsync",
+      "service": "files"
     },
-    "GET /v1/classifications/{classification_id}": {
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "CompleteUploadAsync",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
       "sdkMethod": "GetAsync",
-      "service": "classifications"
+      "service": "files"
     },
-    "DELETE /v1/classifications/{classification_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "classifications"
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "GetDownloadLinkAsync",
+      "service": "files"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "ListAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "CreateAsync",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "RetryAsync",
+      "service": "jobs"
     },
     "GET /v1/parses": {
       "sdkMethod": "ListAsync",
@@ -388,6 +462,10 @@
       "sdkMethod": "DeleteAsync",
       "service": "partitions"
     },
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "GenerateAsync",
+      "service": "schemas"
+    },
     "GET /v1/splits": {
       "sdkMethod": "ListAsync",
       "service": "splits"
@@ -404,57 +482,129 @@
       "sdkMethod": "DeleteAsync",
       "service": "splits"
     },
-    "POST /v1/files/upload": {
-      "sdkMethod": "CreateUploadAsync",
-      "service": "files"
-    },
-    "POST /v1/files/upload/{file_id}/complete": {
-      "sdkMethod": "CompleteUploadAsync",
-      "service": "files"
-    },
-    "GET /v1/files": {
+    "GET /v1/workflows": {
       "sdkMethod": "ListAsync",
-      "service": "files"
+      "service": "workflows"
     },
-    "GET /v1/files/{file_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "files"
-    },
-    "GET /v1/files/{file_id}/download-link": {
-      "sdkMethod": "GetDownloadLinkAsync",
-      "service": "files"
-    },
-    "GET /v1/workflows/runs": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.runs"
-    },
-    "POST /v1/workflows/runs": {
+    "POST /v1/workflows": {
       "sdkMethod": "CreateAsync",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "POST /v1/workflows/runs/export": {
-      "sdkMethod": "ExportAsync",
-      "service": "workflows.runs"
-    },
-    "GET /v1/workflows/runs/{run_id}": {
+    "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "DELETE /v1/workflows/runs/{run_id}": {
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "DeleteAsync",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "POST /v1/workflows/runs/{run_id}/cancel": {
-      "sdkMethod": "CancelAsync",
-      "service": "workflows.runs"
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "PublishAsync",
+      "service": "workflows"
     },
-    "GET /v1/workflows/steps": {
+    "GET /v1/workflows/artifacts": {
       "sdkMethod": "ListAsync",
-      "service": "workflows.steps"
+      "service": "workflows.artifacts"
     },
-    "GET /v1/workflows/steps/{step_id}": {
+    "GET /v1/workflows/artifacts/{artifact_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.steps"
+      "service": "workflows.artifacts"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflows.blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.blocks.executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.blocks.executions"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflows.experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.experiments.metrics"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.experiments.runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "workflows.experiments.runs"
     },
     "GET /v1/workflows/reviews": {
       "sdkMethod": "ListAsync",
@@ -484,73 +634,53 @@
       "sdkMethod": "GetAsync",
       "service": "workflows.reviews.versions"
     },
-    "GET /v1/workflows/artifacts/{artifact_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.artifacts"
-    },
-    "GET /v1/workflows/artifacts": {
+    "GET /v1/workflows/runs": {
       "sdkMethod": "ListAsync",
-      "service": "workflows.artifacts"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/runs": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs": {
+    "POST /v1/workflows/runs": {
       "sdkMethod": "CreateAsync",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/runs/{run_id}": {
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "ExportAsync",
+      "service": "workflows.runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows.runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
       "sdkMethod": "CancelAsync",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/results": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.tests.results"
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "ApplyAsync",
+      "service": "workflows.spec"
     },
-    "GET /v1/workflows/tests/results/{result_id}": {
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "PlanAsync",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "ValidateAsync",
+      "service": "workflows.spec"
+    },
+    "GET /v1/workflows/spec/{workflow_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.tests.results"
+      "service": "workflows.spec"
     },
-    "GET /v1/workflows/blocks": {
+    "GET /v1/workflows/steps": {
       "sdkMethod": "ListAsync",
-      "service": "workflows.blocks"
+      "service": "workflows.steps"
     },
-    "POST /v1/workflows/blocks": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/blocks/{block_id}": {
+    "GET /v1/workflows/steps/{step_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.blocks"
-    },
-    "PATCH /v1/workflows/blocks/{block_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "workflows.blocks"
-    },
-    "DELETE /v1/workflows/blocks/{block_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/edges": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.edges"
-    },
-    "POST /v1/workflows/edges": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.edges"
-    },
-    "GET /v1/workflows/edges/{edge_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.edges"
-    },
-    "DELETE /v1/workflows/edges/{edge_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "workflows.edges"
+      "service": "workflows.steps"
     },
     "GET /v1/workflows/tests": {
       "sdkMethod": "ListAsync",
@@ -572,157 +702,29 @@
       "sdkMethod": "DeleteAsync",
       "service": "workflows.tests"
     },
-    "GET /v1/workflows/experiments/runs": {
+    "GET /v1/workflows/tests/results": {
       "sdkMethod": "ListAsync",
-      "service": "workflows.experiments.runs"
+      "service": "workflows.tests.results"
     },
-    "POST /v1/workflows/experiments/runs": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.experiments.runs"
-    },
-    "GET /v1/workflows/experiments/runs/{run_id}": {
+    "GET /v1/workflows/tests/results/{result_id}": {
       "sdkMethod": "GetAsync",
-      "service": "workflows.experiments.runs"
+      "service": "workflows.tests.results"
     },
-    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.tests.runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
       "sdkMethod": "CancelAsync",
-      "service": "workflows.experiments.runs"
-    },
-    "GET /v1/workflows/experiments/results": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.experiments.results"
-    },
-    "GET /v1/workflows/experiments/results/{result_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.experiments.results"
-    },
-    "GET /v1/workflows/experiments/metrics": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.experiments.metrics"
-    },
-    "GET /v1/workflows/experiments": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.experiments"
-    },
-    "POST /v1/workflows/experiments": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.experiments"
-    },
-    "GET /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.experiments"
-    },
-    "PATCH /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "workflows.experiments"
-    },
-    "DELETE /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "workflows.experiments"
-    },
-    "GET /v1/workflows/blocks/executions": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.blocks.executions"
-    },
-    "POST /v1/workflows/blocks/executions": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.blocks.executions"
-    },
-    "GET /v1/workflows": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows"
-    },
-    "POST /v1/workflows": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows"
-    },
-    "GET /v1/workflows/{workflow_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows"
-    },
-    "PATCH /v1/workflows/{workflow_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "workflows"
-    },
-    "DELETE /v1/workflows/{workflow_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/publish": {
-      "sdkMethod": "PublishAsync",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/spec/validate": {
-      "sdkMethod": "ValidateAsync",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "PlanAsync",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "ApplyAsync",
-      "service": "workflows.spec"
-    },
-    "GET /v1/workflows/spec/{workflow_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.spec"
-    },
-    "GET /v1/edits/templates": {
-      "sdkMethod": "ListAsync",
-      "service": "edits.templates"
-    },
-    "POST /v1/edits/templates": {
-      "sdkMethod": "CreateAsync",
-      "service": "edits.templates"
-    },
-    "GET /v1/edits/templates/{template_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "edits.templates"
-    },
-    "PATCH /v1/edits/templates/{template_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "edits.templates"
-    },
-    "DELETE /v1/edits/templates/{template_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "edits.templates"
-    },
-    "GET /v1/edits": {
-      "sdkMethod": "ListAsync",
-      "service": "edits"
-    },
-    "POST /v1/edits": {
-      "sdkMethod": "CreateAsync",
-      "service": "edits"
-    },
-    "GET /v1/edits/{edit_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "edits"
-    },
-    "DELETE /v1/edits/{edit_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "edits"
-    },
-    "GET /v1/jobs": {
-      "sdkMethod": "ListAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "CreateAsync",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "CancelAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "RetryAsync",
-      "service": "jobs"
+      "service": "workflows.tests.runs"
     }
   }
 }

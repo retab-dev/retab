@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class RunningWorkflowExperimentRun {
+public final class RunningWorkflowExperimentRun implements WorkflowExperimentRun {
   private final String status;
 
   @JsonCreator

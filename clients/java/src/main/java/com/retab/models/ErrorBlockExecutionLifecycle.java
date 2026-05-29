@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ErrorBlockExecutionLifecycle {
+public final class ErrorBlockExecutionLifecycle implements BlockExecutionLifecycle {
   private final String status;
   private final String message;
 

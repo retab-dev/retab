@@ -5,7 +5,6 @@ package com.retab.extractions;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
-import com.retab.RetabException;
 import com.retab.models.Extraction;
 import com.retab.models.ExtractionRequest;
 import com.retab.models.SourcesResponse;
@@ -67,10 +66,7 @@ public final class ExtractionsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -158,10 +154,7 @@ public final class ExtractionsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -182,10 +175,7 @@ public final class ExtractionsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -206,10 +196,7 @@ public final class ExtractionsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -230,10 +217,7 @@ public final class ExtractionsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class AwaitingReviewRun {
+public final class AwaitingReviewRun implements WorkflowRunLifecycle {
   private final String status;
   private final List<String> waitingForBlockIds;
 

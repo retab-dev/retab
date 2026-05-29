@@ -18,6 +18,57 @@ class Files
     ) {}
 
     /**
+     * List Files
+     *
+     * List files with pagination and optional filtering.
+     * @param string|null $before
+     * @param string|null $after
+     * @param int|null $limit Items per page Defaults to 10.
+     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
+     * @param string|null $filename
+     * @param string|null $mimeType
+     * @param string|null $fromDate
+     * @param string|null $toDate
+     * @param bool|null $includeEmbeddings Include embeddings in the response Defaults to false.
+     * @param string|null $sortBy Defaults to "created_at".
+     * @return \Retab\PaginatedResponse<\Retab\Resource\File>
+     * @throws \Retab\Exception\RetabException
+     */
+    public function list(
+        ?string $before = null,
+        ?string $after = null,
+        ?int $limit = null,
+        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
+        ?string $filename = null,
+        ?string $mimeType = null,
+        ?string $fromDate = null,
+        ?string $toDate = null,
+        ?bool $includeEmbeddings = null,
+        ?string $sortBy = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\PaginatedResponse {
+        $query = array_filter([
+            'before' => $before,
+            'after' => $after,
+            'limit' => $limit,
+            'order' => $order->value,
+            'filename' => $filename,
+            'mime_type' => $mimeType,
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+            'include_embeddings' => $includeEmbeddings,
+            'sort_by' => $sortBy,
+        ], fn($v) => $v !== null);
+        return $this->client->requestPage(
+            method: 'GET',
+            path: 'v1/files',
+            query: $query,
+            modelClass: File::class,
+            options: $options,
+        );
+    }
+
+    /**
      * Upload File
      * @param string $filename Filename to store
      * @param string|null $contentType MIME type the client will upload
@@ -70,57 +121,6 @@ class Files
             options: $options,
         );
         return MimeData::fromArray($response);
-    }
-
-    /**
-     * List Files
-     *
-     * List files with pagination and optional filtering.
-     * @param string|null $before
-     * @param string|null $after
-     * @param int|null $limit Items per page Defaults to 10.
-     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
-     * @param string|null $filename
-     * @param string|null $mimeType
-     * @param string|null $fromDate
-     * @param string|null $toDate
-     * @param bool|null $includeEmbeddings Include embeddings in the response Defaults to false.
-     * @param string|null $sortBy Defaults to "created_at".
-     * @return \Retab\PaginatedResponse<\Retab\Resource\File>
-     * @throws \Retab\Exception\RetabException
-     */
-    public function list(
-        ?string $before = null,
-        ?string $after = null,
-        ?int $limit = null,
-        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
-        ?string $filename = null,
-        ?string $mimeType = null,
-        ?string $fromDate = null,
-        ?string $toDate = null,
-        ?bool $includeEmbeddings = null,
-        ?string $sortBy = null,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\PaginatedResponse {
-        $query = array_filter([
-            'before' => $before,
-            'after' => $after,
-            'limit' => $limit,
-            'order' => $order->value,
-            'filename' => $filename,
-            'mime_type' => $mimeType,
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-            'include_embeddings' => $includeEmbeddings,
-            'sort_by' => $sortBy,
-        ], fn($v) => $v !== null);
-        return $this->client->requestPage(
-            method: 'GET',
-            path: 'v1/files',
-            query: $query,
-            modelClass: File::class,
-            options: $options,
-        );
     }
 
     /**

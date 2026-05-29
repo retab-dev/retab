@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class WebhookTrigger {
+public final class WebhookTrigger implements Trigger {
   private final String type;
   private final String webhookId;
 

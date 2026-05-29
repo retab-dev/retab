@@ -32,7 +32,7 @@ public final class Job {
 
   @JsonCreator
   public Job(
-      @JsonProperty(value = "id", required = false) String id,
+      @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "object", required = false) String objectType,
       @JsonProperty(value = "status", required = false) JobStatus status,
       @JsonProperty(value = "endpoint", required = true) SupportedEndpoint endpoint,

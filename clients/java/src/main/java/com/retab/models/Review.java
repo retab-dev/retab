@@ -19,7 +19,7 @@ public final class Review {
   private final String parentStepId;
   private final String iterationKey;
   private final ReviewBlockType blockType;
-  private final ReviewAlways triggeredBy;
+  private final ReviewKind triggeredBy;
   private final OffsetDateTime createdAt;
   private final ReviewDecision decision;
 
@@ -34,7 +34,7 @@ public final class Review {
       @JsonProperty(value = "parent_step_id", required = false) String parentStepId,
       @JsonProperty(value = "iteration_key", required = false) String iterationKey,
       @JsonProperty(value = "block_type", required = true) ReviewBlockType blockType,
-      @JsonProperty(value = "triggered_by", required = true) ReviewAlways triggeredBy,
+      @JsonProperty(value = "triggered_by", required = true) ReviewKind triggeredBy,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "decision", required = false) ReviewDecision decision) {
     this.id = id;
@@ -97,7 +97,7 @@ public final class Review {
   }
 
   @JsonProperty("triggered_by")
-  public ReviewAlways getTriggeredBy() {
+  public ReviewKind getTriggeredBy() {
     return triggeredBy;
   }
 

@@ -5,13 +5,12 @@ package com.retab.workflowtests;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
-import com.retab.RetabException;
 import com.retab.models.AssertionSpec;
 import com.retab.models.CreateWorkflowTestRequest;
-import com.retab.models.ManualWorkflowTestSource;
 import com.retab.models.UpdateWorkflowTestRequest;
 import com.retab.models.WorkflowTest;
 import com.retab.models.WorkflowTestBlockTarget;
+import com.retab.models.WorkflowTestSource;
 import com.retab.types.SortOrder;
 import com.retab.workflowtestrunresults.WorkflowTestRunResultsApi;
 import com.retab.workflowtestruns.WorkflowTestRunsApi;
@@ -70,10 +69,7 @@ public final class WorkflowTestsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -102,7 +98,7 @@ public final class WorkflowTestsApi {
   public WorkflowTest create(
       String workflowId,
       WorkflowTestBlockTarget target,
-      ManualWorkflowTestSource source,
+      WorkflowTestSource source,
       String name,
       AssertionSpec assertion)
       throws IOException, InterruptedException {
@@ -128,10 +124,7 @@ public final class WorkflowTestsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -152,10 +145,7 @@ public final class WorkflowTestsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -173,7 +163,7 @@ public final class WorkflowTestsApi {
   }
 
   public WorkflowTest update(
-      String testId, String name, AssertionSpec assertion, ManualWorkflowTestSource source)
+      String testId, String name, AssertionSpec assertion, WorkflowTestSource source)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/tests/" + encodePathSegment(testId);
     StringBuilder query = new StringBuilder();
@@ -199,10 +189,7 @@ public final class WorkflowTestsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -223,10 +210,7 @@ public final class WorkflowTestsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

@@ -485,7 +485,7 @@ result records.`,
   retab workflows tests runs get wftestrun_mno345
 
   # Fetch child result rows for a workflow-test run
-  retab workflows tests runs results list wftestrun_mno345
+  retab workflows tests results list wftestrun_mno345
 
   # Recent runs for one test
   retab workflows tests runs list --workflow-id wf_abc123 --test-id wfnodetest_jkl012`,
@@ -503,7 +503,7 @@ for one block pass ` + "`--target-file`" + ` with a JSON target such as
 ` + `{"type":"block","block_id":"extract_1"}` + `.
 
 Poll progress with ` + "`workflows tests runs get`" + ` and fetch per-test
-results with ` + "`workflows tests runs results list`" + `.`,
+results with ` + "`workflows tests results list`" + `.`,
 	Example: `  # Run every test in the workflow
   retab workflows tests runs create wf_abc123
 
@@ -708,12 +708,12 @@ var workflowsTestsRunsCancelCmd = &cobra.Command{
 	}),
 }
 
-var workflowsTestsRunsResultsCmd = &cobra.Command{
+var workflowsTestsResultsCmd = &cobra.Command{
 	Use:   "results",
 	Short: "Inspect workflow-test run results",
 }
 
-var workflowsTestsRunsResultsListCmd = &cobra.Command{
+var workflowsTestsResultsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List child results for a workflow-test run",
 	Args:  cobra.ExactArgs(1),
@@ -738,7 +738,7 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
-var workflowsTestsRunsResultsGetCmd = &cobra.Command{
+var workflowsTestsResultsGetCmd = &cobra.Command{
 	Use:   "get <result-id>",
 	Short: "Get a workflow-test result",
 	Long:  `Fetch one workflow-test result by flat result id.`,
@@ -792,12 +792,12 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
-	workflowsTestsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsTestsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
-	workflowsTestsRunsResultsCmd.AddCommand(workflowsTestsRunsResultsListCmd, workflowsTestsRunsResultsGetCmd)
+	workflowsTestsResultsCmd.AddCommand(workflowsTestsResultsListCmd, workflowsTestsResultsGetCmd)
 	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsCancelCmd)
 	workflowsTestsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsRunsCmd, workflowsTestsRunsResultsCmd)
+	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsRunsCmd, workflowsTestsResultsCmd)
 	workflowsCmd.AddCommand(workflowsTestsCmd)
 }

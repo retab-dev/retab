@@ -26,14 +26,14 @@ func validateGeneratedBlockExecutionNConsensus(raw string) (int, error) {
 	}
 }
 
-var workflowsBlockExecutionsCmd = &cobra.Command{
+var workflowsBlocksExecutionsCmd = &cobra.Command{
 	Use:     "executions",
 	Short:   "Run and inspect workflow block executions",
 	Long:    "Create and list block executions for one block within a workflow run.\n\nA block execution replays a block with the current draft configuration\nagainst inputs from an existing run. Use this to verify a block change\nbefore starting another full workflow run.",
 	Example: "  # Re-run one block using inputs from a prior run\n  retab workflows blocks executions create run_xyz789 --block-id blk_extract_1\n\n  # List recent block executions for that run and block\n  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1",
 }
 
-var workflowsBlockExecutionsCreateCmd = &cobra.Command{
+var workflowsBlocksExecutionsCreateCmd = &cobra.Command{
 	Use:     "create <run-id>",
 	Short:   "Create a workflow block execution",
 	Long:    "Create a block execution by replaying a block with the current draft\nconfiguration against inputs captured from an existing workflow run.\n\nThe run id is positional; --block-id selects the block to replay. For\nfor_each blocks, --step-id can pin a concrete iteration step.",
@@ -74,7 +74,7 @@ var workflowsBlockExecutionsCreateCmd = &cobra.Command{
 	}),
 }
 
-var workflowsBlockExecutionsListCmd = &cobra.Command{
+var workflowsBlocksExecutionsListCmd = &cobra.Command{
 	Use:     "list <run-id>",
 	Short:   "List workflow block executions",
 	Long:    "List block executions for a block within one workflow run.\n\nThe run id is positional; --block-id selects the block whose block\nexecution history should be returned.",
@@ -103,15 +103,15 @@ var workflowsBlockExecutionsListCmd = &cobra.Command{
 }
 
 func init() {
-	workflowsBlockExecutionsCreateCmd.Flags().String("block-id", "", "block id to execute (required)")
-	_ = workflowsBlockExecutionsCreateCmd.MarkFlagRequired("block-id")
-	workflowsBlockExecutionsCreateCmd.Flags().String("step-id", "", "specific iteration step id to source inputs from")
-	workflowsBlockExecutionsCreateCmd.Flags().String("n-consensus", "", "override n_consensus for extract, split, or classifier blocks (3, 5, or 7)")
-	workflowsBlockExecutionsCreateCmd.Flags().Bool("no-check-eligibility", false, "skip upstream drift eligibility checks")
-	workflowsBlockExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
-	workflowsBlockExecutionsListCmd.Flags().String("block-id", "", "block id to list block executions for (required)")
-	_ = workflowsBlockExecutionsListCmd.MarkFlagRequired("block-id")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("block-id", "", "block id to execute (required)")
+	_ = workflowsBlocksExecutionsCreateCmd.MarkFlagRequired("block-id")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("step-id", "", "specific iteration step id to source inputs from")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("n-consensus", "", "override n_consensus for extract, split, or classifier blocks (3, 5, or 7)")
+	workflowsBlocksExecutionsCreateCmd.Flags().Bool("no-check-eligibility", false, "skip upstream drift eligibility checks")
+	workflowsBlocksExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
+	workflowsBlocksExecutionsListCmd.Flags().String("block-id", "", "block id to list block executions for (required)")
+	_ = workflowsBlocksExecutionsListCmd.MarkFlagRequired("block-id")
 
-	workflowsBlockExecutionsCmd.AddCommand(workflowsBlockExecutionsCreateCmd, workflowsBlockExecutionsListCmd)
-	workflowsBlocksCmd.AddCommand(workflowsBlockExecutionsCmd)
+	workflowsBlocksExecutionsCmd.AddCommand(workflowsBlocksExecutionsCreateCmd, workflowsBlocksExecutionsListCmd)
+	workflowsBlocksCmd.AddCommand(workflowsBlocksExecutionsCmd)
 }

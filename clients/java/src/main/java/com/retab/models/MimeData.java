@@ -15,16 +15,13 @@ import java.util.Base64;
 public final class MimeData {
   private final String filename;
   private final String url;
-  private final String mimeType;
 
   @JsonCreator
   public MimeData(
       @JsonProperty(value = "filename", required = true) String filename,
-      @JsonProperty(value = "url", required = true) String url,
-      @JsonProperty(value = "mime_type", required = false) String mimeType) {
+      @JsonProperty(value = "url", required = true) String url) {
     this.filename = filename;
     this.url = url;
-    this.mimeType = mimeType;
   }
 
   public static MimeData fromPath(Path path) throws IOException {
@@ -48,7 +45,7 @@ public final class MimeData {
     }
     String safeFilename = filename == null || filename.isBlank() ? "document" : filename;
     String dataUrl = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(bytes);
-    return new MimeData(safeFilename, dataUrl, contentType);
+    return new MimeData(safeFilename, dataUrl);
   }
 
   public static MimeData fromUrl(URI url) {
@@ -61,12 +58,11 @@ public final class MimeData {
     if (filename == null || filename.isBlank()) {
       filename = "document";
     }
-    return new MimeData(filename, url.toString(), null);
+    return new MimeData(filename, url.toString());
   }
 
   public static MimeData fromDataUrl(String dataUrl, String filename) {
-    return new MimeData(
-        filename == null || filename.isBlank() ? "document" : filename, dataUrl, null);
+    return new MimeData(filename == null || filename.isBlank() ? "document" : filename, dataUrl);
   }
 
   private static String detectMimeType(byte[] bytes) {
@@ -99,10 +95,5 @@ public final class MimeData {
   @JsonProperty("url")
   public String getUrl() {
     return url;
-  }
-
-  @JsonProperty("mime_type")
-  public String getMimeType() {
-    return mimeType;
   }
 }

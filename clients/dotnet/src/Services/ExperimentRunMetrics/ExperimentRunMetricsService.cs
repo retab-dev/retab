@@ -21,14 +21,14 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="ExperimentSummaryMetricsResponse"/> result.</returns>
-        public virtual async Task<ExperimentSummaryMetricsResponse> GetAsync(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>One discriminated-union variant boxed as <see cref="object"/>; pattern-match on the concrete variant type.</returns>
+        public virtual async Task<object> GetAsync(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<ExperimentSummaryMetricsResponse>("/v1/workflows/experiments/metrics", options, requestOptions, cancellationToken);
+            return await this.GetAsync<object>("/v1/workflows/experiments/metrics", options, new ExperimentSummaryMetricsResponseDiscriminatorConverter(), requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<ExperimentSummaryMetricsResponse> Get(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<object> Get(ExperimentRunMetricsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.GetAsync(options, requestOptions, cancellationToken);
         }

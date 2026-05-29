@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.LengthCompareConditionOp;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class LengthCompareCondition {
+public final class LengthCompareCondition implements Condition {
   private final String kind;
   private final LengthCompareConditionOp op;
   private final Long expected;

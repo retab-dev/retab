@@ -15,7 +15,7 @@ public final class WorkflowTest {
   private final String id;
   private final String workflowId;
   private final WorkflowTestBlockTarget target;
-  private final ManualWorkflowTestSource source;
+  private final WorkflowTestSource source;
   private final String name;
   private final AssertionSpec assertion;
   private final AssertionSchemaDep assertionSchemaDep;
@@ -35,7 +35,7 @@ public final class WorkflowTest {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
       @JsonProperty(value = "target", required = true) WorkflowTestBlockTarget target,
-      @JsonProperty(value = "source", required = true) ManualWorkflowTestSource source,
+      @JsonProperty(value = "source", required = true) WorkflowTestSource source,
       @JsonProperty(value = "name", required = false) String name,
       @JsonProperty(value = "assertion", required = false) AssertionSpec assertion,
       @JsonProperty(value = "assertion_schema_dep", required = false)
@@ -52,8 +52,8 @@ public final class WorkflowTest {
           LatestBlockTestRunSummary latestPassingRunSummary,
       @JsonProperty(value = "latest_failing_run_summary", required = false)
           LatestBlockTestRunSummary latestFailingRunSummary,
-      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
-      @JsonProperty(value = "updated_at", required = false) OffsetDateTime updatedAt) {
+      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
     this.id = id;
     this.workflowId = workflowId;
     this.target = target;
@@ -89,7 +89,7 @@ public final class WorkflowTest {
   }
 
   @JsonProperty("source")
-  public ManualWorkflowTestSource getSource() {
+  public WorkflowTestSource getSource() {
     return source;
   }
 

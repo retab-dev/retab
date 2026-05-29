@@ -18,36 +18,32 @@ class WorkflowSpec
     ) {}
 
     /**
-     * Validate Workflow Spec
+     * Apply Workflow Spec
      *
-     * Validate declarative YAML without mutating workflow state.
+     * Apply declarative YAML to draft workflow state.
      *
      * Contract:
-     * - validate, plan, and apply agree on whether a spec is acceptable: any
-     *   severity=error diagnostic — whether emitted at parse time as a
-     *   DeclarativeWorkflowError or bumped during compile/diagnose — raises
-     *   HTTP 400 with the structured error issues
-     * - warnings do not make the document invalid; warning-only specs return
-     *   HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
-     * - counts reflect the canonical compiled graph, not raw authored block count
+     * - apply writes canonical draft state, not authored formatting
+     * - re-applying canonical exported YAML against unchanged draft state should
+     *   return an empty resource_changes list
      * @param string $yamlDefinition Workflow YAML definition
-     * @return \Retab\Resource\DeclarativeValidationResponse
+     * @return \Retab\Resource\DeclarativeApplyResponse
      * @throws \Retab\Exception\RetabException
      */
-    public function validate(
+    public function apply(
         string $yamlDefinition,
         ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\DeclarativeValidationResponse {
+    ): \Retab\Resource\DeclarativeApplyResponse {
         $body = [
             'yaml_definition' => $yamlDefinition,
         ];
         $response = $this->client->request(
             method: 'POST',
-            path: 'v1/workflows/spec/validate',
+            path: 'v1/workflows/spec/apply',
             body: $body,
             options: $options,
         );
-        return DeclarativeValidationResponse::fromArray($response);
+        return DeclarativeApplyResponse::fromArray($response);
     }
 
     /**
@@ -79,32 +75,36 @@ class WorkflowSpec
     }
 
     /**
-     * Apply Workflow Spec
+     * Validate Workflow Spec
      *
-     * Apply declarative YAML to draft workflow state.
+     * Validate declarative YAML without mutating workflow state.
      *
      * Contract:
-     * - apply writes canonical draft state, not authored formatting
-     * - re-applying canonical exported YAML against unchanged draft state should
-     *   return an empty resource_changes list
+     * - validate, plan, and apply agree on whether a spec is acceptable: any
+     *   severity=error diagnostic — whether emitted at parse time as a
+     *   DeclarativeWorkflowError or bumped during compile/diagnose — raises
+     *   HTTP 400 with the structured error issues
+     * - warnings do not make the document invalid; warning-only specs return
+     *   HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
+     * - counts reflect the canonical compiled graph, not raw authored block count
      * @param string $yamlDefinition Workflow YAML definition
-     * @return \Retab\Resource\DeclarativeApplyResponse
+     * @return \Retab\Resource\DeclarativeValidationResponse
      * @throws \Retab\Exception\RetabException
      */
-    public function apply(
+    public function validate(
         string $yamlDefinition,
         ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\DeclarativeApplyResponse {
+    ): \Retab\Resource\DeclarativeValidationResponse {
         $body = [
             'yaml_definition' => $yamlDefinition,
         ];
         $response = $this->client->request(
             method: 'POST',
-            path: 'v1/workflows/spec/apply',
+            path: 'v1/workflows/spec/validate',
             body: $body,
             options: $options,
         );
-        return DeclarativeApplyResponse::fromArray($response);
+        return DeclarativeValidationResponse::fromArray($response);
     }
 
     /**

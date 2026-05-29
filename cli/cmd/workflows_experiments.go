@@ -24,7 +24,7 @@ against every document and stores the outputs in isolation —
 production traffic is never affected.
 
 Compare experiment outputs to a baseline via
-` + "`workflows experiments runs metrics get`" + `. Create a run inside an
+` + "`workflows experiments metrics get`" + `. Create a run inside an
 experiment via ` + "`workflows experiments runs create`" + `.
 
 For deterministic regression testing of a single pinned assertion, see
@@ -39,7 +39,7 @@ For deterministic regression testing of a single pinned assertion, see
     --captures-file ./captures.json
 
   # Inspect quality metrics
-  retab workflows experiments runs metrics get exprun_abc --view summary`,
+  retab workflows experiments metrics get exprun_abc --view summary`,
 }
 
 func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCaptureRequest, []*retab.ExplicitExperimentDocumentRequest, error) {
@@ -425,7 +425,7 @@ consumers.`,
   retab workflows experiments runs get exprun_aaa
 
   # Inspect run results
-  retab workflows experiments runs results list exprun_aaa`,
+  retab workflows experiments results list exprun_aaa`,
 }
 
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
@@ -623,12 +623,12 @@ var workflowsExperimentsRunsCancelCmd = &cobra.Command{
 	}),
 }
 
-var workflowsExperimentsRunsResultsCmd = &cobra.Command{
+var workflowsExperimentsResultsCmd = &cobra.Command{
 	Use:   "results",
 	Short: "Inspect experiment run results",
 }
 
-var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
+var workflowsExperimentsResultsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List per-document results for an experiment run",
 	Args:  cobra.ExactArgs(1),
@@ -653,7 +653,7 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
-var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
+var workflowsExperimentsResultsGetCmd = &cobra.Command{
 	Use:   "get <result-id>",
 	Short: "Get an experiment result",
 	Long:  `Fetch one experiment result by flat result id.`,
@@ -673,12 +673,12 @@ var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
 	}),
 }
 
-var workflowsExperimentsRunsMetricsCmd = &cobra.Command{
+var workflowsExperimentsMetricsCmd = &cobra.Command{
 	Use:   "metrics",
 	Short: "Inspect experiment run metrics",
 }
 
-var workflowsExperimentsRunsMetricsGetCmd = &cobra.Command{
+var workflowsExperimentsMetricsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get metrics for an experiment run",
 	Long: `Aggregate quality metrics for an experiment run. Pivot the
@@ -778,18 +778,18 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
-	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("document-id", "", "document id")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("target-path", "", "target path")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
+	workflowsExperimentsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
+	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id")
+	workflowsExperimentsMetricsGetCmd.Flags().String("target-path", "", "target path")
+	workflowsExperimentsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
+	workflowsExperimentsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
-	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
+	workflowsExperimentsResultsCmd.AddCommand(workflowsExperimentsResultsListCmd, workflowsExperimentsResultsGetCmd)
+	workflowsExperimentsMetricsCmd.AddCommand(workflowsExperimentsMetricsGetCmd)
 	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd)
 	workflowsExperimentsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd, workflowsExperimentsRunsResultsCmd, workflowsExperimentsRunsMetricsCmd)
+	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd, workflowsExperimentsResultsCmd, workflowsExperimentsMetricsCmd)
 	workflowsCmd.AddCommand(workflowsExperimentsCmd)
 }

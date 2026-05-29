@@ -48,7 +48,10 @@ impl GetParams {
 
 impl<'a> ExperimentRunMetricsApi<'a> {
     /// Get Experiment Metrics For Run
-    pub async fn get(&self, params: GetParams) -> Result<serde_json::Value, Error> {
+    pub async fn get(
+        &self,
+        params: GetParams,
+    ) -> Result<GetExperimentMetricsForRunResponseOneOf, Error> {
         self.get_with_options(params, None).await
     }
 
@@ -57,7 +60,7 @@ impl<'a> ExperimentRunMetricsApi<'a> {
         &self,
         params: GetParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<serde_json::Value, Error> {
+    ) -> Result<GetExperimentMetricsForRunResponseOneOf, Error> {
         let path = "/v1/workflows/experiments/metrics".to_string();
         let method = http::Method::GET;
         self.client

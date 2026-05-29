@@ -9,13 +9,12 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ExplicitExperimentDocumentRequest {
-  private final Map<String, JsonHandleInput> handleInputs;
+  private final Map<String, HandleInput> handleInputs;
   private final ExperimentDocumentProvenance provenance;
 
   @JsonCreator
   public ExplicitExperimentDocumentRequest(
-      @JsonProperty(value = "handle_inputs", required = true)
-          Map<String, JsonHandleInput> handleInputs,
+      @JsonProperty(value = "handle_inputs", required = true) Map<String, HandleInput> handleInputs,
       @JsonProperty(value = "provenance", required = false)
           ExperimentDocumentProvenance provenance) {
     this.handleInputs = handleInputs;
@@ -23,7 +22,7 @@ public final class ExplicitExperimentDocumentRequest {
   }
 
   @JsonProperty("handle_inputs")
-  public Map<String, JsonHandleInput> getHandleInputs() {
+  public Map<String, HandleInput> getHandleInputs() {
     return handleInputs;
   }
 

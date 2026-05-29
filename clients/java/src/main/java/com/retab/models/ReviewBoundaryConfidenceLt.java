@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewBoundaryConfidenceLt {
+public final class ReviewBoundaryConfidenceLt implements ReviewKind {
   private final String kind;
   private final Double threshold;
 

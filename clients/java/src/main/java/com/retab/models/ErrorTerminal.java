@@ -9,7 +9,7 @@ import com.retab.types.ErrorTerminalCategory;
 import com.retab.types.ErrorTerminalStage;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ErrorTerminal {
+public final class ErrorTerminal implements WorkflowRunLifecycle {
   private final String status;
   private final String message;
   private final ErrorTerminalStage stage;

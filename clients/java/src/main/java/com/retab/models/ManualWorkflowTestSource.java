@@ -8,15 +8,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ManualWorkflowTestSource {
+public final class ManualWorkflowTestSource implements WorkflowTestSource {
   private final String type;
-  private final Map<String, JsonHandleInput> handleInputs;
+  private final Map<String, HandleInput> handleInputs;
 
   @JsonCreator
   public ManualWorkflowTestSource(
       @JsonProperty(value = "type", required = false) String type,
       @JsonProperty(value = "handle_inputs", required = false)
-          Map<String, JsonHandleInput> handleInputs) {
+          Map<String, HandleInput> handleInputs) {
     this.type = type;
     this.handleInputs = handleInputs;
   }
@@ -27,7 +27,7 @@ public final class ManualWorkflowTestSource {
   }
 
   @JsonProperty("handle_inputs")
-  public Map<String, JsonHandleInput> getHandleInputs() {
+  public Map<String, HandleInput> getHandleInputs() {
     return handleInputs;
   }
 }

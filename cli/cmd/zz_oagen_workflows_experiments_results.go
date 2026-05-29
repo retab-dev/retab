@@ -9,12 +9,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var workflowsExperimentsRunsResultsCmd = &cobra.Command{
+var workflowsExperimentsResultsCmd = &cobra.Command{
 	Use:   "results",
 	Short: "Inspect experiment run results",
 }
 
-var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
+var workflowsExperimentsResultsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List per-document results for an experiment run",
 	Args:  cobra.ExactArgs(1),
@@ -39,7 +39,7 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
-var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
+var workflowsExperimentsResultsGetCmd = &cobra.Command{
 	Use:   "get <result-id>",
 	Short: "Get an experiment result",
 	Long:  "Fetch one experiment result by flat result id.",
@@ -60,8 +60,8 @@ var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
 }
 
 func init() {
-	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
-	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
-	workflowsExperimentsCmd.AddCommand(workflowsExperimentsRunsResultsCmd)
+	workflowsExperimentsResultsCmd.AddCommand(workflowsExperimentsResultsListCmd, workflowsExperimentsResultsGetCmd)
+	workflowsExperimentsCmd.AddCommand(workflowsExperimentsResultsCmd)
 }

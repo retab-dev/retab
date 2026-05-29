@@ -316,4 +316,44 @@ spec:
         Assert.IsType<ApiTrigger>(run.Trigger);
         Assert.IsType<CompletedBlockExecutionLifecycle>(run.Lifecycle);
     }
+
+    [Fact]
+    public async Task UnionResponseDecodesNonFirstVariantLosslessly()
+    {
+        // Regression for the lossy discriminated-union RESPONSE collapse:
+        // GET /v1/workflows/artifacts/{id} is an 11-variant union keyed on
+        // "operation". Upstream codegen collapsed the response to the FIRST
+        // variant (ExtractionWorkflowArtifact), dropping every other variant's
+        // fields. A classification artifact must decode to the classification
+        // variant (NOT extraction) with its variant-specific fields intact, and
+        // an unmodeled field must survive a deserialize -> serialize round-trip
+        // via [JsonExtensionData].
+        var handler = new CapturingHandler(
+            "{" +
+            "\"operation\":\"classification\"," +
+            "\"id\":\"clss_123\"," +
+            "\"model\":\"retab-small\"," +
+            "\"future_field\":\"keep-me\"" +
+            "}"
+        );
+        var client = new global::Retab.Retab(new RetabOptions
+        {
+            ApiKey = "test-api-key",
+            BaseUrl = new Uri("http://stub.local"),
+            HttpClient = new HttpClient(handler),
+        });
+
+        var artifact = await client.Workflows.Artifacts.GetAsync("clss_123");
+
+        // Decoded to the correct (non-first) variant, not ExtractionWorkflowArtifact.
+        var classification = Assert.IsType<ClassificationWorkflowArtifact>(artifact);
+        Assert.Equal("clss_123", classification.Id);
+        Assert.Equal("retab-small", classification.Model);
+
+        // The unmodeled wire field survived on the extension-data container, so a
+        // round-trip back to JSON preserves it.
+        var roundTripped = Newtonsoft.Json.JsonConvert.SerializeObject(classification);
+        Assert.Contains("future_field", roundTripped);
+        Assert.Contains("keep-me", roundTripped);
+    }
 }

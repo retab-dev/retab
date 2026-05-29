@@ -13,6 +13,28 @@ class FilesTest extends TestCase
 {
     use TestHelper;
 
+    public function testList(): void
+    {
+        $fixture = $this->loadFixture('list_file');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->files()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', mimeType: 'test_value', fromDate: 'test_value', toDate: 'test_value', includeEmbeddings: true, sortBy: 'test_value');
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/files', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['before']);
+        $this->assertSame('test_value', $query['after']);
+        $this->assertArrayHasKey('limit', $query);
+        $this->assertSame('asc', $query['order']);
+        $this->assertSame('test_value', $query['filename']);
+        $this->assertSame('test_value', $query['mime_type']);
+        $this->assertSame('test_value', $query['from_date']);
+        $this->assertSame('test_value', $query['to_date']);
+        $this->assertArrayHasKey('include_embeddings', $query);
+        $this->assertSame('test_value', $query['sort_by']);
+    }
+
     public function testCreateUpload(): void
     {
         $fixture = $this->loadFixture('create_upload_response');
@@ -40,28 +62,6 @@ class FilesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
         $this->assertStringEndsWith('v1/files/upload/test_file_id/complete', $request->getUri()->getPath());
-    }
-
-    public function testList(): void
-    {
-        $fixture = $this->loadFixture('list_file');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->files()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', mimeType: 'test_value', fromDate: 'test_value', toDate: 'test_value', includeEmbeddings: true, sortBy: 'test_value');
-        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
-        $request = $this->getLastRequest();
-        $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/files', $request->getUri()->getPath());
-        parse_str($request->getUri()->getQuery(), $query);
-        $this->assertSame('test_value', $query['before']);
-        $this->assertSame('test_value', $query['after']);
-        $this->assertArrayHasKey('limit', $query);
-        $this->assertSame('asc', $query['order']);
-        $this->assertSame('test_value', $query['filename']);
-        $this->assertSame('test_value', $query['mime_type']);
-        $this->assertSame('test_value', $query['from_date']);
-        $this->assertSame('test_value', $query['to_date']);
-        $this->assertArrayHasKey('include_embeddings', $query);
-        $this->assertSame('test_value', $query['sort_by']);
     }
 
     public function testGet(): void

@@ -43,7 +43,7 @@ readonly class PartitionRequest implements \JsonSerializable
         return new self(
             document: (static function (array $__value) {
                 return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true, 'mime_type' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
+                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
                 };
             })($data['document']),
             key: $data['key'],

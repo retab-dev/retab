@@ -20,12 +20,12 @@ func validateExperimentMetricsView(view string) error {
 	}
 }
 
-var workflowsExperimentsRunsMetricsCmd = &cobra.Command{
+var workflowsExperimentsMetricsCmd = &cobra.Command{
 	Use:   "metrics",
 	Short: "Inspect experiment run metrics",
 }
 
-var workflowsExperimentsRunsMetricsGetCmd = &cobra.Command{
+var workflowsExperimentsMetricsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get metrics for an experiment run",
 	Long:  "Aggregate quality metrics for an experiment run. Pivot the view\nwith --view (summary | by_document | by_target | votes) to drill from\nheadline numbers down to individual fields. Compare against a prior run\nwith --prior-run-id.",
@@ -78,12 +78,12 @@ var workflowsExperimentsRunsMetricsGetCmd = &cobra.Command{
 }
 
 func init() {
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("document-id", "", "document id")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("target-path", "", "target path")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
-	workflowsExperimentsRunsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
+	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
+	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id")
+	workflowsExperimentsMetricsGetCmd.Flags().String("target-path", "", "target path")
+	workflowsExperimentsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
+	workflowsExperimentsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
-	workflowsExperimentsCmd.AddCommand(workflowsExperimentsRunsMetricsCmd)
+	workflowsExperimentsMetricsCmd.AddCommand(workflowsExperimentsMetricsGetCmd)
+	workflowsExperimentsCmd.AddCommand(workflowsExperimentsMetricsCmd)
 }

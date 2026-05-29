@@ -1,18 +1,13 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-28T16:49:14.773Z",
+  "generatedAt": "2026-05-29T00:26:28.397Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
     "pom.xml",
     "settings.gradle.kts",
-    "src/main/java/com/retab/RetabAuthenticationException.java",
     "src/main/java/com/retab/RetabClient.java",
-    "src/main/java/com/retab/RetabException.java",
-    "src/main/java/com/retab/RetabNotFoundException.java",
-    "src/main/java/com/retab/RetabPermissionException.java",
-    "src/main/java/com/retab/RetabRateLimitException.java",
     "src/main/java/com/retab/classifications/ClassificationsApi.java",
     "src/main/java/com/retab/edits/EditsApi.java",
     "src/main/java/com/retab/edittemplates/EditTemplatesApi.java",
@@ -38,6 +33,7 @@
     "src/main/java/com/retab/models/AwaitingReviewStepLifecycle.java",
     "src/main/java/com/retab/models/BBox.java",
     "src/main/java/com/retab/models/BetweenCondition.java",
+    "src/main/java/com/retab/models/BlockExecutionLifecycle.java",
     "src/main/java/com/retab/models/BlockTestBatchExecutionCounts.java",
     "src/main/java/com/retab/models/BlockTestLifecycleCounts.java",
     "src/main/java/com/retab/models/BlockTestOutcomeCounts.java",
@@ -62,6 +58,7 @@
     "src/main/java/com/retab/models/CompletedWorkflowExperimentResult.java",
     "src/main/java/com/retab/models/CompletedWorkflowExperimentRun.java",
     "src/main/java/com/retab/models/CompletedWorkflowTestRun.java",
+    "src/main/java/com/retab/models/Condition.java",
     "src/main/java/com/retab/models/ConditionEvaluationDetails.java",
     "src/main/java/com/retab/models/ConditionEvaluationPerItem.java",
     "src/main/java/com/retab/models/ConditionEvaluationResult.java",
@@ -106,6 +103,7 @@
     "src/main/java/com/retab/models/ErrorWorkflowExperimentRun.java",
     "src/main/java/com/retab/models/ErrorWorkflowTestRun.java",
     "src/main/java/com/retab/models/ExistCondition.java",
+    "src/main/java/com/retab/models/Experiment.java",
     "src/main/java/com/retab/models/ExperimentByDocumentMetricsResponse.java",
     "src/main/java/com/retab/models/ExperimentByDocumentTargetMetric.java",
     "src/main/java/com/retab/models/ExperimentByTargetDocumentMetric.java",
@@ -142,6 +140,7 @@
     "src/main/java/com/retab/models/FormField.java",
     "src/main/java/com/retab/models/FunctionInvocation.java",
     "src/main/java/com/retab/models/GenerateSchemaRequest.java",
+    "src/main/java/com/retab/models/HandleInput.java",
     "src/main/java/com/retab/models/HttpValidationError.java",
     "src/main/java/com/retab/models/Job.java",
     "src/main/java/com/retab/models/JobError.java",
@@ -204,6 +203,7 @@
     "src/main/java/com/retab/models/ReviewEvaluation.java",
     "src/main/java/com/retab/models/ReviewFieldConfidenceLt.java",
     "src/main/java/com/retab/models/ReviewJsonCondition.java",
+    "src/main/java/com/retab/models/ReviewKind.java",
     "src/main/java/com/retab/models/ReviewSplitCountNeq.java",
     "src/main/java/com/retab/models/ReviewTopMarginLt.java",
     "src/main/java/com/retab/models/ReviewValidationFailed.java",
@@ -217,6 +217,7 @@
     "src/main/java/com/retab/models/RunningWorkflowExperimentRun.java",
     "src/main/java/com/retab/models/RunningWorkflowTestRun.java",
     "src/main/java/com/retab/models/ScheduleTrigger.java",
+    "src/main/java/com/retab/models/Scope.java",
     "src/main/java/com/retab/models/SimilarityGteCondition.java",
     "src/main/java/com/retab/models/SkippedBlockExecutionLifecycle.java",
     "src/main/java/com/retab/models/SkippedStepLifecycle.java",
@@ -230,9 +231,11 @@
     "src/main/java/com/retab/models/SplitWorkflowArtifact.java",
     "src/main/java/com/retab/models/StartWithCondition.java",
     "src/main/java/com/retab/models/StepArtifactRef.java",
+    "src/main/java/com/retab/models/StepLifecycle.java",
     "src/main/java/com/retab/models/StoredBlockExecution.java",
     "src/main/java/com/retab/models/Subdocument.java",
     "src/main/java/com/retab/models/SubmitDecisionResponse.java",
+    "src/main/java/com/retab/models/Trigger.java",
     "src/main/java/com/retab/models/UpdateEditTemplateRequest.java",
     "src/main/java/com/retab/models/UpdateExperimentRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowBlockRequest.java",
@@ -245,15 +248,19 @@
     "src/main/java/com/retab/models/WhileLoopTermination.java",
     "src/main/java/com/retab/models/Workflow.java",
     "src/main/java/com/retab/models/WorkflowArtifact.java",
+    "src/main/java/com/retab/models/WorkflowArtifactOperation2.java",
     "src/main/java/com/retab/models/WorkflowBlock.java",
     "src/main/java/com/retab/models/WorkflowBlockCreateRequest.java",
     "src/main/java/com/retab/models/WorkflowEdgeCreateRequest.java",
     "src/main/java/com/retab/models/WorkflowEdgeDoc.java",
     "src/main/java/com/retab/models/WorkflowExperiment.java",
+    "src/main/java/com/retab/models/WorkflowExperimentResult.java",
+    "src/main/java/com/retab/models/WorkflowExperimentRun.java",
     "src/main/java/com/retab/models/WorkflowExportPayloadRequest.java",
     "src/main/java/com/retab/models/WorkflowExportPayloadResponse.java",
     "src/main/java/com/retab/models/WorkflowPublished.java",
     "src/main/java/com/retab/models/WorkflowRun.java",
+    "src/main/java/com/retab/models/WorkflowRunLifecycle.java",
     "src/main/java/com/retab/models/WorkflowRunStep.java",
     "src/main/java/com/retab/models/WorkflowSnapshotRef.java",
     "src/main/java/com/retab/models/WorkflowTest.java",
@@ -262,8 +269,10 @@
     "src/main/java/com/retab/models/WorkflowTestRun.java",
     "src/main/java/com/retab/models/WorkflowTestRunBlockScope.java",
     "src/main/java/com/retab/models/WorkflowTestRunSingleScope.java",
+    "src/main/java/com/retab/models/WorkflowTestRunStatus.java",
     "src/main/java/com/retab/models/WorkflowTestRunTiming.java",
     "src/main/java/com/retab/models/WorkflowTestRunWorkflowScope.java",
+    "src/main/java/com/retab/models/WorkflowTestSource.java",
     "src/main/java/com/retab/parses/ParsesApi.java",
     "src/main/java/com/retab/partitions/PartitionsApi.java",
     "src/main/java/com/retab/schemas/SchemasApi.java",
@@ -353,12 +362,61 @@
     "src/main/java/com/retab/workflowtestrunresults/WorkflowTestRunResultsApi.java",
     "src/main/java/com/retab/workflowtestruns/WorkflowTestRunsApi.java",
     "src/main/java/com/retab/workflowtests/WorkflowTestsApi.java",
+    "src/test/java/com/retab/DiscriminatedUnionRoundTripTest.java",
     "src/test/java/com/retab/GeneratedSdkSmokeTest.java"
   ],
   "operations": {
-    "POST /v1/schemas/generate": {
-      "sdkMethod": "generate",
-      "service": "schemas"
+    "GET /v1/classifications": {
+      "sdkMethod": "list",
+      "service": "classifications"
+    },
+    "POST /v1/classifications": {
+      "sdkMethod": "create",
+      "service": "classifications"
+    },
+    "GET /v1/classifications/{classification_id}": {
+      "sdkMethod": "get",
+      "service": "classifications"
+    },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "delete",
+      "service": "classifications"
+    },
+    "GET /v1/edits": {
+      "sdkMethod": "list",
+      "service": "edits"
+    },
+    "POST /v1/edits": {
+      "sdkMethod": "create",
+      "service": "edits"
+    },
+    "GET /v1/edits/{edit_id}": {
+      "sdkMethod": "get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "GET /v1/edits/templates": {
+      "sdkMethod": "list",
+      "service": "edits.templates"
+    },
+    "POST /v1/edits/templates": {
+      "sdkMethod": "create",
+      "service": "edits.templates"
+    },
+    "GET /v1/edits/templates/{template_id}": {
+      "sdkMethod": "get",
+      "service": "edits.templates"
+    },
+    "PATCH /v1/edits/templates/{template_id}": {
+      "sdkMethod": "update",
+      "service": "edits.templates"
+    },
+    "DELETE /v1/edits/templates/{template_id}": {
+      "sdkMethod": "delete",
+      "service": "edits.templates"
     },
     "GET /v1/extractions": {
       "sdkMethod": "list",
@@ -380,21 +438,45 @@
       "sdkMethod": "sources",
       "service": "extractions"
     },
-    "GET /v1/classifications": {
+    "GET /v1/files": {
       "sdkMethod": "list",
-      "service": "classifications"
+      "service": "files"
     },
-    "POST /v1/classifications": {
-      "sdkMethod": "create",
-      "service": "classifications"
+    "POST /v1/files/upload": {
+      "sdkMethod": "createUpload",
+      "service": "files"
     },
-    "GET /v1/classifications/{classification_id}": {
+    "POST /v1/files/upload/{file_id}/complete": {
+      "sdkMethod": "completeUpload",
+      "service": "files"
+    },
+    "GET /v1/files/{file_id}": {
       "sdkMethod": "get",
-      "service": "classifications"
+      "service": "files"
     },
-    "DELETE /v1/classifications/{classification_id}": {
-      "sdkMethod": "delete",
-      "service": "classifications"
+    "GET /v1/files/{file_id}/download-link": {
+      "sdkMethod": "getDownloadLink",
+      "service": "files"
+    },
+    "GET /v1/jobs": {
+      "sdkMethod": "list",
+      "service": "jobs"
+    },
+    "POST /v1/jobs": {
+      "sdkMethod": "create",
+      "service": "jobs"
+    },
+    "GET /v1/jobs/{job_id}": {
+      "sdkMethod": "get",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "jobs"
+    },
+    "POST /v1/jobs/{job_id}/retry": {
+      "sdkMethod": "retry",
+      "service": "jobs"
     },
     "GET /v1/parses": {
       "sdkMethod": "list",
@@ -428,6 +510,10 @@
       "sdkMethod": "delete",
       "service": "partitions"
     },
+    "POST /v1/schemas/generate": {
+      "sdkMethod": "generate",
+      "service": "schemas"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -444,57 +530,129 @@
       "sdkMethod": "delete",
       "service": "splits"
     },
-    "POST /v1/files/upload": {
-      "sdkMethod": "createUpload",
-      "service": "files"
-    },
-    "POST /v1/files/upload/{file_id}/complete": {
-      "sdkMethod": "completeUpload",
-      "service": "files"
-    },
-    "GET /v1/files": {
+    "GET /v1/workflows": {
       "sdkMethod": "list",
-      "service": "files"
+      "service": "workflows"
     },
-    "GET /v1/files/{file_id}": {
-      "sdkMethod": "get",
-      "service": "files"
-    },
-    "GET /v1/files/{file_id}/download-link": {
-      "sdkMethod": "getDownloadLink",
-      "service": "files"
-    },
-    "GET /v1/workflows/runs": {
-      "sdkMethod": "list",
-      "service": "workflows.runs"
-    },
-    "POST /v1/workflows/runs": {
+    "POST /v1/workflows": {
       "sdkMethod": "create",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "POST /v1/workflows/runs/export": {
-      "sdkMethod": "export",
-      "service": "workflows.runs"
-    },
-    "GET /v1/workflows/runs/{run_id}": {
+    "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "get",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "DELETE /v1/workflows/runs/{run_id}": {
+    "PATCH /v1/workflows/{workflow_id}": {
+      "sdkMethod": "update",
+      "service": "workflows"
+    },
+    "DELETE /v1/workflows/{workflow_id}": {
       "sdkMethod": "delete",
-      "service": "workflows.runs"
+      "service": "workflows"
     },
-    "POST /v1/workflows/runs/{run_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "workflows.runs"
+    "POST /v1/workflows/{workflow_id}/publish": {
+      "sdkMethod": "publish",
+      "service": "workflows"
     },
-    "GET /v1/workflows/steps": {
+    "GET /v1/workflows/artifacts": {
       "sdkMethod": "list",
-      "service": "workflows.steps"
+      "service": "workflows.artifacts"
     },
-    "GET /v1/workflows/steps/{step_id}": {
+    "GET /v1/workflows/artifacts/{artifact_id}": {
       "sdkMethod": "get",
-      "service": "workflows.steps"
+      "service": "workflows.artifacts"
+    },
+    "GET /v1/workflows/blocks": {
+      "sdkMethod": "list",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks": {
+      "sdkMethod": "create",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.blocks"
+    },
+    "PATCH /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.blocks"
+    },
+    "DELETE /v1/workflows/blocks/{block_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/executions": {
+      "sdkMethod": "list",
+      "service": "workflows.blocks.executions"
+    },
+    "POST /v1/workflows/blocks/executions": {
+      "sdkMethod": "create",
+      "service": "workflows.blocks.executions"
+    },
+    "GET /v1/workflows/edges": {
+      "sdkMethod": "list",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges": {
+      "sdkMethod": "create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.edges"
+    },
+    "DELETE /v1/workflows/edges/{edge_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/experiments": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments"
+    },
+    "POST /v1/workflows/experiments": {
+      "sdkMethod": "create",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments"
+    },
+    "PATCH /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.experiments"
+    },
+    "DELETE /v1/workflows/experiments/{experiment_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.experiments"
+    },
+    "GET /v1/workflows/experiments/metrics": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.metrics"
+    },
+    "GET /v1/workflows/experiments/results": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.results"
+    },
+    "GET /v1/workflows/experiments/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.experiments.runs"
+    },
+    "GET /v1/workflows/experiments/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.experiments.runs"
+    },
+    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflows.experiments.runs"
     },
     "GET /v1/workflows/reviews": {
       "sdkMethod": "list",
@@ -524,73 +682,53 @@
       "sdkMethod": "get",
       "service": "workflows.reviews.versions"
     },
-    "GET /v1/workflows/artifacts/{artifact_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.artifacts"
-    },
-    "GET /v1/workflows/artifacts": {
+    "GET /v1/workflows/runs": {
       "sdkMethod": "list",
-      "service": "workflows.artifacts"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/runs": {
-      "sdkMethod": "list",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs": {
+    "POST /v1/workflows/runs": {
       "sdkMethod": "create",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/runs/{run_id}": {
+    "POST /v1/workflows/runs/export": {
+      "sdkMethod": "export",
+      "service": "workflows.runs"
+    },
+    "GET /v1/workflows/runs/{run_id}": {
       "sdkMethod": "get",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
+    "DELETE /v1/workflows/runs/{run_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.runs"
+    },
+    "POST /v1/workflows/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
-      "service": "workflows.tests.runs"
+      "service": "workflows.runs"
     },
-    "GET /v1/workflows/tests/results": {
-      "sdkMethod": "list",
-      "service": "workflows.tests.results"
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows.spec"
     },
-    "GET /v1/workflows/tests/results/{result_id}": {
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/spec/validate": {
+      "sdkMethod": "validate",
+      "service": "workflows.spec"
+    },
+    "GET /v1/workflows/spec/{workflow_id}": {
       "sdkMethod": "get",
-      "service": "workflows.tests.results"
+      "service": "workflows.spec"
     },
-    "GET /v1/workflows/blocks": {
+    "GET /v1/workflows/steps": {
       "sdkMethod": "list",
-      "service": "workflows.blocks"
+      "service": "workflows.steps"
     },
-    "POST /v1/workflows/blocks": {
-      "sdkMethod": "create",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/blocks/{block_id}": {
+    "GET /v1/workflows/steps/{step_id}": {
       "sdkMethod": "get",
-      "service": "workflows.blocks"
-    },
-    "PATCH /v1/workflows/blocks/{block_id}": {
-      "sdkMethod": "update",
-      "service": "workflows.blocks"
-    },
-    "DELETE /v1/workflows/blocks/{block_id}": {
-      "sdkMethod": "delete",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/edges": {
-      "sdkMethod": "list",
-      "service": "workflows.edges"
-    },
-    "POST /v1/workflows/edges": {
-      "sdkMethod": "create",
-      "service": "workflows.edges"
-    },
-    "GET /v1/workflows/edges/{edge_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.edges"
-    },
-    "DELETE /v1/workflows/edges/{edge_id}": {
-      "sdkMethod": "delete",
-      "service": "workflows.edges"
+      "service": "workflows.steps"
     },
     "GET /v1/workflows/tests": {
       "sdkMethod": "list",
@@ -612,157 +750,29 @@
       "sdkMethod": "delete",
       "service": "workflows.tests"
     },
-    "GET /v1/workflows/experiments/runs": {
+    "GET /v1/workflows/tests/results": {
       "sdkMethod": "list",
-      "service": "workflows.experiments.runs"
+      "service": "workflows.tests.results"
     },
-    "POST /v1/workflows/experiments/runs": {
-      "sdkMethod": "create",
-      "service": "workflows.experiments.runs"
-    },
-    "GET /v1/workflows/experiments/runs/{run_id}": {
+    "GET /v1/workflows/tests/results/{result_id}": {
       "sdkMethod": "get",
-      "service": "workflows.experiments.runs"
+      "service": "workflows.tests.results"
     },
-    "POST /v1/workflows/experiments/runs/{run_id}/cancel": {
+    "GET /v1/workflows/tests/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.tests.runs"
+    },
+    "GET /v1/workflows/tests/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.tests.runs"
+    },
+    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
-      "service": "workflows.experiments.runs"
-    },
-    "GET /v1/workflows/experiments/results": {
-      "sdkMethod": "list",
-      "service": "workflows.experiments.results"
-    },
-    "GET /v1/workflows/experiments/results/{result_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.experiments.results"
-    },
-    "GET /v1/workflows/experiments/metrics": {
-      "sdkMethod": "get",
-      "service": "workflows.experiments.metrics"
-    },
-    "GET /v1/workflows/experiments": {
-      "sdkMethod": "list",
-      "service": "workflows.experiments"
-    },
-    "POST /v1/workflows/experiments": {
-      "sdkMethod": "create",
-      "service": "workflows.experiments"
-    },
-    "GET /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.experiments"
-    },
-    "PATCH /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "update",
-      "service": "workflows.experiments"
-    },
-    "DELETE /v1/workflows/experiments/{experiment_id}": {
-      "sdkMethod": "delete",
-      "service": "workflows.experiments"
-    },
-    "GET /v1/workflows/blocks/executions": {
-      "sdkMethod": "list",
-      "service": "workflows.blocks.executions"
-    },
-    "POST /v1/workflows/blocks/executions": {
-      "sdkMethod": "create",
-      "service": "workflows.blocks.executions"
-    },
-    "GET /v1/workflows": {
-      "sdkMethod": "list",
-      "service": "workflows"
-    },
-    "POST /v1/workflows": {
-      "sdkMethod": "create",
-      "service": "workflows"
-    },
-    "GET /v1/workflows/{workflow_id}": {
-      "sdkMethod": "get",
-      "service": "workflows"
-    },
-    "PATCH /v1/workflows/{workflow_id}": {
-      "sdkMethod": "update",
-      "service": "workflows"
-    },
-    "DELETE /v1/workflows/{workflow_id}": {
-      "sdkMethod": "delete",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/publish": {
-      "sdkMethod": "publish",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/spec/validate": {
-      "sdkMethod": "validate",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "plan",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "apply",
-      "service": "workflows.spec"
-    },
-    "GET /v1/workflows/spec/{workflow_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.spec"
-    },
-    "GET /v1/edits/templates": {
-      "sdkMethod": "list",
-      "service": "edits.templates"
-    },
-    "POST /v1/edits/templates": {
-      "sdkMethod": "create",
-      "service": "edits.templates"
-    },
-    "GET /v1/edits/templates/{template_id}": {
-      "sdkMethod": "get",
-      "service": "edits.templates"
-    },
-    "PATCH /v1/edits/templates/{template_id}": {
-      "sdkMethod": "update",
-      "service": "edits.templates"
-    },
-    "DELETE /v1/edits/templates/{template_id}": {
-      "sdkMethod": "delete",
-      "service": "edits.templates"
-    },
-    "GET /v1/edits": {
-      "sdkMethod": "list",
-      "service": "edits"
-    },
-    "POST /v1/edits": {
-      "sdkMethod": "create",
-      "service": "edits"
-    },
-    "GET /v1/edits/{edit_id}": {
-      "sdkMethod": "get",
-      "service": "edits"
-    },
-    "DELETE /v1/edits/{edit_id}": {
-      "sdkMethod": "delete",
-      "service": "edits"
-    },
-    "GET /v1/jobs": {
-      "sdkMethod": "list",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "retry",
-      "service": "jobs"
+      "service": "workflows.tests.runs"
     }
   }
 }

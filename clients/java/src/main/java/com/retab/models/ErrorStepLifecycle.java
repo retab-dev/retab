@@ -9,7 +9,7 @@ import com.retab.types.ErrorStepLifecycleCategory;
 import com.retab.types.ErrorStepLifecycleStage;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ErrorStepLifecycle {
+public final class ErrorStepLifecycle implements StepLifecycle {
   private final String status;
   private final String message;
   private final ErrorStepLifecycleStage stage;

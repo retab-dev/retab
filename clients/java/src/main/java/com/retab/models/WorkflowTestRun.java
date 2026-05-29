@@ -10,8 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class WorkflowTestRun {
   private final String id;
   private final WorkflowSnapshotRef workflow;
-  private final ManualTrigger trigger;
-  private final PendingWorkflowTestRun lifecycle;
+  private final Trigger trigger;
+  private final WorkflowTestRunStatus lifecycle;
   private final WorkflowTestRunTiming timing;
   private final WorkflowTestBlockTarget target;
   private final String testId;
@@ -22,8 +22,8 @@ public final class WorkflowTestRun {
   public WorkflowTestRun(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
-      @JsonProperty(value = "trigger", required = true) ManualTrigger trigger,
-      @JsonProperty(value = "lifecycle", required = true) PendingWorkflowTestRun lifecycle,
+      @JsonProperty(value = "trigger", required = true) Trigger trigger,
+      @JsonProperty(value = "lifecycle", required = true) WorkflowTestRunStatus lifecycle,
       @JsonProperty(value = "timing", required = true) WorkflowTestRunTiming timing,
       @JsonProperty(value = "target", required = false) WorkflowTestBlockTarget target,
       @JsonProperty(value = "test_id", required = false) String testId,
@@ -51,12 +51,12 @@ public final class WorkflowTestRun {
   }
 
   @JsonProperty("trigger")
-  public ManualTrigger getTrigger() {
+  public Trigger getTrigger() {
     return trigger;
   }
 
   @JsonProperty("lifecycle")
-  public PendingWorkflowTestRun getLifecycle() {
+  public WorkflowTestRunStatus getLifecycle() {
     return lifecycle;
   }
 

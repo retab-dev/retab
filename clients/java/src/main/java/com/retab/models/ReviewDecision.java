@@ -21,7 +21,7 @@ public final class ReviewDecision {
       @JsonProperty(value = "verdict", required = true) ReviewVerdict verdict,
       @JsonProperty(value = "version_id", required = true) String versionId,
       @JsonProperty(value = "author", required = true) Actor author,
-      @JsonProperty(value = "decided_at", required = false) OffsetDateTime decidedAt,
+      @JsonProperty(value = "decided_at", required = true) OffsetDateTime decidedAt,
       @JsonProperty(value = "reason", required = false) String reason) {
     this.verdict = verdict;
     this.versionId = versionId;

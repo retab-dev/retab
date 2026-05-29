@@ -56,32 +56,6 @@ impl Default for ListParams {
 }
 
 impl<'a> WorkflowArtifactsApi<'a> {
-    /// Get Workflow Artifact By Id
-    ///
-    /// Get one workflow artifact by id alone.
-    ///
-    /// The operation is derived from the id prefix
-    /// (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
-    /// the flat-resource shape — callers do not need to know which collection
-    /// backs the id.
-    pub async fn get(&self, artifact_id: &str) -> Result<serde_json::Value, Error> {
-        self.get_with_options(artifact_id, None).await
-    }
-
-    /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn get_with_options(
-        &self,
-        artifact_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<serde_json::Value, Error> {
-        let artifact_id = crate::client::path_segment(artifact_id);
-        let path = format!("/v1/workflows/artifacts/{artifact_id}");
-        let method = http::Method::GET;
-        self.client
-            .request_with_query_opts(method, &path, &(), options)
-            .await
-    }
-
     /// List Workflow Artifacts
     ///
     /// List artifacts produced by a workflow run.
@@ -108,6 +82,35 @@ impl<'a> WorkflowArtifactsApi<'a> {
         let method = http::Method::GET;
         self.client
             .request_page(method, &path, &params, "after", options)
+            .await
+    }
+
+    /// Get Workflow Artifact By Id
+    ///
+    /// Get one workflow artifact by id alone.
+    ///
+    /// The operation is derived from the id prefix
+    /// (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
+    /// the flat-resource shape — callers do not need to know which collection
+    /// backs the id.
+    pub async fn get(
+        &self,
+        artifact_id: &str,
+    ) -> Result<GetWorkflowArtifactByIdResponseOneOf, Error> {
+        self.get_with_options(artifact_id, None).await
+    }
+
+    /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn get_with_options(
+        &self,
+        artifact_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<GetWorkflowArtifactByIdResponseOneOf, Error> {
+        let artifact_id = crate::client::path_segment(artifact_id);
+        let path = format!("/v1/workflows/artifacts/{artifact_id}");
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 }

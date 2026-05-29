@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewBranchIn {
+public final class ReviewBranchIn implements ReviewKind {
   private final String kind;
   private final List<String> branches;
 

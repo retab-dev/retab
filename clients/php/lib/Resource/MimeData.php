@@ -15,7 +15,6 @@ readonly class MimeData implements \JsonSerializable
         public string $filename,
         /** The URL of the file in base64 format */
         public string $url,
-        public ?string $mimeType = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -32,7 +31,6 @@ readonly class MimeData implements \JsonSerializable
         return new self(
             filename: $data['filename'],
             url: $data['url'],
-            mimeType: $data['mime_type'] ?? null,
         );
     }
 
@@ -42,7 +40,6 @@ readonly class MimeData implements \JsonSerializable
         return [
             'filename' => $this->filename,
             'url' => $this->url,
-            'mime_type' => $this->mimeType,
         ];
     }
 }

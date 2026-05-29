@@ -37,7 +37,7 @@ namespace Retab
     {
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Optional execution scope. Omit to run every saved test in the workflow.</summary>
+        /// <summary>Optional execution scope. Omit (or pass null) to run every saved test in the workflow.</summary>
         public object? Scope { get; set; }
 
     }

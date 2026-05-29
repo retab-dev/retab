@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class EndsWithCondition {
+public final class EndsWithCondition implements Condition {
   private final String kind;
   private final String expected;
 

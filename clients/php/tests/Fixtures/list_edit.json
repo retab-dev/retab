@@ -31,8 +31,7 @@
         ],
         "filled_document": {
           "filename": "Test",
-          "url": "https://example.com",
-          "mime_type": "test_mime_type"
+          "url": "https://example.com"
         }
       },
       "filled_document_ref": {

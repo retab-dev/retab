@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ExperimentVotesMetricsResponse {
+public final class ExperimentVotesMetricsResponse implements Experiment {
   private final String runId;
   private final String kind;
   private final String view;

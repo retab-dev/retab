@@ -2,8 +2,7 @@
   "instructions": "test_instructions",
   "document": {
     "filename": "Test",
-    "url": "https://example.com",
-    "mime_type": "test_mime_type"
+    "url": "https://example.com"
   },
   "template_id": "template_id_01234",
   "model": "test_model",

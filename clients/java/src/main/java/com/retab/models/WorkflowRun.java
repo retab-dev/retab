@@ -10,8 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class WorkflowRun {
   private final String id;
   private final WorkflowSnapshotRef workflow;
-  private final ManualTrigger trigger;
-  private final PendingRun lifecycle;
+  private final Trigger trigger;
+  private final WorkflowRunLifecycle lifecycle;
   private final RunTiming timing;
   private final RunInputs inputs;
 
@@ -19,8 +19,8 @@ public final class WorkflowRun {
   public WorkflowRun(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow", required = true) WorkflowSnapshotRef workflow,
-      @JsonProperty(value = "trigger", required = true) ManualTrigger trigger,
-      @JsonProperty(value = "lifecycle", required = true) PendingRun lifecycle,
+      @JsonProperty(value = "trigger", required = true) Trigger trigger,
+      @JsonProperty(value = "lifecycle", required = true) WorkflowRunLifecycle lifecycle,
       @JsonProperty(value = "timing", required = true) RunTiming timing,
       @JsonProperty(value = "inputs", required = false) RunInputs inputs) {
     this.id = id;
@@ -42,12 +42,12 @@ public final class WorkflowRun {
   }
 
   @JsonProperty("trigger")
-  public ManualTrigger getTrigger() {
+  public Trigger getTrigger() {
     return trigger;
   }
 
   @JsonProperty("lifecycle")
-  public PendingRun getLifecycle() {
+  public WorkflowRunLifecycle getLifecycle() {
     return lifecycle;
   }
 

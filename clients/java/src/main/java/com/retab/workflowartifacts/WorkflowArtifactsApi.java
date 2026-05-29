@@ -5,9 +5,8 @@ package com.retab.workflowartifacts;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
-import com.retab.RetabException;
-import com.retab.models.ExtractionWorkflowArtifact;
 import com.retab.models.WorkflowArtifact;
+import com.retab.models.WorkflowArtifactOperation2;
 import com.retab.types.WorkflowArtifactsOperation;
 import java.io.IOException;
 import java.net.URI;
@@ -26,31 +25,6 @@ public final class WorkflowArtifactsApi {
 
   public RetabClient getClient() {
     return client;
-  }
-
-  public ExtractionWorkflowArtifact get(String artifactId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/artifacts/" + encodePathSegment(artifactId);
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), ExtractionWorkflowArtifact.class);
   }
 
   public List<WorkflowArtifact> list(
@@ -81,10 +55,7 @@ public final class WorkflowArtifactsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -99,6 +70,28 @@ public final class WorkflowArtifactsApi {
         .readValue(
             data.traverse(client.getObjectMapper()),
             new TypeReference<List<WorkflowArtifact>>() {});
+  }
+
+  public WorkflowArtifactOperation2 get(String artifactId)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/artifacts/" + encodePathSegment(artifactId);
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), WorkflowArtifactOperation2.class);
   }
 
   private static String encodePathSegment(Object value) {

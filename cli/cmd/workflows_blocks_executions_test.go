@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestWorkflowsBlockExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
+func TestWorkflowsBlocksExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -40,19 +40,21 @@ func TestWorkflowsBlockExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 		"step-id":     "step_iter_0_blk_extract",
 		"n-consensus": "5",
 	} {
-		if err := workflowsBlockExecutionsCreateCmd.Flags().Set(flag, value); err != nil {
+		if err := workflowsBlocksExecutionsCreateCmd.Flags().Set(flag, value); err != nil {
 			t.Fatalf("set --%s: %v", flag, err)
 		}
-		t.Cleanup(func() { resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, flag) })
+		t.Cleanup(func() { resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, flag) })
 	}
-	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("no-check-eligibility", "true"); err != nil {
+	if err := workflowsBlocksExecutionsCreateCmd.Flags().Set("no-check-eligibility", "true"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "no-check-eligibility") })
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, "no-check-eligibility")
+	})
 
 	var err error
 	captureStd(t, func() {
-		err = workflowsBlockExecutionsCreateCmd.RunE(workflowsBlockExecutionsCreateCmd, []string{"run_123"})
+		err = workflowsBlocksExecutionsCreateCmd.RunE(workflowsBlocksExecutionsCreateCmd, []string{"run_123"})
 	})
 	if err != nil {
 		t.Fatalf("block executions create: %v", err)
@@ -68,7 +70,7 @@ func TestWorkflowsBlockExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
-func TestWorkflowsBlockExecutionsListUsesCanonicalEndpoint(t *testing.T) {
+func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -98,20 +100,20 @@ func TestWorkflowsBlockExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	if err := workflowsBlockExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
 		t.Fatal(err)
 	}
-	if err := workflowsBlockExecutionsListCmd.Flags().Set("limit", "10"); err != nil {
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("limit", "10"); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsListCmd, "block-id")
-		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsListCmd, "limit")
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "block-id")
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "limit")
 	})
 
 	var err error
 	captureStd(t, func() {
-		err = workflowsBlockExecutionsListCmd.RunE(workflowsBlockExecutionsListCmd, []string{"run_123"})
+		err = workflowsBlocksExecutionsListCmd.RunE(workflowsBlocksExecutionsListCmd, []string{"run_123"})
 	})
 	if err != nil {
 		t.Fatalf("block executions list: %v", err)
@@ -121,7 +123,7 @@ func TestWorkflowsBlockExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
-func TestWorkflowsBlockExecutionsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
+func TestWorkflowsBlocksExecutionsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -131,20 +133,20 @@ func TestWorkflowsBlockExecutionsRejectsInvalidNConsensusBeforeRequest(t *testin
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+	if err := workflowsBlocksExecutionsCreateCmd.Flags().Set("block-id", "blk_extract"); err != nil {
 		t.Fatal(err)
 	}
-	if err := workflowsBlockExecutionsCreateCmd.Flags().Set("n-consensus", "4"); err != nil {
+	if err := workflowsBlocksExecutionsCreateCmd.Flags().Set("n-consensus", "4"); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "block-id")
-		resetWorkflowBlockExecutionsFlag(t, workflowsBlockExecutionsCreateCmd, "n-consensus")
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, "block-id")
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, "n-consensus")
 	})
 
 	var err error
 	_, stderr := captureStd(t, func() {
-		err = workflowsBlockExecutionsCreateCmd.RunE(workflowsBlockExecutionsCreateCmd, []string{"run_123"})
+		err = workflowsBlocksExecutionsCreateCmd.RunE(workflowsBlocksExecutionsCreateCmd, []string{"run_123"})
 	})
 	if err == nil {
 		t.Fatal("expected invalid n-consensus error")
@@ -154,7 +156,7 @@ func TestWorkflowsBlockExecutionsRejectsInvalidNConsensusBeforeRequest(t *testin
 	}
 }
 
-func resetWorkflowBlockExecutionsFlag(t *testing.T, cmd *cobra.Command, name string) {
+func resetWorkflowBlocksExecutionsFlag(t *testing.T, cmd *cobra.Command, name string) {
 	t.Helper()
 	flag := cmd.Flags().Lookup(name)
 	if flag == nil {

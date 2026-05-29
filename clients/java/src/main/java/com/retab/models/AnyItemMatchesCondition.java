@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class AnyItemMatchesCondition {
+public final class AnyItemMatchesCondition implements Condition {
   private final String kind;
-  private final ExistCondition condition;
+  private final Condition condition;
 
   @JsonCreator
   public AnyItemMatchesCondition(
       @JsonProperty(value = "kind", required = false) String kind,
-      @JsonProperty(value = "condition", required = true) ExistCondition condition) {
+      @JsonProperty(value = "condition", required = true) Condition condition) {
     this.kind = kind;
     this.condition = condition;
   }
@@ -25,7 +25,7 @@ public final class AnyItemMatchesCondition {
   }
 
   @JsonProperty("condition")
-  public ExistCondition getCondition() {
+  public Condition getCondition() {
     return condition;
   }
 }

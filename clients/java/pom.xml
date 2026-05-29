@@ -27,7 +27,7 @@
     <developerConnection>scm:git:ssh://git@github.com/retab-dev/retab.git</developerConnection>
   </scm>
   <properties>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.jupiter.version>5.11.4</junit.jupiter.version>
     <central.publishing.server.id>central</central.publishing.server.id>

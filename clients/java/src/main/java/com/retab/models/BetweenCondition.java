@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class BetweenCondition {
+public final class BetweenCondition implements Condition {
   private final String kind;
   private final Object lower;
   private final Object upper;

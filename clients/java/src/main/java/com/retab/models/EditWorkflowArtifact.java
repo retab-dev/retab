@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class EditWorkflowArtifact {
+public final class EditWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final String id;
   private final FileRef file;
   private final String model;
