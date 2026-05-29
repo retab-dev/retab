@@ -10,7 +10,7 @@ from retab.types.mime import FileRef, MIMEData
 class SplitRequest(BaseModel):
     """Canonical split request."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(..., description="The subdocuments to split the document into")
@@ -38,8 +38,8 @@ class Split(BaseModel):
 class SplitConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    likelihoods: list[SplitSubdocumentLikelihood] | None = Field(default=None, description="Consensus likelihood tree mirroring the split output")
-    choices: list[list[SplitResult]] | None = Field(default=None, description="Alternative split vote outputs used to build the consolidated result")
+    likelihoods: list[SplitSubdocumentLikelihood] | None = Field(default=[], description="Consensus likelihood tree mirroring the split output")
+    choices: list[list[SplitResult]] | None = Field(default=[], description="Alternative split vote outputs used to build the consolidated result")
 
 
 class SplitResult(BaseModel):
@@ -53,7 +53,7 @@ class SplitSubdocumentLikelihood(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
-    pages: list[float] | None = Field(default=None, description="Confidence for each page in the corresponding split.pages array")
+    pages: list[float] | None = Field(default=[], description="Confidence for each page in the corresponding split.pages array")
 
 
 class Subdocument(BaseModel):

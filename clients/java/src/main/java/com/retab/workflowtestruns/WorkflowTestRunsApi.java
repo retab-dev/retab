@@ -36,10 +36,8 @@ public final class WorkflowTestRunsApi {
       String testId,
       String targetBlockId,
       String status,
-      List<String> statuses,
       String excludeStatus,
       String triggerType,
-      List<String> triggerTypes,
       OffsetDateTime fromDate,
       OffsetDateTime toDate,
       String sortBy,
@@ -54,10 +52,8 @@ public final class WorkflowTestRunsApi {
     appendQueryParam(query, "test_id", testId);
     appendQueryParam(query, "target_block_id", targetBlockId);
     appendQueryParam(query, "status", status);
-    appendQueryParam(query, "statuses", statuses);
     appendQueryParam(query, "exclude_status", excludeStatus);
     appendQueryParam(query, "trigger_type", triggerType);
-    appendQueryParam(query, "trigger_types", triggerTypes);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     appendQueryParam(query, "sort_by", sortBy);

@@ -16,7 +16,7 @@ public final class WorkflowTestRunTiming {
 
   @JsonCreator
   public WorkflowTestRunTiming(
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
       @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
       @JsonProperty(value = "duration_ms", required = false) Long durationMs) {

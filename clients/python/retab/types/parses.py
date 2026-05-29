@@ -17,7 +17,7 @@ ParseRequestTableParsingFormat = TableParsingFormat
 class ParseRequest(BaseModel):
     """Public create-parse request body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     document: MIMEData | FileRef = Field(..., description="The document to parse")
     model: str | None = Field(default="retab-small", description="The model to use for parsing")

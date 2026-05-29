@@ -14,7 +14,7 @@ class CreateReviewVersionRequest(BaseModel):
     reference an existing version under the same ``review_id``; seed versions
     are created by the runtime through the store path."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     review_id: str
     parent_id: str

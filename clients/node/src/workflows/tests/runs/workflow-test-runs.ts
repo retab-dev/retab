@@ -28,10 +28,8 @@ export class WorkflowTestRuns {
     testId?: string | null | undefined;
     targetBlockId?: string | null | undefined;
     status?: string | null | undefined;
-    statuses?: string[] | null | undefined;
     excludeStatus?: string | null | undefined;
     triggerType?: string | null | undefined;
-    triggerTypes?: string[] | null | undefined;
     fromDate?: Date | null | undefined;
     toDate?: Date | null | undefined;
     sortBy?: string | undefined;
@@ -48,10 +46,8 @@ export class WorkflowTestRuns {
         test_id: options?.testId,
         target_block_id: options?.targetBlockId,
         status: options?.status,
-        statuses: options?.statuses,
         exclude_status: options?.excludeStatus,
         trigger_type: options?.triggerType,
-        trigger_types: options?.triggerTypes,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         sort_by: options?.sortBy,

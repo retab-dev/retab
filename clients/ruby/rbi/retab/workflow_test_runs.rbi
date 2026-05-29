@@ -15,10 +15,8 @@ module Retab
         test_id: T.nilable(String),
         target_block_id: T.nilable(String),
         status: T.nilable(String),
-        statuses: T.nilable(T::Array[String]),
         exclude_status: T.nilable(String),
         trigger_type: T.nilable(String),
-        trigger_types: T.nilable(T::Array[String]),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         sort_by: T.nilable(String),
@@ -29,7 +27,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowTestRun])
     end
-    def list(workflow_id:, test_id:, target_block_id:, status:, statuses:, exclude_status:, trigger_type:, trigger_types:, from_date:, to_date:, sort_by:, before:, after:, limit:, order:, request_options:); end
+    def list(workflow_id:, test_id:, target_block_id:, status:, exclude_status:, trigger_type:, from_date:, to_date:, sort_by:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

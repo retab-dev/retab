@@ -12,14 +12,7 @@
   "exclude_status": "pending",
   "from_date": "test_from_date",
   "to_date": "test_to_date",
-  "trigger_types": [
-    "manual",
-    "api",
-    "schedule",
-    "webhook",
-    "email",
-    "restart"
-  ],
+  "trigger_type": "manual",
   "preferred_columns": [
     "test_preferred_columns"
   ],

@@ -13,11 +13,9 @@ construction here means every resource's `.list()` collapses to one
 line and the async side can't silently forget to wire pagination.
 
 The optional ``transform`` callback lets resources apply client-side
-post-processing (e.g. ``WorkflowSteps.list(block_ids=...)``) to every
-page, not just the first one. Without it, auto-paging would silently
-return UNFILTERED data on subsequent pages because the filter wouldn't
-be in the request's ``params`` and the closure would re-fetch the
-unfiltered server response.
+post-processing to every page, not just the first one. Without it,
+auto-paging would silently return unprocessed data on subsequent pages
+because the closure would re-fetch the raw server response.
 """
 
 from __future__ import annotations
@@ -170,10 +168,10 @@ class SyncAPIResource:
         get transparent auto-pagination via ``for item in page:``.
 
         Pass ``transform`` when the resource applies client-side
-        post-processing (e.g. ``WorkflowSteps.list(block_ids=...)``).
-        The callback receives the validated items list and returns a new
-        list; it's applied to EVERY page (initial + each closure call)
-        so ``auto_paging_iter`` stays consistent.
+        post-processing to each page. The callback receives the validated
+        items list and returns a new list; it's applied to EVERY page
+        (initial + each closure call) so ``auto_paging_iter`` stays
+        consistent.
         """
         response = self._client._prepared_request(request)
         return _new_sync_page(

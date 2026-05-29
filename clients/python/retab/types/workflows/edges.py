@@ -8,10 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field
 class WorkflowEdgeCreateRequest(BaseModel):
     """Body for POST /v1/workflows/edges."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow to create the edge in.")
-    id: str | None = Field(default=None, description="Opaque edge ID. Omit to let the server generate one.")
+    id: str | None = Field(default=None, description="If omitted, the server generates an opaque ``edg_<nanoid>``. Opaque edge ID. Omit to let the server generate one.")
     source_block: str = Field(..., description="Source block ID")
     target_block: str = Field(..., description="Target block ID")
     source_handle: str | None = Field(default=None, description="Output handle")

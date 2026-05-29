@@ -567,7 +567,7 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.timing.model_dump()["duration_ms"] is None
     assert "active_duration_ms" not in run.timing.model_dump()
 
-    # Defaults: omitted inputs remain absent.
+    # Defaults: omitted inputs fall back to an empty RunInputs.
     run2 = WorkflowRun.model_validate(
         {
             "id": "run_000",
@@ -581,7 +581,9 @@ def test_workflow_run_v2_typed_fields() -> None:
             "timing": {"created_at": "2026-01-01T00:00:00Z"},
         }
     )
-    assert run2.inputs is None
+    assert run2.inputs is not None
+    assert run2.inputs.documents == {}
+    assert run2.inputs.json_data == {}
     assert run2.timing is not None
     assert run2.timing.accumulated_review_waiting_ms == 0
 
@@ -757,6 +759,7 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
             "block_type": "extract",
             "block_label": "Extract",
             "lifecycle": {"status": "completed"},
+            "created_at": "2026-01-01T00:00:00+00:00",
             "output": {
                 "data": {"invoice_number": "INV-001"},
                 "json_schema": {"type": "object"},
@@ -877,7 +880,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     WorkflowRuns(client=client).list(
         workflow_id="wf_1",
         statuses=["completed", "error"],
-        trigger_types=["api", "email"],
+        trigger_type="api",
         from_date=date(2026, 1, 1),
         to_date=date(2026, 1, 31),
         after="run_after",
@@ -888,7 +891,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.url == "/v1/workflows/runs"
     assert request.params["workflow_id"] == "wf_1"
     assert request.params["statuses"] == ["completed", "error"]
-    assert request.params["trigger_types"] == ["api", "email"]
+    assert request.params["trigger_type"] == "api"
     assert request.params["from_date"] == date(2026, 1, 1)
     assert request.params["to_date"] == date(2026, 1, 31)
     assert "fields" not in request.params
@@ -1000,7 +1003,7 @@ def test_workflow_runs_export_route() -> None:
         block_id="extract-1",
         export_source="outputs",
         selected_run_ids=["run_1", "run_2"],
-        trigger_types=["api"],
+        trigger_type="api",
         preferred_columns=["invoice_number", "total_amount"],
     )
 
@@ -1016,7 +1019,7 @@ def test_workflow_runs_export_route() -> None:
         "quote": '"',
         "line_delimiter": "\n",
         "selected_run_ids": ["run_1", "run_2"],
-        "trigger_types": ["api"],
+        "trigger_type": "api",
     }
     assert result.rows == 1
     assert result.columns == 2

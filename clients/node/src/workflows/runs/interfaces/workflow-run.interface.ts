@@ -89,12 +89,12 @@ import {
 import type {
   WorkflowSnapshotRef,
   WorkflowSnapshotRefResponse,
-} from './workflow-snapshot-ref.interface.js';
+} from '../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
 import {
   ZWorkflowSnapshotRef,
   deserializeWorkflowSnapshotRef,
   serializeWorkflowSnapshotRef,
-} from './workflow-snapshot-ref.interface.js';
+} from '../../../workflows/experiments/runs/interfaces/workflow-snapshot-ref.interface.js';
 
 /** Public workflow run response without tenant isolation fields. */
 export interface WorkflowRun {

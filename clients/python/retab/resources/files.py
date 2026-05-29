@@ -11,26 +11,6 @@ from retab.types.mime import MIMEData
 
 
 class FilesMixin:
-    def prepare_create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Upload File"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = UploadFileRequest(filename=cast(Any, filename), content_type=cast(Any, content_type), size_bytes=cast(Any, size_bytes), sha256=cast(Any, sha256))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/files/upload", params=params or None, data=data)
-
-    def prepare_complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Complete Upload File"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = CompleteFileUploadRequest(sha256=cast(Any, sha256))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url=f"/v1/files/upload/{file_id}/complete", params=params or None, data=data)
-
     def prepare_list(
         self,
         before: str | None = None,
@@ -64,6 +44,26 @@ class FilesMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/files", params=params or None, data=data)
 
+    def prepare_create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
+        """Upload File"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = UploadFileRequest(filename=cast(Any, filename), content_type=cast(Any, content_type), size_bytes=cast(Any, size_bytes), sha256=cast(Any, sha256))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url="/v1/files/upload", params=params or None, data=data)
+
+    def prepare_complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
+        """Complete Upload File"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = CompleteFileUploadRequest(sha256=cast(Any, sha256))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url=f"/v1/files/upload/{file_id}/complete", params=params or None, data=data)
+
     def prepare_get(self, file_id: str, **extra_params: Any) -> PreparedRequest:
         """Get File"""
         params: dict[str, Any] = {}
@@ -85,18 +85,6 @@ class FilesMixin:
 
 class Files(SyncAPIResource, FilesMixin):
     """Files API wrapper."""
-
-    def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
-        """Upload File"""
-        prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return CreateUploadResponse.model_validate(response)
-
-    def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
-        """Complete Upload File"""
-        prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return MIMEData.model_validate(response)
 
     def list(
         self,
@@ -128,6 +116,18 @@ class Files(SyncAPIResource, FilesMixin):
         )
         return self.request_page(prepared_request, model=File)
 
+    def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
+        """Upload File"""
+        prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return CreateUploadResponse.model_validate(response)
+
+    def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
+        """Complete Upload File"""
+        prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return MIMEData.model_validate(response)
+
     def get(self, file_id: str, **extra_params: Any) -> File:
         """Get File"""
         prepared_request = self.prepare_get(file_id, **extra_params)
@@ -143,18 +143,6 @@ class Files(SyncAPIResource, FilesMixin):
 
 class AsyncFiles(AsyncAPIResource, FilesMixin):
     """Async Files API wrapper."""
-
-    async def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
-        """Upload File"""
-        prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return CreateUploadResponse.model_validate(response)
-
-    async def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
-        """Complete Upload File"""
-        prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return MIMEData.model_validate(response)
 
     async def list(
         self,
@@ -185,6 +173,18 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
             **extra_params,
         )
         return await self.request_page(prepared_request, model=File)
+
+    async def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
+        """Upload File"""
+        prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return CreateUploadResponse.model_validate(response)
+
+    async def complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> MIMEData:
+        """Complete Upload File"""
+        prepared_request = self.prepare_complete_upload(file_id, sha256=sha256, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return MIMEData.model_validate(response)
 
     async def get(self, file_id: str, **extra_params: Any) -> File:
         """Get File"""

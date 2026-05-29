@@ -24,13 +24,9 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowExperimentsStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub statuses: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_status: Option<WorkflowExperimentsExcludeStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger_types: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,10 +54,8 @@ impl Default for ListParams {
             experiment_id: Default::default(),
             block_id: Default::default(),
             status: Default::default(),
-            statuses: Default::default(),
             exclude_status: Default::default(),
             trigger_type: Default::default(),
-            trigger_types: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
             sort_by: Some("created_at".to_string()),

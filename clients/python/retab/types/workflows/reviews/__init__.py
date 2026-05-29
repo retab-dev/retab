@@ -38,27 +38,27 @@ class Actor(BaseModel):
 class ApproveReviewRequest(BaseModel):
     """POST /workflows/reviews/{review_id}/approve body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     version_id: str = Field(..., description="Exact content-addressed key of the version to approve.")
 
 
 class ReviewDecision(BaseModel):
-    """The one terminal decision recorded against one exact :class:`ReviewVersion`."""
+    """The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     verdict: ReviewVerdict
     version_id: str
     author: Actor
-    decided_at: datetime.datetime | None = None
+    created_at: datetime.datetime
     reason: str | None = None
 
 
 class RejectReviewRequest(BaseModel):
     """POST /workflows/reviews/{review_id}/reject body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     version_id: str = Field(..., description="Exact content-addressed key of the version to reject.")
     reason: str = Field(..., description="Required, non-empty rejection reason.")

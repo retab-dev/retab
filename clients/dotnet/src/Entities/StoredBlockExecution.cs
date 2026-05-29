@@ -49,7 +49,7 @@ namespace Retab
         public double? DurationMs { get; set; }
 
         /// <summary>When the block execution record was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>The draft block config used for this block execution</summary>
         public Dictionary<string, object>? BlockConfig { get; set; }

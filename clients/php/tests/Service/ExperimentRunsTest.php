@@ -17,7 +17,7 @@ class ExperimentRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_experiment_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->experiments()->runs()->list(workflowId: 'test_value', experimentId: 'test_value', blockId: 'test_value', status: \Retab\Resource\WorkflowExperimentsStatus::Pending, statuses: 'test_value', excludeStatus: \Retab\Resource\WorkflowExperimentsStatus::Pending, triggerType: 'test_value', triggerTypes: 'test_value', fromDate: 'test_value', toDate: 'test_value', sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->experiments()->runs()->list(workflowId: 'test_value', experimentId: 'test_value', blockId: 'test_value', status: \Retab\Resource\WorkflowExperimentsStatus::Pending, excludeStatus: \Retab\Resource\WorkflowExperimentsStatus::Pending, triggerType: 'test_value', fromDate: 'test_value', toDate: 'test_value', sortBy: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -27,10 +27,8 @@ class ExperimentRunsTest extends TestCase
         $this->assertSame('test_value', $query['experiment_id']);
         $this->assertSame('test_value', $query['block_id']);
         $this->assertSame('pending', $query['status']);
-        $this->assertSame('test_value', $query['statuses']);
         $this->assertSame('pending', $query['exclude_status']);
         $this->assertSame('test_value', $query['trigger_type']);
-        $this->assertSame('test_value', $query['trigger_types']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
         $this->assertSame('test_value', $query['sort_by']);

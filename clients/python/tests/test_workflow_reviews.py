@@ -41,6 +41,7 @@ _DECISION = {
     "version_id": _VERSION_ID,
     "author": _ACTOR_HUMAN,
     "decided_at": _NOW,
+    "created_at": _NOW,
     "reason": None,
 }
 

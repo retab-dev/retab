@@ -4,10 +4,10 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Represents workflow export payload request trigger types values.</summary>
+    /// <summary>Represents workflow export payload request trigger type values.</summary>
     [JsonConverter(typeof(RetabNewtonsoftStringEnumConverter))]
     [STJS.JsonConverter(typeof(RetabStringEnumConverterFactory))]
-    public enum WorkflowExportPayloadRequestTriggerTypes
+    public enum WorkflowExportPayloadRequestTriggerType
     {
         [EnumMember(Value = "unknown")]
         Unknown,

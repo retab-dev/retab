@@ -28,7 +28,7 @@ export interface ConditionalEvaluation {
   /** @default [] */
   matchedConditionIds?: string[];
   /** When this artifact was written by the orchestrator. */
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 export interface ConditionalEvaluationResponse {
@@ -40,7 +40,7 @@ export interface ConditionalEvaluationResponse {
   selected_handles?: string[];
   matched_branch_id?: string | null;
   matched_condition_ids?: string[];
-  created_at: string;
+  created_at?: string;
 }
 
 export const ZConditionalEvaluation = z.object({
@@ -52,7 +52,7 @@ export const ZConditionalEvaluation = z.object({
   selectedHandles: z.string().array().optional(),
   matchedBranchId: z.string().nullable().optional(),
   matchedConditionIds: z.string().array().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
 }) as z.ZodType<ConditionalEvaluation>;
 
 export function deserializeConditionalEvaluation(
@@ -70,7 +70,8 @@ export function deserializeConditionalEvaluation(
     selectedHandles: wire['selected_handles'],
     matchedBranchId: wire['matched_branch_id'],
     matchedConditionIds: wire['matched_condition_ids'],
-    createdAt: new Date(wire['created_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
   };
 }
 
@@ -89,6 +90,9 @@ export function serializeConditionalEvaluation(
     selected_handles: domain['selectedHandles'],
     matched_branch_id: domain['matchedBranchId'],
     matched_condition_ids: domain['matchedConditionIds'],
-    created_at: domain['createdAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
   };
 }

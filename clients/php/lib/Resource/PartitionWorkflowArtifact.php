@@ -19,8 +19,6 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
         public string $model,
         /** Partition key used for the run */
         public string $key,
-        /** When this artifact was written by the orchestrator. */
-        public \DateTimeImmutable $createdAt,
         /** Free-form instructions supplied with the partition request */
         public ?string $instructions = null,
         /** Number of consensus votes used */
@@ -36,6 +34,8 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
         public ?PartitionConsensus $consensus = null,
         /** Usage information for the partition operation */
         public ?RetabUsage $usage = null,
+        /** When this artifact was written by the orchestrator. */
+        public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'partition',
     ) {}
@@ -48,7 +48,6 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
             'file',
             'model',
             'key',
-            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for PartitionWorkflowArtifact::fromArray()");
@@ -59,13 +58,13 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
             key: $data['key'],
-            createdAt: new \DateTimeImmutable($data['created_at']),
             instructions: $data['instructions'] ?? null,
             nConsensus: $data['n_consensus'] ?? null,
             allowOverlap: $data['allow_overlap'] ?? null,
             output: isset($data['output']) ? array_map(fn($item) => PartitionChunk::fromArray($item), $data['output']) : null,
             consensus: isset($data['consensus']) ? PartitionConsensus::fromArray($data['consensus']) : null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             operation: $data['operation'] ?? 'partition',
         );
     }
@@ -78,13 +77,13 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
             'file' => $this->file->toArray(),
             'model' => $this->model,
             'key' => $this->key,
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'instructions' => $this->instructions,
             'n_consensus' => $this->nConsensus,
             'allow_overlap' => $this->allowOverlap,
             'output' => $this->output !== null ? array_map(fn($item) => $item->toArray(), $this->output) : null,
             'consensus' => $this->consensus?->toArray(),
             'usage' => $this->usage?->toArray(),
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'operation' => $this->operation,
         ];
     }

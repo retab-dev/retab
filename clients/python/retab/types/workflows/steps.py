@@ -6,7 +6,8 @@ from enum import Enum
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.mime import FileRef
-from retab.types.workflows.runs import ErrorDetails
+from retab.types.workflows.artifacts import ErrorDetails
+from retab.types.workflows.blocks.executions import StepArtifactRef
 
 
 class ErrorStepLifecycleStage(str, Enum):
@@ -28,20 +29,6 @@ class ErrorStepLifecycleCategory(str, Enum):
 class PublicHandlePayloadType(str, Enum):
     FILE = "file"
     JSON = "json"
-
-
-class StepArtifactRefOperation(str, Enum):
-    EXTRACTION = "extraction"
-    SPLIT = "split"
-    CLASSIFICATION = "classification"
-    PARSE = "parse"
-    EDIT = "edit"
-    PARTITION = "partition"
-    CONDITIONAL_EVALUATION = "conditional_evaluation"
-    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
-    WHILE_LOOP_TERMINATION = "while_loop_termination"
-    API_CALL_INVOCATION = "api_call_invocation"
-    FUNCTION_INVOCATION = "function_invocation"
 
 
 class WorkflowRunStepBlockType(str, Enum):
@@ -157,19 +144,6 @@ class SkippedStepLifecycle(BaseModel):
     reason: str = Field(..., description="Reason the step was skipped")
 
 
-class StepArtifactRef(BaseModel):
-    """Canonical persisted resource produced by a workflow step.
-
-    Uniformly a `(operation, id)` ref into a backing collection. The artifact
-    itself carries no payload — consumers dispatch on ``operation`` and fetch
-    the backing record by ``id``."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    operation: StepArtifactRefOperation = Field(..., description="Persisted resource operation; identifies the backing collection")
-    id: str = Field(..., description="Persisted resource identifier")
-
-
 class WorkflowRunStep(BaseModel):
     """Public step status object."""
 
@@ -192,11 +166,11 @@ class WorkflowRunStep(BaseModel):
     started_at: datetime.datetime | None = Field(default=None, description="When the step started executing")
     completed_at: datetime.datetime | None = Field(default=None, description="When the step finished executing")
     model: str | None = Field(default=None, description="LLM model used by this step, when applicable")
-    loop_containers: list[ContainerContextData] | None = Field(default=None, description="Container hierarchy from outermost to innermost. Empty when not inside any container.")
+    loop_containers: list[ContainerContextData] | None = Field(default=[], description="Container hierarchy from outermost to innermost. Empty when not inside any container.")
     run_id: str = Field(..., description="Parent workflow run ID")
     created_at: datetime.datetime | None = Field(default=None, description="When the step doc was first persisted")
-    handle_inputs: dict[str, PublicHandlePayload] | None = Field(default=None, description="Handle input payloads consumed by this step")
-    handle_outputs: dict[str, PublicHandlePayload] | None = Field(default=None, description="Handle output payloads produced by this step")
+    handle_inputs: dict[str, PublicHandlePayload] | None = Field(default={}, description="Handle input payloads consumed by this step")
+    handle_outputs: dict[str, PublicHandlePayload] | None = Field(default={}, description="Handle output payloads produced by this step")
     artifact: StepArtifactRef | None = Field(default=None, description="Canonical persisted result of this step")
     retry_count: int | None = Field(default=0, description="Number of retry attempts")
 
@@ -216,5 +190,4 @@ PublicHandlePayload.model_rebuild()
 QueuedStepLifecycle.model_rebuild()
 RunningStepLifecycle.model_rebuild()
 SkippedStepLifecycle.model_rebuild()
-StepArtifactRef.model_rebuild()
 WorkflowRunStep.model_rebuild()

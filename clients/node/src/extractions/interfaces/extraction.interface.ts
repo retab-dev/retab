@@ -10,14 +10,24 @@ import {
   deserializeExtractionConsensus,
   serializeExtractionConsensus,
 } from './extraction-consensus.interface.js';
-import type { FileRef, FileRefResponse } from './file-ref.interface.js';
-import { ZFileRef, deserializeFileRef, serializeFileRef } from './file-ref.interface.js';
-import type { RetabUsage, RetabUsageResponse } from './retab-usage.interface.js';
+import type {
+  FileRef,
+  FileRefResponse,
+} from '../../classifications/interfaces/file-ref.interface.js';
+import {
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../classifications/interfaces/file-ref.interface.js';
+import type {
+  RetabUsage,
+  RetabUsageResponse,
+} from '../../classifications/interfaces/retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
-} from './retab-usage.interface.js';
+} from '../../classifications/interfaces/retab-usage.interface.js';
 
 /** A stored extraction record from the Retab API. */
 export interface Extraction {

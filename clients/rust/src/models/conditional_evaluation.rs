@@ -27,7 +27,8 @@ pub struct ConditionalEvaluation {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub matched_condition_ids: Option<Vec<String>>,
     /// When this artifact was written by the orchestrator.
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
 }
 impl ConditionalEvaluation {
     /// Construct a new `ConditionalEvaluation` with the required fields set.
@@ -36,7 +37,6 @@ impl ConditionalEvaluation {
         id: impl Into<String>,
         workflow_run_id: impl Into<String>,
         step_id: impl Into<String>,
-        created_at: impl Into<String>,
     ) -> Self {
         Self {
             operation: Default::default(),
@@ -47,7 +47,7 @@ impl ConditionalEvaluation {
             selected_handles: Default::default(),
             matched_branch_id: Default::default(),
             matched_condition_ids: Default::default(),
-            created_at: created_at.into(),
+            created_at: Default::default(),
         }
     }
 }

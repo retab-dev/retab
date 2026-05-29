@@ -9,7 +9,7 @@ module Retab
       verdict: :verdict,
       version_id: :version_id,
       author: :author,
-      decided_at: :decided_at,
+      created_at: :created_at,
       reason: :reason
     }.freeze
 
@@ -17,7 +17,7 @@ module Retab
       :verdict,
       :version_id,
       :author,
-      :decided_at,
+      :created_at,
       :reason
     )
 
@@ -27,7 +27,7 @@ module Retab
       @verdict = hash[:verdict]
       @version_id = hash[:version_id]
       @author = hash[:author] ? Retab::Actor.new(hash[:author]) : nil
-      @decided_at = hash[:decided_at]
+      @created_at = hash[:created_at]
       @reason = hash[:reason]
     end
   end

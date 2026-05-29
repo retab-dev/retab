@@ -16,87 +16,8 @@ class GenerateSchemaRequestReasoningEffort(str, Enum):
     XHIGH = "xhigh"
 
 
-class WorkflowRunsStatus(str, Enum):
-    PENDING = "pending"
-    QUEUED = "queued"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    ERROR = "error"
-    FAILED = "failed"
-    AWAITING_REVIEW = "awaiting_review"
-    CANCELLED = "cancelled"
-
-
-class WorkflowRunsTriggerType(str, Enum):
-    MANUAL = "manual"
-    API = "api"
-    SCHEDULE = "schedule"
-    WEBHOOK = "webhook"
-    EMAIL = "email"
-    RESTART = "restart"
-
-
-class WorkflowArtifactsOperation(str, Enum):
-    EXTRACTION = "extraction"
-    SPLIT = "split"
-    CLASSIFICATION = "classification"
-    PARSE = "parse"
-    EDIT = "edit"
-    PARTITION = "partition"
-    CONDITIONAL_EVALUATION = "conditional_evaluation"
-    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
-    WHILE_LOOP_TERMINATION = "while_loop_termination"
-    API_CALL_INVOCATION = "api_call_invocation"
-    FUNCTION_INVOCATION = "function_invocation"
-
-
-class WorkflowExperimentsStatus(str, Enum):
-    PENDING = "pending"
-    QUEUED = "queued"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    ERROR = "error"
-    CANCELLED = "cancelled"
-
-
-class JobsStatus(str, Enum):
-    VALIDATING = "validating"
-    QUEUED = "queued"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    EXPIRED = "expired"
-
-
-class JobsEndpoint(str, Enum):
-    V_1_EXTRACTIONS = "/v1/extractions"
-    V_1_PARSES = "/v1/parses"
-    V_1_SPLITS = "/v1/splits"
-    V_1_PARTITIONS = "/v1/partitions"
-    V_1_CLASSIFICATIONS = "/v1/classifications"
-    V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
-    V_1_EDITS = "/v1/edits"
-    V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
-    V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
-    V_1_EVALS_EXTRACT_EXTRACT = "/v1/evals/extract/extract"
-    V_1_EVALS_EXTRACT_SPLIT = "/v1/evals/extract/split"
-
-
-class JobsSource(str, Enum):
-    API = "api"
-    PROJECT = "project"
-    WORKFLOW = "workflow"
-
-
-WorkflowRunsExcludeStatus = WorkflowRunsStatus
-
-
-WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
-
-
 class GenerateSchemaRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     documents: list[MIMEData]
     model: str | None = Field(default="retab-small")
@@ -106,29 +27,13 @@ class GenerateSchemaRequest(BaseModel):
     stream: bool | None = Field(default=False)
 
 
-class HttpValidationError(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    detail: list[ValidationError] | None = None
-
-
 class PartialSchema(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     object: str | None = Field(default="schema")
     created_at: str | None = Field(default="")
-    json_schema: dict[str, Any] | None = None
+    json_schema: dict[str, Any] | None = Field(default={})
     strict: bool | None = Field(default=True)
-
-
-class ValidationError(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    loc: list[str | int]
-    msg: str
-    type: str
-    input: Any | None = None
-    ctx: dict[str, Any] | None = None
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -137,6 +42,4 @@ class ValidationError(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 GenerateSchemaRequest.model_rebuild()
-HttpValidationError.model_rebuild()
 PartialSchema.model_rebuild()
-ValidationError.model_rebuild()

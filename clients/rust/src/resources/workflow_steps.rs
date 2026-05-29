@@ -18,12 +18,9 @@ pub struct ListParams {
     /// Optional workflow run ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
-    /// Optional logical block ID filter (deprecated; prefer ``block_ids`` for multi-value filtering).
+    /// Optional logical block ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
-    /// Optional logical block ID filter — multi-value. Repeat the query parameter (``?block_ids=a&block_ids=b``) to match any of several blocks. An empty list is treated as no filter. Preferred over the singular ``block_id``.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub block_ids: Option<Vec<String>>,
     /// Optional step ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub step_id: Option<String>,
@@ -52,7 +49,6 @@ impl Default for ListParams {
         Self {
             run_id: Default::default(),
             block_id: Default::default(),
-            block_ids: Default::default(),
             step_id: Default::default(),
             block_type: Default::default(),
             status: Default::default(),

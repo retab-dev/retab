@@ -3,16 +3,32 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
+from typing import cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
-from retab.types.workflows.artifacts import EditConfig, EditResult
+
+
+class FieldType(str, Enum):
+    TEXT = "text"
+    CHECKBOX = "checkbox"
+
+
+class BBox(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    left: float = Field(..., description="Left coordinate of the bounding box, relative to page width (0.0 = left edge, 1.0 = right edge).")
+    top: float = Field(..., description="Top coordinate of the bounding box, relative to page height (0.0 = top edge, 1.0 = bottom edge).")
+    width: float = Field(..., description="Width of the bounding box, relative to page width (0.0–1.0).")
+    height: float = Field(..., description="Height of the bounding box, relative to page height (0.0–1.0).")
+    page: int = Field(..., description="1-based index of the page where this field appears.")
 
 
 class EditRequest(BaseModel):
     """Public create-edit request body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     instructions: str = Field(..., description="Instructions describing how to fill the form fields.")
     document: MIMEData | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
@@ -20,7 +36,7 @@ class EditRequest(BaseModel):
         default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document."
     )
     model: str | None = Field(default="retab-small", description="The model to use for edit inference.")
-    config: EditConfig | None = Field(default=None, description="Edit configuration (rendering options).")
+    config: EditConfig | None = Field(default={"color": "#000080"}, validate_default=True, description="Edit configuration (rendering options).")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion.")
 
 
@@ -39,11 +55,33 @@ class Edit(BaseModel):
     created_at: datetime.datetime | None = None
 
 
+class EditConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    color: str | None = Field(default=cast(str, "#000080"), description="Hex code of the color to use for the filled text.")
+
+
+class EditResult(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    form_data: list[FormField] = Field(..., description="Filled form fields (positions, descriptions, and filled values).")
+    filled_document: MIMEData = Field(..., description="PDF with the filled form values rendered in.")
+
+
+class FormField(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    bbox: BBox = Field(..., description="Position and size of this field on the page.")
+    description: str = Field(..., description="Human-readable description of the field, including label and instructions.")
+    type: FieldType = Field(..., description="Type of field. Currently supported: 'text' and 'checkbox'.")
+    key: str = Field(..., description="Stable key identifying the field in the form data.")
+    value: str | None = Field(default=None, description="Filled value of the field as text. Null when no filled value is set.")
+
+
 from .templates import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["CreateEditTemplateRequest", "Edit", "EditRequest", "EditTemplate", "UpdateEditTemplateRequest"]
+__all__ = ["BBox", "CreateEditTemplateRequest", "Edit", "EditConfig", "EditRequest", "EditResult", "EditTemplate", "FieldType", "FormField", "UpdateEditTemplateRequest"]
 
-from ..workflows.artifacts import BBox, EditConfig, EditResult, FieldType, FormField  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 
 
@@ -52,5 +90,9 @@ from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: E402,F40
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
+BBox.model_rebuild()
 EditRequest.model_rebuild()
 Edit.model_rebuild()
+EditConfig.model_rebuild()
+EditResult.model_rebuild()
+FormField.model_rebuild()

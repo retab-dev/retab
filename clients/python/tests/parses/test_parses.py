@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from retab import Retab
 from retab.types.mime import MIMEData
@@ -51,12 +50,17 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     assert getattr(captured["request"], "url") == "/v1/parses"
 
 
-def test_parse_request_rejects_benchmark_model_policy_fields() -> None:
-    with pytest.raises(ValidationError):
-        ParseRequest.model_validate(
-            {
-                "document": _sample_document().model_dump(mode="json"),
-                "candidate_scope": "exact_model",
-                "capacity_retry_owner": "caller",
-            }
-        )
+def test_parse_request_ignores_benchmark_model_policy_fields() -> None:
+    # ``ParseRequest`` mirrors the backend's ``extra="ignore"`` config, so
+    # internal benchmark/policy fields are dropped rather than rejected:
+    # they must never surface on the validated public model.
+    request = ParseRequest.model_validate(
+        {
+            "document": _sample_document().model_dump(mode="json"),
+            "candidate_scope": "exact_model",
+            "capacity_retry_owner": "caller",
+        }
+    )
+    dumped = request.model_dump()
+    assert "candidate_scope" not in dumped
+    assert "capacity_retry_owner" not in dumped

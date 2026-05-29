@@ -15,7 +15,7 @@ namespace Retab
     {
 
         /// <summary>When the run record was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>When the run started executing</summary>
         public DateTimeOffset? StartedAt { get; set; }

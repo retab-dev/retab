@@ -35,7 +35,7 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
       @JsonProperty(value = "output", required = false) List<PartitionChunk> output,
       @JsonProperty(value = "consensus", required = false) PartitionConsensus consensus,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "operation", required = false) String operation) {
     this.id = id;
     this.file = file;

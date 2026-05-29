@@ -40,7 +40,7 @@ public final class StoredBlockExecution {
       @JsonProperty(value = "handle_outputs", required = false) Map<String, Object> handleOutputs,
       @JsonProperty(value = "routing_decision", required = false) List<String> routingDecision,
       @JsonProperty(value = "duration_ms", required = false) Double durationMs,
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
       @JsonProperty(value = "step_id", required = false) String stepId,
       @JsonProperty(value = "available_iterations", required = false)

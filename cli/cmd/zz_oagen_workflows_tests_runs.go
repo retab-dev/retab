@@ -82,17 +82,11 @@ var workflowsTestsRunsListCmd = &cobra.Command{
 		if v, _ := cmd.Flags().GetString("status"); v != "" {
 			params.Status = ptr(v)
 		}
-		if v, _ := cmd.Flags().GetString("statuses"); v != "" {
-			params.Statuses = []string{v}
-		}
 		if v, _ := cmd.Flags().GetString("exclude-status"); v != "" {
 			params.ExcludeStatus = ptr(v)
 		}
 		if v, _ := cmd.Flags().GetString("trigger-type"); v != "" {
 			params.TriggerType = ptr(v)
-		}
-		if v, _ := cmd.Flags().GetString("trigger-types"); v != "" {
-			params.TriggerTypes = []string{v}
 		}
 		dateQuery := url.Values{}
 		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
@@ -178,10 +172,8 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("test-id", "", "filter by test id")
 	workflowsTestsRunsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
-	workflowsTestsRunsListCmd.Flags().String("statuses", "", "comma-separated lifecycle statuses")
 	workflowsTestsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
 	workflowsTestsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
-	workflowsTestsRunsListCmd.Flags().String("trigger-types", "", "comma-separated trigger types")
 	workflowsTestsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsTestsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsTestsRunsListCmd.Flags().String("sort-by", "", "sort field")

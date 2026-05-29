@@ -198,6 +198,18 @@ type ErrorTerminalCategory = ErrorStepLifecycleCategory
 // ExperimentSummaryMetricsResponseBlockType is an alias for ExperimentBlockType.
 type ExperimentSummaryMetricsResponseBlockType = ExperimentBlockType
 
+// SourcesResponseDocumentType represents sources response document type values.
+type SourcesResponseDocumentType string
+
+const (
+	SourcesResponseDocumentTypePdf   SourcesResponseDocumentType = "pdf"
+	SourcesResponseDocumentTypeImage SourcesResponseDocumentType = "image"
+	SourcesResponseDocumentTypeCsv   SourcesResponseDocumentType = "csv"
+	SourcesResponseDocumentTypeXlsx  SourcesResponseDocumentType = "xlsx"
+	SourcesResponseDocumentTypeDocx  SourcesResponseDocumentType = "docx"
+	SourcesResponseDocumentTypeTxt   SourcesResponseDocumentType = "txt"
+)
+
 // GenerateSchemaRequestReasoningEffort represents generate schema request reasoning effort values.
 type GenerateSchemaRequestReasoningEffort string
 
@@ -419,16 +431,16 @@ const (
 	WorkflowExportPayloadRequestExcludeStatusCancelled      WorkflowExportPayloadRequestExcludeStatus = "cancelled"
 )
 
-// WorkflowExportPayloadRequestTriggerTypes represents workflow export payload request trigger types values.
-type WorkflowExportPayloadRequestTriggerTypes string
+// WorkflowExportPayloadRequestTriggerType represents workflow export payload request trigger type values.
+type WorkflowExportPayloadRequestTriggerType string
 
 const (
-	WorkflowExportPayloadRequestTriggerTypesManual   WorkflowExportPayloadRequestTriggerTypes = "manual"
-	WorkflowExportPayloadRequestTriggerTypesAPI      WorkflowExportPayloadRequestTriggerTypes = "api"
-	WorkflowExportPayloadRequestTriggerTypesSchedule WorkflowExportPayloadRequestTriggerTypes = "schedule"
-	WorkflowExportPayloadRequestTriggerTypesWebhook  WorkflowExportPayloadRequestTriggerTypes = "webhook"
-	WorkflowExportPayloadRequestTriggerTypesEmail    WorkflowExportPayloadRequestTriggerTypes = "email"
-	WorkflowExportPayloadRequestTriggerTypesRestart  WorkflowExportPayloadRequestTriggerTypes = "restart"
+	WorkflowExportPayloadRequestTriggerTypeManual   WorkflowExportPayloadRequestTriggerType = "manual"
+	WorkflowExportPayloadRequestTriggerTypeAPI      WorkflowExportPayloadRequestTriggerType = "api"
+	WorkflowExportPayloadRequestTriggerTypeSchedule WorkflowExportPayloadRequestTriggerType = "schedule"
+	WorkflowExportPayloadRequestTriggerTypeWebhook  WorkflowExportPayloadRequestTriggerType = "webhook"
+	WorkflowExportPayloadRequestTriggerTypeEmail    WorkflowExportPayloadRequestTriggerType = "email"
+	WorkflowExportPayloadRequestTriggerTypeRestart  WorkflowExportPayloadRequestTriggerType = "restart"
 )
 
 // ReviewBlockType is an alias for ExperimentBlockType.
@@ -471,18 +483,6 @@ type WorkflowTestSchemaDrift = ExperimentSchemaDriftStatus
 // WorkflowTestResultVerdict is an alias for AssertionOutcome.
 type WorkflowTestResultVerdict = AssertionOutcome
 
-// SourcesResponseDocumentType represents sources response document type values.
-type SourcesResponseDocumentType string
-
-const (
-	SourcesResponseDocumentTypePdf   SourcesResponseDocumentType = "pdf"
-	SourcesResponseDocumentTypeImage SourcesResponseDocumentType = "image"
-	SourcesResponseDocumentTypeCsv   SourcesResponseDocumentType = "csv"
-	SourcesResponseDocumentTypeXlsx  SourcesResponseDocumentType = "xlsx"
-	SourcesResponseDocumentTypeDocx  SourcesResponseDocumentType = "docx"
-	SourcesResponseDocumentTypeTxt   SourcesResponseDocumentType = "txt"
-)
-
 // WorkflowTestRunScopeType represents workflow test run scope type values.
 type WorkflowTestRunScopeType string
 
@@ -492,9 +492,6 @@ const (
 	WorkflowTestRunScopeTypeBlock    WorkflowTestRunScopeType = "block"
 )
 
-// ExtractionsOrder is an alias for ClassificationsOrder.
-type ExtractionsOrder = ClassificationsOrder
-
 // ClassificationsOrder represents classifications order values.
 type ClassificationsOrder string
 
@@ -503,89 +500,17 @@ const (
 	ClassificationsOrderDesc ClassificationsOrder = "desc"
 )
 
-// ParsesOrder is an alias for ClassificationsOrder.
-type ParsesOrder = ClassificationsOrder
-
-// PartitionsOrder is an alias for ClassificationsOrder.
-type PartitionsOrder = ClassificationsOrder
-
-// SplitsOrder is an alias for ClassificationsOrder.
-type SplitsOrder = ClassificationsOrder
-
-// FilesOrder is an alias for ClassificationsOrder.
-type FilesOrder = ClassificationsOrder
-
-// WorkflowRunsStatus is an alias for WorkflowExportPayloadRequestExcludeStatus.
-type WorkflowRunsStatus = WorkflowExportPayloadRequestExcludeStatus
-
-// WorkflowRunsExcludeStatus is an alias for WorkflowExportPayloadRequestExcludeStatus.
-type WorkflowRunsExcludeStatus = WorkflowExportPayloadRequestExcludeStatus
-
-// WorkflowRunsTriggerType is an alias for WorkflowExportPayloadRequestTriggerTypes.
-type WorkflowRunsTriggerType = WorkflowExportPayloadRequestTriggerTypes
-
-// WorkflowRunsOrder is an alias for ClassificationsOrder.
-type WorkflowRunsOrder = ClassificationsOrder
-
-// ReviewDecisionStatus represents review decision status values.
-type ReviewDecisionStatus string
-
-const (
-	ReviewDecisionStatusPending  ReviewDecisionStatus = "pending"
-	ReviewDecisionStatusApproved ReviewDecisionStatus = "approved"
-	ReviewDecisionStatusRejected ReviewDecisionStatus = "rejected"
-	ReviewDecisionStatusDecided  ReviewDecisionStatus = "decided"
-	ReviewDecisionStatusAll      ReviewDecisionStatus = "all"
-)
-
-// WorkflowArtifactsOperation is an alias for StepArtifactRefOperation.
-type WorkflowArtifactsOperation = StepArtifactRefOperation
-
-// WorkflowTestRunsOrder is an alias for ClassificationsOrder.
-type WorkflowTestRunsOrder = ClassificationsOrder
-
-// WorkflowTestRunResultsOrder is an alias for ClassificationsOrder.
-type WorkflowTestRunResultsOrder = ClassificationsOrder
-
-// WorkflowTestsOrder is an alias for ClassificationsOrder.
-type WorkflowTestsOrder = ClassificationsOrder
-
-// WorkflowExperimentsStatus is an alias for LatestBlockTestRunSummaryStatus.
-type WorkflowExperimentsStatus = LatestBlockTestRunSummaryStatus
-
-// WorkflowExperimentsExcludeStatus is an alias for LatestBlockTestRunSummaryStatus.
-type WorkflowExperimentsExcludeStatus = LatestBlockTestRunSummaryStatus
-
-// ExperimentRunsOrder is an alias for ClassificationsOrder.
-type ExperimentRunsOrder = ClassificationsOrder
-
-// ExperimentRunResultsOrder is an alias for ClassificationsOrder.
-type ExperimentRunResultsOrder = ClassificationsOrder
-
-// ExperimentRunMetricsView represents experiment run metrics view values.
-type ExperimentRunMetricsView string
-
-const (
-	ExperimentRunMetricsViewSummary    ExperimentRunMetricsView = "summary"
-	ExperimentRunMetricsViewByDocument ExperimentRunMetricsView = "by_document"
-	ExperimentRunMetricsViewByTarget   ExperimentRunMetricsView = "by_target"
-	ExperimentRunMetricsViewVotes      ExperimentRunMetricsView = "votes"
-)
-
-// WorkflowExperimentsOrder is an alias for ClassificationsOrder.
-type WorkflowExperimentsOrder = ClassificationsOrder
-
-// WorkflowBlockExecutionsOrder is an alias for ClassificationsOrder.
-type WorkflowBlockExecutionsOrder = ClassificationsOrder
-
-// WorkflowsOrder is an alias for ClassificationsOrder.
-type WorkflowsOrder = ClassificationsOrder
+// EditsOrder is an alias for ClassificationsOrder.
+type EditsOrder = ClassificationsOrder
 
 // EditTemplatesOrder is an alias for ClassificationsOrder.
 type EditTemplatesOrder = ClassificationsOrder
 
-// EditsOrder is an alias for ClassificationsOrder.
-type EditsOrder = ClassificationsOrder
+// ExtractionsOrder is an alias for ClassificationsOrder.
+type ExtractionsOrder = ClassificationsOrder
+
+// FilesOrder is an alias for ClassificationsOrder.
+type FilesOrder = ClassificationsOrder
 
 // JobsOrder is an alias for ClassificationsOrder.
 type JobsOrder = ClassificationsOrder
@@ -604,3 +529,78 @@ const (
 	JobsSourceProject  JobsSource = "project"
 	JobsSourceWorkflow JobsSource = "workflow"
 )
+
+// ParsesOrder is an alias for ClassificationsOrder.
+type ParsesOrder = ClassificationsOrder
+
+// PartitionsOrder is an alias for ClassificationsOrder.
+type PartitionsOrder = ClassificationsOrder
+
+// SplitsOrder is an alias for ClassificationsOrder.
+type SplitsOrder = ClassificationsOrder
+
+// WorkflowsOrder is an alias for ClassificationsOrder.
+type WorkflowsOrder = ClassificationsOrder
+
+// WorkflowArtifactsOperation is an alias for StepArtifactRefOperation.
+type WorkflowArtifactsOperation = StepArtifactRefOperation
+
+// WorkflowBlockExecutionsOrder is an alias for ClassificationsOrder.
+type WorkflowBlockExecutionsOrder = ClassificationsOrder
+
+// WorkflowExperimentsOrder is an alias for ClassificationsOrder.
+type WorkflowExperimentsOrder = ClassificationsOrder
+
+// ExperimentRunMetricsView represents experiment run metrics view values.
+type ExperimentRunMetricsView string
+
+const (
+	ExperimentRunMetricsViewSummary    ExperimentRunMetricsView = "summary"
+	ExperimentRunMetricsViewByDocument ExperimentRunMetricsView = "by_document"
+	ExperimentRunMetricsViewByTarget   ExperimentRunMetricsView = "by_target"
+	ExperimentRunMetricsViewVotes      ExperimentRunMetricsView = "votes"
+)
+
+// ExperimentRunResultsOrder is an alias for ClassificationsOrder.
+type ExperimentRunResultsOrder = ClassificationsOrder
+
+// WorkflowExperimentsStatus is an alias for LatestBlockTestRunSummaryStatus.
+type WorkflowExperimentsStatus = LatestBlockTestRunSummaryStatus
+
+// WorkflowExperimentsExcludeStatus is an alias for LatestBlockTestRunSummaryStatus.
+type WorkflowExperimentsExcludeStatus = LatestBlockTestRunSummaryStatus
+
+// ExperimentRunsOrder is an alias for ClassificationsOrder.
+type ExperimentRunsOrder = ClassificationsOrder
+
+// ReviewDecisionStatus represents review decision status values.
+type ReviewDecisionStatus string
+
+const (
+	ReviewDecisionStatusPending  ReviewDecisionStatus = "pending"
+	ReviewDecisionStatusApproved ReviewDecisionStatus = "approved"
+	ReviewDecisionStatusRejected ReviewDecisionStatus = "rejected"
+	ReviewDecisionStatusDecided  ReviewDecisionStatus = "decided"
+	ReviewDecisionStatusAll      ReviewDecisionStatus = "all"
+)
+
+// WorkflowRunsStatus is an alias for WorkflowExportPayloadRequestExcludeStatus.
+type WorkflowRunsStatus = WorkflowExportPayloadRequestExcludeStatus
+
+// WorkflowRunsExcludeStatus is an alias for WorkflowExportPayloadRequestExcludeStatus.
+type WorkflowRunsExcludeStatus = WorkflowExportPayloadRequestExcludeStatus
+
+// WorkflowRunsTriggerType is an alias for WorkflowExportPayloadRequestTriggerType.
+type WorkflowRunsTriggerType = WorkflowExportPayloadRequestTriggerType
+
+// WorkflowRunsOrder is an alias for ClassificationsOrder.
+type WorkflowRunsOrder = ClassificationsOrder
+
+// WorkflowTestsOrder is an alias for ClassificationsOrder.
+type WorkflowTestsOrder = ClassificationsOrder
+
+// WorkflowTestRunResultsOrder is an alias for ClassificationsOrder.
+type WorkflowTestRunResultsOrder = ClassificationsOrder
+
+// WorkflowTestRunsOrder is an alias for ClassificationsOrder.
+type WorkflowTestRunsOrder = ClassificationsOrder

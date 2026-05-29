@@ -12,11 +12,9 @@ module Retab
 
     # List Workflow Runs
     # @param workflow_id [String, nil] Filter by workflow ID
-    # @param status [Retab::Types::WorkflowRunsStatus, nil] Filter by single run status (deprecated, use 'statuses')
-    # @param statuses [String, nil] Filter by multiple statuses (comma-separated: pending,queued,running,completed,error,failed,awaiting_review,cancelled)
+    # @param status [Retab::Types::WorkflowRunsStatus, nil] Filter by run status
     # @param exclude_status [Retab::Types::WorkflowRunsExcludeStatus, nil] Exclude runs with this status
-    # @param trigger_type [Retab::Types::WorkflowRunsTriggerType, nil] Filter by single trigger type (deprecated, use 'trigger_types')
-    # @param trigger_types [String, nil] Filter by multiple trigger types (comma-separated: manual,api,schedule,webhook,email,restart)
+    # @param trigger_type [Retab::Types::WorkflowRunsTriggerType, nil] Filter by trigger type
     # @param from_date [String, nil] Filter runs created on or after this date (YYYY-MM-DD)
     # @param to_date [String, nil] Filter runs created on or before this date (YYYY-MM-DD)
     # @param min_duration_ms [Integer, nil] Filter runs with duration >= this value in milliseconds
@@ -32,10 +30,8 @@ module Retab
     def list(
       workflow_id: nil,
       status: nil,
-      statuses: nil,
       exclude_status: nil,
       trigger_type: nil,
-      trigger_types: nil,
       from_date: nil,
       to_date: nil,
       min_duration_ms: nil,
@@ -51,10 +47,8 @@ module Retab
       params = {
         "workflow_id" => workflow_id,
         "status" => status,
-        "statuses" => statuses,
         "exclude_status" => exclude_status,
         "trigger_type" => trigger_type,
-        "trigger_types" => trigger_types,
         "from_date" => from_date,
         "to_date" => to_date,
         "min_duration_ms" => min_duration_ms,
@@ -77,10 +71,8 @@ module Retab
         list(
           workflow_id: workflow_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           min_duration_ms: min_duration_ms,
@@ -100,10 +92,8 @@ module Retab
         filters: {
           workflow_id: workflow_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           min_duration_ms: min_duration_ms,
@@ -165,7 +155,7 @@ module Retab
     # @param exclude_status [Retab::Types::WorkflowExportPayloadRequestExcludeStatus, nil] Optional status exclusion filter (intersects with completed-only export scope)
     # @param from_date [String, nil] Optional start date filter (YYYY-MM-DD)
     # @param to_date [String, nil] Optional end date filter (YYYY-MM-DD)
-    # @param trigger_types [Array<Retab::Types::WorkflowExportPayloadRequestTriggerTypes>, nil] Optional trigger type filters
+    # @param trigger_type [Retab::Types::WorkflowExportPayloadRequestTriggerType, nil] Optional trigger type filter
     # @param preferred_columns [Array<String>, nil] Preferred data column order
     # @param delimiter [String, nil] CSV field delimiter. Default is ';' (Excel-EU locale default); pass ',' for RFC 4180 / pandas compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.
     # @param line_delimiter [String, nil] CSV line delimiter
@@ -182,7 +172,7 @@ module Retab
       exclude_status: nil,
       from_date: nil,
       to_date: nil,
-      trigger_types: nil,
+      trigger_type: nil,
       preferred_columns: nil,
       delimiter: nil,
       line_delimiter: nil,
@@ -199,7 +189,7 @@ module Retab
         "exclude_status" => exclude_status,
         "from_date" => from_date,
         "to_date" => to_date,
-        "trigger_types" => trigger_types,
+        "trigger_type" => trigger_type,
         "preferred_columns" => preferred_columns,
         "delimiter" => delimiter,
         "line_delimiter" => line_delimiter,

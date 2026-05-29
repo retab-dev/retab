@@ -15,10 +15,6 @@ readonly class WorkflowTest implements \JsonSerializable
         public string $workflowId,
         public WorkflowTestBlockTarget $target,
         public ManualWorkflowTestSource|RunStepWorkflowTestSource $source,
-        /** When the workflow test was created */
-        public \DateTimeImmutable $createdAt,
-        /** When the workflow test was last updated */
-        public \DateTimeImmutable $updatedAt,
         public ?string $name = null,
         public ?AssertionSpec $assertion = null,
         public ?AssertionSchemaDep $assertionSchemaDep = null,
@@ -31,6 +27,10 @@ readonly class WorkflowTest implements \JsonSerializable
         public ?LatestBlockTestRunSummary $latestRunSummary = null,
         public ?LatestBlockTestRunSummary $latestPassingRunSummary = null,
         public ?LatestBlockTestRunSummary $latestFailingRunSummary = null,
+        /** When the workflow test was created */
+        public ?\DateTimeImmutable $createdAt = null,
+        /** When the workflow test was last updated */
+        public ?\DateTimeImmutable $updatedAt = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -41,8 +41,6 @@ readonly class WorkflowTest implements \JsonSerializable
             'workflow_id',
             'target',
             'source',
-            'created_at',
-            'updated_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowTest::fromArray()");
@@ -55,8 +53,6 @@ readonly class WorkflowTest implements \JsonSerializable
             source: match ($data['source']['type'] ?? null) {
                 'manual' => ManualWorkflowTestSource::fromArray($data['source']), 'run_step' => RunStepWorkflowTestSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
             },
-            createdAt: new \DateTimeImmutable($data['created_at']),
-            updatedAt: new \DateTimeImmutable($data['updated_at']),
             name: $data['name'] ?? null,
             assertion: isset($data['assertion']) ? AssertionSpec::fromArray($data['assertion']) : null,
             assertionSchemaDep: isset($data['assertion_schema_dep']) ? AssertionSchemaDep::fromArray($data['assertion_schema_dep']) : null,
@@ -68,6 +64,8 @@ readonly class WorkflowTest implements \JsonSerializable
             latestRunSummary: isset($data['latest_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_run_summary']) : null,
             latestPassingRunSummary: isset($data['latest_passing_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_passing_run_summary']) : null,
             latestFailingRunSummary: isset($data['latest_failing_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_failing_run_summary']) : null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
+            updatedAt: isset($data['updated_at']) ? new \DateTimeImmutable($data['updated_at']) : null,
         );
     }
 
@@ -79,8 +77,6 @@ readonly class WorkflowTest implements \JsonSerializable
             'workflow_id' => $this->workflowId,
             'target' => $this->target->toArray(),
             'source' => $this->source->toArray(),
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'updated_at' => $this->updatedAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'name' => $this->name,
             'assertion' => $this->assertion?->toArray(),
             'assertion_schema_dep' => $this->assertionSchemaDep?->toArray(),
@@ -92,6 +88,8 @@ readonly class WorkflowTest implements \JsonSerializable
             'latest_run_summary' => $this->latestRunSummary?->toArray(),
             'latest_passing_run_summary' => $this->latestPassingRunSummary?->toArray(),
             'latest_failing_run_summary' => $this->latestFailingRunSummary?->toArray(),
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'updated_at' => $this->updatedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];
     }
 }

@@ -17,7 +17,7 @@ class WorkflowStepsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run_step');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->steps()->list(runId: 'test_value', blockId: 'test_value', blockIds: [], stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->steps()->list(runId: 'test_value', blockId: 'test_value', stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

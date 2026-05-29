@@ -21,8 +21,6 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
         public EditConfig $config,
         /** The edit result: filled form fields and the rendered PDF. */
         public EditResult $output,
-        /** When this artifact was written by the orchestrator. */
-        public \DateTimeImmutable $createdAt,
         /** Free-form instructions supplied with the edit request. */
         public ?string $instructions = null,
         /** Template id used when the edit was created from a template; null for direct-document edits. */
@@ -31,6 +29,8 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
         public ?FileRef $filledDocumentRef = null,
         /** Usage information for the edit operation. */
         public ?RetabUsage $usage = null,
+        /** When this artifact was written by the orchestrator. */
+        public ?\DateTimeImmutable $createdAt = null,
         /** Artifact operation that determines the backing record type */
         public string $operation = 'edit',
     ) {}
@@ -44,7 +44,6 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             'model',
             'config',
             'output',
-            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for EditWorkflowArtifact::fromArray()");
@@ -56,11 +55,11 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             model: $data['model'],
             config: EditConfig::fromArray($data['config']),
             output: EditResult::fromArray($data['output']),
-            createdAt: new \DateTimeImmutable($data['created_at']),
             instructions: $data['instructions'] ?? null,
             templateId: $data['template_id'] ?? null,
             filledDocumentRef: isset($data['filled_document_ref']) ? FileRef::fromArray($data['filled_document_ref']) : null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
+            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             operation: $data['operation'] ?? 'edit',
         );
     }
@@ -74,11 +73,11 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             'model' => $this->model,
             'config' => $this->config->toArray(),
             'output' => $this->output->toArray(),
-            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'instructions' => $this->instructions,
             'template_id' => $this->templateId,
             'filled_document_ref' => $this->filledDocumentRef?->toArray(),
             'usage' => $this->usage?->toArray(),
+            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'operation' => $this->operation,
         ];
     }

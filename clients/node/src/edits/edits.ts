@@ -3,10 +3,8 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
-import type { Edit, EditResponse } from '../edits/interfaces/index.js';
-import type { EditConfig } from '../workflows/artifacts/interfaces/index.js';
-import { deserializeEdit } from '../edits/interfaces/index.js';
-import { serializeEditConfig } from '../workflows/artifacts/interfaces/index.js';
+import type { Edit, EditConfig, EditResponse } from '../edits/interfaces/index.js';
+import { deserializeEdit, serializeEditConfig } from '../edits/interfaces/index.js';
 import { EditTemplates } from './templates/edit-templates.js';
 
 export class Edits {

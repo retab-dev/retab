@@ -33,6 +33,34 @@ import { deserializeWorkflowArtifact } from '../../workflows/artifacts/interface
 export class WorkflowArtifacts {
   constructor(private readonly client: Retab) {}
 
+  /** List Workflow Artifacts */
+  async list(options?: {
+    runId?: string | null | undefined;
+    operation?: WorkflowArtifactsOperation | null | undefined;
+    blockId?: string | null | undefined;
+    stepId?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowArtifact>> {
+    return this.client._fetchPage(deserializeWorkflowArtifact, {
+      method: 'GET',
+      path: '/v1/workflows/artifacts',
+      query: {
+        run_id: options?.runId,
+        operation: options?.operation,
+        block_id: options?.blockId,
+        step_id: options?.stepId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
+  }
+
   /** Get Workflow Artifact By Id */
   async get(
     artifactId: string
@@ -79,33 +107,5 @@ export class WorkflowArtifacts {
       | WhileLoopTermination
       | ApiCallInvocation
       | FunctionInvocation;
-  }
-
-  /** List Workflow Artifacts */
-  async list(options?: {
-    runId?: string | null | undefined;
-    operation?: WorkflowArtifactsOperation | null | undefined;
-    blockId?: string | null | undefined;
-    stepId?: string | null | undefined;
-    limit?: number;
-    before?: string;
-    after?: string;
-    order?: 'asc' | 'desc';
-  }): Promise<PaginatedList<WorkflowArtifact>> {
-    return this.client._fetchPage(deserializeWorkflowArtifact, {
-      method: 'GET',
-      path: '/v1/workflows/artifacts',
-      query: {
-        run_id: options?.runId,
-        operation: options?.operation,
-        block_id: options?.blockId,
-        step_id: options?.stepId,
-        limit: options?.limit,
-        before: options?.before,
-        after: options?.after,
-        order: options?.order,
-      },
-      body: undefined,
-    });
   }
 }

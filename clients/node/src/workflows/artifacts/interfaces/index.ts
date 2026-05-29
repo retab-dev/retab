@@ -2,7 +2,6 @@
 
 export * from './api-call-attempt.interface.js';
 export * from './api-call-invocation.interface.js';
-export * from './b-box.interface.js';
 export * from './classification-workflow-artifact.interface.js';
 export * from './condition-evaluation-details.interface.js';
 export * from './condition-evaluation-details-logical-operator.interface.js';
@@ -11,12 +10,9 @@ export * from './condition-evaluation-result.interface.js';
 export * from './condition-evaluation-result-logical-operator.interface.js';
 export * from './condition-evaluation-sub-condition.interface.js';
 export * from './conditional-evaluation.interface.js';
-export * from './edit-config.interface.js';
-export * from './edit-result.interface.js';
 export * from './edit-workflow-artifact.interface.js';
+export * from './error-details.interface.js';
 export * from './extraction-workflow-artifact.interface.js';
-export * from './field-type.interface.js';
-export * from './form-field.interface.js';
 export * from './function-invocation.interface.js';
 export * from './parse-workflow-artifact.interface.js';
 export * from './parse-workflow-artifact-table-parsing-format.interface.js';

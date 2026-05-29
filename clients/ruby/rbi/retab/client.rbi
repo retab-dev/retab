@@ -6,14 +6,20 @@
 
 module Retab
   class Client < BaseClient
-    sig { returns(Retab::Schemas) }
-    def schemas; end
+    sig { returns(Retab::Classifications) }
+    def classifications; end
+
+    sig { returns(Retab::Edits) }
+    def edits; end
 
     sig { returns(Retab::Extractions) }
     def extractions; end
 
-    sig { returns(Retab::Classifications) }
-    def classifications; end
+    sig { returns(Retab::Files) }
+    def files; end
+
+    sig { returns(Retab::Jobs) }
+    def jobs; end
 
     sig { returns(Retab::Parses) }
     def parses; end
@@ -21,20 +27,14 @@ module Retab
     sig { returns(Retab::Partitions) }
     def partitions; end
 
+    sig { returns(Retab::Schemas) }
+    def schemas; end
+
     sig { returns(Retab::Splits) }
     def splits; end
 
-    sig { returns(Retab::Files) }
-    def files; end
-
     sig { returns(Retab::Workflows) }
     def workflows; end
-
-    sig { returns(Retab::Edits) }
-    def edits; end
-
-    sig { returns(Retab::Jobs) }
-    def jobs; end
 
   end
 end

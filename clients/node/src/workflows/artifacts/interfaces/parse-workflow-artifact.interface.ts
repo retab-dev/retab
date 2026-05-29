@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   ParseOutput,
   ParseOutputResponse,
@@ -22,12 +22,12 @@ import {
 import type {
   RetabUsage,
   RetabUsageResponse,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 import type { ParseWorkflowArtifactTableParsingFormat } from './parse-workflow-artifact-table-parsing-format.interface.js';
 import { ZParseWorkflowArtifactTableParsingFormat } from './parse-workflow-artifact-table-parsing-format.interface.js';
 

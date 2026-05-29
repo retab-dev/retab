@@ -7,8 +7,8 @@ import type { WorkflowExportPayloadRequestExportSource } from './workflow-export
 import { ZWorkflowExportPayloadRequestExportSource } from './workflow-export-payload-request-export-source.interface.js';
 import type { WorkflowExportPayloadRequestStatus } from './workflow-export-payload-request-status.interface.js';
 import { ZWorkflowExportPayloadRequestStatus } from './workflow-export-payload-request-status.interface.js';
-import type { WorkflowExportPayloadRequestTriggerTypes } from './workflow-export-payload-request-trigger-types.interface.js';
-import { ZWorkflowExportPayloadRequestTriggerTypes } from './workflow-export-payload-request-trigger-types.interface.js';
+import type { WorkflowExportPayloadRequestTriggerType } from './workflow-export-payload-request-trigger-type.interface.js';
+import { ZWorkflowExportPayloadRequestTriggerType } from './workflow-export-payload-request-trigger-type.interface.js';
 
 export interface WorkflowExportPayloadRequest {
   /** Workflow ID to export */
@@ -32,8 +32,8 @@ export interface WorkflowExportPayloadRequest {
   fromDate?: string | null;
   /** Optional end date filter (YYYY-MM-DD) */
   toDate?: string | null;
-  /** Optional trigger type filters */
-  triggerTypes?: WorkflowExportPayloadRequestTriggerTypes[] | null;
+  /** Optional trigger type filter */
+  triggerType?: WorkflowExportPayloadRequestTriggerType | null;
   /**
    * Preferred data column order
    * @default []
@@ -66,7 +66,7 @@ export interface WorkflowExportPayloadRequestResponse {
   exclude_status?: WorkflowExportPayloadRequestExcludeStatus | null;
   from_date?: string | null;
   to_date?: string | null;
-  trigger_types?: WorkflowExportPayloadRequestTriggerTypes[] | null;
+  trigger_type?: WorkflowExportPayloadRequestTriggerType | null;
   preferred_columns?: string[];
   delimiter?: string;
   line_delimiter?: string;
@@ -83,7 +83,7 @@ export const ZWorkflowExportPayloadRequest = z.object({
   excludeStatus: ZWorkflowExportPayloadRequestExcludeStatus.nullable().optional(),
   fromDate: z.string().nullable().optional(),
   toDate: z.string().nullable().optional(),
-  triggerTypes: ZWorkflowExportPayloadRequestTriggerTypes.array().nullable().optional(),
+  triggerType: ZWorkflowExportPayloadRequestTriggerType.nullable().optional(),
   preferredColumns: z.string().array().optional(),
   delimiter: z.string().optional(),
   lineDelimiter: z.string().optional(),
@@ -103,7 +103,7 @@ export function deserializeWorkflowExportPayloadRequest(
     excludeStatus: wire['exclude_status'],
     fromDate: wire['from_date'],
     toDate: wire['to_date'],
-    triggerTypes: wire['trigger_types'],
+    triggerType: wire['trigger_type'],
     preferredColumns: wire['preferred_columns'],
     delimiter: wire['delimiter'],
     lineDelimiter: wire['line_delimiter'],
@@ -124,7 +124,7 @@ export function serializeWorkflowExportPayloadRequest(
     exclude_status: domain['excludeStatus'],
     from_date: domain['fromDate'],
     to_date: domain['toDate'],
-    trigger_types: domain['triggerTypes'],
+    trigger_type: domain['triggerType'],
     preferred_columns: domain['preferredColumns'],
     delimiter: domain['delimiter'],
     line_delimiter: domain['lineDelimiter'],

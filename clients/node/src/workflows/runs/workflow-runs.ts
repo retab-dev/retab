@@ -14,7 +14,7 @@ import type {
   WorkflowExportPayloadRequestExcludeStatus,
   WorkflowExportPayloadRequestExportSource,
   WorkflowExportPayloadRequestStatus,
-  WorkflowExportPayloadRequestTriggerTypes,
+  WorkflowExportPayloadRequestTriggerType,
   WorkflowExportPayloadResponse,
   WorkflowExportPayloadResponseResponse,
   WorkflowRun,
@@ -33,10 +33,8 @@ export class WorkflowRuns {
   async list(options?: {
     workflowId?: string | null | undefined;
     status?: WorkflowRunsStatus | null | undefined;
-    statuses?: string | null | undefined;
     excludeStatus?: WorkflowRunsExcludeStatus | null | undefined;
     triggerType?: WorkflowRunsTriggerType | null | undefined;
-    triggerTypes?: string | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     minDurationMs?: number | null | undefined;
@@ -54,10 +52,8 @@ export class WorkflowRuns {
       query: {
         workflow_id: options?.workflowId,
         status: options?.status,
-        statuses: options?.statuses,
         exclude_status: options?.excludeStatus,
         trigger_type: options?.triggerType,
-        trigger_types: options?.triggerTypes,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         min_duration_ms: options?.minDurationMs,
@@ -114,7 +110,7 @@ export class WorkflowRuns {
     excludeStatus?: WorkflowExportPayloadRequestExcludeStatus | null,
     fromDate?: string | null,
     toDate?: string | null,
-    triggerTypes?: WorkflowExportPayloadRequestTriggerTypes[] | null,
+    triggerType?: WorkflowExportPayloadRequestTriggerType | null,
     preferredColumns?: string[],
     delimiter?: string,
     lineDelimiter?: string,
@@ -130,7 +126,7 @@ export class WorkflowRuns {
       exclude_status: excludeStatus,
       from_date: fromDate,
       to_date: toDate,
-      trigger_types: triggerTypes,
+      trigger_type: triggerType,
       preferred_columns: preferredColumns,
       delimiter: delimiter,
       line_delimiter: lineDelimiter,

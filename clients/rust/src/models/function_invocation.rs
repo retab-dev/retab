@@ -25,7 +25,8 @@ pub struct FunctionInvocation {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub error: Option<ErrorDetails>,
     /// When this artifact was written by the orchestrator.
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
 }
 impl FunctionInvocation {
     /// Construct a new `FunctionInvocation` with the required fields set.
@@ -34,7 +35,6 @@ impl FunctionInvocation {
         id: impl Into<String>,
         workflow_run_id: impl Into<String>,
         step_id: impl Into<String>,
-        created_at: impl Into<String>,
     ) -> Self {
         Self {
             operation: Default::default(),
@@ -45,7 +45,7 @@ impl FunctionInvocation {
             output: Default::default(),
             duration_ms: Default::default(),
             error: Default::default(),
-            created_at: created_at.into(),
+            created_at: Default::default(),
         }
     }
 }

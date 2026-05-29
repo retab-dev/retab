@@ -4,21 +4,21 @@ import { z } from 'zod';
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   FormField,
   FormFieldResponse,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 import {
   ZFormField,
   deserializeFormField,
   serializeFormField,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 
 export interface EditTemplate {
   /** Unique identifier of the template. */

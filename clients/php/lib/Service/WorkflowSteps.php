@@ -25,8 +25,7 @@ class WorkflowSteps
      * ``run_id`` is optional; when omitted the list is scoped to the caller's
      * organization.
      * @param string|null $runId Optional workflow run ID filter.
-     * @param string|null $blockId Optional logical block ID filter (deprecated; prefer ``block_ids`` for multi-value filtering).
-     * @param array<string>|null $blockIds Optional logical block ID filter — multi-value. Repeat the query parameter (``?block_ids=a&block_ids=b``) to match any of several blocks. An empty list is treated as no filter. Preferred over the singular ``block_id``.
+     * @param string|null $blockId Optional logical block ID filter.
      * @param string|null $stepId Optional step ID filter.
      * @param array<string>|null $blockType Optional block type filter. Repeat the query parameter for multiple values.
      * @param array<string>|null $status Optional step lifecycle status filter. Repeat the query parameter for multiple values.
@@ -39,7 +38,6 @@ class WorkflowSteps
     public function list(
         ?string $runId = null,
         ?string $blockId = null,
-        ?array $blockIds = null,
         ?string $stepId = null,
         ?array $blockType = null,
         ?array $status = null,
@@ -51,7 +49,6 @@ class WorkflowSteps
         $query = array_filter([
             'run_id' => $runId,
             'block_id' => $blockId,
-            'block_ids' => $blockIds,
             'step_id' => $stepId,
             'block_type' => $blockType,
             'status' => $status,

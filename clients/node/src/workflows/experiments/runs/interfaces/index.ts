@@ -13,3 +13,4 @@ export * from './experiment-run-trigger.interface.js';
 export * from './pending-workflow-experiment-run.interface.js';
 export * from './queued-workflow-experiment-run.interface.js';
 export * from './running-workflow-experiment-run.interface.js';
+export * from './workflow-snapshot-ref.interface.js';

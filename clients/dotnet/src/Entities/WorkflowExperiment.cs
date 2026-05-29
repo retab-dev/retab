@@ -18,10 +18,10 @@ namespace Retab
         public string? LastRunId { get; set; }
 
         /// <summary>When the experiment was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>When the experiment was last updated</summary>
-        public DateTimeOffset UpdatedAt { get; set; }
+        public DateTimeOffset? UpdatedAt { get; set; }
         public ExperimentPublicStatus? Status { get; set; }
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]

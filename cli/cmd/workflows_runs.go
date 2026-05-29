@@ -127,22 +127,10 @@ func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	if err := validateEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
-		return err
-	}
-	if err := validateMutuallyExclusiveChangedFlags(cmd, "status", "statuses"); err != nil {
-		return err
-	}
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	if err := validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
-		return err
-	}
-	if err := validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
-		return err
-	}
-	return validateMutuallyExclusiveChangedFlags(cmd, "trigger-type", "trigger-types")
+	return validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 }
 
 func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
@@ -155,7 +143,7 @@ func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
-	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+	return validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
 }
 
 func validateMutuallyExclusiveChangedFlags(cmd *cobra.Command, left string, right string) error {
@@ -174,29 +162,6 @@ func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bo
 		return fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
 	}
 	return nil
-}
-
-func validateEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
-	_, err := normalizeEnumArrayFlag(cmd, flagName, allowed, allowedValues)
-	return err
-}
-
-func normalizeEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) ([]string, error) {
-	rawValues, _ := cmd.Flags().GetStringArray(flagName)
-	values := make([]string, 0, len(rawValues))
-	for _, raw := range rawValues {
-		for value := range strings.SplitSeq(raw, ",") {
-			value = strings.TrimSpace(value)
-			if value == "" {
-				continue
-			}
-			if !allowed[value] {
-				return nil, fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
-			}
-			values = append(values, value)
-		}
-	}
-	return values, nil
 }
 
 var workflowsRunsCmd = &cobra.Command{
@@ -618,14 +583,6 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 			status := retab.WorkflowRunsStatus(v)
 			params.Status = &status
 		}
-		statuses, err := normalizeEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues)
-		if err != nil {
-			return err
-		}
-		if len(statuses) > 0 {
-			joined := strings.Join(statuses, ",")
-			params.Statuses = &joined
-		}
 		if v, _ := cmd.Flags().GetString("exclude-status"); v != "" {
 			excludeStatus := retab.WorkflowRunsExcludeStatus(v)
 			params.ExcludeStatus = &excludeStatus
@@ -633,14 +590,6 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if v, _ := cmd.Flags().GetString("trigger-type"); v != "" {
 			triggerType := retab.WorkflowRunsTriggerType(v)
 			params.TriggerType = &triggerType
-		}
-		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
-		if err != nil {
-			return err
-		}
-		if len(triggerTypes) > 0 {
-			joined := strings.Join(triggerTypes, ",")
-			params.TriggerTypes = &joined
 		}
 		fromDate, _ := cmd.Flags().GetString("from-date")
 		if fromDate != "" {
@@ -955,16 +904,9 @@ also configurable.`,
 		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
 			return err
 		}
-		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
-		if err != nil {
-			return err
-		}
-		if len(triggerTypes) > 0 {
-			typed := make([]retab.WorkflowExportPayloadRequestTriggerTypes, 0, len(triggerTypes))
-			for _, t := range triggerTypes {
-				typed = append(typed, retab.WorkflowExportPayloadRequestTriggerTypes(t))
-			}
-			req.TriggerTypes = typed
+		if v, _ := cmd.Flags().GetString("trigger-type"); v != "" {
+			triggerType := retab.WorkflowExportPayloadRequestTriggerType(v)
+			req.TriggerType = &triggerType
 		}
 		preferredColumns, err := nonBlankStringArrayFlag(cmd, "preferred-column")
 		if err != nil {
@@ -1048,10 +990,8 @@ func init() {
 
 	workflowsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsRunsListCmd.Flags().String("status", "", "filter by status")
-	workflowsRunsListCmd.Flags().StringArray("statuses", nil, "filter by status (repeatable)")
 	workflowsRunsListCmd.Flags().String("exclude-status", "", "exclude status")
 	workflowsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
-	workflowsRunsListCmd.Flags().StringArray("trigger-types", nil, "filter by trigger types (repeatable)")
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "from-date", "filter from this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().String("search", "", "search query")
@@ -1077,7 +1017,7 @@ func init() {
 	workflowsRunsExportCmd.Flags().String("exclude-status", "", "exclude status")
 	workflowsRunsExportCmd.Flags().Var(&dateFlagValue{}, "from-date", "from YYYY-MM-DD date")
 	workflowsRunsExportCmd.Flags().Var(&dateFlagValue{}, "to-date", "to YYYY-MM-DD date")
-	workflowsRunsExportCmd.Flags().StringArray("trigger-types", nil, "trigger types (repeatable)")
+	workflowsRunsExportCmd.Flags().String("trigger-type", "", "filter by trigger type")
 	workflowsRunsExportCmd.Flags().StringArray("preferred-column", nil, "preferred CSV column (repeatable)")
 	workflowsRunsExportCmd.Flags().Bool("raw", false, "write raw CSV to stdout (default for TTY); JSON envelope is used for non-TTY unless --raw or --output table")
 	// CSV shape flags — defaults come from the server side. The default

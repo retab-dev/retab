@@ -5,9 +5,9 @@ import datetime
 from enum import Enum
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.runs import ErrorDetails
-from retab.types.workflows.steps import StepArtifactRef
-from retab.types.workflows.tests.results import FileHandleInput, JsonHandleInput
+from retab.types.workflows.artifacts import ErrorDetails
+from retab.types.workflows.blocks.executions import StepArtifactRef
+from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
 
 
 class ExperimentResultBlockType(str, Enum):
@@ -99,7 +99,7 @@ class ExperimentResult(BaseModel):
     ) = Field(..., discriminator="status")
     timing: ExperimentResultTiming
     block_type: ExperimentResultBlockType
-    handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = None
+    handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
     artifact: StepArtifactRef | None = None
     attempt: int | None = Field(default=0)
     is_placeholder: bool | None = Field(default=False)

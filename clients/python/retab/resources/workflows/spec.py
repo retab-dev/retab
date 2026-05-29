@@ -9,15 +9,15 @@ from retab.types.workflows.spec import DeclarativeApplyResponse, DeclarativeExpo
 
 
 class WorkflowSpecMixin:
-    def prepare_validate(self, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
-        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
+    def prepare_apply(self, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
+        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/workflows/spec/validate", params=params or None, data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/spec/apply", params=params or None, data=data)
 
     def prepare_plan(self, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
         """Plan Workflow Spec Compute the declarative reconcile plan against the current draft workflow. Contract: - plan compares authored YAML against current draft state - canonical exported YAML should plan as `noop` against the same draft"""
@@ -29,15 +29,15 @@ class WorkflowSpecMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/spec/plan", params=params or None, data=data)
 
-    def prepare_apply(self, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
-        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
+    def prepare_validate(self, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
+        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/workflows/spec/apply", params=params or None, data=data)
+        return PreparedRequest(method="POST", url="/v1/workflows/spec/validate", params=params or None, data=data)
 
     def prepare_get(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
         """Export Workflow Spec Export draft workflow state as canonical declarative YAML."""
@@ -52,11 +52,11 @@ class WorkflowSpecMixin:
 class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
     """WorkflowSpec API wrapper."""
 
-    def validate(self, yaml_definition: str, **extra_params: Any) -> DeclarativeValidationResponse:
-        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
-        prepared_request = self.prepare_validate(yaml_definition=yaml_definition, **extra_params)
+    def apply(self, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
+        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
+        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, **extra_params)
         response = self._client._prepared_request(prepared_request)
-        return DeclarativeValidationResponse.model_validate(response)
+        return DeclarativeApplyResponse.model_validate(response)
 
     def plan(self, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
         """Plan Workflow Spec Compute the declarative reconcile plan against the current draft workflow. Contract: - plan compares authored YAML against current draft state - canonical exported YAML should plan as `noop` against the same draft"""
@@ -64,11 +64,11 @@ class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
         response = self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 
-    def apply(self, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
-        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, **extra_params)
+    def validate(self, yaml_definition: str, **extra_params: Any) -> DeclarativeValidationResponse:
+        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
+        prepared_request = self.prepare_validate(yaml_definition=yaml_definition, **extra_params)
         response = self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
+        return DeclarativeValidationResponse.model_validate(response)
 
     def get(self, workflow_id: str, **extra_params: Any) -> DeclarativeExportResponse:
         """Export Workflow Spec Export draft workflow state as canonical declarative YAML."""
@@ -80,11 +80,11 @@ class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
 class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
     """Async WorkflowSpec API wrapper."""
 
-    async def validate(self, yaml_definition: str, **extra_params: Any) -> DeclarativeValidationResponse:
-        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
-        prepared_request = self.prepare_validate(yaml_definition=yaml_definition, **extra_params)
+    async def apply(self, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
+        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
+        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, **extra_params)
         response = await self._client._prepared_request(prepared_request)
-        return DeclarativeValidationResponse.model_validate(response)
+        return DeclarativeApplyResponse.model_validate(response)
 
     async def plan(self, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
         """Plan Workflow Spec Compute the declarative reconcile plan against the current draft workflow. Contract: - plan compares authored YAML against current draft state - canonical exported YAML should plan as `noop` against the same draft"""
@@ -92,11 +92,11 @@ class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
         response = await self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 
-    async def apply(self, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec Apply declarative YAML to draft workflow state. Contract: - apply writes canonical draft state, not authored formatting - re-applying canonical exported YAML against unchanged draft state should return an empty resource_changes list"""
-        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, **extra_params)
+    async def validate(self, yaml_definition: str, **extra_params: Any) -> DeclarativeValidationResponse:
+        """Validate Workflow Spec Validate declarative YAML without mutating workflow state. Contract: - validate, plan, and apply agree on whether a spec is acceptable: any severity=error diagnostic — whether emitted at parse time as a DeclarativeWorkflowError or bumped during compile/diagnose — raises HTTP 400 with the structured error issues - warnings do not make the document invalid; warning-only specs…"""
+        prepared_request = self.prepare_validate(yaml_definition=yaml_definition, **extra_params)
         response = await self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
+        return DeclarativeValidationResponse.model_validate(response)
 
     async def get(self, workflow_id: str, **extra_params: Any) -> DeclarativeExportResponse:
         """Export Workflow Spec Export draft workflow state as canonical declarative YAML."""

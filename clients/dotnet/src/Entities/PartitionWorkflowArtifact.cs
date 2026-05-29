@@ -38,7 +38,7 @@ namespace Retab
         public RetabUsage? Usage { get; set; }
 
         /// <summary>When this artifact was written by the orchestrator.</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Artifact operation that determines the backing record type</summary>
         public string? Operation { get; set; }

@@ -31,21 +31,21 @@ import {
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   RetabUsage,
   RetabUsageResponse,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 
 export interface ClassificationWorkflowArtifact {
   /** Unique identifier of the classification */

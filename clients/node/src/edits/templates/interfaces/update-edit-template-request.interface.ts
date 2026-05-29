@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   FormField,
   FormFieldResponse,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 import {
   ZFormField,
   deserializeFormField,
   serializeFormField,
-} from '../../../workflows/artifacts/interfaces/form-field.interface.js';
+} from '../../../edits/interfaces/form-field.interface.js';
 
 export interface UpdateEditTemplateRequest {
   /** New name for the template. */

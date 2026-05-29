@@ -20,9 +20,9 @@ export interface WorkflowExperiment {
   name: string;
   lastRunId?: string | null;
   /** When the experiment was created */
-  createdAt: Date;
+  createdAt?: Date;
   /** When the experiment was last updated */
-  updatedAt: Date;
+  updatedAt?: Date;
   /** @default "draft" */
   status?: ExperimentPublicStatus;
   blockType: ExperimentBlockType;
@@ -42,8 +42,8 @@ export interface WorkflowExperimentResponse {
   document_count?: number;
   name: string;
   last_run_id?: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   status?: ExperimentPublicStatus;
   block_type: ExperimentBlockType;
   score?: number | null;
@@ -60,8 +60,8 @@ export const ZWorkflowExperiment = z.object({
   documentCount: z.number().int().optional(),
   name: z.string(),
   lastRunId: z.string().nullable().optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
   status: ZExperimentPublicStatus.optional(),
   blockType: ZExperimentBlockType,
   score: z.number().nullable().optional(),
@@ -81,8 +81,10 @@ export function deserializeWorkflowExperiment(
     documentCount: wire['document_count'],
     name: wire['name'],
     lastRunId: wire['last_run_id'],
-    createdAt: new Date(wire['created_at']),
-    updatedAt: new Date(wire['updated_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    updatedAt:
+      wire['updated_at'] == null ? (wire['updated_at'] as undefined) : new Date(wire['updated_at']),
     status: wire['status'],
     blockType: wire['block_type'],
     score: wire['score'],
@@ -103,8 +105,14 @@ export function serializeWorkflowExperiment(
     document_count: domain['documentCount'],
     name: domain['name'],
     last_run_id: domain['lastRunId'],
-    created_at: domain['createdAt'].toISOString(),
-    updated_at: domain['updatedAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
+    updated_at:
+      domain['updatedAt'] == null
+        ? (domain['updatedAt'] as undefined)
+        : domain['updatedAt'].toISOString(),
     status: domain['status'],
     block_type: domain['blockType'],
     score: domain['score'],

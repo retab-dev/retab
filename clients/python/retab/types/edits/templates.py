@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.edits import FormField
 from retab.types.mime import FileRef, MIMEData
-from retab.types.workflows.artifacts import FormField
 
 
 class CreateEditTemplateRequest(BaseModel):
     """Public create-edit-template request body."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str = Field(..., description="Name of the template.")
     document: MIMEData = Field(..., description="The PDF document to use as the empty template.")
@@ -30,7 +30,7 @@ class EditTemplate(BaseModel):
 
 
 class UpdateEditTemplateRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, protected_namespaces=())
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str | None = Field(default=None, description="New name for the template.")
     form_fields: list[FormField] | None = Field(default=None, description="Replacement list of form fields.")

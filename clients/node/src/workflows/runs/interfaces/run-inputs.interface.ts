@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 
 /** Input payloads supplied at run creation time. */
 export interface RunInputs {

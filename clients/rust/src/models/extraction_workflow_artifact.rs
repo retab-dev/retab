@@ -39,7 +39,8 @@ pub struct ExtractionWorkflowArtifact {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
     /// When this artifact was written by the orchestrator.
-    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub created_at: Option<String>,
     /// Artifact operation that determines the backing record type
     ///
     /// Defaults to `extraction`.
@@ -55,7 +56,6 @@ impl ExtractionWorkflowArtifact {
         model: impl Into<String>,
         json_schema: std::collections::HashMap<String, serde_json::Value>,
         output: std::collections::HashMap<String, serde_json::Value>,
-        created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -69,7 +69,7 @@ impl ExtractionWorkflowArtifact {
             consensus: Default::default(),
             metadata: Default::default(),
             usage: Default::default(),
-            created_at: created_at.into(),
+            created_at: Default::default(),
             operation: Default::default(),
         }
     }

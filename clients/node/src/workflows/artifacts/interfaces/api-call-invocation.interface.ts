@@ -7,15 +7,12 @@ import {
   deserializeApiCallAttempt,
   serializeApiCallAttempt,
 } from './api-call-attempt.interface.js';
-import type {
-  ErrorDetails,
-  ErrorDetailsResponse,
-} from '../../../workflows/runs/interfaces/error-details.interface.js';
+import type { ErrorDetails, ErrorDetailsResponse } from './error-details.interface.js';
 import {
   ZErrorDetails,
   deserializeErrorDetails,
   serializeErrorDetails,
-} from '../../../workflows/runs/interfaces/error-details.interface.js';
+} from './error-details.interface.js';
 
 export interface ApiCallInvocation {
   /**
@@ -30,7 +27,7 @@ export interface ApiCallInvocation {
   attempts?: ApiCallAttempt[];
   error?: ErrorDetails | null;
   /** When this artifact was written by the orchestrator. */
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 export interface ApiCallInvocationResponse {
@@ -40,7 +37,7 @@ export interface ApiCallInvocationResponse {
   step_id: string;
   attempts?: ApiCallAttemptResponse[];
   error?: ErrorDetailsResponse | null;
-  created_at: string;
+  created_at?: string;
 }
 
 export const ZApiCallInvocation = z.object({
@@ -50,7 +47,7 @@ export const ZApiCallInvocation = z.object({
   stepId: z.string(),
   attempts: ZApiCallAttempt.array().optional(),
   error: ZErrorDetails.nullable().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
 }) as z.ZodType<ApiCallInvocation>;
 
 export function deserializeApiCallInvocation(wire: ApiCallInvocationResponse): ApiCallInvocation {
@@ -69,7 +66,8 @@ export function deserializeApiCallInvocation(wire: ApiCallInvocationResponse): A
         : wire['error'] == null
           ? wire['error']
           : deserializeErrorDetails(wire['error']),
-    createdAt: new Date(wire['created_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
   };
 }
 
@@ -89,6 +87,9 @@ export function serializeApiCallInvocation(domain: ApiCallInvocation): ApiCallIn
         : domain['error'] == null
           ? domain['error']
           : serializeErrorDetails(domain['error']),
-    created_at: domain['createdAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
   };
 }

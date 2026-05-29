@@ -15,10 +15,8 @@ module Retab
     # @param test_id [String, nil]
     # @param target_block_id [String, nil]
     # @param status [String, nil]
-    # @param statuses [Array<String>, nil]
     # @param exclude_status [String, nil]
     # @param trigger_type [String, nil]
-    # @param trigger_types [Array<String>, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param sort_by [String, nil]
@@ -33,10 +31,8 @@ module Retab
       test_id: nil,
       target_block_id: nil,
       status: nil,
-      statuses: nil,
       exclude_status: nil,
       trigger_type: nil,
-      trigger_types: nil,
       from_date: nil,
       to_date: nil,
       sort_by: "created_at",
@@ -51,10 +47,8 @@ module Retab
         "test_id" => test_id,
         "target_block_id" => target_block_id,
         "status" => status,
-        "statuses" => statuses,
         "exclude_status" => exclude_status,
         "trigger_type" => trigger_type,
-        "trigger_types" => trigger_types,
         "from_date" => from_date,
         "to_date" => to_date,
         "sort_by" => sort_by,
@@ -76,10 +70,8 @@ module Retab
           test_id: test_id,
           target_block_id: target_block_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           sort_by: sort_by,
@@ -98,10 +90,8 @@ module Retab
           test_id: test_id,
           target_block_id: target_block_id,
           status: status,
-          statuses: statuses,
           exclude_status: exclude_status,
           trigger_type: trigger_type,
-          trigger_types: trigger_types,
           from_date: from_date,
           to_date: to_date,
           sort_by: sort_by,
@@ -115,7 +105,7 @@ module Retab
 
     # Create Test Run
     # @param workflow_id [String]
-    # @param scope [Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope, nil] Optional execution scope. Omit to run every saved test in the workflow.
+    # @param scope [Retab::WorkflowTestRunSingleScope, Retab::WorkflowTestRunWorkflowScope, Retab::WorkflowTestRunBlockScope, nil] Optional execution scope. Omit (or pass null) to run every saved test in the workflow.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTestRun]
     def create(

@@ -7,9 +7,15 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows.tests import AssertionSpec, CreateWorkflowTestRequest, UpdateWorkflowTestRequest, WorkflowTest
-from retab.types.workflows.tests.results import ManualWorkflowTestSource, RunStepWorkflowTestSource
-from retab.types.workflows.tests.runs import WorkflowTestBlockTarget
+from retab.types.workflows.tests import (
+    AssertionSpec,
+    CreateWorkflowTestRequest,
+    ManualWorkflowTestSource,
+    RunStepWorkflowTestSource,
+    UpdateWorkflowTestRequest,
+    WorkflowTest,
+    WorkflowTestBlockTarget,
+)
 
 from .results import WorkflowTestRunResults, AsyncWorkflowTestRunResults
 from .runs import WorkflowTestRuns, AsyncWorkflowTestRuns
@@ -221,17 +227,17 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         return None
 
 
-from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .results import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
+from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
 __all__ = [
     "WorkflowTests",
     "AsyncWorkflowTests",
     "WorkflowTestsMixin",
-    "WorkflowTestRuns",
-    "AsyncWorkflowTestRuns",
-    "WorkflowTestRunsMixin",
     "WorkflowTestRunResults",
     "AsyncWorkflowTestRunResults",
     "WorkflowTestRunResultsMixin",
+    "WorkflowTestRuns",
+    "AsyncWorkflowTestRuns",
+    "WorkflowTestRunsMixin",
 ]

@@ -21,10 +21,8 @@ type WorkflowTestRunsListParams struct {
 	TestID        *string    `url:"test_id,omitempty" json:"-"`
 	TargetBlockID *string    `url:"target_block_id,omitempty" json:"-"`
 	Status        *string    `url:"status,omitempty" json:"-"`
-	Statuses      []string   `url:"statuses,omitempty" json:"-"`
 	ExcludeStatus *string    `url:"exclude_status,omitempty" json:"-"`
 	TriggerType   *string    `url:"trigger_type,omitempty" json:"-"`
-	TriggerTypes  []string   `url:"trigger_types,omitempty" json:"-"`
 	FromDate      *time.Time `url:"from_date,omitempty" json:"-"`
 	ToDate        *time.Time `url:"to_date,omitempty" json:"-"`
 	// Defaults to "created_at".

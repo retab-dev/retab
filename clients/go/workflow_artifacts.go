@@ -13,24 +13,6 @@ type WorkflowArtifactService struct {
 	client *Client
 }
 
-// Get workflow Artifact By Id
-// Get one workflow artifact by id alone.
-// The operation is derived from the id prefix
-// (“extr_…“ → extraction, “clss_…“ → classification, etc.). This is
-// the flat-resource shape — callers do not need to know which collection
-// backs the id.
-func (s *WorkflowArtifactService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (interface{}, error) {
-	if artifactID == "" {
-		return nil, fmt.Errorf("retab: artifact_id is required")
-	}
-	var result interface{}
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/artifacts/%s", url.PathEscape(artifactID)), nil, nil, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 // WorkflowArtifactsListParams contains the parameters for List.
 type WorkflowArtifactsListParams struct {
 	PaginationParams
@@ -55,4 +37,22 @@ type WorkflowArtifactsListParams struct {
 // rejected with 400.
 func (s *WorkflowArtifactService) List(ctx context.Context, params *WorkflowArtifactsListParams, opts ...RequestOption) (*PaginatedList[WorkflowArtifact], error) {
 	return doPaginated[WorkflowArtifact](ctx, s.client, "GET", "/v1/workflows/artifacts", params, nil, opts...)
+}
+
+// Get workflow Artifact By Id
+// Get one workflow artifact by id alone.
+// The operation is derived from the id prefix
+// (“extr_…“ → extraction, “clss_…“ → classification, etc.). This is
+// the flat-resource shape — callers do not need to know which collection
+// backs the id.
+func (s *WorkflowArtifactService) Get(ctx context.Context, artifactID string, opts ...RequestOption) (interface{}, error) {
+	if artifactID == "" {
+		return nil, fmt.Errorf("retab: artifact_id is required")
+	}
+	var result interface{}
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/artifacts/%s", url.PathEscape(artifactID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

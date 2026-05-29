@@ -20,10 +20,8 @@ class WorkflowTestRuns
      * @param string|null $testId
      * @param string|null $targetBlockId
      * @param string|null $status
-     * @param array<string>|null $statuses
      * @param string|null $excludeStatus
      * @param string|null $triggerType
-     * @param array<string>|null $triggerTypes
      * @param \DateTimeImmutable|null $fromDate
      * @param \DateTimeImmutable|null $toDate
      * @param string|null $sortBy Defaults to "created_at".
@@ -39,10 +37,8 @@ class WorkflowTestRuns
         ?string $testId = null,
         ?string $targetBlockId = null,
         ?string $status = null,
-        ?array $statuses = null,
         ?string $excludeStatus = null,
         ?string $triggerType = null,
-        ?array $triggerTypes = null,
         ?\DateTimeImmutable $fromDate = null,
         ?\DateTimeImmutable $toDate = null,
         ?string $sortBy = null,
@@ -57,10 +53,8 @@ class WorkflowTestRuns
             'test_id' => $testId,
             'target_block_id' => $targetBlockId,
             'status' => $status,
-            'statuses' => $statuses,
             'exclude_status' => $excludeStatus,
             'trigger_type' => $triggerType,
-            'trigger_types' => $triggerTypes,
             'from_date' => $fromDate?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'to_date' => $toDate?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'sort_by' => $sortBy,

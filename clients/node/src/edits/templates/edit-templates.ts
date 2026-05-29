@@ -3,10 +3,10 @@
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../../runtime/mime.js';
+import type { FormField } from '../../edits/interfaces/index.js';
 import type { EditTemplate, EditTemplateResponse } from '../../edits/templates/interfaces/index.js';
-import type { FormField } from '../../workflows/artifacts/interfaces/index.js';
+import { serializeFormField } from '../../edits/interfaces/index.js';
 import { deserializeEditTemplate } from '../../edits/templates/interfaces/index.js';
-import { serializeFormField } from '../../workflows/artifacts/interfaces/index.js';
 
 export class EditTemplates {
   constructor(private readonly client: Retab) {}

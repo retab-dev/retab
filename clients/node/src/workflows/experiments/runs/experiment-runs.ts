@@ -26,10 +26,8 @@ export class ExperimentRuns {
     experimentId?: string | null | undefined;
     blockId?: string | null | undefined;
     status?: WorkflowExperimentsStatus | null | undefined;
-    statuses?: string | null | undefined;
     excludeStatus?: WorkflowExperimentsExcludeStatus | null | undefined;
     triggerType?: string | null | undefined;
-    triggerTypes?: string | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     sortBy?: string | undefined;
@@ -46,10 +44,8 @@ export class ExperimentRuns {
         experiment_id: options?.experimentId,
         block_id: options?.blockId,
         status: options?.status,
-        statuses: options?.statuses,
         exclude_status: options?.excludeStatus,
         trigger_type: options?.triggerType,
-        trigger_types: options?.triggerTypes,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         sort_by: options?.sortBy,

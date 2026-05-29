@@ -10,71 +10,6 @@ module Retab
       @client = client
     end
 
-    # Upload File
-    # @param filename [String] Filename to store
-    # @param content_type [String, nil] MIME type the client will upload
-    # @param size_bytes [Integer] Expected upload size in bytes
-    # @param sha_256 [String, nil] Optional SHA-256 checksum
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::CreateUploadResponse]
-    def create_upload(
-      filename:,
-      size_bytes:,
-      content_type: nil,
-      sha_256: nil,
-      request_options: {}
-    )
-      body = {
-        "filename" => filename,
-        "content_type" => content_type,
-        "size_bytes" => size_bytes,
-        "sha256" => sha_256
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/files/upload",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::CreateUploadResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Complete Upload File
-    # @param file_id [String]
-    # @param sha_256 [String, nil] Optional SHA-256 checksum
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::MimeData]
-    def complete_upload(
-      file_id:,
-      sha_256: nil,
-      request_options: {}
-    )
-      body = {
-        "sha256" => sha_256
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/files/upload/#{Retab::Util.encode_path(file_id)}/complete",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::MimeData.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
     # List Files
     # @param before [String, nil]
     # @param after [String, nil]
@@ -151,6 +86,71 @@ module Retab
         },
         fetch_next: fetch_next
       )
+    end
+
+    # Upload File
+    # @param filename [String] Filename to store
+    # @param content_type [String, nil] MIME type the client will upload
+    # @param size_bytes [Integer] Expected upload size in bytes
+    # @param sha_256 [String, nil] Optional SHA-256 checksum
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::CreateUploadResponse]
+    def create_upload(
+      filename:,
+      size_bytes:,
+      content_type: nil,
+      sha_256: nil,
+      request_options: {}
+    )
+      body = {
+        "filename" => filename,
+        "content_type" => content_type,
+        "size_bytes" => size_bytes,
+        "sha256" => sha_256
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: "/v1/files/upload",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::CreateUploadResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Complete Upload File
+    # @param file_id [String]
+    # @param sha_256 [String, nil] Optional SHA-256 checksum
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::MimeData]
+    def complete_upload(
+      file_id:,
+      sha_256: nil,
+      request_options: {}
+    )
+      body = {
+        "sha256" => sha_256
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: "/v1/files/upload/#{Retab::Util.encode_path(file_id)}/complete",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::MimeData.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
 
     # Get File

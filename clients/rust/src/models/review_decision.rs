@@ -5,13 +5,13 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// The one terminal decision recorded against one exact :class:`ReviewVersion`.
+/// The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewDecision {
     pub verdict: ReviewVerdict,
     pub version_id: String,
     pub author: Actor,
-    pub decided_at: String,
+    pub created_at: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reason: Option<String>,
 }
@@ -22,13 +22,13 @@ impl ReviewDecision {
         verdict: ReviewVerdict,
         version_id: impl Into<String>,
         author: Actor,
-        decided_at: impl Into<String>,
+        created_at: impl Into<String>,
     ) -> Self {
         Self {
             verdict,
             version_id: version_id.into(),
             author,
-            decided_at: decided_at.into(),
+            created_at: created_at.into(),
             reason: Default::default(),
         }
     }

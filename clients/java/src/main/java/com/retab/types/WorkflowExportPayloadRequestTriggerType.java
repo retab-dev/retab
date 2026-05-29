@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum WorkflowExportPayloadRequestTriggerTypes {
+public enum WorkflowExportPayloadRequestTriggerType {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
   MANUAL("manual"),
@@ -18,7 +18,7 @@ public enum WorkflowExportPayloadRequestTriggerTypes {
 
   private final String value;
 
-  WorkflowExportPayloadRequestTriggerTypes(String value) {
+  WorkflowExportPayloadRequestTriggerType(String value) {
     this.value = value;
   }
 
@@ -28,8 +28,8 @@ public enum WorkflowExportPayloadRequestTriggerTypes {
   }
 
   @JsonCreator
-  public static WorkflowExportPayloadRequestTriggerTypes fromValue(String value) {
-    for (WorkflowExportPayloadRequestTriggerTypes item : values()) {
+  public static WorkflowExportPayloadRequestTriggerType fromValue(String value) {
+    for (WorkflowExportPayloadRequestTriggerType item : values()) {
       if (item.value.equals(value)) {
         return item;
       }

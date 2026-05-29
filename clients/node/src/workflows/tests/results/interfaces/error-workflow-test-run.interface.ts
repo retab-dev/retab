@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   ErrorDetails,
   ErrorDetailsResponse,
-} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
 import {
   ZErrorDetails,
   deserializeErrorDetails,
   serializeErrorDetails,
-} from '../../../../workflows/runs/interfaces/error-details.interface.js';
+} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
 
 /** The test run failed. The error message lives on this variant. */
 export interface ErrorWorkflowTestRun {

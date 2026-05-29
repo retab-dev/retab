@@ -52,8 +52,8 @@ public final class WorkflowTest {
           LatestBlockTestRunSummary latestPassingRunSummary,
       @JsonProperty(value = "latest_failing_run_summary", required = false)
           LatestBlockTestRunSummary latestFailingRunSummary,
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
-      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
+      @JsonProperty(value = "updated_at", required = false) OffsetDateTime updatedAt) {
     this.id = id;
     this.workflowId = workflowId;
     this.target = target;

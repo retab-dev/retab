@@ -4,7 +4,7 @@
 
 module Retab
   module Types
-    class WorkflowExportPayloadRequestTriggerTypes
+    class WorkflowExportPayloadRequestTriggerType
       MANUAL = "manual"
       API = "api"
       SCHEDULE = "schedule"

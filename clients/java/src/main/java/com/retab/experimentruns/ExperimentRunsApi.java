@@ -37,10 +37,8 @@ public final class ExperimentRunsApi {
       String experimentId,
       String blockId,
       WorkflowExperimentsStatus status,
-      String statuses,
       WorkflowExperimentsExcludeStatus excludeStatus,
       String triggerType,
-      String triggerTypes,
       String fromDate,
       String toDate,
       String sortBy,
@@ -55,10 +53,8 @@ public final class ExperimentRunsApi {
     appendQueryParam(query, "experiment_id", experimentId);
     appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "status", status);
-    appendQueryParam(query, "statuses", statuses);
     appendQueryParam(query, "exclude_status", excludeStatus);
     appendQueryParam(query, "trigger_type", triggerType);
-    appendQueryParam(query, "trigger_types", triggerTypes);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     appendQueryParam(query, "sort_by", sortBy);

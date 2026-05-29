@@ -5,16 +5,24 @@
 module Retab
   class Client < BaseClient
 
-    def schemas
-      @schemas ||= Retab::Schemas.new(self)
+    def classifications
+      @classifications ||= Retab::Classifications.new(self)
+    end
+
+    def edits
+      @edits ||= Retab::Edits.new(self)
     end
 
     def extractions
       @extractions ||= Retab::Extractions.new(self)
     end
 
-    def classifications
-      @classifications ||= Retab::Classifications.new(self)
+    def files
+      @files ||= Retab::Files.new(self)
+    end
+
+    def jobs
+      @jobs ||= Retab::Jobs.new(self)
     end
 
     def parses
@@ -25,24 +33,16 @@ module Retab
       @partitions ||= Retab::Partitions.new(self)
     end
 
+    def schemas
+      @schemas ||= Retab::Schemas.new(self)
+    end
+
     def splits
       @splits ||= Retab::Splits.new(self)
     end
 
-    def files
-      @files ||= Retab::Files.new(self)
-    end
-
     def workflows
       @workflows ||= Retab::Workflows.new(self)
-    end
-
-    def edits
-      @edits ||= Retab::Edits.new(self)
-    end
-
-    def jobs
-      @jobs ||= Retab::Jobs.new(self)
     end
   end
 end

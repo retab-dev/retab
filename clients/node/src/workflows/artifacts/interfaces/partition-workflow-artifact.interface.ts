@@ -4,12 +4,12 @@ import { z } from 'zod';
 import type {
   FileRef,
   FileRefResponse,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
   ZFileRef,
   deserializeFileRef,
   serializeFileRef,
-} from '../../../extractions/interfaces/file-ref.interface.js';
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
   PartitionChunk,
   PartitionChunkResponse,
@@ -31,12 +31,12 @@ import {
 import type {
   RetabUsage,
   RetabUsageResponse,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
-} from '../../../extractions/interfaces/retab-usage.interface.js';
+} from '../../../classifications/interfaces/retab-usage.interface.js';
 
 export interface PartitionWorkflowArtifact {
   /** Unique identifier of the partition */
@@ -69,7 +69,7 @@ export interface PartitionWorkflowArtifact {
   /** Usage information for the partition operation */
   usage?: RetabUsage | null;
   /** When this artifact was written by the orchestrator. */
-  createdAt: Date;
+  createdAt?: Date;
   /**
    * Artifact operation that determines the backing record type
    * @default "partition"
@@ -88,7 +88,7 @@ export interface PartitionWorkflowArtifactResponse {
   output?: PartitionChunkResponse[];
   consensus?: PartitionConsensusResponse | null;
   usage?: RetabUsageResponse | null;
-  created_at: string;
+  created_at?: string;
   operation: 'partition';
 }
 
@@ -103,7 +103,7 @@ export const ZPartitionWorkflowArtifact = z.object({
   output: ZPartitionChunk.array().optional(),
   consensus: ZPartitionConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
   operation: z.literal('partition'),
 }) as z.ZodType<PartitionWorkflowArtifact>;
 
@@ -134,7 +134,8 @@ export function deserializePartitionWorkflowArtifact(
         : wire['usage'] == null
           ? wire['usage']
           : deserializeRetabUsage(wire['usage']),
-    createdAt: new Date(wire['created_at']),
+    createdAt:
+      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
     operation: wire['operation'],
   };
 }
@@ -166,7 +167,10 @@ export function serializePartitionWorkflowArtifact(
         : domain['usage'] == null
           ? domain['usage']
           : serializeRetabUsage(domain['usage']),
-    created_at: domain['createdAt'].toISOString(),
+    created_at:
+      domain['createdAt'] == null
+        ? (domain['createdAt'] as undefined)
+        : domain['createdAt'].toISOString(),
     operation: domain['operation'],
   };
 }

@@ -16,13 +16,9 @@ namespace Retab
 
         public LatestBlockTestRunSummaryStatus? Status { get; set; }
 
-        public string? Statuses { get; set; }
-
         public LatestBlockTestRunSummaryStatus? ExcludeStatus { get; set; }
 
         public string? TriggerType { get; set; }
-
-        public string? TriggerTypes { get; set; }
 
         public string? FromDate { get; set; }
 

@@ -18,10 +18,8 @@ type WorkflowStepsListParams struct {
 	PaginationParams
 	// RunID is optional workflow run ID filter.
 	RunID *string `url:"run_id,omitempty" json:"-"`
-	// BlockID is optional logical block ID filter (deprecated; prefer ``block_ids`` for multi-value filtering).
+	// BlockID is optional logical block ID filter.
 	BlockID *string `url:"block_id,omitempty" json:"-"`
-	// BlockIDs is optional logical block ID filter — multi-value. Repeat the query parameter (``?block_ids=a&block_ids=b``) to match any of several blocks. An empty list is treated as no filter. Preferred over the singular ``block_id``.
-	BlockIDs []string `url:"block_ids,omitempty" json:"-"`
 	// StepID is optional step ID filter.
 	StepID *string `url:"step_id,omitempty" json:"-"`
 	// BlockType is optional block type filter. Repeat the query parameter for multiple values.

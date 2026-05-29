@@ -15,7 +15,7 @@ module Retab
       exclude_status: :exclude_status,
       from_date: :from_date,
       to_date: :to_date,
-      trigger_types: :trigger_types,
+      trigger_type: :trigger_type,
       preferred_columns: :preferred_columns,
       delimiter: :delimiter,
       line_delimiter: :line_delimiter,
@@ -32,7 +32,7 @@ module Retab
       :exclude_status,
       :from_date,
       :to_date,
-      :trigger_types,
+      :trigger_type,
       :preferred_columns,
       :delimiter,
       :line_delimiter,
@@ -51,7 +51,7 @@ module Retab
       @exclude_status = hash[:exclude_status]
       @from_date = hash[:from_date]
       @to_date = hash[:to_date]
-      @trigger_types = (hash[:trigger_types] || [])
+      @trigger_type = hash[:trigger_type]
       @preferred_columns = (hash[:preferred_columns] || [])
       @delimiter = hash[:delimiter]
       @line_delimiter = hash[:line_delimiter]

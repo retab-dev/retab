@@ -35,11 +35,8 @@ readonly class WorkflowExportPayloadRequest implements \JsonSerializable
         public ?string $fromDate = null,
         /** Optional end date filter (YYYY-MM-DD) */
         public ?string $toDate = null,
-        /**
-         * Optional trigger type filters
-         * @var array<\Retab\Resource\WorkflowRunsTriggerType>|null
-         */
-        public ?array $triggerTypes = null,
+        /** Optional trigger type filter */
+        public ?WorkflowRunsTriggerType $triggerType = null,
         /**
          * Preferred data column order
          * @var array<string>|null
@@ -74,7 +71,7 @@ readonly class WorkflowExportPayloadRequest implements \JsonSerializable
             excludeStatus: isset($data['exclude_status']) ? WorkflowRunsStatus::from($data['exclude_status']) : null,
             fromDate: $data['from_date'] ?? null,
             toDate: $data['to_date'] ?? null,
-            triggerTypes: isset($data['trigger_types']) ? array_map(fn($item) => WorkflowRunsTriggerType::from($item), $data['trigger_types']) : null,
+            triggerType: isset($data['trigger_type']) ? WorkflowRunsTriggerType::from($data['trigger_type']) : null,
             preferredColumns: $data['preferred_columns'] ?? null,
             delimiter: $data['delimiter'] ?? null,
             lineDelimiter: $data['line_delimiter'] ?? null,
@@ -95,7 +92,7 @@ readonly class WorkflowExportPayloadRequest implements \JsonSerializable
             'exclude_status' => $this->excludeStatus?->value,
             'from_date' => $this->fromDate,
             'to_date' => $this->toDate,
-            'trigger_types' => $this->triggerTypes !== null ? array_map(fn($item) => $item->value, $this->triggerTypes) : null,
+            'trigger_type' => $this->triggerType?->value,
             'preferred_columns' => $this->preferredColumns,
             'delimiter' => $this->delimiter,
             'line_delimiter' => $this->lineDelimiter,

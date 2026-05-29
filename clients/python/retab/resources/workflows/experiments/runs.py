@@ -6,7 +6,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.schemas import WorkflowExperimentsExcludeStatus, WorkflowExperimentsStatus
+from retab.types.classifications import WorkflowExperimentsExcludeStatus, WorkflowExperimentsStatus
 from retab.types.workflows.experiments.runs import CancelWorkflowExperimentRunResponse, CreateExperimentRunRequest, ExperimentRun
 
 
@@ -17,10 +17,8 @@ class ExperimentRunsMixin:
         experiment_id: str | None = None,
         block_id: str | None = None,
         status: WorkflowExperimentsStatus | None = None,
-        statuses: str | None = None,
         exclude_status: WorkflowExperimentsExcludeStatus | None = None,
         trigger_type: str | None = None,
-        trigger_types: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         sort_by: str | None = cast(str, "created_at"),
@@ -36,10 +34,8 @@ class ExperimentRunsMixin:
             "experiment_id": experiment_id,
             "block_id": block_id,
             "status": status,
-            "statuses": statuses,
             "exclude_status": exclude_status,
             "trigger_type": trigger_type,
-            "trigger_types": trigger_types,
             "from_date": from_date,
             "to_date": to_date,
             "sort_by": sort_by,
@@ -92,10 +88,8 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         experiment_id: str | None = None,
         block_id: str | None = None,
         status: WorkflowExperimentsStatus | None = None,
-        statuses: str | None = None,
         exclude_status: WorkflowExperimentsExcludeStatus | None = None,
         trigger_type: str | None = None,
-        trigger_types: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         sort_by: str | None = cast(str, "created_at"),
@@ -111,10 +105,8 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
             experiment_id=experiment_id,
             block_id=block_id,
             status=status,
-            statuses=statuses,
             exclude_status=exclude_status,
             trigger_type=trigger_type,
-            trigger_types=trigger_types,
             from_date=from_date,
             to_date=to_date,
             sort_by=sort_by,
@@ -154,10 +146,8 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         experiment_id: str | None = None,
         block_id: str | None = None,
         status: WorkflowExperimentsStatus | None = None,
-        statuses: str | None = None,
         exclude_status: WorkflowExperimentsExcludeStatus | None = None,
         trigger_type: str | None = None,
-        trigger_types: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         sort_by: str | None = cast(str, "created_at"),
@@ -173,10 +163,8 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
             experiment_id=experiment_id,
             block_id=block_id,
             status=status,
-            statuses=statuses,
             exclude_status=exclude_status,
             trigger_type=trigger_type,
-            trigger_types=trigger_types,
             from_date=from_date,
             to_date=to_date,
             sort_by=sort_by,

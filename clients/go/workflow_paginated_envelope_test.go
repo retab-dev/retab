@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -67,10 +66,8 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 			query.Get("experiment_id") != "exp_1" ||
 			query.Get("block_id") != "block_1" ||
 			query.Get("status") != "completed" ||
-			query.Get("statuses") != "completed,error" ||
 			query.Get("exclude_status") != "cancelled" ||
 			query.Get("trigger_type") != "api" ||
-			query.Get("trigger_types") != "api,manual_run" ||
 			query.Get("from_date") != "2026-05-01" ||
 			query.Get("to_date") != "2026-05-18" ||
 			query.Get("sort_by") != "created_at" ||
@@ -107,10 +104,8 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 		ExperimentID:  ptrTo("exp_1"),
 		BlockID:       ptrTo("block_1"),
 		Status:        &completedStatus,
-		Statuses:      ptrTo("completed,error"),
 		ExcludeStatus: &cancelledStatus,
 		TriggerType:   ptrTo("api"),
-		TriggerTypes:  ptrTo("api,manual_run"),
 		FromDate:      ptrTo("2026-05-01"),
 		ToDate:        ptrTo("2026-05-18"),
 		SortBy:        ptrTo("created_at"),
@@ -171,10 +166,8 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 			query.Get("test_id") != "wfnodetest_1" ||
 			query.Get("target_block_id") != "block_1" ||
 			query.Get("status") != "passed" ||
-			strings.Join(query["statuses"], ",") != "passed,failed" ||
 			query.Get("exclude_status") != "cancelled" ||
 			query.Get("trigger_type") != "api" ||
-			strings.Join(query["trigger_types"], ",") != "api,manual_run" ||
 			query.Get("sort_by") != "created_at" ||
 			query.Has("fields") ||
 			query.Get("before") != "wftestrun_before" ||
@@ -207,10 +200,8 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 		TestID:        ptrTo("wfnodetest_1"),
 		TargetBlockID: ptrTo("block_1"),
 		Status:        ptrTo("passed"),
-		Statuses:      []string{"passed", "failed"},
 		ExcludeStatus: ptrTo("cancelled"),
 		TriggerType:   ptrTo("api"),
-		TriggerTypes:  []string{"api", "manual_run"},
 		SortBy:        ptrTo("created_at"),
 		PaginationParams: PaginationParams{
 			Before: ptrTo("wftestrun_before"),

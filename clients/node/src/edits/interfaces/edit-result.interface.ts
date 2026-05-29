@@ -6,12 +6,12 @@ import { ZFormField, deserializeFormField, serializeFormField } from './form-fie
 import type {
   MIMEData,
   MIMEDataResponse,
-} from '../../../schemas/interfaces/mime-data.interface.js';
+} from '../../classifications/interfaces/mime-data.interface.js';
 import {
   ZMIMEData,
   deserializeMIMEData,
   serializeMIMEData,
-} from '../../../schemas/interfaces/mime-data.interface.js';
+} from '../../classifications/interfaces/mime-data.interface.js';
 
 export interface EditResult {
   /** Filled form fields (positions, descriptions, and filled values). */

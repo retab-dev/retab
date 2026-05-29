@@ -7,7 +7,7 @@ namespace Retab
     {
 
         /// <summary>When the experiment run record was created</summary>
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt { get; set; }
         public DateTimeOffset? StartedAt { get; set; }
         public DateTimeOffset? CompletedAt { get; set; }
         public long? DurationMs { get; set; }

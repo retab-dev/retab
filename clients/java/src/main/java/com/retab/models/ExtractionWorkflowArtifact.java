@@ -37,7 +37,7 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
       @JsonProperty(value = "consensus", required = false) ExtractionConsensus consensus,
       @JsonProperty(value = "metadata", required = false) Map<String, String> metadata,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
-      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "operation", required = false) String operation) {
     this.id = id;
     this.file = file;

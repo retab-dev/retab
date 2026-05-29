@@ -4,7 +4,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>The one terminal decision recorded against one exact :class:`ReviewVersion`.</summary>
+    /// <summary>The one terminal decision recorded against one exact :class:`StoredWorkflowReviewVersion`.</summary>
     public class ReviewDecision
     {
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -12,7 +12,7 @@ namespace Retab
         public ReviewEvaluationReviewDecision Verdict { get; set; }
         public string VersionId { get; set; } = default!;
         public Actor Author { get; set; } = default!;
-        public DateTimeOffset DecidedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
         public string? Reason { get; set; }
 
         /// <summary>

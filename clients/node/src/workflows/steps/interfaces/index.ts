@@ -13,7 +13,5 @@ export * from './public-handle-payload-type.interface.js';
 export * from './queued-step-lifecycle.interface.js';
 export * from './running-step-lifecycle.interface.js';
 export * from './skipped-step-lifecycle.interface.js';
-export * from './step-artifact-ref.interface.js';
-export * from './step-artifact-ref-operation.interface.js';
 export * from './workflow-run-step.interface.js';
 export * from './workflow-run-step-block-type.interface.js';

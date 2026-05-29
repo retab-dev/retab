@@ -40,21 +40,21 @@ import {
 import type {
   FileHandleInput,
   FileHandleInputResponse,
-} from '../../../../workflows/tests/results/interfaces/file-handle-input.interface.js';
+} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
 import {
   ZFileHandleInput,
   deserializeFileHandleInput,
   serializeFileHandleInput,
-} from '../../../../workflows/tests/results/interfaces/file-handle-input.interface.js';
+} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
 import type {
   JsonHandleInput,
   JsonHandleInputResponse,
-} from '../../../../workflows/tests/results/interfaces/json-handle-input.interface.js';
+} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
 import {
   ZJsonHandleInput,
   deserializeJsonHandleInput,
   serializeJsonHandleInput,
-} from '../../../../workflows/tests/results/interfaces/json-handle-input.interface.js';
+} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
 import type {
   PendingWorkflowExperimentResult,
   PendingWorkflowExperimentResultResponse,
@@ -85,12 +85,12 @@ import {
 import type {
   StepArtifactRef,
   StepArtifactRefResponse,
-} from '../../../../workflows/steps/interfaces/step-artifact-ref.interface.js';
+} from '../../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
 import {
   ZStepArtifactRef,
   deserializeStepArtifactRef,
   serializeStepArtifactRef,
-} from '../../../../workflows/steps/interfaces/step-artifact-ref.interface.js';
+} from '../../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
 import type { ExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 import { ZExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 

@@ -11,14 +11,6 @@ module Retab
 
     sig do
       params(
-        artifact_id: String,
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(T.any(Retab::ExtractionWorkflowArtifact, Retab::SplitWorkflowArtifact, Retab::ClassificationWorkflowArtifact, Retab::ParseWorkflowArtifact, Retab::EditWorkflowArtifact, Retab::PartitionWorkflowArtifact, Retab::ConditionalEvaluation, Retab::ReviewEvaluation, Retab::WhileLoopTermination, Retab::ApiCallInvocation, Retab::FunctionInvocation))
-    end
-    def get(artifact_id:, request_options:); end
-
-    sig do
-      params(
         run_id: T.nilable(String),
         operation: T.nilable(String),
         block_id: T.nilable(String),
@@ -30,6 +22,14 @@ module Retab
       ).returns(Retab::PaginatedList[Retab::WorkflowArtifact])
     end
     def list(run_id:, operation:, block_id:, step_id:, before:, after:, limit:, request_options:); end
+
+    sig do
+      params(
+        artifact_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(T.any(Retab::ExtractionWorkflowArtifact, Retab::SplitWorkflowArtifact, Retab::ClassificationWorkflowArtifact, Retab::ParseWorkflowArtifact, Retab::EditWorkflowArtifact, Retab::PartitionWorkflowArtifact, Retab::ConditionalEvaluation, Retab::ReviewEvaluation, Retab::WhileLoopTermination, Retab::ApiCallInvocation, Retab::FunctionInvocation))
+    end
+    def get(artifact_id:, request_options:); end
 
   end
 end
