@@ -196,19 +196,35 @@ sh_test(
     tags = ["generated-check"],
 )
 
+# Fully hermetic Rust SDK drift check (blueprint Phase 4, Rust): mirrors
+# check_go/check_node. Runs SANDBOXED with no network and is cached on no-op
+# reruns. Both inputs are Bazel-declared TreeArtifacts:
+#   * generated_rust_sdk_formatted -- the raw generator output (sandboxed, from
+#     the committed OpenAPI contract on the pinned Node toolchain via the
+#     lockfile-materialized oagen_npm closure) re-formatted with the pinned,
+#     vendored rustfmt binary via //tools/bazel/rustfmt_sdk_tree (the rustc
+#     runtime libs travel with it; the format script points the dynamic loader
+#     at their dir). Scoped to src/** + manifest (Node parity).
+#   * committed_rust_sdk_tree -- the committed src/**/*.rs + manifest staged into
+#     a tree. The hand-bumped Cargo.toml/Cargo.lock, LICENSE, README and the
+#     hand-written tests/ are NOT generated and are excluded.
+# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
+# manifest generatedAt timestamp), so nothing reaches the live working tree. This
+# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
+# the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_rust",
-    srcs = ["//tools/bazel:check_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "rust",
-        "$(location :generated_rust_sdk)",
-        "open-source/sdk/clients/rust",
+        "$(location //open-source/sdk/clients/rust:generated_rust_sdk_formatted)",
+        "$(location //open-source/sdk/clients/rust:committed_rust_sdk_tree)",
     ],
     data = [
-        ":generated_rust_sdk",
-        ":generation_inputs",
+        "//open-source/sdk/clients/rust:committed_rust_sdk_tree",
+        "//open-source/sdk/clients/rust:generated_rust_sdk_formatted",
     ],
-    tags = MANUAL_LOCAL_TAGS + ["generated-check"],
+    tags = ["generated-check"],
 )
 
 # Fully hermetic .NET SDK drift check (blueprint Phase 4, gold standard): runs
