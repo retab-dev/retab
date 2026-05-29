@@ -14,10 +14,10 @@ public final class ExperimentResult {
   private final String runId;
   private final String experimentId;
   private final String documentId;
-  private final PendingWorkflowExperimentResult lifecycle;
+  private final WorkflowExperimentResult lifecycle;
   private final ExperimentResultTiming timing;
   private final ExperimentResultBlockType blockType;
-  private final Map<String, JsonHandleInput> handleInputs;
+  private final Map<String, HandleInput> handleInputs;
   private final StepArtifactRef artifact;
   private final Long attempt;
   private final Boolean isPlaceholder;
@@ -28,11 +28,11 @@ public final class ExperimentResult {
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
       @JsonProperty(value = "document_id", required = true) String documentId,
-      @JsonProperty(value = "lifecycle", required = true) PendingWorkflowExperimentResult lifecycle,
+      @JsonProperty(value = "lifecycle", required = true) WorkflowExperimentResult lifecycle,
       @JsonProperty(value = "timing", required = true) ExperimentResultTiming timing,
       @JsonProperty(value = "block_type", required = true) ExperimentResultBlockType blockType,
       @JsonProperty(value = "handle_inputs", required = false)
-          Map<String, JsonHandleInput> handleInputs,
+          Map<String, HandleInput> handleInputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "attempt", required = false) Long attempt,
       @JsonProperty(value = "is_placeholder", required = false) Boolean isPlaceholder) {
@@ -70,7 +70,7 @@ public final class ExperimentResult {
   }
 
   @JsonProperty("lifecycle")
-  public PendingWorkflowExperimentResult getLifecycle() {
+  public WorkflowExperimentResult getLifecycle() {
     return lifecycle;
   }
 
@@ -85,7 +85,7 @@ public final class ExperimentResult {
   }
 
   @JsonProperty("handle_inputs")
-  public Map<String, JsonHandleInput> getHandleInputs() {
+  public Map<String, HandleInput> getHandleInputs() {
     return handleInputs;
   }
 

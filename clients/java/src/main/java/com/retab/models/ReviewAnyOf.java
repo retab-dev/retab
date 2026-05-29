@@ -8,14 +8,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewAnyOf {
+public final class ReviewAnyOf implements ReviewKind {
   private final String kind;
-  private final List<ReviewAlways> predicates;
+  private final List<ReviewKind> predicates;
 
   @JsonCreator
   public ReviewAnyOf(
       @JsonProperty(value = "kind", required = false) String kind,
-      @JsonProperty(value = "predicates", required = true) List<ReviewAlways> predicates) {
+      @JsonProperty(value = "predicates", required = true) List<ReviewKind> predicates) {
     this.kind = kind;
     this.predicates = predicates;
   }
@@ -26,7 +26,7 @@ public final class ReviewAnyOf {
   }
 
   @JsonProperty("predicates")
-  public List<ReviewAlways> getPredicates() {
+  public List<ReviewKind> getPredicates() {
     return predicates;
   }
 }

@@ -3,7 +3,6 @@
 package com.retab.workflowspec;
 
 import com.retab.RetabClient;
-import com.retab.RetabException;
 import com.retab.models.DeclarativeApplyResponse;
 import com.retab.models.DeclarativeExportResponse;
 import com.retab.models.DeclarativePlanResponse;
@@ -29,14 +28,14 @@ public final class WorkflowSpecApi {
     return client;
   }
 
-  public DeclarativeValidationResponse validate(DeclarativeWorkflowRequest request)
+  public DeclarativeApplyResponse apply(DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return validate(request == null ? null : request.getYamlDefinition());
+    return apply(request == null ? null : request.getYamlDefinition());
   }
 
-  public DeclarativeValidationResponse validate(String yamlDefinition)
+  public DeclarativeApplyResponse apply(String yamlDefinition)
       throws IOException, InterruptedException {
-    String path = "/v1/workflows/spec/validate";
+    String path = "/v1/workflows/spec/apply";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
@@ -52,15 +51,12 @@ public final class WorkflowSpecApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), DeclarativeValidationResponse.class);
+    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
   }
 
   public DeclarativePlanResponse plan(DeclarativeWorkflowRequest request)
@@ -86,10 +82,7 @@ public final class WorkflowSpecApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -97,14 +90,14 @@ public final class WorkflowSpecApi {
     return client.getObjectMapper().readValue(response.body(), DeclarativePlanResponse.class);
   }
 
-  public DeclarativeApplyResponse apply(DeclarativeWorkflowRequest request)
+  public DeclarativeValidationResponse validate(DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return apply(request == null ? null : request.getYamlDefinition());
+    return validate(request == null ? null : request.getYamlDefinition());
   }
 
-  public DeclarativeApplyResponse apply(String yamlDefinition)
+  public DeclarativeValidationResponse validate(String yamlDefinition)
       throws IOException, InterruptedException {
-    String path = "/v1/workflows/spec/apply";
+    String path = "/v1/workflows/spec/validate";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
@@ -120,15 +113,12 @@ public final class WorkflowSpecApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
+    return client.getObjectMapper().readValue(response.body(), DeclarativeValidationResponse.class);
   }
 
   public DeclarativeExportResponse get(String workflowId) throws IOException, InterruptedException {
@@ -144,10 +134,7 @@ public final class WorkflowSpecApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

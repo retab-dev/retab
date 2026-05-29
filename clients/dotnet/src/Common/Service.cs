@@ -32,6 +32,18 @@ namespace Retab
                 RequestOptions = requestOptions,
             }, cancellationToken);
 
+        // Converter-threading overloads: a discriminated-union response root is
+        // deserialized as 'object' through the variant-dispatching converter so
+        // the concrete variant survives instead of collapsing to one class.
+        protected Task<TResult> GetAsync<TResult>(string path, BaseOptions? options, Newtonsoft.Json.JsonConverter converter, RequestOptions? requestOptions, CancellationToken cancellationToken)
+            => this.Client.MakeAPIRequest<TResult>(new RetabRequest
+            {
+                Method = HttpMethod.Get,
+                Path = path,
+                Options = options,
+                RequestOptions = requestOptions,
+            }, converter, cancellationToken);
+
         protected Task<TResult> PostAsync<TResult>(string path, BaseOptions? options, RequestOptions? requestOptions, CancellationToken cancellationToken)
             => this.Client.MakeAPIRequest<TResult>(new RetabRequest
             {
@@ -40,6 +52,15 @@ namespace Retab
                 Options = options,
                 RequestOptions = requestOptions,
             }, cancellationToken);
+
+        protected Task<TResult> PostAsync<TResult>(string path, BaseOptions? options, Newtonsoft.Json.JsonConverter converter, RequestOptions? requestOptions, CancellationToken cancellationToken)
+            => this.Client.MakeAPIRequest<TResult>(new RetabRequest
+            {
+                Method = HttpMethod.Post,
+                Path = path,
+                Options = options,
+                RequestOptions = requestOptions,
+            }, converter, cancellationToken);
 
         protected Task<TResult> PutAsync<TResult>(string path, BaseOptions? options, RequestOptions? requestOptions, CancellationToken cancellationToken)
             => this.Client.MakeAPIRequest<TResult>(new RetabRequest
@@ -50,6 +71,15 @@ namespace Retab
                 RequestOptions = requestOptions,
             }, cancellationToken);
 
+        protected Task<TResult> PutAsync<TResult>(string path, BaseOptions? options, Newtonsoft.Json.JsonConverter converter, RequestOptions? requestOptions, CancellationToken cancellationToken)
+            => this.Client.MakeAPIRequest<TResult>(new RetabRequest
+            {
+                Method = HttpMethod.Put,
+                Path = path,
+                Options = options,
+                RequestOptions = requestOptions,
+            }, converter, cancellationToken);
+
         protected Task<TResult> PatchAsync<TResult>(string path, BaseOptions? options, RequestOptions? requestOptions, CancellationToken cancellationToken)
             => this.Client.MakeAPIRequest<TResult>(new RetabRequest
             {
@@ -58,6 +88,15 @@ namespace Retab
                 Options = options,
                 RequestOptions = requestOptions,
             }, cancellationToken);
+
+        protected Task<TResult> PatchAsync<TResult>(string path, BaseOptions? options, Newtonsoft.Json.JsonConverter converter, RequestOptions? requestOptions, CancellationToken cancellationToken)
+            => this.Client.MakeAPIRequest<TResult>(new RetabRequest
+            {
+                Method = new HttpMethod("PATCH"),
+                Path = path,
+                Options = options,
+                RequestOptions = requestOptions,
+            }, converter, cancellationToken);
 
         protected Task DeleteAsync(string path, BaseOptions? options, RequestOptions? requestOptions, CancellationToken cancellationToken)
             => this.Client.MakeRawAPIRequest(new RetabRequest

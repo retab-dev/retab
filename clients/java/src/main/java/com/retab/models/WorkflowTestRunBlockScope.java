@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class WorkflowTestRunBlockScope {
+public final class WorkflowTestRunBlockScope implements Scope {
   private final String type;
   private final String blockId;
 

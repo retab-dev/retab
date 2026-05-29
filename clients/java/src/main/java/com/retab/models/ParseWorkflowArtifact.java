@@ -9,7 +9,7 @@ import com.retab.types.ParseWorkflowArtifactTableParsingFormat;
 import java.time.OffsetDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ParseWorkflowArtifact {
+public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final String id;
   private final FileRef file;
   private final String model;

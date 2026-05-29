@@ -808,3 +808,149 @@ impl From<CancelledWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
         WorkflowTestResultLifecycleOneOf::CancelledWorkflowTestRun(Box::new(v))
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "operation")]
+pub enum GetWorkflowArtifactByIdResponseOneOf {
+    #[serde(rename = "extraction")]
+    ExtractionWorkflowArtifact(Box<ExtractionWorkflowArtifact>),
+    #[serde(rename = "split")]
+    SplitWorkflowArtifact(Box<SplitWorkflowArtifact>),
+    #[serde(rename = "classification")]
+    ClassificationWorkflowArtifact(Box<ClassificationWorkflowArtifact>),
+    #[serde(rename = "parse")]
+    ParseWorkflowArtifact(Box<ParseWorkflowArtifact>),
+    #[serde(rename = "edit")]
+    EditWorkflowArtifact(Box<EditWorkflowArtifact>),
+    #[serde(rename = "partition")]
+    PartitionWorkflowArtifact(Box<PartitionWorkflowArtifact>),
+    #[serde(rename = "conditional_evaluation")]
+    ConditionalEvaluation(Box<ConditionalEvaluation>),
+    #[serde(rename = "review_trigger_evaluation")]
+    ReviewEvaluation(Box<ReviewEvaluation>),
+    #[serde(rename = "while_loop_termination")]
+    WhileLoopTermination(Box<WhileLoopTermination>),
+    #[serde(rename = "api_call_invocation")]
+    ApiCallInvocation(Box<ApiCallInvocation>),
+    #[serde(rename = "function_invocation")]
+    FunctionInvocation(Box<FunctionInvocation>),
+}
+
+impl From<ExtractionWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ExtractionWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ExtractionWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<SplitWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: SplitWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::SplitWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<ClassificationWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ClassificationWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ClassificationWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<ParseWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ParseWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ParseWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<EditWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: EditWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::EditWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<PartitionWorkflowArtifact> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: PartitionWorkflowArtifact) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::PartitionWorkflowArtifact(Box::new(v))
+    }
+}
+
+impl From<ConditionalEvaluation> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ConditionalEvaluation) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ConditionalEvaluation(Box::new(v))
+    }
+}
+
+impl From<ReviewEvaluation> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ReviewEvaluation) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ReviewEvaluation(Box::new(v))
+    }
+}
+
+impl From<WhileLoopTermination> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: WhileLoopTermination) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::WhileLoopTermination(Box::new(v))
+    }
+}
+
+impl From<ApiCallInvocation> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: ApiCallInvocation) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::ApiCallInvocation(Box::new(v))
+    }
+}
+
+impl From<FunctionInvocation> for GetWorkflowArtifactByIdResponseOneOf {
+    fn from(v: FunctionInvocation) -> Self {
+        GetWorkflowArtifactByIdResponseOneOf::FunctionInvocation(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum GetExperimentMetricsForRunResponseOneOf {
+    #[serde(rename = "summary")]
+    ExperimentSummaryMetricsResponse(Box<ExperimentSummaryMetricsResponse>),
+    #[serde(rename = "by_document")]
+    ExperimentByDocumentMetricsResponse(Box<ExperimentByDocumentMetricsResponse>),
+    #[serde(rename = "by_target")]
+    ExperimentByTargetMetricsResponse(Box<ExperimentByTargetMetricsResponse>),
+    #[serde(rename = "votes")]
+    ExperimentVotesMetricsResponse(Box<ExperimentVotesMetricsResponse>),
+    #[serde(rename = "stale_metrics")]
+    ExperimentMetricsStaleError(Box<ExperimentMetricsStaleError>),
+    #[serde(rename = "no_metrics")]
+    ExperimentMetricsMissingError(Box<ExperimentMetricsMissingError>),
+}
+
+impl From<ExperimentSummaryMetricsResponse> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentSummaryMetricsResponse) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentSummaryMetricsResponse(Box::new(v))
+    }
+}
+
+impl From<ExperimentByDocumentMetricsResponse> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentByDocumentMetricsResponse) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentByDocumentMetricsResponse(Box::new(v))
+    }
+}
+
+impl From<ExperimentByTargetMetricsResponse> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentByTargetMetricsResponse) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentByTargetMetricsResponse(Box::new(v))
+    }
+}
+
+impl From<ExperimentVotesMetricsResponse> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentVotesMetricsResponse) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentVotesMetricsResponse(Box::new(v))
+    }
+}
+
+impl From<ExperimentMetricsStaleError> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentMetricsStaleError) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentMetricsStaleError(Box::new(v))
+    }
+}
+
+impl From<ExperimentMetricsMissingError> for GetExperimentMetricsForRunResponseOneOf {
+    fn from(v: ExperimentMetricsMissingError) -> Self {
+        GetExperimentMetricsForRunResponseOneOf::ExperimentMetricsMissingError(Box::new(v))
+    }
+}

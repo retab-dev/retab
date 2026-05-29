@@ -10,7 +10,7 @@ namespace Retab
         public string TestId { get; set; } = default!;
         [Newtonsoft.Json.JsonConverter(typeof(PendingWorkflowTestRunDiscriminatorConverter))]
         public object? Lifecycle { get; set; }
-        public WorkflowTestRunTiming? Timing { get; set; }
+        public ExperimentRunTiming? Timing { get; set; }
 
         /// <summary>Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.</summary>
         public AssertionOutcome? Verdict { get; set; }
@@ -29,6 +29,15 @@ namespace Retab
         public bool? Skipped { get; set; }
         public AssertionResult? AssertionResult { get; set; }
         public VerdictSummary? VerdictSummary { get; set; }
+
+        /// <summary>
+        /// Wire fields not modeled by this SDK version, preserved verbatim so a
+        /// deserialize → serialize round-trip never drops data (e.g. variant-
+        /// specific fields on a discriminated-union response).
+        /// </summary>
+        [Newtonsoft.Json.JsonExtensionData]
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalData { get; set; } = new System.Collections.Generic.Dictionary<string, object>();
 
         /// <summary>
         /// Typed accessor for <see cref="Outputs"/>. Returns the value stored under

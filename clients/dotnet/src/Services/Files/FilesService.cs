@@ -17,6 +17,35 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public FilesService(Retab client) : base(client) { }
 
+        /// <summary>List Files</summary>
+        /// <remarks>
+        /// List files with pagination and optional filtering.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A page of <see cref="File"/> results.</returns>
+        public virtual async Task<PaginatedList<File>> ListAsync(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.FetchPageAsync<File>("/v1/files", options, null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
+        public virtual Task<PaginatedList<File>> List(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An async sequence of <see cref="File"/> items.</returns>
+        public virtual IAsyncEnumerable<File> ListAutoPagingAsync(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return base.ListAutoPagingAsync<File>("/v1/files", options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Upload File</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -48,35 +77,6 @@ namespace Retab
         public virtual Task<MimeData> CompleteUpload(string fileId, FilesCompleteUploadOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.CompleteUploadAsync(fileId, options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>List Files</summary>
-        /// <remarks>
-        /// List files with pagination and optional filtering.
-        /// </remarks>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A page of <see cref="File"/> results.</returns>
-        public virtual async Task<PaginatedList<File>> ListAsync(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.FetchPageAsync<File>("/v1/files", options, null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<File>> List(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.ListAsync(options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Auto-paging variant of <see cref="ListAsync"/>. Yields individual items across all pages.</summary>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>An async sequence of <see cref="File"/> items.</returns>
-        public virtual IAsyncEnumerable<File> ListAutoPagingAsync(FilesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return base.ListAutoPagingAsync<File>("/v1/files", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get File</summary>

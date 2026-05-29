@@ -24,7 +24,7 @@ namespace Retab
         /// <summary>Workflow to create the edge in.</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Opaque edge ID. Omit to let the server generate one.</summary>
+        /// <summary>If omitted, the server generates an opaque ``edg_&lt;nanoid&gt;``. Opaque edge ID. Omit to let the server generate one.</summary>
         public string? Id { get; set; }
 
         /// <summary>Source block ID</summary>

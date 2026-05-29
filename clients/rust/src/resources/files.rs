@@ -14,40 +14,6 @@ pub struct FilesApi<'a> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct CreateUploadParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: UploadFileRequest,
-}
-
-impl CreateUploadParams {
-    /// Construct a new `CreateUploadParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: UploadFileRequest) -> Self {
-        Self { body }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct CompleteUploadParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: CompleteFileUploadRequest,
-}
-
-impl CompleteUploadParams {
-    /// Construct a new `CompleteUploadParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: CompleteFileUploadRequest) -> Self {
-        Self { body }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
 pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
@@ -97,7 +63,61 @@ impl Default for ListParams {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateUploadParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: UploadFileRequest,
+}
+
+impl CreateUploadParams {
+    /// Construct a new `CreateUploadParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: UploadFileRequest) -> Self {
+        Self { body }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CompleteUploadParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: CompleteFileUploadRequest,
+}
+
+impl CompleteUploadParams {
+    /// Construct a new `CompleteUploadParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: CompleteFileUploadRequest) -> Self {
+        Self { body }
+    }
+}
+
 impl<'a> FilesApi<'a> {
+    /// List Files
+    ///
+    /// List files with pagination and optional filtering.
+    pub async fn list(&self, params: ListParams) -> Result<FileList, Error> {
+        self.list_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::list`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_with_options(
+        &self,
+        params: ListParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<FileList, Error> {
+        let path = "/v1/files".to_string();
+        let method = http::Method::GET;
+        self.client
+            .request_page(method, &path, &params, "after", options)
+            .await
+    }
+
     /// Upload File
     pub async fn create_upload(
         &self,
@@ -141,26 +161,6 @@ impl<'a> FilesApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
-            .await
-    }
-
-    /// List Files
-    ///
-    /// List files with pagination and optional filtering.
-    pub async fn list(&self, params: ListParams) -> Result<FileList, Error> {
-        self.list_with_options(params, None).await
-    }
-
-    /// Variant of [`Self::list`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn list_with_options(
-        &self,
-        params: ListParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<FileList, Error> {
-        let path = "/v1/files".to_string();
-        let method = http::Method::GET;
-        self.client
-            .request_page(method, &path, &params, "after", options)
             .await
     }
 

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ApiTrigger {
+public final class ApiTrigger implements Trigger {
   private final String type;
   private final String apiKeyId;
 

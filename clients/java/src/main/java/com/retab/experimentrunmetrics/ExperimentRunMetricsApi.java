@@ -3,8 +3,7 @@
 package com.retab.experimentrunmetrics;
 
 import com.retab.RetabClient;
-import com.retab.RetabException;
-import com.retab.models.ExperimentSummaryMetricsResponse;
+import com.retab.models.Experiment;
 import com.retab.types.ExperimentRunMetricsView;
 import java.io.IOException;
 import java.net.URI;
@@ -24,7 +23,7 @@ public final class ExperimentRunMetricsApi {
     return client;
   }
 
-  public ExperimentSummaryMetricsResponse get(
+  public Experiment get(
       String runId,
       ExperimentRunMetricsView view,
       String documentId,
@@ -50,17 +49,12 @@ public final class ExperimentRunMetricsApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client
-        .getObjectMapper()
-        .readValue(response.body(), ExperimentSummaryMetricsResponse.class);
+    return client.getObjectMapper().readValue(response.body(), Experiment.class);
   }
 
   private static String encodePathSegment(Object value) {

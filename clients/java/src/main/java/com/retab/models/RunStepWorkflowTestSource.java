@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class RunStepWorkflowTestSource {
+public final class RunStepWorkflowTestSource implements WorkflowTestSource {
   private final String type;
   private final String runId;
   private final String stepId;

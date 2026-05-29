@@ -6,7 +6,17 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\ApiCallInvocation;
+use Retab\Resource\ClassificationWorkflowArtifact;
+use Retab\Resource\ConditionalEvaluation;
+use Retab\Resource\EditWorkflowArtifact;
 use Retab\Resource\ExtractionWorkflowArtifact;
+use Retab\Resource\FunctionInvocation;
+use Retab\Resource\ParseWorkflowArtifact;
+use Retab\Resource\PartitionWorkflowArtifact;
+use Retab\Resource\ReviewEvaluation;
+use Retab\Resource\SplitWorkflowArtifact;
+use Retab\Resource\WhileLoopTermination;
 use Retab\Resource\WorkflowArtifact;
 
 class WorkflowArtifacts
@@ -14,31 +24,6 @@ class WorkflowArtifacts
     public function __construct(
         private readonly \Retab\HttpClient $client,
     ) {}
-
-    /**
-     * Get Workflow Artifact By Id
-     *
-     * Get one workflow artifact by id alone.
-     *
-     * The operation is derived from the id prefix
-     * (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
-     * the flat-resource shape — callers do not need to know which collection
-     * backs the id.
-     * @param string $artifactId
-     * @return \Retab\Resource\ExtractionWorkflowArtifact
-     * @throws \Retab\Exception\RetabException
-     */
-    public function get(
-        string $artifactId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\ExtractionWorkflowArtifact {
-        $response = $this->client->request(
-            method: 'GET',
-            path: 'v1/workflows/artifacts/' . rawurlencode($artifactId),
-            options: $options,
-        );
-        return ExtractionWorkflowArtifact::fromArray($response);
-    }
 
     /**
      * List Workflow Artifacts
@@ -89,5 +74,32 @@ class WorkflowArtifacts
             modelClass: WorkflowArtifact::class,
             options: $options,
         );
+    }
+
+    /**
+     * Get Workflow Artifact By Id
+     *
+     * Get one workflow artifact by id alone.
+     *
+     * The operation is derived from the id prefix
+     * (``extr_…`` → extraction, ``clss_…`` → classification, etc.). This is
+     * the flat-resource shape — callers do not need to know which collection
+     * backs the id.
+     * @param string $artifactId
+     * @return \Retab\Resource\ExtractionWorkflowArtifact|\Retab\Resource\SplitWorkflowArtifact|\Retab\Resource\ClassificationWorkflowArtifact|\Retab\Resource\ParseWorkflowArtifact|\Retab\Resource\EditWorkflowArtifact|\Retab\Resource\PartitionWorkflowArtifact|\Retab\Resource\ConditionalEvaluation|\Retab\Resource\ReviewEvaluation|\Retab\Resource\WhileLoopTermination|\Retab\Resource\ApiCallInvocation|\Retab\Resource\FunctionInvocation
+     * @throws \Retab\Exception\RetabException
+     */
+    public function get(
+        string $artifactId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\ExtractionWorkflowArtifact|\Retab\Resource\SplitWorkflowArtifact|\Retab\Resource\ClassificationWorkflowArtifact|\Retab\Resource\ParseWorkflowArtifact|\Retab\Resource\EditWorkflowArtifact|\Retab\Resource\PartitionWorkflowArtifact|\Retab\Resource\ConditionalEvaluation|\Retab\Resource\ReviewEvaluation|\Retab\Resource\WhileLoopTermination|\Retab\Resource\ApiCallInvocation|\Retab\Resource\FunctionInvocation {
+        $response = $this->client->request(
+            method: 'GET',
+            path: 'v1/workflows/artifacts/' . rawurlencode($artifactId),
+            options: $options,
+        );
+        return match ($response['operation'] ?? null) {
+            'extraction' => ExtractionWorkflowArtifact::fromArray($response), 'split' => SplitWorkflowArtifact::fromArray($response), 'classification' => ClassificationWorkflowArtifact::fromArray($response), 'parse' => ParseWorkflowArtifact::fromArray($response), 'edit' => EditWorkflowArtifact::fromArray($response), 'partition' => PartitionWorkflowArtifact::fromArray($response), 'conditional_evaluation' => ConditionalEvaluation::fromArray($response), 'review_trigger_evaluation' => ReviewEvaluation::fromArray($response), 'while_loop_termination' => WhileLoopTermination::fromArray($response), 'api_call_invocation' => ApiCallInvocation::fromArray($response), 'function_invocation' => FunctionInvocation::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown operation: %s', json_encode($response['operation'] ?? null))),
+        };
     }
 }

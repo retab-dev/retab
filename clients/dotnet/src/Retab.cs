@@ -96,6 +96,21 @@ namespace Retab
             return await DeserializeAsync<TResult>(response, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Issue a request and deserialize the response through an explicit
+        /// <paramref name="converter"/>. Used for discriminated-union response
+        /// roots, where <typeparamref name="TResult"/> is <see cref="object"/>
+        /// and the converter dispatches to the concrete variant by its
+        /// discriminator property so no variant-specific field is lost.
+        /// </summary>
+        public virtual async Task<TResult> MakeAPIRequest<TResult>(RetabRequest request, Newtonsoft.Json.JsonConverter converter, CancellationToken cancellationToken)
+        {
+            using var httpRequest = BuildHttpRequest(request);
+            using var response = await this.HttpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+            await EnsureSuccessAsync(response).ConfigureAwait(false);
+            return await DeserializeAsync<TResult>(response, converter, cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>Issue a request and discard the response body.</summary>
         public virtual async Task MakeRawAPIRequest(RetabRequest request, CancellationToken cancellationToken)
         {
@@ -200,6 +215,25 @@ namespace Retab
             }
             var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             var result = JsonConvert.DeserializeObject<TResult>(body, NewtonsoftJsonSettings);
+            return result!;
+        }
+
+        private static async Task<TResult> DeserializeAsync<TResult>(HttpResponseMessage response, Newtonsoft.Json.JsonConverter converter, CancellationToken cancellationToken)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent || response.Content == null)
+            {
+                return default!;
+            }
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            // Deserialize through the discriminated-union converter without
+            // mutating the shared NewtonsoftJsonSettings: clone the snake-case
+            // contract resolver settings and add the converter for this call.
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = NewtonsoftJsonSettings.ContractResolver,
+            };
+            settings.Converters.Add(converter);
+            var result = JsonConvert.DeserializeObject<TResult>(body, settings);
             return result!;
         }
 

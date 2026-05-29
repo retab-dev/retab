@@ -9,7 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ExtractionWorkflowArtifact {
+public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final String id;
   private final FileRef file;
   private final String model;

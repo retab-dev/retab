@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ExperimentMetricsMissingError {
+public final class ExperimentMetricsMissingError implements Experiment {
   private final String kind;
   private final String error;
   private final String experimentId;

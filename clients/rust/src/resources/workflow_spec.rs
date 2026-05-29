@@ -14,7 +14,7 @@ pub struct WorkflowSpecApi<'a> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ValidateParams {
+pub struct ApplyParams {
     /// Request body sent with this call.
     ///
     /// Required.
@@ -22,8 +22,8 @@ pub struct ValidateParams {
     pub body: DeclarativeWorkflowRequest,
 }
 
-impl ValidateParams {
-    /// Construct a new `ValidateParams` with the required fields set.
+impl ApplyParams {
+    /// Construct a new `ApplyParams` with the required fields set.
     #[allow(deprecated)]
     pub fn new(body: DeclarativeWorkflowRequest) -> Self {
         Self { body }
@@ -48,7 +48,7 @@ impl PlanParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ApplyParams {
+pub struct ValidateParams {
     /// Request body sent with this call.
     ///
     /// Required.
@@ -56,8 +56,8 @@ pub struct ApplyParams {
     pub body: DeclarativeWorkflowRequest,
 }
 
-impl ApplyParams {
-    /// Construct a new `ApplyParams` with the required fields set.
+impl ValidateParams {
+    /// Construct a new `ValidateParams` with the required fields set.
     #[allow(deprecated)]
     pub fn new(body: DeclarativeWorkflowRequest) -> Self {
         Self { body }
@@ -65,32 +65,25 @@ impl ApplyParams {
 }
 
 impl<'a> WorkflowSpecApi<'a> {
-    /// Validate Workflow Spec
+    /// Apply Workflow Spec
     ///
-    /// Validate declarative YAML without mutating workflow state.
+    /// Apply declarative YAML to draft workflow state.
     ///
     /// Contract:
-    /// - validate, plan, and apply agree on whether a spec is acceptable: any
-    /// severity=error diagnostic — whether emitted at parse time as a
-    /// DeclarativeWorkflowError or bumped during compile/diagnose — raises
-    /// HTTP 400 with the structured error issues
-    /// - warnings do not make the document invalid; warning-only specs return
-    /// HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
-    /// - counts reflect the canonical compiled graph, not raw authored block count
-    pub async fn validate(
-        &self,
-        params: ValidateParams,
-    ) -> Result<DeclarativeValidationResponse, Error> {
-        self.validate_with_options(params, None).await
+    /// - apply writes canonical draft state, not authored formatting
+    /// - re-applying canonical exported YAML against unchanged draft state should
+    /// return an empty resource_changes list
+    pub async fn apply(&self, params: ApplyParams) -> Result<DeclarativeApplyResponse, Error> {
+        self.apply_with_options(params, None).await
     }
 
-    /// Variant of [`Self::validate`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn validate_with_options(
+    /// Variant of [`Self::apply`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn apply_with_options(
         &self,
-        params: ValidateParams,
+        params: ApplyParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativeValidationResponse, Error> {
-        let path = "/v1/workflows/spec/validate".to_string();
+    ) -> Result<DeclarativeApplyResponse, Error> {
+        let path = "/v1/workflows/spec/apply".to_string();
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
@@ -121,25 +114,32 @@ impl<'a> WorkflowSpecApi<'a> {
             .await
     }
 
-    /// Apply Workflow Spec
+    /// Validate Workflow Spec
     ///
-    /// Apply declarative YAML to draft workflow state.
+    /// Validate declarative YAML without mutating workflow state.
     ///
     /// Contract:
-    /// - apply writes canonical draft state, not authored formatting
-    /// - re-applying canonical exported YAML against unchanged draft state should
-    /// return an empty resource_changes list
-    pub async fn apply(&self, params: ApplyParams) -> Result<DeclarativeApplyResponse, Error> {
-        self.apply_with_options(params, None).await
+    /// - validate, plan, and apply agree on whether a spec is acceptable: any
+    /// severity=error diagnostic — whether emitted at parse time as a
+    /// DeclarativeWorkflowError or bumped during compile/diagnose — raises
+    /// HTTP 400 with the structured error issues
+    /// - warnings do not make the document invalid; warning-only specs return
+    /// HTTP 200 with `is_valid=True` and the warning issues in `diagnostics`
+    /// - counts reflect the canonical compiled graph, not raw authored block count
+    pub async fn validate(
+        &self,
+        params: ValidateParams,
+    ) -> Result<DeclarativeValidationResponse, Error> {
+        self.validate_with_options(params, None).await
     }
 
-    /// Variant of [`Self::apply`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn apply_with_options(
+    /// Variant of [`Self::validate`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn validate_with_options(
         &self,
-        params: ApplyParams,
+        params: ValidateParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativeApplyResponse, Error> {
-        let path = "/v1/workflows/spec/apply".to_string();
+    ) -> Result<DeclarativeValidationResponse, Error> {
+        let path = "/v1/workflows/spec/validate".to_string();
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)

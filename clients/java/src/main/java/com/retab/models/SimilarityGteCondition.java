@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.SimilarityGteConditionMethod;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SimilarityGteCondition {
+public final class SimilarityGteCondition implements Condition {
   private final String kind;
   private final Object reference;
   private final Double threshold;

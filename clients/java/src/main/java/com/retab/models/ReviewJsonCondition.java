@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewJsonCondition {
+public final class ReviewJsonCondition implements ReviewKind {
   private final String kind;
   private final Map<String, Object> condition;
 

@@ -13,17 +13,17 @@ class WorkflowSpecTest extends TestCase
 {
     use TestHelper;
 
-    public function testValidate(): void
+    public function testApply(): void
     {
-        $fixture = $this->loadFixture('declarative_validation_response');
+        $fixture = $this->loadFixture('declarative_apply_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->spec()->validate(yamlDefinition: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\DeclarativeValidationResponse::class, $result);
+        $result = $client->workflows()->spec()->apply(yamlDefinition: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\DeclarativeApplyResponse::class, $result);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/spec/validate', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/workflows/spec/apply', $request->getUri()->getPath());
         $body = json_decode((string) $request->getBody(), true);
         $this->assertSame('test_value', $body['yaml_definition']);
     }
@@ -43,17 +43,17 @@ class WorkflowSpecTest extends TestCase
         $this->assertSame('test_value', $body['yaml_definition']);
     }
 
-    public function testApply(): void
+    public function testValidate(): void
     {
-        $fixture = $this->loadFixture('declarative_apply_response');
+        $fixture = $this->loadFixture('declarative_validation_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->spec()->apply(yamlDefinition: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\DeclarativeApplyResponse::class, $result);
+        $result = $client->workflows()->spec()->validate(yamlDefinition: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\DeclarativeValidationResponse::class, $result);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/spec/apply', $request->getUri()->getPath());
+        $this->assertStringEndsWith('v1/workflows/spec/validate', $request->getUri()->getPath());
         $body = json_decode((string) $request->getBody(), true);
         $this->assertSame('test_value', $body['yaml_definition']);
     }

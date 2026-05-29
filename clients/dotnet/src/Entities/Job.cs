@@ -11,7 +11,9 @@ namespace Retab
     /// </remarks>
     public class Job
     {
-        public string? Id { get; set; }
+
+        /// <summary>Opaque job id (server-generated ``job_&lt;nanoid&gt;``).</summary>
+        public string Id { get; set; } = default!;
         public string? Object { get; set; }
         public JobStatus? Status { get; set; }
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -30,6 +32,15 @@ namespace Retab
         public string? LastFailureCode { get; set; }
         public Dictionary<string, object>? Request { get; set; }
         public JobResponse? Response { get; set; }
+
+        /// <summary>
+        /// Wire fields not modeled by this SDK version, preserved verbatim so a
+        /// deserialize → serialize round-trip never drops data (e.g. variant-
+        /// specific fields on a discriminated-union response).
+        /// </summary>
+        [Newtonsoft.Json.JsonExtensionData]
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalData { get; set; } = new System.Collections.Generic.Dictionary<string, object>();
 
         /// <summary>
         /// Typed accessor for <see cref="Request"/>. Returns the value stored under

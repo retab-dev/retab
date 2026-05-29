@@ -47,7 +47,9 @@ namespace Retab
 
         /// <summary>Duration of the block execution in milliseconds</summary>
         public double? DurationMs { get; set; }
-        public DateTimeOffset? CreatedAt { get; set; }
+
+        /// <summary>When the block execution record was created</summary>
+        public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>The draft block config used for this block execution</summary>
         public Dictionary<string, object>? BlockConfig { get; set; }
@@ -57,6 +59,15 @@ namespace Retab
 
         /// <summary>When the block has multiple iterations, lists all available ones</summary>
         public List<Dictionary<string, object>>? AvailableIterations { get; set; }
+
+        /// <summary>
+        /// Wire fields not modeled by this SDK version, preserved verbatim so a
+        /// deserialize → serialize round-trip never drops data (e.g. variant-
+        /// specific fields on a discriminated-union response).
+        /// </summary>
+        [Newtonsoft.Json.JsonExtensionData]
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalData { get; set; } = new System.Collections.Generic.Dictionary<string, object>();
 
         /// <summary>
         /// Typed accessor for <see cref="HandleInputs"/>. Returns the value stored under

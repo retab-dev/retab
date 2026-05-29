@@ -10,14 +10,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class AssertionSpec {
   private final String id;
   private final OutputTarget target;
-  private final ExistCondition condition;
+  private final Condition condition;
   private final String label;
 
   @JsonCreator
   public AssertionSpec(
       @JsonProperty(value = "id", required = false) String id,
       @JsonProperty(value = "target", required = true) OutputTarget target,
-      @JsonProperty(value = "condition", required = true) ExistCondition condition,
+      @JsonProperty(value = "condition", required = true) Condition condition,
       @JsonProperty(value = "label", required = false) String label) {
     this.id = id;
     this.target = target;
@@ -36,7 +36,7 @@ public final class AssertionSpec {
   }
 
   @JsonProperty("condition")
-  public ExistCondition getCondition() {
+  public Condition getCondition() {
     return condition;
   }
 

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewSplitCountNeq {
+public final class ReviewSplitCountNeq implements ReviewKind {
   private final String kind;
   private final Long expected;
 

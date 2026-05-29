@@ -5,7 +5,6 @@ package com.retab.files;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
-import com.retab.RetabException;
 import com.retab.models.CompleteFileUploadRequest;
 import com.retab.models.CreateUploadResponse;
 import com.retab.models.File;
@@ -32,6 +31,55 @@ public final class FilesApi {
 
   public RetabClient getClient() {
     return client;
+  }
+
+  public List<File> list(
+      String before,
+      String after,
+      Long limit,
+      SortOrder order,
+      String filename,
+      String mimeType,
+      String fromDate,
+      String toDate,
+      Boolean includeEmbeddings,
+      String sortBy)
+      throws IOException, InterruptedException {
+    String path = "/v1/files";
+    StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "before", before);
+    appendQueryParam(query, "after", after);
+    appendQueryParam(query, "limit", limit);
+    appendQueryParam(query, "order", order);
+    appendQueryParam(query, "filename", filename);
+    appendQueryParam(query, "mime_type", mimeType);
+    appendQueryParam(query, "from_date", fromDate);
+    appendQueryParam(query, "to_date", toDate);
+    appendQueryParam(query, "include_embeddings", includeEmbeddings);
+    appendQueryParam(query, "sort_by", sortBy);
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    JsonNode root = client.getObjectMapper().readTree(response.body());
+    JsonNode data = root.isArray() ? root : root.get("data");
+    if (data == null || data.isNull()) {
+      return List.of();
+    }
+    return client
+        .getObjectMapper()
+        .readValue(data.traverse(client.getObjectMapper()), new TypeReference<List<File>>() {});
   }
 
   public CreateUploadResponse createUpload(UploadFileRequest request)
@@ -69,10 +117,7 @@ public final class FilesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -105,67 +150,12 @@ public final class FilesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), MimeData.class);
-  }
-
-  public List<File> list(
-      String before,
-      String after,
-      Long limit,
-      SortOrder order,
-      String filename,
-      String mimeType,
-      String fromDate,
-      String toDate,
-      Boolean includeEmbeddings,
-      String sortBy)
-      throws IOException, InterruptedException {
-    String path = "/v1/files";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "before", before);
-    appendQueryParam(query, "after", after);
-    appendQueryParam(query, "limit", limit);
-    appendQueryParam(query, "order", order);
-    appendQueryParam(query, "filename", filename);
-    appendQueryParam(query, "mime_type", mimeType);
-    appendQueryParam(query, "from_date", fromDate);
-    appendQueryParam(query, "to_date", toDate);
-    appendQueryParam(query, "include_embeddings", includeEmbeddings);
-    appendQueryParam(query, "sort_by", sortBy);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    JsonNode root = client.getObjectMapper().readTree(response.body());
-    JsonNode data = root.isArray() ? root : root.get("data");
-    if (data == null || data.isNull()) {
-      return List.of();
-    }
-    return client
-        .getObjectMapper()
-        .readValue(data.traverse(client.getObjectMapper()), new TypeReference<List<File>>() {});
   }
 
   public File get(String fileId) throws IOException, InterruptedException {
@@ -181,10 +171,7 @@ public final class FilesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;
@@ -205,10 +192,7 @@ public final class FilesApi {
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw RetabException.fromStatusCode(
-          response.statusCode(),
-          "Request failed (" + response.statusCode() + "): " + response.body(),
-          response.body());
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
     }
     if (response.body() == null || response.body().isBlank()) {
       return null;

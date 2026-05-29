@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class QueuedStepLifecycle {
+public final class QueuedStepLifecycle implements StepLifecycle {
   private final String status;
 
   @JsonCreator

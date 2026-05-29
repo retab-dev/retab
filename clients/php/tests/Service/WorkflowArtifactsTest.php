@@ -13,20 +13,6 @@ class WorkflowArtifactsTest extends TestCase
 {
     use TestHelper;
 
-    public function testGet(): void
-    {
-        $fixture = $this->loadFixture('extraction_workflow_artifact');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->artifacts()->get('test_artifact_id');
-        $this->assertInstanceOf(\Retab\Resource\ExtractionWorkflowArtifact::class, $result);
-        $this->assertSame($fixture['id'], $result->id);
-        $this->assertSame($fixture['model'], $result->model);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/artifacts/test_artifact_id', $request->getUri()->getPath());
-    }
-
     public function testList(): void
     {
         $fixture = $this->loadFixture('list_workflow_artifact');
@@ -44,6 +30,20 @@ class WorkflowArtifactsTest extends TestCase
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
+    }
+
+    public function testGet(): void
+    {
+        $fixture = $this->loadFixture('extraction_workflow_artifact');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->artifacts()->get('test_artifact_id');
+        $this->assertInstanceOf(\Retab\Resource\ExtractionWorkflowArtifact::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['model'], $result->model);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/artifacts/test_artifact_id', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void

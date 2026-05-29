@@ -11,12 +11,10 @@ namespace Retab\Resource;
  *
  * ``duration_ms`` is backfilled at read time from
  * ``completed_at - started_at`` when both timestamps are present and the
- * stored value is ``None``. The field is ``init=False`` so producers cannot
- * pass it through ``__init__`` — they must round-trip through
- * ``model_validate`` (or persist via the Mongo projection helpers in
- * ``run_duration.py``). Records that already store ``duration_ms`` are left
- * untouched (idempotent), so backfill cannot drift from the canonical value
- * written by the projection.
+ * stored value is ``None`` (the Mongo projection helpers in
+ * ``run_duration.py`` compute and persist the canonical value). Records that
+ * already store ``duration_ms`` are left untouched (idempotent), so backfill
+ * cannot drift from the canonical value written by the projection.
  */
 readonly class RunTiming implements \JsonSerializable
 {

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var workflowsBlockExecutionsCmd = &cobra.Command{
+var workflowsBlocksExecutionsCmd = &cobra.Command{
 	Use:   "executions",
 	Short: "Run and inspect workflow block executions",
 	Long: `Create and list block executions for one block within a workflow run.
@@ -24,7 +24,7 @@ starting another full workflow run.`,
   retab workflows blocks executions list run_xyz789 --block-id blk_extract_1`,
 }
 
-var workflowsBlockExecutionsCreateCmd = &cobra.Command{
+var workflowsBlocksExecutionsCreateCmd = &cobra.Command{
 	Use:   "create <run-id>",
 	Short: "Create a workflow block execution",
 	Long: `Create a block execution by replaying a block with the current draft
@@ -84,7 +84,7 @@ step.`,
 	}),
 }
 
-var workflowsBlockExecutionsListCmd = &cobra.Command{
+var workflowsBlocksExecutionsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List workflow block executions",
 	Long: `List block executions for a block within one workflow run.
@@ -130,16 +130,16 @@ func validateBlockExecutionNConsensus(value int) error {
 }
 
 func init() {
-	workflowsBlockExecutionsCreateCmd.Flags().String("block-id", "", "block id to execute (required)")
-	workflowsBlockExecutionsCreateCmd.Flags().String("step-id", "", "specific iteration step id to source inputs from")
-	workflowsBlockExecutionsCreateCmd.Flags().String("n-consensus", "", "override n_consensus for extract, split, or classifier blocks (3, 5, or 7)")
-	workflowsBlockExecutionsCreateCmd.Flags().Bool("no-check-eligibility", false, "skip upstream drift eligibility checks")
-	_ = workflowsBlockExecutionsCreateCmd.MarkFlagRequired("block-id")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("block-id", "", "block id to execute (required)")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("step-id", "", "specific iteration step id to source inputs from")
+	workflowsBlocksExecutionsCreateCmd.Flags().String("n-consensus", "", "override n_consensus for extract, split, or classifier blocks (3, 5, or 7)")
+	workflowsBlocksExecutionsCreateCmd.Flags().Bool("no-check-eligibility", false, "skip upstream drift eligibility checks")
+	_ = workflowsBlocksExecutionsCreateCmd.MarkFlagRequired("block-id")
 
-	workflowsBlockExecutionsListCmd.Flags().String("block-id", "", "block id to list block executions for (required)")
-	workflowsBlockExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
-	_ = workflowsBlockExecutionsListCmd.MarkFlagRequired("block-id")
+	workflowsBlocksExecutionsListCmd.Flags().String("block-id", "", "block id to list block executions for (required)")
+	workflowsBlocksExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
+	_ = workflowsBlocksExecutionsListCmd.MarkFlagRequired("block-id")
 
-	workflowsBlockExecutionsCmd.AddCommand(workflowsBlockExecutionsCreateCmd, workflowsBlockExecutionsListCmd)
-	workflowsBlocksCmd.AddCommand(workflowsBlockExecutionsCmd)
+	workflowsBlocksExecutionsCmd.AddCommand(workflowsBlocksExecutionsCreateCmd, workflowsBlocksExecutionsListCmd)
+	workflowsBlocksCmd.AddCommand(workflowsBlocksExecutionsCmd)
 }

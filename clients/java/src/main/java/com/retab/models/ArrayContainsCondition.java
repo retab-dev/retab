@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ArrayContainsCondition {
+public final class ArrayContainsCondition implements Condition {
   private final String kind;
   private final Map<String, Object> expected;
 

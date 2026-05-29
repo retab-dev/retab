@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class ReviewTopMarginLt {
+public final class ReviewTopMarginLt implements ReviewKind {
   private final String kind;
   private final Double margin;
 

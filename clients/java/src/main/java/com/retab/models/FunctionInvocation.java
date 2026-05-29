@@ -9,7 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class FunctionInvocation {
+public final class FunctionInvocation implements WorkflowArtifactOperation2 {
   private final String operation;
   private final String id;
   private final String workflowRunId;

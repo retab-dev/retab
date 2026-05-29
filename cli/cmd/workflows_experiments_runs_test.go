@@ -57,7 +57,7 @@ func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
 	}
 }
 
-func TestWorkflowsExperimentsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
+func TestWorkflowsExperimentsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -79,7 +79,7 @@ func TestWorkflowsExperimentsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsExperimentsRunsResultsGetCmd.RunE(workflowsExperimentsRunsResultsGetCmd, []string{"expresult_123"}); err != nil {
+		if err := workflowsExperimentsResultsGetCmd.RunE(workflowsExperimentsResultsGetCmd, []string{"expresult_123"}); err != nil {
 			t.Fatalf("experiment result get: %v", err)
 		}
 	})
@@ -211,10 +211,10 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID(t *testing.T) {
 	}
 }
 
-// TestWorkflowsExperimentsRunsMetricsGetRequiresDependentFlags asserts that
+// TestWorkflowsExperimentsMetricsGetRequiresDependentFlags asserts that
 // the CLI catches missing required flags client-side before issuing an HTTP
 // request that the server would reject with a 400.
-func TestWorkflowsExperimentsRunsMetricsGetRequiresDependentFlags(t *testing.T) {
+func TestWorkflowsExperimentsMetricsGetRequiresDependentFlags(t *testing.T) {
 	cases := []struct {
 		name      string
 		view      string
@@ -237,16 +237,16 @@ func TestWorkflowsExperimentsRunsMetricsGetRequiresDependentFlags(t *testing.T) 
 			defer server.Close()
 			t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-			if err := workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", tc.view); err != nil {
+			if err := workflowsExperimentsMetricsGetCmd.Flags().Set("view", tc.view); err != nil {
 				t.Fatalf("set --view: %v", err)
 			}
 			t.Cleanup(func() {
-				_ = workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "summary")
-				_ = workflowsExperimentsRunsMetricsGetCmd.Flags().Set("document-id", "")
-				_ = workflowsExperimentsRunsMetricsGetCmd.Flags().Set("target-path", "")
+				_ = workflowsExperimentsMetricsGetCmd.Flags().Set("view", "summary")
+				_ = workflowsExperimentsMetricsGetCmd.Flags().Set("document-id", "")
+				_ = workflowsExperimentsMetricsGetCmd.Flags().Set("target-path", "")
 			})
 
-			err := workflowsExperimentsRunsMetricsGetCmd.RunE(workflowsExperimentsRunsMetricsGetCmd, []string{"exprun_abc"})
+			err := workflowsExperimentsMetricsGetCmd.RunE(workflowsExperimentsMetricsGetCmd, []string{"exprun_abc"})
 			if err == nil {
 				t.Fatalf("expected error when --view=%s and dependent flag is missing", tc.view)
 			}

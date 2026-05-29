@@ -16,7 +16,7 @@ public final class StoredBlockExecution {
   private final String runId;
   private final String blockId;
   private final String blockType;
-  private final CompletedBlockExecutionLifecycle lifecycle;
+  private final BlockExecutionLifecycle lifecycle;
   private final Map<String, Object> handleInputs;
   private final StepArtifactRef artifact;
   private final Map<String, Object> handleOutputs;
@@ -34,14 +34,13 @@ public final class StoredBlockExecution {
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "block_type", required = true) String blockType,
-      @JsonProperty(value = "lifecycle", required = true)
-          CompletedBlockExecutionLifecycle lifecycle,
+      @JsonProperty(value = "lifecycle", required = true) BlockExecutionLifecycle lifecycle,
       @JsonProperty(value = "handle_inputs", required = false) Map<String, Object> handleInputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "handle_outputs", required = false) Map<String, Object> handleOutputs,
       @JsonProperty(value = "routing_decision", required = false) List<String> routingDecision,
       @JsonProperty(value = "duration_ms", required = false) Double durationMs,
-      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
+      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
       @JsonProperty(value = "step_id", required = false) String stepId,
       @JsonProperty(value = "available_iterations", required = false)
@@ -89,7 +88,7 @@ public final class StoredBlockExecution {
   }
 
   @JsonProperty("lifecycle")
-  public CompletedBlockExecutionLifecycle getLifecycle() {
+  public BlockExecutionLifecycle getLifecycle() {
     return lifecycle;
   }
 

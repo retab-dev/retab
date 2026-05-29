@@ -5,8 +5,8 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Request options for <see cref="WorkflowSpecService.ValidateAsync"/>: Validate Workflow Spec</summary>
-    public class WorkflowSpecValidateOptions : BaseOptions
+    /// <summary>Request options for <see cref="WorkflowSpecService.ApplyAsync"/>: Apply Workflow Spec</summary>
+    public class WorkflowSpecApplyOptions : BaseOptions
     {
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
@@ -21,8 +21,8 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowSpecService.ApplyAsync"/>: Apply Workflow Spec</summary>
-    public class WorkflowSpecApplyOptions : BaseOptions
+    /// <summary>Request options for <see cref="WorkflowSpecService.ValidateAsync"/>: Validate Workflow Spec</summary>
+    public class WorkflowSpecValidateOptions : BaseOptions
     {
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;

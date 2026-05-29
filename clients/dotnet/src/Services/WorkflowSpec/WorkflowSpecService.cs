@@ -16,6 +16,51 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public WorkflowSpecService(Retab client) : base(client) { }
 
+        /// <summary>Apply Workflow Spec</summary>
+        /// <remarks>
+        /// Apply declarative YAML to draft workflow state.
+        /// Contract:
+        /// - apply writes canonical draft state, not authored formatting
+        /// - re-applying canonical exported YAML against unchanged draft state should
+        /// return an empty resource_changes list
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativeApplyResponse"/> result.</returns>
+        public virtual async Task<DeclarativeApplyResponse> ApplyAsync(WorkflowSpecApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<DeclarativeApplyResponse>("/v1/workflows/spec/apply", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ApplyAsync"/>.</summary>
+        public virtual Task<DeclarativeApplyResponse> Apply(WorkflowSpecApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ApplyAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Plan Workflow Spec</summary>
+        /// <remarks>
+        /// Compute the declarative reconcile plan against the current draft workflow.
+        /// Contract:
+        /// - plan compares authored YAML against current draft state
+        /// - canonical exported YAML should plan as `noop` against the same draft
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativePlanResponse"/> result.</returns>
+        public virtual async Task<DeclarativePlanResponse> PlanAsync(WorkflowSpecPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<DeclarativePlanResponse>("/v1/workflows/spec/plan", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="PlanAsync"/>.</summary>
+        public virtual Task<DeclarativePlanResponse> Plan(WorkflowSpecPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.PlanAsync(options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Validate Workflow Spec</summary>
         /// <remarks>
         /// Validate declarative YAML without mutating workflow state.
@@ -41,51 +86,6 @@ namespace Retab
         public virtual Task<DeclarativeValidationResponse> Validate(WorkflowSpecValidateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.ValidateAsync(options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Plan Workflow Spec</summary>
-        /// <remarks>
-        /// Compute the declarative reconcile plan against the current draft workflow.
-        /// Contract:
-        /// - plan compares authored YAML against current draft state
-        /// - canonical exported YAML should plan as `noop` against the same draft
-        /// </remarks>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="DeclarativePlanResponse"/> result.</returns>
-        public virtual async Task<DeclarativePlanResponse> PlanAsync(WorkflowSpecPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.PostAsync<DeclarativePlanResponse>("/v1/workflows/spec/plan", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="PlanAsync"/>.</summary>
-        public virtual Task<DeclarativePlanResponse> Plan(WorkflowSpecPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.PlanAsync(options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Apply Workflow Spec</summary>
-        /// <remarks>
-        /// Apply declarative YAML to draft workflow state.
-        /// Contract:
-        /// - apply writes canonical draft state, not authored formatting
-        /// - re-applying canonical exported YAML against unchanged draft state should
-        /// return an empty resource_changes list
-        /// </remarks>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="DeclarativeApplyResponse"/> result.</returns>
-        public virtual async Task<DeclarativeApplyResponse> ApplyAsync(WorkflowSpecApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.PostAsync<DeclarativeApplyResponse>("/v1/workflows/spec/apply", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="ApplyAsync"/>.</summary>
-        public virtual Task<DeclarativeApplyResponse> Apply(WorkflowSpecApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.ApplyAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Export Workflow Spec</summary>

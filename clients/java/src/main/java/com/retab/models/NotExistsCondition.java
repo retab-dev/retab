@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class NotExistsCondition {
+public final class NotExistsCondition implements Condition {
   private final String kind;
 
   @JsonCreator
