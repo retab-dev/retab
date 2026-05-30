@@ -109,23 +109,9 @@ else
   log "building lit WITH OCR (Tesseract, statically linked)"
 fi
 
-# Optional cross-compilation. When LIT_RUST_TARGET is set the build targets a
-# triple other than the host (e.g. building x86_64-apple-darwin on an Apple
-# Silicon runner because GitHub retired the Intel macOS runner). The lit binary
-# is pure Rust + a runtime-dlopen'd pdfium, so cross-compiling is clean; OCR's
-# vendored Tesseract CMake build is not cross-safe, so cross targets run with
-# LIT_OCR=0. The built artifact then lives under target/<triple>/release/.
-TARGET_SUBDIR="release"
-if [ -n "${LIT_RUST_TARGET:-}" ]; then
-  log "cross-compiling for ${LIT_RUST_TARGET}"
-  rustup target add "${LIT_RUST_TARGET}"
-  CARGO_FLAGS+=(--target "${LIT_RUST_TARGET}")
-  TARGET_SUBDIR="${LIT_RUST_TARGET}/release"
-fi
-
 ( cd "${SRC}" && cargo build "${CARGO_FLAGS[@]}" )
 
-LIT_BUILT="${SRC}/target/${TARGET_SUBDIR}/${LIT_BIN_NAME}"
+LIT_BUILT="${SRC}/target/release/${LIT_BIN_NAME}"
 [ -f "${LIT_BUILT}" ] || die "expected built binary not found at ${LIT_BUILT}"
 
 # --- 3. Fetch the matching libpdfium ----------------------------------------
