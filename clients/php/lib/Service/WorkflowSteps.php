@@ -31,7 +31,7 @@ class WorkflowSteps
      * @param array<string>|null $status Optional step lifecycle status filter. Repeat the query parameter for multiple values.
      * @param string|null $before Step id cursor: return the page before this id (mutually exclusive with `after`).
      * @param string|null $after Step id cursor: return the page after this id (mutually exclusive with `before`).
-     * @param int|null $limit Maximum number of steps to return per page (1-1000). Defaults to 5 because each step hydrates its handle payloads from the artifact store; raise it deliberately when you need a larger page, and use cursor pagination for the rest. Defaults to 5.
+     * @param int|null $limit Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest. Defaults to 20.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowRunStep>
      * @throws \Retab\Exception\RetabException
      */
