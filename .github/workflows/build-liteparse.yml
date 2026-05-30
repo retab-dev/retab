@@ -68,10 +68,20 @@ jobs:
             arch: arm64
             runner: ubuntu-24.04-arm
             ocr: "1"
+          # darwin/amd64: GitHub retired the Intel macOS hosted runner
+          # (macos-13), so there is no native x86_64 mac runner left. Build on
+          # Apple Silicon and cross-compile to x86_64-apple-darwin instead. The
+          # `lit` binary is pure Rust and dlopen()s pdfium at runtime, so the
+          # cross-build is clean — but the OCR feature's vendored Tesseract CMake
+          # build does not cross-compile reliably (Homebrew leptonica is arm64),
+          # so this target ships OCR-less, matching the windows/arm64 precedent.
+          # Flip ocr back to "1" once a native Intel runner returns or the
+          # Tesseract cross-build is validated.
           - os: darwin
             arch: amd64
-            runner: macos-13
-            ocr: "1"
+            runner: macos-latest
+            ocr: "0"
+            rust_target: x86_64-apple-darwin
           - os: darwin
             arch: arm64
             runner: macos-latest
@@ -142,6 +152,9 @@ jobs:
           LIT_OS: ${{ matrix.os }}
           LIT_ARCH: ${{ matrix.arch }}
           LIT_OCR: ${{ matrix.ocr }}
+          # When set, cross-compile to this Rust target triple instead of the
+          # host (used for darwin/amd64 on an Apple Silicon runner).
+          LIT_RUST_TARGET: ${{ matrix.rust_target }}
           LITEPARSE_REF: ${{ steps.ref.outputs.liteparse_ref }}
           STAGE_DIR: dist/lit-${{ matrix.os }}-${{ matrix.arch }}
         run: bash scripts/build-liteparse.sh
