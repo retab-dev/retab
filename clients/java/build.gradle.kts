@@ -6,11 +6,11 @@ plugins {
 }
 
 group = "com.retab"
-version = "0.0.1"
+version = "0.0.6"
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
   withSourcesJar()
   withJavadocJar()
 }
