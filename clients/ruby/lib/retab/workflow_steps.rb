@@ -18,7 +18,7 @@ module Retab
     # @param status [Array<String>, nil] Optional step lifecycle status filter. Repeat the query parameter for multiple values.
     # @param before [String, nil] Step id cursor: return the page before this id (mutually exclusive with `after`).
     # @param after [String, nil] Step id cursor: return the page after this id (mutually exclusive with `before`).
-    # @param limit [Integer, nil] Maximum number of steps to return per page (1-1000). Defaults to 5 because each step hydrates its handle payloads from the artifact store; raise it deliberately when you need a larger page, and use cursor pagination for the rest.
+    # @param limit [Integer, nil] Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowRunStep>]
     def list(
@@ -29,7 +29,7 @@ module Retab
       status: nil,
       before: nil,
       after: nil,
-      limit: 5,
+      limit: 20,
       request_options: {}
     )
       params = {
