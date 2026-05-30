@@ -218,6 +218,11 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # This job downloads artifacts but never checks out the repo, so gh
+          # has no local git remote to infer the target repo from. Pass it
+          # explicitly so `gh release create` doesn't fail with
+          # "fatal: not a git repository".
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -eu
