@@ -158,23 +158,11 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Files.List": {
 			{method: http.MethodGet, path: "/files"},
 		},
-		"Jobs.Cancel": {
-			{method: http.MethodPost, path: "/jobs/{job_id}/cancel"},
-		},
-		"Jobs.Create": {
-			{method: http.MethodPost, path: "/jobs"},
-		},
-		"Jobs.List": {
-			{method: http.MethodGet, path: "/jobs"},
-		},
-		"Jobs.Retry": {
-			{method: http.MethodPost, path: "/jobs/{job_id}/retry"},
-		},
-		"Jobs.Get": {
-			{method: http.MethodGet, path: "/jobs/{job_id}"},
-		},
 		"Parses.Create": {
 			{method: http.MethodPost, path: "/parses"},
+		},
+		"Parses.Cancel": {
+			{method: http.MethodPost, path: "/parses/{parse_id}/cancel"},
 		},
 		"Parses.Delete": {
 			{method: http.MethodDelete, path: "/parses/{parse_id}"},
