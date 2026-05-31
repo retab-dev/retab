@@ -5,15 +5,12 @@ package com.retab.files;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
-import com.retab.models.AnalyzeFileRequest;
 import com.retab.models.CompleteFileUploadRequest;
 import com.retab.models.CreateUploadResponse;
 import com.retab.models.File;
 import com.retab.models.FileLink;
-import com.retab.models.Job;
 import com.retab.models.MimeData;
 import com.retab.models.UploadFileRequest;
-import com.retab.types.AnalyzeFileRequestMode;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -83,50 +80,6 @@ public final class FilesApi {
     return client
         .getObjectMapper()
         .readValue(data.traverse(client.getObjectMapper()), new TypeReference<List<File>>() {});
-  }
-
-  public Job createAnalyze(AnalyzeFileRequest request) throws IOException, InterruptedException {
-    return createAnalyze(
-        request == null ? null : request.getFileId(),
-        request == null ? null : request.getMode(),
-        request == null ? null : request.getIntent(),
-        request == null ? null : request.getMetadata());
-  }
-
-  public Job createAnalyze(
-      String fileId, AnalyzeFileRequestMode mode, String intent, Map<String, String> metadata)
-      throws IOException, InterruptedException {
-    String path = "/v1/files/analyze";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("file_id", fileId);
-    if (mode != null) {
-      body.put("mode", mode);
-    }
-    if (intent != null) {
-      body.put("intent", intent);
-    }
-    if (metadata != null) {
-      body.put("metadata", metadata);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), Job.class);
   }
 
   public CreateUploadResponse createUpload(UploadFileRequest request)

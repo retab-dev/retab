@@ -99,7 +99,7 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 
 // approvedDirectCLINonReferenceRoutes are raw cliJSONRequest routes that the
 // CLI intentionally calls but that are deliberately excluded from the public
-// OpenAPI reference (see PUBLIC_OPENAPI_EXCLUDED_ROUTES in generate_openapi.py).
+// OpenAPI reference (see documentation_only_routes in public_api_routes.yaml).
 var approvedDirectCLINonReferenceRoutes = map[string]bool{
 	// `files analyze` is an internal worker-pool blueprint job endpoint; the
 	// CLI exposes it as a raw overlay but it is not part of the public API
