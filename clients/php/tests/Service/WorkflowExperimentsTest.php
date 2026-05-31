@@ -17,7 +17,7 @@ class WorkflowExperimentsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_experiment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->experiments()->list(workflowId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc);
+        $result = $client->workflows()->experiments()->list(workflowId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

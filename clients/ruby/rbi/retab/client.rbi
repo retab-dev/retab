@@ -18,9 +18,6 @@ module Retab
     sig { returns(Retab::Files) }
     def files; end
 
-    sig { returns(Retab::Jobs) }
-    def jobs; end
-
     sig { returns(Retab::Parses) }
     def parses; end
 

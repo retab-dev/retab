@@ -21,7 +21,6 @@ export * from './edits/interfaces/index.js';
 export * from './edits/templates/interfaces/index.js';
 export * from './extractions/interfaces/index.js';
 export * from './files/interfaces/index.js';
-export * from './jobs/interfaces/index.js';
 export * from './parses/interfaces/index.js';
 export * from './partitions/interfaces/index.js';
 export * from './schemas/interfaces/index.js';

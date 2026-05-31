@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-31T13:09:06.141Z",
+  "generatedAt": "2026-05-31T16:15:03.957Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -81,12 +81,6 @@
     "lib/retab/files/file_link.rb",
     "lib/retab/files/upload_file_request.rb",
     "lib/retab/inflections.rb",
-    "lib/retab/jobs.rb",
-    "lib/retab/jobs/create_job_request.rb",
-    "lib/retab/jobs/job.rb",
-    "lib/retab/jobs/job_error.rb",
-    "lib/retab/jobs/job_response.rb",
-    "lib/retab/jobs/job_warning.rb",
     "lib/retab/mime.rb",
     "lib/retab/paginated_list.rb",
     "lib/retab/parses.rb",
@@ -124,7 +118,6 @@
     "lib/retab/types/condition_evaluation_details_logical_operator.rb",
     "lib/retab/types/condition_evaluation_result_logical_operator.rb",
     "lib/retab/types/create_experiment_request_n_consensus.rb",
-    "lib/retab/types/create_job_request_endpoint.rb",
     "lib/retab/types/declarative_apply_response_action.rb",
     "lib/retab/types/declarative_plan_field_change_action.rb",
     "lib/retab/types/declarative_plan_resource_change_actions.rb",
@@ -156,11 +149,6 @@
     "lib/retab/types/extractions_status.rb",
     "lib/retab/types/field_type.rb",
     "lib/retab/types/files_order.rb",
-    "lib/retab/types/job_status.rb",
-    "lib/retab/types/jobs_endpoint.rb",
-    "lib/retab/types/jobs_order.rb",
-    "lib/retab/types/jobs_source.rb",
-    "lib/retab/types/jobs_status.rb",
     "lib/retab/types/latest_block_test_run_summary_outcome.rb",
     "lib/retab/types/latest_block_test_run_summary_status.rb",
     "lib/retab/types/length_compare_condition_op.rb",
@@ -168,6 +156,8 @@
     "lib/retab/types/n_consensus_value.rb",
     "lib/retab/types/number_compare_condition_op.rb",
     "lib/retab/types/parse_request_table_parsing_format.rb",
+    "lib/retab/types/parse_status.rb",
+    "lib/retab/types/parse_workflow_artifact_status.rb",
     "lib/retab/types/parse_workflow_artifact_table_parsing_format.rb",
     "lib/retab/types/parses_order.rb",
     "lib/retab/types/partition_status.rb",
@@ -189,7 +179,6 @@
     "lib/retab/types/splits_status.rb",
     "lib/retab/types/step_artifact_ref_operation.rb",
     "lib/retab/types/submission_status.rb",
-    "lib/retab/types/supported_endpoint.rb",
     "lib/retab/types/table_parsing_format.rb",
     "lib/retab/types/trigger_info_type.rb",
     "lib/retab/types/update_experiment_request_n_consensus.rb",
@@ -436,7 +425,6 @@
     "rbi/retab/create_edit_template_request.rbi",
     "rbi/retab/create_experiment_request.rbi",
     "rbi/retab/create_experiment_run_request.rbi",
-    "rbi/retab/create_job_request.rbi",
     "rbi/retab/create_review_version_request.rbi",
     "rbi/retab/create_upload_response.rbi",
     "rbi/retab/create_workflow_request.rbi",
@@ -512,11 +500,6 @@
     "rbi/retab/function_invocation.rbi",
     "rbi/retab/generate_schema_request.rbi",
     "rbi/retab/http_validation_error.rbi",
-    "rbi/retab/job.rbi",
-    "rbi/retab/job_error.rbi",
-    "rbi/retab/job_response.rbi",
-    "rbi/retab/job_warning.rbi",
-    "rbi/retab/jobs.rbi",
     "rbi/retab/json_handle_input.rbi",
     "rbi/retab/json_schema_valid_condition.rbi",
     "rbi/retab/latest_block_test_run_summary.rbi",
@@ -657,7 +640,6 @@
     "test/retab/test_experiment_runs.rb",
     "test/retab/test_extractions.rb",
     "test/retab/test_files.rb",
-    "test/retab/test_jobs.rb",
     "test/retab/test_model_round_trip.rb",
     "test/retab/test_parses.rb",
     "test/retab/test_partitions.rb",
@@ -786,26 +768,6 @@
       "sdkMethod": "get_download_link",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "list",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "retry",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "list",
       "service": "parses"
@@ -820,6 +782,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "cancel",
       "service": "parses"
     },
     "GET /v1/partitions": {

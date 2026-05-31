@@ -865,11 +865,6 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 			service: &WorkflowExperimentService{},
 			methods: []string{"Duplicate", "ListEligibleBlocks"},
 		},
-		{
-			name:    "JobService",
-			service: &JobService{},
-			methods: []string{"RetrieveFull"},
-		},
 	}
 	for _, tc := range cases {
 		serviceType := reflect.TypeOf(tc.service)

@@ -26,7 +26,7 @@ class Parses
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
-     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
+     * @param \Retab\Resource\EditsOrder $order Defaults to "desc".
      * @param string|null $filename
      * @param string|null $fromDate
      * @param string|null $toDate
@@ -37,7 +37,7 @@ class Parses
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
-        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Desc,
         ?string $filename = null,
         ?string $fromDate = null,
         ?string $toDate = null,
@@ -76,6 +76,7 @@ class Parses
      * @param int|null $imageResolutionDpi DPI used when rasterizing pages for the parser
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the parse.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\Parse
      * @throws \Retab\Exception\RetabException
      */
@@ -86,6 +87,7 @@ class Parses
         ?int $imageResolutionDpi = null,
         ?string $instructions = null,
         ?bool $bustCache = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Parse {
         $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
@@ -96,6 +98,7 @@ class Parses
             'image_resolution_dpi' => $imageResolutionDpi,
             'instructions' => $instructions,
             'bust_cache' => $bustCache,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -115,16 +118,22 @@ class Parses
      * returns the full `Parse` including its `output`. Responds with `404` if no parse with
      * that id exists.
      * @param string $parseId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Parse
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $parseId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Parse {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/parses/' . rawurlencode($parseId),
+            query: $query,
             options: $options,
         );
         return Parse::fromArray($response);
@@ -151,5 +160,23 @@ class Parses
             path: 'v1/parses/' . rawurlencode($parseId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Parse
+     * @param string $parseId
+     * @return \Retab\Resource\Parse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function cancel(
+        string $parseId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Parse {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/parses/' . rawurlencode($parseId) . '/cancel',
+            options: $options,
+        );
+        return Parse::fromArray($response);
     }
 }

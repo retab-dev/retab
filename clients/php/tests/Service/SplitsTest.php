@@ -17,7 +17,7 @@ class SplitsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_split');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->splits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->splits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, filename: 'test_value', status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

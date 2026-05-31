@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.ParseWorkflowArtifactStatus;
 import com.retab.types.ParseWorkflowArtifactTableParsingFormat;
 import java.time.OffsetDateTime;
 
@@ -17,6 +18,8 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final Long imageResolutionDpi;
   private final String instructions;
   private final ParseOutput output;
+  private final ParseWorkflowArtifactStatus status;
+  private final PrimitiveError error;
   private final RetabUsage usage;
   private final OffsetDateTime createdAt;
   private final String operation;
@@ -31,6 +34,8 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "image_resolution_dpi", required = true) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "output", required = true) ParseOutput output,
+      @JsonProperty(value = "status", required = false) ParseWorkflowArtifactStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "operation", required = false) String operation) {
@@ -41,6 +46,8 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
     this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.output = output;
+    this.status = status;
+    this.error = error;
     this.usage = usage;
     this.createdAt = createdAt;
     this.operation = operation != null ? operation : "parse";
@@ -79,6 +86,16 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
   @JsonProperty("output")
   public ParseOutput getOutput() {
     return output;
+  }
+
+  @JsonProperty("status")
+  public ParseWorkflowArtifactStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 
   @JsonProperty("usage")

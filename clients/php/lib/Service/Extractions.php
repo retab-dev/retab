@@ -26,7 +26,7 @@ class Extractions
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 10.
-     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
+     * @param \Retab\Resource\EditsOrder $order Defaults to "desc".
      * @param string|null $filename
      * @param string|null $filenameRegex Deprecated alias for prefix filename filtering. Regex patterns are rejected.
      * @param string|null $filenameContains Plain-text search over the filename.
@@ -42,7 +42,7 @@ class Extractions
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
-        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Desc,
         ?string $filename = null,
         ?string $filenameRegex = null,
         ?string $filenameContains = null,

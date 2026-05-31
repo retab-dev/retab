@@ -39,6 +39,13 @@ class ParsesTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/parses/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.parses.cancel(parse_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/parses(\?|\z)}},
@@ -49,7 +56,13 @@ class ParsesTest < Minitest::Test
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}},
-    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}}
+    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}},
+    {
+      name: :cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/parses/stub/cancel(\?|\z)},
+      args: {parse_id: "stub"}
+    }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do
       stub_request(spec[:verb], spec[:url])

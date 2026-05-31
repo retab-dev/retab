@@ -2,11 +2,17 @@ namespace Retab
 {
     using System.Collections.Generic;
 
-    /// <summary>Error details when job fails.</summary>
-    public class JobError
+    /// <summary>Represents a primitive error.</summary>
+    public class PrimitiveError
     {
+
+        /// <summary>Machine-readable error code.</summary>
         public string Code { get; set; } = default!;
+
+        /// <summary>Human-readable error message.</summary>
         public string Message { get; set; } = default!;
+
+        /// <summary>Optional structured error context.</summary>
         public Dictionary<string, object>? Details { get; set; }
 
         /// <summary>

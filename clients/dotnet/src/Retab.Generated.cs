@@ -27,11 +27,6 @@ namespace Retab
         /// <summary>Gets the <see cref="FilesService"/> for files API operations.</summary>
         public virtual FilesService Files => this.files ??= new FilesService(this);
 
-        private JobsService? jobs;
-
-        /// <summary>Gets the <see cref="JobsService"/> for jobs API operations.</summary>
-        public virtual JobsService Jobs => this.jobs ??= new JobsService(this);
-
         private ParsesService? parses;
 
         /// <summary>Gets the <see cref="ParsesService"/> for parses API operations.</summary>

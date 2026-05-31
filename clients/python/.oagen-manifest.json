@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "python",
-  "generatedAt": "2026-05-31T13:09:01.763Z",
+  "generatedAt": "2026-05-31T16:14:59.060Z",
   "files": [
     "retab/resources/__init__.py",
     "retab/resources/classifications.py",
@@ -9,7 +9,6 @@
     "retab/resources/edits/templates.py",
     "retab/resources/extractions.py",
     "retab/resources/files.py",
-    "retab/resources/jobs.py",
     "retab/resources/parses.py",
     "retab/resources/partitions.py",
     "retab/resources/schemas.py",
@@ -40,7 +39,6 @@
     "retab/types/edits/templates.py",
     "retab/types/extractions.py",
     "retab/types/files.py",
-    "retab/types/jobs.py",
     "retab/types/mime.py",
     "retab/types/pagination.py",
     "retab/types/parses.py",

@@ -40,6 +40,11 @@ export interface ParseRequest {
    * @default false
    */
   bustCache?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
 }
 
 export interface ParseRequestResponse {
@@ -49,6 +54,7 @@ export interface ParseRequestResponse {
   image_resolution_dpi?: number;
   instructions?: string | null;
   bust_cache?: boolean;
+  background?: boolean;
 }
 
 export const ZParseRequest = z.object({
@@ -58,6 +64,7 @@ export const ZParseRequest = z.object({
   imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   bustCache: z.boolean().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<ParseRequest>;
 
 export function deserializeParseRequest(wire: ParseRequestResponse): ParseRequest {
@@ -68,6 +75,7 @@ export function deserializeParseRequest(wire: ParseRequestResponse): ParseReques
     imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     bustCache: wire['bust_cache'],
+    background: wire['background'],
   };
 }
 
@@ -79,5 +87,6 @@ export function serializeParseRequest(domain: ParseRequest): ParseRequestRespons
     image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     bust_cache: domain['bustCache'],
+    background: domain['background'],
   };
 }

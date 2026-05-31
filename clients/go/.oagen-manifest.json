@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-31T13:08:56.800Z",
+  "generatedAt": "2026-05-31T16:14:51.980Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
@@ -14,7 +14,6 @@
     "extractions.go",
     "files.go",
     "go.mod",
-    "jobs.go",
     "mime.go",
     "models.go",
     "pagination.go",
@@ -145,26 +144,6 @@
       "sdkMethod": "GetDownloadLink",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "List",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "Create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "Get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "Cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "Retry",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "List",
       "service": "parses"
@@ -179,6 +158,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "Delete",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "Cancel",
       "service": "parses"
     },
     "GET /v1/partitions": {

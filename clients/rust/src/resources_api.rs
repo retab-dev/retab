@@ -5,7 +5,6 @@ use crate::resources::ClassificationsApi;
 use crate::resources::EditsApi;
 use crate::resources::ExtractionsApi;
 use crate::resources::FilesApi;
-use crate::resources::JobsApi;
 use crate::resources::ParsesApi;
 use crate::resources::PartitionsApi;
 use crate::resources::SchemasApi;
@@ -31,11 +30,6 @@ impl Retab {
     /// Access the `files` resource.
     pub fn files(&self) -> FilesApi<'_> {
         FilesApi { client: self }
-    }
-
-    /// Access the `jobs` resource.
-    pub fn jobs(&self) -> JobsApi<'_> {
-        JobsApi { client: self }
     }
 
     /// Access the `parses` resource.

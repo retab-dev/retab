@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-31T13:34:46.945Z",
+  "generatedAt": "2026-05-31T16:08:25.287Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -16,7 +16,6 @@
     "src/main/java/com/retab/experimentruns/ExperimentRunsApi.java",
     "src/main/java/com/retab/extractions/ExtractionsApi.java",
     "src/main/java/com/retab/files/FilesApi.java",
-    "src/main/java/com/retab/jobs/JobsApi.java",
     "src/main/java/com/retab/models/Actor.java",
     "src/main/java/com/retab/models/AllItemsMatchCondition.java",
     "src/main/java/com/retab/models/AnyItemMatchesCondition.java",
@@ -69,7 +68,6 @@
     "src/main/java/com/retab/models/CreateEditTemplateRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRunRequest.java",
-    "src/main/java/com/retab/models/CreateJobRequest.java",
     "src/main/java/com/retab/models/CreateReviewVersionRequest.java",
     "src/main/java/com/retab/models/CreateUploadResponse.java",
     "src/main/java/com/retab/models/CreateWorkflowRequest.java",
@@ -140,10 +138,6 @@
     "src/main/java/com/retab/models/GenerateSchemaRequest.java",
     "src/main/java/com/retab/models/HandleInput.java",
     "src/main/java/com/retab/models/HttpValidationError.java",
-    "src/main/java/com/retab/models/Job.java",
-    "src/main/java/com/retab/models/JobError.java",
-    "src/main/java/com/retab/models/JobResponse.java",
-    "src/main/java/com/retab/models/JobWarning.java",
     "src/main/java/com/retab/models/JsonHandleInput.java",
     "src/main/java/com/retab/models/JsonSchemaValidCondition.java",
     "src/main/java/com/retab/models/LatestBlockTestRunSummary.java",
@@ -281,7 +275,6 @@
     "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
     "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
     "src/main/java/com/retab/types/CreateExperimentRequestNConsensus.java",
-    "src/main/java/com/retab/types/CreateJobRequestEndpoint.java",
     "src/main/java/com/retab/types/DeclarativeApplyResponseAction.java",
     "src/main/java/com/retab/types/DeclarativePlanFieldChangeAction.java",
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeActions.java",
@@ -307,16 +300,14 @@
     "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ExtractionsStatus.java",
     "src/main/java/com/retab/types/FieldType.java",
-    "src/main/java/com/retab/types/JobStatus.java",
-    "src/main/java/com/retab/types/JobsEndpoint.java",
-    "src/main/java/com/retab/types/JobsSource.java",
-    "src/main/java/com/retab/types/JobsStatus.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryOutcome.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryStatus.java",
     "src/main/java/com/retab/types/LengthCompareConditionOp.java",
     "src/main/java/com/retab/types/NConsensusValue.java",
     "src/main/java/com/retab/types/NumberCompareConditionOp.java",
     "src/main/java/com/retab/types/ParseRequestTableParsingFormat.java",
+    "src/main/java/com/retab/types/ParseStatus.java",
+    "src/main/java/com/retab/types/ParseWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ParseWorkflowArtifactTableParsingFormat.java",
     "src/main/java/com/retab/types/PartitionStatus.java",
     "src/main/java/com/retab/types/PartitionWorkflowArtifactStatus.java",
@@ -335,7 +326,6 @@
     "src/main/java/com/retab/types/SplitsStatus.java",
     "src/main/java/com/retab/types/StepArtifactRefOperation.java",
     "src/main/java/com/retab/types/SubmissionStatus.java",
-    "src/main/java/com/retab/types/SupportedEndpoint.java",
     "src/main/java/com/retab/types/TableParsingFormat.java",
     "src/main/java/com/retab/types/TriggerInfoType.java",
     "src/main/java/com/retab/types/UpdateExperimentRequestNConsensus.java",
@@ -479,26 +469,6 @@
       "sdkMethod": "getDownloadLink",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "list",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "retry",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "list",
       "service": "parses"
@@ -513,6 +483,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "cancel",
       "service": "parses"
     },
     "GET /v1/partitions": {

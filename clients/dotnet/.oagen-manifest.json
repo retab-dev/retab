@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-31T13:09:02.740Z",
+  "generatedAt": "2026-05-31T16:14:59.972Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -122,9 +122,6 @@
     "src/Entities/FormField.cs",
     "src/Entities/FunctionInvocation.cs",
     "src/Entities/HttpValidationError.cs",
-    "src/Entities/Job.cs",
-    "src/Entities/JobError.cs",
-    "src/Entities/JobResponse.cs",
     "src/Entities/JsonHandleInput.cs",
     "src/Entities/JsonSchemaValidCondition.cs",
     "src/Entities/LatestBlockTestRunSummary.cs",
@@ -151,6 +148,7 @@
     "src/Entities/PartitionConsensus.cs",
     "src/Entities/PartitionWorkflowArtifact.cs",
     "src/Entities/PendingRun.cs",
+    "src/Entities/PrimitiveError.cs",
     "src/Entities/PublicHandlePayload.cs",
     "src/Entities/PublishWorkflowRequest.cs",
     "src/Entities/QueuedStepLifecycle.cs",
@@ -218,7 +216,6 @@
     "src/Enums/ClassificationsOrder.cs",
     "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
     "src/Enums/CreateExperimentRequestNConsensus.cs",
-    "src/Enums/CreateJobRequestEndpoint.cs",
     "src/Enums/DeclarativeApplyResponseAction.cs",
     "src/Enums/DeclarativePlanFieldChangeAction.cs",
     "src/Enums/DeclarativePlanResourceChangeTarget.cs",
@@ -230,8 +227,6 @@
     "src/Enums/ExperimentRunMetricsView.cs",
     "src/Enums/ExperimentSchemaDriftStatus.cs",
     "src/Enums/FieldType.cs",
-    "src/Enums/JobStatus.cs",
-    "src/Enums/JobsSource.cs",
     "src/Enums/LatestBlockTestRunSummaryStatus.cs",
     "src/Enums/LengthCompareConditionOp.cs",
     "src/Enums/ParseRequestTableParsingFormat.cs",
@@ -271,8 +266,6 @@
     "src/Services/Extractions/_interfaces/ExtractionsOptions.cs",
     "src/Services/Files/FilesService.cs",
     "src/Services/Files/_interfaces/FilesOptions.cs",
-    "src/Services/Jobs/JobsService.cs",
-    "src/Services/Jobs/_interfaces/JobsOptions.cs",
     "src/Services/Parses/ParsesService.cs",
     "src/Services/Parses/_interfaces/ParsesOptions.cs",
     "src/Services/Partitions/PartitionsService.cs",
@@ -418,26 +411,6 @@
       "sdkMethod": "GetDownloadLinkAsync",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "ListAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "CreateAsync",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "CancelAsync",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "RetryAsync",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "ListAsync",
       "service": "parses"
@@ -452,6 +425,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "CancelAsync",
       "service": "parses"
     },
     "GET /v1/partitions": {

@@ -80,6 +80,7 @@ module Retab
     # @param image_resolution_dpi [Integer, nil] DPI used when rasterizing pages for the parser
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the parse.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Parse]
     def create(
@@ -89,6 +90,7 @@ module Retab
       image_resolution_dpi: nil,
       instructions: nil,
       bust_cache: nil,
+      background: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document) unless document.nil?
@@ -98,7 +100,8 @@ module Retab
         "table_parsing_format" => table_parsing_format,
         "image_resolution_dpi" => image_resolution_dpi,
         "instructions" => instructions,
-        "bust_cache" => bust_cache
+        "bust_cache" => bust_cache,
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,
@@ -118,16 +121,22 @@ module Retab
 
     # Get Parse
     # @param parse_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Parse]
     def get(
       parse_id:,
+      include_output: true,
       request_options: {}
     )
+      params = {
+        "include_output" => include_output
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/parses/#{Retab::Util.encode_path(parse_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::Parse.new(response.body)
@@ -154,6 +163,29 @@ module Retab
         request_options: request_options
       )
       nil
+    end
+
+    # Cancel Parse
+    # @param parse_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Parse]
+    def cancel(
+      parse_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/parses/#{Retab::Util.encode_path(parse_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Parse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
   end
 end

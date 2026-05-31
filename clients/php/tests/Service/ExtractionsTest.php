@@ -17,7 +17,7 @@ class ExtractionsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_extraction');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', filenameRegex: 'test_value', filenameContains: 'test_value', documentType: [], status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value', metadata: 'test_value');
+        $result = $client->extractions()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, filename: 'test_value', filenameRegex: 'test_value', filenameContains: 'test_value', documentType: [], status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value', metadata: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

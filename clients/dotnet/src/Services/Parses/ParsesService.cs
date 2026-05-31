@@ -81,18 +81,19 @@ namespace Retab
         /// that id exists.
         /// </remarks>
         /// <param name="parseId">The parse id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Parse"/> result.</returns>
-        public virtual async Task<Parse> GetAsync(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Parse> GetAsync(string parseId, ParsesGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<Parse>($"/v1/parses/{Uri.EscapeDataString(parseId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Parse>($"/v1/parses/{Uri.EscapeDataString(parseId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Parse> Get(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Parse> Get(string parseId, ParsesGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(parseId, requestOptions, cancellationToken);
+            return this.GetAsync(parseId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Parse</summary>
@@ -114,6 +115,22 @@ namespace Retab
         public virtual Task Delete(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.DeleteAsync(parseId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel Parse</summary>
+        /// <param name="parseId">The parse id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Parse"/> result.</returns>
+        public virtual async Task<Parse> CancelAsync(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Parse>($"/v1/parses/{Uri.EscapeDataString(parseId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CancelAsync"/>.</summary>
+        public virtual Task<Parse> Cancel(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CancelAsync(parseId, requestOptions, cancellationToken);
         }
     }
 }

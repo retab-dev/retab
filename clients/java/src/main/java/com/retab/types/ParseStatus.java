@@ -6,16 +6,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum JobsSource {
+public enum ParseStatus {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
-  API("api"),
-  PROJECT("project"),
-  WORKFLOW("workflow");
+  PENDING("pending"),
+  QUEUED("queued"),
+  IN_PROGRESS("in_progress"),
+  COMPLETED("completed"),
+  FAILED("failed"),
+  CANCELLED("cancelled");
 
   private final String value;
 
-  JobsSource(String value) {
+  ParseStatus(String value) {
     this.value = value;
   }
 
@@ -25,8 +28,8 @@ public enum JobsSource {
   }
 
   @JsonCreator
-  public static JobsSource fromValue(String value) {
-    for (JobsSource item : values()) {
+  public static ParseStatus fromValue(String value) {
+    for (ParseStatus item : values()) {
       if (item.value.equals(value)) {
         return item;
       }

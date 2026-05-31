@@ -31,6 +31,12 @@ namespace Retab
         /// <summary>The parsed document content</summary>
         public ParseOutput Output { get; set; } = default!;
 
+        /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
+        public ClassificationStatus? Status { get; set; }
+
+        /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
+        public PrimitiveError? Error { get; set; }
+
         /// <summary>Usage information for the parse operation</summary>
         public RetabUsage? Usage { get; set; }
         public DateTimeOffset? CreatedAt { get; set; }

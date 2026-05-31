@@ -69,6 +69,9 @@ ConditionEvaluationResultLogicalOperator = ConditionEvaluationDetailsLogicalOper
 ExtractionWorkflowArtifactStatus = EditWorkflowArtifactStatus
 
 
+ParseWorkflowArtifactStatus = EditWorkflowArtifactStatus
+
+
 PartitionWorkflowArtifactStatus = EditWorkflowArtifactStatus
 
 
@@ -330,6 +333,13 @@ class ParseWorkflowArtifact(BaseModel):
     image_resolution_dpi: int = Field(..., description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
     operation: Literal["parse"] = Field(default="parse", description="The operation that produced this artifact")

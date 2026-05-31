@@ -17,7 +17,7 @@ class EditTemplatesTest extends TestCase
     {
         $fixture = $this->loadFixture('list_edit_template');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->templates()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, name: 'test_value', sortBy: 'test_value');
+        $result = $client->edits()->templates()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, name: 'test_value', sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

@@ -201,23 +201,6 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "jobs create",
-			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.Create(ctx, &JobsCreateParams{
-					Endpoint: CreateJobRequestEndpointV1Extractions,
-					Request:  map[string]interface{}{"model": "retab-small"},
-					Metadata: map[string]string{"owner": "go-test"},
-				})
-				return err
-			},
-			wantMethod: http.MethodPost,
-			wantPath:   "/v1/jobs",
-			assertBody: func(t *testing.T, body Resource) {
-				assertBodyString(t, body, "endpoint", "/v1/extractions")
-				assertNestedString(t, body, "request", "model", "retab-small")
-			},
-		},
 	}
 
 	for _, test := range tests {
@@ -272,7 +255,7 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 			return err
 		}, http.MethodPost, "/v1/files/upload/file_123/complete"},
 		{"extractions get", func(ctx context.Context, client *Client) error {
-			_, err := client.Extractions.Get(ctx, "ext_123")
+			_, err := client.Extractions.Get(ctx, "ext_123", nil)
 			return err
 		}, http.MethodGet, "/v1/extractions/ext_123"},
 		{"extractions sources", func(ctx context.Context, client *Client) error {
@@ -283,24 +266,16 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 			return client.Splits.Delete(ctx, "split_123")
 		}, http.MethodDelete, "/v1/splits/split_123"},
 		{"classifications get", func(ctx context.Context, client *Client) error {
-			_, err := client.Classifications.Get(ctx, "cls_123")
+			_, err := client.Classifications.Get(ctx, "cls_123", nil)
 			return err
 		}, http.MethodGet, "/v1/classifications/cls_123"},
 		{"parses delete", func(ctx context.Context, client *Client) error {
 			return client.Parses.Delete(ctx, "parse_123")
 		}, http.MethodDelete, "/v1/parses/parse_123"},
 		{"edits get", func(ctx context.Context, client *Client) error {
-			_, err := client.Edits.Get(ctx, "edit_123")
+			_, err := client.Edits.Get(ctx, "edit_123", nil)
 			return err
 		}, http.MethodGet, "/v1/edits/edit_123"},
-		{"jobs cancel", func(ctx context.Context, client *Client) error {
-			_, err := client.Jobs.Cancel(ctx, "job_123")
-			return err
-		}, http.MethodPost, "/v1/jobs/job_123/cancel"},
-		{"jobs retry", func(ctx context.Context, client *Client) error {
-			_, err := client.Jobs.Retry(ctx, "job_123")
-			return err
-		}, http.MethodPost, "/v1/jobs/job_123/retry"},
 	}
 
 	for _, test := range tests {
@@ -425,7 +400,6 @@ func TestFilesUploadRequestShape(t *testing.T) {
 func TestListQueryShapes(t *testing.T) {
 	fromDate := "2026-01-02"
 	toDate := "2026-01-03"
-	includeRequest := true
 	tests := []struct {
 		name     string
 		call     func(context.Context, *Client) error
@@ -456,69 +430,6 @@ func TestListQueryShapes(t *testing.T) {
 				assertQuery(t, query, "filename", "invoice.pdf")
 				assertQuery(t, query, "from_date", "2026-01-02")
 				assertQuery(t, query, "metadata", `{"tenant":"acme"}`)
-			},
-		},
-		{
-			name: "jobs retrieve",
-			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.Get(ctx, "job_123", &JobsGetParams{
-					IncludeRequest:  ptrTo(true),
-					IncludeResponse: ptrTo(true),
-				})
-				return err
-			},
-			wantPath: "/v1/jobs/job_123",
-			assert: func(t *testing.T, query map[string][]string) {
-				assertQuery(t, query, "include_request", "true")
-				assertQuery(t, query, "include_response", "true")
-			},
-		},
-		{
-			name: "jobs list filters",
-			call: func(ctx context.Context, client *Client) error {
-				status := JobStatusCompleted
-				endpoint := CreateJobRequestEndpointV1Parses
-				_, err := client.Jobs.List(ctx, &JobsListParams{
-					PaginationParams: PaginationParams{Limit: ptrTo(3)},
-					Status:           &status,
-					Endpoint:         &endpoint,
-					DocumentType:     []string{"invoice", "receipt"},
-					Metadata:         ptrTo(`{"tenant":"acme"}`),
-					IncludeRequest:   &includeRequest,
-				})
-				return err
-			},
-			wantPath: "/v1/jobs",
-			assert: func(t *testing.T, query map[string][]string) {
-				assertQuery(t, query, "limit", "3")
-				assertQuery(t, query, "status", "completed")
-				assertQuery(t, query, "endpoint", "/v1/parses")
-				assertQuery(t, query, "metadata", `{"tenant":"acme"}`)
-				assertQuery(t, query, "include_request", "true")
-				if got := strings.Join(query["document_type"], ","); got != "invoice,receipt" {
-					t.Fatalf("document_type = %q", got)
-				}
-			},
-		},
-		{
-			// Regression: a typed-nil map made it past the `value == nil`
-			// guard in addJSONQuery and serialised as `metadata=null`,
-			// which the API then rejected with HTTP 400. The CLI hit this
-			// the moment a user ran `retab jobs list` with no flags.
-			// Pin the fix: an unset Metadata must NOT appear in the URL.
-			name: "jobs list omits metadata when unset",
-			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Jobs.List(ctx, &JobsListParams{
-					PaginationParams: PaginationParams{Limit: ptrTo(1)},
-				})
-				return err
-			},
-			wantPath: "/v1/jobs",
-			assert: func(t *testing.T, query map[string][]string) {
-				assertQuery(t, query, "limit", "1")
-				if _, ok := query["metadata"]; ok {
-					t.Fatalf("metadata should not appear when unset, got %q", query["metadata"])
-				}
 			},
 		},
 	}

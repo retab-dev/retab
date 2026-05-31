@@ -17,7 +17,7 @@ class ParsesTest extends TestCase
     {
         $fixture = $this->loadFixture('list_parse');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->parses()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->parses()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -50,7 +50,7 @@ class ParsesTest extends TestCase
     {
         $fixture = $this->loadFixture('parse');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->parses()->get('test_parse_id');
+        $result = $client->parses()->get('test_parse_id', includeOutput: true);
         $this->assertInstanceOf(\Retab\Resource\Parse::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
@@ -58,6 +58,8 @@ class ParsesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/parses/test_parse_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertArrayHasKey('include_output', $query);
     }
 
     public function testDelete(): void
@@ -67,6 +69,20 @@ class ParsesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/parses/test_parse_id', $request->getUri()->getPath());
+    }
+
+    public function testCancel(): void
+    {
+        $fixture = $this->loadFixture('parse');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->parses()->cancel('test_parse_id');
+        $this->assertInstanceOf(\Retab\Resource\Parse::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['model'], $result->model);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/parses/test_parse_id/cancel', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void

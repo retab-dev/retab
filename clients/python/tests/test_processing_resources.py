@@ -222,6 +222,8 @@ def test_parses_resource_crud(sync_client: Retab, created_parse: Parse, booking_
     with sync_client as client:
         fetched = client.parses.get(created_parse.id)
         assert fetched.id == created_parse.id
+        assert fetched.output is not None
+        assert created_parse.output is not None
         assert fetched.output.text == created_parse.output.text
 
         page = _wait_for_list_contains(
@@ -353,6 +355,7 @@ def test_edits_resource_crud(sync_client: Retab, created_edit: Edit) -> None:
     with sync_client as client:
         fetched = client.edits.get(created_edit.id)
         assert fetched.id == created_edit.id
+        assert fetched.output is not None
         assert fetched.output.filled_document.url.startswith("data:application/pdf;base64,")
         assert len(fetched.output.form_data) > 0
 

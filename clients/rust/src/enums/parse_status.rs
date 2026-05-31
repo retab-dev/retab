@@ -6,18 +6,13 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum JobsEndpoint {
-    V1Extractions,
-    V1Parses,
-    V1Splits,
-    V1Partitions,
-    V1Classifications,
-    V1SchemasGenerate,
-    V1FilesAnalyze,
-    V1Edits,
-    V1EditsTemplatesGenerate,
-    V1EvalsExtractProcess,
-    V1EvalsExtractExtract,
+pub enum ParseStatus {
+    Pending,
+    Queued,
+    InProgress,
+    Completed,
+    Failed,
+    Cancelled,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -25,62 +20,52 @@ pub enum JobsEndpoint {
     Unknown(String),
 }
 
-impl JobsEndpoint {
+impl ParseStatus {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::V1Extractions => "/v1/extractions",
-            Self::V1Parses => "/v1/parses",
-            Self::V1Splits => "/v1/splits",
-            Self::V1Partitions => "/v1/partitions",
-            Self::V1Classifications => "/v1/classifications",
-            Self::V1SchemasGenerate => "/v1/schemas/generate",
-            Self::V1FilesAnalyze => "/v1/files/analyze",
-            Self::V1Edits => "/v1/edits",
-            Self::V1EditsTemplatesGenerate => "/v1/edits/templates/generate",
-            Self::V1EvalsExtractProcess => "/v1/evals/extract/process",
-            Self::V1EvalsExtractExtract => "/v1/evals/extract/extract",
+            Self::Pending => "pending",
+            Self::Queued => "queued",
+            Self::InProgress => "in_progress",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
             Self::Unknown(s) => s.as_str(),
         }
     }
 }
 
-impl fmt::Display for JobsEndpoint {
+impl fmt::Display for ParseStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for JobsEndpoint {
+impl AsRef<str> for ParseStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for JobsEndpoint {
+impl FromStr for ParseStatus {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "/v1/extractions" => Self::V1Extractions,
-            "/v1/parses" => Self::V1Parses,
-            "/v1/splits" => Self::V1Splits,
-            "/v1/partitions" => Self::V1Partitions,
-            "/v1/classifications" => Self::V1Classifications,
-            "/v1/schemas/generate" => Self::V1SchemasGenerate,
-            "/v1/files/analyze" => Self::V1FilesAnalyze,
-            "/v1/edits" => Self::V1Edits,
-            "/v1/edits/templates/generate" => Self::V1EditsTemplatesGenerate,
-            "/v1/evals/extract/process" => Self::V1EvalsExtractProcess,
-            "/v1/evals/extract/extract" => Self::V1EvalsExtractExtract,
+            "pending" => Self::Pending,
+            "queued" => Self::Queued,
+            "in_progress" => Self::InProgress,
+            "completed" => Self::Completed,
+            "failed" => Self::Failed,
+            "cancelled" => Self::Cancelled,
             other => Self::Unknown(other.to_string()),
         })
     }
 }
 
-impl From<String> for JobsEndpoint {
+impl From<String> for ParseStatus {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -90,19 +75,19 @@ impl From<String> for JobsEndpoint {
     }
 }
 
-impl From<&str> for JobsEndpoint {
+impl From<&str> for ParseStatus {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for JobsEndpoint {
+impl Serialize for ParseStatus {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for JobsEndpoint {
+impl<'de> Deserialize<'de> for ParseStatus {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

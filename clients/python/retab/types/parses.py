@@ -2,13 +2,24 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.classifications import PrimitiveError
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
 
 
 TableParsingFormat: TypeAlias = Literal["markdown", "yaml", "html", "json"]
+
+
+class ParseStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 ParseRequestTableParsingFormat = TableParsingFormat
@@ -25,6 +36,10 @@ class ParseRequest(BaseModel):
     image_resolution_dpi: int | None = Field(default=192, description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the parse.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Parse(BaseModel):
@@ -39,6 +54,13 @@ class Parse(BaseModel):
     image_resolution_dpi: int = Field(..., description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
+    status: ParseStatus | None = Field(
+        default=cast(ParseStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
     created_at: datetime.datetime | None = None
 
