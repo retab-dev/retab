@@ -15,7 +15,6 @@ module Retab
       V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
       V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
       V_1_EVALS_EXTRACT_EXTRACT = "/v1/evals/extract/extract"
-      V_1_EVALS_EXTRACT_SPLIT = "/v1/evals/extract/split"
       ALL = [
         V_1_EXTRACTIONS,
         V_1_PARSES,
@@ -26,8 +25,7 @@ module Retab
         V_1_EDITS,
         V_1_EDITS_TEMPLATES_GENERATE,
         V_1_EVALS_EXTRACT_PROCESS,
-        V_1_EVALS_EXTRACT_EXTRACT,
-        V_1_EVALS_EXTRACT_SPLIT
+        V_1_EVALS_EXTRACT_EXTRACT
       ].freeze
     end
   end

@@ -12,8 +12,7 @@ export type JobsEndpoint =
   | '/v1/edits'
   | '/v1/edits/templates/generate'
   | '/v1/evals/extract/process'
-  | '/v1/evals/extract/extract'
-  | '/v1/evals/extract/split';
+  | '/v1/evals/extract/extract';
 
 export const ZJobsEndpoint = z.enum([
   '/v1/extractions',
@@ -26,5 +25,4 @@ export const ZJobsEndpoint = z.enum([
   '/v1/edits/templates/generate',
   '/v1/evals/extract/process',
   '/v1/evals/extract/extract',
-  '/v1/evals/extract/split',
 ] as const);

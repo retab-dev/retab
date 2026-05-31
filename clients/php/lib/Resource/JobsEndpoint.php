@@ -18,5 +18,4 @@ enum JobsEndpoint: string
     case V1EditsTemplatesGenerate = '/v1/edits/templates/generate';
     case V1EvalsExtractProcess = '/v1/evals/extract/process';
     case V1EvalsExtractExtract = '/v1/evals/extract/extract';
-    case V1EvalsExtractSplit = '/v1/evals/extract/split';
 }

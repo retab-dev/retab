@@ -32,7 +32,5 @@ namespace Retab
         V1EvalsExtractProcess,
         [EnumMember(Value = "/v1/evals/extract/extract")]
         V1EvalsExtractExtract,
-        [EnumMember(Value = "/v1/evals/extract/split")]
-        V1EvalsExtractSplit,
     }
 }

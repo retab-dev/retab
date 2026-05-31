@@ -23,7 +23,6 @@ var approvedCLINonReferenceJobEndpoints = map[string]bool{
 	"/v1/edits/templates/generate": true,
 	"/v1/evals/extract/extract":    true,
 	"/v1/evals/extract/process":    true,
-	"/v1/evals/extract/split":      true,
 }
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
