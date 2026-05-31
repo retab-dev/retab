@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -429,16 +430,29 @@ func TestLitCLIParseArgs(t *testing.T) {
 // --- fake LiteParser end-to-end (pdf grep + inspect render) ----------------
 
 type fakeLiteParser struct {
-	parse   *ParseResult
-	shots   []ScreenshotPage
-	lastOpt ParseOptions
+	parse       *ParseResult
+	shots       []ScreenshotPage
+	lastOpt     ParseOptions
+	lastShotOpt ScreenshotOptions
 }
 
 func (f *fakeLiteParser) Parse(_ context.Context, _ string, opt ParseOptions) (*ParseResult, error) {
 	f.lastOpt = opt
 	return f.parse, nil
 }
-func (f *fakeLiteParser) Screenshot(_ context.Context, _ string, _ ScreenshotOptions) ([]ScreenshotPage, error) {
+func (f *fakeLiteParser) Screenshot(_ context.Context, _ string, opt ScreenshotOptions) ([]ScreenshotPage, error) {
+	f.lastShotOpt = opt
+	if f.parse != nil && f.parse.TotalPages > 0 && opt.TargetPages != "" {
+		pages, err := parsePageList(opt.TargetPages)
+		if err != nil {
+			return nil, err
+		}
+		for _, page := range pages {
+			if page > f.parse.TotalPages {
+				return nil, fmt.Errorf("page %d out of range (document has %d pages)", page, f.parse.TotalPages)
+			}
+		}
+	}
 	return f.shots, nil
 }
 func (f *fakeLiteParser) Version(_ context.Context) (string, error) { return "lit 9.9.9", nil }
@@ -486,9 +500,15 @@ func TestFilesInspectRenderEndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 	outDir := filepath.Join(dir, "out")
-	withFakeLiteParser(t, &fakeLiteParser{shots: []ScreenshotPage{
-		{Page: 1, Path: filepath.Join(outDir, "page-1.png"), MIMEType: "image/png"},
-	}})
+	withFakeLiteParser(t, &fakeLiteParser{
+		parse: &ParseResult{
+			TotalPages: 1,
+			Pages:      []ParsedPage{{Page: 1, Text: "page\n"}},
+		},
+		shots: []ScreenshotPage{
+			{Page: 1, Path: filepath.Join(outDir, "page-1.png"), MIMEType: "image/png"},
+		},
+	})
 
 	resetInspectFlags(t)
 	if err := filesInspectCmd.Flags().Set("render", "1"); err != nil {
@@ -505,6 +525,48 @@ func TestFilesInspectRenderEndToEnd(t *testing.T) {
 	var out inspectRenderResult
 	if err := json.Unmarshal([]byte(stdout), &out); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, stdout)
+	}
+	if len(out.Pages) != 1 || out.Pages[0].Page != 1 {
+		t.Fatalf("unexpected render result: %+v", out)
+	}
+}
+
+func TestFilesInspectRenderClipsPagesPastDocumentEnd(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.pdf")
+	if err := os.WriteFile(path, []byte("%PDF-1.4 fake"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	outDir := filepath.Join(dir, "out")
+	fake := &fakeLiteParser{
+		parse: &ParseResult{
+			TotalPages: 1,
+			Pages:      []ParsedPage{{Page: 1, Text: "only page\n"}},
+		},
+		shots: []ScreenshotPage{
+			{Page: 1, Path: filepath.Join(outDir, "page-1.png"), MIMEType: "image/png"},
+		},
+	}
+	withFakeLiteParser(t, fake)
+
+	resetInspectFlags(t)
+	if err := filesInspectCmd.Flags().Set("render", "1-3"); err != nil {
+		t.Fatal(err)
+	}
+	if err := filesInspectCmd.Flags().Set("out", outDir); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _ := captureStd(t, func() {
+		if err := filesInspectCmd.RunE(filesInspectCmd, []string{path}); err != nil {
+			t.Fatalf("inspect: %v", err)
+		}
+	})
+	var out inspectRenderResult
+	if err := json.Unmarshal([]byte(stdout), &out); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, stdout)
+	}
+	if fake.lastShotOpt.TargetPages != "1" {
+		t.Fatalf("target pages = %q, want 1", fake.lastShotOpt.TargetPages)
 	}
 	if len(out.Pages) != 1 || out.Pages[0].Page != 1 {
 		t.Fatalf("unexpected render result: %+v", out)

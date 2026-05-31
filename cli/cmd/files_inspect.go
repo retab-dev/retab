@@ -40,8 +40,10 @@ type inspectRenderResult struct {
 
 var filesInspectCmd = &cobra.Command{
 	Use:   "inspect <path>",
-	Short: "Inspect a region of a local document",
-	Long: `Inspect a specific region of a local document, entirely locally.
+	Short: "Inspect lines/cells or render PDF/image pages to PNG",
+	Long: `Inspect lines/cells or render PDF/image pages to PNG.
+
+It works on local documents entirely locally: no upload, no API call.
 
 This mirrors the Retab MCP files_inspect tool. Pick exactly one mode:
 
@@ -49,16 +51,23 @@ This mirrors the Retab MCP files_inspect tool. Pick exactly one mode:
   --cells A1:Z100      read a cell range from a csv/xlsx document
   --render 1,3,5       render pdf/image pages to PNG (via LiteParse)
 
-The mode must match the document type. Rendering shells out to the ` + "`lit`" + `
-binary and writes one PNG per page into --out (or a temp directory).`,
+Use --render when an agent or human needs to see the page visually. It shells
+out to the ` + "`lit`" + ` binary, writes one PNG per selected page into --out
+(or a temp directory), and prints JSON with the image paths. If the requested
+range runs past the end of the document, only existing pages are rendered.
+
+The selected mode must match the document type.`,
 	Example: `  # Read lines 10-40 of a text file
   retab files inspect notes.md --lines 10-40
 
   # Read a cell range from the second sheet
   retab files inspect data.xlsx --cells A1:D20 --sheet 2
 
-  # Render the first three PDF pages to images
-  retab files inspect report.pdf --render 1-3 --out ./pages`,
+  # Render the first three PDF pages to PNG images
+  retab files inspect report.pdf --render 1-3 --out ./pages
+
+  # Render one local image to a normalized PNG and print its path
+  retab files inspect receipt.jpg --render 1 --out ./pages`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		path := args[0]
@@ -168,9 +177,6 @@ func inspectRender(ctx context.Context, cmd *cobra.Command, path string, kind do
 	if err != nil {
 		return err
 	}
-	if len(pages) > 3 {
-		return fmt.Errorf("--render supports at most 3 pages (got %d)", len(pages))
-	}
 
 	outDir, _ := cmd.Flags().GetString("out")
 	if outDir == "" {
@@ -185,6 +191,20 @@ func inspectRender(ctx context.Context, cmd *cobra.Command, path string, kind do
 		return err
 	}
 	dpi, _ := cmd.Flags().GetInt("dpi")
+	countOpt := parseOptionsFromCmd(cmd)
+	countOpt.OCR = false
+	countOpt.TargetPages = ""
+	parsed, err := parser.Parse(ctx, path, countOpt)
+	if err != nil {
+		return err
+	}
+	pages, err = clipPagesToDocument(pages, parsed.TotalPages)
+	if err != nil {
+		return err
+	}
+	if len(pages) > 3 {
+		return fmt.Errorf("--render supports at most 3 pages (got %d after clipping to document bounds)", len(pages))
+	}
 	shots, err := parser.Screenshot(ctx, path, ScreenshotOptions{
 		TargetPages: pageListToSpec(pages),
 		DPI:         dpi,
@@ -199,6 +219,22 @@ func inspectRender(ctx context.Context, cmd *cobra.Command, path string, kind do
 		OutputDir:    outDir,
 		Pages:        shots,
 	})
+}
+
+func clipPagesToDocument(pages []int, totalPages int) ([]int, error) {
+	if totalPages <= 0 {
+		return nil, fmt.Errorf("document has no renderable pages")
+	}
+	clipped := make([]int, 0, len(pages))
+	for _, page := range pages {
+		if page <= totalPages {
+			clipped = append(clipped, page)
+		}
+	}
+	if len(clipped) == 0 {
+		return nil, fmt.Errorf("requested pages are outside document bounds (document has %d pages)", totalPages)
+	}
+	return clipped, nil
 }
 
 // selectSheet resolves --sheet (name or 1-based index) against a parse result.
