@@ -42,7 +42,6 @@ func TestListCommandsRunERejectsBeforeAndAfterTogether(t *testing.T) {
 		{"workflows runs list", workflowsRunsListCmd, nil},
 		{"workflows experiments runs list", workflowsExperimentsRunsListCmd, nil},
 		{"workflows tests runs list", workflowsTestsRunsListCmd, nil},
-		{"jobs list", jobsListCmd, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

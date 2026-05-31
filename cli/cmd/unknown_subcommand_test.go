@@ -8,7 +8,7 @@ import (
 
 // Regression guard: an unknown subcommand of a router command must fail
 // loudly. Cobra's built-in unknown-command detection only fires for the
-// root, so nested routers (`jobs`, `files`, `workflows runs`, ...) used
+// root, so nested routers (`files`, `workflows runs`, ...) used
 // to print help and exit 0 — silently swallowing typos in scripts.
 //
 // These tests drive the real command tree through Execute() (which
@@ -62,7 +62,7 @@ func TestUnknownRootCommandStillFails(t *testing.T) {
 func TestBareRouterPrintsHelpWithoutError(t *testing.T) {
 	// A router invoked with no subcommand should still print help and
 	// exit 0 — only *unknown* subcommands are an error.
-	for _, router := range []string{"jobs", "files", "workflows"} {
+	for _, router := range []string{"files", "workflows"} {
 		t.Run(router, func(t *testing.T) {
 			if err := runRootForTest(t, router); err != nil {
 				t.Fatalf("retab %s: bare router should not error, got: %v", router, err)

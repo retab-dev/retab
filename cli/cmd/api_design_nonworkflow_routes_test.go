@@ -13,21 +13,6 @@ var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 	// public API reference.
 }
 
-var approvedCLINonReferenceJobEndpoints = map[string]bool{
-	// Internal worker-pool blueprint endpoint excluded from the public API
-	// reference but still accepted as an async job target.
-	"/v1/files/analyze": true,
-	// Legacy async job endpoints that the CLI still accepts for compatibility.
-	"/v1/documents/classify":       true,
-	"/v1/documents/extract":        true,
-	"/v1/documents/parse":          true,
-	"/v1/documents/split":          true,
-	"/v1/edit/templates/generate":  true,
-	"/v1/edits/templates/generate": true,
-	"/v1/evals/extract/extract":    true,
-	"/v1/evals/extract/process":    true,
-}
-
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
 	source := readCLISource(t)
 	calls := extractNonWorkflowCLIClientCalls(source)
@@ -64,28 +49,6 @@ func TestNonWorkflowCLIRoutesMatchOpenAPIOrExplicitApproval(t *testing.T) {
 	}
 }
 
-func TestNonWorkflowCLIJobEndpointsAreOpenAPIOrExplicitApproval(t *testing.T) {
-	openAPI := loadCLIOpenAPIContract(t)
-	for endpoint := range allowedJobEndpoints {
-		if _, ok := openAPI.Paths[endpoint]; ok {
-			continue
-		}
-		if approvedCLINonReferenceJobEndpoints[endpoint] {
-			continue
-		}
-		t.Fatalf("CLI jobs allow non-reference endpoint %s without explicit approval", endpoint)
-	}
-
-	for endpoint := range approvedCLINonReferenceJobEndpoints {
-		if !allowedJobEndpoints[endpoint] {
-			t.Fatalf("approved non-reference job endpoint %s is stale; allowedJobEndpoints no longer contains it", endpoint)
-		}
-		if _, ok := openAPI.Paths[endpoint]; ok {
-			t.Fatalf("approved non-reference job endpoint %s is now in OpenAPI; remove its approval", endpoint)
-		}
-	}
-}
-
 func TestNonWorkflowCLICanonicalTopLevelResourcesUseV1ResourceRoutes(t *testing.T) {
 	openAPI := loadCLIOpenAPIContract(t)
 	for _, endpoint := range []string{
@@ -97,9 +60,6 @@ func TestNonWorkflowCLICanonicalTopLevelResourcesUseV1ResourceRoutes(t *testing.
 		"/v1/schemas/generate",
 		"/v1/splits",
 	} {
-		if !allowedJobEndpoints[endpoint] {
-			t.Fatalf("CLI jobs must allow canonical endpoint %s", endpoint)
-		}
 		operations, ok := openAPI.Paths[endpoint]
 		if !ok {
 			t.Fatalf("OpenAPI contract is missing canonical endpoint %s", endpoint)

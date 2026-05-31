@@ -35,7 +35,6 @@ func TestListCommandsDeclareBeforeAfterMutuallyExclusive(t *testing.T) {
 		{"workflows runs list", workflowsRunsListCmd},
 		{"workflows experiments runs list", workflowsExperimentsRunsListCmd},
 		{"workflows tests runs list", workflowsTestsRunsListCmd},
-		{"jobs list", jobsListCmd},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
