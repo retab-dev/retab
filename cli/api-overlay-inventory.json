@@ -3,10 +3,16 @@
   "openapi": "open-source/docs/api-reference/openapi.json",
   "default_decision": "deferred",
   "baseline_operation_ids": [
+    "analyze_file",
     "apply_workflow_spec",
     "approve_review",
+    "cancel_classification",
+    "cancel_edit",
     "cancel_experiment_run",
+    "cancel_extraction",
     "cancel_job",
+    "cancel_partition",
+    "cancel_split",
     "cancel_test_execution_run",
     "cancel_workflow_run",
     "complete_upload_file",
@@ -108,6 +114,10 @@
     "validate_workflow_spec"
   ],
   "exposed_operations": {
+    "analyze_file": {
+      "command": "retab files analyze",
+      "source_files": ["open-source/sdk/cli/cmd/files_analyze.go"]
+    },
     "apply_workflow_spec": {
       "command": "retab workflows spec apply",
       "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]

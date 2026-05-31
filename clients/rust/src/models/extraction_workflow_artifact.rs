@@ -31,6 +31,14 @@ pub struct ExtractionWorkflowArtifact {
     pub instructions: Option<String>,
     /// The extracted structured data
     pub output: std::collections::HashMap<String, serde_json::Value>,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<ExtractionWorkflowArtifactStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Consensus metadata for multi-vote extraction runs
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<ExtractionConsensus>,
@@ -67,6 +75,8 @@ impl ExtractionWorkflowArtifact {
             image_resolution_dpi: Default::default(),
             instructions: Default::default(),
             output,
+            status: Default::default(),
+            error: Default::default(),
             consensus: Default::default(),
             metadata: Default::default(),
             usage: Default::default(),

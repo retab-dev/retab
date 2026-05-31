@@ -20,6 +20,7 @@ public final class ExtractionRequest {
   private final List<Map<String, Object>> additionalMessages;
   private final Boolean bustCache;
   private final Boolean stream;
+  private final Boolean background;
   private final Map<String, String> chunkingKeys;
 
   @JsonCreator
@@ -35,6 +36,7 @@ public final class ExtractionRequest {
           List<Map<String, Object>> additionalMessages,
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
+      @JsonProperty(value = "background", required = false) Boolean background,
       @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys) {
     this.document = document;
     this.jsonSchema = jsonSchema;
@@ -46,6 +48,7 @@ public final class ExtractionRequest {
     this.additionalMessages = additionalMessages;
     this.bustCache = bustCache != null ? bustCache : false;
     this.stream = stream != null ? stream : false;
+    this.background = background != null ? background : false;
     this.chunkingKeys = chunkingKeys;
   }
 
@@ -97,6 +100,11 @@ public final class ExtractionRequest {
   @JsonProperty("stream")
   public Boolean isStream() {
     return stream;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 
   @JsonProperty("chunking_keys")

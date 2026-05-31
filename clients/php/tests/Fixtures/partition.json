@@ -18,6 +18,14 @@
       ]
     }
   ],
+  "status": "pending",
+  "error": {
+    "code": "test_code",
+    "message": "test_message",
+    "details": {
+      "key": {}
+    }
+  },
   "consensus": {
     "choices": [
       [

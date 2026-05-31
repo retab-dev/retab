@@ -8,6 +8,7 @@ import type {
   Classification,
   ClassificationResponse,
 } from '../classifications/interfaces/index.js';
+import type { ClassificationsStatus } from '../common/interfaces/index.js';
 import {
   deserializeClassification,
   serializeCategory,
@@ -19,6 +20,7 @@ export class Classifications {
   /** List Classifications */
   async list(options?: {
     filename?: string | null | undefined;
+    status?: ClassificationsStatus | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     limit?: number;
@@ -31,6 +33,7 @@ export class Classifications {
       path: '/v1/classifications',
       query: {
         filename: options?.filename,
+        status: options?.status,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         limit: options?.limit,
@@ -50,7 +53,8 @@ export class Classifications {
     firstNPages?: number | null,
     instructions?: string | null,
     nConsensus?: number,
-    bustCache?: boolean
+    bustCache?: boolean,
+    background?: boolean
   ): Promise<Classification> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
@@ -61,6 +65,7 @@ export class Classifications {
       instructions: instructions,
       n_consensus: nConsensus,
       bust_cache: bustCache,
+      background: background,
     };
     const __wire = await this.client.request<ClassificationResponse>({
       method: 'POST',
@@ -72,11 +77,14 @@ export class Classifications {
   }
 
   /** Get Classification */
-  async get(classificationId: string): Promise<Classification> {
+  async get(
+    classificationId: string,
+    options?: { includeOutput?: boolean | undefined }
+  ): Promise<Classification> {
     const __wire = await this.client.request<ClassificationResponse>({
       method: 'GET',
       path: `/v1/classifications/${classificationId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializeClassification(__wire);
@@ -90,5 +98,16 @@ export class Classifications {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Classification */
+  async create_classification_cancel(classificationId: string): Promise<Classification> {
+    const __wire = await this.client.request<ClassificationResponse>({
+      method: 'POST',
+      path: `/v1/classifications/${classificationId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeClassification(__wire);
   }
 }

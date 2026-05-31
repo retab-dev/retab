@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-31T10:02:18.762Z",
+  "generatedAt": "2026-05-31T13:09:07.165Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -11,7 +11,10 @@
     "src/enums/assertion_drift_status.rs",
     "src/enums/assertion_outcome.rs",
     "src/enums/cancel_workflow_response_cancellation_status.rs",
+    "src/enums/classification_status.rs",
+    "src/enums/classification_workflow_artifact_status.rs",
     "src/enums/classifications_order.rs",
+    "src/enums/classifications_status.rs",
     "src/enums/condition_evaluation_details_logical_operator.rs",
     "src/enums/condition_evaluation_result_logical_operator.rs",
     "src/enums/create_experiment_request_n_consensus.rs",
@@ -22,8 +25,11 @@
     "src/enums/declarative_plan_resource_change_target.rs",
     "src/enums/declarative_plan_resource_change_type.rs",
     "src/enums/declarative_plan_response_action.rs",
+    "src/enums/edit_status.rs",
     "src/enums/edit_templates_order.rs",
+    "src/enums/edit_workflow_artifact_status.rs",
     "src/enums/edits_order.rs",
+    "src/enums/edits_status.rs",
     "src/enums/error_step_lifecycle_category.rs",
     "src/enums/error_step_lifecycle_stage.rs",
     "src/enums/error_terminal_category.rs",
@@ -38,7 +44,10 @@
     "src/enums/experiment_runs_order.rs",
     "src/enums/experiment_schema_drift_status.rs",
     "src/enums/experiment_summary_metrics_response_block_type.rs",
+    "src/enums/extraction_status.rs",
+    "src/enums/extraction_workflow_artifact_status.rs",
     "src/enums/extractions_order.rs",
+    "src/enums/extractions_status.rs",
     "src/enums/field_type.rs",
     "src/enums/files_order.rs",
     "src/enums/job_status.rs",
@@ -55,7 +64,10 @@
     "src/enums/parse_request_table_parsing_format.rs",
     "src/enums/parse_workflow_artifact_table_parsing_format.rs",
     "src/enums/parses_order.rs",
+    "src/enums/partition_status.rs",
+    "src/enums/partition_workflow_artifact_status.rs",
     "src/enums/partitions_order.rs",
+    "src/enums/partitions_status.rs",
     "src/enums/public_handle_payload_type.rs",
     "src/enums/resume_status.rs",
     "src/enums/review_block_type.rs",
@@ -64,7 +76,10 @@
     "src/enums/review_verdict.rs",
     "src/enums/similarity_gte_condition_method.rs",
     "src/enums/sources_response_document_type.rs",
+    "src/enums/split_status.rs",
+    "src/enums/split_workflow_artifact_status.rs",
     "src/enums/splits_order.rs",
+    "src/enums/splits_status.rs",
     "src/enums/step_artifact_ref_operation.rs",
     "src/enums/submission_status.rs",
     "src/enums/supported_endpoint.rs",
@@ -267,6 +282,7 @@
     "src/models/pending_workflow_experiment_result.rs",
     "src/models/pending_workflow_experiment_run.rs",
     "src/models/pending_workflow_test_run.rs",
+    "src/models/primitive_error.rs",
     "src/models/public_handle_payload.rs",
     "src/models/publish_workflow_request.rs",
     "src/models/queued_step_lifecycle.rs",
@@ -414,6 +430,10 @@
       "sdkMethod": "delete",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "create_classification_cancel",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "list",
       "service": "edits"
@@ -428,6 +448,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "create_edit_cancel",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -464,6 +488,10 @@
     },
     "DELETE /v1/extractions/{extraction_id}": {
       "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "create_extraction_cancel",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
@@ -542,6 +570,10 @@
       "sdkMethod": "delete",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "create_partition_cancel",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"
@@ -560,6 +592,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "create_split_cancel",
       "service": "splits"
     },
     "GET /v1/workflows": {

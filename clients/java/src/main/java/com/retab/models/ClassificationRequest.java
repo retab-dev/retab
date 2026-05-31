@@ -16,6 +16,7 @@ public final class ClassificationRequest {
   private final String instructions;
   private final Long nConsensus;
   private final Boolean bustCache;
+  private final Boolean background;
 
   @JsonCreator
   public ClassificationRequest(
@@ -25,7 +26,8 @@ public final class ClassificationRequest {
       @JsonProperty(value = "first_n_pages", required = false) Long firstNPages,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
-      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
+      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.document = document;
     this.categories = categories;
     this.model = model != null ? model : "retab-small";
@@ -33,6 +35,7 @@ public final class ClassificationRequest {
     this.instructions = instructions;
     this.nConsensus = nConsensus;
     this.bustCache = bustCache != null ? bustCache : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("document")
@@ -68,5 +71,10 @@ public final class ClassificationRequest {
   @JsonProperty("bust_cache")
   public Boolean isBustCache() {
     return bustCache;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

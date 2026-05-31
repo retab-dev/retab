@@ -51,6 +51,12 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def bust_cache=(value); end
 
+    sig { returns(T.nilable(T::Boolean)) }
+    def background; end
+
+    sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
+    def background=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.classifications import Category, ClassificationConsensus, ClassificationDecision
+from retab.types.classifications import Category, ClassificationConsensus, ClassificationDecision, PrimitiveError
 from retab.types.documents.usage import RetabUsage
 from retab.types.edits import EditConfig, EditResult
 from retab.types.extractions import ExtractionConsensus
@@ -33,6 +33,15 @@ WorkflowArtifactOperation: TypeAlias = Literal[
 ]
 
 
+class EditWorkflowArtifactStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
 class ParseWorkflowArtifactTableParsingFormat(str, Enum):
     MARKDOWN = "markdown"
     YAML = "yaml"
@@ -51,7 +60,19 @@ class WhileLoopTerminationTerminationReason(str, Enum):
     ERROR = "error"
 
 
+ClassificationWorkflowArtifactStatus = EditWorkflowArtifactStatus
+
+
 ConditionEvaluationResultLogicalOperator = ConditionEvaluationDetailsLogicalOperator
+
+
+ExtractionWorkflowArtifactStatus = EditWorkflowArtifactStatus
+
+
+PartitionWorkflowArtifactStatus = EditWorkflowArtifactStatus
+
+
+SplitWorkflowArtifactStatus = EditWorkflowArtifactStatus
 
 
 class ApiCallAttempt(BaseModel):
@@ -101,7 +122,16 @@ class ClassificationWorkflowArtifact(BaseModel):
     categories: list[Category] = Field(..., description="Categories the document was classified against")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
-    output: ClassificationDecision = Field(..., description="The classification result with reasoning")
+    output: ClassificationDecision | None = Field(
+        default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status."
+    )
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
@@ -211,7 +241,16 @@ class EditWorkflowArtifact(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the edit request.")
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
-    output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
+    output: EditResult | None = Field(
+        default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status."
+    )
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
@@ -246,6 +285,13 @@ class ExtractionWorkflowArtifact(BaseModel):
     image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
@@ -301,7 +347,14 @@ class PartitionWorkflowArtifact(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the partition request")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool | None = Field(default=True, description="Whether pages were allowed to appear in more than one partition chunk")
-    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages")
+    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
@@ -347,7 +400,14 @@ class SplitWorkflowArtifact(BaseModel):
     subdocuments: list[Subdocument] = Field(..., description="Subdocuments used for the split operation")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the split request.")
-    output: list[SplitResult] = Field(..., description="The list of document splits with their assigned pages")
+    output: list[SplitResult] | None = Field(default=[], description="The list of document splits with their assigned pages. Empty [] until status == 'completed'.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: SplitConsensus | None = Field(default=None, description="Consensus metadata for multi-vote split runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the split operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")

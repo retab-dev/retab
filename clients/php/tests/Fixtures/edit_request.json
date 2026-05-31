@@ -9,5 +9,6 @@
   "config": {
     "color": "test_color"
   },
-  "bust_cache": true
+  "bust_cache": true,
+  "background": true
 }

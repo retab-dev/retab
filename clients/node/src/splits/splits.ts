@@ -3,6 +3,7 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
+import type { SplitsStatus } from '../common/interfaces/index.js';
 import type { Split, SplitResponse, Subdocument } from '../splits/interfaces/index.js';
 import { deserializeSplit, serializeSubdocument } from '../splits/interfaces/index.js';
 
@@ -12,6 +13,7 @@ export class Splits {
   /** List Splits */
   async list(options?: {
     filename?: string | null | undefined;
+    status?: SplitsStatus | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     limit?: number;
@@ -24,6 +26,7 @@ export class Splits {
       path: '/v1/splits',
       query: {
         filename: options?.filename,
+        status: options?.status,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         limit: options?.limit,
@@ -42,7 +45,8 @@ export class Splits {
     model?: string,
     instructions?: string | null,
     nConsensus?: number,
-    bustCache?: boolean
+    bustCache?: boolean,
+    background?: boolean
   ): Promise<Split> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
@@ -52,6 +56,7 @@ export class Splits {
       instructions: instructions,
       n_consensus: nConsensus,
       bust_cache: bustCache,
+      background: background,
     };
     const __wire = await this.client.request<SplitResponse>({
       method: 'POST',
@@ -63,11 +68,11 @@ export class Splits {
   }
 
   /** Get Split */
-  async get(splitId: string): Promise<Split> {
+  async get(splitId: string, options?: { includeOutput?: boolean | undefined }): Promise<Split> {
     const __wire = await this.client.request<SplitResponse>({
       method: 'GET',
       path: `/v1/splits/${splitId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializeSplit(__wire);
@@ -81,5 +86,16 @@ export class Splits {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Split */
+  async create_split_cancel(splitId: string): Promise<Split> {
+    const __wire = await this.client.request<SplitResponse>({
+      method: 'POST',
+      path: `/v1/splits/${splitId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeSplit(__wire);
   }
 }

@@ -11,6 +11,15 @@ import {
   serializeFileRef,
 } from '../../classifications/interfaces/file-ref.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../classifications/interfaces/retab-usage.interface.js';
@@ -37,6 +46,8 @@ import {
   deserializeSubdocument,
   serializeSubdocument,
 } from './subdocument.interface.js';
+import type { SplitStatus } from './split-status.interface.js';
+import { ZSplitStatus } from './split-status.interface.js';
 
 /** A split result: a document divided into its constituent `subdocuments`. */
 export interface Split {
@@ -55,8 +66,18 @@ export interface Split {
   nConsensus?: number;
   /** Free-form instructions supplied with the split request. */
   instructions?: string | null;
-  /** The list of document splits with their assigned pages */
-  output: SplitResult[];
+  /**
+   * The list of document splits with their assigned pages. Empty [] until status == 'completed'.
+   * @default []
+   */
+  output?: SplitResult[];
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: SplitStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote split runs */
   consensus?: SplitConsensus | null;
   /** Usage information for the split operation */
@@ -71,7 +92,9 @@ export interface SplitResponse {
   subdocuments: SubdocumentResponse[];
   n_consensus?: number;
   instructions?: string | null;
-  output: SplitResultResponse[];
+  output?: SplitResultResponse[];
+  status?: SplitStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: SplitConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
@@ -84,7 +107,9 @@ export const ZSplit = z.object({
   subdocuments: ZSubdocument.array(),
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
-  output: ZSplitResult.array(),
+  output: ZSplitResult.array().optional(),
+  status: ZSplitStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZSplitConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
@@ -98,7 +123,17 @@ export function deserializeSplit(wire: SplitResponse): Split {
     subdocuments: wire['subdocuments'].map((__i) => deserializeSubdocument(__i)),
     nConsensus: wire['n_consensus'],
     instructions: wire['instructions'],
-    output: wire['output'].map((__i) => deserializeSplitResult(__i)),
+    output:
+      wire['output'] == null
+        ? (wire['output'] as undefined)
+        : wire['output'].map((__i) => deserializeSplitResult(__i)),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -128,7 +163,17 @@ export function serializeSplit(domain: Split): SplitResponse {
     subdocuments: domain['subdocuments'].map((__i) => serializeSubdocument(__i)),
     n_consensus: domain['nConsensus'],
     instructions: domain['instructions'],
-    output: domain['output'].map((__i) => serializeSplitResult(__i)),
+    output:
+      domain['output'] == null
+        ? (domain['output'] as undefined)
+        : domain['output'].map((__i) => serializeSplitResult(__i)),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)

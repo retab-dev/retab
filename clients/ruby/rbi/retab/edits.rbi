@@ -20,12 +20,13 @@ module Retab
         order: T.nilable(String),
         filename: T.nilable(String),
         template_id: T.nilable(String),
+        status: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Edit])
     end
-    def list(before:, after:, limit:, order:, filename:, template_id:, from_date:, to_date:, request_options:); end
+    def list(before:, after:, limit:, order:, filename:, template_id:, status:, from_date:, to_date:, request_options:); end
 
     sig do
       params(
@@ -35,18 +36,20 @@ module Retab
         model: T.nilable(String),
         config: T.nilable(Retab::EditConfig),
         bust_cache: T.nilable(T::Boolean),
+        background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Edit)
     end
-    def create(instructions:, document:, template_id:, model:, config:, bust_cache:, request_options:); end
+    def create(instructions:, document:, template_id:, model:, config:, bust_cache:, background:, request_options:); end
 
     sig do
       params(
         edit_id: String,
+        include_output: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Edit)
     end
-    def get(edit_id:, request_options:); end
+    def get(edit_id:, include_output:, request_options:); end
 
     sig do
       params(
@@ -55,6 +58,14 @@ module Retab
       ).returns(NilClass)
     end
     def delete(edit_id:, request_options:); end
+
+    sig do
+      params(
+        edit_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Edit)
+    end
+    def create_edit_cancel(edit_id:, request_options:); end
 
   end
 end

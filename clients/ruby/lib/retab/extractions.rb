@@ -19,6 +19,7 @@ module Retab
     # @param filename_regex [String, nil] Deprecated alias for prefix filename filtering. Regex patterns are rejected.
     # @param filename_contains [String, nil] Plain-text search over the filename.
     # @param document_type [Array<String>, nil] Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
+    # @param status [Retab::Types::ExtractionsStatus, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param metadata [String, nil]
@@ -33,6 +34,7 @@ module Retab
       filename_regex: nil,
       filename_contains: nil,
       document_type: nil,
+      status: nil,
       from_date: nil,
       to_date: nil,
       metadata: nil,
@@ -47,6 +49,7 @@ module Retab
         "filename_regex" => filename_regex,
         "filename_contains" => filename_contains,
         "document_type" => document_type,
+        "status" => status,
         "from_date" => from_date,
         "to_date" => to_date,
         "metadata" => metadata
@@ -68,6 +71,7 @@ module Retab
           filename_regex: filename_regex,
           filename_contains: filename_contains,
           document_type: document_type,
+          status: status,
           from_date: from_date,
           to_date: to_date,
           metadata: metadata,
@@ -85,6 +89,7 @@ module Retab
           filename_regex: filename_regex,
           filename_contains: filename_contains,
           document_type: document_type,
+          status: status,
           from_date: from_date,
           to_date: to_date,
           metadata: metadata
@@ -104,6 +109,7 @@ module Retab
     # @param additional_messages [Array<Hash{String => Object}>, nil] Additional chat messages forwarded to the extraction model.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
     # @param stream [Boolean, nil]
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param chunking_keys [Hash{String => String}, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
@@ -118,6 +124,7 @@ module Retab
       additional_messages: nil,
       bust_cache: nil,
       stream: nil,
+      background: nil,
       chunking_keys: nil,
       request_options: {}
     )
@@ -133,6 +140,7 @@ module Retab
         "additional_messages" => additional_messages,
         "bust_cache" => bust_cache,
         "stream" => stream,
+        "background" => background,
         "chunking_keys" => chunking_keys
       }.compact
       response = @client.request(
@@ -153,16 +161,22 @@ module Retab
 
     # Get Extraction
     # @param extraction_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def get(
       extraction_id:,
+      include_output: true,
       request_options: {}
     )
+      params = {
+        "include_output" => include_output
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::Extraction.new(response.body)
@@ -189,6 +203,29 @@ module Retab
         request_options: request_options
       )
       nil
+    end
+
+    # Cancel Extraction
+    # @param extraction_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Extraction]
+    def create_extraction_cancel(
+      extraction_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Extraction.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
 
     # Get Extraction Sources

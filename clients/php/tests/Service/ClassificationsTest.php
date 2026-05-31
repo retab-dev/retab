@@ -17,7 +17,7 @@ class ClassificationsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_classification');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->classifications()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->classifications()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -28,6 +28,7 @@ class ClassificationsTest extends TestCase
         $this->assertArrayHasKey('limit', $query);
         $this->assertSame('asc', $query['order']);
         $this->assertSame('test_value', $query['filename']);
+        $this->assertSame('pending', $query['status']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
     }
@@ -50,7 +51,7 @@ class ClassificationsTest extends TestCase
     {
         $fixture = $this->loadFixture('classification');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->classifications()->get('test_classification_id');
+        $result = $client->classifications()->get('test_classification_id', includeOutput: true);
         $this->assertInstanceOf(\Retab\Resource\Classification::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
@@ -58,6 +59,8 @@ class ClassificationsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/classifications/test_classification_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertArrayHasKey('include_output', $query);
     }
 
     public function testDelete(): void
@@ -67,6 +70,20 @@ class ClassificationsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/classifications/test_classification_id', $request->getUri()->getPath());
+    }
+
+    public function testCreateClassificationCancel(): void
+    {
+        $fixture = $this->loadFixture('classification');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->classifications()->createClassificationCancel('test_classification_id');
+        $this->assertInstanceOf(\Retab\Resource\Classification::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['model'], $result->model);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/classifications/test_classification_id/cancel', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void

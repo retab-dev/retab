@@ -24,8 +24,19 @@ pub struct Split {
     /// Free-form instructions supplied with the split request.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
-    /// The list of document splits with their assigned pages
-    pub output: Vec<SplitResult>,
+    /// The list of document splits with their assigned pages. Empty [] until status == 'completed'.
+    ///
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub output: Option<Vec<SplitResult>>,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<SplitStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Consensus metadata for multi-vote split runs
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<SplitConsensus>,
@@ -43,7 +54,6 @@ impl Split {
         file: FileRef,
         model: impl Into<String>,
         subdocuments: Vec<Subdocument>,
-        output: Vec<SplitResult>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -52,7 +62,9 @@ impl Split {
             subdocuments,
             n_consensus: Default::default(),
             instructions: Default::default(),
-            output,
+            output: Default::default(),
+            status: Default::default(),
+            error: Default::default(),
             consensus: Default::default(),
             usage: Default::default(),
             created_at: Default::default(),

@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.ClassificationStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -17,6 +18,8 @@ public final class Classification {
   private final Long nConsensus;
   private final String instructions;
   private final ClassificationDecision output;
+  private final ClassificationStatus status;
+  private final PrimitiveError error;
   private final ClassificationConsensus consensus;
   private final RetabUsage usage;
   private final OffsetDateTime createdAt;
@@ -29,7 +32,9 @@ public final class Classification {
       @JsonProperty(value = "categories", required = true) List<Category> categories,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
       @JsonProperty(value = "instructions", required = false) String instructions,
-      @JsonProperty(value = "output", required = true) ClassificationDecision output,
+      @JsonProperty(value = "output", required = false) ClassificationDecision output,
+      @JsonProperty(value = "status", required = false) ClassificationStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "consensus", required = false) ClassificationConsensus consensus,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
@@ -40,6 +45,8 @@ public final class Classification {
     this.nConsensus = nConsensus;
     this.instructions = instructions;
     this.output = output;
+    this.status = status;
+    this.error = error;
     this.consensus = consensus;
     this.usage = usage;
     this.createdAt = createdAt;
@@ -78,6 +85,16 @@ public final class Classification {
   @JsonProperty("output")
   public ClassificationDecision getOutput() {
     return output;
+  }
+
+  @JsonProperty("status")
+  public ClassificationStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 
   @JsonProperty("consensus")

@@ -20,6 +20,15 @@ import {
   serializeFileRef,
 } from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
@@ -28,6 +37,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
+import type { ExtractionWorkflowArtifactStatus } from './extraction-workflow-artifact-status.interface.js';
+import { ZExtractionWorkflowArtifactStatus } from './extraction-workflow-artifact-status.interface.js';
 
 /** An extraction produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface ExtractionWorkflowArtifact {
@@ -53,6 +64,13 @@ export interface ExtractionWorkflowArtifact {
   instructions?: string | null;
   /** The extracted structured data */
   output: Record<string, unknown>;
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: ExtractionWorkflowArtifactStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote extraction runs */
   consensus?: ExtractionConsensus | null;
   metadata?: Record<string, string> | null;
@@ -76,6 +94,8 @@ export interface ExtractionWorkflowArtifactResponse {
   image_resolution_dpi?: number;
   instructions?: string | null;
   output: Record<string, unknown>;
+  status?: ExtractionWorkflowArtifactStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: ExtractionConsensusResponse | null;
   metadata?: Record<string, string> | null;
   usage?: RetabUsageResponse | null;
@@ -92,6 +112,8 @@ export const ZExtractionWorkflowArtifact = z.object({
   imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: z.record(z.string(), z.unknown()),
+  status: ZExtractionWorkflowArtifactStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZExtractionConsensus.nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
@@ -111,6 +133,13 @@ export function deserializeExtractionWorkflowArtifact(
     imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     output: wire['output'],
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -142,6 +171,13 @@ export function serializeExtractionWorkflowArtifact(
     image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     output: domain['output'],
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)

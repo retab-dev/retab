@@ -19,6 +19,8 @@ namespace Retab
         /// <summary>Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.</summary>
         public List<string>? DocumentType { get; set; }
 
+        public ClassificationStatus? Status { get; set; }
+
         public string? FromDate { get; set; }
 
         public string? ToDate { get; set; }
@@ -58,7 +60,18 @@ namespace Retab
 
         public bool? Stream { get; set; }
 
+        /// <summary>If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/&lt;primitive&gt;/{id} until status is terminal. Mutually exclusive with stream.</summary>
+        public bool? Background { get; set; }
+
         public Dictionary<string, string>? ChunkingKeys { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="ExtractionsService.GetAsync"/>: Get Extraction</summary>
+    public class ExtractionsGetOptions : BaseOptions
+    {
+        /// <summary>When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.</summary>
+        public bool? IncludeOutput { get; set; }
 
     }
 }

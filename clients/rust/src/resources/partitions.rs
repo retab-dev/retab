@@ -28,6 +28,8 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<PartitionsStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_date: Option<String>,
@@ -42,6 +44,7 @@ impl Default for ListParams {
             limit: Some(10),
             order: Some(PartitionsOrder::Desc),
             filename: Default::default(),
+            status: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
         }
@@ -78,7 +81,26 @@ impl CreateParams {
                 n_consensus: Default::default(),
                 allow_overlap: Default::default(),
                 bust_cache: Default::default(),
+                background: Default::default(),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
         }
     }
 }
@@ -141,21 +163,22 @@ impl<'a> PartitionsApi<'a> {
     /// Fetches a single partition by its `partition_id` within the authenticated environment
     /// and returns the full `Partition` including its `output` chunks. Responds with `404` if
     /// no partition with that id exists.
-    pub async fn get(&self, partition_id: &str) -> Result<Partition, Error> {
-        self.get_with_options(partition_id, None).await
+    pub async fn get(&self, partition_id: &str, params: GetParams) -> Result<Partition, Error> {
+        self.get_with_options(partition_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         partition_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<Partition, Error> {
         let partition_id = crate::client::path_segment(partition_id);
         let path = format!("/v1/partitions/{partition_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 
@@ -181,6 +204,26 @@ impl<'a> PartitionsApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
+    /// Cancel Partition
+    pub async fn create_partition_cancel(&self, partition_id: &str) -> Result<Partition, Error> {
+        self.create_partition_cancel_with_options(partition_id, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_partition_cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_partition_cancel_with_options(
+        &self,
+        partition_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Partition, Error> {
+        let partition_id = crate::client::path_segment(partition_id);
+        let path = format!("/v1/partitions/{partition_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 }

@@ -8,6 +8,7 @@ import com.retab.RetabClient;
 import com.retab.models.Category;
 import com.retab.models.Classification;
 import com.retab.models.ClassificationRequest;
+import com.retab.types.ClassificationsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -36,6 +37,7 @@ public final class ClassificationsApi {
       Long limit,
       SortOrder order,
       String filename,
+      ClassificationsStatus status,
       String fromDate,
       String toDate)
       throws IOException, InterruptedException {
@@ -46,6 +48,7 @@ public final class ClassificationsApi {
     appendQueryParam(query, "limit", limit);
     appendQueryParam(query, "order", order);
     appendQueryParam(query, "filename", filename);
+    appendQueryParam(query, "status", status);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -83,7 +86,8 @@ public final class ClassificationsApi {
         request == null ? null : request.getFirstNPages(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getNConsensus(),
-        request == null ? null : request.isBustCache());
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isBackground());
   }
 
   public Classification create(
@@ -93,7 +97,8 @@ public final class ClassificationsApi {
       Long firstNPages,
       String instructions,
       Long nConsensus,
-      Boolean bustCache)
+      Boolean bustCache,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/classifications";
     StringBuilder query = new StringBuilder();
@@ -116,6 +121,9 @@ public final class ClassificationsApi {
     if (bustCache != null) {
       body.put("bust_cache", bustCache);
     }
+    if (background != null) {
+      body.put("background", background);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -135,9 +143,11 @@ public final class ClassificationsApi {
     return client.getObjectMapper().readValue(response.body(), Classification.class);
   }
 
-  public Classification get(String classificationId) throws IOException, InterruptedException {
+  public Classification get(String classificationId, Boolean includeOutput)
+      throws IOException, InterruptedException {
     String path = "/v1/classifications/" + encodePathSegment(classificationId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -175,6 +185,28 @@ public final class ClassificationsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Classification createCancel(String classificationId)
+      throws IOException, InterruptedException {
+    String path = "/v1/classifications/" + encodePathSegment(classificationId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Classification.class);
   }
 
   private static String encodePathSegment(Object value) {

@@ -9,6 +9,7 @@ import com.retab.models.Split;
 import com.retab.models.SplitRequest;
 import com.retab.models.Subdocument;
 import com.retab.types.SortOrder;
+import com.retab.types.SplitsStatus;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -36,6 +37,7 @@ public final class SplitsApi {
       Long limit,
       SortOrder order,
       String filename,
+      SplitsStatus status,
       String fromDate,
       String toDate)
       throws IOException, InterruptedException {
@@ -46,6 +48,7 @@ public final class SplitsApi {
     appendQueryParam(query, "limit", limit);
     appendQueryParam(query, "order", order);
     appendQueryParam(query, "filename", filename);
+    appendQueryParam(query, "status", status);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -80,7 +83,8 @@ public final class SplitsApi {
         request == null ? null : request.getModel(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getNConsensus(),
-        request == null ? null : request.isBustCache());
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isBackground());
   }
 
   public Split create(
@@ -89,7 +93,8 @@ public final class SplitsApi {
       String model,
       String instructions,
       Long nConsensus,
-      Boolean bustCache)
+      Boolean bustCache,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/splits";
     StringBuilder query = new StringBuilder();
@@ -108,6 +113,9 @@ public final class SplitsApi {
     }
     if (bustCache != null) {
       body.put("bust_cache", bustCache);
+    }
+    if (background != null) {
+      body.put("background", background);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
@@ -128,9 +136,10 @@ public final class SplitsApi {
     return client.getObjectMapper().readValue(response.body(), Split.class);
   }
 
-  public Split get(String splitId) throws IOException, InterruptedException {
+  public Split get(String splitId, Boolean includeOutput) throws IOException, InterruptedException {
     String path = "/v1/splits/" + encodePathSegment(splitId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -168,6 +177,27 @@ public final class SplitsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Split createCancel(String splitId) throws IOException, InterruptedException {
+    String path = "/v1/splits/" + encodePathSegment(splitId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Split.class);
   }
 
   private static String encodePathSegment(Object value) {

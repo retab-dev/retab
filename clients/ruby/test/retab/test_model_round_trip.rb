@@ -402,6 +402,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
@@ -447,6 +449,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",
@@ -671,7 +675,8 @@ class ModelRoundTripTest < Minitest::Test
       "first_n_pages" => nil,
       "instructions" => nil,
       "n_consensus" => 1,
-      "bust_cache" => true
+      "bust_cache" => true,
+      "background" => true
     }
     model = Retab::ClassificationRequest.new(fixture.to_json)
     json = model.to_h
@@ -686,7 +691,8 @@ class ModelRoundTripTest < Minitest::Test
       "template_id" => nil,
       "model" => "stub",
       "config" => {},
-      "bust_cache" => true
+      "bust_cache" => true,
+      "background" => true
     }
     model = Retab::EditRequest.new(fixture.to_json)
     json = model.to_h
@@ -749,6 +755,7 @@ class ModelRoundTripTest < Minitest::Test
       "additional_messages" => nil,
       "bust_cache" => true,
       "stream" => true,
+      "background" => true,
       "chunking_keys" => nil
     }
     model = Retab::ExtractionRequest.new(fixture.to_json)
@@ -810,7 +817,8 @@ class ModelRoundTripTest < Minitest::Test
       "model" => "stub",
       "n_consensus" => 1,
       "allow_overlap" => true,
-      "bust_cache" => true
+      "bust_cache" => true,
+      "background" => true
     }
     model = Retab::PartitionRequest.new(fixture.to_json)
     json = model.to_h
@@ -842,7 +850,8 @@ class ModelRoundTripTest < Minitest::Test
       "model" => "stub",
       "instructions" => nil,
       "n_consensus" => 1,
-      "bust_cache" => true
+      "bust_cache" => true,
+      "background" => true
     }
     model = Retab::SplitRequest.new(fixture.to_json)
     json = model.to_h
@@ -1121,6 +1130,8 @@ class ModelRoundTripTest < Minitest::Test
       "config" => {},
       "template_id" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "filled_document_ref" => nil,
       "usage" => nil,
       "created_at" => nil
@@ -1181,6 +1192,8 @@ class ModelRoundTripTest < Minitest::Test
       "config" => {},
       "template_id" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "filled_document_ref" => nil,
       "usage" => nil,
       "created_at" => "stub",
@@ -1658,6 +1671,8 @@ class ModelRoundTripTest < Minitest::Test
       "image_resolution_dpi" => 1,
       "instructions" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "metadata" => nil,
       "usage" => nil,
@@ -1708,6 +1723,8 @@ class ModelRoundTripTest < Minitest::Test
       "image_resolution_dpi" => 1,
       "instructions" => nil,
       "output" => {},
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "metadata" => nil,
       "usage" => nil,
@@ -2210,6 +2227,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "allow_overlap" => true,
       "output" => [],
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
@@ -2267,6 +2286,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "allow_overlap" => true,
       "output" => [],
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",
@@ -2328,6 +2349,20 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::PendingWorkflowTestRun.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_primitive_error_round_trip
+    fixture = {
+      "code" => "stub",
+      "message" => "stub",
+      "details" => nil
+    }
+    model = Retab::PrimitiveError.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["code"], json[:code])
+    assert_equal(fixture["message"], json[:message])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2738,6 +2773,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => [],
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => nil
@@ -2805,6 +2842,8 @@ class ModelRoundTripTest < Minitest::Test
       "n_consensus" => 1,
       "instructions" => nil,
       "output" => [],
+      "status" => "stub",
+      "error" => nil,
       "consensus" => nil,
       "usage" => nil,
       "created_at" => "stub",

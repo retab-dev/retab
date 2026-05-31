@@ -33,6 +33,11 @@ export interface ClassificationRequest {
    * @default false
    */
   bustCache?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
 }
 
 export interface ClassificationRequestResponse {
@@ -43,6 +48,7 @@ export interface ClassificationRequestResponse {
   instructions?: string | null;
   n_consensus?: number;
   bust_cache?: boolean;
+  background?: boolean;
 }
 
 export const ZClassificationRequest = z.object({
@@ -53,6 +59,7 @@ export const ZClassificationRequest = z.object({
   instructions: z.string().nullable().optional(),
   nConsensus: z.number().int().optional(),
   bustCache: z.boolean().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<ClassificationRequest>;
 
 export function deserializeClassificationRequest(
@@ -66,6 +73,7 @@ export function deserializeClassificationRequest(
     instructions: wire['instructions'],
     nConsensus: wire['n_consensus'],
     bustCache: wire['bust_cache'],
+    background: wire['background'],
   };
 }
 
@@ -80,5 +88,6 @@ export function serializeClassificationRequest(
     instructions: domain['instructions'],
     n_consensus: domain['nConsensus'],
     bust_cache: domain['bustCache'],
+    background: domain['background'],
   };
 }

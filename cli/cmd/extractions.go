@@ -238,7 +238,7 @@ page or region of the source document each value came from), use
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Extractions.Get(ctx, args[0])
+		result, err := client.Extractions.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -314,6 +314,29 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
+var extractionsCancelCmd = &cobra.Command{
+	Use:   "cancel <extraction-id>",
+	Short: "Cancel an extraction",
+	Long: `Cancel a pending or in-flight extraction. Completed extractions
+cannot be cancelled and the API returns an error.`,
+	Example: `  # Cancel a running extraction
+  retab extractions cancel extr_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Extractions.CreateCancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func addExtractionBodyFlags(cmd *cobra.Command) {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
@@ -336,6 +359,6 @@ func init() {
 
 	extractionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsDeleteCmd)
+	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsCancelCmd, extractionsDeleteCmd)
 	rootCmd.AddCommand(extractionsCmd)
 }

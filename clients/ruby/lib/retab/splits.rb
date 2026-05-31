@@ -16,6 +16,7 @@ module Retab
     # @param limit [Integer, nil]
     # @param order [Retab::Types::SplitsOrder, nil]
     # @param filename [String, nil]
+    # @param status [Retab::Types::SplitsStatus, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -26,6 +27,7 @@ module Retab
       limit: 10,
       order: "desc",
       filename: nil,
+      status: nil,
       from_date: nil,
       to_date: nil,
       request_options: {}
@@ -36,6 +38,7 @@ module Retab
         "limit" => limit,
         "order" => order,
         "filename" => filename,
+        "status" => status,
         "from_date" => from_date,
         "to_date" => to_date
       }.compact
@@ -53,6 +56,7 @@ module Retab
           limit: limit,
           order: order,
           filename: filename,
+          status: status,
           from_date: from_date,
           to_date: to_date,
           request_options: request_options
@@ -66,6 +70,7 @@ module Retab
           limit: limit,
           order: order,
           filename: filename,
+          status: status,
           from_date: from_date,
           to_date: to_date
         },
@@ -80,6 +85,7 @@ module Retab
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the split.
     # @param n_consensus [Integer, nil] Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Split]
     def create(
@@ -89,6 +95,7 @@ module Retab
       instructions: nil,
       n_consensus: nil,
       bust_cache: nil,
+      background: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document) unless document.nil?
@@ -98,7 +105,8 @@ module Retab
         "model" => model,
         "instructions" => instructions,
         "n_consensus" => n_consensus,
-        "bust_cache" => bust_cache
+        "bust_cache" => bust_cache,
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,
@@ -118,16 +126,22 @@ module Retab
 
     # Get Split
     # @param split_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Split]
     def get(
       split_id:,
+      include_output: true,
       request_options: {}
     )
+      params = {
+        "include_output" => include_output
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/splits/#{Retab::Util.encode_path(split_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::Split.new(response.body)
@@ -154,6 +168,29 @@ module Retab
         request_options: request_options
       )
       nil
+    end
+
+    # Cancel Split
+    # @param split_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Split]
+    def create_split_cancel(
+      split_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/splits/#{Retab::Util.encode_path(split_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Split.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
   end
 end

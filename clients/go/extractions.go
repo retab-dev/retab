@@ -22,10 +22,11 @@ type ExtractionsListParams struct {
 	// FilenameContains is plain-text search over the filename.
 	FilenameContains *string `url:"filename_contains,omitempty" json:"-"`
 	// DocumentType is filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
-	DocumentType []string `url:"document_type,omitempty" json:"-"`
-	FromDate     *string  `url:"from_date,omitempty" json:"-"`
-	ToDate       *string  `url:"to_date,omitempty" json:"-"`
-	Metadata     *string  `url:"metadata,omitempty" json:"-"`
+	DocumentType []string           `url:"document_type,omitempty" json:"-"`
+	Status       *ExtractionsStatus `url:"status,omitempty" json:"-"`
+	FromDate     *string            `url:"from_date,omitempty" json:"-"`
+	ToDate       *string            `url:"to_date,omitempty" json:"-"`
+	Metadata     *string            `url:"metadata,omitempty" json:"-"`
 }
 
 // List extractions
@@ -54,8 +55,10 @@ type ExtractionsCreateParams struct {
 	// AdditionalMessages is additional chat messages forwarded to the extraction model.
 	AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
-	BustCache    *bool             `json:"bust_cache,omitempty" url:"-"`
-	Stream       *bool             `json:"stream,omitempty" url:"-"`
+	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	Stream    *bool `json:"stream,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background   *bool             `json:"background,omitempty" url:"-"`
 	ChunkingKeys map[string]string `json:"chunking_keys,omitempty" url:"-"`
 }
 
@@ -89,6 +92,7 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
 		BustCache          *bool                    `json:"bust_cache,omitempty"`
 		Stream             *bool                    `json:"stream,omitempty"`
+		Background         *bool                    `json:"background,omitempty"`
 		ChunkingKeys       map[string]string        `json:"chunking_keys,omitempty"`
 	}
 	if params == nil {
@@ -113,6 +117,7 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		AdditionalMessages: params.AdditionalMessages,
 		BustCache:          params.BustCache,
 		Stream:             params.Stream,
+		Background:         params.Background,
 		ChunkingKeys:       params.ChunkingKeys,
 	}
 	var result Extraction
@@ -123,17 +128,24 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 	return &result, nil
 }
 
+// ExtractionsGetParams contains the parameters for Get.
+type ExtractionsGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get extraction
 // Retrieve an extraction.
 // Returns the extraction identified by `extraction_id`, including its source
 // file, schema, `output`, and consensus details. Responds with `404` if no
 // matching extraction exists.
-func (s *ExtractionService) Get(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
+func (s *ExtractionService) Get(ctx context.Context, extractionID string, params *ExtractionsGetParams, opts ...RequestOption) (*Extraction, error) {
 	if extractionID == "" {
 		return nil, fmt.Errorf("retab: extraction_id is required")
 	}
 	var result Extraction
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/extractions/%s", url.PathEscape(extractionID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/extractions/%s", url.PathEscape(extractionID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +160,19 @@ func (s *ExtractionService) Delete(ctx context.Context, extractionID string, opt
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/extractions/%s", url.PathEscape(extractionID)), nil, nil, nil, opts)
 	return err
+}
+
+// CreateCancel cancel Extraction
+func (s *ExtractionService) CreateCancel(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
+	if extractionID == "" {
+		return nil, fmt.Errorf("retab: extraction_id is required")
+	}
+	var result Extraction
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/extractions/%s/cancel", url.PathEscape(extractionID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 // Sources get Extraction Sources

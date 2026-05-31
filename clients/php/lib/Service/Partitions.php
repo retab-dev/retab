@@ -28,6 +28,7 @@ class Partitions
      * @param int|null $limit Defaults to 10.
      * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
      * @param string|null $filename
+     * @param \Retab\Resource\EditStatus|null $status
      * @param string|null $fromDate
      * @param string|null $toDate
      * @return \Retab\PaginatedResponse<\Retab\Resource\Partition>
@@ -39,6 +40,7 @@ class Partitions
         ?int $limit = null,
         \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
         ?string $filename = null,
+        ?\Retab\Resource\EditStatus $status = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?\Retab\RequestOptions $options = null,
@@ -49,6 +51,7 @@ class Partitions
             'limit' => $limit,
             'order' => $order->value,
             'filename' => $filename,
+            'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
         ], fn($v) => $v !== null);
@@ -77,6 +80,7 @@ class Partitions
      * @param int|null $nConsensus Number of partitioning runs to use for consensus voting. Uses deterministic single-pass when set to 1.
      * @param bool|null $allowOverlap If true, allow a page to appear in more than one partition chunk
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\Partition
      * @throws \Retab\Exception\RetabException
      */
@@ -88,6 +92,7 @@ class Partitions
         ?int $nConsensus = null,
         ?bool $allowOverlap = null,
         ?bool $bustCache = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Partition {
         $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
@@ -99,6 +104,7 @@ class Partitions
             'n_consensus' => $nConsensus,
             'allow_overlap' => $allowOverlap,
             'bust_cache' => $bustCache,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -118,16 +124,22 @@ class Partitions
      * and returns the full `Partition` including its `output` chunks. Responds with `404` if
      * no partition with that id exists.
      * @param string $partitionId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Partition
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $partitionId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Partition {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/partitions/' . rawurlencode($partitionId),
+            query: $query,
             options: $options,
         );
         return Partition::fromArray($response);
@@ -154,5 +166,23 @@ class Partitions
             path: 'v1/partitions/' . rawurlencode($partitionId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Partition
+     * @param string $partitionId
+     * @return \Retab\Resource\Partition
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createPartitionCancel(
+        string $partitionId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Partition {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/partitions/' . rawurlencode($partitionId) . '/cancel',
+            options: $options,
+        );
+        return Partition::fromArray($response);
     }
 }

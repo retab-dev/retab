@@ -26,6 +26,7 @@ class Classifications
      * @param int|null $limit Defaults to 10.
      * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
      * @param string|null $filename
+     * @param \Retab\Resource\EditStatus|null $status
      * @param string|null $fromDate
      * @param string|null $toDate
      * @return \Retab\PaginatedResponse<\Retab\Resource\Classification>
@@ -37,6 +38,7 @@ class Classifications
         ?int $limit = null,
         \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
         ?string $filename = null,
+        ?\Retab\Resource\EditStatus $status = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?\Retab\RequestOptions $options = null,
@@ -47,6 +49,7 @@ class Classifications
             'limit' => $limit,
             'order' => $order->value,
             'filename' => $filename,
+            'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
         ], fn($v) => $v !== null);
@@ -76,6 +79,7 @@ class Classifications
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the classification.
      * @param int|null $nConsensus Number of classification runs to use for consensus voting. Uses deterministic single-pass when set to 1.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\Classification
      * @throws \Retab\Exception\RetabException
      */
@@ -87,6 +91,7 @@ class Classifications
         ?string $instructions = null,
         ?int $nConsensus = null,
         ?bool $bustCache = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Classification {
         $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
@@ -98,6 +103,7 @@ class Classifications
             'instructions' => $instructions,
             'n_consensus' => $nConsensus,
             'bust_cache' => $bustCache,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -117,16 +123,22 @@ class Classifications
      * classification with its file reference, categories, and result; responds
      * with `404` if no classification with that id exists.
      * @param string $classificationId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Classification
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $classificationId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Classification {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/classifications/' . rawurlencode($classificationId),
+            query: $query,
             options: $options,
         );
         return Classification::fromArray($response);
@@ -152,5 +164,23 @@ class Classifications
             path: 'v1/classifications/' . rawurlencode($classificationId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Classification
+     * @param string $classificationId
+     * @return \Retab\Resource\Classification
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createClassificationCancel(
+        string $classificationId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Classification {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/classifications/' . rawurlencode($classificationId) . '/cancel',
+            options: $options,
+        );
+        return Classification::fromArray($response);
     }
 }

@@ -14,6 +14,7 @@ public final class EditRequest {
   private final String model;
   private final EditConfig config;
   private final Boolean bustCache;
+  private final Boolean background;
 
   @JsonCreator
   public EditRequest(
@@ -22,13 +23,15 @@ public final class EditRequest {
       @JsonProperty(value = "template_id", required = false) String templateId,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "config", required = false) EditConfig config,
-      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
+      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.instructions = instructions;
     this.document = document;
     this.templateId = templateId;
     this.model = model != null ? model : "retab-small";
     this.config = config;
     this.bustCache = bustCache != null ? bustCache : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("instructions")
@@ -59,5 +62,10 @@ public final class EditRequest {
   @JsonProperty("bust_cache")
   public Boolean isBustCache() {
     return bustCache;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

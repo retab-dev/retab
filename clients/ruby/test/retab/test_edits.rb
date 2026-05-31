@@ -39,12 +39,25 @@ class EditsTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_create_edit_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/edits/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.edits.create_edit_cancel(edit_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/edits(\?|\z)}},
     {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/edits(\?|\z)}, args: {instructions: "stub"}},
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)}, args: {edit_id: "stub"}},
-    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)}, args: {edit_id: "stub"}}
+    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)}, args: {edit_id: "stub"}},
+    {
+      name: :create_edit_cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/edits/stub/cancel(\?|\z)},
+      args: {edit_id: "stub"}
+    }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do
       stub_request(spec[:verb], spec[:url])

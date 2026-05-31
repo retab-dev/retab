@@ -45,6 +45,11 @@ export interface ExtractionRequest {
   bustCache?: boolean;
   /** @default false */
   stream?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
   chunkingKeys?: Record<string, string> | null;
 }
 
@@ -59,6 +64,7 @@ export interface ExtractionRequestResponse {
   additional_messages?: Record<string, unknown>[] | null;
   bust_cache?: boolean;
   stream?: boolean;
+  background?: boolean;
   chunking_keys?: Record<string, string> | null;
 }
 
@@ -73,6 +79,7 @@ export const ZExtractionRequest = z.object({
   additionalMessages: z.record(z.string(), z.unknown()).array().nullable().optional(),
   bustCache: z.boolean().optional(),
   stream: z.boolean().optional(),
+  background: z.boolean().optional(),
   chunkingKeys: z.record(z.string(), z.string()).nullable().optional(),
 }) as z.ZodType<ExtractionRequest>;
 
@@ -88,6 +95,7 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     additionalMessages: wire['additional_messages'],
     bustCache: wire['bust_cache'],
     stream: wire['stream'],
+    background: wire['background'],
     chunkingKeys: wire['chunking_keys'],
   };
 }
@@ -104,6 +112,7 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     additional_messages: domain['additionalMessages'],
     bust_cache: domain['bustCache'],
     stream: domain['stream'],
+    background: domain['background'],
     chunking_keys: domain['chunkingKeys'],
   };
 }

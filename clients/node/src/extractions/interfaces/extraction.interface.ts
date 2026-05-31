@@ -20,6 +20,15 @@ import {
   serializeFileRef,
 } from '../../classifications/interfaces/file-ref.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../classifications/interfaces/retab-usage.interface.js';
@@ -28,6 +37,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../classifications/interfaces/retab-usage.interface.js';
+import type { ExtractionStatus } from './extraction-status.interface.js';
+import { ZExtractionStatus } from './extraction-status.interface.js';
 
 /** A stored extraction record from the Retab API. */
 export interface Extraction {
@@ -53,6 +64,13 @@ export interface Extraction {
   instructions?: string | null;
   /** The extracted structured data */
   output: Record<string, unknown>;
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: ExtractionStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote extraction runs */
   consensus?: ExtractionConsensus | null;
   metadata?: Record<string, string> | null;
@@ -70,6 +88,8 @@ export interface ExtractionResponse {
   image_resolution_dpi?: number;
   instructions?: string | null;
   output: Record<string, unknown>;
+  status?: ExtractionStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: ExtractionConsensusResponse | null;
   metadata?: Record<string, string> | null;
   usage?: RetabUsageResponse | null;
@@ -85,6 +105,8 @@ export const ZExtraction = z.object({
   imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: z.record(z.string(), z.unknown()),
+  status: ZExtractionStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZExtractionConsensus.nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
@@ -101,6 +123,13 @@ export function deserializeExtraction(wire: ExtractionResponse): Extraction {
     imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     output: wire['output'],
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -133,6 +162,13 @@ export function serializeExtraction(domain: Extraction): ExtractionResponse {
     image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     output: domain['output'],
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)

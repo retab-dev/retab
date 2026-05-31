@@ -19,6 +19,14 @@
     "reasoning": "test_reasoning",
     "category": "test_category"
   },
+  "status": "pending",
+  "error": {
+    "code": "test_code",
+    "message": "test_message",
+    "details": {
+      "key": {}
+    }
+  },
   "consensus": {
     "choices": [
       {

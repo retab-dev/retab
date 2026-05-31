@@ -156,7 +156,7 @@ definitions, and the resolved subdocument page ranges.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Splits.Get(ctx, args[0])
+		result, err := client.Splits.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -228,6 +228,29 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
+var splitsCancelCmd = &cobra.Command{
+	Use:   "cancel <split-id>",
+	Short: "Cancel a split",
+	Long: `Cancel a pending or in-flight split. Completed splits cannot be
+cancelled and the API returns an error.`,
+	Example: `  # Cancel a running split
+  retab splits cancel split_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Splits.CreateCancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func init() {
 	addDocumentFlags(splitsCreateCmd)
 	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances) (required)")
@@ -242,6 +265,6 @@ func init() {
 
 	splitsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsDeleteCmd)
+	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsCancelCmd, splitsDeleteCmd)
 	rootCmd.AddCommand(splitsCmd)
 }

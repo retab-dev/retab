@@ -27,6 +27,8 @@ readonly class SplitRequest implements \JsonSerializable
         public ?int $nConsensus = null,
         /** If true, skip the LLM cache and force a fresh completion */
         public ?bool $bustCache = null,
+        /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
+        public ?bool $background = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -51,6 +53,7 @@ readonly class SplitRequest implements \JsonSerializable
             instructions: $data['instructions'] ?? null,
             nConsensus: $data['n_consensus'] ?? null,
             bustCache: $data['bust_cache'] ?? null,
+            background: $data['background'] ?? null,
         );
     }
 
@@ -64,6 +67,7 @@ readonly class SplitRequest implements \JsonSerializable
             'instructions' => $this->instructions,
             'n_consensus' => $this->nConsensus,
             'bust_cache' => $this->bustCache,
+            'background' => $this->background,
         ];
     }
 }

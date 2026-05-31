@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-31T10:02:16.580Z",
+  "generatedAt": "2026-05-31T13:09:04.321Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -89,6 +89,7 @@
     "lib/Resource/EditConfig.php",
     "lib/Resource/EditRequest.php",
     "lib/Resource/EditResult.php",
+    "lib/Resource/EditStatus.php",
     "lib/Resource/EditTemplate.php",
     "lib/Resource/EditWorkflowArtifact.php",
     "lib/Resource/EndsWithCondition.php",
@@ -188,6 +189,7 @@
     "lib/Resource/PendingWorkflowExperimentResult.php",
     "lib/Resource/PendingWorkflowExperimentRun.php",
     "lib/Resource/PendingWorkflowTestRun.php",
+    "lib/Resource/PrimitiveError.php",
     "lib/Resource/PublicHandlePayload.php",
     "lib/Resource/PublicHandlePayloadType.php",
     "lib/Resource/PublishWorkflowRequest.php",
@@ -496,6 +498,7 @@
     "tests/Fixtures/pending_workflow_experiment_result.json",
     "tests/Fixtures/pending_workflow_experiment_run.json",
     "tests/Fixtures/pending_workflow_test_run.json",
+    "tests/Fixtures/primitive_error.json",
     "tests/Fixtures/public_handle_payload.json",
     "tests/Fixtures/publish_workflow_request.json",
     "tests/Fixtures/queued_step_lifecycle.json",
@@ -621,6 +624,10 @@
       "sdkMethod": "delete",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "createClassificationCancel",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "list",
       "service": "edits"
@@ -635,6 +642,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "createEditCancel",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -671,6 +682,10 @@
     },
     "DELETE /v1/extractions/{extraction_id}": {
       "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "createExtractionCancel",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
@@ -749,6 +764,10 @@
       "sdkMethod": "delete",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "createPartitionCancel",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"
@@ -767,6 +786,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "createSplitCancel",
       "service": "splits"
     },
     "GET /v1/workflows": {

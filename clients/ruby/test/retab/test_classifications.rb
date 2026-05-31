@@ -41,6 +41,13 @@ class ClassificationsTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_create_classification_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/classifications/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.classifications.create_classification_cancel(classification_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/classifications(\?|\z)}},
@@ -60,6 +67,12 @@ class ClassificationsTest < Minitest::Test
       name: :delete,
       verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/classifications/stub(\?|\z)},
+      args: {classification_id: "stub"}
+    },
+    {
+      name: :create_classification_cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/classifications/stub/cancel(\?|\z)},
       args: {classification_id: "stub"}
     }
   ].each do |spec|

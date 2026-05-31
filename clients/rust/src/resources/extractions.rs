@@ -37,6 +37,8 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub document_type: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<ExtractionsStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_date: Option<String>,
@@ -56,6 +58,7 @@ impl Default for ListParams {
             filename_regex: Default::default(),
             filename_contains: Default::default(),
             document_type: Default::default(),
+            status: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
             metadata: Default::default(),
@@ -95,8 +98,27 @@ impl CreateParams {
                 additional_messages: Default::default(),
                 bust_cache: Default::default(),
                 stream: Default::default(),
+                background: Default::default(),
                 chunking_keys: Default::default(),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
         }
     }
 }
@@ -158,21 +180,22 @@ impl<'a> ExtractionsApi<'a> {
     /// Returns the extraction identified by `extraction_id`, including its source
     /// file, schema, `output`, and consensus details. Responds with `404` if no
     /// matching extraction exists.
-    pub async fn get(&self, extraction_id: &str) -> Result<Extraction, Error> {
-        self.get_with_options(extraction_id, None).await
+    pub async fn get(&self, extraction_id: &str, params: GetParams) -> Result<Extraction, Error> {
+        self.get_with_options(extraction_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         extraction_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<Extraction, Error> {
         let extraction_id = crate::client::path_segment(extraction_id);
         let path = format!("/v1/extractions/{extraction_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 
@@ -194,6 +217,26 @@ impl<'a> ExtractionsApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
+    /// Cancel Extraction
+    pub async fn create_extraction_cancel(&self, extraction_id: &str) -> Result<Extraction, Error> {
+        self.create_extraction_cancel_with_options(extraction_id, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_extraction_cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_extraction_cancel_with_options(
+        &self,
+        extraction_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Extraction, Error> {
+        let extraction_id = crate::client::path_segment(extraction_id);
+        let path = format!("/v1/extractions/{extraction_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 

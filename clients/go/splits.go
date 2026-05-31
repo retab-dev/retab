@@ -16,9 +16,10 @@ type SplitService struct {
 // SplitsListParams contains the parameters for List.
 type SplitsListParams struct {
 	PaginationParams
-	Filename *string `url:"filename,omitempty" json:"-"`
-	FromDate *string `url:"from_date,omitempty" json:"-"`
-	ToDate   *string `url:"to_date,omitempty" json:"-"`
+	Filename *string       `url:"filename,omitempty" json:"-"`
+	Status   *SplitsStatus `url:"status,omitempty" json:"-"`
+	FromDate *string       `url:"from_date,omitempty" json:"-"`
+	ToDate   *string       `url:"to_date,omitempty" json:"-"`
 }
 
 // List splits
@@ -45,6 +46,8 @@ type SplitsCreateParams struct {
 	NConsensus *int `json:"n_consensus,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create split
@@ -70,6 +73,7 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 		Instructions *string        `json:"instructions,omitempty"`
 		NConsensus   *int           `json:"n_consensus,omitempty"`
 		BustCache    *bool          `json:"bust_cache,omitempty"`
+		Background   *bool          `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -89,6 +93,7 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 		Instructions: params.Instructions,
 		NConsensus:   params.NConsensus,
 		BustCache:    params.BustCache,
+		Background:   params.Background,
 	}
 	var result Split
 	_, err := s.client.request(ctx, "POST", "/v1/splits", nil, body, &result, opts)
@@ -98,17 +103,24 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 	return &result, nil
 }
 
+// SplitsGetParams contains the parameters for Get.
+type SplitsGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get split
 // Retrieve a split.
 // Fetches a single split by its `split_id` within the authenticated environment and
 // returns the full `Split` including its `output` page assignments. Responds with `404`
 // if no split with that id exists.
-func (s *SplitService) Get(ctx context.Context, splitID string, opts ...RequestOption) (*Split, error) {
+func (s *SplitService) Get(ctx context.Context, splitID string, params *SplitsGetParams, opts ...RequestOption) (*Split, error) {
 	if splitID == "" {
 		return nil, fmt.Errorf("retab: split_id is required")
 	}
 	var result Split
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/splits/%s", url.PathEscape(splitID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/splits/%s", url.PathEscape(splitID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -126,4 +138,17 @@ func (s *SplitService) Delete(ctx context.Context, splitID string, opts ...Reque
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/splits/%s", url.PathEscape(splitID)), nil, nil, nil, opts)
 	return err
+}
+
+// CreateCancel cancel Split
+func (s *SplitService) CreateCancel(ctx context.Context, splitID string, opts ...RequestOption) (*Split, error) {
+	if splitID == "" {
+		return nil, fmt.Errorf("retab: split_id is required")
+	}
+	var result Split
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/splits/%s/cancel", url.PathEscape(splitID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

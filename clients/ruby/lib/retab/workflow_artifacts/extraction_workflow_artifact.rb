@@ -14,6 +14,8 @@ module Retab
       image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       output: :output,
+      status: :status,
+      error: :error,
       consensus: :consensus,
       metadata: :metadata,
       usage: :usage,
@@ -30,6 +32,8 @@ module Retab
       :image_resolution_dpi,
       :instructions,
       :output,
+      :status,
+      :error,
       :consensus,
       :metadata,
       :usage,
@@ -48,6 +52,8 @@ module Retab
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @output = hash[:output] || {}
+      @status = hash[:status].nil? ? "pending" : hash[:status]
+      @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil
       @consensus = hash[:consensus] ? Retab::ExtractionConsensus.new(hash[:consensus]) : nil
       @metadata = hash[:metadata] || {}
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil

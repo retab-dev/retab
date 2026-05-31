@@ -11,7 +11,8 @@ module Retab
       template_id: :template_id,
       model: :model,
       config: :config,
-      bust_cache: :bust_cache
+      bust_cache: :bust_cache,
+      background: :background
     }.freeze
 
     attr_accessor(
@@ -20,7 +21,8 @@ module Retab
       :template_id,
       :model,
       :config,
-      :bust_cache
+      :bust_cache,
+      :background
     )
 
     def initialize(json)
@@ -32,6 +34,7 @@ module Retab
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @config = hash[:config] ? Retab::EditConfig.new(hash[:config]) : nil
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
+      @background = hash[:background].nil? ? false : hash[:background]
     end
   end
 end

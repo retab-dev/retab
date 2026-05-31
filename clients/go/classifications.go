@@ -16,9 +16,10 @@ type ClassificationService struct {
 // ClassificationsListParams contains the parameters for List.
 type ClassificationsListParams struct {
 	PaginationParams
-	Filename *string `url:"filename,omitempty" json:"-"`
-	FromDate *string `url:"from_date,omitempty" json:"-"`
-	ToDate   *string `url:"to_date,omitempty" json:"-"`
+	Filename *string                `url:"filename,omitempty" json:"-"`
+	Status   *ClassificationsStatus `url:"status,omitempty" json:"-"`
+	FromDate *string                `url:"from_date,omitempty" json:"-"`
+	ToDate   *string                `url:"to_date,omitempty" json:"-"`
 }
 
 // List classifications
@@ -45,6 +46,8 @@ type ClassificationsCreateParams struct {
 	NConsensus *int `json:"n_consensus,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create classification
@@ -75,6 +78,7 @@ func (s *ClassificationService) Create(ctx context.Context, params *Classificati
 		Instructions *string     `json:"instructions,omitempty"`
 		NConsensus   *int        `json:"n_consensus,omitempty"`
 		BustCache    *bool       `json:"bust_cache,omitempty"`
+		Background   *bool       `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -95,6 +99,7 @@ func (s *ClassificationService) Create(ctx context.Context, params *Classificati
 		Instructions: params.Instructions,
 		NConsensus:   params.NConsensus,
 		BustCache:    params.BustCache,
+		Background:   params.Background,
 	}
 	var result Classification
 	_, err := s.client.request(ctx, "POST", "/v1/classifications", nil, body, &result, opts)
@@ -104,17 +109,24 @@ func (s *ClassificationService) Create(ctx context.Context, params *Classificati
 	return &result, nil
 }
 
+// ClassificationsGetParams contains the parameters for Get.
+type ClassificationsGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get classification
 // Retrieve a classification.
 // Fetches a single classification by its `classification_id`. Returns the
 // classification with its file reference, categories, and result; responds
 // with `404` if no classification with that id exists.
-func (s *ClassificationService) Get(ctx context.Context, classificationID string, opts ...RequestOption) (*Classification, error) {
+func (s *ClassificationService) Get(ctx context.Context, classificationID string, params *ClassificationsGetParams, opts ...RequestOption) (*Classification, error) {
 	if classificationID == "" {
 		return nil, fmt.Errorf("retab: classification_id is required")
 	}
 	var result Classification
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/classifications/%s", url.PathEscape(classificationID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/classifications/%s", url.PathEscape(classificationID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -131,4 +143,17 @@ func (s *ClassificationService) Delete(ctx context.Context, classificationID str
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/classifications/%s", url.PathEscape(classificationID)), nil, nil, nil, opts)
 	return err
+}
+
+// CreateCancel cancel Classification
+func (s *ClassificationService) CreateCancel(ctx context.Context, classificationID string, opts ...RequestOption) (*Classification, error) {
+	if classificationID == "" {
+		return nil, fmt.Errorf("retab: classification_id is required")
+	}
+	var result Classification
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/classifications/%s/cancel", url.PathEscape(classificationID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

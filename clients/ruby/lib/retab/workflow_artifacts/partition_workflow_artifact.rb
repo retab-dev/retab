@@ -14,6 +14,8 @@ module Retab
       n_consensus: :n_consensus,
       allow_overlap: :allow_overlap,
       output: :output,
+      status: :status,
+      error: :error,
       consensus: :consensus,
       usage: :usage,
       created_at: :created_at,
@@ -29,6 +31,8 @@ module Retab
       :n_consensus,
       :allow_overlap,
       :output,
+      :status,
+      :error,
       :consensus,
       :usage,
       :created_at,
@@ -46,6 +50,8 @@ module Retab
       @n_consensus = hash[:n_consensus]
       @allow_overlap = hash[:allow_overlap].nil? ? true : hash[:allow_overlap]
       @output = (hash[:output] || []).map { |item| item ? Retab::PartitionChunk.new(item) : nil }
+      @status = hash[:status].nil? ? "pending" : hash[:status]
+      @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil
       @consensus = hash[:consensus] ? Retab::PartitionConsensus.new(hash[:consensus]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]

@@ -12,6 +12,8 @@ namespace Retab
 
         public string? TemplateId { get; set; }
 
+        public ClassificationStatus? Status { get; set; }
+
         public string? FromDate { get; set; }
 
         public string? ToDate { get; set; }
@@ -38,6 +40,17 @@ namespace Retab
 
         /// <summary>If true, skip the LLM cache and force a fresh completion.</summary>
         public bool? BustCache { get; set; }
+
+        /// <summary>If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/&lt;primitive&gt;/{id} until status is terminal. Mutually exclusive with stream.</summary>
+        public bool? Background { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="EditsService.GetAsync"/>: Get Edit</summary>
+    public class EditsGetOptions : BaseOptions
+    {
+        /// <summary>When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.</summary>
+        public bool? IncludeOutput { get; set; }
 
     }
 }

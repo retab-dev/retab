@@ -5,5 +5,6 @@ export * from './edit.interface.js';
 export * from './edit-config.interface.js';
 export * from './edit-request.interface.js';
 export * from './edit-result.interface.js';
+export * from './edit-status.interface.js';
 export * from './field-type.interface.js';
 export * from './form-field.interface.js';

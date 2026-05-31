@@ -16,9 +16,10 @@ type PartitionService struct {
 // PartitionsListParams contains the parameters for List.
 type PartitionsListParams struct {
 	PaginationParams
-	Filename *string `url:"filename,omitempty" json:"-"`
-	FromDate *string `url:"from_date,omitempty" json:"-"`
-	ToDate   *string `url:"to_date,omitempty" json:"-"`
+	Filename *string           `url:"filename,omitempty" json:"-"`
+	Status   *PartitionsStatus `url:"status,omitempty" json:"-"`
+	FromDate *string           `url:"from_date,omitempty" json:"-"`
+	ToDate   *string           `url:"to_date,omitempty" json:"-"`
 }
 
 // List partitions
@@ -47,6 +48,8 @@ type PartitionsCreateParams struct {
 	AllowOverlap *bool `json:"allow_overlap,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create partitions
@@ -76,6 +79,7 @@ func (s *PartitionService) Create(ctx context.Context, params *PartitionsCreateP
 		NConsensus   *int      `json:"n_consensus,omitempty"`
 		AllowOverlap *bool     `json:"allow_overlap,omitempty"`
 		BustCache    *bool     `json:"bust_cache,omitempty"`
+		Background   *bool     `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -96,6 +100,7 @@ func (s *PartitionService) Create(ctx context.Context, params *PartitionsCreateP
 		NConsensus:   params.NConsensus,
 		AllowOverlap: params.AllowOverlap,
 		BustCache:    params.BustCache,
+		Background:   params.Background,
 	}
 	var result Partition
 	_, err := s.client.request(ctx, "POST", "/v1/partitions", nil, body, &result, opts)
@@ -105,17 +110,24 @@ func (s *PartitionService) Create(ctx context.Context, params *PartitionsCreateP
 	return &result, nil
 }
 
+// PartitionsGetParams contains the parameters for Get.
+type PartitionsGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get partition
 // Retrieve a partition.
 // Fetches a single partition by its `partition_id` within the authenticated environment
 // and returns the full `Partition` including its `output` chunks. Responds with `404` if
 // no partition with that id exists.
-func (s *PartitionService) Get(ctx context.Context, partitionID string, opts ...RequestOption) (*Partition, error) {
+func (s *PartitionService) Get(ctx context.Context, partitionID string, params *PartitionsGetParams, opts ...RequestOption) (*Partition, error) {
 	if partitionID == "" {
 		return nil, fmt.Errorf("retab: partition_id is required")
 	}
 	var result Partition
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/partitions/%s", url.PathEscape(partitionID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/partitions/%s", url.PathEscape(partitionID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -133,4 +145,17 @@ func (s *PartitionService) Delete(ctx context.Context, partitionID string, opts 
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/partitions/%s", url.PathEscape(partitionID)), nil, nil, nil, opts)
 	return err
+}
+
+// CreateCancel cancel Partition
+func (s *PartitionService) CreateCancel(ctx context.Context, partitionID string, opts ...RequestOption) (*Partition, error) {
+	if partitionID == "" {
+		return nil, fmt.Errorf("retab: partition_id is required")
+	}
+	var result Partition
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/partitions/%s/cancel", url.PathEscape(partitionID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

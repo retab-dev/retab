@@ -3,10 +3,19 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
+
+
+class EditsStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class JobsStatus(str, Enum):
@@ -26,6 +35,7 @@ class JobsEndpoint(str, Enum):
     V_1_PARTITIONS = "/v1/partitions"
     V_1_CLASSIFICATIONS = "/v1/classifications"
     V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
+    V_1_FILES_ANALYZE = "/v1/files/analyze"
     V_1_EDITS = "/v1/edits"
     V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
     V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
@@ -81,6 +91,21 @@ class WorkflowRunsTriggerType(str, Enum):
     RESTART = "restart"
 
 
+ClassificationStatus = EditsStatus
+
+
+ClassificationsStatus = EditsStatus
+
+
+ExtractionsStatus = EditsStatus
+
+
+PartitionsStatus = EditsStatus
+
+
+SplitsStatus = EditsStatus
+
+
 WorkflowExperimentsExcludeStatus = WorkflowExperimentsStatus
 
 
@@ -106,7 +131,16 @@ class Classification(BaseModel):
     categories: list[Category] = Field(..., description="Categories the document was classified against")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
-    output: ClassificationDecision = Field(..., description="The classification result with reasoning")
+    output: ClassificationDecision | None = Field(
+        default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status."
+    )
+    status: EditsStatus | None = Field(
+        default=cast(EditsStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
     created_at: datetime.datetime | None = None
@@ -141,12 +175,24 @@ class ClassificationRequest(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the classification.")
     n_consensus: int | None = Field(default=1, description="Number of classification runs to use for consensus voting. Uses deterministic single-pass when set to 1.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class HttpValidationError(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     detail: list[ValidationError] | None = Field(default=[])
+
+
+class PrimitiveError(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    code: str = Field(..., description="Machine-readable error code.")
+    message: str = Field(..., description="Human-readable error message.")
+    details: dict[str, Any] | None = Field(default=None, description="Optional structured error context.")
 
 
 class ValidationError(BaseModel):
@@ -170,4 +216,5 @@ ClassificationConsensus.model_rebuild()
 ClassificationDecision.model_rebuild()
 ClassificationRequest.model_rebuild()
 HttpValidationError.model_rebuild()
+PrimitiveError.model_rebuild()
 ValidationError.model_rebuild()

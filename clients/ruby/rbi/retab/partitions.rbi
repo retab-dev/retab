@@ -16,12 +16,13 @@ module Retab
         limit: T.nilable(Integer),
         order: T.nilable(String),
         filename: T.nilable(String),
+        status: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Partition])
     end
-    def list(before:, after:, limit:, order:, filename:, from_date:, to_date:, request_options:); end
+    def list(before:, after:, limit:, order:, filename:, status:, from_date:, to_date:, request_options:); end
 
     sig do
       params(
@@ -32,18 +33,20 @@ module Retab
         n_consensus: T.nilable(Integer),
         allow_overlap: T.nilable(T::Boolean),
         bust_cache: T.nilable(T::Boolean),
+        background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Partition)
     end
-    def create(document:, key:, instructions:, model:, n_consensus:, allow_overlap:, bust_cache:, request_options:); end
+    def create(document:, key:, instructions:, model:, n_consensus:, allow_overlap:, bust_cache:, background:, request_options:); end
 
     sig do
       params(
         partition_id: String,
+        include_output: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Partition)
     end
-    def get(partition_id:, request_options:); end
+    def get(partition_id:, include_output:, request_options:); end
 
     sig do
       params(
@@ -52,6 +55,14 @@ module Retab
       ).returns(NilClass)
     end
     def delete(partition_id:, request_options:); end
+
+    sig do
+      params(
+        partition_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Partition)
+    end
+    def create_partition_cancel(partition_id:, request_options:); end
 
   end
 end

@@ -27,10 +27,14 @@ readonly class Partition implements \JsonSerializable
         /** Whether pages were allowed to appear in more than one partition chunk */
         public ?bool $allowOverlap = null,
         /**
-         * The list of partition chunks with their assigned pages
+         * The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
          * @var array<\Retab\Resource\PartitionChunk>|null
          */
         public ?array $output = null,
+        /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
+        public ?EditStatus $status = null,
+        /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+        public ?PrimitiveError $error = null,
         /** Consensus metadata for multi-vote partition runs */
         public ?PartitionConsensus $consensus = null,
         /** Usage information for the partition operation */
@@ -60,6 +64,8 @@ readonly class Partition implements \JsonSerializable
             nConsensus: $data['n_consensus'] ?? null,
             allowOverlap: $data['allow_overlap'] ?? null,
             output: isset($data['output']) ? array_map(fn($item) => PartitionChunk::fromArray($item), $data['output']) : null,
+            status: isset($data['status']) ? EditStatus::from($data['status']) : null,
+            error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             consensus: isset($data['consensus']) ? PartitionConsensus::fromArray($data['consensus']) : null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
@@ -78,6 +84,8 @@ readonly class Partition implements \JsonSerializable
             'n_consensus' => $this->nConsensus,
             'allow_overlap' => $this->allowOverlap,
             'output' => $this->output !== null ? array_map(fn($item) => $item->toArray(), $this->output) : null,
+            'status' => $this->status?->value,
+            'error' => $this->error?->toArray(),
             'consensus' => $this->consensus?->toArray(),
             'usage' => $this->usage?->toArray(),
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),

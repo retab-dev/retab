@@ -37,6 +37,21 @@ const (
 	CancelWorkflowResponseCancellationStatusCancellationFailed    CancelWorkflowResponseCancellationStatus = "cancellation_failed"
 )
 
+// ClassificationStatus represents classification status values.
+type ClassificationStatus string
+
+const (
+	ClassificationStatusPending    ClassificationStatus = "pending"
+	ClassificationStatusQueued     ClassificationStatus = "queued"
+	ClassificationStatusInProgress ClassificationStatus = "in_progress"
+	ClassificationStatusCompleted  ClassificationStatus = "completed"
+	ClassificationStatusFailed     ClassificationStatus = "failed"
+	ClassificationStatusCancelled  ClassificationStatus = "cancelled"
+)
+
+// ClassificationWorkflowArtifactStatus is an alias for ClassificationStatus.
+type ClassificationWorkflowArtifactStatus = ClassificationStatus
+
 // ConditionEvaluationDetailsLogicalOperator represents condition evaluation details logical operator values.
 type ConditionEvaluationDetailsLogicalOperator string
 
@@ -67,6 +82,7 @@ const (
 	CreateJobRequestEndpointV1Partitions             CreateJobRequestEndpoint = "/v1/partitions"
 	CreateJobRequestEndpointV1Classifications        CreateJobRequestEndpoint = "/v1/classifications"
 	CreateJobRequestEndpointV1SchemasGenerate        CreateJobRequestEndpoint = "/v1/schemas/generate"
+	CreateJobRequestEndpointV1FilesAnalyze           CreateJobRequestEndpoint = "/v1/files/analyze"
 	CreateJobRequestEndpointV1Edits                  CreateJobRequestEndpoint = "/v1/edits"
 	CreateJobRequestEndpointV1EditsTemplatesGenerate CreateJobRequestEndpoint = "/v1/edits/templates/generate"
 	CreateJobRequestEndpointV1EvalsExtractProcess    CreateJobRequestEndpoint = "/v1/evals/extract/process"
@@ -166,6 +182,12 @@ type DeclarativePlanResourceChangeActions = DeclarativePlanFieldChangeAction
 // DeclarativePlanResponseAction is an alias for DeclarativeApplyResponseAction.
 type DeclarativePlanResponseAction = DeclarativeApplyResponseAction
 
+// EditStatus is an alias for ClassificationStatus.
+type EditStatus = ClassificationStatus
+
+// EditWorkflowArtifactStatus is an alias for ClassificationStatus.
+type EditWorkflowArtifactStatus = ClassificationStatus
+
 // ErrorStepLifecycleStage represents error step lifecycle stage values.
 type ErrorStepLifecycleStage string
 
@@ -197,6 +219,9 @@ type ErrorTerminalCategory = ErrorStepLifecycleCategory
 // ExperimentSummaryMetricsResponseBlockType is an alias for ExperimentBlockType.
 type ExperimentSummaryMetricsResponseBlockType = ExperimentBlockType
 
+// ExtractionStatus is an alias for ClassificationStatus.
+type ExtractionStatus = ClassificationStatus
+
 // SourcesResponseDocumentType represents sources response document type values.
 type SourcesResponseDocumentType string
 
@@ -208,6 +233,9 @@ const (
 	SourcesResponseDocumentTypeDocx  SourcesResponseDocumentType = "docx"
 	SourcesResponseDocumentTypeTxt   SourcesResponseDocumentType = "txt"
 )
+
+// ExtractionWorkflowArtifactStatus is an alias for ClassificationStatus.
+type ExtractionWorkflowArtifactStatus = ClassificationStatus
 
 // JobStatus represents job status values.
 type JobStatus string
@@ -261,6 +289,12 @@ type TableParsingFormat = ParseRequestTableParsingFormat
 // ParseWorkflowArtifactTableParsingFormat is an alias for ParseRequestTableParsingFormat.
 type ParseWorkflowArtifactTableParsingFormat = ParseRequestTableParsingFormat
 
+// PartitionStatus is an alias for ClassificationStatus.
+type PartitionStatus = ClassificationStatus
+
+// PartitionWorkflowArtifactStatus is an alias for ClassificationStatus.
+type PartitionWorkflowArtifactStatus = ClassificationStatus
+
 // PublicHandlePayloadType represents public handle payload type values.
 type PublicHandlePayloadType string
 
@@ -284,6 +318,12 @@ const (
 	SimilarityGteConditionMethodLevenshtein SimilarityGteConditionMethod = "levenshtein"
 	SimilarityGteConditionMethodEmbeddings  SimilarityGteConditionMethod = "embeddings"
 )
+
+// SplitStatus is an alias for ClassificationStatus.
+type SplitStatus = ClassificationStatus
+
+// SplitWorkflowArtifactStatus is an alias for ClassificationStatus.
+type SplitWorkflowArtifactStatus = ClassificationStatus
 
 // StepArtifactRefOperation represents step artifact ref operation values.
 type StepArtifactRefOperation string
@@ -500,14 +540,23 @@ const (
 	ClassificationsOrderDesc ClassificationsOrder = "desc"
 )
 
+// ClassificationsStatus is an alias for ClassificationStatus.
+type ClassificationsStatus = ClassificationStatus
+
 // EditsOrder is an alias for ClassificationsOrder.
 type EditsOrder = ClassificationsOrder
+
+// EditsStatus is an alias for ClassificationStatus.
+type EditsStatus = ClassificationStatus
 
 // EditTemplatesOrder is an alias for ClassificationsOrder.
 type EditTemplatesOrder = ClassificationsOrder
 
 // ExtractionsOrder is an alias for ClassificationsOrder.
 type ExtractionsOrder = ClassificationsOrder
+
+// ExtractionsStatus is an alias for ClassificationStatus.
+type ExtractionsStatus = ClassificationStatus
 
 // FilesOrder is an alias for ClassificationsOrder.
 type FilesOrder = ClassificationsOrder
@@ -536,8 +585,14 @@ type ParsesOrder = ClassificationsOrder
 // PartitionsOrder is an alias for ClassificationsOrder.
 type PartitionsOrder = ClassificationsOrder
 
+// PartitionsStatus is an alias for ClassificationStatus.
+type PartitionsStatus = ClassificationStatus
+
 // SplitsOrder is an alias for ClassificationsOrder.
 type SplitsOrder = ClassificationsOrder
+
+// SplitsStatus is an alias for ClassificationStatus.
+type SplitsStatus = ClassificationStatus
 
 // WorkflowsOrder is an alias for ClassificationsOrder.
 type WorkflowsOrder = ClassificationsOrder

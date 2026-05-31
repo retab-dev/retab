@@ -45,6 +45,8 @@ readonly class ExtractionRequest implements \JsonSerializable
         /** If true, skip the LLM cache and force a fresh completion */
         public ?bool $bustCache = null,
         public ?bool $stream = null,
+        /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
+        public ?bool $background = null,
         /** @var array<string, string>|null */
         public ?array $chunkingKeys = null,
     ) {}
@@ -75,6 +77,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             additionalMessages: $data['additional_messages'] ?? null,
             bustCache: $data['bust_cache'] ?? null,
             stream: $data['stream'] ?? null,
+            background: $data['background'] ?? null,
             chunkingKeys: $data['chunking_keys'] ?? null,
         );
     }
@@ -93,6 +96,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             'additional_messages' => $this->additionalMessages,
             'bust_cache' => $this->bustCache,
             'stream' => $this->stream,
+            'background' => $this->background,
             'chunking_keys' => $this->chunkingKeys,
         ];
     }

@@ -81,18 +81,19 @@ namespace Retab
         /// if no split with that id exists.
         /// </remarks>
         /// <param name="splitId">The split id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Split"/> result.</returns>
-        public virtual async Task<Split> GetAsync(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Split> GetAsync(string splitId, SplitsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<Split>($"/v1/splits/{Uri.EscapeDataString(splitId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Split>($"/v1/splits/{Uri.EscapeDataString(splitId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Split> Get(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Split> Get(string splitId, SplitsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(splitId, requestOptions, cancellationToken);
+            return this.GetAsync(splitId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Split</summary>
@@ -114,6 +115,22 @@ namespace Retab
         public virtual Task Delete(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.DeleteAsync(splitId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel Split</summary>
+        /// <param name="splitId">The split id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Split"/> result.</returns>
+        public virtual async Task<Split> CreateCancelAsync(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Split>($"/v1/splits/{Uri.EscapeDataString(splitId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateCancelAsync"/>.</summary>
+        public virtual Task<Split> CreateCancel(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateCancelAsync(splitId, requestOptions, cancellationToken);
         }
     }
 }

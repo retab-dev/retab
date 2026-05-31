@@ -31,6 +31,7 @@ class Extractions
      * @param string|null $filenameRegex Deprecated alias for prefix filename filtering. Regex patterns are rejected.
      * @param string|null $filenameContains Plain-text search over the filename.
      * @param array<string>|null $documentType Filter by document type. Can be repeated. Accepted values: bmp, csv, doc, docm, docx, dotm, dotx, eml, gif, heic, heif, htm, html, jpeg, jpg, json, md, mhtml, msg, odp, ods, odt, ots, ott, pdf, png, ppt, pptx, rtf, svg, tif, tiff, tsv, txt, webp, xlam, xls, xlsb, xlsm, xlsx, xltm, xltx, xml, yaml, yml.
+     * @param \Retab\Resource\EditStatus|null $status
      * @param string|null $fromDate
      * @param string|null $toDate
      * @param string|null $metadata
@@ -46,6 +47,7 @@ class Extractions
         ?string $filenameRegex = null,
         ?string $filenameContains = null,
         ?array $documentType = null,
+        ?\Retab\Resource\EditStatus $status = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?string $metadata = null,
@@ -60,6 +62,7 @@ class Extractions
             'filename_regex' => $filenameRegex,
             'filename_contains' => $filenameContains,
             'document_type' => $documentType,
+            'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'metadata' => $metadata,
@@ -92,6 +95,7 @@ class Extractions
      * @param array<array<string, mixed>>|null $additionalMessages Additional chat messages forwarded to the extraction model.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
      * @param bool|null $stream
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param array<string, string>|null $chunkingKeys
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
@@ -107,6 +111,7 @@ class Extractions
         ?array $additionalMessages = null,
         ?bool $bustCache = null,
         ?bool $stream = null,
+        ?bool $background = null,
         ?array $chunkingKeys = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
@@ -122,6 +127,7 @@ class Extractions
             'additional_messages' => $additionalMessages,
             'bust_cache' => $bustCache,
             'stream' => $stream,
+            'background' => $background,
             'chunking_keys' => $chunkingKeys,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
@@ -142,16 +148,22 @@ class Extractions
      * file, schema, `output`, and consensus details. Responds with `404` if no
      * matching extraction exists.
      * @param string $extractionId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $extractionId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/extractions/' . rawurlencode($extractionId),
+            query: $query,
             options: $options,
         );
         return Extraction::fromArray($response);
@@ -174,6 +186,24 @@ class Extractions
             path: 'v1/extractions/' . rawurlencode($extractionId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Extraction
+     * @param string $extractionId
+     * @return \Retab\Resource\Extraction
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createExtractionCancel(
+        string $extractionId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Extraction {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/extractions/' . rawurlencode($extractionId) . '/cancel',
+            options: $options,
+        );
+        return Extraction::fromArray($response);
     }
 
     /**

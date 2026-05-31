@@ -25,8 +25,14 @@ namespace Retab
         /// <summary>Free-form instructions supplied with the classification request.</summary>
         public string? Instructions { get; set; }
 
-        /// <summary>The classification result with reasoning</summary>
-        public ClassificationDecision Output { get; set; } = default!;
+        /// <summary>The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.</summary>
+        public ClassificationDecision? Output { get; set; }
+
+        /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
+        public ClassificationStatus? Status { get; set; }
+
+        /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
+        public JobError? Error { get; set; }
 
         /// <summary>Consensus metadata for multi-vote classification runs</summary>
         public ClassificationConsensus? Consensus { get; set; }

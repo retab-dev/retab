@@ -20,12 +20,16 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
         public string $model,
         /** Configuration used for the edit operation. */
         public EditConfig $config,
-        /** The edit result: filled form fields and the rendered PDF. */
-        public EditResult $output,
         /** Free-form instructions supplied with the edit request. */
         public ?string $instructions = null,
         /** Template id used when the edit was created from a template; null for direct-document edits. */
         public ?string $templateId = null,
+        /** The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status. */
+        public ?EditResult $output = null,
+        /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
+        public ?EditStatus $status = null,
+        /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+        public ?PrimitiveError $error = null,
         /** Durable file reference for the filled document, when materialized. */
         public ?FileRef $filledDocumentRef = null,
         /** Usage information for the edit operation. */
@@ -44,7 +48,6 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             'file',
             'model',
             'config',
-            'output',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for EditWorkflowArtifact::fromArray()");
@@ -55,9 +58,11 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
             config: EditConfig::fromArray($data['config']),
-            output: EditResult::fromArray($data['output']),
             instructions: $data['instructions'] ?? null,
             templateId: $data['template_id'] ?? null,
+            output: isset($data['output']) ? EditResult::fromArray($data['output']) : null,
+            status: isset($data['status']) ? EditStatus::from($data['status']) : null,
+            error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             filledDocumentRef: isset($data['filled_document_ref']) ? FileRef::fromArray($data['filled_document_ref']) : null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
@@ -73,9 +78,11 @@ readonly class EditWorkflowArtifact implements \JsonSerializable
             'file' => $this->file->toArray(),
             'model' => $this->model,
             'config' => $this->config->toArray(),
-            'output' => $this->output->toArray(),
             'instructions' => $this->instructions,
             'template_id' => $this->templateId,
+            'output' => $this->output?->toArray(),
+            'status' => $this->status?->value,
+            'error' => $this->error?->toArray(),
             'filled_document_ref' => $this->filledDocumentRef?->toArray(),
             'usage' => $this->usage?->toArray(),
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),

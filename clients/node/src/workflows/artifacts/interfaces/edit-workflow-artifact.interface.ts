@@ -29,6 +29,15 @@ import {
   serializeFileRef,
 } from '../../../classifications/interfaces/file-ref.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
@@ -37,6 +46,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
+import type { EditWorkflowArtifactStatus } from './edit-workflow-artifact-status.interface.js';
+import { ZEditWorkflowArtifactStatus } from './edit-workflow-artifact-status.interface.js';
 
 /** An edit produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface EditWorkflowArtifact {
@@ -52,8 +63,15 @@ export interface EditWorkflowArtifact {
   config: EditConfig;
   /** Template id used when the edit was created from a template; null for direct-document edits. */
   templateId?: string | null;
-  /** The edit result: filled form fields and the rendered PDF. */
-  output: EditResult;
+  /** The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status. */
+  output?: EditResult;
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: EditWorkflowArtifactStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Durable file reference for the filled document, when materialized. */
   filledDocumentRef?: FileRef | null;
   /** Usage information for the edit operation. */
@@ -74,7 +92,9 @@ export interface EditWorkflowArtifactResponse {
   instructions?: string | null;
   config: EditConfigResponse;
   template_id?: string | null;
-  output: EditResultResponse;
+  output?: EditResultResponse;
+  status?: EditWorkflowArtifactStatus;
+  error?: PrimitiveErrorResponse | null;
   filled_document_ref?: FileRefResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string;
@@ -88,7 +108,9 @@ export const ZEditWorkflowArtifact = z.object({
   instructions: z.string().nullable().optional(),
   config: ZEditConfig,
   templateId: z.string().nullable().optional(),
-  output: ZEditResult,
+  output: ZEditResult.optional(),
+  status: ZEditWorkflowArtifactStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   filledDocumentRef: ZFileRef.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().optional(),
@@ -105,7 +127,17 @@ export function deserializeEditWorkflowArtifact(
     instructions: wire['instructions'],
     config: deserializeEditConfig(wire['config']),
     templateId: wire['template_id'],
-    output: deserializeEditResult(wire['output']),
+    output:
+      wire['output'] == null
+        ? (wire['output'] as undefined)
+        : deserializeEditResult(wire['output']),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     filledDocumentRef:
       wire['filled_document_ref'] == null
         ? (wire['filled_document_ref'] as undefined)
@@ -134,7 +166,17 @@ export function serializeEditWorkflowArtifact(
     instructions: domain['instructions'],
     config: serializeEditConfig(domain['config']),
     template_id: domain['templateId'],
-    output: serializeEditResult(domain['output']),
+    output:
+      domain['output'] == null
+        ? (domain['output'] as undefined)
+        : serializeEditResult(domain['output']),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     filled_document_ref:
       domain['filledDocumentRef'] == null
         ? (domain['filledDocumentRef'] as undefined)

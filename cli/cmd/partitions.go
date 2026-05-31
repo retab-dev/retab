@@ -111,7 +111,7 @@ value for each).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Partitions.Get(ctx, args[0])
+		result, err := client.Partitions.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -183,6 +183,29 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
+var partitionsCancelCmd = &cobra.Command{
+	Use:   "cancel <partition-id>",
+	Short: "Cancel a partition",
+	Long: `Cancel a pending or in-flight partition. Completed partitions
+cannot be cancelled and the API returns an error.`,
+	Example: `  # Cancel a running partition
+  retab partitions cancel part_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Partitions.CreateCancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func init() {
 	addDocumentFlags(partitionsCreateCmd)
 	partitionsCreateCmd.Flags().String("key", "", "partition key (required)")
@@ -199,6 +222,6 @@ func init() {
 
 	partitionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	partitionsCmd.AddCommand(partitionsCreateCmd, partitionsGetCmd, partitionsListCmd, partitionsDeleteCmd)
+	partitionsCmd.AddCommand(partitionsCreateCmd, partitionsGetCmd, partitionsListCmd, partitionsCancelCmd, partitionsDeleteCmd)
 	rootCmd.AddCommand(partitionsCmd)
 }

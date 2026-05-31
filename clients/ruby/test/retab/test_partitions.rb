@@ -45,6 +45,13 @@ class PartitionsTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_create_partition_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/partitions/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.partitions.create_partition_cancel(partition_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/partitions(\?|\z)}},
@@ -63,6 +70,12 @@ class PartitionsTest < Minitest::Test
       name: :delete,
       verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/partitions/stub(\?|\z)},
+      args: {partition_id: "stub"}
+    },
+    {
+      name: :create_partition_cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/partitions/stub/cancel(\?|\z)},
       args: {partition_id: "stub"}
     }
   ].each do |spec|

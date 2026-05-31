@@ -12,6 +12,7 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
+from retab.types.classifications import EditsStatus
 from retab.types.edits import Edit, EditConfig, EditRequest
 from retab.types.mime import FileRef, MIMEData
 
@@ -38,6 +39,7 @@ class EditsMixin:
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
+        status: EditsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         **extra_params: Any,
@@ -50,6 +52,7 @@ class EditsMixin:
             "order": order,
             "filename": filename,
             "template_id": template_id,
+            "status": status,
             "from_date": from_date,
             "to_date": to_date,
         }
@@ -67,6 +70,7 @@ class EditsMixin:
         model: str = "retab-small",
         config: EditConfig | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
@@ -84,13 +88,16 @@ class EditsMixin:
             model=cast(Any, model),
             config=cast(Any, config),
             bust_cache=cast(Any, bust_cache),
+            background=cast(Any, background),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/edits", params=params or None, data=data)
 
-    def prepare_get(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(self, edit_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
         """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "include_output": include_output,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -105,6 +112,15 @@ class EditsMixin:
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/edits/{edit_id}", params=params or None, data=data)
+
+    def prepare_create_edit_cancel(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
+        """Cancel Edit"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/edits/{edit_id}/cancel", params=params or None, data=data)
 
 
 class Edits(SyncAPIResource, EditsMixin):
@@ -122,13 +138,14 @@ class Edits(SyncAPIResource, EditsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
+        status: EditsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[Edit]:
         """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
+            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params
         )
         return self.request_page(prepared_request, model=Edit)
 
@@ -140,18 +157,19 @@ class Edits(SyncAPIResource, EditsMixin):
         model: str = "retab-small",
         config: EditConfig | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> Edit:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
         prepared_request = self.prepare_create(
-            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
+            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params
         )
         response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
-    def get(self, edit_id: str, **extra_params: Any) -> Edit:
+    def get(self, edit_id: str, include_output: bool | None = True, **extra_params: Any) -> Edit:
         """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
-        prepared_request = self.prepare_get(edit_id, **extra_params)
+        prepared_request = self.prepare_get(edit_id, include_output=include_output, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
@@ -160,6 +178,12 @@ class Edits(SyncAPIResource, EditsMixin):
         prepared_request = self.prepare_delete(edit_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
+
+    def create_edit_cancel(self, edit_id: str, **extra_params: Any) -> Edit:
+        """Cancel Edit"""
+        prepared_request = self.prepare_create_edit_cancel(edit_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return Edit.model_validate(response)
 
 
 class AsyncEdits(AsyncAPIResource, EditsMixin):
@@ -177,13 +201,14 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         filename: str | None = None,
         template_id: str | None = None,
+        status: EditsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Edit]:
         """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, from_date=from_date, to_date=to_date, **extra_params
+            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params
         )
         return await self.request_page(prepared_request, model=Edit)
 
@@ -195,18 +220,19 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         model: str = "retab-small",
         config: EditConfig | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> Edit:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
         prepared_request = self.prepare_create(
-            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, **extra_params
+            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params
         )
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
-    async def get(self, edit_id: str, **extra_params: Any) -> Edit:
+    async def get(self, edit_id: str, include_output: bool | None = True, **extra_params: Any) -> Edit:
         """Get Edit Retrieve an edit. Fetches a single edit by its `edit_id`. Returns the edit with its filled form data and rendered document; responds with `404` if no edit with that id exists."""
-        prepared_request = self.prepare_get(edit_id, **extra_params)
+        prepared_request = self.prepare_get(edit_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
@@ -215,6 +241,12 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         prepared_request = self.prepare_delete(edit_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def create_edit_cancel(self, edit_id: str, **extra_params: Any) -> Edit:
+        """Cancel Edit"""
+        prepared_request = self.prepare_create_edit_cancel(edit_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return Edit.model_validate(response)
 
 
 from .templates import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)

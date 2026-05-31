@@ -41,6 +41,11 @@ export interface EditRequest {
    * @default false
    */
   bustCache?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
 }
 
 export interface EditRequestResponse {
@@ -50,6 +55,7 @@ export interface EditRequestResponse {
   model?: string;
   config?: EditConfigResponse;
   bust_cache?: boolean;
+  background?: boolean;
 }
 
 export const ZEditRequest = z.object({
@@ -59,6 +65,7 @@ export const ZEditRequest = z.object({
   model: z.string().optional(),
   config: ZEditConfig.optional(),
   bustCache: z.boolean().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<EditRequest>;
 
 export function deserializeEditRequest(wire: EditRequestResponse): EditRequest {
@@ -77,6 +84,7 @@ export function deserializeEditRequest(wire: EditRequestResponse): EditRequest {
         ? (wire['config'] as undefined)
         : deserializeEditConfig(wire['config']),
     bustCache: wire['bust_cache'],
+    background: wire['background'],
   };
 }
 
@@ -96,5 +104,6 @@ export function serializeEditRequest(domain: EditRequest): EditRequestResponse {
         ? (domain['config'] as undefined)
         : serializeEditConfig(domain['config']),
     bust_cache: domain['bustCache'],
+    background: domain['background'],
   };
 }

@@ -46,6 +46,11 @@ pub struct ExtractionRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stream: Option<bool>,
+    /// If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    ///
+    /// Defaults to `false`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub background: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub chunking_keys: Option<std::collections::HashMap<String, String>>,
 }
@@ -67,6 +72,7 @@ impl ExtractionRequest {
             additional_messages: Default::default(),
             bust_cache: Default::default(),
             stream: Default::default(),
+            background: Default::default(),
             chunking_keys: Default::default(),
         }
     }
