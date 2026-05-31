@@ -42,7 +42,13 @@ edits, schemas, workflow runs) so the same blob isn't re-uploaded on
 every call.
 
 For files larger than the synchronous upload path allows, use the
-two-phase ` + "`create-upload`" + ` -> direct PUT -> ` + "`complete-upload`" + ` flow.`,
+two-phase ` + "`create-upload`" + ` -> direct PUT -> ` + "`complete-upload`" + ` flow.
+
+Local document tools do not require an API key and never upload data:
+
+  parse              extract local text or structured JSON
+  grep               search local PDFs, images, docs, and sheets
+  inspect --render   render PDF/image pages to PNG files for visual review`,
 	Example: `  # List the five most recent files
   retab files list --limit 5
 
@@ -56,7 +62,13 @@ two-phase ` + "`create-upload`" + ` -> direct PUT -> ` + "`complete-upload`" + `
     --model gpt-4o
 
   # Pull the file back down to a local path
-  retab files download $FILE_ID -o ./invoice.pdf`,
+  retab files download $FILE_ID -o ./invoice.pdf
+
+  # Parse a local PDF without uploading it
+  retab files parse ./invoice.pdf --format json --bbox
+
+  # Render local PDF pages to PNGs that an agent or human can inspect
+  retab files inspect ./statement.pdf --render 1-3 --out ./pages`,
 }
 
 var filesListCmd = &cobra.Command{

@@ -22,23 +22,34 @@ func writeJSONTo(w io.Writer, v any) error {
 
 var filesParseCmd = &cobra.Command{
 	Use:   "parse <path>",
-	Short: "Parse a local document to text or structured JSON",
-	Long: `Parse a local document into layout-preserved text or structured JSON,
-entirely locally — no upload, no API call.
+	Short: "Parse a local document to text/JSON without uploading",
+	Long: `Parse a local document to text/JSON without uploading.
+
+It produces layout-preserved text or structured JSON entirely locally: no
+upload, no API call.
 
 PDFs and images are parsed with LiteParse (the ` + "`lit`" + ` binary: PDFium
 text extraction plus selective Tesseract OCR). text/csv/xlsx/docx are parsed
 natively in Go, preserving exact line and cell structure.
 
-With --format text (default) it prints the document's text. With
---format json it emits a normalized parse result: filename, mime_type,
-document_type, source (pdf_text_layer | ocr | native), total_pages, and
-per-page text. Add --bbox to include per-item bounding boxes for pdf/image.`,
+Use this when you want the machine-readable local parse result directly:
+
+  --format text      print extracted text (default)
+  --format json      print normalized JSON: filename, mime_type,
+                     document_type, source, total_pages, pages, sheets
+  --bbox             include positioned text items for PDFs/images
+  --pages 1-5,10     parse only selected PDF/image pages
+
+PDF/image parses are cached by file content and parse options, so repeated
+parse/grep calls with the same flags reuse the expensive text extraction/OCR.`,
 	Example: `  # Print the text of a PDF
   retab files parse invoice.pdf
 
   # Structured JSON with positioned items
   retab files parse invoice.pdf --format json --bbox
+
+  # Save local structured JSON for downstream tooling
+  retab files parse invoice.pdf --format json --bbox -o invoice.parse.json
 
   # Only the first five pages, no OCR
   retab files parse scan.pdf --pages 1-5 --no-ocr

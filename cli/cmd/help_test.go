@@ -270,6 +270,70 @@ func TestRenderRootHelp_FeaturedFilesSubcommandsAreTeased(t *testing.T) {
 	}
 }
 
+func TestFilesHelpHighlightsLocalParseAndRender(t *testing.T) {
+	out := commandHelpOutput(t, "files")
+	for _, want := range []string{
+		"Local document tools do not require an API key and never upload data:",
+		"inspect --render   render PDF/image pages to PNG files for visual review",
+		"retab files parse ./invoice.pdf --format json --bbox",
+		"retab files inspect ./statement.pdf --render 1-3 --out ./pages",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("files help missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestFilesParseHelpMakesLocalJSONAndCacheObvious(t *testing.T) {
+	out := commandHelpOutput(t, "files", "parse")
+	for _, want := range []string{
+		"Parse a local document to text/JSON without uploading",
+		"--format json      print normalized JSON",
+		"--bbox             include positioned text items for PDFs/images",
+		"PDF/image parses are cached by file content and parse options",
+		"retab files parse invoice.pdf --format json --bbox -o invoice.parse.json",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("parse help missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestFilesInspectHelpMakesRenderOutputObvious(t *testing.T) {
+	out := commandHelpOutput(t, "files", "inspect")
+	for _, want := range []string{
+		"Inspect lines/cells or render PDF/image pages to PNG",
+		"Use --render when an agent or human needs to see the page visually.",
+		"prints JSON with the image paths",
+		"only existing pages are rendered",
+		"retab files inspect report.pdf --render 1-3 --out ./pages",
+		"retab files inspect receipt.jpg --render 1 --out ./pages",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("inspect help missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func commandHelpOutput(t *testing.T, path ...string) string {
+	t.Helper()
+	cmd, _, err := rootCmd.Find(path)
+	if err != nil {
+		t.Fatalf("find %v: %v", path, err)
+	}
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	t.Cleanup(func() {
+		cmd.SetOut(nil)
+		cmd.SetErr(nil)
+	})
+	if err := cmd.Help(); err != nil {
+		t.Fatalf("help %v: %v", path, err)
+	}
+	return buf.String()
+}
+
 func TestRenderRootHelp_VersionFormatting(t *testing.T) {
 	cases := []struct {
 		in   string
