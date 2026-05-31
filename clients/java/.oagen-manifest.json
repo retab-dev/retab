@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-31T12:03:41.000Z",
+  "generatedAt": "2026-05-31T13:34:46.945Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -19,7 +19,6 @@
     "src/main/java/com/retab/jobs/JobsApi.java",
     "src/main/java/com/retab/models/Actor.java",
     "src/main/java/com/retab/models/AllItemsMatchCondition.java",
-    "src/main/java/com/retab/models/AnalyzeFileRequest.java",
     "src/main/java/com/retab/models/AnyItemMatchesCondition.java",
     "src/main/java/com/retab/models/ApiCallAttempt.java",
     "src/main/java/com/retab/models/ApiCallInvocation.java",
@@ -273,7 +272,6 @@
     "src/main/java/com/retab/schemas/SchemasApi.java",
     "src/main/java/com/retab/splits/SplitsApi.java",
     "src/main/java/com/retab/types/ActorKind.java",
-    "src/main/java/com/retab/types/AnalyzeFileRequestMode.java",
     "src/main/java/com/retab/types/AssertionDriftStatus.java",
     "src/main/java/com/retab/types/AssertionOutcome.java",
     "src/main/java/com/retab/types/CancelWorkflowResponseCancellationStatus.java",
@@ -463,10 +461,6 @@
     },
     "GET /v1/files": {
       "sdkMethod": "list",
-      "service": "files"
-    },
-    "POST /v1/files/analyze": {
-      "sdkMethod": "createAnalyze",
       "service": "files"
     },
     "POST /v1/files/upload": {
