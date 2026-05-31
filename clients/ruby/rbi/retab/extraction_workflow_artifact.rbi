@@ -57,6 +57,18 @@ module Retab
     sig { params(value: T::Hash[String, T.untyped]).returns(T::Hash[String, T.untyped]) }
     def output=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def status; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def status=(value); end
+
+    sig { returns(T.nilable(Retab::PrimitiveError)) }
+    def error; end
+
+    sig { params(value: T.nilable(Retab::PrimitiveError)).returns(T.nilable(Retab::PrimitiveError)) }
+    def error=(value); end
+
     sig { returns(T.nilable(Retab::ExtractionConsensus)) }
     def consensus; end
 

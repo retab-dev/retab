@@ -164,7 +164,7 @@ categories supplied at create time, and the source document reference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Classifications.Get(ctx, args[0])
+		result, err := client.Classifications.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -236,6 +236,29 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
+var classificationsCancelCmd = &cobra.Command{
+	Use:   "cancel <classification-id>",
+	Short: "Cancel a classification",
+	Long: `Cancel a pending or in-flight classification. Completed
+classifications cannot be cancelled and the API returns an error.`,
+	Example: `  # Cancel a running classification
+  retab classifications cancel clas_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Classifications.CreateCancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func init() {
 	addDocumentFlags(classificationsCreateCmd)
 	classificationsCreateCmd.Flags().String("model", "", "model identifier (required)")
@@ -251,6 +274,6 @@ func init() {
 
 	classificationsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsDeleteCmd)
+	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsCancelCmd, classificationsDeleteCmd)
 	rootCmd.AddCommand(classificationsCmd)
 }

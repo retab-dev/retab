@@ -3,10 +3,20 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.classifications import PrimitiveError
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
+
+
+class ExtractionStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class SourcesResponseDocumentType(str, Enum):
@@ -37,6 +47,10 @@ class ExtractionRequest(BaseModel):
     additional_messages: list[dict[str, Any]] | None = Field(default=None, description="Additional chat messages forwarded to the extraction model.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
     stream: bool | None = Field(default=False)
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
     chunking_keys: dict[str, str] | None = None
 
 
@@ -53,6 +67,13 @@ class Extraction(BaseModel):
     image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
+    status: ExtractionStatus | None = Field(
+        default=cast(ExtractionStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")

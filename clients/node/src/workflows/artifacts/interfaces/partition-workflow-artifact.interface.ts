@@ -29,6 +29,15 @@ import {
   serializePartitionConsensus,
 } from '../../../partitions/interfaces/partition-consensus.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
@@ -37,6 +46,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../../classifications/interfaces/retab-usage.interface.js';
+import type { PartitionWorkflowArtifactStatus } from './partition-workflow-artifact-status.interface.js';
+import { ZPartitionWorkflowArtifactStatus } from './partition-workflow-artifact-status.interface.js';
 
 /** A partition produced by a workflow run, tagged with its artifact `operation` and creation time. */
 export interface PartitionWorkflowArtifact {
@@ -61,10 +72,17 @@ export interface PartitionWorkflowArtifact {
    */
   allowOverlap?: boolean;
   /**
-   * The list of partition chunks with their assigned pages
+   * The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
    * @default []
    */
   output?: PartitionChunk[];
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: PartitionWorkflowArtifactStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote partition runs */
   consensus?: PartitionConsensus | null;
   /** Usage information for the partition operation */
@@ -87,6 +105,8 @@ export interface PartitionWorkflowArtifactResponse {
   n_consensus?: number;
   allow_overlap?: boolean;
   output?: PartitionChunkResponse[];
+  status?: PartitionWorkflowArtifactStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: PartitionConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string;
@@ -102,6 +122,8 @@ export const ZPartitionWorkflowArtifact = z.object({
   nConsensus: z.number().int().optional(),
   allowOverlap: z.boolean().optional(),
   output: ZPartitionChunk.array().optional(),
+  status: ZPartitionWorkflowArtifactStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZPartitionConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().optional(),
@@ -123,6 +145,13 @@ export function deserializePartitionWorkflowArtifact(
       wire['output'] == null
         ? (wire['output'] as undefined)
         : wire['output'].map((__i) => deserializePartitionChunk(__i)),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -156,6 +185,13 @@ export function serializePartitionWorkflowArtifact(
       domain['output'] == null
         ? (domain['output'] as undefined)
         : domain['output'].map((__i) => serializePartitionChunk(__i)),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)

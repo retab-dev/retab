@@ -28,8 +28,14 @@ namespace Retab
         /// <summary>Whether pages were allowed to appear in more than one partition chunk</summary>
         public bool? AllowOverlap { get; set; } = true;
 
-        /// <summary>The list of partition chunks with their assigned pages</summary>
+        /// <summary>The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.</summary>
         public List<PartitionChunk>? Output { get; set; }
+
+        /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
+        public ClassificationStatus? Status { get; set; }
+
+        /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
+        public JobError? Error { get; set; }
 
         /// <summary>Consensus metadata for multi-vote partition runs</summary>
         public PartitionConsensus? Consensus { get; set; }

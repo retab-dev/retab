@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-05-31T10:02:15.160Z",
+  "generatedAt": "2026-05-31T13:09:02.740Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -214,6 +214,7 @@
     "src/Enums/AssertionDriftStatus.cs",
     "src/Enums/AssertionOutcome.cs",
     "src/Enums/CancelWorkflowResponseCancellationStatus.cs",
+    "src/Enums/ClassificationStatus.cs",
     "src/Enums/ClassificationsOrder.cs",
     "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
     "src/Enums/CreateExperimentRequestNConsensus.cs",
@@ -329,6 +330,10 @@
       "sdkMethod": "DeleteAsync",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "CreateCancelAsync",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "ListAsync",
       "service": "edits"
@@ -343,6 +348,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "CreateCancelAsync",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -379,6 +388,10 @@
     },
     "DELETE /v1/extractions/{extraction_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "CreateCancelAsync",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
@@ -457,6 +470,10 @@
       "sdkMethod": "DeleteAsync",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "CreateCancelAsync",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "GenerateAsync",
       "service": "schemas"
@@ -475,6 +492,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "CreateCancelAsync",
       "service": "splits"
     },
     "GET /v1/workflows": {

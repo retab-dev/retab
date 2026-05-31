@@ -16,6 +16,7 @@ module Retab
     # @param limit [Integer, nil]
     # @param order [Retab::Types::ClassificationsOrder, nil]
     # @param filename [String, nil]
+    # @param status [Retab::Types::ClassificationsStatus, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -26,6 +27,7 @@ module Retab
       limit: 10,
       order: "desc",
       filename: nil,
+      status: nil,
       from_date: nil,
       to_date: nil,
       request_options: {}
@@ -36,6 +38,7 @@ module Retab
         "limit" => limit,
         "order" => order,
         "filename" => filename,
+        "status" => status,
         "from_date" => from_date,
         "to_date" => to_date
       }.compact
@@ -53,6 +56,7 @@ module Retab
           limit: limit,
           order: order,
           filename: filename,
+          status: status,
           from_date: from_date,
           to_date: to_date,
           request_options: request_options
@@ -66,6 +70,7 @@ module Retab
           limit: limit,
           order: order,
           filename: filename,
+          status: status,
           from_date: from_date,
           to_date: to_date
         },
@@ -81,6 +86,7 @@ module Retab
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the classification.
     # @param n_consensus [Integer, nil] Number of classification runs to use for consensus voting. Uses deterministic single-pass when set to 1.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Classification]
     def create(
@@ -91,6 +97,7 @@ module Retab
       instructions: nil,
       n_consensus: nil,
       bust_cache: nil,
+      background: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document) unless document.nil?
@@ -101,7 +108,8 @@ module Retab
         "first_n_pages" => first_n_pages,
         "instructions" => instructions,
         "n_consensus" => n_consensus,
-        "bust_cache" => bust_cache
+        "bust_cache" => bust_cache,
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,
@@ -121,16 +129,22 @@ module Retab
 
     # Get Classification
     # @param classification_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Classification]
     def get(
       classification_id:,
+      include_output: true,
       request_options: {}
     )
+      params = {
+        "include_output" => include_output
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/classifications/#{Retab::Util.encode_path(classification_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::Classification.new(response.body)
@@ -157,6 +171,29 @@ module Retab
         request_options: request_options
       )
       nil
+    end
+
+    # Cancel Classification
+    # @param classification_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Classification]
+    def create_classification_cancel(
+      classification_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/classifications/#{Retab::Util.encode_path(classification_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Classification.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
   end
 end

@@ -11,6 +11,7 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
+from retab.types.classifications import ExtractionsStatus
 from retab.types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from retab.types.mime import FileRef, MIMEData
 
@@ -37,6 +38,7 @@ class ExtractionsMixin:
         filename_regex: str | None = None,
         filename_contains: str | None = None,
         document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         metadata: str | None = None,
@@ -52,6 +54,7 @@ class ExtractionsMixin:
             "filename_regex": filename_regex,
             "filename_contains": filename_contains,
             "document_type": document_type,
+            "status": status,
             "from_date": from_date,
             "to_date": to_date,
             "metadata": metadata,
@@ -74,6 +77,7 @@ class ExtractionsMixin:
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        background: bool = False,
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -96,14 +100,17 @@ class ExtractionsMixin:
             additional_messages=cast(Any, additional_messages),
             bust_cache=cast(Any, bust_cache),
             stream=cast(Any, stream),
+            background=cast(Any, background),
             chunking_keys=cast(Any, chunking_keys),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
 
-    def prepare_get(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "include_output": include_output,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -118,6 +125,15 @@ class ExtractionsMixin:
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/extractions/{extraction_id}", params=params or None, data=data)
+
+    def prepare_create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
+        """Cancel Extraction"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/extractions/{extraction_id}/cancel", params=params or None, data=data)
 
     def prepare_sources(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
@@ -142,6 +158,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         filename_regex: str | None = None,
         filename_contains: str | None = None,
         document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         metadata: str | None = None,
@@ -157,6 +174,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             filename_regex=filename_regex,
             filename_contains=filename_contains,
             document_type=document_type,
+            status=status,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
@@ -176,6 +194,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        background: bool = False,
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
@@ -191,15 +210,16 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             additional_messages=additional_messages,
             bust_cache=bust_cache,
             stream=stream,
+            background=background,
             chunking_keys=chunking_keys,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
-    def get(self, extraction_id: str, **extra_params: Any) -> Extraction:
+    def get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> Extraction:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
-        prepared_request = self.prepare_get(extraction_id, **extra_params)
+        prepared_request = self.prepare_get(extraction_id, include_output=include_output, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
@@ -208,6 +228,12 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         prepared_request = self.prepare_delete(extraction_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
+
+    def create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> Extraction:
+        """Cancel Extraction"""
+        prepared_request = self.prepare_create_extraction_cancel(extraction_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return Extraction.model_validate(response)
 
     def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
@@ -229,6 +255,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         filename_regex: str | None = None,
         filename_contains: str | None = None,
         document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         metadata: str | None = None,
@@ -244,6 +271,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             filename_regex=filename_regex,
             filename_contains=filename_contains,
             document_type=document_type,
+            status=status,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
@@ -263,6 +291,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         additional_messages: list[dict[str, Any]] | None = None,
         bust_cache: bool = False,
         stream: bool = False,
+        background: bool = False,
         chunking_keys: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> Extraction:
@@ -278,15 +307,16 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             additional_messages=additional_messages,
             bust_cache=bust_cache,
             stream=stream,
+            background=background,
             chunking_keys=chunking_keys,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
-    async def get(self, extraction_id: str, **extra_params: Any) -> Extraction:
+    async def get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> Extraction:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
-        prepared_request = self.prepare_get(extraction_id, **extra_params)
+        prepared_request = self.prepare_get(extraction_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
@@ -295,6 +325,12 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         prepared_request = self.prepare_delete(extraction_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> Extraction:
+        """Cancel Extraction"""
+        prepared_request = self.prepare_create_extraction_cancel(extraction_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return Extraction.model_validate(response)
 
     async def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""

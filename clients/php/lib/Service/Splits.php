@@ -28,6 +28,7 @@ class Splits
      * @param int|null $limit Defaults to 10.
      * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
      * @param string|null $filename
+     * @param \Retab\Resource\EditStatus|null $status
      * @param string|null $fromDate
      * @param string|null $toDate
      * @return \Retab\PaginatedResponse<\Retab\Resource\Split>
@@ -39,6 +40,7 @@ class Splits
         ?int $limit = null,
         \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
         ?string $filename = null,
+        ?\Retab\Resource\EditStatus $status = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?\Retab\RequestOptions $options = null,
@@ -49,6 +51,7 @@ class Splits
             'limit' => $limit,
             'order' => $order->value,
             'filename' => $filename,
+            'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
         ], fn($v) => $v !== null);
@@ -76,6 +79,7 @@ class Splits
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the split.
      * @param int|null $nConsensus Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\Split
      * @throws \Retab\Exception\RetabException
      */
@@ -86,6 +90,7 @@ class Splits
         ?string $instructions = null,
         ?int $nConsensus = null,
         ?bool $bustCache = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Split {
         $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
@@ -96,6 +101,7 @@ class Splits
             'instructions' => $instructions,
             'n_consensus' => $nConsensus,
             'bust_cache' => $bustCache,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -115,16 +121,22 @@ class Splits
      * returns the full `Split` including its `output` page assignments. Responds with `404`
      * if no split with that id exists.
      * @param string $splitId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Split
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $splitId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Split {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/splits/' . rawurlencode($splitId),
+            query: $query,
             options: $options,
         );
         return Split::fromArray($response);
@@ -151,5 +163,23 @@ class Splits
             path: 'v1/splits/' . rawurlencode($splitId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Split
+     * @param string $splitId
+     * @return \Retab\Resource\Split
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createSplitCancel(
+        string $splitId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Split {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/splits/' . rawurlencode($splitId) . '/cancel',
+            options: $options,
+        );
+        return Split::fromArray($response);
     }
 }

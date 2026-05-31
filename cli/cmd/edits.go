@@ -112,7 +112,7 @@ instructions, model, and per-annotation details.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Edits.Get(ctx, args[0])
+		result, err := client.Edits.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}
@@ -186,6 +186,29 @@ is not a terminal.`,
 		}
 		confirmDeleted("edit", args[0])
 		return nil
+	}),
+}
+
+var editsCancelCmd = &cobra.Command{
+	Use:   "cancel <edit-id>",
+	Short: "Cancel an edit",
+	Long: `Cancel a pending or in-flight edit. Completed edits cannot be
+cancelled and the API returns an error.`,
+	Example: `  # Cancel a running edit
+  retab edits cancel edit_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Edits.CreateCancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
 	}),
 }
 
@@ -517,6 +540,6 @@ func init() {
 	editsTemplatesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd)
-	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsDeleteCmd, editsTemplatesCmd)
+	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsCancelCmd, editsDeleteCmd, editsTemplatesCmd)
 	rootCmd.AddCommand(editsCmd)
 }

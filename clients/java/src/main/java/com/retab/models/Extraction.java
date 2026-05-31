@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.ExtractionStatus;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
@@ -18,6 +19,8 @@ public final class Extraction {
   private final Long imageResolutionDpi;
   private final String instructions;
   private final Map<String, Object> output;
+  private final ExtractionStatus status;
+  private final PrimitiveError error;
   private final ExtractionConsensus consensus;
   private final Map<String, String> metadata;
   private final RetabUsage usage;
@@ -33,6 +36,8 @@ public final class Extraction {
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "output", required = true) Map<String, Object> output,
+      @JsonProperty(value = "status", required = false) ExtractionStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "consensus", required = false) ExtractionConsensus consensus,
       @JsonProperty(value = "metadata", required = false) Map<String, String> metadata,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
@@ -45,6 +50,8 @@ public final class Extraction {
     this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.output = output;
+    this.status = status;
+    this.error = error;
     this.consensus = consensus;
     this.metadata = metadata;
     this.usage = usage;
@@ -89,6 +96,16 @@ public final class Extraction {
   @JsonProperty("output")
   public Map<String, Object> getOutput() {
     return output;
+  }
+
+  @JsonProperty("status")
+  public ExtractionStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 
   @JsonProperty("consensus")

@@ -3,5 +3,6 @@
 export * from './extraction.interface.js';
 export * from './extraction-consensus.interface.js';
 export * from './extraction-request.interface.js';
+export * from './extraction-status.interface.js';
 export * from './sources-response.interface.js';
 export * from './sources-response-document-type.interface.js';

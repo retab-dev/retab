@@ -28,6 +28,8 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<ClassificationsStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_date: Option<String>,
@@ -42,6 +44,7 @@ impl Default for ListParams {
             limit: Some(10),
             order: Some(ClassificationsOrder::Desc),
             filename: Default::default(),
+            status: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
         }
@@ -74,7 +77,26 @@ impl CreateParams {
                 instructions: Default::default(),
                 n_consensus: Default::default(),
                 bust_cache: Default::default(),
+                background: Default::default(),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
         }
     }
 }
@@ -136,21 +158,26 @@ impl<'a> ClassificationsApi<'a> {
     /// Fetches a single classification by its `classification_id`. Returns the
     /// classification with its file reference, categories, and result; responds
     /// with `404` if no classification with that id exists.
-    pub async fn get(&self, classification_id: &str) -> Result<Classification, Error> {
-        self.get_with_options(classification_id, None).await
+    pub async fn get(
+        &self,
+        classification_id: &str,
+        params: GetParams,
+    ) -> Result<Classification, Error> {
+        self.get_with_options(classification_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         classification_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<Classification, Error> {
         let classification_id = crate::client::path_segment(classification_id);
         let path = format!("/v1/classifications/{classification_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 
@@ -175,6 +202,29 @@ impl<'a> ClassificationsApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
+    /// Cancel Classification
+    pub async fn create_classification_cancel(
+        &self,
+        classification_id: &str,
+    ) -> Result<Classification, Error> {
+        self.create_classification_cancel_with_options(classification_id, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_classification_cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_classification_cancel_with_options(
+        &self,
+        classification_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Classification, Error> {
+        let classification_id = crate::client::path_segment(classification_id);
+        let path = format!("/v1/classifications/{classification_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 }

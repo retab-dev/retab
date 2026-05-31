@@ -16,6 +16,7 @@ module Retab
       additional_messages: :additional_messages,
       bust_cache: :bust_cache,
       stream: :stream,
+      background: :background,
       chunking_keys: :chunking_keys
     }.freeze
 
@@ -30,6 +31,7 @@ module Retab
       :additional_messages,
       :bust_cache,
       :stream,
+      :background,
       :chunking_keys
     )
 
@@ -46,6 +48,7 @@ module Retab
       @additional_messages = (hash[:additional_messages] || []).map { |item| item || {} }
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
       @stream = hash[:stream].nil? ? false : hash[:stream]
+      @background = hash[:background].nil? ? false : hash[:background]
       @chunking_keys = hash[:chunking_keys] || {}
     end
   end

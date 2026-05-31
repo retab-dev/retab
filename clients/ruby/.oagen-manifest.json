@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-05-31T10:02:17.995Z",
+  "generatedAt": "2026-05-31T13:09:06.141Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -13,6 +13,7 @@
     "lib/retab/classifications/classification_decision.rb",
     "lib/retab/classifications/classification_request.rb",
     "lib/retab/classifications/file_ref.rb",
+    "lib/retab/classifications/primitive_error.rb",
     "lib/retab/classifications/retab_usage.rb",
     "lib/retab/client.rb",
     "lib/retab/configuration.rb",
@@ -116,7 +117,10 @@
     "lib/retab/types/assertion_outcome.rb",
     "lib/retab/types/base_model.rb",
     "lib/retab/types/cancel_workflow_response_cancellation_status.rb",
+    "lib/retab/types/classification_status.rb",
+    "lib/retab/types/classification_workflow_artifact_status.rb",
     "lib/retab/types/classifications_order.rb",
+    "lib/retab/types/classifications_status.rb",
     "lib/retab/types/condition_evaluation_details_logical_operator.rb",
     "lib/retab/types/condition_evaluation_result_logical_operator.rb",
     "lib/retab/types/create_experiment_request_n_consensus.rb",
@@ -127,8 +131,11 @@
     "lib/retab/types/declarative_plan_resource_change_target.rb",
     "lib/retab/types/declarative_plan_resource_change_type.rb",
     "lib/retab/types/declarative_plan_response_action.rb",
+    "lib/retab/types/edit_status.rb",
     "lib/retab/types/edit_templates_order.rb",
+    "lib/retab/types/edit_workflow_artifact_status.rb",
     "lib/retab/types/edits_order.rb",
+    "lib/retab/types/edits_status.rb",
     "lib/retab/types/error_step_lifecycle_category.rb",
     "lib/retab/types/error_step_lifecycle_stage.rb",
     "lib/retab/types/error_terminal_category.rb",
@@ -143,7 +150,10 @@
     "lib/retab/types/experiment_runs_order.rb",
     "lib/retab/types/experiment_schema_drift_status.rb",
     "lib/retab/types/experiment_summary_metrics_response_block_type.rb",
+    "lib/retab/types/extraction_status.rb",
+    "lib/retab/types/extraction_workflow_artifact_status.rb",
     "lib/retab/types/extractions_order.rb",
+    "lib/retab/types/extractions_status.rb",
     "lib/retab/types/field_type.rb",
     "lib/retab/types/files_order.rb",
     "lib/retab/types/job_status.rb",
@@ -160,7 +170,10 @@
     "lib/retab/types/parse_request_table_parsing_format.rb",
     "lib/retab/types/parse_workflow_artifact_table_parsing_format.rb",
     "lib/retab/types/parses_order.rb",
+    "lib/retab/types/partition_status.rb",
+    "lib/retab/types/partition_workflow_artifact_status.rb",
     "lib/retab/types/partitions_order.rb",
+    "lib/retab/types/partitions_status.rb",
     "lib/retab/types/public_handle_payload_type.rb",
     "lib/retab/types/request_options.rb",
     "lib/retab/types/resume_status.rb",
@@ -170,7 +183,10 @@
     "lib/retab/types/review_verdict.rb",
     "lib/retab/types/similarity_gte_condition_method.rb",
     "lib/retab/types/sources_response_document_type.rb",
+    "lib/retab/types/split_status.rb",
+    "lib/retab/types/split_workflow_artifact_status.rb",
     "lib/retab/types/splits_order.rb",
+    "lib/retab/types/splits_status.rb",
     "lib/retab/types/step_artifact_ref_operation.rb",
     "lib/retab/types/submission_status.rb",
     "lib/retab/types/supported_endpoint.rb",
@@ -535,6 +551,7 @@
     "rbi/retab/pending_workflow_experiment_result.rbi",
     "rbi/retab/pending_workflow_experiment_run.rbi",
     "rbi/retab/pending_workflow_test_run.rbi",
+    "rbi/retab/primitive_error.rbi",
     "rbi/retab/public_handle_payload.rbi",
     "rbi/retab/publish_workflow_request.rbi",
     "rbi/retab/queued_step_lifecycle.rbi",
@@ -681,6 +698,10 @@
       "sdkMethod": "delete",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "create_classification_cancel",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "list",
       "service": "edits"
@@ -695,6 +716,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "create_edit_cancel",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -731,6 +756,10 @@
     },
     "DELETE /v1/extractions/{extraction_id}": {
       "sdkMethod": "delete",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "create_extraction_cancel",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
@@ -809,6 +838,10 @@
       "sdkMethod": "delete",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "create_partition_cancel",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"
@@ -827,6 +860,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "create_split_cancel",
       "service": "splits"
     },
     "GET /v1/workflows": {

@@ -15,6 +15,7 @@ public final class SplitRequest {
   private final String instructions;
   private final Long nConsensus;
   private final Boolean bustCache;
+  private final Boolean background;
 
   @JsonCreator
   public SplitRequest(
@@ -23,13 +24,15 @@ public final class SplitRequest {
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
-      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
+      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.document = document;
     this.subdocuments = subdocuments;
     this.model = model != null ? model : "retab-small";
     this.instructions = instructions;
     this.nConsensus = nConsensus;
     this.bustCache = bustCache != null ? bustCache : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("document")
@@ -60,5 +63,10 @@ public final class SplitRequest {
   @JsonProperty("bust_cache")
   public Boolean isBustCache() {
     return bustCache;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

@@ -3,6 +3,7 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
+import type { PartitionsStatus } from '../common/interfaces/index.js';
 import type { Partition, PartitionResponse } from '../partitions/interfaces/index.js';
 import { deserializePartition } from '../partitions/interfaces/index.js';
 
@@ -12,6 +13,7 @@ export class Partitions {
   /** List Partitions */
   async list(options?: {
     filename?: string | null | undefined;
+    status?: PartitionsStatus | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     limit?: number;
@@ -24,6 +26,7 @@ export class Partitions {
       path: '/v1/partitions',
       query: {
         filename: options?.filename,
+        status: options?.status,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         limit: options?.limit,
@@ -43,7 +46,8 @@ export class Partitions {
     model?: string,
     nConsensus?: number,
     allowOverlap?: boolean,
-    bustCache?: boolean
+    bustCache?: boolean,
+    background?: boolean
   ): Promise<Partition> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
@@ -54,6 +58,7 @@ export class Partitions {
       n_consensus: nConsensus,
       allow_overlap: allowOverlap,
       bust_cache: bustCache,
+      background: background,
     };
     const __wire = await this.client.request<PartitionResponse>({
       method: 'POST',
@@ -65,11 +70,14 @@ export class Partitions {
   }
 
   /** Get Partition */
-  async get(partitionId: string): Promise<Partition> {
+  async get(
+    partitionId: string,
+    options?: { includeOutput?: boolean | undefined }
+  ): Promise<Partition> {
     const __wire = await this.client.request<PartitionResponse>({
       method: 'GET',
       path: `/v1/partitions/${partitionId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializePartition(__wire);
@@ -83,5 +91,16 @@ export class Partitions {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Partition */
+  async create_partition_cancel(partitionId: string): Promise<Partition> {
+    const __wire = await this.client.request<PartitionResponse>({
+      method: 'POST',
+      path: `/v1/partitions/${partitionId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializePartition(__wire);
   }
 }

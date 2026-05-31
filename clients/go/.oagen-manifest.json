@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-05-31T10:02:09.408Z",
+  "generatedAt": "2026-05-31T13:08:56.800Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
@@ -57,6 +57,10 @@
       "sdkMethod": "Delete",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "CreateCancel",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "List",
       "service": "edits"
@@ -71,6 +75,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "Delete",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "CreateCancel",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -107,6 +115,10 @@
     },
     "DELETE /v1/extractions/{extraction_id}": {
       "sdkMethod": "Delete",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "CreateCancel",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
@@ -185,6 +197,10 @@
       "sdkMethod": "Delete",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "CreateCancel",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "Generate",
       "service": "schemas"
@@ -203,6 +219,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "Delete",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "CreateCancel",
       "service": "splits"
     },
     "GET /v1/workflows": {

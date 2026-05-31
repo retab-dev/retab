@@ -5,3 +5,4 @@ export * from './partition-chunk.interface.js';
 export * from './partition-chunk-likelihood.interface.js';
 export * from './partition-consensus.interface.js';
 export * from './partition-request.interface.js';
+export * from './partition-status.interface.js';

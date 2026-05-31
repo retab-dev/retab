@@ -34,6 +34,10 @@ readonly class ExtractionWorkflowArtifact implements \JsonSerializable
         public ?int $imageResolutionDpi = null,
         /** Free-form instructions supplied with the extraction request. */
         public ?string $instructions = null,
+        /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
+        public ?EditStatus $status = null,
+        /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+        public ?PrimitiveError $error = null,
         /** Consensus metadata for multi-vote extraction runs */
         public ?ExtractionConsensus $consensus = null,
         /** @var array<string, string>|null */
@@ -69,6 +73,8 @@ readonly class ExtractionWorkflowArtifact implements \JsonSerializable
             nConsensus: $data['n_consensus'] ?? null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             instructions: $data['instructions'] ?? null,
+            status: isset($data['status']) ? EditStatus::from($data['status']) : null,
+            error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             consensus: isset($data['consensus']) ? ExtractionConsensus::fromArray($data['consensus']) : null,
             metadata: $data['metadata'] ?? null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
@@ -89,6 +95,8 @@ readonly class ExtractionWorkflowArtifact implements \JsonSerializable
             'n_consensus' => $this->nConsensus,
             'image_resolution_dpi' => $this->imageResolutionDpi,
             'instructions' => $this->instructions,
+            'status' => $this->status?->value,
+            'error' => $this->error?->toArray(),
             'consensus' => $this->consensus?->toArray(),
             'metadata' => $this->metadata,
             'usage' => $this->usage?->toArray(),

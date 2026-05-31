@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.EditStatus;
 import java.time.OffsetDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -16,6 +17,8 @@ public final class Edit {
   private final EditConfig config;
   private final String templateId;
   private final EditResult output;
+  private final EditStatus status;
+  private final PrimitiveError error;
   private final FileRef filledDocumentRef;
   private final RetabUsage usage;
   private final OffsetDateTime createdAt;
@@ -28,7 +31,9 @@ public final class Edit {
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "config", required = true) EditConfig config,
       @JsonProperty(value = "template_id", required = false) String templateId,
-      @JsonProperty(value = "output", required = true) EditResult output,
+      @JsonProperty(value = "output", required = false) EditResult output,
+      @JsonProperty(value = "status", required = false) EditStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "filled_document_ref", required = false) FileRef filledDocumentRef,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
@@ -39,6 +44,8 @@ public final class Edit {
     this.config = config;
     this.templateId = templateId;
     this.output = output;
+    this.status = status;
+    this.error = error;
     this.filledDocumentRef = filledDocumentRef;
     this.usage = usage;
     this.createdAt = createdAt;
@@ -77,6 +84,16 @@ public final class Edit {
   @JsonProperty("output")
   public EditResult getOutput() {
     return output;
+  }
+
+  @JsonProperty("status")
+  public EditStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 
   @JsonProperty("filled_document_ref")

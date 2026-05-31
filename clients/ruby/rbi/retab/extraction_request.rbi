@@ -69,6 +69,12 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def stream=(value); end
 
+    sig { returns(T.nilable(T::Boolean)) }
+    def background; end
+
+    sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
+    def background=(value); end
+
     sig { returns(T.nilable(T::Hash[String, String])) }
     def chunking_keys; end
 

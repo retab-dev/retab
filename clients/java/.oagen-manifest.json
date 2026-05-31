@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-05-30T09:01:26.813Z",
+  "generatedAt": "2026-05-31T12:03:41.000Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -19,6 +19,7 @@
     "src/main/java/com/retab/jobs/JobsApi.java",
     "src/main/java/com/retab/models/Actor.java",
     "src/main/java/com/retab/models/AllItemsMatchCondition.java",
+    "src/main/java/com/retab/models/AnalyzeFileRequest.java",
     "src/main/java/com/retab/models/AnyItemMatchesCondition.java",
     "src/main/java/com/retab/models/ApiCallAttempt.java",
     "src/main/java/com/retab/models/ApiCallInvocation.java",
@@ -177,6 +178,7 @@
     "src/main/java/com/retab/models/PendingWorkflowExperimentResult.java",
     "src/main/java/com/retab/models/PendingWorkflowExperimentRun.java",
     "src/main/java/com/retab/models/PendingWorkflowTestRun.java",
+    "src/main/java/com/retab/models/PrimitiveError.java",
     "src/main/java/com/retab/models/PublicHandlePayload.java",
     "src/main/java/com/retab/models/PublishWorkflowRequest.java",
     "src/main/java/com/retab/models/QueuedStepLifecycle.java",
@@ -271,9 +273,13 @@
     "src/main/java/com/retab/schemas/SchemasApi.java",
     "src/main/java/com/retab/splits/SplitsApi.java",
     "src/main/java/com/retab/types/ActorKind.java",
+    "src/main/java/com/retab/types/AnalyzeFileRequestMode.java",
     "src/main/java/com/retab/types/AssertionDriftStatus.java",
     "src/main/java/com/retab/types/AssertionOutcome.java",
     "src/main/java/com/retab/types/CancelWorkflowResponseCancellationStatus.java",
+    "src/main/java/com/retab/types/ClassificationStatus.java",
+    "src/main/java/com/retab/types/ClassificationWorkflowArtifactStatus.java",
+    "src/main/java/com/retab/types/ClassificationsStatus.java",
     "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
     "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
     "src/main/java/com/retab/types/CreateExperimentRequestNConsensus.java",
@@ -284,6 +290,9 @@
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeTarget.java",
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeType.java",
     "src/main/java/com/retab/types/DeclarativePlanResponseAction.java",
+    "src/main/java/com/retab/types/EditStatus.java",
+    "src/main/java/com/retab/types/EditWorkflowArtifactStatus.java",
+    "src/main/java/com/retab/types/EditsStatus.java",
     "src/main/java/com/retab/types/ErrorStepLifecycleCategory.java",
     "src/main/java/com/retab/types/ErrorStepLifecycleStage.java",
     "src/main/java/com/retab/types/ErrorTerminalCategory.java",
@@ -296,6 +305,9 @@
     "src/main/java/com/retab/types/ExperimentRunNConsensus.java",
     "src/main/java/com/retab/types/ExperimentSchemaDriftStatus.java",
     "src/main/java/com/retab/types/ExperimentSummaryMetricsResponseBlockType.java",
+    "src/main/java/com/retab/types/ExtractionStatus.java",
+    "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
+    "src/main/java/com/retab/types/ExtractionsStatus.java",
     "src/main/java/com/retab/types/FieldType.java",
     "src/main/java/com/retab/types/JobStatus.java",
     "src/main/java/com/retab/types/JobsEndpoint.java",
@@ -308,6 +320,9 @@
     "src/main/java/com/retab/types/NumberCompareConditionOp.java",
     "src/main/java/com/retab/types/ParseRequestTableParsingFormat.java",
     "src/main/java/com/retab/types/ParseWorkflowArtifactTableParsingFormat.java",
+    "src/main/java/com/retab/types/PartitionStatus.java",
+    "src/main/java/com/retab/types/PartitionWorkflowArtifactStatus.java",
+    "src/main/java/com/retab/types/PartitionsStatus.java",
     "src/main/java/com/retab/types/PublicHandlePayloadType.java",
     "src/main/java/com/retab/types/ResumeStatus.java",
     "src/main/java/com/retab/types/ReviewBlockType.java",
@@ -317,6 +332,9 @@
     "src/main/java/com/retab/types/SimilarityGteConditionMethod.java",
     "src/main/java/com/retab/types/SortOrder.java",
     "src/main/java/com/retab/types/SourcesResponseDocumentType.java",
+    "src/main/java/com/retab/types/SplitStatus.java",
+    "src/main/java/com/retab/types/SplitWorkflowArtifactStatus.java",
+    "src/main/java/com/retab/types/SplitsStatus.java",
     "src/main/java/com/retab/types/StepArtifactRefOperation.java",
     "src/main/java/com/retab/types/SubmissionStatus.java",
     "src/main/java/com/retab/types/SupportedEndpoint.java",
@@ -375,6 +393,10 @@
       "sdkMethod": "delete",
       "service": "classifications"
     },
+    "POST /v1/classifications/{classification_id}/cancel": {
+      "sdkMethod": "createCancel",
+      "service": "classifications"
+    },
     "GET /v1/edits": {
       "sdkMethod": "list",
       "service": "edits"
@@ -389,6 +411,10 @@
     },
     "DELETE /v1/edits/{edit_id}": {
       "sdkMethod": "delete",
+      "service": "edits"
+    },
+    "POST /v1/edits/{edit_id}/cancel": {
+      "sdkMethod": "createCancel",
       "service": "edits"
     },
     "GET /v1/edits/templates": {
@@ -427,12 +453,20 @@
       "sdkMethod": "delete",
       "service": "extractions"
     },
+    "POST /v1/extractions/{extraction_id}/cancel": {
+      "sdkMethod": "createCancel",
+      "service": "extractions"
+    },
     "GET /v1/extractions/{extraction_id}/sources": {
       "sdkMethod": "sources",
       "service": "extractions"
     },
     "GET /v1/files": {
       "sdkMethod": "list",
+      "service": "files"
+    },
+    "POST /v1/files/analyze": {
+      "sdkMethod": "createAnalyze",
       "service": "files"
     },
     "POST /v1/files/upload": {
@@ -503,6 +537,10 @@
       "sdkMethod": "delete",
       "service": "partitions"
     },
+    "POST /v1/partitions/{partition_id}/cancel": {
+      "sdkMethod": "createCancel",
+      "service": "partitions"
+    },
     "POST /v1/schemas/generate": {
       "sdkMethod": "generate",
       "service": "schemas"
@@ -521,6 +559,10 @@
     },
     "DELETE /v1/splits/{split_id}": {
       "sdkMethod": "delete",
+      "service": "splits"
+    },
+    "POST /v1/splits/{split_id}/cancel": {
+      "sdkMethod": "createCancel",
       "service": "splits"
     },
     "GET /v1/workflows": {

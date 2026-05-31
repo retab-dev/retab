@@ -11,6 +11,7 @@ module Retab
       V_1_PARTITIONS = "/v1/partitions"
       V_1_CLASSIFICATIONS = "/v1/classifications"
       V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
+      V_1_FILES_ANALYZE = "/v1/files/analyze"
       V_1_EDITS = "/v1/edits"
       V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
       V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
@@ -22,6 +23,7 @@ module Retab
         V_1_PARTITIONS,
         V_1_CLASSIFICATIONS,
         V_1_SCHEMAS_GENERATE,
+        V_1_FILES_ANALYZE,
         V_1_EDITS,
         V_1_EDITS_TEMPLATES_GENERATE,
         V_1_EVALS_EXTRACT_PROCESS,

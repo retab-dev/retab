@@ -17,7 +17,7 @@ class EditsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_edit');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', templateId: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->edits()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\JobsOrder::Asc, filename: 'test_value', templateId: 'test_value', status: \Retab\Resource\EditStatus::Pending, fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -29,6 +29,7 @@ class EditsTest extends TestCase
         $this->assertSame('asc', $query['order']);
         $this->assertSame('test_value', $query['filename']);
         $this->assertSame('test_value', $query['template_id']);
+        $this->assertSame('pending', $query['status']);
         $this->assertSame('test_value', $query['from_date']);
         $this->assertSame('test_value', $query['to_date']);
     }
@@ -53,7 +54,7 @@ class EditsTest extends TestCase
     {
         $fixture = $this->loadFixture('edit');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->edits()->get('test_edit_id');
+        $result = $client->edits()->get('test_edit_id', includeOutput: true);
         $this->assertInstanceOf(\Retab\Resource\Edit::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['model'], $result->model);
@@ -61,6 +62,8 @@ class EditsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/edits/test_edit_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertArrayHasKey('include_output', $query);
     }
 
     public function testDelete(): void
@@ -70,6 +73,20 @@ class EditsTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/edits/test_edit_id', $request->getUri()->getPath());
+    }
+
+    public function testCreateEditCancel(): void
+    {
+        $fixture = $this->loadFixture('edit');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->edits()->createEditCancel('test_edit_id');
+        $this->assertInstanceOf(\Retab\Resource\Edit::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['model'], $result->model);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/edits/test_edit_id/cancel', $request->getUri()->getPath());
     }
 
     public function testPaginationBoundary(): void

@@ -4,5 +4,6 @@ export * from './split.interface.js';
 export * from './split-consensus.interface.js';
 export * from './split-request.interface.js';
 export * from './split-result.interface.js';
+export * from './split-status.interface.js';
 export * from './split-subdocument-likelihood.interface.js';
 export * from './subdocument.interface.js';

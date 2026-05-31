@@ -29,11 +29,19 @@ pub struct PartitionWorkflowArtifact {
     /// Defaults to `true`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub allow_overlap: Option<bool>,
-    /// The list of partition chunks with their assigned pages
+    /// The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
     ///
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub output: Option<Vec<PartitionChunk>>,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<PartitionWorkflowArtifactStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Consensus metadata for multi-vote partition runs
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<PartitionConsensus>,
@@ -67,6 +75,8 @@ impl PartitionWorkflowArtifact {
             n_consensus: Default::default(),
             allow_overlap: Default::default(),
             output: Default::default(),
+            status: Default::default(),
+            error: Default::default(),
             consensus: Default::default(),
             usage: Default::default(),
             created_at: Default::default(),

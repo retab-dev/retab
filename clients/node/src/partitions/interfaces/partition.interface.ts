@@ -26,6 +26,15 @@ import {
   serializePartitionConsensus,
 } from './partition-consensus.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../classifications/interfaces/retab-usage.interface.js';
@@ -34,6 +43,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../classifications/interfaces/retab-usage.interface.js';
+import type { PartitionStatus } from './partition-status.interface.js';
+import { ZPartitionStatus } from './partition-status.interface.js';
 
 /** A partition result: a document segmented into chunks along the requested `key`. */
 export interface Partition {
@@ -58,10 +69,17 @@ export interface Partition {
    */
   allowOverlap?: boolean;
   /**
-   * The list of partition chunks with their assigned pages
+   * The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
    * @default []
    */
   output?: PartitionChunk[];
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: PartitionStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote partition runs */
   consensus?: PartitionConsensus | null;
   /** Usage information for the partition operation */
@@ -78,6 +96,8 @@ export interface PartitionResponse {
   n_consensus?: number;
   allow_overlap?: boolean;
   output?: PartitionChunkResponse[];
+  status?: PartitionStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: PartitionConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
@@ -92,6 +112,8 @@ export const ZPartition = z.object({
   nConsensus: z.number().int().optional(),
   allowOverlap: z.boolean().optional(),
   output: ZPartitionChunk.array().optional(),
+  status: ZPartitionStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZPartitionConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
@@ -110,6 +132,13 @@ export function deserializePartition(wire: PartitionResponse): Partition {
       wire['output'] == null
         ? (wire['output'] as undefined)
         : wire['output'].map((__i) => deserializePartitionChunk(__i)),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -144,6 +173,13 @@ export function serializePartition(domain: Partition): PartitionResponse {
       domain['output'] == null
         ? (domain['output'] as undefined)
         : domain['output'].map((__i) => serializePartitionChunk(__i)),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)

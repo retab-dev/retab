@@ -13,6 +13,8 @@ module Retab
       n_consensus: :n_consensus,
       instructions: :instructions,
       output: :output,
+      status: :status,
+      error: :error,
       consensus: :consensus,
       usage: :usage,
       created_at: :created_at,
@@ -27,6 +29,8 @@ module Retab
       :n_consensus,
       :instructions,
       :output,
+      :status,
+      :error,
       :consensus,
       :usage,
       :created_at,
@@ -43,6 +47,8 @@ module Retab
       @n_consensus = hash[:n_consensus]
       @instructions = hash[:instructions]
       @output = hash[:output] ? Retab::ClassificationDecision.new(hash[:output]) : nil
+      @status = hash[:status].nil? ? "pending" : hash[:status]
+      @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil
       @consensus = hash[:consensus] ? Retab::ClassificationConsensus.new(hash[:consensus]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]

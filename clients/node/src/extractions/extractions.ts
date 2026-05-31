@@ -3,6 +3,7 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
+import type { ExtractionsStatus } from '../common/interfaces/index.js';
 import type {
   Extraction,
   ExtractionResponse,
@@ -23,6 +24,7 @@ export class Extractions {
     filenameRegex?: string | null | undefined;
     filenameContains?: string | null | undefined;
     documentType?: string[] | null | undefined;
+    status?: ExtractionsStatus | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     metadata?: string | null | undefined;
@@ -39,6 +41,7 @@ export class Extractions {
         filename_regex: options?.filenameRegex,
         filename_contains: options?.filenameContains,
         document_type: options?.documentType,
+        status: options?.status,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         metadata: options?.metadata,
@@ -63,6 +66,7 @@ export class Extractions {
     additionalMessages?: Record<string, unknown>[] | null,
     bustCache?: boolean,
     stream?: boolean,
+    background?: boolean,
     chunkingKeys?: Record<string, string> | null
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document);
@@ -77,6 +81,7 @@ export class Extractions {
       additional_messages: additionalMessages,
       bust_cache: bustCache,
       stream: stream,
+      background: background,
       chunking_keys: chunkingKeys,
     };
     const __wire = await this.client.request<ExtractionResponse>({
@@ -89,11 +94,14 @@ export class Extractions {
   }
 
   /** Get Extraction */
-  async get(extractionId: string): Promise<Extraction> {
+  async get(
+    extractionId: string,
+    options?: { includeOutput?: boolean | undefined }
+  ): Promise<Extraction> {
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'GET',
       path: `/v1/extractions/${extractionId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializeExtraction(__wire);
@@ -107,6 +115,17 @@ export class Extractions {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Extraction */
+  async create_extraction_cancel(extractionId: string): Promise<Extraction> {
+    const __wire = await this.client.request<ExtractionResponse>({
+      method: 'POST',
+      path: `/v1/extractions/${extractionId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeExtraction(__wire);
   }
 
   /** Get Extraction Sources */

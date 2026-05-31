@@ -97,6 +97,16 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 	}
 }
 
+// approvedDirectCLINonReferenceRoutes are raw cliJSONRequest routes that the
+// CLI intentionally calls but that are deliberately excluded from the public
+// OpenAPI reference (see PUBLIC_OPENAPI_EXCLUDED_ROUTES in generate_openapi.py).
+var approvedDirectCLINonReferenceRoutes = map[string]bool{
+	// `files analyze` is an internal worker-pool blueprint job endpoint; the
+	// CLI exposes it as a raw overlay but it is not part of the public API
+	// reference.
+	"POST /v1/files/analyze": true,
+}
+
 func TestDirectCLIJSONRequestCallsMatchOpenAPI(t *testing.T) {
 	openAPI := loadCLIOpenAPIContract(t)
 	routes := extractDirectCLIJSONRequestRoutes(readCLISource(t))
@@ -104,8 +114,23 @@ func TestDirectCLIJSONRequestCallsMatchOpenAPI(t *testing.T) {
 		t.Fatal("no direct cliJSONRequest calls found")
 	}
 
+	used := map[string]bool{}
 	for _, route := range routes {
+		key := cliHTTPRouteKey(route)
+		if approvedDirectCLINonReferenceRoutes[key] {
+			used[key] = true
+			if cliOpenAPIHasRoute(openAPI, route) {
+				t.Fatalf("%s is now in OpenAPI; remove it from approvedDirectCLINonReferenceRoutes", key)
+			}
+			continue
+		}
 		assertCLIOpenAPIRoute(t, openAPI, route)
+	}
+
+	for key := range approvedDirectCLINonReferenceRoutes {
+		if !used[key] {
+			t.Fatalf("approved direct CLI non-reference route %s is stale; no cliJSONRequest call uses it", key)
+		}
 	}
 }
 

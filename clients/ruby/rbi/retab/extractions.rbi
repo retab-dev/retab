@@ -19,13 +19,14 @@ module Retab
         filename_regex: T.nilable(String),
         filename_contains: T.nilable(String),
         document_type: T.nilable(T::Array[String]),
+        status: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         metadata: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Extraction])
     end
-    def list(before:, after:, limit:, order:, filename:, filename_regex:, filename_contains:, document_type:, from_date:, to_date:, metadata:, request_options:); end
+    def list(before:, after:, limit:, order:, filename:, filename_regex:, filename_contains:, document_type:, status:, from_date:, to_date:, metadata:, request_options:); end
 
     sig do
       params(
@@ -39,19 +40,21 @@ module Retab
         additional_messages: T.nilable(T::Array[T::Hash[String, T.untyped]]),
         bust_cache: T.nilable(T::Boolean),
         stream: T.nilable(T::Boolean),
+        background: T.nilable(T::Boolean),
         chunking_keys: T.nilable(T::Hash[String, String]),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def create(document:, json_schema:, model:, image_resolution_dpi:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, chunking_keys:, request_options:); end
+    def create(document:, json_schema:, model:, image_resolution_dpi:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, request_options:); end
 
     sig do
       params(
         extraction_id: String,
+        include_output: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def get(extraction_id:, request_options:); end
+    def get(extraction_id:, include_output:, request_options:); end
 
     sig do
       params(
@@ -60,6 +63,14 @@ module Retab
       ).returns(NilClass)
     end
     def delete(extraction_id:, request_options:); end
+
+    sig do
+      params(
+        extraction_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Extraction)
+    end
+    def create_extraction_cancel(extraction_id:, request_options:); end
 
     sig do
       params(

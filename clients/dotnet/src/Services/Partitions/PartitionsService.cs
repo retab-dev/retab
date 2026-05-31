@@ -81,18 +81,19 @@ namespace Retab
         /// no partition with that id exists.
         /// </remarks>
         /// <param name="partitionId">The partition id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Partition"/> result.</returns>
-        public virtual async Task<Partition> GetAsync(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Partition> GetAsync(string partitionId, PartitionsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<Partition>($"/v1/partitions/{Uri.EscapeDataString(partitionId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Partition>($"/v1/partitions/{Uri.EscapeDataString(partitionId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Partition> Get(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Partition> Get(string partitionId, PartitionsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(partitionId, requestOptions, cancellationToken);
+            return this.GetAsync(partitionId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Partition</summary>
@@ -114,6 +115,22 @@ namespace Retab
         public virtual Task Delete(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.DeleteAsync(partitionId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel Partition</summary>
+        /// <param name="partitionId">The partition id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Partition"/> result.</returns>
+        public virtual async Task<Partition> CreateCancelAsync(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Partition>($"/v1/partitions/{Uri.EscapeDataString(partitionId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateCancelAsync"/>.</summary>
+        public virtual Task<Partition> CreateCancel(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateCancelAsync(partitionId, requestOptions, cancellationToken);
         }
     }
 }

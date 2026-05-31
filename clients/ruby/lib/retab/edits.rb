@@ -21,6 +21,7 @@ module Retab
     # @param order [Retab::Types::EditsOrder, nil]
     # @param filename [String, nil]
     # @param template_id [String, nil]
+    # @param status [Retab::Types::EditsStatus, nil]
     # @param from_date [String, nil]
     # @param to_date [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -32,6 +33,7 @@ module Retab
       order: "desc",
       filename: nil,
       template_id: nil,
+      status: nil,
       from_date: nil,
       to_date: nil,
       request_options: {}
@@ -43,6 +45,7 @@ module Retab
         "order" => order,
         "filename" => filename,
         "template_id" => template_id,
+        "status" => status,
         "from_date" => from_date,
         "to_date" => to_date
       }.compact
@@ -61,6 +64,7 @@ module Retab
           order: order,
           filename: filename,
           template_id: template_id,
+          status: status,
           from_date: from_date,
           to_date: to_date,
           request_options: request_options
@@ -75,6 +79,7 @@ module Retab
           order: order,
           filename: filename,
           template_id: template_id,
+          status: status,
           from_date: from_date,
           to_date: to_date
         },
@@ -89,6 +94,7 @@ module Retab
     # @param model [String, nil] The model to use for edit inference.
     # @param config [Retab::EditConfig, nil] Edit configuration (rendering options).
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion.
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Edit]
     def create(
@@ -98,6 +104,7 @@ module Retab
       model: nil,
       config: nil,
       bust_cache: nil,
+      background: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document) unless document.nil?
@@ -107,7 +114,8 @@ module Retab
         "template_id" => template_id,
         "model" => model,
         "config" => config,
-        "bust_cache" => bust_cache
+        "bust_cache" => bust_cache,
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,
@@ -127,16 +135,22 @@ module Retab
 
     # Get Edit
     # @param edit_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Edit]
     def get(
       edit_id:,
+      include_output: true,
       request_options: {}
     )
+      params = {
+        "include_output" => include_output
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/edits/#{Retab::Util.encode_path(edit_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::Edit.new(response.body)
@@ -163,6 +177,29 @@ module Retab
         request_options: request_options
       )
       nil
+    end
+
+    # Cancel Edit
+    # @param edit_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::Edit]
+    def create_edit_cancel(
+      edit_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/edits/#{Retab::Util.encode_path(edit_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::Edit.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
     end
   end
 end

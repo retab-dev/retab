@@ -11,7 +11,8 @@ module Retab
       model: :model,
       instructions: :instructions,
       n_consensus: :n_consensus,
-      bust_cache: :bust_cache
+      bust_cache: :bust_cache,
+      background: :background
     }.freeze
 
     attr_accessor(
@@ -20,7 +21,8 @@ module Retab
       :model,
       :instructions,
       :n_consensus,
-      :bust_cache
+      :bust_cache,
+      :background
     )
 
     def initialize(json)
@@ -32,6 +34,7 @@ module Retab
       @instructions = hash[:instructions]
       @n_consensus = hash[:n_consensus]
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
+      @background = hash[:background].nil? ? false : hash[:background]
     end
   end
 end

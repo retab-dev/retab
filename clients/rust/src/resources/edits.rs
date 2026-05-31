@@ -31,6 +31,8 @@ pub struct ListParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub template_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<EditsStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_date: Option<String>,
@@ -46,6 +48,7 @@ impl Default for ListParams {
             order: Some(EditsOrder::Desc),
             filename: Default::default(),
             template_id: Default::default(),
+            status: Default::default(),
             from_date: Default::default(),
             to_date: Default::default(),
         }
@@ -77,7 +80,26 @@ impl CreateParams {
                 model: Default::default(),
                 config: Default::default(),
                 bust_cache: Default::default(),
+                background: Default::default(),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
         }
     }
 }
@@ -148,21 +170,22 @@ impl<'a> EditsApi<'a> {
     /// Fetches a single edit by its `edit_id`. Returns the edit with its filled
     /// form data and rendered document; responds with `404` if no edit with that
     /// id exists.
-    pub async fn get(&self, edit_id: &str) -> Result<Edit, Error> {
-        self.get_with_options(edit_id, None).await
+    pub async fn get(&self, edit_id: &str, params: GetParams) -> Result<Edit, Error> {
+        self.get_with_options(edit_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         edit_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<Edit, Error> {
         let edit_id = crate::client::path_segment(edit_id);
         let path = format!("/v1/edits/{edit_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 
@@ -187,6 +210,25 @@ impl<'a> EditsApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
+    /// Cancel Edit
+    pub async fn create_edit_cancel(&self, edit_id: &str) -> Result<Edit, Error> {
+        self.create_edit_cancel_with_options(edit_id, None).await
+    }
+
+    /// Variant of [`Self::create_edit_cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_edit_cancel_with_options(
+        &self,
+        edit_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Edit, Error> {
+        let edit_id = crate::client::path_segment(edit_id);
+        let path = format!("/v1/edits/{edit_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 }

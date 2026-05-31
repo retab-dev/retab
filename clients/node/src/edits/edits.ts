@@ -3,6 +3,7 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
+import type { EditsStatus } from '../common/interfaces/index.js';
 import type { Edit, EditConfig, EditResponse } from '../edits/interfaces/index.js';
 import { deserializeEdit, serializeEditConfig } from '../edits/interfaces/index.js';
 import { EditTemplates } from './templates/edit-templates.js';
@@ -18,6 +19,7 @@ export class Edits {
   async list(options?: {
     filename?: string | null | undefined;
     templateId?: string | null | undefined;
+    status?: EditsStatus | null | undefined;
     fromDate?: string | null | undefined;
     toDate?: string | null | undefined;
     limit?: number;
@@ -31,6 +33,7 @@ export class Edits {
       query: {
         filename: options?.filename,
         template_id: options?.templateId,
+        status: options?.status,
         from_date: options?.fromDate,
         to_date: options?.toDate,
         limit: options?.limit,
@@ -49,7 +52,8 @@ export class Edits {
     templateId?: string | null,
     model?: string,
     config?: EditConfig,
-    bustCache?: boolean
+    bustCache?: boolean,
+    background?: boolean
   ): Promise<Edit> {
     const documentCoerced = document === undefined ? undefined : await coerceMimeData(document);
     const body = {
@@ -59,6 +63,7 @@ export class Edits {
       model: model,
       config: config === undefined ? undefined : serializeEditConfig(config),
       bust_cache: bustCache,
+      background: background,
     };
     const __wire = await this.client.request<EditResponse>({
       method: 'POST',
@@ -70,11 +75,11 @@ export class Edits {
   }
 
   /** Get Edit */
-  async get(editId: string): Promise<Edit> {
+  async get(editId: string, options?: { includeOutput?: boolean | undefined }): Promise<Edit> {
     const __wire = await this.client.request<EditResponse>({
       method: 'GET',
       path: `/v1/edits/${editId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializeEdit(__wire);
@@ -88,5 +93,16 @@ export class Edits {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Edit */
+  async create_edit_cancel(editId: string): Promise<Edit> {
+    const __wire = await this.client.request<EditResponse>({
+      method: 'POST',
+      path: `/v1/edits/${editId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeEdit(__wire);
   }
 }

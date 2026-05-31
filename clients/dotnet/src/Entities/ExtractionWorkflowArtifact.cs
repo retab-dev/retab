@@ -31,6 +31,12 @@ namespace Retab
         /// <summary>The extracted structured data</summary>
         public Dictionary<string, object> Output { get; set; } = default!;
 
+        /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
+        public ClassificationStatus? Status { get; set; }
+
+        /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
+        public JobError? Error { get; set; }
+
         /// <summary>Consensus metadata for multi-vote extraction runs</summary>
         public ExtractionConsensus? Consensus { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }

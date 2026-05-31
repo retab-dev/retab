@@ -14,6 +14,9 @@ var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 }
 
 var approvedCLINonReferenceJobEndpoints = map[string]bool{
+	// Internal worker-pool blueprint endpoint excluded from the public API
+	// reference but still accepted as an async job target.
+	"/v1/files/analyze": true,
 	// Legacy async job endpoints that the CLI still accepts for compatibility.
 	"/v1/documents/classify":       true,
 	"/v1/documents/extract":        true,
@@ -120,6 +123,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Classifications.Create": {
 			{method: http.MethodPost, path: "/classifications"},
 		},
+		"Classifications.CreateCancel": {
+			{method: http.MethodPost, path: "/classifications/{classification_id}/cancel"},
+		},
 		"Classifications.Delete": {
 			{method: http.MethodDelete, path: "/classifications/{classification_id}"},
 		},
@@ -131,6 +137,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Edits.Create": {
 			{method: http.MethodPost, path: "/edits"},
+		},
+		"Edits.CreateCancel": {
+			{method: http.MethodPost, path: "/edits/{edit_id}/cancel"},
 		},
 		"Edits.Delete": {
 			{method: http.MethodDelete, path: "/edits/{edit_id}"},
@@ -158,6 +167,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Extractions.Create": {
 			{method: http.MethodPost, path: "/extractions"},
+		},
+		"Extractions.CreateCancel": {
+			{method: http.MethodPost, path: "/extractions/{extraction_id}/cancel"},
 		},
 		"Extractions.Delete": {
 			{method: http.MethodDelete, path: "/extractions/{extraction_id}"},
@@ -216,6 +228,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Partitions.Create": {
 			{method: http.MethodPost, path: "/partitions"},
 		},
+		"Partitions.CreateCancel": {
+			{method: http.MethodPost, path: "/partitions/{partition_id}/cancel"},
+		},
 		"Partitions.Delete": {
 			{method: http.MethodDelete, path: "/partitions/{partition_id}"},
 		},
@@ -230,6 +245,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Splits.Create": {
 			{method: http.MethodPost, path: "/splits"},
+		},
+		"Splits.CreateCancel": {
+			{method: http.MethodPost, path: "/splits/{split_id}/cancel"},
 		},
 		"Splits.Delete": {
 			{method: http.MethodDelete, path: "/splits/{split_id}"},

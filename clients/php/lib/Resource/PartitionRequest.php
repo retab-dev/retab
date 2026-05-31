@@ -26,6 +26,8 @@ readonly class PartitionRequest implements \JsonSerializable
         public ?bool $allowOverlap = null,
         /** If true, skip the LLM cache and force a fresh completion */
         public ?bool $bustCache = null,
+        /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
+        public ?bool $background = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -52,6 +54,7 @@ readonly class PartitionRequest implements \JsonSerializable
             nConsensus: $data['n_consensus'] ?? null,
             allowOverlap: $data['allow_overlap'] ?? null,
             bustCache: $data['bust_cache'] ?? null,
+            background: $data['background'] ?? null,
         );
     }
 
@@ -66,6 +69,7 @@ readonly class PartitionRequest implements \JsonSerializable
             'n_consensus' => $this->nConsensus,
             'allow_overlap' => $this->allowOverlap,
             'bust_cache' => $this->bustCache,
+            'background' => $this->background,
         ];
     }
 }

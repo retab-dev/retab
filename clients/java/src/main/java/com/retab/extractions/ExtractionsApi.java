@@ -8,6 +8,7 @@ import com.retab.RetabClient;
 import com.retab.models.Extraction;
 import com.retab.models.ExtractionRequest;
 import com.retab.models.SourcesResponse;
+import com.retab.types.ExtractionsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +40,7 @@ public final class ExtractionsApi {
       String filenameRegex,
       String filenameContains,
       List<String> documentType,
+      ExtractionsStatus status,
       String fromDate,
       String toDate,
       String metadata)
@@ -53,6 +55,7 @@ public final class ExtractionsApi {
     appendQueryParam(query, "filename_regex", filenameRegex);
     appendQueryParam(query, "filename_contains", filenameContains);
     appendQueryParam(query, "document_type", documentType);
+    appendQueryParam(query, "status", status);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     appendQueryParam(query, "metadata", metadata);
@@ -94,6 +97,7 @@ public final class ExtractionsApi {
         request == null ? null : request.getAdditionalMessages(),
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
+        request == null ? null : request.isBackground(),
         request == null ? null : request.getChunkingKeys());
   }
 
@@ -108,6 +112,7 @@ public final class ExtractionsApi {
       List<Map<String, Object>> additionalMessages,
       Boolean bustCache,
       Boolean stream,
+      Boolean background,
       Map<String, String> chunkingKeys)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
@@ -140,6 +145,9 @@ public final class ExtractionsApi {
     if (stream != null) {
       body.put("stream", stream);
     }
+    if (background != null) {
+      body.put("background", background);
+    }
     if (chunkingKeys != null) {
       body.put("chunking_keys", chunkingKeys);
     }
@@ -162,9 +170,11 @@ public final class ExtractionsApi {
     return client.getObjectMapper().readValue(response.body(), Extraction.class);
   }
 
-  public Extraction get(String extractionId) throws IOException, InterruptedException {
+  public Extraction get(String extractionId, Boolean includeOutput)
+      throws IOException, InterruptedException {
     String path = "/v1/extractions/" + encodePathSegment(extractionId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -202,6 +212,27 @@ public final class ExtractionsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Extraction createCancel(String extractionId) throws IOException, InterruptedException {
+    String path = "/v1/extractions/" + encodePathSegment(extractionId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Extraction.class);
   }
 
   public SourcesResponse sources(String extractionId) throws IOException, InterruptedException {

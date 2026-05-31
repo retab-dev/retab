@@ -24,6 +24,8 @@ namespace Retab
         V1Classifications,
         [EnumMember(Value = "/v1/schemas/generate")]
         V1SchemasGenerate,
+        [EnumMember(Value = "/v1/files/analyze")]
+        V1FilesAnalyze,
         [EnumMember(Value = "/v1/edits")]
         V1Edits,
         [EnumMember(Value = "/v1/edits/templates/generate")]

@@ -34,6 +34,11 @@ pub struct PartitionRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub bust_cache: Option<bool>,
+    /// If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    ///
+    /// Defaults to `false`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub background: Option<bool>,
 }
 impl PartitionRequest {
     /// Construct a new `PartitionRequest` with the required fields set.
@@ -51,6 +56,7 @@ impl PartitionRequest {
             n_consensus: Default::default(),
             allow_overlap: Default::default(),
             bust_cache: Default::default(),
+            background: Default::default(),
         }
     }
 }

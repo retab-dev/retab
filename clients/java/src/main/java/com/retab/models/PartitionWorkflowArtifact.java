@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.PartitionWorkflowArtifactStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -18,6 +19,8 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
   private final Long nConsensus;
   private final Boolean allowOverlap;
   private final List<PartitionChunk> output;
+  private final PartitionWorkflowArtifactStatus status;
+  private final PrimitiveError error;
   private final PartitionConsensus consensus;
   private final RetabUsage usage;
   private final OffsetDateTime createdAt;
@@ -33,6 +36,8 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
       @JsonProperty(value = "allow_overlap", required = false) Boolean allowOverlap,
       @JsonProperty(value = "output", required = false) List<PartitionChunk> output,
+      @JsonProperty(value = "status", required = false) PartitionWorkflowArtifactStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "consensus", required = false) PartitionConsensus consensus,
       @JsonProperty(value = "usage", required = false) RetabUsage usage,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
@@ -45,6 +50,8 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
     this.nConsensus = nConsensus;
     this.allowOverlap = allowOverlap != null ? allowOverlap : true;
     this.output = output;
+    this.status = status;
+    this.error = error;
     this.consensus = consensus;
     this.usage = usage;
     this.createdAt = createdAt;
@@ -89,6 +96,16 @@ public final class PartitionWorkflowArtifact implements WorkflowArtifactOperatio
   @JsonProperty("output")
   public List<PartitionChunk> getOutput() {
     return output;
+  }
+
+  @JsonProperty("status")
+  public PartitionWorkflowArtifactStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 
   @JsonProperty("consensus")

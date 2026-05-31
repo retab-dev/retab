@@ -36,6 +36,7 @@ class Edits
      * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
      * @param string|null $filename
      * @param string|null $templateId
+     * @param \Retab\Resource\EditStatus|null $status
      * @param string|null $fromDate
      * @param string|null $toDate
      * @return \Retab\PaginatedResponse<\Retab\Resource\Edit>
@@ -48,6 +49,7 @@ class Edits
         \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
         ?string $filename = null,
         ?string $templateId = null,
+        ?\Retab\Resource\EditStatus $status = null,
         ?string $fromDate = null,
         ?string $toDate = null,
         ?\Retab\RequestOptions $options = null,
@@ -59,6 +61,7 @@ class Edits
             'order' => $order->value,
             'filename' => $filename,
             'template_id' => $templateId,
+            'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
         ], fn($v) => $v !== null);
@@ -87,6 +90,7 @@ class Edits
      * @param string|null $model The model to use for edit inference.
      * @param \Retab\Resource\EditConfig|null $config Edit configuration (rendering options).
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion.
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\Edit
      * @throws \Retab\Exception\RetabException
      */
@@ -97,6 +101,7 @@ class Edits
         ?string $model = null,
         ?\Retab\Resource\EditConfig $config = null,
         ?bool $bustCache = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Edit {
         if ($document !== null) {
@@ -109,6 +114,7 @@ class Edits
             'model' => $model,
             'config' => $config,
             'bust_cache' => $bustCache,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -128,16 +134,22 @@ class Edits
      * form data and rendered document; responds with `404` if no edit with that
      * id exists.
      * @param string $editId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
      * @return \Retab\Resource\Edit
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $editId,
+        ?bool $includeOutput = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Edit {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/edits/' . rawurlencode($editId),
+            query: $query,
             options: $options,
         );
         return Edit::fromArray($response);
@@ -163,5 +175,23 @@ class Edits
             path: 'v1/edits/' . rawurlencode($editId),
             options: $options,
         );
+    }
+
+    /**
+     * Cancel Edit
+     * @param string $editId
+     * @return \Retab\Resource\Edit
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createEditCancel(
+        string $editId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\Edit {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/edits/' . rawurlencode($editId) . '/cancel',
+            options: $options,
+        );
+        return Edit::fromArray($response);
     }
 }

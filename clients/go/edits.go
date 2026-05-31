@@ -17,10 +17,11 @@ type EditService struct {
 // EditsListParams contains the parameters for List.
 type EditsListParams struct {
 	PaginationParams
-	Filename   *string `url:"filename,omitempty" json:"-"`
-	TemplateID *string `url:"template_id,omitempty" json:"-"`
-	FromDate   *string `url:"from_date,omitempty" json:"-"`
-	ToDate     *string `url:"to_date,omitempty" json:"-"`
+	Filename   *string      `url:"filename,omitempty" json:"-"`
+	TemplateID *string      `url:"template_id,omitempty" json:"-"`
+	Status     *EditsStatus `url:"status,omitempty" json:"-"`
+	FromDate   *string      `url:"from_date,omitempty" json:"-"`
+	ToDate     *string      `url:"to_date,omitempty" json:"-"`
 }
 
 // List edits
@@ -47,6 +48,8 @@ type EditsCreateParams struct {
 	Config *EditConfig `json:"config,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion.
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create edit
@@ -70,6 +73,7 @@ func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opt
 		Model        *string     `json:"model,omitempty"`
 		Config       *EditConfig `json:"config,omitempty"`
 		BustCache    *bool       `json:"bust_cache,omitempty"`
+		Background   *bool       `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -89,6 +93,7 @@ func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opt
 		Model:        params.Model,
 		Config:       params.Config,
 		BustCache:    params.BustCache,
+		Background:   params.Background,
 	}
 	var result Edit
 	_, err := s.client.request(ctx, "POST", "/v1/edits", nil, body, &result, opts)
@@ -98,17 +103,24 @@ func (s *EditService) Create(ctx context.Context, params *EditsCreateParams, opt
 	return &result, nil
 }
 
+// EditsGetParams contains the parameters for Get.
+type EditsGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get edit
 // Retrieve an edit.
 // Fetches a single edit by its `edit_id`. Returns the edit with its filled
 // form data and rendered document; responds with `404` if no edit with that
 // id exists.
-func (s *EditService) Get(ctx context.Context, editID string, opts ...RequestOption) (*Edit, error) {
+func (s *EditService) Get(ctx context.Context, editID string, params *EditsGetParams, opts ...RequestOption) (*Edit, error) {
 	if editID == "" {
 		return nil, fmt.Errorf("retab: edit_id is required")
 	}
 	var result Edit
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/edits/%s", url.PathEscape(editID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/edits/%s", url.PathEscape(editID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -125,4 +137,17 @@ func (s *EditService) Delete(ctx context.Context, editID string, opts ...Request
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/edits/%s", url.PathEscape(editID)), nil, nil, nil, opts)
 	return err
+}
+
+// CreateCancel cancel Edit
+func (s *EditService) CreateCancel(ctx context.Context, editID string, opts ...RequestOption) (*Edit, error) {
+	if editID == "" {
+		return nil, fmt.Errorf("retab: edit_id is required")
+	}
+	var result Edit
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/edits/%s/cancel", url.PathEscape(editID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

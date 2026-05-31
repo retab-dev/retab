@@ -40,6 +40,11 @@ export interface PartitionRequest {
    * @default false
    */
   bustCache?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
 }
 
 export interface PartitionRequestResponse {
@@ -50,6 +55,7 @@ export interface PartitionRequestResponse {
   n_consensus?: number;
   allow_overlap?: boolean;
   bust_cache?: boolean;
+  background?: boolean;
 }
 
 export const ZPartitionRequest = z.object({
@@ -60,6 +66,7 @@ export const ZPartitionRequest = z.object({
   nConsensus: z.number().int().optional(),
   allowOverlap: z.boolean().optional(),
   bustCache: z.boolean().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<PartitionRequest>;
 
 export function deserializePartitionRequest(wire: PartitionRequestResponse): PartitionRequest {
@@ -71,6 +78,7 @@ export function deserializePartitionRequest(wire: PartitionRequestResponse): Par
     nConsensus: wire['n_consensus'],
     allowOverlap: wire['allow_overlap'],
     bustCache: wire['bust_cache'],
+    background: wire['background'],
   };
 }
 
@@ -83,5 +91,6 @@ export function serializePartitionRequest(domain: PartitionRequest): PartitionRe
     n_consensus: domain['nConsensus'],
     allow_overlap: domain['allowOverlap'],
     bust_cache: domain['bustCache'],
+    background: domain['background'],
   };
 }

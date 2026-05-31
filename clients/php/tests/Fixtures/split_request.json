@@ -13,5 +13,6 @@
   "model": "test_model",
   "instructions": "test_instructions",
   "n_consensus": 1,
-  "bust_cache": true
+  "bust_cache": true,
+  "background": true
 }

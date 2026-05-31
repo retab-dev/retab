@@ -15,6 +15,7 @@ public final class PartitionRequest {
   private final Long nConsensus;
   private final Boolean allowOverlap;
   private final Boolean bustCache;
+  private final Boolean background;
 
   @JsonCreator
   public PartitionRequest(
@@ -24,7 +25,8 @@ public final class PartitionRequest {
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
       @JsonProperty(value = "allow_overlap", required = false) Boolean allowOverlap,
-      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
+      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.document = document;
     this.key = key;
     this.instructions = instructions;
@@ -32,6 +34,7 @@ public final class PartitionRequest {
     this.nConsensus = nConsensus;
     this.allowOverlap = allowOverlap != null ? allowOverlap : true;
     this.bustCache = bustCache != null ? bustCache : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("document")
@@ -67,5 +70,10 @@ public final class PartitionRequest {
   @JsonProperty("bust_cache")
   public Boolean isBustCache() {
     return bustCache;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

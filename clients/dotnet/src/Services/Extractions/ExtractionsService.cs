@@ -79,18 +79,19 @@ namespace Retab
         /// matching extraction exists.
         /// </remarks>
         /// <param name="extractionId">The extraction id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Extraction"/> result.</returns>
-        public virtual async Task<Extraction> GetAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Extraction> GetAsync(string extractionId, ExtractionsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<Extraction>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Extraction>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Extraction> Get(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Extraction> Get(string extractionId, ExtractionsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(extractionId, requestOptions, cancellationToken);
+            return this.GetAsync(extractionId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Extraction</summary>
@@ -109,6 +110,22 @@ namespace Retab
         public virtual Task Delete(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.DeleteAsync(extractionId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel Extraction</summary>
+        /// <param name="extractionId">The extraction id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Extraction"/> result.</returns>
+        public virtual async Task<Extraction> CreateCancelAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Extraction>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateCancelAsync"/>.</summary>
+        public virtual Task<Extraction> CreateCancel(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateCancelAsync(extractionId, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Extraction Sources</summary>

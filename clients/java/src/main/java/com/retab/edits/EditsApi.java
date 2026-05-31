@@ -9,6 +9,7 @@ import com.retab.edittemplates.EditTemplatesApi;
 import com.retab.models.Edit;
 import com.retab.models.EditConfig;
 import com.retab.models.EditRequest;
+import com.retab.types.EditsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -42,6 +43,7 @@ public final class EditsApi {
       SortOrder order,
       String filename,
       String templateId,
+      EditsStatus status,
       String fromDate,
       String toDate)
       throws IOException, InterruptedException {
@@ -53,6 +55,7 @@ public final class EditsApi {
     appendQueryParam(query, "order", order);
     appendQueryParam(query, "filename", filename);
     appendQueryParam(query, "template_id", templateId);
+    appendQueryParam(query, "status", status);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -87,7 +90,8 @@ public final class EditsApi {
         request == null ? null : request.getTemplateId(),
         request == null ? null : request.getModel(),
         request == null ? null : request.getConfig(),
-        request == null ? null : request.isBustCache());
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isBackground());
   }
 
   public Edit create(
@@ -96,7 +100,8 @@ public final class EditsApi {
       String templateId,
       String model,
       EditConfig config,
-      Boolean bustCache)
+      Boolean bustCache,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/edits";
     StringBuilder query = new StringBuilder();
@@ -118,6 +123,9 @@ public final class EditsApi {
     if (bustCache != null) {
       body.put("bust_cache", bustCache);
     }
+    if (background != null) {
+      body.put("background", background);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -137,9 +145,10 @@ public final class EditsApi {
     return client.getObjectMapper().readValue(response.body(), Edit.class);
   }
 
-  public Edit get(String editId) throws IOException, InterruptedException {
+  public Edit get(String editId, Boolean includeOutput) throws IOException, InterruptedException {
     String path = "/v1/edits/" + encodePathSegment(editId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -177,6 +186,27 @@ public final class EditsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Edit createCancel(String editId) throws IOException, InterruptedException {
+    String path = "/v1/edits/" + encodePathSegment(editId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Edit.class);
   }
 
   private static String encodePathSegment(Object value) {

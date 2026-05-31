@@ -16,12 +16,13 @@ module Retab
         limit: T.nilable(Integer),
         order: T.nilable(String),
         filename: T.nilable(String),
+        status: T.nilable(String),
         from_date: T.nilable(String),
         to_date: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Classification])
     end
-    def list(before:, after:, limit:, order:, filename:, from_date:, to_date:, request_options:); end
+    def list(before:, after:, limit:, order:, filename:, status:, from_date:, to_date:, request_options:); end
 
     sig do
       params(
@@ -32,18 +33,20 @@ module Retab
         instructions: T.nilable(String),
         n_consensus: T.nilable(Integer),
         bust_cache: T.nilable(T::Boolean),
+        background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Classification)
     end
-    def create(document:, categories:, model:, first_n_pages:, instructions:, n_consensus:, bust_cache:, request_options:); end
+    def create(document:, categories:, model:, first_n_pages:, instructions:, n_consensus:, bust_cache:, background:, request_options:); end
 
     sig do
       params(
         classification_id: String,
+        include_output: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Classification)
     end
-    def get(classification_id:, request_options:); end
+    def get(classification_id:, include_output:, request_options:); end
 
     sig do
       params(
@@ -52,6 +55,14 @@ module Retab
       ).returns(NilClass)
     end
     def delete(classification_id:, request_options:); end
+
+    sig do
+      params(
+        classification_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Classification)
+    end
+    def create_classification_cancel(classification_id:, request_options:); end
 
   end
 end

@@ -6,6 +6,7 @@ import datetime
 from enum import Enum
 from typing import cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.classifications import PrimitiveError
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
 
@@ -13,6 +14,15 @@ from retab.types.mime import FileRef, MIMEData
 class FieldType(str, Enum):
     TEXT = "text"
     CHECKBOX = "checkbox"
+
+
+class EditStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class BBox(BaseModel):
@@ -38,6 +48,10 @@ class EditRequest(BaseModel):
     model: str | None = Field(default="retab-small", description="The model to use for edit inference.")
     config: EditConfig | None = Field(default={"color": "#000080"}, validate_default=True, description="Edit configuration (rendering options).")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion.")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Edit(BaseModel):
@@ -51,7 +65,16 @@ class Edit(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the edit request.")
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
-    output: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
+    output: EditResult | None = Field(
+        default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status."
+    )
+    status: EditStatus | None = Field(
+        default=cast(EditStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = None
@@ -89,6 +112,7 @@ __all__ = [
     "EditConfig",
     "EditRequest",
     "EditResult",
+    "EditStatus",
     "EditTemplate",
     "FieldType",
     "FileRef",

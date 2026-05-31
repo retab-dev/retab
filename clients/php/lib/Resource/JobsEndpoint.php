@@ -14,6 +14,7 @@ enum JobsEndpoint: string
     case V1Partitions = '/v1/partitions';
     case V1Classifications = '/v1/classifications';
     case V1SchemasGenerate = '/v1/schemas/generate';
+    case V1FilesAnalyze = '/v1/files/analyze';
     case V1Edits = '/v1/edits';
     case V1EditsTemplatesGenerate = '/v1/edits/templates/generate';
     case V1EvalsExtractProcess = '/v1/evals/extract/process';

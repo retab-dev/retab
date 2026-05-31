@@ -22,8 +22,17 @@ pub struct EditWorkflowArtifact {
     /// Template id used when the edit was created from a template; null for direct-document edits.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub template_id: Option<String>,
-    /// The edit result: filled form fields and the rendered PDF.
-    pub output: EditResult,
+    /// The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub output: Option<EditResult>,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<EditWorkflowArtifactStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Durable file reference for the filled document, when materialized.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub filled_document_ref: Option<FileRef>,
@@ -47,7 +56,6 @@ impl EditWorkflowArtifact {
         file: FileRef,
         model: impl Into<String>,
         config: EditConfig,
-        output: EditResult,
     ) -> Self {
         Self {
             id: id.into(),
@@ -56,7 +64,9 @@ impl EditWorkflowArtifact {
             instructions: Default::default(),
             config,
             template_id: Default::default(),
-            output,
+            output: Default::default(),
+            status: Default::default(),
+            error: Default::default(),
             filled_document_ref: Default::default(),
             usage: Default::default(),
             created_at: Default::default(),

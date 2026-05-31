@@ -41,6 +41,13 @@ class SplitsTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_create_split_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/splits/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.splits.create_split_cancel(split_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/splits(\?|\z)}},
@@ -51,7 +58,13 @@ class SplitsTest < Minitest::Test
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, subdocuments: [{}]}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
-    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}}
+    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
+    {
+      name: :create_split_cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/splits/stub/cancel(\?|\z)},
+      args: {split_id: "stub"}
+    }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do
       stub_request(spec[:verb], spec[:url])

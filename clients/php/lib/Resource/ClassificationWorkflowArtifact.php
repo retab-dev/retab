@@ -23,14 +23,18 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
          * @var array<\Retab\Resource\Category>
          */
         public array $categories,
-        /** The classification result with reasoning */
-        public ClassificationDecision $output,
         /** Timestamp when this artifact was created. */
         public \DateTimeImmutable $createdAt,
         /** Number of consensus votes used */
         public ?int $nConsensus = null,
         /** Free-form instructions supplied with the classification request. */
         public ?string $instructions = null,
+        /** The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status. */
+        public ?ClassificationDecision $output = null,
+        /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
+        public ?EditStatus $status = null,
+        /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+        public ?PrimitiveError $error = null,
         /** Consensus metadata for multi-vote classification runs */
         public ?ClassificationConsensus $consensus = null,
         /** Usage information for the classification */
@@ -47,7 +51,6 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
             'file',
             'model',
             'categories',
-            'output',
             'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -59,10 +62,12 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
             categories: array_map(fn($item) => Category::fromArray($item), $data['categories']),
-            output: ClassificationDecision::fromArray($data['output']),
             createdAt: new \DateTimeImmutable($data['created_at']),
             nConsensus: $data['n_consensus'] ?? null,
             instructions: $data['instructions'] ?? null,
+            output: isset($data['output']) ? ClassificationDecision::fromArray($data['output']) : null,
+            status: isset($data['status']) ? EditStatus::from($data['status']) : null,
+            error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             consensus: isset($data['consensus']) ? ClassificationConsensus::fromArray($data['consensus']) : null,
             usage: isset($data['usage']) ? RetabUsage::fromArray($data['usage']) : null,
             operation: $data['operation'] ?? 'classification',
@@ -77,10 +82,12 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
             'file' => $this->file->toArray(),
             'model' => $this->model,
             'categories' => array_map(fn($item) => $item->toArray(), $this->categories),
-            'output' => $this->output->toArray(),
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'n_consensus' => $this->nConsensus,
             'instructions' => $this->instructions,
+            'output' => $this->output?->toArray(),
+            'status' => $this->status?->value,
+            'error' => $this->error?->toArray(),
             'consensus' => $this->consensus?->toArray(),
             'usage' => $this->usage?->toArray(),
             'operation' => $this->operation,

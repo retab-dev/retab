@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.Partition;
 import com.retab.models.PartitionRequest;
+import com.retab.types.PartitionsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -35,6 +36,7 @@ public final class PartitionsApi {
       Long limit,
       SortOrder order,
       String filename,
+      PartitionsStatus status,
       String fromDate,
       String toDate)
       throws IOException, InterruptedException {
@@ -45,6 +47,7 @@ public final class PartitionsApi {
     appendQueryParam(query, "limit", limit);
     appendQueryParam(query, "order", order);
     appendQueryParam(query, "filename", filename);
+    appendQueryParam(query, "status", status);
     appendQueryParam(query, "from_date", fromDate);
     appendQueryParam(query, "to_date", toDate);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -81,7 +84,8 @@ public final class PartitionsApi {
         request == null ? null : request.getModel(),
         request == null ? null : request.getNConsensus(),
         request == null ? null : request.isAllowOverlap(),
-        request == null ? null : request.isBustCache());
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isBackground());
   }
 
   public Partition create(
@@ -91,7 +95,8 @@ public final class PartitionsApi {
       String model,
       Long nConsensus,
       Boolean allowOverlap,
-      Boolean bustCache)
+      Boolean bustCache,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/partitions";
     StringBuilder query = new StringBuilder();
@@ -112,6 +117,9 @@ public final class PartitionsApi {
     if (bustCache != null) {
       body.put("bust_cache", bustCache);
     }
+    if (background != null) {
+      body.put("background", background);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -131,9 +139,11 @@ public final class PartitionsApi {
     return client.getObjectMapper().readValue(response.body(), Partition.class);
   }
 
-  public Partition get(String partitionId) throws IOException, InterruptedException {
+  public Partition get(String partitionId, Boolean includeOutput)
+      throws IOException, InterruptedException {
     String path = "/v1/partitions/" + encodePathSegment(partitionId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -171,6 +181,27 @@ public final class PartitionsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Partition createCancel(String partitionId) throws IOException, InterruptedException {
+    String path = "/v1/partitions/" + encodePathSegment(partitionId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Partition.class);
   }
 
   private static String encodePathSegment(Object value) {

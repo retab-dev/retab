@@ -85,18 +85,19 @@ namespace Retab
         /// id exists.
         /// </remarks>
         /// <param name="editId">The edit id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="Edit"/> result.</returns>
-        public virtual async Task<Edit> GetAsync(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<Edit> GetAsync(string editId, EditsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<Edit>($"/v1/edits/{Uri.EscapeDataString(editId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<Edit>($"/v1/edits/{Uri.EscapeDataString(editId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<Edit> Get(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<Edit> Get(string editId, EditsGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(editId, requestOptions, cancellationToken);
+            return this.GetAsync(editId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Edit</summary>
@@ -117,6 +118,22 @@ namespace Retab
         public virtual Task Delete(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.DeleteAsync(editId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel Edit</summary>
+        /// <param name="editId">The edit id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Edit"/> result.</returns>
+        public virtual async Task<Edit> CreateCancelAsync(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Edit>($"/v1/edits/{Uri.EscapeDataString(editId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateCancelAsync"/>.</summary>
+        public virtual Task<Edit> CreateCancel(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateCancelAsync(editId, requestOptions, cancellationToken);
         }
     }
 }

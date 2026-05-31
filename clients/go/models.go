@@ -292,8 +292,12 @@ type Classification struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// Instructions is free-form instructions supplied with the classification request.
 	Instructions *string `json:"instructions,omitempty"`
-	// Output is the classification result with reasoning
-	Output ClassificationDecision `json:"output"`
+	// Output is the classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.
+	Output *ClassificationDecision `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *ClassificationStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote classification runs
 	Consensus *ClassificationConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the classification
@@ -340,8 +344,12 @@ type ClassificationWorkflowArtifact struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// Instructions is free-form instructions supplied with the classification request.
 	Instructions *string `json:"instructions,omitempty"`
-	// Output is the classification result with reasoning
-	Output ClassificationDecision `json:"output"`
+	// Output is the classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.
+	Output *ClassificationDecision `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *ClassificationWorkflowArtifactStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote classification runs
 	Consensus *ClassificationConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the classification
@@ -664,8 +672,12 @@ type Edit struct {
 	Config EditConfig `json:"config"`
 	// TemplateID is template id used when the edit was created from a template; null for direct-document edits.
 	TemplateID *string `json:"template_id,omitempty"`
-	// Output is the edit result: filled form fields and the rendered PDF.
-	Output EditResult `json:"output"`
+	// Output is the edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.
+	Output *EditResult `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *EditStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// FilledDocumentRef is durable file reference for the filled document, when materialized.
 	FilledDocumentRef *FileRef `json:"filled_document_ref,omitempty"`
 	// Usage is usage information for the edit operation.
@@ -719,8 +731,12 @@ type EditWorkflowArtifact struct {
 	Config EditConfig `json:"config"`
 	// TemplateID is template id used when the edit was created from a template; null for direct-document edits.
 	TemplateID *string `json:"template_id,omitempty"`
-	// Output is the edit result: filled form fields and the rendered PDF.
-	Output EditResult `json:"output"`
+	// Output is the edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.
+	Output *EditResult `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *EditWorkflowArtifactStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// FilledDocumentRef is durable file reference for the filled document, when materialized.
 	FilledDocumentRef *FileRef `json:"filled_document_ref,omitempty"`
 	// Usage is usage information for the edit operation.
@@ -1026,6 +1042,10 @@ type Extraction struct {
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
 	Output map[string]interface{} `json:"output"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *ExtractionStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote extraction runs
 	Consensus *ExtractionConsensus `json:"consensus,omitempty"`
 	Metadata  map[string]string    `json:"metadata,omitempty"`
@@ -1090,6 +1110,10 @@ type ExtractionWorkflowArtifact struct {
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
 	Output map[string]interface{} `json:"output"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *ExtractionWorkflowArtifactStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote extraction runs
 	Consensus *ExtractionConsensus `json:"consensus,omitempty"`
 	Metadata  map[string]string    `json:"metadata,omitempty"`
@@ -1427,8 +1451,12 @@ type Partition struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// AllowOverlap is whether pages were allowed to appear in more than one partition chunk
 	AllowOverlap bool `json:"allow_overlap,omitempty"`
-	// Output is the list of partition chunks with their assigned pages
+	// Output is the list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
 	Output []*PartitionChunk `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *PartitionStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote partition runs
 	Consensus *PartitionConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the partition operation
@@ -1486,8 +1514,12 @@ type PartitionWorkflowArtifact struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// AllowOverlap is whether pages were allowed to appear in more than one partition chunk
 	AllowOverlap bool `json:"allow_overlap,omitempty"`
-	// Output is the list of partition chunks with their assigned pages
+	// Output is the list of partition chunks with their assigned pages. Empty [] until status == 'completed'.
 	Output []*PartitionChunk `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *PartitionWorkflowArtifactStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote partition runs
 	Consensus *PartitionConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the partition operation
@@ -1524,6 +1556,9 @@ type PendingWorkflowExperimentRun = PendingRun
 
 // PendingWorkflowTestRun is an alias for PendingRun.
 type PendingWorkflowTestRun = PendingRun
+
+// PrimitiveError is an alias for JobError.
+type PrimitiveError = JobError
 
 // PublicHandlePayload public handle payload exposed by workflow step APIs.
 type PublicHandlePayload struct {
@@ -1760,8 +1795,12 @@ type Split struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// Instructions is free-form instructions supplied with the split request.
 	Instructions *string `json:"instructions,omitempty"`
-	// Output is the list of document splits with their assigned pages
-	Output []*SplitResult `json:"output"`
+	// Output is the list of document splits with their assigned pages. Empty [] until status == 'completed'.
+	Output []*SplitResult `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *SplitStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote split runs
 	Consensus *SplitConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the split operation
@@ -1834,8 +1873,12 @@ type SplitWorkflowArtifact struct {
 	NConsensus int `json:"n_consensus,omitempty"`
 	// Instructions is free-form instructions supplied with the split request.
 	Instructions *string `json:"instructions,omitempty"`
-	// Output is the list of document splits with their assigned pages
-	Output []*SplitResult `json:"output"`
+	// Output is the list of document splits with their assigned pages. Empty [] until status == 'completed'.
+	Output []*SplitResult `json:"output,omitempty"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *SplitWorkflowArtifactStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
 	// Consensus is consensus metadata for multi-vote split runs
 	Consensus *SplitConsensus `json:"consensus,omitempty"`
 	// Usage is usage information for the split operation

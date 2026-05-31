@@ -24,8 +24,17 @@ pub struct Classification {
     /// Free-form instructions supplied with the classification request.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
-    /// The classification result with reasoning
-    pub output: ClassificationDecision,
+    /// The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub output: Option<ClassificationDecision>,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<ClassificationStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Consensus metadata for multi-vote classification runs
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub consensus: Option<ClassificationConsensus>,
@@ -43,7 +52,6 @@ impl Classification {
         file: FileRef,
         model: impl Into<String>,
         categories: Vec<Category>,
-        output: ClassificationDecision,
     ) -> Self {
         Self {
             id: id.into(),
@@ -52,7 +60,9 @@ impl Classification {
             categories,
             n_consensus: Default::default(),
             instructions: Default::default(),
-            output,
+            output: Default::default(),
+            status: Default::default(),
+            error: Default::default(),
             consensus: Default::default(),
             usage: Default::default(),
             created_at: Default::default(),

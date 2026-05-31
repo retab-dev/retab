@@ -41,6 +41,11 @@ export interface SplitRequest {
    * @default false
    */
   bustCache?: boolean;
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+   * @default false
+   */
+  background?: boolean;
 }
 
 export interface SplitRequestResponse {
@@ -50,6 +55,7 @@ export interface SplitRequestResponse {
   instructions?: string | null;
   n_consensus?: number;
   bust_cache?: boolean;
+  background?: boolean;
 }
 
 export const ZSplitRequest = z.object({
@@ -59,6 +65,7 @@ export const ZSplitRequest = z.object({
   instructions: z.string().nullable().optional(),
   nConsensus: z.number().int().optional(),
   bustCache: z.boolean().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<SplitRequest>;
 
 export function deserializeSplitRequest(wire: SplitRequestResponse): SplitRequest {
@@ -69,6 +76,7 @@ export function deserializeSplitRequest(wire: SplitRequestResponse): SplitReques
     instructions: wire['instructions'],
     nConsensus: wire['n_consensus'],
     bustCache: wire['bust_cache'],
+    background: wire['background'],
   };
 }
 
@@ -80,5 +88,6 @@ export function serializeSplitRequest(domain: SplitRequest): SplitRequestRespons
     instructions: domain['instructions'],
     n_consensus: domain['nConsensus'],
     bust_cache: domain['bustCache'],
+    background: domain['background'],
   };
 }

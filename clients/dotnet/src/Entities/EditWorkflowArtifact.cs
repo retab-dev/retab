@@ -24,8 +24,14 @@ namespace Retab
         /// <summary>Template id used when the edit was created from a template; null for direct-document edits.</summary>
         public string? TemplateId { get; set; }
 
-        /// <summary>The edit result: filled form fields and the rendered PDF.</summary>
-        public EditResult Output { get; set; } = default!;
+        /// <summary>The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.</summary>
+        public EditResult? Output { get; set; }
+
+        /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
+        public ClassificationStatus? Status { get; set; }
+
+        /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
+        public JobError? Error { get; set; }
 
         /// <summary>Durable file reference for the filled document, when materialized.</summary>
         public FileRef? FilledDocumentRef { get; set; }

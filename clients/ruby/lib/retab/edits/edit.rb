@@ -13,6 +13,8 @@ module Retab
       config: :config,
       template_id: :template_id,
       output: :output,
+      status: :status,
+      error: :error,
       filled_document_ref: :filled_document_ref,
       usage: :usage,
       created_at: :created_at
@@ -26,6 +28,8 @@ module Retab
       :config,
       :template_id,
       :output,
+      :status,
+      :error,
       :filled_document_ref,
       :usage,
       :created_at
@@ -41,6 +45,8 @@ module Retab
       @config = hash[:config] ? Retab::EditConfig.new(hash[:config]) : nil
       @template_id = hash[:template_id]
       @output = hash[:output] ? Retab::EditResult.new(hash[:output]) : nil
+      @status = hash[:status].nil? ? "pending" : hash[:status]
+      @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil
       @filled_document_ref = hash[:filled_document_ref] ? Retab::FileRef.new(hash[:filled_document_ref]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]

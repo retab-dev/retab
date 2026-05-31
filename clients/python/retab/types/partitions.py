@@ -2,9 +2,21 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
+from typing import cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.classifications import PrimitiveError
 from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
+
+
+class PartitionStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class PartitionRequest(BaseModel):
@@ -19,6 +31,10 @@ class PartitionRequest(BaseModel):
     n_consensus: int | None = Field(default=1, description="Number of partitioning runs to use for consensus voting. Uses deterministic single-pass when set to 1.")
     allow_overlap: bool | None = Field(default=True, description="If true, allow a page to appear in more than one partition chunk")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Partition(BaseModel):
@@ -33,7 +49,14 @@ class Partition(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the partition request")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool | None = Field(default=True, description="Whether pages were allowed to appear in more than one partition chunk")
-    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages")
+    output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.")
+    status: PartitionStatus | None = Field(
+        default=cast(PartitionStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
     created_at: datetime.datetime | None = None

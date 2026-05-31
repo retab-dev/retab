@@ -23,12 +23,20 @@ import {
 } from './classification-decision.interface.js';
 import type { FileRef, FileRefResponse } from './file-ref.interface.js';
 import { ZFileRef, deserializeFileRef, serializeFileRef } from './file-ref.interface.js';
+import type { PrimitiveError, PrimitiveErrorResponse } from './primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from './primitive-error.interface.js';
 import type { RetabUsage, RetabUsageResponse } from './retab-usage.interface.js';
 import {
   ZRetabUsage,
   deserializeRetabUsage,
   serializeRetabUsage,
 } from './retab-usage.interface.js';
+import type { ClassificationStatus } from './classification-status.interface.js';
+import { ZClassificationStatus } from './classification-status.interface.js';
 
 /** A classification result: the categories a document was scored against and the chosen `output` decision. */
 export interface Classification {
@@ -47,8 +55,15 @@ export interface Classification {
   nConsensus?: number;
   /** Free-form instructions supplied with the classification request. */
   instructions?: string | null;
-  /** The classification result with reasoning */
-  output: ClassificationDecision;
+  /** The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status. */
+  output?: ClassificationDecision;
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: ClassificationStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Consensus metadata for multi-vote classification runs */
   consensus?: ClassificationConsensus | null;
   /** Usage information for the classification */
@@ -63,7 +78,9 @@ export interface ClassificationResponse {
   categories: CategoryResponse[];
   n_consensus?: number;
   instructions?: string | null;
-  output: ClassificationDecisionResponse;
+  output?: ClassificationDecisionResponse;
+  status?: ClassificationStatus;
+  error?: PrimitiveErrorResponse | null;
   consensus?: ClassificationConsensusResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
@@ -76,7 +93,9 @@ export const ZClassification = z.object({
   categories: ZCategory.array(),
   nConsensus: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
-  output: ZClassificationDecision,
+  output: ZClassificationDecision.optional(),
+  status: ZClassificationStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   consensus: ZClassificationConsensus.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
@@ -90,7 +109,17 @@ export function deserializeClassification(wire: ClassificationResponse): Classif
     categories: wire['categories'].map((__i) => deserializeCategory(__i)),
     nConsensus: wire['n_consensus'],
     instructions: wire['instructions'],
-    output: deserializeClassificationDecision(wire['output']),
+    output:
+      wire['output'] == null
+        ? (wire['output'] as undefined)
+        : deserializeClassificationDecision(wire['output']),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     consensus:
       wire['consensus'] == null
         ? (wire['consensus'] as undefined)
@@ -120,7 +149,17 @@ export function serializeClassification(domain: Classification): ClassificationR
     categories: domain['categories'].map((__i) => serializeCategory(__i)),
     n_consensus: domain['nConsensus'],
     instructions: domain['instructions'],
-    output: serializeClassificationDecision(domain['output']),
+    output:
+      domain['output'] == null
+        ? (domain['output'] as undefined)
+        : serializeClassificationDecision(domain['output']),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     consensus:
       domain['consensus'] == null
         ? (domain['consensus'] as undefined)
