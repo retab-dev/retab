@@ -18,36 +18,6 @@ class EditsStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class JobsStatus(str, Enum):
-    VALIDATING = "validating"
-    QUEUED = "queued"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    EXPIRED = "expired"
-
-
-class JobsEndpoint(str, Enum):
-    V_1_EXTRACTIONS = "/v1/extractions"
-    V_1_PARSES = "/v1/parses"
-    V_1_SPLITS = "/v1/splits"
-    V_1_PARTITIONS = "/v1/partitions"
-    V_1_CLASSIFICATIONS = "/v1/classifications"
-    V_1_SCHEMAS_GENERATE = "/v1/schemas/generate"
-    V_1_FILES_ANALYZE = "/v1/files/analyze"
-    V_1_EDITS = "/v1/edits"
-    V_1_EDITS_TEMPLATES_GENERATE = "/v1/edits/templates/generate"
-    V_1_EVALS_EXTRACT_PROCESS = "/v1/evals/extract/process"
-    V_1_EVALS_EXTRACT_EXTRACT = "/v1/evals/extract/extract"
-
-
-class JobsSource(str, Enum):
-    API = "api"
-    PROJECT = "project"
-    WORKFLOW = "workflow"
-
-
 class WorkflowArtifactsOperation(str, Enum):
     EXTRACTION = "extraction"
     SPLIT = "split"

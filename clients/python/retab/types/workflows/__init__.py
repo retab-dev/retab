@@ -221,6 +221,7 @@ __all__ = [
     "ObjectContainsCondition",
     "OutputTarget",
     "ParseWorkflowArtifact",
+    "ParseWorkflowArtifactStatus",
     "ParseWorkflowArtifactTableParsingFormat",
     "PartitionWorkflowArtifact",
     "PartitionWorkflowArtifactStatus",

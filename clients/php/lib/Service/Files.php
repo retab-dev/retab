@@ -24,7 +24,7 @@ class Files
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Items per page Defaults to 10.
-     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
+     * @param \Retab\Resource\EditsOrder $order Defaults to "desc".
      * @param string|null $filename
      * @param string|null $mimeType
      * @param string|null $fromDate
@@ -38,7 +38,7 @@ class Files
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
-        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Desc,
         ?string $filename = null,
         ?string $mimeType = null,
         ?string $fromDate = null,

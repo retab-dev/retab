@@ -4,6 +4,6 @@
 
 module Retab
   module Types
-    SupportedEndpoint = CreateJobRequestEndpoint
+    ParseStatus = ClassificationStatus
   end
 end

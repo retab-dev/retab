@@ -18,6 +18,7 @@ export * from './extraction-workflow-artifact.interface.js';
 export * from './extraction-workflow-artifact-status.interface.js';
 export * from './function-invocation.interface.js';
 export * from './parse-workflow-artifact.interface.js';
+export * from './parse-workflow-artifact-status.interface.js';
 export * from './parse-workflow-artifact-table-parsing-format.interface.js';
 export * from './partition-workflow-artifact.interface.js';
 export * from './partition-workflow-artifact-status.interface.js';

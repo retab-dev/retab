@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-enum JobsOrder: string
+enum EditsOrder: string
 {
     case Asc = 'asc';
     case Desc = 'desc';

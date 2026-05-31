@@ -62,6 +62,7 @@ class ParsesMixin:
         image_resolution_dpi: int = 192,
         instructions: str | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -79,13 +80,16 @@ class ParsesMixin:
             image_resolution_dpi=cast(Any, image_resolution_dpi),
             instructions=cast(Any, instructions),
             bust_cache=cast(Any, bust_cache),
+            background=cast(Any, background),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/parses", params=params or None, data=data)
 
-    def prepare_get(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(self, parse_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
         """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "include_output": include_output,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -100,6 +104,15 @@ class ParsesMixin:
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/parses/{parse_id}", params=params or None, data=data)
+
+    def prepare_cancel(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
+        """Cancel Parse"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/parses/{parse_id}/cancel", params=params or None, data=data)
 
 
 class Parses(SyncAPIResource, ParsesMixin):
@@ -128,6 +141,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         image_resolution_dpi: int = 192,
         instructions: str | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> Parse:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -138,14 +152,15 @@ class Parses(SyncAPIResource, ParsesMixin):
             image_resolution_dpi=image_resolution_dpi,
             instructions=instructions,
             bust_cache=bust_cache,
+            background=background,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
-    def get(self, parse_id: str, **extra_params: Any) -> Parse:
+    def get(self, parse_id: str, include_output: bool | None = True, **extra_params: Any) -> Parse:
         """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
-        prepared_request = self.prepare_get(parse_id, **extra_params)
+        prepared_request = self.prepare_get(parse_id, include_output=include_output, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
@@ -154,6 +169,12 @@ class Parses(SyncAPIResource, ParsesMixin):
         prepared_request = self.prepare_delete(parse_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
+
+    def cancel(self, parse_id: str, **extra_params: Any) -> Parse:
+        """Cancel Parse"""
+        prepared_request = self.prepare_cancel(parse_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return Parse.model_validate(response)
 
 
 class AsyncParses(AsyncAPIResource, ParsesMixin):
@@ -182,6 +203,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         image_resolution_dpi: int = 192,
         instructions: str | None = None,
         bust_cache: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> Parse:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -192,14 +214,15 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
             image_resolution_dpi=image_resolution_dpi,
             instructions=instructions,
             bust_cache=bust_cache,
+            background=background,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
-    async def get(self, parse_id: str, **extra_params: Any) -> Parse:
+    async def get(self, parse_id: str, include_output: bool | None = True, **extra_params: Any) -> Parse:
         """Get Parse Retrieve a parse. Fetches a single parse by its `parse_id` within the authenticated environment and returns the full `Parse` including its `output`. Responds with `404` if no parse with that id exists."""
-        prepared_request = self.prepare_get(parse_id, **extra_params)
+        prepared_request = self.prepare_get(parse_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
@@ -208,6 +231,12 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         prepared_request = self.prepare_delete(parse_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def cancel(self, parse_id: str, **extra_params: Any) -> Parse:
+        """Cancel Parse"""
+        prepared_request = self.prepare_cancel(parse_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return Parse.model_validate(response)
 
 
 __all__ = ["Parses", "AsyncParses", "ParsesMixin"]

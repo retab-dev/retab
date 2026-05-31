@@ -80,7 +80,8 @@ public final class ParsesApi {
         request == null ? null : request.getTableParsingFormat(),
         request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.getInstructions(),
-        request == null ? null : request.isBustCache());
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isBackground());
   }
 
   public Parse create(
@@ -89,7 +90,8 @@ public final class ParsesApi {
       ParseRequestTableParsingFormat tableParsingFormat,
       Long imageResolutionDpi,
       String instructions,
-      Boolean bustCache)
+      Boolean bustCache,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/parses";
     StringBuilder query = new StringBuilder();
@@ -111,6 +113,9 @@ public final class ParsesApi {
     if (bustCache != null) {
       body.put("bust_cache", bustCache);
     }
+    if (background != null) {
+      body.put("background", background);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -130,9 +135,10 @@ public final class ParsesApi {
     return client.getObjectMapper().readValue(response.body(), Parse.class);
   }
 
-  public Parse get(String parseId) throws IOException, InterruptedException {
+  public Parse get(String parseId, Boolean includeOutput) throws IOException, InterruptedException {
     String path = "/v1/parses/" + encodePathSegment(parseId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "include_output", includeOutput);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -170,6 +176,27 @@ public final class ParsesApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Parse cancel(String parseId) throws IOException, InterruptedException {
+    String path = "/v1/parses/" + encodePathSegment(parseId) + "/cancel";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Parse.class);
   }
 
   private static String encodePathSegment(Object value) {

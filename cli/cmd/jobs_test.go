@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -559,9 +558,8 @@ func TestJobWaitTerminalErrorStatuses(t *testing.T) {
 		{status: "in_progress", wantErr: false},
 	} {
 		t.Run(tc.status, func(t *testing.T) {
-			status := retab.JobStatus(tc.status)
-			job := retab.Job{ID: "job_123", Status: &status}
-			err := jobWaitTerminalError(&job)
+			job := map[string]any{"id": "job_123", "status": tc.status}
+			err := jobWaitTerminalError(job)
 			if tc.wantErr && err == nil {
 				t.Fatalf("expected error for status %q", tc.status)
 			}

@@ -17,6 +17,15 @@ import {
   serializeParseOutput,
 } from './parse-output.interface.js';
 import type {
+  PrimitiveError,
+  PrimitiveErrorResponse,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import {
+  ZPrimitiveError,
+  deserializePrimitiveError,
+  serializePrimitiveError,
+} from '../../classifications/interfaces/primitive-error.interface.js';
+import type {
   RetabUsage,
   RetabUsageResponse,
 } from '../../classifications/interfaces/retab-usage.interface.js';
@@ -25,6 +34,8 @@ import {
   deserializeRetabUsage,
   serializeRetabUsage,
 } from '../../classifications/interfaces/retab-usage.interface.js';
+import type { ParseStatus } from './parse-status.interface.js';
+import { ZParseStatus } from './parse-status.interface.js';
 import type { TableParsingFormat } from './table-parsing-format.interface.js';
 import { ZTableParsingFormat } from './table-parsing-format.interface.js';
 
@@ -44,6 +55,13 @@ export interface Parse {
   instructions?: string | null;
   /** The parsed document content */
   output: ParseOutput;
+  /**
+   * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+   * @default "pending"
+   */
+  status?: ParseStatus;
+  /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
+  error?: PrimitiveError | null;
   /** Usage information for the parse operation */
   usage?: RetabUsage | null;
   createdAt?: Date | null;
@@ -57,6 +75,8 @@ export interface ParseResponse {
   image_resolution_dpi: number;
   instructions?: string | null;
   output: ParseOutputResponse;
+  status?: ParseStatus;
+  error?: PrimitiveErrorResponse | null;
   usage?: RetabUsageResponse | null;
   created_at?: string | null;
 }
@@ -69,6 +89,8 @@ export const ZParse = z.object({
   imageResolutionDpi: z.number().int(),
   instructions: z.string().nullable().optional(),
   output: ZParseOutput,
+  status: ZParseStatus.optional(),
+  error: ZPrimitiveError.nullable().optional(),
   usage: ZRetabUsage.nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Parse>;
@@ -82,6 +104,13 @@ export function deserializeParse(wire: ParseResponse): Parse {
     imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     output: deserializeParseOutput(wire['output']),
+    status: wire['status'],
+    error:
+      wire['error'] == null
+        ? (wire['error'] as undefined)
+        : wire['error'] == null
+          ? wire['error']
+          : deserializePrimitiveError(wire['error']),
     usage:
       wire['usage'] == null
         ? (wire['usage'] as undefined)
@@ -106,6 +135,13 @@ export function serializeParse(domain: Parse): ParseResponse {
     image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     output: serializeParseOutput(domain['output']),
+    status: domain['status'],
+    error:
+      domain['error'] == null
+        ? (domain['error'] as undefined)
+        : domain['error'] == null
+          ? domain['error']
+          : serializePrimitiveError(domain['error']),
     usage:
       domain['usage'] == null
         ? (domain['usage'] as undefined)

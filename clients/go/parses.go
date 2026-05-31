@@ -45,6 +45,8 @@ type ParsesCreateParams struct {
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create parse
@@ -70,6 +72,7 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		ImageResolutionDpi *int                            `json:"image_resolution_dpi,omitempty"`
 		Instructions       *string                         `json:"instructions,omitempty"`
 		BustCache          *bool                           `json:"bust_cache,omitempty"`
+		Background         *bool                           `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -89,6 +92,7 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		ImageResolutionDpi: params.ImageResolutionDpi,
 		Instructions:       params.Instructions,
 		BustCache:          params.BustCache,
+		Background:         params.Background,
 	}
 	var result Parse
 	_, err := s.client.request(ctx, "POST", "/v1/parses", nil, body, &result, opts)
@@ -98,17 +102,24 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 	return &result, nil
 }
 
+// ParsesGetParams contains the parameters for Get.
+type ParsesGetParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
 // Get parse
 // Retrieve a parse.
 // Fetches a single parse by its `parse_id` within the authenticated environment and
 // returns the full `Parse` including its `output`. Responds with `404` if no parse with
 // that id exists.
-func (s *ParseService) Get(ctx context.Context, parseID string, opts ...RequestOption) (*Parse, error) {
+func (s *ParseService) Get(ctx context.Context, parseID string, params *ParsesGetParams, opts ...RequestOption) (*Parse, error) {
 	if parseID == "" {
 		return nil, fmt.Errorf("retab: parse_id is required")
 	}
 	var result Parse
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/parses/%s", url.PathEscape(parseID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/parses/%s", url.PathEscape(parseID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -126,4 +137,17 @@ func (s *ParseService) Delete(ctx context.Context, parseID string, opts ...Reque
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/parses/%s", url.PathEscape(parseID)), nil, nil, nil, opts)
 	return err
+}
+
+// Cancel parse
+func (s *ParseService) Cancel(ctx context.Context, parseID string, opts ...RequestOption) (*Parse, error) {
+	if parseID == "" {
+		return nil, fmt.Errorf("retab: parse_id is required")
+	}
+	var result Parse
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/parses/%s/cancel", url.PathEscape(parseID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

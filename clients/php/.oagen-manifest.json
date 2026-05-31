@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-05-31T13:09:04.321Z",
+  "generatedAt": "2026-05-31T16:15:02.030Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -65,7 +65,6 @@
     "lib/Resource/CreateEditTemplateRequest.php",
     "lib/Resource/CreateExperimentRequest.php",
     "lib/Resource/CreateExperimentRunRequest.php",
-    "lib/Resource/CreateJobRequest.php",
     "lib/Resource/CreateReviewVersionRequest.php",
     "lib/Resource/CreateUploadResponse.php",
     "lib/Resource/CreateWorkflowRequest.php",
@@ -92,6 +91,7 @@
     "lib/Resource/EditStatus.php",
     "lib/Resource/EditTemplate.php",
     "lib/Resource/EditWorkflowArtifact.php",
+    "lib/Resource/EditsOrder.php",
     "lib/Resource/EndsWithCondition.php",
     "lib/Resource/EqualCondition.php",
     "lib/Resource/ErrorBlockExecutionLifecycle.php",
@@ -144,14 +144,6 @@
     "lib/Resource/FunctionInvocation.php",
     "lib/Resource/GenerateSchemaRequest.php",
     "lib/Resource/HttpValidationError.php",
-    "lib/Resource/Job.php",
-    "lib/Resource/JobError.php",
-    "lib/Resource/JobResponse.php",
-    "lib/Resource/JobStatus.php",
-    "lib/Resource/JobWarning.php",
-    "lib/Resource/JobsEndpoint.php",
-    "lib/Resource/JobsOrder.php",
-    "lib/Resource/JobsSource.php",
     "lib/Resource/JsonHandleInput.php",
     "lib/Resource/JsonSchemaValidCondition.php",
     "lib/Resource/JsonSerializableTrait.php",
@@ -298,7 +290,6 @@
     "lib/Service/ExperimentRuns.php",
     "lib/Service/Extractions.php",
     "lib/Service/Files.php",
-    "lib/Service/Jobs.php",
     "lib/Service/Parses.php",
     "lib/Service/Partitions.php",
     "lib/Service/Schemas.php",
@@ -368,7 +359,6 @@
     "tests/Fixtures/create_edit_template_request.json",
     "tests/Fixtures/create_experiment_request.json",
     "tests/Fixtures/create_experiment_run_request.json",
-    "tests/Fixtures/create_job_request.json",
     "tests/Fixtures/create_review_version_request.json",
     "tests/Fixtures/create_upload_response.json",
     "tests/Fixtures/create_workflow_request.json",
@@ -437,10 +427,6 @@
     "tests/Fixtures/function_invocation.json",
     "tests/Fixtures/generate_schema_request.json",
     "tests/Fixtures/http_validation_error.json",
-    "tests/Fixtures/job.json",
-    "tests/Fixtures/job_error.json",
-    "tests/Fixtures/job_response.json",
-    "tests/Fixtures/job_warning.json",
     "tests/Fixtures/json_handle_input.json",
     "tests/Fixtures/json_schema_valid_condition.json",
     "tests/Fixtures/latest_block_test_run_summary.json",
@@ -452,7 +438,6 @@
     "tests/Fixtures/list_experiment_run.json",
     "tests/Fixtures/list_extraction.json",
     "tests/Fixtures/list_file.json",
-    "tests/Fixtures/list_job.json",
     "tests/Fixtures/list_parse.json",
     "tests/Fixtures/list_partition.json",
     "tests/Fixtures/list_review.json",
@@ -587,7 +572,6 @@
     "tests/Service/ExperimentRunsTest.php",
     "tests/Service/ExtractionsTest.php",
     "tests/Service/FilesTest.php",
-    "tests/Service/JobsTest.php",
     "tests/Service/ParsesTest.php",
     "tests/Service/PartitionsTest.php",
     "tests/Service/SchemasTest.php",
@@ -712,26 +696,6 @@
       "sdkMethod": "getDownloadLink",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "list",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "retry",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "list",
       "service": "parses"
@@ -746,6 +710,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "cancel",
       "service": "parses"
     },
     "GET /v1/partitions": {

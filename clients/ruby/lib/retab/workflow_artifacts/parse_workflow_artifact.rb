@@ -13,6 +13,8 @@ module Retab
       image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       output: :output,
+      status: :status,
+      error: :error,
       usage: :usage,
       created_at: :created_at,
       operation: :operation
@@ -26,6 +28,8 @@ module Retab
       :image_resolution_dpi,
       :instructions,
       :output,
+      :status,
+      :error,
       :usage,
       :created_at,
       :operation
@@ -41,6 +45,8 @@ module Retab
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @output = hash[:output] ? Retab::ParseOutput.new(hash[:output]) : nil
+      @status = hash[:status].nil? ? "pending" : hash[:status]
+      @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil
       @usage = hash[:usage] ? Retab::RetabUsage.new(hash[:usage]) : nil
       @created_at = hash[:created_at]
       @operation = hash[:operation].nil? ? "parse" : hash[:operation]

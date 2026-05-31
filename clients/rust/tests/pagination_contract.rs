@@ -17,7 +17,6 @@ const REGISTERED_LIST_MODULES: &[&str] = &[
     "experiment_runs.rs",
     "extractions.rs",
     "files.rs",
-    "jobs.rs",
     "parses.rs",
     "partitions.rs",
     "splits.rs",
@@ -186,12 +185,6 @@ pagination_case!(files_list_auto_pages, "/v1/files", |client| {
     client
         .files()
         .list(retab::resources::files::ListParams::default())
-        .await
-});
-pagination_case!(jobs_list_auto_pages, "/v1/jobs", |client| {
-    client
-        .jobs()
-        .list(retab::resources::jobs::ListParams::default())
         .await
 });
 pagination_case!(parses_list_auto_pages, "/v1/parses", |client| {

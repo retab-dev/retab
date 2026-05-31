@@ -46,6 +46,7 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
 
     assert isinstance(result, Parse)
     assert result.id == "parse_123"
+    assert result.output is not None
     assert result.output.text == "invoice"
     assert getattr(captured["request"], "url") == "/v1/parses"
 

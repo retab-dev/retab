@@ -2,21 +2,19 @@
 
 import { z } from 'zod';
 
-export type JobsStatus =
-  | 'validating'
+export type ParseWorkflowArtifactStatus =
+  | 'pending'
   | 'queued'
   | 'in_progress'
   | 'completed'
   | 'failed'
-  | 'cancelled'
-  | 'expired';
+  | 'cancelled';
 
-export const ZJobsStatus = z.enum([
-  'validating',
+export const ZParseWorkflowArtifactStatus = z.enum([
+  'pending',
   'queued',
   'in_progress',
   'completed',
   'failed',
   'cancelled',
-  'expired',
 ] as const);

@@ -7,5 +7,6 @@
   "table_parsing_format": "markdown",
   "image_resolution_dpi": 1,
   "instructions": "test_instructions",
-  "bust_cache": true
+  "bust_cache": true,
+  "background": true
 }

@@ -76,12 +76,6 @@ class PaginationContractTest < Minitest::Test
       invoke: -> (c) { c.files.list }
     },
     {
-      service: :jobs,
-      path: "/v1/jobs",
-      sample: "{}",
-      invoke: -> (c) { c.jobs.list }
-    },
-    {
       service: :parses,
       path: "/v1/parses",
       sample: "{}",

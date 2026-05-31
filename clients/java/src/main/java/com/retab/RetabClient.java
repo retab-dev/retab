@@ -8,7 +8,6 @@ import com.retab.classifications.ClassificationsApi;
 import com.retab.edits.EditsApi;
 import com.retab.extractions.ExtractionsApi;
 import com.retab.files.FilesApi;
-import com.retab.jobs.JobsApi;
 import com.retab.parses.ParsesApi;
 import com.retab.partitions.PartitionsApi;
 import com.retab.schemas.SchemasApi;
@@ -27,7 +26,6 @@ public final class RetabClient {
   private final EditsApi edits;
   private final ExtractionsApi extractions;
   private final FilesApi files;
-  private final JobsApi jobs;
   private final ParsesApi parses;
   private final PartitionsApi partitions;
   private final SchemasApi schemas;
@@ -52,7 +50,6 @@ public final class RetabClient {
     this.edits = new EditsApi(this);
     this.extractions = new ExtractionsApi(this);
     this.files = new FilesApi(this);
-    this.jobs = new JobsApi(this);
     this.parses = new ParsesApi(this);
     this.partitions = new PartitionsApi(this);
     this.schemas = new SchemasApi(this);
@@ -90,10 +87,6 @@ public final class RetabClient {
 
   public FilesApi files() {
     return files;
-  }
-
-  public JobsApi jobs() {
-    return jobs;
   }
 
   public ParsesApi parses() {

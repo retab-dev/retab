@@ -73,7 +73,26 @@ impl CreateParams {
                 image_resolution_dpi: Default::default(),
                 instructions: Default::default(),
                 bust_cache: Default::default(),
+                background: Default::default(),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
         }
     }
 }
@@ -136,21 +155,22 @@ impl<'a> ParsesApi<'a> {
     /// Fetches a single parse by its `parse_id` within the authenticated environment and
     /// returns the full `Parse` including its `output`. Responds with `404` if no parse with
     /// that id exists.
-    pub async fn get(&self, parse_id: &str) -> Result<Parse, Error> {
-        self.get_with_options(parse_id, None).await
+    pub async fn get(&self, parse_id: &str, params: GetParams) -> Result<Parse, Error> {
+        self.get_with_options(parse_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         parse_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<Parse, Error> {
         let parse_id = crate::client::path_segment(parse_id);
         let path = format!("/v1/parses/{parse_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 
@@ -176,6 +196,25 @@ impl<'a> ParsesApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
+    /// Cancel Parse
+    pub async fn cancel(&self, parse_id: &str) -> Result<Parse, Error> {
+        self.cancel_with_options(parse_id, None).await
+    }
+
+    /// Variant of [`Self::cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn cancel_with_options(
+        &self,
+        parse_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Parse, Error> {
+        let parse_id = crate::client::path_segment(parse_id);
+        let path = format!("/v1/parses/{parse_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 }

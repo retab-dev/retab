@@ -21,7 +21,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
+from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows
 from .types.standards import PreparedRequest
 
 logger = logging.getLogger("retab")
@@ -201,7 +201,7 @@ class Retab(BaseRetab):
     """Synchronous client for interacting with the Retab API.
 
     This client provides synchronous access to all Retab API resources including files, extractions,
-    parses, splits, classifications, partitions, edits, schemas, workflows, and jobs.
+    parses, splits, classifications, partitions, edits, schemas, and workflows.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -238,7 +238,6 @@ class Retab(BaseRetab):
         self.schemas = schemas.Schemas(client=self)
         self.edits = edits.Edits(client=self)
         self.workflows = workflows.Workflows(client=self)
-        self.jobs = jobs.Jobs(client=self)
 
     def _request(
         self,
@@ -469,7 +468,7 @@ class AsyncRetab(BaseRetab):
     """Asynchronous client for interacting with the Retab API.
 
     This client provides asynchronous access to all Retab API resources including files, extractions,
-    parses, splits, classifications, partitions, edits, schemas, workflows, and jobs.
+    parses, splits, classifications, partitions, edits, schemas, and workflows.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -507,7 +506,6 @@ class AsyncRetab(BaseRetab):
         self.schemas = schemas.AsyncSchemas(client=self)
         self.edits = edits.AsyncEdits(client=self)
         self.workflows = workflows.AsyncWorkflows(client=self)
-        self.jobs = jobs.AsyncJobs(client=self)
 
     async def _request(
         self,

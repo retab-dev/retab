@@ -32,7 +32,6 @@ type Client struct {
 	Edits           *EditService
 	Extractions     *ExtractionService
 	Files           *FileService
-	Jobs            *JobService
 	Parses          *ParseService
 	Partitions      *PartitionService
 	Schemas         *SchemaService
@@ -130,7 +129,6 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	editTemplates := &EditTemplateService{client: c}
 	c.Extractions = &ExtractionService{client: c}
 	c.Files = &FileService{client: c}
-	c.Jobs = &JobService{client: c}
 	c.Parses = &ParseService{client: c}
 	c.Partitions = &PartitionService{client: c}
 	c.Schemas = &SchemaService{client: c}

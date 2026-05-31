@@ -46,7 +46,8 @@ export class Parses {
     tableParsingFormat?: ParseRequestTableParsingFormat,
     imageResolutionDpi?: number,
     instructions?: string | null,
-    bustCache?: boolean
+    bustCache?: boolean,
+    background?: boolean
   ): Promise<Parse> {
     const documentCoerced = await coerceMimeData(document);
     const body = {
@@ -56,6 +57,7 @@ export class Parses {
       image_resolution_dpi: imageResolutionDpi,
       instructions: instructions,
       bust_cache: bustCache,
+      background: background,
     };
     const __wire = await this.client.request<ParseResponse>({
       method: 'POST',
@@ -67,11 +69,11 @@ export class Parses {
   }
 
   /** Get Parse */
-  async get(parseId: string): Promise<Parse> {
+  async get(parseId: string, options?: { includeOutput?: boolean | undefined }): Promise<Parse> {
     const __wire = await this.client.request<ParseResponse>({
       method: 'GET',
       path: `/v1/parses/${parseId}`,
-      query: undefined,
+      query: { include_output: options?.includeOutput },
       body: undefined,
     });
     return deserializeParse(__wire);
@@ -85,5 +87,16 @@ export class Parses {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Cancel Parse */
+  async cancel(parseId: string): Promise<Parse> {
+    const __wire = await this.client.request<ParseResponse>({
+      method: 'POST',
+      path: `/v1/parses/${parseId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeParse(__wire);
   }
 }

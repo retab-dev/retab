@@ -120,7 +120,7 @@ reference, and per-page metadata.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Parses.Get(ctx, args[0])
+		result, err := client.Parses.Get(ctx, args[0], &retab.ParsesGetParams{})
 		if err != nil {
 			return err
 		}
@@ -191,6 +191,29 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 	}),
 }
 
+var parsesCancelCmd = &cobra.Command{
+	Use:   "cancel <parse-id>",
+	Short: "Cancel a parse",
+	Long: `Cancel a pending or in-flight parse. Completed parses cannot be
+cancelled and the API returns an error.`,
+	Example: `  # Cancel a running parse
+  retab parses cancel parse_xyz789`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Parses.Cancel(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func init() {
 	addDocumentFlags(parsesCreateCmd)
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
@@ -204,6 +227,6 @@ func init() {
 
 	parsesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	parsesCmd.AddCommand(parsesCreateCmd, parsesGetCmd, parsesListCmd, parsesDeleteCmd)
+	parsesCmd.AddCommand(parsesCreateCmd, parsesGetCmd, parsesListCmd, parsesCancelCmd, parsesDeleteCmd)
 	rootCmd.AddCommand(parsesCmd)
 }

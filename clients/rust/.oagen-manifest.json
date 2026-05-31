@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-05-31T13:09:07.165Z",
+  "generatedAt": "2026-05-31T16:15:05.106Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -18,7 +18,6 @@
     "src/enums/condition_evaluation_details_logical_operator.rs",
     "src/enums/condition_evaluation_result_logical_operator.rs",
     "src/enums/create_experiment_request_n_consensus.rs",
-    "src/enums/create_job_request_endpoint.rs",
     "src/enums/declarative_apply_response_action.rs",
     "src/enums/declarative_plan_field_change_action.rs",
     "src/enums/declarative_plan_resource_change_actions.rs",
@@ -50,11 +49,6 @@
     "src/enums/extractions_status.rs",
     "src/enums/field_type.rs",
     "src/enums/files_order.rs",
-    "src/enums/job_status.rs",
-    "src/enums/jobs_endpoint.rs",
-    "src/enums/jobs_order.rs",
-    "src/enums/jobs_source.rs",
-    "src/enums/jobs_status.rs",
     "src/enums/latest_block_test_run_summary_outcome.rs",
     "src/enums/latest_block_test_run_summary_status.rs",
     "src/enums/length_compare_condition_op.rs",
@@ -62,6 +56,8 @@
     "src/enums/n_consensus_value.rs",
     "src/enums/number_compare_condition_op.rs",
     "src/enums/parse_request_table_parsing_format.rs",
+    "src/enums/parse_status.rs",
+    "src/enums/parse_workflow_artifact_status.rs",
     "src/enums/parse_workflow_artifact_table_parsing_format.rs",
     "src/enums/parses_order.rs",
     "src/enums/partition_status.rs",
@@ -82,7 +78,6 @@
     "src/enums/splits_status.rs",
     "src/enums/step_artifact_ref_operation.rs",
     "src/enums/submission_status.rs",
-    "src/enums/supported_endpoint.rs",
     "src/enums/table_parsing_format.rs",
     "src/enums/trigger_info_type.rs",
     "src/enums/update_experiment_request_n_consensus.rs",
@@ -167,7 +162,6 @@
     "src/models/create_edit_template_request.rs",
     "src/models/create_experiment_request.rs",
     "src/models/create_experiment_run_request.rs",
-    "src/models/create_job_request.rs",
     "src/models/create_review_version_request.rs",
     "src/models/create_upload_response.rs",
     "src/models/create_workflow_request.rs",
@@ -240,11 +234,6 @@
     "src/models/function_invocation.rs",
     "src/models/generate_schema_request.rs",
     "src/models/http_validation_error.rs",
-    "src/models/job.rs",
-    "src/models/job_error.rs",
-    "src/models/job_list.rs",
-    "src/models/job_response.rs",
-    "src/models/job_warning.rs",
     "src/models/json_handle_input.rs",
     "src/models/json_schema_valid_condition.rs",
     "src/models/latest_block_test_run_summary.rs",
@@ -388,7 +377,6 @@
     "src/resources/experiment_runs.rs",
     "src/resources/extractions.rs",
     "src/resources/files.rs",
-    "src/resources/jobs.rs",
     "src/resources/mod.rs",
     "src/resources/parses.rs",
     "src/resources/partitions.rs",
@@ -518,26 +506,6 @@
       "sdkMethod": "get_download_link",
       "service": "files"
     },
-    "GET /v1/jobs": {
-      "sdkMethod": "list",
-      "service": "jobs"
-    },
-    "POST /v1/jobs": {
-      "sdkMethod": "create",
-      "service": "jobs"
-    },
-    "GET /v1/jobs/{job_id}": {
-      "sdkMethod": "get",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "jobs"
-    },
-    "POST /v1/jobs/{job_id}/retry": {
-      "sdkMethod": "retry",
-      "service": "jobs"
-    },
     "GET /v1/parses": {
       "sdkMethod": "list",
       "service": "parses"
@@ -552,6 +520,10 @@
     },
     "DELETE /v1/parses/{parse_id}": {
       "sdkMethod": "delete",
+      "service": "parses"
+    },
+    "POST /v1/parses/{parse_id}/cancel": {
+      "sdkMethod": "cancel",
       "service": "parses"
     },
     "GET /v1/partitions": {

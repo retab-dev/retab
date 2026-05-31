@@ -5,7 +5,6 @@ import { Classifications } from './classifications/classifications.js';
 import { Edits } from './edits/edits.js';
 import { Extractions } from './extractions/extractions.js';
 import { Files } from './files/files.js';
-import { Jobs } from './jobs/jobs.js';
 import { Parses } from './parses/parses.js';
 import { Partitions } from './partitions/partitions.js';
 import { Schemas } from './schemas/schemas.js';
@@ -23,7 +22,6 @@ export class Retab extends RetabBase {
   readonly edits: Edits;
   readonly extractions: Extractions;
   readonly files: Files;
-  readonly jobs: Jobs;
   readonly parses: Parses;
   readonly partitions: Partitions;
   readonly schemas: Schemas;
@@ -36,7 +34,6 @@ export class Retab extends RetabBase {
     this.edits = new Edits(this);
     this.extractions = new Extractions(this);
     this.files = new Files(this);
-    this.jobs = new Jobs(this);
     this.parses = new Parses(this);
     this.partitions = new Partitions(this);
     this.schemas = new Schemas(this);

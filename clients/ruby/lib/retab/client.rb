@@ -21,10 +21,6 @@ module Retab
       @files ||= Retab::Files.new(self)
     end
 
-    def jobs
-      @jobs ||= Retab::Jobs.new(self)
-    end
-
     def parses
       @parses ||= Retab::Parses.new(self)
     end

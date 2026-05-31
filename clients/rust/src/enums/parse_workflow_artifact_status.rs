@@ -6,14 +6,13 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum JobStatus {
-    Validating,
+pub enum ParseWorkflowArtifactStatus {
+    Pending,
     Queued,
     InProgress,
     Completed,
     Failed,
     Cancelled,
-    Expired,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -21,54 +20,52 @@ pub enum JobStatus {
     Unknown(String),
 }
 
-impl JobStatus {
+impl ParseWorkflowArtifactStatus {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Validating => "validating",
+            Self::Pending => "pending",
             Self::Queued => "queued",
             Self::InProgress => "in_progress",
             Self::Completed => "completed",
             Self::Failed => "failed",
             Self::Cancelled => "cancelled",
-            Self::Expired => "expired",
             Self::Unknown(s) => s.as_str(),
         }
     }
 }
 
-impl fmt::Display for JobStatus {
+impl fmt::Display for ParseWorkflowArtifactStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for JobStatus {
+impl AsRef<str> for ParseWorkflowArtifactStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for JobStatus {
+impl FromStr for ParseWorkflowArtifactStatus {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "validating" => Self::Validating,
+            "pending" => Self::Pending,
             "queued" => Self::Queued,
             "in_progress" => Self::InProgress,
             "completed" => Self::Completed,
             "failed" => Self::Failed,
             "cancelled" => Self::Cancelled,
-            "expired" => Self::Expired,
             other => Self::Unknown(other.to_string()),
         })
     }
 }
 
-impl From<String> for JobStatus {
+impl From<String> for ParseWorkflowArtifactStatus {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -78,19 +75,19 @@ impl From<String> for JobStatus {
     }
 }
 
-impl From<&str> for JobStatus {
+impl From<&str> for ParseWorkflowArtifactStatus {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for JobStatus {
+impl Serialize for ParseWorkflowArtifactStatus {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for JobStatus {
+impl<'de> Deserialize<'de> for ParseWorkflowArtifactStatus {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

@@ -15,6 +15,7 @@ public final class ParseRequest {
   private final Long imageResolutionDpi;
   private final String instructions;
   private final Boolean bustCache;
+  private final Boolean background;
 
   @JsonCreator
   public ParseRequest(
@@ -24,13 +25,15 @@ public final class ParseRequest {
           ParseRequestTableParsingFormat tableParsingFormat,
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
-      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache) {
+      @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.document = document;
     this.model = model != null ? model : "retab-small";
     this.tableParsingFormat = tableParsingFormat;
     this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.bustCache = bustCache != null ? bustCache : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("document")
@@ -61,5 +64,10 @@ public final class ParseRequest {
   @JsonProperty("bust_cache")
   public Boolean isBustCache() {
     return bustCache;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

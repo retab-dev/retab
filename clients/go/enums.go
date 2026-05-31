@@ -72,23 +72,6 @@ const (
 	CreateExperimentRequestNConsensus7 CreateExperimentRequestNConsensus = 7
 )
 
-// CreateJobRequestEndpoint represents create job request endpoint values.
-type CreateJobRequestEndpoint string
-
-const (
-	CreateJobRequestEndpointV1Extractions            CreateJobRequestEndpoint = "/v1/extractions"
-	CreateJobRequestEndpointV1Parses                 CreateJobRequestEndpoint = "/v1/parses"
-	CreateJobRequestEndpointV1Splits                 CreateJobRequestEndpoint = "/v1/splits"
-	CreateJobRequestEndpointV1Partitions             CreateJobRequestEndpoint = "/v1/partitions"
-	CreateJobRequestEndpointV1Classifications        CreateJobRequestEndpoint = "/v1/classifications"
-	CreateJobRequestEndpointV1SchemasGenerate        CreateJobRequestEndpoint = "/v1/schemas/generate"
-	CreateJobRequestEndpointV1FilesAnalyze           CreateJobRequestEndpoint = "/v1/files/analyze"
-	CreateJobRequestEndpointV1Edits                  CreateJobRequestEndpoint = "/v1/edits"
-	CreateJobRequestEndpointV1EditsTemplatesGenerate CreateJobRequestEndpoint = "/v1/edits/templates/generate"
-	CreateJobRequestEndpointV1EvalsExtractProcess    CreateJobRequestEndpoint = "/v1/evals/extract/process"
-	CreateJobRequestEndpointV1EvalsExtractExtract    CreateJobRequestEndpoint = "/v1/evals/extract/extract"
-)
-
 // ParseRequestTableParsingFormat represents parse request table parsing format values.
 type ParseRequestTableParsingFormat string
 
@@ -237,22 +220,6 @@ const (
 // ExtractionWorkflowArtifactStatus is an alias for ClassificationStatus.
 type ExtractionWorkflowArtifactStatus = ClassificationStatus
 
-// JobStatus represents job status values.
-type JobStatus string
-
-const (
-	JobStatusValidating JobStatus = "validating"
-	JobStatusQueued     JobStatus = "queued"
-	JobStatusInProgress JobStatus = "in_progress"
-	JobStatusCompleted  JobStatus = "completed"
-	JobStatusFailed     JobStatus = "failed"
-	JobStatusCancelled  JobStatus = "cancelled"
-	JobStatusExpired    JobStatus = "expired"
-)
-
-// SupportedEndpoint is an alias for CreateJobRequestEndpoint.
-type SupportedEndpoint = CreateJobRequestEndpoint
-
 // LatestBlockTestRunSummaryStatus represents latest block test run summary status values.
 type LatestBlockTestRunSummaryStatus string
 
@@ -286,8 +253,14 @@ type NumberCompareConditionOp = LengthCompareConditionOp
 // TableParsingFormat is an alias for ParseRequestTableParsingFormat.
 type TableParsingFormat = ParseRequestTableParsingFormat
 
+// ParseStatus is an alias for ClassificationStatus.
+type ParseStatus = ClassificationStatus
+
 // ParseWorkflowArtifactTableParsingFormat is an alias for ParseRequestTableParsingFormat.
 type ParseWorkflowArtifactTableParsingFormat = ParseRequestTableParsingFormat
+
+// ParseWorkflowArtifactStatus is an alias for ClassificationStatus.
+type ParseWorkflowArtifactStatus = ClassificationStatus
 
 // PartitionStatus is an alias for ClassificationStatus.
 type PartitionStatus = ClassificationStatus
@@ -560,24 +533,6 @@ type ExtractionsStatus = ClassificationStatus
 
 // FilesOrder is an alias for ClassificationsOrder.
 type FilesOrder = ClassificationsOrder
-
-// JobsOrder is an alias for ClassificationsOrder.
-type JobsOrder = ClassificationsOrder
-
-// JobsStatus is an alias for JobStatus.
-type JobsStatus = JobStatus
-
-// JobsEndpoint is an alias for CreateJobRequestEndpoint.
-type JobsEndpoint = CreateJobRequestEndpoint
-
-// JobsSource represents jobs source values.
-type JobsSource string
-
-const (
-	JobsSourceAPI      JobsSource = "api"
-	JobsSourceProject  JobsSource = "project"
-	JobsSourceWorkflow JobsSource = "workflow"
-)
 
 // ParsesOrder is an alias for ClassificationsOrder.
 type ParsesOrder = ClassificationsOrder

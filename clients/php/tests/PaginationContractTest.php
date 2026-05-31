@@ -112,12 +112,6 @@ class PaginationContractTest extends TestCase
                 'listFixture' => 'list_file',
                 'invoke' => static fn(Client $c) => $c->files()->list(),
             ],
-            'Jobs' => [
-                'serviceClass' => \Retab\Service\Jobs::class,
-                'clientAccessor' => 'jobs',
-                'listFixture' => 'list_job',
-                'invoke' => static fn(Client $c) => $c->jobs()->list(),
-            ],
             'Parses' => [
                 'serviceClass' => \Retab\Service\Parses::class,
                 'clientAccessor' => 'parses',

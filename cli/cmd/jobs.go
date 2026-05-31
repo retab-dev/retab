@@ -6,12 +6,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -83,18 +85,12 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		if err := validateJobMetadata(md); err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Jobs.Create(ctx, &retab.JobsCreateParams{
-			Endpoint: retab.CreateJobRequestEndpoint(endpoint),
-			Request:  body,
-			Metadata: md,
-		})
-		if err != nil {
+		var result any
+		if err := cliJSONRequestInto(cmd, http.MethodPost, "/v1/jobs", nil, map[string]any{
+			"endpoint": endpoint,
+			"request":  body,
+			"metadata": md,
+		}, &result); err != nil {
 			return err
 		}
 		return printJSON(result)
@@ -121,18 +117,9 @@ keep payloads small — use ` + "`--include-request`" + ` /
   done`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		includeReq, _ := cmd.Flags().GetBool("include-request")
 		includeResp, _ := cmd.Flags().GetBool("include-response")
-		result, err := client.Jobs.Get(ctx, args[0], &retab.JobsGetParams{
-			IncludeRequest:  ptr(includeReq),
-			IncludeResponse: ptr(includeResp),
-		})
+		result, err := getJob(cmd, args[0], includeReq, includeResp)
 		if err != nil {
 			return err
 		}
@@ -161,10 +148,6 @@ handles backoff and timeout, and exits non-zero if the timeout elapses.`,
     --include-response`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		pollMS, _ := cmd.Flags().GetInt("poll-interval-ms")
@@ -179,7 +162,7 @@ handles backoff and timeout, and exits non-zero if the timeout elapses.`,
 		if timeoutS > 0 {
 			timeout = time.Duration(timeoutS) * time.Second
 		}
-		result, err := waitForJobCompletion(ctx, client, args[0], pollInterval, timeout, includeReq, includeResp)
+		result, err := waitForJobCompletion(ctx, cmd, args[0], pollInterval, timeout, includeReq, includeResp)
 		if err != nil {
 			return err
 		}
@@ -199,14 +182,8 @@ cancelled and the API returns an error.`,
   retab jobs cancel job_abc123`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Jobs.Cancel(ctx, args[0])
-		if err != nil {
+		var result any
+		if err := cliJSONRequestInto(cmd, http.MethodPost, jobPath(args[0], "cancel"), nil, nil, &result); err != nil {
 			return err
 		}
 		return printJSON(result)
@@ -223,14 +200,8 @@ same — retries are not new jobs.`,
   retab jobs retry job_abc123`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Jobs.Retry(ctx, args[0])
-		if err != nil {
+		var result any
+		if err := cliJSONRequestInto(cmd, http.MethodPost, jobPath(args[0], "retry"), nil, nil, &result); err != nil {
 			return err
 		}
 		return printJSON(result)
@@ -266,65 +237,70 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		if err := validateJobsListFilters(cmd); err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
-		params := retab.JobsListParams{PaginationParams: collectListParams(cmd)}
+		query := url.Values{}
+		if v, _ := cmd.Flags().GetString("before"); v != "" {
+			query.Set("before", v)
+		}
+		if v, _ := cmd.Flags().GetString("after"); v != "" {
+			query.Set("after", v)
+		}
+		if v, _ := cmd.Flags().GetInt("limit"); v > 0 {
+			query.Set("limit", strconv.Itoa(v))
+		}
+		if v, _ := cmd.Flags().GetString("order"); v != "" {
+			query.Set("order", v)
+		}
 		if v, _ := cmd.Flags().GetString("id"); v != "" {
-			params.JobID = ptr(v)
+			query.Set("job_id", v)
 		}
 		if v, _ := cmd.Flags().GetString("status"); v != "" {
-			status := retab.JobsStatus(v)
-			params.Status = &status
+			query.Set("status", v)
 		}
 		if v, _ := cmd.Flags().GetString("endpoint"); v != "" {
-			endpoint := retab.JobsEndpoint(v)
-			params.Endpoint = &endpoint
+			query.Set("endpoint", v)
 		}
 		if v, _ := cmd.Flags().GetString("source"); v != "" {
-			source := retab.JobsSource(v)
-			params.Source = &source
+			query.Set("source", v)
 		}
 		if v, _ := cmd.Flags().GetString("project-id"); v != "" {
-			params.ProjectID = ptr(v)
+			query.Set("project_id", v)
 		}
 		if v, _ := cmd.Flags().GetString("workflow-id"); v != "" {
-			params.WorkflowID = ptr(v)
+			query.Set("workflow_id", v)
 		}
 		if v, _ := cmd.Flags().GetString("workflow-block-id"); v != "" {
-			params.WorkflowBlockID = ptr(v)
+			query.Set("workflow_block_id", v)
 		}
 		if v, _ := cmd.Flags().GetString("model"); v != "" {
-			params.Model = ptr(v)
+			query.Set("model", v)
 		}
 		if v, _ := cmd.Flags().GetString("filename-regex"); v != "" {
-			params.FilenameRegex = ptr(v)
+			query.Set("filename_regex", v)
 		}
 		if v, _ := cmd.Flags().GetString("filename-contains"); v != "" {
-			params.FilenameContains = ptr(v)
+			query.Set("filename_contains", v)
 		}
 		rawDocumentTypes, _ := cmd.Flags().GetStringArray("document-type")
 		documentTypes, err := normalizeJobDocumentTypes(rawDocumentTypes)
 		if err != nil {
 			return err
 		}
-		params.DocumentType = documentTypes
+		for _, documentType := range documentTypes {
+			query.Add("document_type", documentType)
+		}
 		fromDate, _ := cmd.Flags().GetString("from-date")
 		toDate, _ := cmd.Flags().GetString("to-date")
 		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
 			return err
 		}
 		if fromDate != "" {
-			params.FromDate = ptr(fromDate)
+			query.Set("from_date", fromDate)
 		}
 		if toDate != "" {
-			params.ToDate = ptr(toDate)
+			query.Set("to_date", toDate)
 		}
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
@@ -336,18 +312,18 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-			params.Metadata = ptr(string(raw))
+			query.Set("metadata", string(raw))
 		}
 		if cmd.Flags().Changed("include-request") {
 			v, _ := cmd.Flags().GetBool("include-request")
-			params.IncludeRequest = &v
+			query.Set("include_request", strconv.FormatBool(v))
 		}
 		if cmd.Flags().Changed("include-response") {
 			v, _ := cmd.Flags().GetBool("include-response")
-			params.IncludeResponse = &v
+			query.Set("include_response", strconv.FormatBool(v))
 		}
-		result, err := client.Jobs.List(ctx, &params)
-		if err != nil {
+		var result any
+		if err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/jobs", query, nil, &result); err != nil {
 			return err
 		}
 		return printJobsListResult(cmd, result)
@@ -548,19 +524,16 @@ func hasUnescapedJobRegexQuantifier(pattern string) bool {
 	return false
 }
 
-func jobWaitTerminalError(job *retab.Job) error {
+func jobWaitTerminalError(job map[string]any) error {
 	if job == nil {
 		return nil
 	}
-	status := ""
-	if job.Status != nil {
-		status = string(*job.Status)
-	}
+	status := jobStatus(job)
 	switch status {
-	case "", string(retab.JobStatusCompleted):
+	case "", "completed":
 		return nil
-	case string(retab.JobStatusFailed), string(retab.JobStatusCancelled), string(retab.JobStatusExpired):
-		id := job.ID
+	case "failed", "cancelled", "expired":
+		id, _ := job["id"].(string)
 		if id == "" {
 			return fmt.Errorf("job ended with status %s", status)
 		}
@@ -572,13 +545,13 @@ func jobWaitTerminalError(job *retab.Job) error {
 
 func waitForJobCompletion(
 	ctx context.Context,
-	client *retab.Client,
+	cmd *cobra.Command,
 	jobID string,
 	pollInterval time.Duration,
 	timeout time.Duration,
 	includeRequest bool,
 	includeResponse bool,
-) (*retab.Job, error) {
+) (map[string]any, error) {
 	if pollInterval <= 0 {
 		pollInterval = 2 * time.Second
 	}
@@ -588,12 +561,8 @@ func waitForJobCompletion(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	params := &retab.JobsGetParams{
-		IncludeRequest:  ptr(includeRequest),
-		IncludeResponse: ptr(includeResponse),
-	}
 	for {
-		job, err := client.Jobs.Get(ctx, jobID, params)
+		job, err := getJob(cmd, jobID, includeRequest, includeResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -611,16 +580,44 @@ func waitForJobCompletion(
 	}
 }
 
-func isTerminalJob(job *retab.Job) bool {
-	if job == nil || job.Status == nil {
+func getJob(cmd *cobra.Command, jobID string, includeRequest bool, includeResponse bool) (map[string]any, error) {
+	query := url.Values{}
+	query.Set("include_request", strconv.FormatBool(includeRequest))
+	query.Set("include_response", strconv.FormatBool(includeResponse))
+	var result map[string]any
+	if err := cliJSONRequestInto(cmd, http.MethodGet, jobPath(jobID, ""), query, nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func jobPath(jobID string, action string) string {
+	path := "/v1/jobs/" + url.PathEscape(jobID)
+	if action != "" {
+		path += "/" + action
+	}
+	return path
+}
+
+func isTerminalJob(job map[string]any) bool {
+	status := jobStatus(job)
+	if status == "" {
 		return false
 	}
-	switch *job.Status {
-	case retab.JobStatusCompleted, retab.JobStatusFailed, retab.JobStatusCancelled, retab.JobStatusExpired:
+	switch status {
+	case "completed", "failed", "cancelled", "expired":
 		return true
 	default:
 		return false
 	}
+}
+
+func jobStatus(job map[string]any) string {
+	if job == nil {
+		return ""
+	}
+	status, _ := job["status"].(string)
+	return status
 }
 
 func printJobsListResult(cmd *cobra.Command, result any) error {

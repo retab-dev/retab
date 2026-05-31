@@ -23,6 +23,14 @@ pub struct ParseWorkflowArtifact {
     pub instructions: Option<String>,
     /// The parsed document content
     pub output: ParseOutput,
+    /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+    ///
+    /// Defaults to `pending`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub status: Option<ParseWorkflowArtifactStatus>,
+    /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<PrimitiveError>,
     /// Usage information for the parse operation
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub usage: Option<RetabUsage>,
@@ -54,6 +62,8 @@ impl ParseWorkflowArtifact {
             image_resolution_dpi,
             instructions: Default::default(),
             output,
+            status: Default::default(),
+            error: Default::default(),
             usage: Default::default(),
             created_at: created_at.into(),
             operation: Default::default(),

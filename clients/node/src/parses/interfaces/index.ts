@@ -4,4 +4,5 @@ export * from './parse.interface.js';
 export * from './parse-output.interface.js';
 export * from './parse-request.interface.js';
 export * from './parse-request-table-parsing-format.interface.js';
+export * from './parse-status.interface.js';
 export * from './table-parsing-format.interface.js';

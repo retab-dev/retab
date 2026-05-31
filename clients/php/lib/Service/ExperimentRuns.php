@@ -36,7 +36,7 @@ class ExperimentRuns
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 20.
-     * @param \Retab\Resource\JobsOrder $order Defaults to "desc".
+     * @param \Retab\Resource\EditsOrder $order Defaults to "desc".
      * @return \Retab\PaginatedResponse<\Retab\Resource\ExperimentRun>
      * @throws \Retab\Exception\RetabException
      */
@@ -53,7 +53,7 @@ class ExperimentRuns
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
-        \Retab\Resource\JobsOrder $order = \Retab\Resource\JobsOrder::Desc,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Desc,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([

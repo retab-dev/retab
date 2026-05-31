@@ -17,6 +17,14 @@
         ],
         "text": "test_text"
       },
+      "status": "pending",
+      "error": {
+        "code": "test_code",
+        "message": "test_message",
+        "details": {
+          "key": {}
+        }
+      },
       "usage": {
         "credits": 1
       },
