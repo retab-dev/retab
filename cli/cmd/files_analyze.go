@@ -13,10 +13,7 @@ import (
 var filesAnalyzeCmd = &cobra.Command{
 	Use:   "analyze <file-id>",
 	Short: "Analyze a file and create a blueprint job",
-	Long: `Analyze an uploaded file asynchronously and return the created job.
-
-The job runs through the Retab worker pool and can be polled with
-` + "`retab jobs get <job-id> --include-response`" + `.`,
+	Long:  `Analyze an uploaded file asynchronously and return the created job.`,
 	Example: `  # Analyze an uploaded document
   retab files analyze file_abc123 --mode reasoning
 

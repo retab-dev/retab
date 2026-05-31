@@ -19,7 +19,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"create": true, "create-upload": true, "delete": true, "discard-draft": true,
 		"doctor": true, "download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
-		"generate": true, "get": true, "grep": true, "inspect": true, "jobs": true,
+		"generate": true, "get": true, "grep": true, "inspect": true,
 		"list": true, "login": true, "logout": true, "metrics": true,
 		"parse": true, "parses": true, "partitions": true, "plan": true, "publish": true,
 		"reject": true, "remove": true, "restart": true, "results": true, "retry": true, "retrieve": true,
@@ -77,6 +77,7 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 		"env delete",
 		"env remove",
 		"files delete",
+		"jobs",
 		"workflows append-version",
 		"workflows reviews append",
 		"workflows reviews append-version",
@@ -104,7 +105,7 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "jobs", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
+		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list"},
 		"classifications":               {"create", "get", "list", "cancel", "delete"},
@@ -112,8 +113,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"edits templates":               {"create", "get", "list", "update", "delete"},
 		"extractions":                   {"create", "stream", "list", "get", "sources", "cancel", "delete"},
 		"files":                         {"list", "get", "upload", "download-link", "download", "create-upload", "complete-upload", "parse", "analyze", "grep", "inspect", "doctor"},
-		"jobs":                          {"create", "get", "wait", "cancel", "retry", "list"},
-		"parses":                        {"create", "get", "list", "delete"},
+		"parses":                        {"create", "get", "list", "cancel", "delete"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete"},
 		"schemas":                       {"generate"},
 		"splits":                        {"create", "get", "list", "cancel", "delete"},

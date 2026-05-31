@@ -618,7 +618,7 @@ handles the interval and timeout, and exits non-zero if the run ends in
 
 // experimentWaitDurations resolves the poll cadence and timeout from the
 // shared --poll-interval-ms / --timeout-seconds flags, applying the same
-// defaults as `jobs wait` (2s polls, 10m timeout).
+// defaults as experiment run polling (2s polls, 10m timeout).
 func experimentWaitDurations(cmd *cobra.Command) (pollInterval, timeout time.Duration) {
 	pollMS, _ := cmd.Flags().GetInt("poll-interval-ms")
 	timeoutS, _ := cmd.Flags().GetInt("timeout-seconds")
@@ -1032,7 +1032,7 @@ func init() {
 	workflowsExperimentsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
 	// `runs create --wait` and the standalone `runs wait` share the same
-	// poll/timeout knobs (mirroring `jobs wait`).
+	// poll/timeout knobs.
 	workflowsExperimentsRunsCreateCmd.Flags().Bool("wait", false, "block until the run reaches a terminal status, then print the final run")
 	workflowsExperimentsRunsCreateCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds while --wait is set")
 	workflowsExperimentsRunsCreateCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait while --wait is set")

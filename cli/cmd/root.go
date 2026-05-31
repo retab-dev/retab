@@ -53,7 +53,7 @@ func Execute() error {
 //
 // Cobra's built-in unknown-command detection (legacyArgs) only fires for
 // the root command — it explicitly bails for any command that has a
-// parent. So `retab bogus` errors as expected, but `retab jobs bogus`,
+// parent. So `retab bogus` errors as expected, but `retab files bogus`,
 // `retab files bogus`, `retab workflows runs bogus` etc. all fall through
 // to a help dump with exit code 0, which silently swallows typos in
 // scripts.
@@ -61,8 +61,8 @@ func Execute() error {
 // A non-runnable command short-circuits to help *before* cobra validates
 // args, so setting Args alone is not enough — the command must also be
 // made runnable. We give each router a RunE that just prints help (so a
-// bare `retab jobs` keeps working) plus Args=NoArgs (so any leftover
-// token surfaces as `unknown command "..." for "retab jobs"`).
+// bare router command keeps working) plus Args=NoArgs (so any leftover
+// token surfaces as `unknown command "..."` for that router).
 func hardenGroupCommands(c *cobra.Command) {
 	for _, sub := range c.Commands() {
 		hardenGroupCommands(sub)

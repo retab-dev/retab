@@ -58,11 +58,8 @@ var commandGroups = []commandGroup{
 		commands: []string{"parses", "extractions", "edits", "splits", "partitions", "classifications"},
 	},
 	{
-		// Catch-all for resource management surfaces (files, schemas) and
-		// background-execution surfaces (jobs). Not strictly docs + schemas
-		// anymore — the title reflects that.
 		title:    "Utils",
-		commands: []string{"files", "schemas", "jobs"},
+		commands: []string{"files", "schemas"},
 	},
 	{
 		title:    "Workflows",

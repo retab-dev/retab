@@ -9,7 +9,7 @@
     "cancel_edit",
     "cancel_experiment_run",
     "cancel_extraction",
-    "cancel_job",
+    "cancel_parse",
     "cancel_partition",
     "cancel_split",
     "cancel_test_execution_run",
@@ -23,7 +23,6 @@
     "create_experiment",
     "create_experiment_run",
     "create_extraction",
-    "create_job",
     "create_parse",
     "create_partitions",
     "create_review_version",
@@ -85,7 +84,6 @@
     "list_experiments",
     "list_extractions",
     "list_files",
-    "list_jobs",
     "list_parses",
     "list_partitions",
     "list_review_versions",
@@ -102,8 +100,6 @@
     "plan_workflow_spec",
     "publish_workflow",
     "reject_review",
-    "retrieve_job",
-    "retry_job",
     "update_block",
     "update_experiment",
     "update_template",
@@ -117,9 +113,9 @@
       "command": "retab workflows spec apply",
       "source_files": ["open-source/sdk/cli/cmd/workflows_spec.go"]
     },
-    "cancel_job": {
-      "command": "retab jobs cancel",
-      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
+    "cancel_parse": {
+      "command": "retab parses cancel",
+      "source_files": ["open-source/sdk/cli/cmd/parses.go"]
     },
     "create_classification": {
       "command": "retab classifications create",
@@ -132,10 +128,6 @@
     "create_extraction": {
       "command": "retab extractions create",
       "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
-    },
-    "create_job": {
-      "command": "retab jobs create",
-      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
     },
     "create_parse": {
       "command": "retab parses create",
@@ -257,10 +249,6 @@
       "command": "retab files list",
       "source_files": ["open-source/sdk/cli/cmd/zz_oagen_files.go"]
     },
-    "list_jobs": {
-      "command": "retab jobs list",
-      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
-    },
     "list_parses": {
       "command": "retab parses list",
       "source_files": ["open-source/sdk/cli/cmd/zz_oagen_parses.go"]
@@ -288,14 +276,6 @@
     "publish_workflow": {
       "command": "retab workflows publish",
       "source_files": ["open-source/sdk/cli/cmd/zz_oagen_workflows.go"]
-    },
-    "retrieve_job": {
-      "command": "retab jobs get",
-      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
-    },
-    "retry_job": {
-      "command": "retab jobs retry",
-      "source_files": ["open-source/sdk/cli/cmd/jobs.go"]
     },
     "update_template": {
       "command": "retab edits templates update",

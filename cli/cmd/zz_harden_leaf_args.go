@@ -7,7 +7,7 @@ import "github.com/spf13/cobra"
 //
 // Cobra's default when Args is nil is ArbitraryArgs: the command silently
 // accepts and ignores any extra positional tokens. For the list commands
-// (`retab files list`, `retab jobs list`, `retab workflows list`, ...) that
+// (`retab files list`, `retab workflows list`, ...) that
 // means `retab files list file_abc123` — a plausible typo for a get/filter
 // — exits 0 and returns the *entire* list, silently dropping the argument.
 // Same trap for the flag-only create commands.

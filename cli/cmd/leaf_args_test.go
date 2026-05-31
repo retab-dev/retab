@@ -24,7 +24,6 @@ func TestListCommandsRejectExtraPositionalArgs(t *testing.T) {
 		{"files", "list", "file_abc123"},
 		{"extractions", "list", "extra"},
 		{"parses", "list", "extra"},
-		{"jobs", "list", "extra"},
 		{"workflows", "list", "extra"},
 		{"auth", "status", "extra"},
 	}
