@@ -26,7 +26,7 @@ var allowedJobEndpoints = map[string]bool{
 	"/v1/documents/extract": true, "/v1/extractions": true, "/v1/documents/parse": true, "/v1/parses": true,
 	"/v1/documents/split": true, "/v1/splits": true, "/v1/partitions": true, "/v1/documents/classify": true,
 	"/v1/classifications": true, "/v1/schemas/generate": true, "/v1/edits": true, "/v1/edits/templates/generate": true,
-	"/v1/edit/templates/generate": true, "/v1/evals/extract/process": true, "/v1/evals/extract/extract": true, "/v1/evals/extract/split": true,
+	"/v1/edit/templates/generate": true, "/v1/evals/extract/process": true, "/v1/evals/extract/extract": true,
 }
 
 var allowedJobDocumentTypes = map[string]bool{

@@ -20,7 +20,6 @@ SupportedEndpoint: TypeAlias = Literal[
     "/v1/edits/templates/generate",
     "/v1/evals/extract/process",
     "/v1/evals/extract/extract",
-    "/v1/evals/extract/split",
 ]
 
 

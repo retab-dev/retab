@@ -71,7 +71,6 @@ const (
 	CreateJobRequestEndpointV1EditsTemplatesGenerate CreateJobRequestEndpoint = "/v1/edits/templates/generate"
 	CreateJobRequestEndpointV1EvalsExtractProcess    CreateJobRequestEndpoint = "/v1/evals/extract/process"
 	CreateJobRequestEndpointV1EvalsExtractExtract    CreateJobRequestEndpoint = "/v1/evals/extract/extract"
-	CreateJobRequestEndpointV1EvalsExtractSplit      CreateJobRequestEndpoint = "/v1/evals/extract/split"
 )
 
 // ParseRequestTableParsingFormat represents parse request table parsing format values.

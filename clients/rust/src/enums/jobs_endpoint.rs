@@ -17,7 +17,6 @@ pub enum JobsEndpoint {
     V1EditsTemplatesGenerate,
     V1EvalsExtractProcess,
     V1EvalsExtractExtract,
-    V1EvalsExtractSplit,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -41,7 +40,6 @@ impl JobsEndpoint {
             Self::V1EditsTemplatesGenerate => "/v1/edits/templates/generate",
             Self::V1EvalsExtractProcess => "/v1/evals/extract/process",
             Self::V1EvalsExtractExtract => "/v1/evals/extract/extract",
-            Self::V1EvalsExtractSplit => "/v1/evals/extract/split",
             Self::Unknown(s) => s.as_str(),
         }
     }
@@ -74,7 +72,6 @@ impl FromStr for JobsEndpoint {
             "/v1/edits/templates/generate" => Self::V1EditsTemplatesGenerate,
             "/v1/evals/extract/process" => Self::V1EvalsExtractProcess,
             "/v1/evals/extract/extract" => Self::V1EvalsExtractExtract,
-            "/v1/evals/extract/split" => Self::V1EvalsExtractSplit,
             other => Self::Unknown(other.to_string()),
         })
     }
