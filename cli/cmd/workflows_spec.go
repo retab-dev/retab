@@ -44,7 +44,6 @@ Spec shape (minimum required keys):
   apiVersion: workflows.retab.com/v1alpha2
   kind: Workflow
   metadata:
-    id: wrk_my-pipeline       # any unique identifier; reuse the existing id to update
     name: My pipeline
   spec:
     blocks:                    # dict keyed by block id, not a list
@@ -56,9 +55,9 @@ Spec shape (minimum required keys):
 
 ` + "`apiVersion`" + ` is required and currently pinned at
 ` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.
-` + "`metadata.id`" + ` is the durable identity used by ` + "`plan`" + ` / ` + "`apply`" + `
-to decide whether to create or update; the same id makes ` + "`apply`" + `
-idempotent.`,
+Workflow ids are runtime identity, not spec identity, so exported specs do not
+include ` + "`metadata.id`" + `. Applying an id-less spec creates a workflow with a
+fresh server-generated id.`,
 	Example: `  # Round-trip a workflow through git
   retab workflows spec get wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml
@@ -161,10 +160,13 @@ Plan is read-only — safe to run on production specs. Pair it with
 
 var workflowsSpecApplyCmd = &cobra.Command{
 	Use:   "apply <path>",
-	Short: "Create or update a workflow from a YAML spec",
-	Long: `Apply the YAML spec: create the workflow if it doesn't exist,
-or update it (block + edge diff) if it does. The workflow's id is read
-from the spec body, so the same file always targets the same workflow.
+	Short: "Create a workflow from a YAML spec",
+	Long: `Apply the YAML spec. Id-less specs create a workflow with a fresh
+server-generated id; exported specs are id-less so round-tripping one does
+not reproduce the source workflow id.
+
+Legacy specs that explicitly include ` + "`metadata.id`" + ` are accepted for
+backward compatibility, but the id is ignored when applying.
 
 Mutating. Before applying, the command runs ` + "`spec plan`" + ` and
 inspects the destroy count. When the plan would delete one or more
@@ -175,8 +177,7 @@ confirm:
   TTY stdin     prints the list of resources marked for deletion to
                 stderr and prompts ` + "`Apply this change? [y/N]`" + `.
   non-TTY       refuses outright unless ` + "`--yes`" + ` is passed —
-                a typo in ` + "`metadata.id`" + ` that points at another
-                workflow could otherwise wipe it silently.
+                the guard remains for backward-compatible plan responses.
 
 Plans with no deletions apply immediately, no extra prompt.`,
 	Example: `  retab workflows spec apply ./workflow.yaml
@@ -492,31 +493,11 @@ func typedResponseAsResource(v any) *retab.Resource {
 	return &out
 }
 
-// translateSpecAPIError catches the most common failure mode of the spec
-// validate/plan/apply surface — a YAML body without `metadata.id` — and
-// rewrites the server's giant pydantic blob into a single actionable
-// sentence. The original error is still surfaced by `--debug` (which dumps
-// the full HTTP trace) so we don't hide debugging detail.
-//
-// The marker is the substring `"yaml_path":"metadata.id"` returned in the
-// pydantic error envelope when the field is missing. Matching on this
-// string is intentional: it's stable, it's what the server emits today,
-// and switching to structural unmarshalling would couple us to the exact
-// shape of the server's error wrapper (which has churned).
-//
-// Any error that doesn't match this pattern is passed through unchanged.
+// translateSpecAPIError keeps the legacy hook point for spec-specific error
+// rewrites. Missing metadata.id used to be rewritten here, but workflow ids
+// are no longer part of the portable YAML spec.
 func translateSpecAPIError(err error) error {
-	if err == nil {
-		return nil
-	}
-	msg := err.Error()
-	if !strings.Contains(msg, `"yaml_path":"metadata.id"`) {
-		return err
-	}
-	if !strings.Contains(msg, `"type":"missing"`) {
-		return err
-	}
-	return fmt.Errorf("spec: metadata.id is required; for new workflows, use any unique identifier (e.g. metadata.id: wrk_my-pipeline); for existing workflows, use the id returned by `retab workflows list`; use --debug to see the full server response")
+	return err
 }
 
 func init() {
