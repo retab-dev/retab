@@ -325,6 +325,8 @@ def test_update_with_assertion_serializes_assertion_only() -> None:
 def _run_response(**overrides: object) -> dict:
     base = {
         "id": "wftestrun_q1z2",
+        "workflow_id": "wf_abc123",
+        "workflow_version_id": "draft_1",
         "workflow": _WORKFLOW_REF,
         "trigger": _TRIGGER,
         "lifecycle": _PENDING,
