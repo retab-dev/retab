@@ -264,29 +264,9 @@ func typedResponseAsResource(v any) *retab.Resource {
 	return &out
 }
 
-// translateSpecAPIError catches the most common failure mode of the spec
-// validate/plan/apply surface — a YAML body without `metadata.id` — and
-// rewrites the server's giant pydantic blob into a single actionable
-// sentence. The original error is still surfaced by `--debug` (which dumps
-// the full HTTP trace) so we don't hide debugging detail.
-//
-// The marker is the substring `"yaml_path":"metadata.id"` returned in the
-// pydantic error envelope when the field is missing. Matching on this
-// string is intentional: it's stable, it's what the server emits today,
-// and switching to structural unmarshalling would couple us to the exact
-// shape of the server's error wrapper (which has churned).
-//
-// Any error that doesn't match this pattern is passed through unchanged.
+// translateSpecAPIError keeps the legacy hook point for spec-specific error
+// rewrites. Missing metadata.id used to be rewritten here, but workflow ids
+// are no longer part of the portable YAML spec.
 func translateSpecAPIError(err error) error {
-	if err == nil {
-		return nil
-	}
-	msg := err.Error()
-	if !strings.Contains(msg, `"yaml_path":"metadata.id"`) {
-		return err
-	}
-	if !strings.Contains(msg, `"type":"missing"`) {
-		return err
-	}
-	return fmt.Errorf("spec: metadata.id is required; for new workflows, use any unique identifier (e.g. metadata.id: wrk_my-pipeline); for existing workflows, use the id returned by `retab workflows list`; use --debug to see the full server response")
+	return err
 }
