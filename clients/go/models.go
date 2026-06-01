@@ -1994,8 +1994,12 @@ type WorkflowBlock struct {
 	// Config is block-specific configuration
 	Config map[string]interface{} `json:"config,omitempty"`
 	// ParentID is id of parent container (while_loop, for_each)
-	ParentID  *string   `json:"parent_id,omitempty"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ParentID *string `json:"parent_id,omitempty"`
+	// DeclarativePath is canonical declarative block path used to reconcile imported specs.
+	DeclarativePath *string `json:"declarative_path,omitempty"`
+	// DeclarativeSourceBlockID is authored declarative block id before import-time id regeneration.
+	DeclarativeSourceBlockID *string   `json:"declarative_source_block_id,omitempty"`
+	UpdatedAt                time.Time `json:"updated_at"`
 	// ResolvedSchemas is schemas resolved for this block from the workflow graph.
 	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
 }

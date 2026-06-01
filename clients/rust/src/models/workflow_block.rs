@@ -41,6 +41,12 @@ pub struct WorkflowBlock {
     /// ID of parent container (while_loop, for_each)
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_id: Option<String>,
+    /// Canonical declarative block path used to reconcile imported specs.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub declarative_path: Option<String>,
+    /// Authored declarative block id before import-time id regeneration.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub declarative_source_block_id: Option<String>,
     pub updated_at: String,
     /// Schemas resolved for this block from the workflow graph.
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -66,6 +72,8 @@ impl WorkflowBlock {
             height: Default::default(),
             config: Default::default(),
             parent_id: Default::default(),
+            declarative_path: Default::default(),
+            declarative_source_block_id: Default::default(),
             updated_at: updated_at.into(),
             resolved_schemas: Default::default(),
         }

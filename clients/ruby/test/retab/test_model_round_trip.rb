@@ -3003,6 +3003,8 @@ class ModelRoundTripTest < Minitest::Test
       "height" => nil,
       "config" => nil,
       "parent_id" => nil,
+      "declarative_path" => nil,
+      "declarative_source_block_id" => nil,
       "updated_at" => "stub",
       "resolved_schemas" => nil
     }

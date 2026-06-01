@@ -16,6 +16,8 @@ module Retab
       height: :height,
       config: :config,
       parent_id: :parent_id,
+      declarative_path: :declarative_path,
+      declarative_source_block_id: :declarative_source_block_id,
       updated_at: :updated_at,
       resolved_schemas: :resolved_schemas
     }.freeze
@@ -31,6 +33,8 @@ module Retab
       :height,
       :config,
       :parent_id,
+      :declarative_path,
+      :declarative_source_block_id,
       :updated_at,
       :resolved_schemas
     )
@@ -48,6 +52,8 @@ module Retab
       @height = hash[:height]
       @config = hash[:config] || {}
       @parent_id = hash[:parent_id]
+      @declarative_path = hash[:declarative_path]
+      @declarative_source_block_id = hash[:declarative_source_block_id]
       @updated_at = hash[:updated_at]
       @resolved_schemas = hash[:resolved_schemas] || {}
     end

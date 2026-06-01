@@ -35,6 +35,10 @@ readonly class WorkflowBlock implements \JsonSerializable
         public ?array $config = null,
         /** ID of parent container (while_loop, for_each) */
         public ?string $parentId = null,
+        /** Canonical declarative block path used to reconcile imported specs. */
+        public ?string $declarativePath = null,
+        /** Authored declarative block id before import-time id regeneration. */
+        public ?string $declarativeSourceBlockId = null,
         /**
          * Schemas resolved for this block from the workflow graph.
          * @var array<string, mixed>|null
@@ -67,6 +71,8 @@ readonly class WorkflowBlock implements \JsonSerializable
             height: $data['height'] ?? null,
             config: $data['config'] ?? null,
             parentId: $data['parent_id'] ?? null,
+            declarativePath: $data['declarative_path'] ?? null,
+            declarativeSourceBlockId: $data['declarative_source_block_id'] ?? null,
             resolvedSchemas: $data['resolved_schemas'] ?? null,
         );
     }
@@ -86,6 +92,8 @@ readonly class WorkflowBlock implements \JsonSerializable
             'height' => $this->height,
             'config' => $this->config,
             'parent_id' => $this->parentId,
+            'declarative_path' => $this->declarativePath,
+            'declarative_source_block_id' => $this->declarativeSourceBlockId,
             'resolved_schemas' => $this->resolvedSchemas,
         ];
     }
