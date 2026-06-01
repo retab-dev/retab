@@ -84,7 +84,6 @@ RESOURCE_PATHS: tuple[str, ...] = (
     "classifications",
     "edits",
     "files",
-    "jobs",
     "workflows",
     # Sub-resources on `edits`
     "edits.templates",

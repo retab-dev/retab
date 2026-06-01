@@ -567,6 +567,7 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
         "n_consensus": 3,
         "allow_overlap": True,
         "bust_cache": False,
+        "background": False,
     }
 
 

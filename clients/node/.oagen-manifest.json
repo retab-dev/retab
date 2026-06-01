@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-05-31T16:14:54.834Z",
+  "generatedAt": "2026-06-01T10:31:46.363Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",

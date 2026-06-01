@@ -251,6 +251,8 @@ def test_experiments_delete_uses_delete_method() -> None:
 def _experiment_run_response(**overrides: object) -> dict:
     base = {
         "id": "exprun_1",
+        "workflow_id": "wf_abc123",
+        "workflow_version_id": "draft_1",
         "workflow": _WORKFLOW_REF,
         "trigger": _TRIGGER,
         "lifecycle": _PENDING,
@@ -448,10 +450,7 @@ def test_experiments_runs_get_uses_run_id_first_route() -> None:
 
 def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "id": "exprun_1",
-        "lifecycle": {"status": "cancelled"},
-    }
+    client._prepared_request.return_value = _experiment_run_response(lifecycle={"status": "cancelled"})
 
     run = Workflows(client=client).experiments.runs.cancel("exprun_1")
 
