@@ -38,6 +38,12 @@ namespace Retab
 
         /// <summary>ID of parent container (while_loop, for_each)</summary>
         public string? ParentId { get; set; }
+
+        /// <summary>Canonical declarative block path used to reconcile imported specs.</summary>
+        public string? DeclarativePath { get; set; }
+
+        /// <summary>Authored declarative block id before import-time id regeneration.</summary>
+        public string? DeclarativeSourceBlockId { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
 
         /// <summary>Schemas resolved for this block from the workflow graph.</summary>

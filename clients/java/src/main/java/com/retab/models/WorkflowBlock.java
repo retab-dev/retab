@@ -21,6 +21,8 @@ public final class WorkflowBlock {
   private final Double height;
   private final Map<String, Object> config;
   private final String parentId;
+  private final String declarativePath;
+  private final String declarativeSourceBlockId;
   private final OffsetDateTime updatedAt;
   private final Map<String, Object> resolvedSchemas;
 
@@ -36,6 +38,9 @@ public final class WorkflowBlock {
       @JsonProperty(value = "height", required = false) Double height,
       @JsonProperty(value = "config", required = false) Map<String, Object> config,
       @JsonProperty(value = "parent_id", required = false) String parentId,
+      @JsonProperty(value = "declarative_path", required = false) String declarativePath,
+      @JsonProperty(value = "declarative_source_block_id", required = false)
+          String declarativeSourceBlockId,
       @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt,
       @JsonProperty(value = "resolved_schemas", required = false)
           Map<String, Object> resolvedSchemas) {
@@ -49,6 +54,8 @@ public final class WorkflowBlock {
     this.height = height;
     this.config = config;
     this.parentId = parentId;
+    this.declarativePath = declarativePath;
+    this.declarativeSourceBlockId = declarativeSourceBlockId;
     this.updatedAt = updatedAt;
     this.resolvedSchemas = resolvedSchemas;
   }
@@ -101,6 +108,16 @@ public final class WorkflowBlock {
   @JsonProperty("parent_id")
   public String getParentId() {
     return parentId;
+  }
+
+  @JsonProperty("declarative_path")
+  public String getDeclarativePath() {
+    return declarativePath;
+  }
+
+  @JsonProperty("declarative_source_block_id")
+  public String getDeclarativeSourceBlockId() {
+    return declarativeSourceBlockId;
   }
 
   @JsonProperty("updated_at")

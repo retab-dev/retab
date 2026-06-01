@@ -34,6 +34,10 @@ export interface WorkflowBlock {
   config?: Record<string, unknown> | null;
   /** ID of parent container (while_loop, for_each) */
   parentId?: string | null;
+  /** Canonical declarative block path used to reconcile imported specs. */
+  declarativePath?: string | null;
+  /** Authored declarative block id before import-time id regeneration. */
+  declarativeSourceBlockId?: string | null;
   updatedAt: Date;
   /** Schemas resolved for this block from the workflow graph. */
   resolvedSchemas?: Record<string, unknown> | null;
@@ -50,6 +54,8 @@ export interface WorkflowBlockResponse {
   height?: number | null;
   config?: Record<string, unknown> | null;
   parent_id?: string | null;
+  declarative_path?: string | null;
+  declarative_source_block_id?: string | null;
   updated_at: string;
   resolved_schemas?: Record<string, unknown> | null;
 }
@@ -65,6 +71,8 @@ export const ZWorkflowBlock = z.object({
   height: z.number().nullable().optional(),
   config: z.record(z.string(), z.unknown()).nullable().optional(),
   parentId: z.string().nullable().optional(),
+  declarativePath: z.string().nullable().optional(),
+  declarativeSourceBlockId: z.string().nullable().optional(),
   updatedAt: z.coerce.date(),
   resolvedSchemas: z.record(z.string(), z.unknown()).nullable().optional(),
 }) as z.ZodType<WorkflowBlock>;
@@ -81,6 +89,8 @@ export function deserializeWorkflowBlock(wire: WorkflowBlockResponse): WorkflowB
     height: wire['height'],
     config: wire['config'],
     parentId: wire['parent_id'],
+    declarativePath: wire['declarative_path'],
+    declarativeSourceBlockId: wire['declarative_source_block_id'],
     updatedAt: new Date(wire['updated_at']),
     resolvedSchemas: wire['resolved_schemas'],
   };
@@ -98,6 +108,8 @@ export function serializeWorkflowBlock(domain: WorkflowBlock): WorkflowBlockResp
     height: domain['height'],
     config: domain['config'],
     parent_id: domain['parentId'],
+    declarative_path: domain['declarativePath'],
+    declarative_source_block_id: domain['declarativeSourceBlockId'],
     updated_at: domain['updatedAt'].toISOString(),
     resolved_schemas: domain['resolvedSchemas'],
   };

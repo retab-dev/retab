@@ -69,6 +69,18 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def parent_id=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def declarative_path; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def declarative_path=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def declarative_source_block_id; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def declarative_source_block_id=(value); end
+
     sig { returns(String) }
     def updated_at; end
 
