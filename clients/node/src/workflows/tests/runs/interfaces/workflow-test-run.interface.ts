@@ -2,6 +2,15 @@
 
 import { z } from 'zod';
 import type {
+  ArtifactFreshness,
+  ArtifactFreshnessResponse,
+} from '../../../../workflows/experiments/interfaces/artifact-freshness.interface.js';
+import {
+  ZArtifactFreshness,
+  deserializeArtifactFreshness,
+  serializeArtifactFreshness,
+} from '../../../../workflows/experiments/interfaces/artifact-freshness.interface.js';
+import type {
   BlockTestBatchExecutionCounts,
   BlockTestBatchExecutionCountsResponse,
 } from './block-test-batch-execution-counts.interface.js';
@@ -111,6 +120,7 @@ export interface WorkflowTestRun {
   totalTests: number;
   /** @default {"lifecycle_counts":{"cancelled":0,"completed":0,"error":0,"pending":0,"queued":0,"running":0},"outcome":{"blocked":0,"failed":0,"passed":0}} */
   counts?: BlockTestBatchExecutionCounts;
+  freshness?: ArtifactFreshness;
 }
 
 export interface WorkflowTestRunResponse {
@@ -130,6 +140,7 @@ export interface WorkflowTestRunResponse {
   test_id?: string | null;
   total_tests: number;
   counts?: BlockTestBatchExecutionCountsResponse;
+  freshness?: ArtifactFreshnessResponse;
 }
 
 export const ZWorkflowTestRun = z.object({
@@ -150,6 +161,7 @@ export const ZWorkflowTestRun = z.object({
   testId: z.string().nullable().optional(),
   totalTests: z.number().int(),
   counts: ZBlockTestBatchExecutionCounts.optional(),
+  freshness: ZArtifactFreshness.optional(),
 }) as z.ZodType<WorkflowTestRun>;
 
 export function deserializeWorkflowTestRun(wire: WorkflowTestRunResponse): WorkflowTestRun {
@@ -208,6 +220,10 @@ export function deserializeWorkflowTestRun(wire: WorkflowTestRunResponse): Workf
       wire['counts'] == null
         ? (wire['counts'] as undefined)
         : deserializeBlockTestBatchExecutionCounts(wire['counts']),
+    freshness:
+      wire['freshness'] == null
+        ? (wire['freshness'] as undefined)
+        : deserializeArtifactFreshness(wire['freshness']),
   };
 }
 
@@ -262,5 +278,9 @@ export function serializeWorkflowTestRun(domain: WorkflowTestRun): WorkflowTestR
       domain['counts'] == null
         ? (domain['counts'] as undefined)
         : serializeBlockTestBatchExecutionCounts(domain['counts']),
+    freshness:
+      domain['freshness'] == null
+        ? (domain['freshness'] as undefined)
+        : serializeArtifactFreshness(domain['freshness']),
   };
 }

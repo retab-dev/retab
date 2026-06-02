@@ -23,6 +23,8 @@ namespace Retab
         public long? DurationMs { get; set; }
         public string? WorkflowDraftFingerprint { get; set; }
         public string? BlockConfigFingerprint { get; set; }
+        public string? ValidityFingerprint { get; set; }
+        public string? HandleInputsFingerprint { get; set; }
         public long? AssertionsPassed { get; set; }
         public long? AssertionsFailed { get; set; }
         public long? BlockedAssertions { get; set; }

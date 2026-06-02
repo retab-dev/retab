@@ -20,6 +20,12 @@ pub struct ExperimentRun {
     pub timing: ExperimentRunTiming,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent_run_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub block_version_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub metrics_validity_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub metrics_validity_fingerprint_version: Option<i64>,
     pub definition_fingerprint: String,
     pub documents_fingerprint: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -66,6 +72,9 @@ impl ExperimentRun {
             lifecycle,
             timing,
             parent_run_id: Default::default(),
+            block_version_id: Default::default(),
+            metrics_validity_fingerprint: Default::default(),
+            metrics_validity_fingerprint_version: Default::default(),
             definition_fingerprint: definition_fingerprint.into(),
             documents_fingerprint: documents_fingerprint.into(),
             score: Default::default(),

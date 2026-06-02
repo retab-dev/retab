@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace Retab\Service;
 
 use Retab\Resource\WorkflowBlock;
+use Retab\Resource\WorkflowBlockVersion;
+use Retab\Resource\WorkflowBlockVersionDiff;
 
 class WorkflowBlocks
 {
@@ -105,6 +107,98 @@ class WorkflowBlocks
             method: 'POST',
             path: 'v1/workflows/blocks',
             body: $body,
+            options: $options,
+        );
+        return WorkflowBlock::fromArray($response);
+    }
+
+    /**
+     * List Block Versions
+     * @param string $workflowId
+     * @param string|null $blockId Filter by stable block ID
+     * @param string|null $workflowVersionId Filter by workflow version ID
+     * @param int|null $limit Maximum number of block versions to return Defaults to 50.
+     * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowBlockVersion>
+     * @throws \Retab\Exception\RetabException
+     */
+    public function listVersions(
+        string $workflowId,
+        ?string $blockId = null,
+        ?string $workflowVersionId = null,
+        ?int $limit = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\PaginatedResponse {
+        $query = array_filter([
+            'workflow_id' => $workflowId,
+            'block_id' => $blockId,
+            'workflow_version_id' => $workflowVersionId,
+            'limit' => $limit,
+        ], fn($v) => $v !== null);
+        return $this->client->requestPage(
+            method: 'GET',
+            path: 'v1/workflows/blocks/versions',
+            query: $query,
+            modelClass: WorkflowBlockVersion::class,
+            options: $options,
+        );
+    }
+
+    /**
+     * Diff Block Versions
+     * @param string $fromBlockVersionId
+     * @param string $toBlockVersionId
+     * @return \Retab\Resource\WorkflowBlockVersionDiff
+     * @throws \Retab\Exception\RetabException
+     */
+    public function listDiff(
+        string $fromBlockVersionId,
+        string $toBlockVersionId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\WorkflowBlockVersionDiff {
+        $query = [
+            'from_block_version_id' => $fromBlockVersionId,
+            'to_block_version_id' => $toBlockVersionId,
+        ];
+        $response = $this->client->request(
+            method: 'GET',
+            path: 'v1/workflows/blocks/versions/diff',
+            query: $query,
+            options: $options,
+        );
+        return WorkflowBlockVersionDiff::fromArray($response);
+    }
+
+    /**
+     * Get Block Version
+     * @param string $blockVersionId
+     * @return \Retab\Resource\WorkflowBlockVersion
+     * @throws \Retab\Exception\RetabException
+     */
+    public function getVersion(
+        string $blockVersionId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\WorkflowBlockVersion {
+        $response = $this->client->request(
+            method: 'GET',
+            path: 'v1/workflows/blocks/versions/' . rawurlencode($blockVersionId),
+            options: $options,
+        );
+        return WorkflowBlockVersion::fromArray($response);
+    }
+
+    /**
+     * Restore Block Version
+     * @param string $blockVersionId
+     * @return \Retab\Resource\WorkflowBlock
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createVersionRestore(
+        string $blockVersionId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\WorkflowBlock {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/workflows/blocks/versions/' . rawurlencode($blockVersionId) . '/restore',
             options: $options,
         );
         return WorkflowBlock::fromArray($response);

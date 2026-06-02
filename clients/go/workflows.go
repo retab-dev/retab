@@ -41,6 +41,8 @@ type WorkflowsCreateParams struct {
 	Name *string `json:"name,omitempty" url:"-"`
 	// Description is description of the workflow
 	Description *string `json:"description,omitempty" url:"-"`
+	// ProjectID is project that should own this workflow. Omit to use the organization's shared workflows project.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Create workflow
@@ -49,6 +51,108 @@ type WorkflowsCreateParams struct {
 func (s *WorkflowService) Create(ctx context.Context, params *WorkflowsCreateParams, opts ...RequestOption) (*Workflow, error) {
 	var result Workflow
 	_, err := s.client.request(ctx, "POST", "/v1/workflows", nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// WorkflowsListVersionsParams contains the parameters for ListVersions.
+type WorkflowsListVersionsParams struct {
+	// WorkflowID is workflow whose versions to list
+	WorkflowID string `url:"workflow_id" json:"-"`
+	// Limit is maximum number of versions to return
+	// Defaults to 50.
+	Limit *int `url:"limit,omitempty" json:"-"`
+}
+
+// ListVersions list Workflow Versions Route
+func (s *WorkflowService) ListVersions(ctx context.Context, params *WorkflowsListVersionsParams, opts ...RequestOption) (*PaginatedList[WorkflowGraphVersion], error) {
+	if params == nil {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	if params.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	return doPaginated[WorkflowGraphVersion](ctx, s.client, "GET", "/v1/workflows/versions", params, nil, opts...)
+}
+
+// WorkflowsListDiffParams contains the parameters for ListDiff.
+type WorkflowsListDiffParams struct {
+	// WorkflowID is workflow whose versions to diff
+	WorkflowID string `url:"workflow_id" json:"-"`
+	// FromWorkflowVersionID is base workflow version ID
+	FromWorkflowVersionID string `url:"from_workflow_version_id" json:"-"`
+	// ToWorkflowVersionID is target workflow version ID
+	ToWorkflowVersionID string `url:"to_workflow_version_id" json:"-"`
+}
+
+// ListDiff diff Workflow Versions Route
+func (s *WorkflowService) ListDiff(ctx context.Context, params *WorkflowsListDiffParams, opts ...RequestOption) (*WorkflowGraphVersionDiff, error) {
+	if params == nil {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	if params.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	if params.FromWorkflowVersionID == "" {
+		return nil, fmt.Errorf("retab: from_workflow_version_id is required")
+	}
+	if params.ToWorkflowVersionID == "" {
+		return nil, fmt.Errorf("retab: to_workflow_version_id is required")
+	}
+	var result WorkflowGraphVersionDiff
+	_, err := s.client.request(ctx, "GET", "/v1/workflows/versions/diff", params, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// WorkflowsGetVersionParams contains the parameters for GetVersion.
+type WorkflowsGetVersionParams struct {
+	// WorkflowID is workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.
+	WorkflowID string `url:"workflow_id" json:"-"`
+}
+
+// GetVersion get Workflow Version Route
+func (s *WorkflowService) GetVersion(ctx context.Context, workflowVersionID string, params *WorkflowsGetVersionParams, opts ...RequestOption) (*WorkflowGraphVersion, error) {
+	if workflowVersionID == "" {
+		return nil, fmt.Errorf("retab: workflow_version_id is required")
+	}
+	if params == nil {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	if params.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	var result WorkflowGraphVersion
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/versions/%s", url.PathEscape(workflowVersionID)), params, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// WorkflowsCreateVersionRestoreParams contains the parameters for CreateVersionRestore.
+type WorkflowsCreateVersionRestoreParams struct {
+	// WorkflowID is workflow to restore into a new draft
+	WorkflowID string `url:"workflow_id" json:"-"`
+}
+
+// CreateVersionRestore restore Workflow Version Route
+func (s *WorkflowService) CreateVersionRestore(ctx context.Context, workflowVersionID string, params *WorkflowsCreateVersionRestoreParams, opts ...RequestOption) (*Workflow, error) {
+	if workflowVersionID == "" {
+		return nil, fmt.Errorf("retab: workflow_version_id is required")
+	}
+	if params == nil {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	if params.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	var result Workflow
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/versions/%s/restore", url.PathEscape(workflowVersionID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}

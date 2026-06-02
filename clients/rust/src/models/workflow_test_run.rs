@@ -22,6 +22,8 @@ pub struct WorkflowTestRun {
     /// Defaults to `{"lifecycle_counts":{"cancelled":0,"completed":0,"error":0,"pending":0,"queued":0,"running":0},"outcome":{"blocked":0,"failed":0,"passed":0}}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub counts: Option<BlockTestBatchExecutionCounts>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub freshness: Option<ArtifactFreshness>,
 }
 impl WorkflowTestRun {
     /// Construct a new `WorkflowTestRun` with the required fields set.
@@ -46,6 +48,7 @@ impl WorkflowTestRun {
             test_id: Default::default(),
             total_tests,
             counts: Default::default(),
+            freshness: Default::default(),
         }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "from_block_version_id": "from_block_version_id_01234",
+  "to_block_version_id": "to_block_version_id_01234",
+  "block_id": "block_id_01234",
+  "changes": [
+    {
+      "field": "test_field",
+      "from_value": {},
+      "to_value": {}
+    }
+  ]
+}

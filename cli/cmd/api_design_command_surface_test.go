@@ -120,10 +120,12 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
 		"schemas":                       {"generate"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
-		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec"},
+		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec", "versions"},
 		"workflows artifacts":           {"get", "list"},
-		"workflows blocks":              {"list", "get", "create", "update", "delete", "executions"},
-		"workflows edges":               {"list", "get", "create", "delete"},
+		"workflows blocks":              {"list", "get", "create", "update", "delete", "executions", "versions"},
+		"workflows blocks versions":     {"list", "get", "diff", "restore"},
+		"workflows edges":               {"list", "get", "create", "delete", "versions"},
+		"workflows edges versions":      {"list", "get", "diff", "restore"},
 		"workflows experiments":         {"create", "list", "get", "update", "delete", "runs", "results", "metrics"},
 		"workflows experiments runs":    {"create", "list", "get", "cancel", "wait"},
 		"workflows experiments metrics": {"get"},
@@ -137,6 +139,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"workflows tests":               {"create", "get", "list", "update", "delete", "runs", "results"},
 		"workflows tests runs":          {"create", "list", "get", "cancel"},
 		"workflows tests results":       {"list", "get"},
+		"workflows versions":            {"list", "get", "diff", "restore"},
 	}
 
 	for commandPath, expected := range expectedChildren {

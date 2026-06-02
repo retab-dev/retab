@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-02T15:41:07.679Z",
+  "generatedAt": "2026-06-02T19:57:48.291Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -109,6 +109,9 @@
     "lib/retab/splits/subdocument.rb",
     "lib/retab/types/actor_kind.rb",
     "lib/retab/types/api_response.rb",
+    "lib/retab/types/artifact_drift_status.rb",
+    "lib/retab/types/artifact_freshness_reasons.rb",
+    "lib/retab/types/artifact_freshness_status.rb",
     "lib/retab/types/assertion_drift_status.rb",
     "lib/retab/types/assertion_outcome.rb",
     "lib/retab/types/base_model.rb",
@@ -195,6 +198,8 @@
     "lib/retab/types/workflow_block_create_request_type.rb",
     "lib/retab/types/workflow_block_executions_order.rb",
     "lib/retab/types/workflow_block_type.rb",
+    "lib/retab/types/workflow_block_version_type.rb",
+    "lib/retab/types/workflow_config_block_type.rb",
     "lib/retab/types/workflow_experiments_exclude_status.rb",
     "lib/retab/types/workflow_experiments_order.rb",
     "lib/retab/types/workflow_experiments_status.rb",
@@ -245,10 +250,17 @@
     "lib/retab/workflow_blocks/update_workflow_block_request.rb",
     "lib/retab/workflow_blocks/workflow_block.rb",
     "lib/retab/workflow_blocks/workflow_block_create_request.rb",
+    "lib/retab/workflow_blocks/workflow_block_version.rb",
+    "lib/retab/workflow_blocks/workflow_block_version_diff.rb",
+    "lib/retab/workflow_blocks/workflow_version_field_diff.rb",
     "lib/retab/workflow_edges.rb",
     "lib/retab/workflow_edges/workflow_edge_create_request.rb",
     "lib/retab/workflow_edges/workflow_edge_doc.rb",
+    "lib/retab/workflow_edges/workflow_edge_version.rb",
+    "lib/retab/workflow_edges/workflow_edge_version_diff.rb",
     "lib/retab/workflow_experiments.rb",
+    "lib/retab/workflow_experiments/artifact_drift.rb",
+    "lib/retab/workflow_experiments/artifact_freshness.rb",
     "lib/retab/workflow_experiments/create_experiment_request.rb",
     "lib/retab/workflow_experiments/experiment_document_capture_request.rb",
     "lib/retab/workflow_experiments/experiment_document_provenance.rb",
@@ -378,6 +390,11 @@
     "lib/retab/workflows/publish_workflow_request.rb",
     "lib/retab/workflows/update_workflow_request.rb",
     "lib/retab/workflows/workflow.rb",
+    "lib/retab/workflows/workflow_block_position.rb",
+    "lib/retab/workflows/workflow_config_block.rb",
+    "lib/retab/workflows/workflow_config_edge.rb",
+    "lib/retab/workflows/workflow_graph_version.rb",
+    "lib/retab/workflows/workflow_graph_version_diff.rb",
     "lib/retab/workflows/workflow_published.rb",
     "rbi/retab/actor.rbi",
     "rbi/retab/all_items_match_condition.rbi",
@@ -386,6 +403,8 @@
     "rbi/retab/api_call_invocation.rbi",
     "rbi/retab/approve_review_request.rbi",
     "rbi/retab/array_contains_condition.rbi",
+    "rbi/retab/artifact_drift.rbi",
+    "rbi/retab/artifact_freshness.rbi",
     "rbi/retab/assertion_failure.rbi",
     "rbi/retab/assertion_result.rbi",
     "rbi/retab/assertion_schema_dep.rbi",
@@ -611,14 +630,23 @@
     "rbi/retab/workflow_block.rbi",
     "rbi/retab/workflow_block_create_request.rbi",
     "rbi/retab/workflow_block_executions.rbi",
+    "rbi/retab/workflow_block_position.rbi",
+    "rbi/retab/workflow_block_version.rbi",
+    "rbi/retab/workflow_block_version_diff.rbi",
     "rbi/retab/workflow_blocks.rbi",
+    "rbi/retab/workflow_config_block.rbi",
+    "rbi/retab/workflow_config_edge.rbi",
     "rbi/retab/workflow_edge_create_request.rbi",
     "rbi/retab/workflow_edge_doc.rbi",
+    "rbi/retab/workflow_edge_version.rbi",
+    "rbi/retab/workflow_edge_version_diff.rbi",
     "rbi/retab/workflow_edges.rbi",
     "rbi/retab/workflow_experiment.rbi",
     "rbi/retab/workflow_experiments.rbi",
     "rbi/retab/workflow_export_payload_request.rbi",
     "rbi/retab/workflow_export_payload_response.rbi",
+    "rbi/retab/workflow_graph_version.rbi",
+    "rbi/retab/workflow_graph_version_diff.rbi",
     "rbi/retab/workflow_published.rbi",
     "rbi/retab/workflow_review_versions.rbi",
     "rbi/retab/workflow_reviews.rbi",
@@ -638,6 +666,7 @@
     "rbi/retab/workflow_test_run_workflow_scope.rbi",
     "rbi/retab/workflow_test_runs.rbi",
     "rbi/retab/workflow_tests.rbi",
+    "rbi/retab/workflow_version_field_diff.rbi",
     "rbi/retab/workflows.rbi",
     "retab.gemspec",
     "test/retab/test_classifications.rb",
@@ -860,6 +889,22 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "GET /v1/workflows/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/{workflow_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
+      "service": "workflows"
+    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "get",
       "service": "workflows"
@@ -896,6 +941,22 @@
       "sdkMethod": "create",
       "service": "workflows.blocks"
     },
+    "GET /v1/workflows/blocks/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/{block_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
+      "service": "workflows.blocks"
+    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "get",
       "service": "workflows.blocks"
@@ -922,6 +983,22 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/{edge_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {

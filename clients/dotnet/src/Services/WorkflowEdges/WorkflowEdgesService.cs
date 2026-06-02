@@ -70,6 +70,70 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>List Edge Versions</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A page of <see cref="WorkflowEdgeVersion"/> results.</returns>
+        public virtual async Task<PaginatedList<WorkflowEdgeVersion>> ListVersionsAsync(WorkflowEdgesListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.FetchPageAsync<WorkflowEdgeVersion>("/v1/workflows/edges/versions", options, null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListVersionsAsync"/>.</summary>
+        public virtual Task<PaginatedList<WorkflowEdgeVersion>> ListVersions(WorkflowEdgesListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListVersionsAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Diff Edge Versions</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="WorkflowEdgeVersionDiff"/> result.</returns>
+        public virtual async Task<WorkflowEdgeVersionDiff> ListDiffAsync(WorkflowEdgesListDiffOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<WorkflowEdgeVersionDiff>("/v1/workflows/edges/versions/diff", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListDiffAsync"/>.</summary>
+        public virtual Task<WorkflowEdgeVersionDiff> ListDiff(WorkflowEdgesListDiffOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListDiffAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Get Edge Version</summary>
+        /// <param name="edgeVersionId">The edge version id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="WorkflowEdgeVersion"/> result.</returns>
+        public virtual async Task<WorkflowEdgeVersion> GetVersionAsync(string edgeVersionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<WorkflowEdgeVersion>($"/v1/workflows/edges/versions/{Uri.EscapeDataString(edgeVersionId)}", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="GetVersionAsync"/>.</summary>
+        public virtual Task<WorkflowEdgeVersion> GetVersion(string edgeVersionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.GetVersionAsync(edgeVersionId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Restore Edge Version</summary>
+        /// <param name="edgeVersionId">The edge version id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="WorkflowEdgeDoc"/> result.</returns>
+        public virtual async Task<WorkflowEdgeDoc> CreateVersionRestoreAsync(string edgeVersionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<WorkflowEdgeDoc>($"/v1/workflows/edges/versions/{Uri.EscapeDataString(edgeVersionId)}/restore", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateVersionRestoreAsync"/>.</summary>
+        public virtual Task<WorkflowEdgeDoc> CreateVersionRestore(string edgeVersionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateVersionRestoreAsync(edgeVersionId, requestOptions, cancellationToken);
+        }
+
         /// <summary>Get Edge</summary>
         /// <remarks>
         /// Get a single edge by ID.

@@ -1,0 +1,22 @@
+{
+  "from_workflow_version_id": "from_workflow_version_id_01234",
+  "to_workflow_version_id": "to_workflow_version_id_01234",
+  "added_block_ids": [
+    "added_block_ids_01234"
+  ],
+  "removed_block_ids": [
+    "removed_block_ids_01234"
+  ],
+  "changed_block_ids": [
+    "changed_block_ids_01234"
+  ],
+  "added_edge_ids": [
+    "added_edge_ids_01234"
+  ],
+  "removed_edge_ids": [
+    "removed_edge_ids_01234"
+  ],
+  "changed_edge_ids": [
+    "changed_edge_ids_01234"
+  ]
+}

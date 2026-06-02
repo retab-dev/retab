@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-02T15:41:06.045Z",
+  "generatedAt": "2026-06-02T19:57:46.633Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -18,6 +18,11 @@
     "lib/Resource/ApiCallInvocation.php",
     "lib/Resource/ApproveReviewRequest.php",
     "lib/Resource/ArrayContainsCondition.php",
+    "lib/Resource/ArtifactDrift.php",
+    "lib/Resource/ArtifactDriftStatus.php",
+    "lib/Resource/ArtifactFreshness.php",
+    "lib/Resource/ArtifactFreshnessReasons.php",
+    "lib/Resource/ArtifactFreshnessStatus.php",
     "lib/Resource/AssertionDriftStatus.php",
     "lib/Resource/AssertionFailure.php",
     "lib/Resource/AssertionOutcome.php",
@@ -263,14 +268,23 @@
     "lib/Resource/WorkflowBlock.php",
     "lib/Resource/WorkflowBlockCreateRequest.php",
     "lib/Resource/WorkflowBlockCreateRequestType.php",
+    "lib/Resource/WorkflowBlockPosition.php",
     "lib/Resource/WorkflowBlockType.php",
+    "lib/Resource/WorkflowBlockVersion.php",
+    "lib/Resource/WorkflowBlockVersionDiff.php",
+    "lib/Resource/WorkflowConfigBlock.php",
+    "lib/Resource/WorkflowConfigEdge.php",
     "lib/Resource/WorkflowEdgeCreateRequest.php",
     "lib/Resource/WorkflowEdgeDoc.php",
+    "lib/Resource/WorkflowEdgeVersion.php",
+    "lib/Resource/WorkflowEdgeVersionDiff.php",
     "lib/Resource/WorkflowExperiment.php",
     "lib/Resource/WorkflowExperimentsStatus.php",
     "lib/Resource/WorkflowExportPayloadRequest.php",
     "lib/Resource/WorkflowExportPayloadRequestExportSource.php",
     "lib/Resource/WorkflowExportPayloadResponse.php",
+    "lib/Resource/WorkflowGraphVersion.php",
+    "lib/Resource/WorkflowGraphVersionDiff.php",
     "lib/Resource/WorkflowPublished.php",
     "lib/Resource/WorkflowRun.php",
     "lib/Resource/WorkflowRunStep.php",
@@ -285,6 +299,7 @@
     "lib/Resource/WorkflowTestRunTiming.php",
     "lib/Resource/WorkflowTestRunWorkflowScope.php",
     "lib/Resource/WorkflowTestSchemaDrift.php",
+    "lib/Resource/WorkflowVersionFieldDiff.php",
     "lib/Service/Classifications.php",
     "lib/Service/EditTemplates.php",
     "lib/Service/Edits.php",
@@ -319,6 +334,8 @@
     "tests/Fixtures/api_call_invocation.json",
     "tests/Fixtures/approve_review_request.json",
     "tests/Fixtures/array_contains_condition.json",
+    "tests/Fixtures/artifact_drift.json",
+    "tests/Fixtures/artifact_freshness.json",
     "tests/Fixtures/assertion_failure.json",
     "tests/Fixtures/assertion_result.json",
     "tests/Fixtures/assertion_schema_dep.json",
@@ -452,8 +469,11 @@
     "tests/Fixtures/list_workflow.json",
     "tests/Fixtures/list_workflow_artifact.json",
     "tests/Fixtures/list_workflow_block.json",
+    "tests/Fixtures/list_workflow_block_version.json",
     "tests/Fixtures/list_workflow_edge_doc.json",
+    "tests/Fixtures/list_workflow_edge_version.json",
     "tests/Fixtures/list_workflow_experiment.json",
+    "tests/Fixtures/list_workflow_graph_version.json",
     "tests/Fixtures/list_workflow_run.json",
     "tests/Fixtures/list_workflow_run_step.json",
     "tests/Fixtures/list_workflow_test.json",
@@ -553,11 +573,20 @@
     "tests/Fixtures/workflow_artifact.json",
     "tests/Fixtures/workflow_block.json",
     "tests/Fixtures/workflow_block_create_request.json",
+    "tests/Fixtures/workflow_block_position.json",
+    "tests/Fixtures/workflow_block_version.json",
+    "tests/Fixtures/workflow_block_version_diff.json",
+    "tests/Fixtures/workflow_config_block.json",
+    "tests/Fixtures/workflow_config_edge.json",
     "tests/Fixtures/workflow_edge_create_request.json",
     "tests/Fixtures/workflow_edge_doc.json",
+    "tests/Fixtures/workflow_edge_version.json",
+    "tests/Fixtures/workflow_edge_version_diff.json",
     "tests/Fixtures/workflow_experiment.json",
     "tests/Fixtures/workflow_export_payload_request.json",
     "tests/Fixtures/workflow_export_payload_response.json",
+    "tests/Fixtures/workflow_graph_version.json",
+    "tests/Fixtures/workflow_graph_version_diff.json",
     "tests/Fixtures/workflow_published.json",
     "tests/Fixtures/workflow_run.json",
     "tests/Fixtures/workflow_run_step.json",
@@ -569,6 +598,7 @@
     "tests/Fixtures/workflow_test_run_single_scope.json",
     "tests/Fixtures/workflow_test_run_timing.json",
     "tests/Fixtures/workflow_test_run_workflow_scope.json",
+    "tests/Fixtures/workflow_version_field_diff.json",
     "tests/Service/ClassificationsTest.php",
     "tests/Service/EditTemplatesTest.php",
     "tests/Service/EditsTest.php",
@@ -785,6 +815,22 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "GET /v1/workflows/versions": {
+      "sdkMethod": "listVersions",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/diff": {
+      "sdkMethod": "listDiff",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/{workflow_version_id}": {
+      "sdkMethod": "getVersion",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
+      "sdkMethod": "createVersionRestore",
+      "service": "workflows"
+    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "get",
       "service": "workflows"
@@ -821,6 +867,22 @@
       "sdkMethod": "create",
       "service": "workflows.blocks"
     },
+    "GET /v1/workflows/blocks/versions": {
+      "sdkMethod": "listVersions",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/diff": {
+      "sdkMethod": "listDiff",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/{block_version_id}": {
+      "sdkMethod": "getVersion",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
+      "sdkMethod": "createVersionRestore",
+      "service": "workflows.blocks"
+    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "get",
       "service": "workflows.blocks"
@@ -847,6 +909,22 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions": {
+      "sdkMethod": "listVersions",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/diff": {
+      "sdkMethod": "listDiff",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/{edge_version_id}": {
+      "sdkMethod": "getVersion",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
+      "sdkMethod": "createVersionRestore",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {

@@ -10,13 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class CreateWorkflowRequest {
   private final String name;
   private final String description;
+  private final String projectId;
 
   @JsonCreator
   public CreateWorkflowRequest(
       @JsonProperty(value = "name", required = false) String name,
-      @JsonProperty(value = "description", required = false) String description) {
+      @JsonProperty(value = "description", required = false) String description,
+      @JsonProperty(value = "project_id", required = false) String projectId) {
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
+    this.projectId = projectId;
   }
 
   @JsonProperty("name")
@@ -27,5 +30,10 @@ public final class CreateWorkflowRequest {
   @JsonProperty("description")
   public String getDescription() {
     return description;
+  }
+
+  @JsonProperty("project_id")
+  public String getProjectId() {
+    return projectId;
   }
 }

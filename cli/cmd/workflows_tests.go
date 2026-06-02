@@ -375,8 +375,34 @@ workflow id is required: tests have no org-wide listing.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowTestsListResult(cmd, result)
 	}),
+}
+
+func printWorkflowTestsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowTest]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
+			return RenderList(os.Stdout, OutputTable, result, workflowTestColumns)
+		}
+	}
+	return printJSON(result)
+}
+
+var workflowTestColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowTestCell(row, "id") }},
+	{Header: "NAME", Extract: func(row any) string { return workflowTestCell(row, "name") }},
+	{Header: "TARGET_BLOCK_ID", Extract: func(row any) string { return workflowTestCell(row, "target.block_id") }},
+	{Header: "FRESHNESS", Extract: artifactFreshnessCell},
+	{Header: "SCHEMA_DRIFT", Extract: func(row any) string { return workflowTestCell(row, "schema_drift") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowTestCell(row, "created_at") }},
+}
+
+func workflowTestCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
 }
 
 var workflowsTestsUpdateCmd = &cobra.Command{

@@ -16,6 +16,8 @@ export interface LatestBlockTestRunSummary {
   durationMs?: number | null;
   workflowDraftFingerprint?: string | null;
   blockConfigFingerprint?: string | null;
+  validityFingerprint?: string | null;
+  handleInputsFingerprint?: string | null;
   /** @default 0 */
   assertionsPassed?: number;
   /** @default 0 */
@@ -33,6 +35,8 @@ export interface LatestBlockTestRunSummaryResponse {
   duration_ms?: number | null;
   workflow_draft_fingerprint?: string | null;
   block_config_fingerprint?: string | null;
+  validity_fingerprint?: string | null;
+  handle_inputs_fingerprint?: string | null;
   assertions_passed?: number;
   assertions_failed?: number;
   blocked_assertions?: number;
@@ -47,6 +51,8 @@ export const ZLatestBlockTestRunSummary = z.object({
   durationMs: z.number().int().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
   blockConfigFingerprint: z.string().nullable().optional(),
+  validityFingerprint: z.string().nullable().optional(),
+  handleInputsFingerprint: z.string().nullable().optional(),
   assertionsPassed: z.number().int().optional(),
   assertionsFailed: z.number().int().optional(),
   blockedAssertions: z.number().int().optional(),
@@ -69,6 +75,8 @@ export function deserializeLatestBlockTestRunSummary(
     durationMs: wire['duration_ms'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
     blockConfigFingerprint: wire['block_config_fingerprint'],
+    validityFingerprint: wire['validity_fingerprint'],
+    handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     assertionsPassed: wire['assertions_passed'],
     assertionsFailed: wire['assertions_failed'],
     blockedAssertions: wire['blocked_assertions'],
@@ -92,6 +100,8 @@ export function serializeLatestBlockTestRunSummary(
     duration_ms: domain['durationMs'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
     block_config_fingerprint: domain['blockConfigFingerprint'],
+    validity_fingerprint: domain['validityFingerprint'],
+    handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     assertions_passed: domain['assertionsPassed'],
     assertions_failed: domain['assertionsFailed'],
     blocked_assertions: domain['blockedAssertions'],

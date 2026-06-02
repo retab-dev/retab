@@ -8,6 +8,8 @@ import com.retab.RetabClient;
 import com.retab.models.UpdateWorkflowBlockRequest;
 import com.retab.models.WorkflowBlock;
 import com.retab.models.WorkflowBlockCreateRequest;
+import com.retab.models.WorkflowBlockVersion;
+import com.retab.models.WorkflowBlockVersionDiff;
 import com.retab.types.UpdateWorkflowBlockRequestConfigMode;
 import com.retab.types.WorkflowBlockCreateRequestType;
 import com.retab.workflowblockexecutions.WorkflowBlockExecutionsApi;
@@ -134,6 +136,110 @@ public final class WorkflowBlocksApi {
             .header("Accept", "application/json")
             .header("Api-Key", client.getApiKey());
     requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), WorkflowBlock.class);
+  }
+
+  public List<WorkflowBlockVersion> listVersions(
+      String workflowId, String blockId, String workflowVersionId, Long limit)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/blocks/versions";
+    StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "workflow_id", workflowId);
+    appendQueryParam(query, "block_id", blockId);
+    appendQueryParam(query, "workflow_version_id", workflowVersionId);
+    appendQueryParam(query, "limit", limit);
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    JsonNode root = client.getObjectMapper().readTree(response.body());
+    JsonNode data = root.isArray() ? root : root.get("data");
+    if (data == null || data.isNull()) {
+      return List.of();
+    }
+    return client
+        .getObjectMapper()
+        .readValue(
+            data.traverse(client.getObjectMapper()),
+            new TypeReference<List<WorkflowBlockVersion>>() {});
+  }
+
+  public WorkflowBlockVersionDiff listDiff(String fromBlockVersionId, String toBlockVersionId)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/blocks/versions/diff";
+    StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "from_block_version_id", fromBlockVersionId);
+    appendQueryParam(query, "to_block_version_id", toBlockVersionId);
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), WorkflowBlockVersionDiff.class);
+  }
+
+  public WorkflowBlockVersion getVersion(String blockVersionId)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/blocks/versions/" + encodePathSegment(blockVersionId);
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), WorkflowBlockVersion.class);
+  }
+
+  public WorkflowBlock createVersionRestore(String blockVersionId)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/blocks/versions/" + encodePathSegment(blockVersionId) + "/restore";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());

@@ -15,6 +15,7 @@ namespace Retab
         public string? TestId { get; set; }
         public long TotalTests { get; set; }
         public BlockTestBatchExecutionCounts? Counts { get; set; }
+        public ArtifactFreshness? Freshness { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

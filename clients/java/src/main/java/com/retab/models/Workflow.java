@@ -12,6 +12,7 @@ public final class Workflow {
   private final String id;
   private final String name;
   private final String description;
+  private final String projectId;
   private final WorkflowPublished published;
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
@@ -21,12 +22,14 @@ public final class Workflow {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "name", required = false) String name,
       @JsonProperty(value = "description", required = false) String description,
+      @JsonProperty(value = "project_id", required = false) String projectId,
       @JsonProperty(value = "published", required = false) WorkflowPublished published,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
     this.id = id;
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
+    this.projectId = projectId;
     this.published = published;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -45,6 +48,11 @@ public final class Workflow {
   @JsonProperty("description")
   public String getDescription() {
     return description;
+  }
+
+  @JsonProperty("project_id")
+  public String getProjectId() {
+    return projectId;
   }
 
   @JsonProperty("published")

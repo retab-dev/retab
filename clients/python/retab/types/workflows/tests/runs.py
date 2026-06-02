@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.workflows.experiments import ArtifactFreshness
 from retab.types.workflows.runs import TriggerInfo
 from retab.types.workflows.tests import WorkflowTestBlockTarget
 from retab.types.workflows.tests.results import (
@@ -83,6 +84,7 @@ class WorkflowTestRun(BaseModel):
         default={"lifecycle_counts": {"cancelled": 0, "completed": 0, "error": 0, "pending": 0, "queued": 0, "running": 0}, "outcome": {"blocked": 0, "failed": 0, "passed": 0}},
         validate_default=True,
     )
+    freshness: ArtifactFreshness | None = None
 
 
 class WorkflowTestRunBlockScope(BaseModel):

@@ -93,6 +93,72 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>List Workflow Versions Route</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A page of <see cref="WorkflowGraphVersion"/> results.</returns>
+        public virtual async Task<PaginatedList<WorkflowGraphVersion>> ListVersionsAsync(WorkflowsListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.FetchPageAsync<WorkflowGraphVersion>("/v1/workflows/versions", options, null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListVersionsAsync"/>.</summary>
+        public virtual Task<PaginatedList<WorkflowGraphVersion>> ListVersions(WorkflowsListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListVersionsAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Diff Workflow Versions Route</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="WorkflowGraphVersionDiff"/> result.</returns>
+        public virtual async Task<WorkflowGraphVersionDiff> ListDiffAsync(WorkflowsListDiffOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<WorkflowGraphVersionDiff>("/v1/workflows/versions/diff", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListDiffAsync"/>.</summary>
+        public virtual Task<WorkflowGraphVersionDiff> ListDiff(WorkflowsListDiffOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListDiffAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Get Workflow Version Route</summary>
+        /// <param name="workflowVersionId">The workflow version id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="WorkflowGraphVersion"/> result.</returns>
+        public virtual async Task<WorkflowGraphVersion> GetVersionAsync(string workflowVersionId, WorkflowsGetVersionOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<WorkflowGraphVersion>($"/v1/workflows/versions/{Uri.EscapeDataString(workflowVersionId)}", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="GetVersionAsync"/>.</summary>
+        public virtual Task<WorkflowGraphVersion> GetVersion(string workflowVersionId, WorkflowsGetVersionOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.GetVersionAsync(workflowVersionId, options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Restore Workflow Version Route</summary>
+        /// <param name="workflowVersionId">The workflow version id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="Workflow"/> result.</returns>
+        public virtual async Task<Workflow> CreateVersionRestoreAsync(string workflowVersionId, WorkflowsCreateVersionRestoreOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<Workflow>($"/v1/workflows/versions/{Uri.EscapeDataString(workflowVersionId)}/restore", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateVersionRestoreAsync"/>.</summary>
+        public virtual Task<Workflow> CreateVersionRestore(string workflowVersionId, WorkflowsCreateVersionRestoreOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateVersionRestoreAsync(workflowVersionId, options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Get Workflow</summary>
         /// <remarks>
         /// Get a single workflow by ID.

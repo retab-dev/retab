@@ -69,6 +69,12 @@ module Retab
     sig { params(value: T.nilable(Retab::BlockTestBatchExecutionCounts)).returns(T.nilable(Retab::BlockTestBatchExecutionCounts)) }
     def counts=(value); end
 
+    sig { returns(T.nilable(Retab::ArtifactFreshness)) }
+    def freshness; end
+
+    sig { params(value: T.nilable(Retab::ArtifactFreshness)).returns(T.nilable(Retab::ArtifactFreshness)) }
+    def freshness=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 
