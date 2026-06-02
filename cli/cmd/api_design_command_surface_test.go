@@ -14,10 +14,10 @@ var apiDesignKebabNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+
 
 func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
-		"add": true, "analyze": true, "apply": true, "approve": true, "artifacts": true, "auth": true,
-		"blocks": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "env": true,
+		"add": true, "apply": true, "approve": true, "artifacts": true, "auth": true,
+		"blocks": true, "blueprints": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "env": true,
 		"create": true, "create-upload": true, "delete": true, "discard-draft": true,
-		"doctor": true, "download": true, "download-link": true, "edges": true, "edits": true,
+		"download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"generate": true, "get": true, "grep": true, "inspect": true,
 		"list": true, "login": true, "logout": true, "metrics": true,
@@ -76,7 +76,9 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 	removedPaths := []string{
 		"env delete",
 		"env remove",
+		"files analyze",
 		"files delete",
+		"files doctor",
 		"jobs",
 		"workflows append-version",
 		"workflows reviews append",
@@ -112,7 +114,8 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"edits":                         {"create", "get", "list", "cancel", "delete", "wait", "templates"},
 		"edits templates":               {"create", "get", "list", "update", "delete"},
 		"extractions":                   {"create", "stream", "list", "get", "sources", "cancel", "delete", "wait"},
-		"files":                         {"list", "get", "upload", "download-link", "download", "create-upload", "complete-upload", "parse", "analyze", "grep", "inspect", "doctor"},
+		"files":                         {"list", "get", "upload", "download-link", "download", "create-upload", "complete-upload", "blueprints", "parse", "grep", "inspect"},
+		"files blueprints":              {"create", "get", "cancel", "wait"},
 		"parses":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
 		"schemas":                       {"generate"},

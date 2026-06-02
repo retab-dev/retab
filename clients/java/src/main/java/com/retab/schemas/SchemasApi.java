@@ -34,7 +34,8 @@ public final class SchemasApi {
         request == null ? null : request.getModel(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getImageResolutionDpi(),
-        request == null ? null : request.isStream());
+        request == null ? null : request.isStream(),
+        request == null ? null : request.isBackground());
   }
 
   public PartialSchema generate(
@@ -42,7 +43,8 @@ public final class SchemasApi {
       String model,
       String instructions,
       Long imageResolutionDpi,
-      Boolean stream)
+      Boolean stream,
+      Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/schemas/generate";
     StringBuilder query = new StringBuilder();
@@ -60,6 +62,9 @@ public final class SchemasApi {
     }
     if (stream != null) {
       body.put("stream", stream);
+    }
+    if (background != null) {
+      body.put("background", background);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

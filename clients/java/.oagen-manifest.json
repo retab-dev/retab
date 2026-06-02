@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-02T07:15:25.330Z",
+  "generatedAt": "2026-06-02T07:50:10.776Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -68,6 +68,7 @@
     "src/main/java/com/retab/models/CreateEditTemplateRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRunRequest.java",
+    "src/main/java/com/retab/models/CreateFileBlueprintRequest.java",
     "src/main/java/com/retab/models/CreateReviewVersionRequest.java",
     "src/main/java/com/retab/models/CreateUploadResponse.java",
     "src/main/java/com/retab/models/CreateWorkflowRequest.java",
@@ -130,6 +131,7 @@
     "src/main/java/com/retab/models/ExtractionRequest.java",
     "src/main/java/com/retab/models/ExtractionWorkflowArtifact.java",
     "src/main/java/com/retab/models/File.java",
+    "src/main/java/com/retab/models/FileBlueprint.java",
     "src/main/java/com/retab/models/FileHandleInput.java",
     "src/main/java/com/retab/models/FileLink.java",
     "src/main/java/com/retab/models/FileRef.java",
@@ -138,6 +140,10 @@
     "src/main/java/com/retab/models/GenerateSchemaRequest.java",
     "src/main/java/com/retab/models/HandleInput.java",
     "src/main/java/com/retab/models/HttpValidationError.java",
+    "src/main/java/com/retab/models/Job.java",
+    "src/main/java/com/retab/models/JobError.java",
+    "src/main/java/com/retab/models/JobResponse.java",
+    "src/main/java/com/retab/models/JobWarning.java",
     "src/main/java/com/retab/models/JsonHandleInput.java",
     "src/main/java/com/retab/models/JsonSchemaValidCondition.java",
     "src/main/java/com/retab/models/LatestBlockTestRunSummary.java",
@@ -275,6 +281,7 @@
     "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
     "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
     "src/main/java/com/retab/types/CreateExperimentRequestNConsensus.java",
+    "src/main/java/com/retab/types/CreateFileBlueprintRequestMode.java",
     "src/main/java/com/retab/types/DeclarativeApplyResponseAction.java",
     "src/main/java/com/retab/types/DeclarativePlanFieldChangeAction.java",
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeActions.java",
@@ -300,6 +307,9 @@
     "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ExtractionsStatus.java",
     "src/main/java/com/retab/types/FieldType.java",
+    "src/main/java/com/retab/types/FileBlueprintMode.java",
+    "src/main/java/com/retab/types/FileBlueprintStatus.java",
+    "src/main/java/com/retab/types/JobStatus.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryOutcome.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryStatus.java",
     "src/main/java/com/retab/types/LengthCompareConditionOp.java",
@@ -326,6 +336,7 @@
     "src/main/java/com/retab/types/SplitsStatus.java",
     "src/main/java/com/retab/types/StepArtifactRefOperation.java",
     "src/main/java/com/retab/types/SubmissionStatus.java",
+    "src/main/java/com/retab/types/SupportedEndpoint.java",
     "src/main/java/com/retab/types/TableParsingFormat.java",
     "src/main/java/com/retab/types/TriggerInfoType.java",
     "src/main/java/com/retab/types/UpdateExperimentRequestNConsensus.java",
@@ -451,6 +462,18 @@
     },
     "GET /v1/files": {
       "sdkMethod": "list",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints": {
+      "sdkMethod": "createBlueprint",
+      "service": "files"
+    },
+    "GET /v1/files/blueprints/{blueprint_id}": {
+      "sdkMethod": "getBlueprint",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints/{blueprint_id}/cancel": {
+      "sdkMethod": "createBlueprintCancel",
       "service": "files"
     },
     "POST /v1/files/upload": {

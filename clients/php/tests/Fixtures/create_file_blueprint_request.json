@@ -1,0 +1,6 @@
+{
+  "file_id": "file_id_01234",
+  "mode": "instant",
+  "intent": "test_intent",
+  "background": true
+}

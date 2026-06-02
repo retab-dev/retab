@@ -1,0 +1,17 @@
+{
+  "object": "test_object",
+  "created_at": "2023-01-01T00:00:00.000Z",
+  "json_schema": {
+    "key": {}
+  },
+  "strict": true,
+  "id": "01234",
+  "status": "pending",
+  "error": {
+    "code": "test_code",
+    "message": "test_message",
+    "details": {
+      "key": {}
+    }
+  }
+}

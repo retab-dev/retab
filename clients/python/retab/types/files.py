@@ -2,9 +2,28 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal
+from enum import Enum
+from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.mime import MIMEData
+from retab.types.classifications import PrimitiveError
+from retab.types.mime import FileRef, MIMEData
+
+
+class FileBlueprintMode(str, Enum):
+    INSTANT = "instant"
+    REASONING = "reasoning"
+
+
+class FileBlueprintStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+CreateFileBlueprintRequestMode = FileBlueprintMode
 
 
 class CompleteFileUploadRequest(BaseModel):
@@ -13,6 +32,20 @@ class CompleteFileUploadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     sha256: str | None = Field(default=None, description="Optional SHA-256 checksum")
+
+
+class CreateFileBlueprintRequest(BaseModel):
+    """Public create-file-blueprint request body."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    file_id: str = Field(..., description="File id to analyze.")
+    mode: FileBlueprintMode | None = Field(default=None, description="Optional analysis depth override. Omit to let Retab choose.")
+    intent: str | None = Field(default=None, description="Optional user intent used to guide the blueprint analysis.")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class CreateUploadResponse(BaseModel):
@@ -46,6 +79,29 @@ class File(BaseModel):
     page_count: int | None = Field(default=None, description="Number of pages in the file")
 
 
+class FileBlueprint(BaseModel):
+    """A document blueprint generated from an uploaded file."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    object: Literal["file.blueprint"] = Field(default="file.blueprint")
+    id: str = Field(..., description="Unique identifier of the file blueprint.")
+    file: FileRef = Field(..., description="Information about the analyzed file.")
+    mode: FileBlueprintMode | None = Field(default=None, description="Analysis depth used or requested.")
+    intent: str | None = Field(default=None, description="User intent supplied with the blueprint request.")
+    output: dict[str, Any] | None = Field(default={}, description="The generated Document Blueprint payload.")
+    status: FileBlueprintStatus | None = Field(
+        default=cast(FileBlueprintStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
+    created_at: datetime.datetime | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+
+
 class FileLink(BaseModel):
     """A short-lived signed link to download a file, with its `filename` and expiry."""
 
@@ -74,7 +130,9 @@ class UploadFileRequest(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 CompleteFileUploadRequest.model_rebuild()
+CreateFileBlueprintRequest.model_rebuild()
 CreateUploadResponse.model_rebuild()
 File.model_rebuild()
+FileBlueprint.model_rebuild()
 FileLink.model_rebuild()
 UploadFileRequest.model_rebuild()

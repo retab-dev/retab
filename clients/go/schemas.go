@@ -18,20 +18,19 @@ type SchemasGenerateParams struct {
 	Model        *string `json:"model,omitempty" url:"-"`
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// ImageResolutionDpi is resolution of the image sent to the LLM
-	ImageResolutionDpi *int  `json:"image_resolution_dpi,omitempty" url:"-"`
-	Stream             *bool `json:"stream,omitempty" url:"-"`
-	Background         *bool `json:"background,omitempty" url:"-"`
+	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Generate schema From Examples
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
-func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*PartialSchema, error) {
+func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*MainServerServicesV1SchemasModelsSchemaGeneration, error) {
 	type generateWireBody struct {
 		Documents          []MIMEData `json:"documents"`
 		Model              *string    `json:"model,omitempty"`
 		Instructions       *string    `json:"instructions,omitempty"`
 		ImageResolutionDpi *int       `json:"image_resolution_dpi,omitempty"`
-		Stream             *bool      `json:"stream,omitempty"`
 		Background         *bool      `json:"background,omitempty"`
 	}
 	if params == nil {
@@ -62,10 +61,9 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		Model:              params.Model,
 		Instructions:       params.Instructions,
 		ImageResolutionDpi: params.ImageResolutionDpi,
-		Stream:             params.Stream,
 		Background:         params.Background,
 	}
-	var result PartialSchema
+	var result MainServerServicesV1SchemasModelsSchemaGeneration
 	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)
 	if err != nil {
 		return nil, err

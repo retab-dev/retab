@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-02T07:38:26.641Z",
+  "generatedAt": "2026-06-02T12:22:29.676Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -116,21 +116,20 @@
     "src/Entities/ExtractionConsensus.cs",
     "src/Entities/ExtractionWorkflowArtifact.cs",
     "src/Entities/File.cs",
+    "src/Entities/FileBlueprint.cs",
     "src/Entities/FileHandleInput.cs",
     "src/Entities/FileLink.cs",
     "src/Entities/FileRef.cs",
     "src/Entities/FormField.cs",
     "src/Entities/FunctionInvocation.cs",
     "src/Entities/HttpValidationError.cs",
-    "src/Entities/Job.cs",
-    "src/Entities/JobError.cs",
-    "src/Entities/JobResponse.cs",
     "src/Entities/JsonHandleInput.cs",
     "src/Entities/JsonSchemaValidCondition.cs",
     "src/Entities/LatestBlockTestRunSummary.cs",
     "src/Entities/LengthCompareCondition.cs",
     "src/Entities/LlmJudgedAsCondition.cs",
     "src/Entities/LlmNotJudgedAsCondition.cs",
+    "src/Entities/MainServerServicesV1SchemasModelsSchemaGeneration.cs",
     "src/Entities/ManualWorkflowTestSource.cs",
     "src/Entities/MatcheRegexCondition.cs",
     "src/Entities/MaterializedDocument.cs",
@@ -144,13 +143,13 @@
     "src/Entities/Parse.cs",
     "src/Entities/ParseOutput.cs",
     "src/Entities/ParseWorkflowArtifact.cs",
-    "src/Entities/PartialSchema.cs",
     "src/Entities/Partition.cs",
     "src/Entities/PartitionChunk.cs",
     "src/Entities/PartitionChunkLikelihood.cs",
     "src/Entities/PartitionConsensus.cs",
     "src/Entities/PartitionWorkflowArtifact.cs",
     "src/Entities/PendingRun.cs",
+    "src/Entities/PrimitiveError.cs",
     "src/Entities/PublicHandlePayload.cs",
     "src/Entities/PublishWorkflowRequest.cs",
     "src/Entities/QueuedStepLifecycle.cs",
@@ -218,6 +217,7 @@
     "src/Enums/ClassificationsOrder.cs",
     "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
     "src/Enums/CreateExperimentRequestNConsensus.cs",
+    "src/Enums/CreateFileBlueprintRequestMode.cs",
     "src/Enums/DeclarativeApplyResponseAction.cs",
     "src/Enums/DeclarativePlanFieldChangeAction.cs",
     "src/Enums/DeclarativePlanResourceChangeTarget.cs",
@@ -229,7 +229,6 @@
     "src/Enums/ExperimentRunMetricsView.cs",
     "src/Enums/ExperimentSchemaDriftStatus.cs",
     "src/Enums/FieldType.cs",
-    "src/Enums/JobStatus.cs",
     "src/Enums/LatestBlockTestRunSummaryStatus.cs",
     "src/Enums/LengthCompareConditionOp.cs",
     "src/Enums/ParseRequestTableParsingFormat.cs",
@@ -241,7 +240,6 @@
     "src/Enums/SourcesResponseDocumentType.cs",
     "src/Enums/StepArtifactRefOperation.cs",
     "src/Enums/SubmissionStatus.cs",
-    "src/Enums/SupportedEndpoint.cs",
     "src/Enums/TriggerInfoType.cs",
     "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
@@ -397,6 +395,18 @@
     },
     "GET /v1/files": {
       "sdkMethod": "ListAsync",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints": {
+      "sdkMethod": "CreateBlueprintAsync",
+      "service": "files"
+    },
+    "GET /v1/files/blueprints/{blueprint_id}": {
+      "sdkMethod": "GetBlueprintAsync",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints/{blueprint_id}/cancel": {
+      "sdkMethod": "CreateBlueprintCancelAsync",
       "service": "files"
     },
     "POST /v1/files/upload": {

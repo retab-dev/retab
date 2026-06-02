@@ -18,11 +18,14 @@ type sdkOperation struct {
 }
 
 var sdkMethodCommandAliases = map[string]string{
-	"CreateStream":      "stream",
-	"CreateUpload":      "create-upload",
-	"CompleteUpload":    "complete-upload",
-	"GetDownloadLink":   "download-link",
-	"WaitForCompletion": "wait",
+	"CreateBlueprint":       "blueprints create",
+	"CreateBlueprintCancel": "blueprints cancel",
+	"CreateStream":          "stream",
+	"CreateUpload":          "create-upload",
+	"CompleteUpload":        "complete-upload",
+	"GetBlueprint":          "blueprints get",
+	"GetDownloadLink":       "download-link",
+	"WaitForCompletion":     "wait",
 }
 
 var sdkResourceCommandAliases = map[string]string{

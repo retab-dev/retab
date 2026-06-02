@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file wires the local-first `files parse|grep|inspect|doctor` commands
+// This file wires the local-first `files parse|grep|inspect` commands
 // onto the existing `files` group. They are an intentional exception to the
 // "CLI = thin overlay on the generated SDK" rule: they take a LOCAL path,
 // never upload, never call the API, and shell out to LiteParse (`lit`) for
@@ -43,7 +43,7 @@ func init() {
 	filesInspectCmd.Flags().StringP("out", "o", "", "output directory for rendered page images (default: a temp dir)")
 	filesInspectCmd.MarkFlagsMutuallyExclusive("lines", "cells", "render")
 
-	filesCmd.AddCommand(filesParseCmd, filesGrepCmd, filesInspectCmd, filesDoctorCmd)
+	filesCmd.AddCommand(filesParseCmd, filesGrepCmd, filesInspectCmd)
 }
 
 // addParseOptionFlags attaches the LiteParse-tuning flags shared by parse,
@@ -102,53 +102,6 @@ func tableSelected(cmd *cobra.Command) bool {
 		return false
 	}
 	return format == OutputTable
-}
-
-var filesDoctorCmd = &cobra.Command{
-	Use:   "doctor",
-	Short: "Check the local LiteParse toolchain",
-	Long: `Report whether the local document-parsing toolchain is ready.
-
-The local ` + "`files parse|grep|inspect`" + ` commands shell out to LiteParse
-(the ` + "`lit`" + ` binary) for PDFs and images. This reports whether ` + "`lit`" + `
-is discoverable and its version. text/csv/xlsx/docx are parsed natively in
-Go and need no external tools.`,
-	Args: cobra.NoArgs,
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-
-		report := map[string]any{
-			"native_formats": []string{"txt/md/json", "csv/tsv", "xlsx", "docx"},
-		}
-		parser, err := resolveLiteParser(liteBinFromCmd(cmd))
-		if err != nil {
-			report["liteparse_available"] = false
-			report["liteparse_error"] = err.Error()
-			if printErr := printJSON(report); printErr != nil {
-				return printErr
-			}
-			return nil
-		}
-		report["liteparse_available"] = true
-		if c, ok := parser.(*litCLI); ok {
-			report["liteparse_bin"] = c.bin
-			if c.pdfiumDir != "" {
-				// Resolved from the Retab-managed bundle (lit + bundled libpdfium).
-				report["liteparse_source"] = "managed-bundle"
-				report["liteparse_pdfium_dir"] = c.pdfiumDir
-			} else {
-				// A `lit` found on PATH / via --liteparse-bin / RETAB_LITEPARSE_BIN.
-				report["liteparse_source"] = "system"
-			}
-		}
-		if version, verr := parser.Version(ctx); verr == nil {
-			report["liteparse_version"] = strings.TrimSpace(version)
-		} else {
-			report["liteparse_version_error"] = verr.Error()
-		}
-		return printJSON(report)
-	}),
 }
 
 // parsePageList parses a comma/range page spec ("1,3,5-7") into a sorted,

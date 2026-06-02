@@ -15,12 +15,11 @@ module Retab
         model: T.nilable(String),
         instructions: T.nilable(String),
         image_resolution_dpi: T.nilable(Integer),
-        stream: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::PartialSchema)
+      ).returns(Retab::MainServerServicesV1SchemasModelsSchemaGeneration)
     end
-    def generate(documents:, model:, instructions:, image_resolution_dpi:, stream:, background:, request_options:); end
+    def generate(documents:, model:, instructions:, image_resolution_dpi:, background:, request_options:); end
 
   end
 end

@@ -19,9 +19,8 @@ pub struct GenerateSchemaRequest {
     /// Defaults to `192`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub image_resolution_dpi: Option<i64>,
-    /// Defaults to `false`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub stream: Option<bool>,
+    /// If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
+    ///
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub background: Option<bool>,
@@ -35,7 +34,6 @@ impl GenerateSchemaRequest {
             model: Default::default(),
             instructions: Default::default(),
             image_resolution_dpi: Default::default(),
-            stream: Default::default(),
             background: Default::default(),
         }
     }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-02T07:38:28.474Z",
+  "generatedAt": "2026-06-02T12:22:31.327Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -65,6 +65,7 @@
     "lib/Resource/CreateEditTemplateRequest.php",
     "lib/Resource/CreateExperimentRequest.php",
     "lib/Resource/CreateExperimentRunRequest.php",
+    "lib/Resource/CreateFileBlueprintRequest.php",
     "lib/Resource/CreateReviewVersionRequest.php",
     "lib/Resource/CreateUploadResponse.php",
     "lib/Resource/CreateWorkflowRequest.php",
@@ -137,6 +138,8 @@
     "lib/Resource/ExtractionWorkflowArtifact.php",
     "lib/Resource/FieldType.php",
     "lib/Resource/File.php",
+    "lib/Resource/FileBlueprint.php",
+    "lib/Resource/FileBlueprintMode.php",
     "lib/Resource/FileHandleInput.php",
     "lib/Resource/FileLink.php",
     "lib/Resource/FileRef.php",
@@ -144,11 +147,6 @@
     "lib/Resource/FunctionInvocation.php",
     "lib/Resource/GenerateSchemaRequest.php",
     "lib/Resource/HttpValidationError.php",
-    "lib/Resource/Job.php",
-    "lib/Resource/JobError.php",
-    "lib/Resource/JobResponse.php",
-    "lib/Resource/JobStatus.php",
-    "lib/Resource/JobWarning.php",
     "lib/Resource/JsonHandleInput.php",
     "lib/Resource/JsonSchemaValidCondition.php",
     "lib/Resource/JsonSerializableTrait.php",
@@ -157,6 +155,7 @@
     "lib/Resource/LengthCompareConditionOp.php",
     "lib/Resource/LlmJudgedAsCondition.php",
     "lib/Resource/LlmNotJudgedAsCondition.php",
+    "lib/Resource/MainServerServicesV1SchemasModelsSchemaGeneration.php",
     "lib/Resource/ManualWorkflowTestSource.php",
     "lib/Resource/MatcheRegexCondition.php",
     "lib/Resource/MaterializedDocument.php",
@@ -174,7 +173,6 @@
     "lib/Resource/ParseOutput.php",
     "lib/Resource/ParseRequest.php",
     "lib/Resource/ParseWorkflowArtifact.php",
-    "lib/Resource/PartialSchema.php",
     "lib/Resource/Partition.php",
     "lib/Resource/PartitionChunk.php",
     "lib/Resource/PartitionChunkLikelihood.php",
@@ -246,7 +244,6 @@
     "lib/Resource/Subdocument.php",
     "lib/Resource/SubmissionStatus.php",
     "lib/Resource/SubmitDecisionResponse.php",
-    "lib/Resource/SupportedEndpoint.php",
     "lib/Resource/TableParsingFormat.php",
     "lib/Resource/TriggerInfo.php",
     "lib/Resource/TriggerInfoType.php",
@@ -365,6 +362,7 @@
     "tests/Fixtures/create_edit_template_request.json",
     "tests/Fixtures/create_experiment_request.json",
     "tests/Fixtures/create_experiment_run_request.json",
+    "tests/Fixtures/create_file_blueprint_request.json",
     "tests/Fixtures/create_review_version_request.json",
     "tests/Fixtures/create_upload_response.json",
     "tests/Fixtures/create_workflow_request.json",
@@ -426,6 +424,7 @@
     "tests/Fixtures/extraction_request.json",
     "tests/Fixtures/extraction_workflow_artifact.json",
     "tests/Fixtures/file.json",
+    "tests/Fixtures/file_blueprint.json",
     "tests/Fixtures/file_handle_input.json",
     "tests/Fixtures/file_link.json",
     "tests/Fixtures/file_ref.json",
@@ -433,10 +432,6 @@
     "tests/Fixtures/function_invocation.json",
     "tests/Fixtures/generate_schema_request.json",
     "tests/Fixtures/http_validation_error.json",
-    "tests/Fixtures/job.json",
-    "tests/Fixtures/job_error.json",
-    "tests/Fixtures/job_response.json",
-    "tests/Fixtures/job_warning.json",
     "tests/Fixtures/json_handle_input.json",
     "tests/Fixtures/json_schema_valid_condition.json",
     "tests/Fixtures/latest_block_test_run_summary.json",
@@ -466,6 +461,7 @@
     "tests/Fixtures/list_workflow_test_run.json",
     "tests/Fixtures/llm_judged_as_condition.json",
     "tests/Fixtures/llm_not_judged_as_condition.json",
+    "tests/Fixtures/main_server_services_v_1_schemas_models_schema_generation.json",
     "tests/Fixtures/manual_workflow_test_source.json",
     "tests/Fixtures/matche_regex_condition.json",
     "tests/Fixtures/materialized_document.json",
@@ -481,7 +477,6 @@
     "tests/Fixtures/parse_output.json",
     "tests/Fixtures/parse_request.json",
     "tests/Fixtures/parse_workflow_artifact.json",
-    "tests/Fixtures/partial_schema.json",
     "tests/Fixtures/partition.json",
     "tests/Fixtures/partition_chunk.json",
     "tests/Fixtures/partition_chunk_likelihood.json",
@@ -688,6 +683,18 @@
     },
     "GET /v1/files": {
       "sdkMethod": "list",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints": {
+      "sdkMethod": "createBlueprint",
+      "service": "files"
+    },
+    "GET /v1/files/blueprints/{blueprint_id}": {
+      "sdkMethod": "getBlueprint",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints/{blueprint_id}/cancel": {
+      "sdkMethod": "createBlueprintCancel",
       "service": "files"
     },
     "POST /v1/files/upload": {

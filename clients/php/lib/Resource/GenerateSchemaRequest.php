@@ -18,7 +18,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         public ?string $instructions = null,
         /** Resolution of the image sent to the LLM */
         public ?int $imageResolutionDpi = null,
-        public ?bool $stream = null,
+        /** If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal. */
         public ?bool $background = null,
     ) {}
 
@@ -37,7 +37,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
-            stream: $data['stream'] ?? null,
             background: $data['background'] ?? null,
         );
     }
@@ -50,7 +49,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             'model' => $this->model,
             'instructions' => $this->instructions,
             'image_resolution_dpi' => $this->imageResolutionDpi,
-            'stream' => $this->stream,
             'background' => $this->background,
         ];
     }

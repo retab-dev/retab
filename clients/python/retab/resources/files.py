@@ -6,7 +6,16 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.files import CompleteFileUploadRequest, CreateUploadResponse, File, FileLink, UploadFileRequest
+from retab.types.files import (
+    CompleteFileUploadRequest,
+    CreateFileBlueprintRequest,
+    CreateFileBlueprintRequestMode,
+    CreateUploadResponse,
+    File,
+    FileBlueprint,
+    FileLink,
+    UploadFileRequest,
+)
 from retab.types.mime import MIMEData
 
 
@@ -43,6 +52,38 @@ class FilesMixin:
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="GET", url="/v1/files", params=params or None, data=data)
+
+    def prepare_create_blueprint(
+        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
+    ) -> PreparedRequest:
+        """Create File Blueprint Create a Document Blueprint for an uploaded file."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = CreateFileBlueprintRequest(file_id=cast(Any, file_id), mode=cast(Any, mode), intent=cast(Any, intent), background=cast(Any, background))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url="/v1/files/blueprints", params=params or None, data=data)
+
+    def prepare_get_blueprint(self, blueprint_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
+        """Get File Blueprint Retrieve a file blueprint by id."""
+        params: dict[str, Any] = {
+            "include_output": include_output,
+        }
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url=f"/v1/files/blueprints/{blueprint_id}", params=params or None, data=data)
+
+    def prepare_create_blueprint_cancel(self, blueprint_id: str, **extra_params: Any) -> PreparedRequest:
+        """Cancel File Blueprint Cancel an in-flight background file blueprint."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/files/blueprints/{blueprint_id}/cancel", params=params or None, data=data)
 
     def prepare_create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
@@ -116,6 +157,26 @@ class Files(SyncAPIResource, FilesMixin):
         )
         return self.request_page(prepared_request, model=File)
 
+    def create_blueprint(
+        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
+    ) -> FileBlueprint:
+        """Create File Blueprint Create a Document Blueprint for an uploaded file."""
+        prepared_request = self.prepare_create_blueprint(file_id=file_id, mode=mode, intent=intent, background=background, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
+
+    def get_blueprint(self, blueprint_id: str, include_output: bool | None = True, **extra_params: Any) -> FileBlueprint:
+        """Get File Blueprint Retrieve a file blueprint by id."""
+        prepared_request = self.prepare_get_blueprint(blueprint_id, include_output=include_output, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
+
+    def create_blueprint_cancel(self, blueprint_id: str, **extra_params: Any) -> FileBlueprint:
+        """Cancel File Blueprint Cancel an in-flight background file blueprint."""
+        prepared_request = self.prepare_create_blueprint_cancel(blueprint_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
+
     def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
         """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
         prepared_request = self.prepare_create_upload(filename=filename, content_type=content_type, size_bytes=size_bytes, sha256=sha256, **extra_params)
@@ -173,6 +234,26 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
             **extra_params,
         )
         return await self.request_page(prepared_request, model=File)
+
+    async def create_blueprint(
+        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
+    ) -> FileBlueprint:
+        """Create File Blueprint Create a Document Blueprint for an uploaded file."""
+        prepared_request = self.prepare_create_blueprint(file_id=file_id, mode=mode, intent=intent, background=background, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
+
+    async def get_blueprint(self, blueprint_id: str, include_output: bool | None = True, **extra_params: Any) -> FileBlueprint:
+        """Get File Blueprint Retrieve a file blueprint by id."""
+        prepared_request = self.prepare_get_blueprint(blueprint_id, include_output=include_output, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
+
+    async def create_blueprint_cancel(self, blueprint_id: str, **extra_params: Any) -> FileBlueprint:
+        """Cancel File Blueprint Cancel an in-flight background file blueprint."""
+        prepared_request = self.prepare_create_blueprint_cancel(blueprint_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return FileBlueprint.model_validate(response)
 
     async def create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> CreateUploadResponse:
         """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""

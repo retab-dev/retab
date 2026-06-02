@@ -12,15 +12,17 @@ import (
 )
 
 type primitiveWaitSpec struct {
-	singular string
-	idName   string
-	path     string
+	singular    string
+	idName      string
+	path        string
+	commandPath string
 }
 
 var (
 	classificationWaitSpec = primitiveWaitSpec{singular: "classification", idName: "classification-id", path: "/v1/classifications"}
 	editWaitSpec           = primitiveWaitSpec{singular: "edit", idName: "edit-id", path: "/v1/edits"}
 	extractionWaitSpec     = primitiveWaitSpec{singular: "extraction", idName: "extraction-id", path: "/v1/extractions"}
+	fileBlueprintWaitSpec  = primitiveWaitSpec{singular: "file blueprint", idName: "blueprint-id", path: "/v1/files/blueprints", commandPath: "files blueprints"}
 	parseWaitSpec          = primitiveWaitSpec{singular: "parse", idName: "parse-id", path: "/v1/parses"}
 	partitionWaitSpec      = primitiveWaitSpec{singular: "partition", idName: "partition-id", path: "/v1/partitions"}
 	splitWaitSpec          = primitiveWaitSpec{singular: "split", idName: "split-id", path: "/v1/splits"}
@@ -43,6 +45,10 @@ func addPrimitiveWaitTuningFlags(cmd *cobra.Command, isCreate bool) {
 }
 
 func primitiveWaitCommand(spec primitiveWaitSpec) *cobra.Command {
+	commandPath := spec.commandPath
+	if commandPath == "" {
+		commandPath = spec.path[4:]
+	}
 	return &cobra.Command{
 		Use:   "wait <" + spec.idName + ">",
 		Short: "Poll until a " + spec.singular + " reaches a terminal status",
@@ -56,10 +62,10 @@ the interval and timeout, prints the final record, and exits non-zero if
 the primitive ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout
 elapses.`,
 		Example: `  # Wait with defaults
-  retab ` + spec.path[4:] + ` wait ` + spec.idName + `
+  retab ` + commandPath + ` wait ` + spec.idName + `
 
   # Faster polls, longer ceiling
-  retab ` + spec.path[4:] + ` wait ` + spec.idName + ` \
+  retab ` + commandPath + ` wait ` + spec.idName + ` \
     --poll-interval-ms 1000 --timeout-seconds 1800`,
 		Args: cobra.ExactArgs(1),
 		RunE: runE(func(cmd *cobra.Command, args []string) error {

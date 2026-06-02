@@ -72,6 +72,14 @@ const (
 	CreateExperimentRequestNConsensus7 CreateExperimentRequestNConsensus = 7
 )
 
+// CreateFileBlueprintRequestMode represents create file blueprint request mode values.
+type CreateFileBlueprintRequestMode string
+
+const (
+	CreateFileBlueprintRequestModeInstant   CreateFileBlueprintRequestMode = "instant"
+	CreateFileBlueprintRequestModeReasoning CreateFileBlueprintRequestMode = "reasoning"
+)
+
 // ParseRequestTableParsingFormat represents parse request table parsing format values.
 type ParseRequestTableParsingFormat string
 
@@ -220,36 +228,11 @@ const (
 // ExtractionWorkflowArtifactStatus is an alias for ClassificationStatus.
 type ExtractionWorkflowArtifactStatus = ClassificationStatus
 
-// JobStatus represents job status values.
-type JobStatus string
+// FileBlueprintMode is an alias for CreateFileBlueprintRequestMode.
+type FileBlueprintMode = CreateFileBlueprintRequestMode
 
-const (
-	JobStatusValidating JobStatus = "validating"
-	JobStatusQueued     JobStatus = "queued"
-	JobStatusInProgress JobStatus = "in_progress"
-	JobStatusCompleted  JobStatus = "completed"
-	JobStatusFailed     JobStatus = "failed"
-	JobStatusCancelled  JobStatus = "cancelled"
-	JobStatusExpired    JobStatus = "expired"
-)
-
-// SupportedEndpoint represents supported endpoint values.
-type SupportedEndpoint string
-
-const (
-	SupportedEndpointV1Extractions            SupportedEndpoint = "/v1/extractions"
-	SupportedEndpointV1Parses                 SupportedEndpoint = "/v1/parses"
-	SupportedEndpointV1Splits                 SupportedEndpoint = "/v1/splits"
-	SupportedEndpointV1Partitions             SupportedEndpoint = "/v1/partitions"
-	SupportedEndpointV1Classifications        SupportedEndpoint = "/v1/classifications"
-	SupportedEndpointV1SchemasGenerate        SupportedEndpoint = "/v1/schemas/generate"
-	SupportedEndpointV1FilesAnalyze           SupportedEndpoint = "/v1/files/analyze"
-	SupportedEndpointV1FilesBlueprints        SupportedEndpoint = "/v1/files/blueprints"
-	SupportedEndpointV1Edits                  SupportedEndpoint = "/v1/edits"
-	SupportedEndpointV1EditsTemplatesGenerate SupportedEndpoint = "/v1/edits/templates/generate"
-	SupportedEndpointV1EvalsExtractProcess    SupportedEndpoint = "/v1/evals/extract/process"
-	SupportedEndpointV1EvalsExtractExtract    SupportedEndpoint = "/v1/evals/extract/extract"
-)
+// FileBlueprintStatus is an alias for ClassificationStatus.
+type FileBlueprintStatus = ClassificationStatus
 
 // LatestBlockTestRunSummaryStatus represents latest block test run summary status values.
 type LatestBlockTestRunSummaryStatus string
@@ -526,6 +509,9 @@ type WorkflowTestSchemaDrift = ExperimentSchemaDriftStatus
 
 // WorkflowTestResultVerdict is an alias for AssertionOutcome.
 type WorkflowTestResultVerdict = AssertionOutcome
+
+// MainServerServicesV1SchemasModelsSchemaGenerationStatus is an alias for ClassificationStatus.
+type MainServerServicesV1SchemasModelsSchemaGenerationStatus = ClassificationStatus
 
 // WorkflowTestRunScopeType represents workflow test run scope type values.
 type WorkflowTestRunScopeType string

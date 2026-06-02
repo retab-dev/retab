@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -76,6 +77,24 @@ func hardenGroupCommands(c *cobra.Command) {
 	}
 }
 
+func replaceTabsInHelpText(c *cobra.Command) {
+	c.Short = strings.ReplaceAll(c.Short, "\t", "  ")
+	c.Long = strings.ReplaceAll(c.Long, "\t", "  ")
+	c.Example = strings.ReplaceAll(c.Example, "\t", "  ")
+	for _, sub := range c.Commands() {
+		replaceTabsInHelpText(sub)
+	}
+}
+
+func hideDefaultCompletionCommand(c *cobra.Command) {
+	for _, sub := range c.Commands() {
+		if sub.Name() == "completion" {
+			sub.Hidden = true
+			return
+		}
+	}
+}
+
 func init() {
 	// `version` lives in version.go and is overwritten at link time by
 	// GoReleaser's ldflags. Surfacing it on rootCmd makes both
@@ -88,6 +107,9 @@ func init() {
 	rootCmd.PersistentFlags().String("environment-id", "", "Retab environment id for OAuth dashboard context (env: RETAB_ENVIRONMENT_ID)")
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
 	rootCmd.PersistentFlags().Var(&outputFlagValue{}, "output", "output format: json | table (default: auto-detect)")
+	rootCmd.InitDefaultCompletionCmd()
+	replaceTabsInHelpText(rootCmd)
+	hideDefaultCompletionCommand(rootCmd)
 
 	// Capture cobra's default help func *before* overriding so we can
 	// delegate to it for non-root commands. If we set our func first

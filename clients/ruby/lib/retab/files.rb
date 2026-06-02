@@ -88,6 +88,94 @@ module Retab
       )
     end
 
+    # Create File Blueprint
+    # @param file_id [String] File id to analyze.
+    # @param mode [Retab::Types::CreateFileBlueprintRequestMode, nil] Optional analysis depth override. Omit to let Retab choose.
+    # @param intent [String, nil] Optional user intent used to guide the blueprint analysis.
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::FileBlueprint]
+    def create_blueprint(
+      file_id:,
+      mode: nil,
+      intent: nil,
+      background: nil,
+      request_options: {}
+    )
+      body = {
+        "file_id" => file_id,
+        "mode" => mode,
+        "intent" => intent,
+        "background" => background
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: "/v1/files/blueprints",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::FileBlueprint.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Get File Blueprint
+    # @param blueprint_id [String]
+    # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::FileBlueprint]
+    def get_blueprint(
+      blueprint_id:,
+      include_output: true,
+      request_options: {}
+    )
+      params = {
+        "include_output" => include_output
+      }.compact
+      response = @client.request(
+        method: :get,
+        path: "/v1/files/blueprints/#{Retab::Util.encode_path(blueprint_id)}",
+        auth: true,
+        params: params,
+        request_options: request_options
+      )
+      result = Retab::FileBlueprint.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Cancel File Blueprint
+    # @param blueprint_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::FileBlueprint]
+    def create_blueprint_cancel(
+      blueprint_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/files/blueprints/#{Retab::Util.encode_path(blueprint_id)}/cancel",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::FileBlueprint.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # Upload File
     # @param filename [String] Filename to store
     # @param content_type [String, nil] MIME type the client will upload

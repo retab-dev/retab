@@ -18,6 +18,27 @@ class FilesTest < Minitest::Test
     assert_kind_of(Retab::PaginatedList, result)
   end
 
+  def test_create_blueprint_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/files/blueprints(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.files.create_blueprint(file_id: "stub")
+    refute_nil(result)
+  end
+
+  def test_get_blueprint_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/files/blueprints/stub(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.files.get_blueprint(blueprint_id: "stub")
+    refute_nil(result)
+  end
+
+  def test_create_blueprint_cancel_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/files/blueprints/stub/cancel(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.files.create_blueprint_cancel(blueprint_id: "stub")
+    refute_nil(result)
+  end
+
   def test_create_upload_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/files/upload(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -49,6 +70,24 @@ class FilesTest < Minitest::Test
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/files(\?|\z)}},
+    {
+      name: :create_blueprint,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/files/blueprints(\?|\z)},
+      args: {file_id: "stub"}
+    },
+    {
+      name: :get_blueprint,
+      verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/files/blueprints/stub(\?|\z)},
+      args: {blueprint_id: "stub"}
+    },
+    {
+      name: :create_blueprint_cancel,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/files/blueprints/stub/cancel(\?|\z)},
+      args: {blueprint_id: "stub"}
+    },
     {
       name: :create_upload,
       verb: :post,

@@ -35,6 +35,49 @@ class FilesTest extends TestCase
         $this->assertSame('test_value', $query['sort_by']);
     }
 
+    public function testCreateBlueprint(): void
+    {
+        $fixture = $this->loadFixture('file_blueprint');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->files()->createBlueprint(fileId: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\FileBlueprint::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/files/blueprints', $request->getUri()->getPath());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('test_value', $body['file_id']);
+    }
+
+    public function testGetBlueprint(): void
+    {
+        $fixture = $this->loadFixture('file_blueprint');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->files()->getBlueprint('test_blueprint_id', includeOutput: true);
+        $this->assertInstanceOf(\Retab\Resource\FileBlueprint::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/files/blueprints/test_blueprint_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertArrayHasKey('include_output', $query);
+    }
+
+    public function testCreateBlueprintCancel(): void
+    {
+        $fixture = $this->loadFixture('file_blueprint');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->files()->createBlueprintCancel('test_blueprint_id');
+        $this->assertInstanceOf(\Retab\Resource\FileBlueprint::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/files/blueprints/test_blueprint_id/cancel', $request->getUri()->getPath());
+    }
+
     public function testCreateUpload(): void
     {
         $fixture = $this->loadFixture('create_upload_response');

@@ -4,9 +4,12 @@ import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import type { MIMEData, MIMEDataResponse } from '../classifications/interfaces/index.js';
 import type {
+  CreateFileBlueprintRequestMode,
   CreateUploadResponse,
   CreateUploadResponseResponse,
   File,
+  FileBlueprint,
+  FileBlueprintResponse,
   FileLink,
   FileLinkResponse,
   FileResponse,
@@ -15,6 +18,7 @@ import { deserializeMIMEData } from '../classifications/interfaces/index.js';
 import {
   deserializeCreateUploadResponse,
   deserializeFile,
+  deserializeFileBlueprint,
   deserializeFileLink,
 } from '../files/interfaces/index.js';
 
@@ -51,6 +55,53 @@ export class Files {
       },
       body: undefined,
     });
+  }
+
+  /** Create File Blueprint */
+  async create_blueprint(
+    fileId: string,
+    mode?: CreateFileBlueprintRequestMode | null,
+    intent?: string | null,
+    background?: boolean
+  ): Promise<FileBlueprint> {
+    const body = {
+      file_id: fileId,
+      mode: mode,
+      intent: intent,
+      background: background,
+    };
+    const __wire = await this.client.request<FileBlueprintResponse>({
+      method: 'POST',
+      path: '/v1/files/blueprints',
+      query: undefined,
+      body: body,
+    });
+    return deserializeFileBlueprint(__wire);
+  }
+
+  /** Get File Blueprint */
+  async get_blueprint(
+    blueprintId: string,
+    options?: { includeOutput?: boolean | undefined }
+  ): Promise<FileBlueprint> {
+    const __wire = await this.client.request<FileBlueprintResponse>({
+      method: 'GET',
+      path: `/v1/files/blueprints/${blueprintId}`,
+      query: { include_output: options?.includeOutput },
+      body: undefined,
+    });
+    return deserializeFileBlueprint(__wire);
+  }
+
+  /** Cancel File Blueprint */
+  async create_blueprint_cancel(blueprintId: string): Promise<FileBlueprint> {
+    const __wire = await this.client.request<FileBlueprintResponse>({
+      method: 'POST',
+      path: `/v1/files/blueprints/${blueprintId}/cancel`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeFileBlueprint(__wire);
   }
 
   /** Upload File */

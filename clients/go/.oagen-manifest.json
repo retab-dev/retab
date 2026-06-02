@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-02T07:38:19.548Z",
+  "generatedAt": "2026-06-02T12:22:24.790Z",
   "files": [
     "classifications.go",
     "edit_templates.go",
@@ -126,6 +126,18 @@
     },
     "GET /v1/files": {
       "sdkMethod": "List",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints": {
+      "sdkMethod": "CreateBlueprint",
+      "service": "files"
+    },
+    "GET /v1/files/blueprints/{blueprint_id}": {
+      "sdkMethod": "GetBlueprint",
+      "service": "files"
+    },
+    "POST /v1/files/blueprints/{blueprint_id}/cancel": {
+      "sdkMethod": "CreateBlueprintCancel",
       "service": "files"
     },
     "POST /v1/files/upload": {

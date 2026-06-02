@@ -23,6 +23,31 @@ namespace Retab
 
     }
 
+    /// <summary>Request options for <see cref="FilesService.CreateBlueprintAsync"/>: Create File Blueprint</summary>
+    public class FilesCreateBlueprintOptions : BaseOptions
+    {
+        /// <summary>File id to analyze.</summary>
+        public string FileId { get; set; } = default!;
+
+        /// <summary>Optional analysis depth override. Omit to let Retab choose.</summary>
+        public CreateFileBlueprintRequestMode? Mode { get; set; }
+
+        /// <summary>Optional user intent used to guide the blueprint analysis.</summary>
+        public string? Intent { get; set; }
+
+        /// <summary>If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/&lt;primitive&gt;/{id} until status is terminal. Mutually exclusive with stream.</summary>
+        public bool? Background { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="FilesService.GetBlueprintAsync"/>: Get File Blueprint</summary>
+    public class FilesGetBlueprintOptions : BaseOptions
+    {
+        /// <summary>When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.</summary>
+        public bool? IncludeOutput { get; set; }
+
+    }
+
     /// <summary>Request options for <see cref="FilesService.CreateUploadAsync"/>: Upload File</summary>
     public class FilesCreateUploadOptions : BaseOptions
     {

@@ -2,8 +2,11 @@
 
 import type { Retab } from '../retab.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
-import type { PartialSchema, PartialSchemaResponse } from '../schemas/interfaces/index.js';
-import { deserializePartialSchema } from '../schemas/interfaces/index.js';
+import type {
+  MainServerServicesV1SchemasModelsSchemaGeneration,
+  MainServerServicesV1SchemasModelsSchemaGenerationResponse,
+} from '../schemas/interfaces/index.js';
+import { deserializeMainServerServicesV1SchemasModelsSchemaGeneration } from '../schemas/interfaces/index.js';
 
 export class Schemas {
   constructor(private readonly client: Retab) {}
@@ -14,24 +17,23 @@ export class Schemas {
     model?: string,
     instructions?: string | null,
     imageResolutionDpi?: number,
-    stream?: boolean,
     background?: boolean
-  ): Promise<PartialSchema> {
+  ): Promise<MainServerServicesV1SchemasModelsSchemaGeneration> {
     const documentsCoerced = await Promise.all(documents.map(coerceMimeData));
     const body = {
       documents: documentsCoerced,
       model: model,
       instructions: instructions,
       image_resolution_dpi: imageResolutionDpi,
-      stream: stream,
       background: background,
     };
-    const __wire = await this.client.request<PartialSchemaResponse>({
-      method: 'POST',
-      path: '/v1/schemas/generate',
-      query: undefined,
-      body: body,
-    });
-    return deserializePartialSchema(__wire);
+    const __wire =
+      await this.client.request<MainServerServicesV1SchemasModelsSchemaGenerationResponse>({
+        method: 'POST',
+        path: '/v1/schemas/generate',
+        query: undefined,
+        body: body,
+      });
+    return deserializeMainServerServicesV1SchemasModelsSchemaGeneration(__wire);
   }
 }

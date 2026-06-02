@@ -164,7 +164,7 @@ alongside your code.
 	}),
 }
 
-func writeGeneratedSchema(w io.Writer, result *retab.PartialSchema, format string) error {
+func writeGeneratedSchema(w io.Writer, result *retab.MainServerServicesV1SchemasModelsSchemaGeneration, format string) error {
 	switch format {
 	case "", "schema":
 		if result == nil || result.JSONSchema == nil {

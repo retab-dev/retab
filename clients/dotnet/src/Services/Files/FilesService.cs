@@ -46,6 +46,64 @@ namespace Retab
             return base.ListAutoPagingAsync<File>("/v1/files", options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Create File Blueprint</summary>
+        /// <remarks>
+        /// Create a Document Blueprint for an uploaded file.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="FileBlueprint"/> result.</returns>
+        public virtual async Task<FileBlueprint> CreateBlueprintAsync(FilesCreateBlueprintOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<FileBlueprint>("/v1/files/blueprints", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateBlueprintAsync"/>.</summary>
+        public virtual Task<FileBlueprint> CreateBlueprint(FilesCreateBlueprintOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateBlueprintAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Get File Blueprint</summary>
+        /// <remarks>
+        /// Retrieve a file blueprint by id.
+        /// </remarks>
+        /// <param name="blueprintId">The blueprint id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="FileBlueprint"/> result.</returns>
+        public virtual async Task<FileBlueprint> GetBlueprintAsync(string blueprintId, FilesGetBlueprintOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<FileBlueprint>($"/v1/files/blueprints/{Uri.EscapeDataString(blueprintId)}", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="GetBlueprintAsync"/>.</summary>
+        public virtual Task<FileBlueprint> GetBlueprint(string blueprintId, FilesGetBlueprintOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.GetBlueprintAsync(blueprintId, options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Cancel File Blueprint</summary>
+        /// <remarks>
+        /// Cancel an in-flight background file blueprint.
+        /// </remarks>
+        /// <param name="blueprintId">The blueprint id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="FileBlueprint"/> result.</returns>
+        public virtual async Task<FileBlueprint> CreateBlueprintCancelAsync(string blueprintId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<FileBlueprint>($"/v1/files/blueprints/{Uri.EscapeDataString(blueprintId)}/cancel", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateBlueprintCancelAsync"/>.</summary>
+        public virtual Task<FileBlueprint> CreateBlueprintCancel(string blueprintId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateBlueprintCancelAsync(blueprintId, requestOptions, cancellationToken);
+        }
+
         /// <summary>Upload File</summary>
         /// <remarks>
         /// Start a file upload.

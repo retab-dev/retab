@@ -28,6 +28,34 @@ module Retab
 
     sig do
       params(
+        file_id: String,
+        mode: T.nilable(String),
+        intent: T.nilable(String),
+        background: T.nilable(T::Boolean),
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::FileBlueprint)
+    end
+    def create_blueprint(file_id:, mode:, intent:, background:, request_options:); end
+
+    sig do
+      params(
+        blueprint_id: String,
+        include_output: T.nilable(T::Boolean),
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::FileBlueprint)
+    end
+    def get_blueprint(blueprint_id:, include_output:, request_options:); end
+
+    sig do
+      params(
+        blueprint_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::FileBlueprint)
+    end
+    def create_blueprint_cancel(blueprint_id:, request_options:); end
+
+    sig do
+      params(
         filename: String,
         size_bytes: Integer,
         content_type: T.nilable(String),

@@ -35,7 +35,7 @@ namespace Retab
         public ClassificationStatus? Status { get; set; }
 
         /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
-        public JobError? Error { get; set; }
+        public PrimitiveError? Error { get; set; }
 
         /// <summary>Usage information for the parse operation</summary>
         public RetabUsage? Usage { get; set; }
