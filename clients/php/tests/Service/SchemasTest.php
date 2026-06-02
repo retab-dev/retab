@@ -15,10 +15,11 @@ class SchemasTest extends TestCase
 
     public function testGenerate(): void
     {
-        $fixture = $this->loadFixture('main_server_services_v_1_schemas_models_schema_generation');
+        $fixture = $this->loadFixture('schema_generation');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
         $result = $client->schemas()->generate(documents: []);
-        $this->assertInstanceOf(\Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration::class, $result);
+        $this->assertInstanceOf(\Retab\Resource\SchemaGeneration::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());

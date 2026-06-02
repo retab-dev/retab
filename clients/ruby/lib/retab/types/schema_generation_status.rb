@@ -4,6 +4,6 @@
 
 module Retab
   module Types
-    MainServerServicesV1SchemasModelsSchemaGenerationStatus = ClassificationStatus
+    SchemaGenerationStatus = ClassificationStatus
   end
 end

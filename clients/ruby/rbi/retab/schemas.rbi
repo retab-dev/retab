@@ -17,7 +17,7 @@ module Retab
         image_resolution_dpi: T.nilable(Integer),
         background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::MainServerServicesV1SchemasModelsSchemaGeneration)
+      ).returns(Retab::SchemaGeneration)
     end
     def generate(documents:, model:, instructions:, image_resolution_dpi:, background:, request_options:); end
 

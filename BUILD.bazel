@@ -416,7 +416,7 @@ SDK_UPDATE_SPECS = [
     {
         "check": ":check_python",
         "client": "open-source/sdk/clients/python",
-        "generated": ":generated_python_sdk",
+        "generated": "//open-source/sdk/clients/python:generated_python_sdk_formatted",
         "language": "python",
         "snippet": "//open-source/docs:snippet_lint_python",
     },

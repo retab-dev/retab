@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-02T12:22:25.905Z",
+  "generatedAt": "2026-06-02T15:41:00.560Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -107,8 +107,8 @@
     "src/runtime/mime.ts",
     "src/schemas/interfaces/generate-schema-request.interface.ts",
     "src/schemas/interfaces/index.ts",
-    "src/schemas/interfaces/main-server-services-v-1-schemas-models-schema-generation-status.interface.ts",
-    "src/schemas/interfaces/main-server-services-v-1-schemas-models-schema-generation.interface.ts",
+    "src/schemas/interfaces/schema-generation-status.interface.ts",
+    "src/schemas/interfaces/schema-generation.interface.ts",
     "src/schemas/schemas.ts",
     "src/splits/interfaces/index.ts",
     "src/splits/interfaces/split-consensus.interface.ts",

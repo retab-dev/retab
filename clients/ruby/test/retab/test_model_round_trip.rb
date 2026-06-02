@@ -2673,6 +2673,23 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_schema_generation_round_trip
+    fixture = {
+      "object" => "stub",
+      "created_at" => nil,
+      "json_schema" => {},
+      "strict" => true,
+      "id" => "stub",
+      "status" => "stub",
+      "error" => nil
+    }
+    model = Retab::SchemaGeneration.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_similarity_gte_condition_round_trip
     fixture = {
       "kind" => "similarity_gte",
@@ -3441,22 +3458,6 @@ class ModelRoundTripTest < Minitest::Test
       "type" => "workflow"
     }
     model = Retab::WorkflowTestRunWorkflowScope.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_main_server_services_v_1_schemas_models_schema_generation_round_trip
-    fixture = {
-      "object" => "stub",
-      "created_at" => nil,
-      "json_schema" => {},
-      "strict" => true,
-      "id" => "stub",
-      "status" => "stub",
-      "error" => nil
-    }
-    model = Retab::MainServerServicesV1SchemasModelsSchemaGeneration.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }

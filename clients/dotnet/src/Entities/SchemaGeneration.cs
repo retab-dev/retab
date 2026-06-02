@@ -4,7 +4,7 @@ namespace Retab
     using System.Collections.Generic;
 
     /// <summary>Public generated schema response.</summary>
-    public class MainServerServicesV1SchemasModelsSchemaGeneration
+    public class SchemaGeneration
     {
         public string? Object { get; set; } = "schema";
         public DateTimeOffset? CreatedAt { get; set; }
@@ -12,7 +12,7 @@ namespace Retab
         public bool? Strict { get; set; } = true;
 
         /// <summary>Unique identifier of the schema generation.</summary>
-        public string? Id { get; set; }
+        public string Id { get; set; } = default!;
 
         /// <summary>Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -&gt; queued -&gt; in_progress -&gt; completed | failed | cancelled.</summary>
         public ClassificationStatus? Status { get; set; }

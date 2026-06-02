@@ -69,6 +69,7 @@ class Extraction(BaseModel):
     output: dict[str, Any] = Field(..., description="The extracted structured data")
     status: ExtractionStatus | None = Field(
         default=cast(ExtractionStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

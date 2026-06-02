@@ -6,20 +6,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum JobStatus {
+public enum SchemaGenerationStatus {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
-  VALIDATING("validating"),
+  PENDING("pending"),
   QUEUED("queued"),
   IN_PROGRESS("in_progress"),
   COMPLETED("completed"),
   FAILED("failed"),
-  CANCELLED("cancelled"),
-  EXPIRED("expired");
+  CANCELLED("cancelled");
 
   private final String value;
 
-  JobStatus(String value) {
+  SchemaGenerationStatus(String value) {
     this.value = value;
   }
 
@@ -29,8 +28,8 @@ public enum JobStatus {
   }
 
   @JsonCreator
-  public static JobStatus fromValue(String value) {
-    for (JobStatus item : values()) {
+  public static SchemaGenerationStatus fromValue(String value) {
+    for (SchemaGenerationStatus item : values()) {
       if (item.value.equals(value)) {
         return item;
       }

@@ -106,6 +106,7 @@ class Classification(BaseModel):
     )
     status: EditsStatus | None = Field(
         default=cast(EditsStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

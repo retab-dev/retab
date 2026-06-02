@@ -7,18 +7,18 @@ declare(strict_types=1);
 namespace Retab\Resource;
 
 /** Public generated schema response. */
-readonly class MainServerServicesV1SchemasModelsSchemaGeneration implements \JsonSerializable
+readonly class SchemaGeneration implements \JsonSerializable
 {
     use JsonSerializableTrait;
 
     public function __construct(
+        /** Unique identifier of the schema generation. */
+        public string $id,
         public ?string $object = null,
         public ?\DateTimeImmutable $createdAt = null,
         /** @var array<string, mixed>|null */
         public ?array $jsonSchema = null,
         public ?bool $strict = null,
-        /** Unique identifier of the schema generation. */
-        public ?string $id = null,
         /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
         public ?EditStatus $status = null,
         /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
@@ -28,12 +28,19 @@ readonly class MainServerServicesV1SchemasModelsSchemaGeneration implements \Jso
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
+        foreach ([
+            'id',
+        ] as $__required) {
+            if (!array_key_exists($__required, $data)) {
+                throw new \UnexpectedValueException("Missing required field '$__required' for SchemaGeneration::fromArray()");
+            }
+        }
         return new self(
+            id: $data['id'],
             object: $data['object'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             jsonSchema: $data['json_schema'] ?? null,
             strict: $data['strict'] ?? null,
-            id: $data['id'] ?? null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
             error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
         );
@@ -43,11 +50,11 @@ readonly class MainServerServicesV1SchemasModelsSchemaGeneration implements \Jso
     public function toArray(): array
     {
         return [
+            'id' => $this->id,
             'object' => $this->object,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'json_schema' => $this->jsonSchema,
             'strict' => $this->strict,
-            'id' => $this->id,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),
         ];

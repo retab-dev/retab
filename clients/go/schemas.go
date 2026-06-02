@@ -25,7 +25,7 @@ type SchemasGenerateParams struct {
 
 // Generate schema From Examples
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
-func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*MainServerServicesV1SchemasModelsSchemaGeneration, error) {
+func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*SchemaGeneration, error) {
 	type generateWireBody struct {
 		Documents          []MIMEData `json:"documents"`
 		Model              *string    `json:"model,omitempty"`
@@ -63,7 +63,7 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		ImageResolutionDpi: params.ImageResolutionDpi,
 		Background:         params.Background,
 	}
-	var result MainServerServicesV1SchemasModelsSchemaGeneration
+	var result SchemaGeneration
 	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)
 	if err != nil {
 		return nil, err

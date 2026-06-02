@@ -9,6 +9,7 @@
     "cancel_edit",
     "cancel_experiment_run",
     "cancel_extraction",
+    "cancel_file_blueprint",
     "cancel_parse",
     "cancel_partition",
     "cancel_split",
@@ -23,6 +24,7 @@
     "create_experiment",
     "create_experiment_run",
     "create_extraction",
+    "create_file_blueprint",
     "create_parse",
     "create_partitions",
     "create_review_version",
@@ -60,6 +62,7 @@
     "get_extraction",
     "get_extraction_sources",
     "get_file",
+    "get_file_blueprint",
     "get_parse",
     "get_partition",
     "get_review",
@@ -117,6 +120,10 @@
       "command": "retab parses cancel",
       "source_files": ["open-source/sdk/cli/cmd/parses.go"]
     },
+    "cancel_file_blueprint": {
+      "command": "retab files blueprints cancel",
+      "source_files": ["open-source/sdk/cli/cmd/files_blueprints.go"]
+    },
     "create_classification": {
       "command": "retab classifications create",
       "source_files": ["open-source/sdk/cli/cmd/zz_oagen_classifications.go"]
@@ -128,6 +135,10 @@
     "create_extraction": {
       "command": "retab extractions create",
       "source_files": ["open-source/sdk/cli/cmd/extractions.go"]
+    },
+    "create_file_blueprint": {
+      "command": "retab files blueprints create",
+      "source_files": ["open-source/sdk/cli/cmd/files_blueprints.go"]
     },
     "create_parse": {
       "command": "retab parses create",
@@ -183,7 +194,9 @@
     },
     "download_link": {
       "command": "retab files download",
-      "source_files": ["open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"]
+      "source_files": [
+        "open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"
+      ]
     },
     "export_workflow_spec": {
       "command": "retab workflows spec get",
@@ -212,6 +225,10 @@
     "get_file": {
       "command": "retab files get",
       "source_files": ["open-source/sdk/cli/cmd/zz_oagen_files.go"]
+    },
+    "get_file_blueprint": {
+      "command": "retab files blueprints get",
+      "source_files": ["open-source/sdk/cli/cmd/files_blueprints.go"]
     },
     "get_parse": {
       "command": "retab parses get",
@@ -287,7 +304,9 @@
     },
     "upload_file": {
       "command": "retab files upload",
-      "source_files": ["open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"]
+      "source_files": [
+        "open-source/sdk/cli/cmd/files_transfer_oagen_overlay.go"
+      ]
     },
     "validate_workflow_spec": {
       "command": "retab workflows spec validate",

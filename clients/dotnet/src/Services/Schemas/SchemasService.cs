@@ -23,14 +23,14 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="MainServerServicesV1SchemasModelsSchemaGeneration"/> result.</returns>
-        public virtual async Task<MainServerServicesV1SchemasModelsSchemaGeneration> GenerateAsync(SchemasGenerateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>The <see cref="SchemaGeneration"/> result.</returns>
+        public virtual async Task<SchemaGeneration> GenerateAsync(SchemasGenerateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.PostAsync<MainServerServicesV1SchemasModelsSchemaGeneration>("/v1/schemas/generate", options, requestOptions, cancellationToken);
+            return await this.PostAsync<SchemaGeneration>("/v1/schemas/generate", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GenerateAsync"/>.</summary>
-        public virtual Task<MainServerServicesV1SchemasModelsSchemaGeneration> Generate(SchemasGenerateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<SchemaGeneration> Generate(SchemasGenerateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.GenerateAsync(options, requestOptions, cancellationToken);
         }

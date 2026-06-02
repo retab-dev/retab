@@ -9,7 +9,7 @@ from retab.types.classifications import PrimitiveError
 from retab.types.mime import MIMEData
 
 
-class MainServerServicesV1SchemasModelsSchemaGenerationStatus(str, Enum):
+class SchemaGenerationStatus(str, Enum):
     PENDING = "pending"
     QUEUED = "queued"
     IN_PROGRESS = "in_progress"
@@ -33,7 +33,7 @@ class GenerateSchemaRequest(BaseModel):
     )
 
 
-class MainServerServicesV1SchemasModelsSchemaGeneration(BaseModel):
+class SchemaGeneration(BaseModel):
     """Public generated schema response."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
@@ -42,9 +42,10 @@ class MainServerServicesV1SchemasModelsSchemaGeneration(BaseModel):
     created_at: datetime.datetime | None = None
     json_schema: dict[str, Any] | None = Field(default={})
     strict: bool | None = Field(default=True)
-    id: str | None = Field(default=None, description="Unique identifier of the schema generation.")
-    status: MainServerServicesV1SchemasModelsSchemaGenerationStatus | None = Field(
-        default=cast(MainServerServicesV1SchemasModelsSchemaGenerationStatus, "pending"),
+    id: str = Field(..., description="Unique identifier of the schema generation.")
+    status: SchemaGenerationStatus | None = Field(
+        default=cast(SchemaGenerationStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -58,4 +59,4 @@ class MainServerServicesV1SchemasModelsSchemaGeneration(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 GenerateSchemaRequest.model_rebuild()
-MainServerServicesV1SchemasModelsSchemaGeneration.model_rebuild()
+SchemaGeneration.model_rebuild()

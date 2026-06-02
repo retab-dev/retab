@@ -5,26 +5,36 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.SchemaGenerationStatus;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class PartialSchema {
+public final class SchemaGeneration {
   private final String objectType;
   private final OffsetDateTime createdAt;
   private final Map<String, Object> jsonSchema;
   private final Boolean strict;
+  private final String id;
+  private final SchemaGenerationStatus status;
+  private final PrimitiveError error;
 
   @JsonCreator
-  public PartialSchema(
+  public SchemaGeneration(
       @JsonProperty(value = "object", required = false) String objectType,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "json_schema", required = false) Map<String, Object> jsonSchema,
-      @JsonProperty(value = "strict", required = false) Boolean strict) {
+      @JsonProperty(value = "strict", required = false) Boolean strict,
+      @JsonProperty(value = "id", required = true) String id,
+      @JsonProperty(value = "status", required = false) SchemaGenerationStatus status,
+      @JsonProperty(value = "error", required = false) PrimitiveError error) {
     this.objectType = objectType != null ? objectType : "schema";
     this.createdAt = createdAt;
     this.jsonSchema = jsonSchema;
     this.strict = strict != null ? strict : true;
+    this.id = id;
+    this.status = status;
+    this.error = error;
   }
 
   @JsonProperty("object")
@@ -45,5 +55,20 @@ public final class PartialSchema {
   @JsonProperty("strict")
   public Boolean isStrict() {
     return strict;
+  }
+
+  @JsonProperty("id")
+  public String getId() {
+    return id;
+  }
+
+  @JsonProperty("status")
+  public SchemaGenerationStatus getStatus() {
+    return status;
+  }
+
+  @JsonProperty("error")
+  public PrimitiveError getError() {
+    return error;
   }
 }

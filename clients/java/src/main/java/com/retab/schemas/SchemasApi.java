@@ -5,7 +5,7 @@ package com.retab.schemas;
 import com.retab.RetabClient;
 import com.retab.models.GenerateSchemaRequest;
 import com.retab.models.MimeData;
-import com.retab.models.PartialSchema;
+import com.retab.models.SchemaGeneration;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -27,23 +27,21 @@ public final class SchemasApi {
     return client;
   }
 
-  public PartialSchema generate(GenerateSchemaRequest request)
+  public SchemaGeneration generate(GenerateSchemaRequest request)
       throws IOException, InterruptedException {
     return generate(
         request == null ? null : request.getDocuments(),
         request == null ? null : request.getModel(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getImageResolutionDpi(),
-        request == null ? null : request.isStream(),
         request == null ? null : request.isBackground());
   }
 
-  public PartialSchema generate(
+  public SchemaGeneration generate(
       List<MimeData> documents,
       String model,
       String instructions,
       Long imageResolutionDpi,
-      Boolean stream,
       Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/schemas/generate";
@@ -59,9 +57,6 @@ public final class SchemasApi {
     }
     if (imageResolutionDpi != null) {
       body.put("image_resolution_dpi", imageResolutionDpi);
-    }
-    if (stream != null) {
-      body.put("stream", stream);
     }
     if (background != null) {
       body.put("background", background);
@@ -82,7 +77,7 @@ public final class SchemasApi {
     if (response.body() == null || response.body().isBlank()) {
       return null;
     }
-    return client.getObjectMapper().readValue(response.body(), PartialSchema.class);
+    return client.getObjectMapper().readValue(response.body(), SchemaGeneration.class);
   }
 
   private static String encodePathSegment(Object value) {

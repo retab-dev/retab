@@ -46,10 +46,7 @@ impl<'a> SchemasApi<'a> {
     /// Generate Schema From Examples
     ///
     /// Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
-    pub async fn generate(
-        &self,
-        params: GenerateParams,
-    ) -> Result<MainServerServicesV1SchemasModelsSchemaGeneration, Error> {
+    pub async fn generate(&self, params: GenerateParams) -> Result<SchemaGeneration, Error> {
         self.generate_with_options(params, None).await
     }
 
@@ -58,7 +55,7 @@ impl<'a> SchemasApi<'a> {
         &self,
         params: GenerateParams,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<MainServerServicesV1SchemasModelsSchemaGeneration, Error> {
+    ) -> Result<SchemaGeneration, Error> {
         let path = "/v1/schemas/generate".to_string();
         let method = http::Method::POST;
         self.client

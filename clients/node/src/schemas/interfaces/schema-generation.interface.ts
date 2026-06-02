@@ -10,11 +10,11 @@ import {
   deserializePrimitiveError,
   serializePrimitiveError,
 } from '../../classifications/interfaces/primitive-error.interface.js';
-import type { MainServerServicesV1SchemasModelsSchemaGenerationStatus } from './main-server-services-v-1-schemas-models-schema-generation-status.interface.js';
-import { ZMainServerServicesV1SchemasModelsSchemaGenerationStatus } from './main-server-services-v-1-schemas-models-schema-generation-status.interface.js';
+import type { SchemaGenerationStatus } from './schema-generation-status.interface.js';
+import { ZSchemaGenerationStatus } from './schema-generation-status.interface.js';
 
 /** Public generated schema response. */
-export interface MainServerServicesV1SchemasModelsSchemaGeneration {
+export interface SchemaGeneration {
   /** @default "schema" */
   object?: string;
   createdAt?: Date | null;
@@ -23,39 +23,37 @@ export interface MainServerServicesV1SchemasModelsSchemaGeneration {
   /** @default true */
   strict?: boolean;
   /** Unique identifier of the schema generation. */
-  id?: string;
+  id: string;
   /**
    * Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
    * @default "pending"
    */
-  status?: MainServerServicesV1SchemasModelsSchemaGenerationStatus;
+  status?: SchemaGenerationStatus;
   /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
   error?: PrimitiveError | null;
 }
 
-export interface MainServerServicesV1SchemasModelsSchemaGenerationResponse {
+export interface SchemaGenerationResponse {
   object?: string;
   created_at?: string | null;
   json_schema?: Record<string, unknown>;
   strict?: boolean;
-  id?: string;
-  status?: MainServerServicesV1SchemasModelsSchemaGenerationStatus;
+  id: string;
+  status?: SchemaGenerationStatus;
   error?: PrimitiveErrorResponse | null;
 }
 
-export const ZMainServerServicesV1SchemasModelsSchemaGeneration = z.object({
+export const ZSchemaGeneration = z.object({
   object: z.string().optional(),
   createdAt: z.coerce.date().nullable().optional(),
   jsonSchema: z.record(z.string(), z.unknown()).optional(),
   strict: z.boolean().optional(),
-  id: z.string().optional(),
-  status: ZMainServerServicesV1SchemasModelsSchemaGenerationStatus.optional(),
+  id: z.string(),
+  status: ZSchemaGenerationStatus.optional(),
   error: ZPrimitiveError.nullable().optional(),
-}) as z.ZodType<MainServerServicesV1SchemasModelsSchemaGeneration>;
+}) as z.ZodType<SchemaGeneration>;
 
-export function deserializeMainServerServicesV1SchemasModelsSchemaGeneration(
-  wire: MainServerServicesV1SchemasModelsSchemaGenerationResponse
-): MainServerServicesV1SchemasModelsSchemaGeneration {
+export function deserializeSchemaGeneration(wire: SchemaGenerationResponse): SchemaGeneration {
   return {
     object: wire['object'],
     createdAt:
@@ -77,9 +75,7 @@ export function deserializeMainServerServicesV1SchemasModelsSchemaGeneration(
   };
 }
 
-export function serializeMainServerServicesV1SchemasModelsSchemaGeneration(
-  domain: MainServerServicesV1SchemasModelsSchemaGeneration
-): MainServerServicesV1SchemasModelsSchemaGenerationResponse {
+export function serializeSchemaGeneration(domain: SchemaGeneration): SchemaGenerationResponse {
   return {
     object: domain['object'],
     created_at:

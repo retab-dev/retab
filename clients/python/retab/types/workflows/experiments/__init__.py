@@ -128,11 +128,11 @@ class WorkflowExperiment(BaseModel):
     last_run_id: str | None = None
     created_at: datetime.datetime | None = Field(default=None, description="When the experiment was created")
     updated_at: datetime.datetime | None = Field(default=None, description="When the experiment was last updated")
-    status: ExperimentPublicStatus | None = Field(default=cast(ExperimentPublicStatus, "draft"))
+    status: ExperimentPublicStatus | None = Field(default=cast(ExperimentPublicStatus, "draft"), validate_default=True)
     block_type: ExperimentBlockType
     score: float | None = None
     is_stale: bool | None = Field(default=False)
-    schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"))
+    schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"), validate_default=True)
     schema_drift_detail: str | None = None
 
 

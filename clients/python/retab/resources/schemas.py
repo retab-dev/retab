@@ -11,7 +11,7 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.utils.mime import prepare_mime_document
 from retab.types.mime import FileRef, MIMEData
-from retab.types.schemas import GenerateSchemaRequest, MainServerServicesV1SchemasModelsSchemaGeneration
+from retab.types.schemas import GenerateSchemaRequest, SchemaGeneration
 
 
 def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
@@ -65,13 +65,13 @@ class Schemas(SyncAPIResource, SchemasMixin):
         image_resolution_dpi: int = 192,
         background: bool = False,
         **extra_params: Any,
-    ) -> MainServerServicesV1SchemasModelsSchemaGeneration:
+    ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
             documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
         )
         response = self._client._prepared_request(prepared_request)
-        return MainServerServicesV1SchemasModelsSchemaGeneration.model_validate(response)
+        return SchemaGeneration.model_validate(response)
 
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
@@ -85,13 +85,13 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         image_resolution_dpi: int = 192,
         background: bool = False,
         **extra_params: Any,
-    ) -> MainServerServicesV1SchemasModelsSchemaGeneration:
+    ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
             documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
         )
         response = await self._client._prepared_request(prepared_request)
-        return MainServerServicesV1SchemasModelsSchemaGeneration.model_validate(response)
+        return SchemaGeneration.model_validate(response)
 
 
 __all__ = ["Schemas", "AsyncSchemas", "SchemasMixin"]

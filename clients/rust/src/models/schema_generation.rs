@@ -6,8 +6,8 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Public generated schema response.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct MainServerServicesV1SchemasModelsSchemaGeneration {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemaGeneration {
     /// Defaults to `schema`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub object: Option<String>,
@@ -20,14 +20,28 @@ pub struct MainServerServicesV1SchemasModelsSchemaGeneration {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub strict: Option<bool>,
     /// Unique identifier of the schema generation.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub id: Option<String>,
+    pub id: String,
     /// Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
     ///
     /// Defaults to `pending`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub status: Option<MainServerServicesV1SchemasModelsSchemaGenerationStatus>,
+    pub status: Option<SchemaGenerationStatus>,
     /// Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub error: Option<PrimitiveError>,
+}
+impl SchemaGeneration {
+    /// Construct a new `SchemaGeneration` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(id: impl Into<String>) -> Self {
+        Self {
+            object: Default::default(),
+            created_at: Default::default(),
+            json_schema: Default::default(),
+            strict: Default::default(),
+            id: id.into(),
+            status: Default::default(),
+            error: Default::default(),
+        }
+    }
 }
