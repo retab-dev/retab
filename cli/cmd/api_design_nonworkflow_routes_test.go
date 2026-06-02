@@ -146,11 +146,20 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Files.CompleteUpload": {
 			{method: http.MethodPost, path: "/files/upload/{file_id}/complete"},
 		},
+		"Files.CreateBlueprint": {
+			{method: http.MethodPost, path: "/files/blueprints"},
+		},
+		"Files.CreateBlueprintCancel": {
+			{method: http.MethodPost, path: "/files/blueprints/{blueprint_id}/cancel"},
+		},
 		"Files.CreateUpload": {
 			{method: http.MethodPost, path: "/files/upload"},
 		},
 		"Files.Get": {
 			{method: http.MethodGet, path: "/files/{file_id}"},
+		},
+		"Files.GetBlueprint": {
+			{method: http.MethodGet, path: "/files/blueprints/{blueprint_id}"},
 		},
 		"Files.GetDownloadLink": {
 			{method: http.MethodGet, path: "/files/{file_id}/download-link"},

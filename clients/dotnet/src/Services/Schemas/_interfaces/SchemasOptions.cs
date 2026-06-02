@@ -17,8 +17,7 @@ namespace Retab
         /// <summary>Resolution of the image sent to the LLM</summary>
         public long? ImageResolutionDpi { get; set; }
 
-        public bool? Stream { get; set; }
-
+        /// <summary>If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.</summary>
         public bool? Background { get; set; }
 
     }

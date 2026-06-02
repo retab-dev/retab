@@ -15,16 +15,14 @@ module Retab
     # @param model [String, nil]
     # @param instructions [String, nil]
     # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
-    # @param stream [Boolean, nil]
-    # @param background [Boolean, nil]
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::PartialSchema]
+    # @return [Retab::MainServerServicesV1SchemasModelsSchemaGeneration]
     def generate(
       documents:,
       model: nil,
       instructions: nil,
       image_resolution_dpi: nil,
-      stream: nil,
       background: nil,
       request_options: {}
     )
@@ -34,7 +32,6 @@ module Retab
         "model" => model,
         "instructions" => instructions,
         "image_resolution_dpi" => image_resolution_dpi,
-        "stream" => stream,
         "background" => background
       }.compact
       response = @client.request(
@@ -44,7 +41,7 @@ module Retab
         body: body,
         request_options: request_options
       )
-      result = Retab::PartialSchema.new(response.body)
+      result = Retab::MainServerServicesV1SchemasModelsSchemaGeneration.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,

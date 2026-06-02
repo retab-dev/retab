@@ -10,7 +10,6 @@ module Retab
       model: :model,
       instructions: :instructions,
       image_resolution_dpi: :image_resolution_dpi,
-      stream: :stream,
       background: :background
     }.freeze
 
@@ -19,7 +18,6 @@ module Retab
       :model,
       :instructions,
       :image_resolution_dpi,
-      :stream,
       :background
     )
 
@@ -30,7 +28,6 @@ module Retab
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @instructions = hash[:instructions]
       @image_resolution_dpi = hash[:image_resolution_dpi]
-      @stream = hash[:stream].nil? ? false : hash[:stream]
       @background = hash[:background].nil? ? false : hash[:background]
     end
   end

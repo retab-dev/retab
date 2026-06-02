@@ -64,6 +64,41 @@ impl Default for ListParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct CreateBlueprintParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: CreateFileBlueprintRequest,
+}
+
+impl CreateBlueprintParams {
+    /// Construct a new `CreateBlueprintParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: CreateFileBlueprintRequest) -> Self {
+        Self { body }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetBlueprintParams {
+    /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+    ///
+    /// Defaults to `true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_output: Option<bool>,
+}
+
+impl Default for GetBlueprintParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            include_output: Some(true),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct CreateUploadParams {
     /// Request body sent with this call.
     ///
@@ -115,6 +150,81 @@ impl<'a> FilesApi<'a> {
         let method = http::Method::GET;
         self.client
             .request_page(method, &path, &params, "after", options)
+            .await
+    }
+
+    /// Create File Blueprint
+    ///
+    /// Create a Document Blueprint for an uploaded file.
+    pub async fn create_blueprint(
+        &self,
+        params: CreateBlueprintParams,
+    ) -> Result<FileBlueprint, Error> {
+        self.create_blueprint_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::create_blueprint`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_blueprint_with_options(
+        &self,
+        params: CreateBlueprintParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<FileBlueprint, Error> {
+        let path = "/v1/files/blueprints".to_string();
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// Get File Blueprint
+    ///
+    /// Retrieve a file blueprint by id.
+    pub async fn get_blueprint(
+        &self,
+        blueprint_id: &str,
+        params: GetBlueprintParams,
+    ) -> Result<FileBlueprint, Error> {
+        self.get_blueprint_with_options(blueprint_id, params, None)
+            .await
+    }
+
+    /// Variant of [`Self::get_blueprint`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn get_blueprint_with_options(
+        &self,
+        blueprint_id: &str,
+        params: GetBlueprintParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<FileBlueprint, Error> {
+        let blueprint_id = crate::client::path_segment(blueprint_id);
+        let path = format!("/v1/files/blueprints/{blueprint_id}");
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &params, options)
+            .await
+    }
+
+    /// Cancel File Blueprint
+    ///
+    /// Cancel an in-flight background file blueprint.
+    pub async fn create_blueprint_cancel(
+        &self,
+        blueprint_id: &str,
+    ) -> Result<FileBlueprint, Error> {
+        self.create_blueprint_cancel_with_options(blueprint_id, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_blueprint_cancel`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_blueprint_cancel_with_options(
+        &self,
+        blueprint_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<FileBlueprint, Error> {
+        let blueprint_id = crate::client::path_segment(blueprint_id);
+        let path = format!("/v1/files/blueprints/{blueprint_id}/cancel");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 

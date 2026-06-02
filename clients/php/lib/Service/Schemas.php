@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
-use Retab\Resource\PartialSchema;
+use Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration;
 
 class Schemas
 {
@@ -22,9 +22,8 @@ class Schemas
      * @param string|null $model
      * @param string|null $instructions
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
-     * @param bool|null $stream
-     * @param bool|null $background
-     * @return \Retab\Resource\PartialSchema
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
+     * @return \Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration
      * @throws \Retab\Exception\RetabException
      */
     public function generate(
@@ -32,17 +31,15 @@ class Schemas
         ?string $model = null,
         ?string $instructions = null,
         ?int $imageResolutionDpi = null,
-        ?bool $stream = null,
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\PartialSchema {
+    ): \Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration {
         $documents = array_map([\Retab\Resource\MimeDataCoerce::class, 'coerce'], $documents);
         $body = array_filter([
             'documents' => $documents,
             'model' => $model,
             'instructions' => $instructions,
             'image_resolution_dpi' => $imageResolutionDpi,
-            'stream' => $stream,
             'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
@@ -51,6 +48,6 @@ class Schemas
             body: $body,
             options: $options,
         );
-        return PartialSchema::fromArray($response);
+        return MainServerServicesV1SchemasModelsSchemaGeneration::fromArray($response);
     }
 }

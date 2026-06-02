@@ -14,6 +14,7 @@ public final class GenerateSchemaRequest {
   private final String instructions;
   private final Long imageResolutionDpi;
   private final Boolean stream;
+  private final Boolean background;
 
   @JsonCreator
   public GenerateSchemaRequest(
@@ -21,12 +22,14 @@ public final class GenerateSchemaRequest {
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
-      @JsonProperty(value = "stream", required = false) Boolean stream) {
+      @JsonProperty(value = "stream", required = false) Boolean stream,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.documents = documents;
     this.model = model != null ? model : "retab-small";
     this.instructions = instructions;
     this.imageResolutionDpi = imageResolutionDpi;
     this.stream = stream != null ? stream : false;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("documents")
@@ -52,5 +55,10 @@ public final class GenerateSchemaRequest {
   @JsonProperty("stream")
   public Boolean isStream() {
     return stream;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

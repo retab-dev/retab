@@ -2,9 +2,20 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any
+from enum import Enum
+from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.classifications import PrimitiveError
 from retab.types.mime import MIMEData
+
+
+class MainServerServicesV1SchemasModelsSchemaGenerationStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class GenerateSchemaRequest(BaseModel):
@@ -16,12 +27,14 @@ class GenerateSchemaRequest(BaseModel):
     model: str | None = Field(default="retab-small")
     instructions: str | None = None
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
-    stream: bool | None = Field(default=False)
-    background: bool | None = Field(default=False)
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.",
+    )
 
 
-class PartialSchema(BaseModel):
-    """A generated JSON schema with its `json_schema` body and `strict` flag."""
+class MainServerServicesV1SchemasModelsSchemaGeneration(BaseModel):
+    """Public generated schema response."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -29,6 +42,14 @@ class PartialSchema(BaseModel):
     created_at: datetime.datetime | None = None
     json_schema: dict[str, Any] | None = Field(default={})
     strict: bool | None = Field(default=True)
+    id: str | None = Field(default=None, description="Unique identifier of the schema generation.")
+    status: MainServerServicesV1SchemasModelsSchemaGenerationStatus | None = Field(
+        default=cast(MainServerServicesV1SchemasModelsSchemaGenerationStatus, "pending"),
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -37,4 +58,4 @@ class PartialSchema(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 GenerateSchemaRequest.model_rebuild()
-PartialSchema.model_rebuild()
+MainServerServicesV1SchemasModelsSchemaGeneration.model_rebuild()

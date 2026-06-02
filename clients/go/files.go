@@ -33,6 +33,64 @@ func (s *FileService) List(ctx context.Context, params *FilesListParams, opts ..
 	return doPaginated[File](ctx, s.client, "GET", "/v1/files", params, nil, opts...)
 }
 
+// FilesCreateBlueprintParams contains the parameters for CreateBlueprint.
+type FilesCreateBlueprintParams struct {
+	// FileID is file id to analyze.
+	FileID string `json:"file_id" url:"-"`
+	// Mode is optional analysis depth override. Omit to let Retab choose.
+	Mode *CreateFileBlueprintRequestMode `json:"mode,omitempty" url:"-"`
+	// Intent is optional user intent used to guide the blueprint analysis.
+	Intent *string `json:"intent,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background *bool `json:"background,omitempty" url:"-"`
+}
+
+// CreateBlueprint create File Blueprint
+// Create a Document Blueprint for an uploaded file.
+func (s *FileService) CreateBlueprint(ctx context.Context, params *FilesCreateBlueprintParams, opts ...RequestOption) (*FileBlueprint, error) {
+	var result FileBlueprint
+	_, err := s.client.request(ctx, "POST", "/v1/files/blueprints", nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// FilesGetBlueprintParams contains the parameters for GetBlueprint.
+type FilesGetBlueprintParams struct {
+	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
+	// Defaults to true.
+	IncludeOutput *bool `url:"include_output,omitempty" json:"-"`
+}
+
+// GetBlueprint get File Blueprint
+// Retrieve a file blueprint by id.
+func (s *FileService) GetBlueprint(ctx context.Context, blueprintID string, params *FilesGetBlueprintParams, opts ...RequestOption) (*FileBlueprint, error) {
+	if blueprintID == "" {
+		return nil, fmt.Errorf("retab: blueprint_id is required")
+	}
+	var result FileBlueprint
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/files/blueprints/%s", url.PathEscape(blueprintID)), params, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// CreateBlueprintCancel cancel File Blueprint
+// Cancel an in-flight background file blueprint.
+func (s *FileService) CreateBlueprintCancel(ctx context.Context, blueprintID string, opts ...RequestOption) (*FileBlueprint, error) {
+	if blueprintID == "" {
+		return nil, fmt.Errorf("retab: blueprint_id is required")
+	}
+	var result FileBlueprint
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/files/blueprints/%s/cancel", url.PathEscape(blueprintID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // FilesCreateUploadParams contains the parameters for CreateUpload.
 type FilesCreateUploadParams struct {
 	// Filename is filename to store

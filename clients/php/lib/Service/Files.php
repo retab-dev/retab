@@ -8,6 +8,7 @@ namespace Retab\Service;
 
 use Retab\Resource\CreateUploadResponse;
 use Retab\Resource\File;
+use Retab\Resource\FileBlueprint;
 use Retab\Resource\FileLink;
 use Retab\Resource\MimeData;
 
@@ -66,6 +67,85 @@ class Files
             modelClass: File::class,
             options: $options,
         );
+    }
+
+    /**
+     * Create File Blueprint
+     *
+     * Create a Document Blueprint for an uploaded file.
+     * @param string $fileId File id to analyze.
+     * @param \Retab\Resource\FileBlueprintMode|null $mode Optional analysis depth override. Omit to let Retab choose.
+     * @param string|null $intent Optional user intent used to guide the blueprint analysis.
+     * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+     * @return \Retab\Resource\FileBlueprint
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createBlueprint(
+        string $fileId,
+        ?\Retab\Resource\FileBlueprintMode $mode = null,
+        ?string $intent = null,
+        ?bool $background = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\FileBlueprint {
+        $body = array_filter([
+            'file_id' => $fileId,
+            'mode' => $mode?->value,
+            'intent' => $intent,
+            'background' => $background,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/files/blueprints',
+            body: $body,
+            options: $options,
+        );
+        return FileBlueprint::fromArray($response);
+    }
+
+    /**
+     * Get File Blueprint
+     *
+     * Retrieve a file blueprint by id.
+     * @param string $blueprintId
+     * @param bool|null $includeOutput When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs. Defaults to true.
+     * @return \Retab\Resource\FileBlueprint
+     * @throws \Retab\Exception\RetabException
+     */
+    public function getBlueprint(
+        string $blueprintId,
+        ?bool $includeOutput = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\FileBlueprint {
+        $query = array_filter([
+            'include_output' => $includeOutput,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'GET',
+            path: 'v1/files/blueprints/' . rawurlencode($blueprintId),
+            query: $query,
+            options: $options,
+        );
+        return FileBlueprint::fromArray($response);
+    }
+
+    /**
+     * Cancel File Blueprint
+     *
+     * Cancel an in-flight background file blueprint.
+     * @param string $blueprintId
+     * @return \Retab\Resource\FileBlueprint
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createBlueprintCancel(
+        string $blueprintId,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\FileBlueprint {
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/files/blueprints/' . rawurlencode($blueprintId) . '/cancel',
+            options: $options,
+        );
+        return FileBlueprint::fromArray($response);
     }
 
     /**

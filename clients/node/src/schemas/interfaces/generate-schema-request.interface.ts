@@ -22,9 +22,10 @@ export interface GenerateSchemaRequest {
    * @default 192
    */
   imageResolutionDpi?: number;
-  /** @default false */
-  stream?: boolean;
-  /** @default false */
+  /**
+   * If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
+   * @default false
+   */
   background?: boolean;
 }
 
@@ -33,7 +34,6 @@ export interface GenerateSchemaRequestResponse {
   model?: string;
   instructions?: string | null;
   image_resolution_dpi?: number;
-  stream?: boolean;
   background?: boolean;
 }
 
@@ -42,7 +42,6 @@ export const ZGenerateSchemaRequest = z.object({
   model: z.string().optional(),
   instructions: z.string().nullable().optional(),
   imageResolutionDpi: z.number().int().optional(),
-  stream: z.boolean().optional(),
   background: z.boolean().optional(),
 }) as z.ZodType<GenerateSchemaRequest>;
 
@@ -54,7 +53,6 @@ export function deserializeGenerateSchemaRequest(
     model: wire['model'],
     instructions: wire['instructions'],
     imageResolutionDpi: wire['image_resolution_dpi'],
-    stream: wire['stream'],
     background: wire['background'],
   };
 }
@@ -67,7 +65,6 @@ export function serializeGenerateSchemaRequest(
     model: domain['model'],
     instructions: domain['instructions'],
     image_resolution_dpi: domain['imageResolutionDpi'],
-    stream: domain['stream'],
     background: domain['background'],
   };
 }
