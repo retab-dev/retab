@@ -33,6 +33,7 @@ class SchemasMixin:
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
@@ -49,6 +50,7 @@ class SchemasMixin:
             instructions=cast(Any, instructions),
             image_resolution_dpi=cast(Any, image_resolution_dpi),
             stream=cast(Any, stream),
+            background=cast(Any, background),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/schemas/generate", params=params or None, data=data)
@@ -64,11 +66,12 @@ class Schemas(SyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> PartialSchema:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, background=background, **extra_params
         )
         response = self._client._prepared_request(prepared_request)
         return PartialSchema.model_validate(response)
@@ -84,11 +87,12 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         image_resolution_dpi: int = 192,
         stream: bool = False,
+        background: bool = False,
         **extra_params: Any,
     ) -> PartialSchema:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, **extra_params
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, stream=stream, background=background, **extra_params
         )
         response = await self._client._prepared_request(prepared_request)
         return PartialSchema.model_validate(response)

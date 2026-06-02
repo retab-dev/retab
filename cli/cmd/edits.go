@@ -88,7 +88,7 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, editWaitSpec, result)
 	}),
 }
 
@@ -519,6 +519,7 @@ func init() {
 	editsCreateCmd.Flags().String("model", "", "model identifier")
 	editsCreateCmd.Flags().String("color", "", "edit color")
 	editsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
+	addPrimitiveCreateWaitFlags(editsCreateCmd)
 	_ = editsCreateCmd.MarkFlagRequired("instructions")
 
 	addListFlags(editsListCmd, false)
@@ -540,6 +541,9 @@ func init() {
 	editsTemplatesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd)
-	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsCancelCmd, editsDeleteCmd, editsTemplatesCmd)
+	editsWaitCmd := primitiveWaitCommand(editWaitSpec)
+	addPrimitiveWaitTuningFlags(editsWaitCmd, false)
+
+	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsCancelCmd, editsDeleteCmd, editsWaitCmd, editsTemplatesCmd)
 	rootCmd.AddCommand(editsCmd)
 }

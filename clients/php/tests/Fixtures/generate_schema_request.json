@@ -8,5 +8,6 @@
   "model": "test_model",
   "instructions": "test_instructions",
   "image_resolution_dpi": 1,
-  "stream": true
+  "stream": true,
+  "background": true
 }

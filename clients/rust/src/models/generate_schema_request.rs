@@ -22,6 +22,9 @@ pub struct GenerateSchemaRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub stream: Option<bool>,
+    /// Defaults to `false`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub background: Option<bool>,
 }
 impl GenerateSchemaRequest {
     /// Construct a new `GenerateSchemaRequest` with the required fields set.
@@ -33,6 +36,7 @@ impl GenerateSchemaRequest {
             instructions: Default::default(),
             image_resolution_dpi: Default::default(),
             stream: Default::default(),
+            background: Default::default(),
         }
     }
 }

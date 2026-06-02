@@ -220,6 +220,37 @@ const (
 // ExtractionWorkflowArtifactStatus is an alias for ClassificationStatus.
 type ExtractionWorkflowArtifactStatus = ClassificationStatus
 
+// JobStatus represents job status values.
+type JobStatus string
+
+const (
+	JobStatusValidating JobStatus = "validating"
+	JobStatusQueued     JobStatus = "queued"
+	JobStatusInProgress JobStatus = "in_progress"
+	JobStatusCompleted  JobStatus = "completed"
+	JobStatusFailed     JobStatus = "failed"
+	JobStatusCancelled  JobStatus = "cancelled"
+	JobStatusExpired    JobStatus = "expired"
+)
+
+// SupportedEndpoint represents supported endpoint values.
+type SupportedEndpoint string
+
+const (
+	SupportedEndpointV1Extractions            SupportedEndpoint = "/v1/extractions"
+	SupportedEndpointV1Parses                 SupportedEndpoint = "/v1/parses"
+	SupportedEndpointV1Splits                 SupportedEndpoint = "/v1/splits"
+	SupportedEndpointV1Partitions             SupportedEndpoint = "/v1/partitions"
+	SupportedEndpointV1Classifications        SupportedEndpoint = "/v1/classifications"
+	SupportedEndpointV1SchemasGenerate        SupportedEndpoint = "/v1/schemas/generate"
+	SupportedEndpointV1FilesAnalyze           SupportedEndpoint = "/v1/files/analyze"
+	SupportedEndpointV1FilesBlueprints        SupportedEndpoint = "/v1/files/blueprints"
+	SupportedEndpointV1Edits                  SupportedEndpoint = "/v1/edits"
+	SupportedEndpointV1EditsTemplatesGenerate SupportedEndpoint = "/v1/edits/templates/generate"
+	SupportedEndpointV1EvalsExtractProcess    SupportedEndpoint = "/v1/evals/extract/process"
+	SupportedEndpointV1EvalsExtractExtract    SupportedEndpoint = "/v1/evals/extract/extract"
+)
+
 // LatestBlockTestRunSummaryStatus represents latest block test run summary status values.
 type LatestBlockTestRunSummaryStatus string
 

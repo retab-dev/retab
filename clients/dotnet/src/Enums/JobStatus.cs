@@ -1,0 +1,30 @@
+namespace Retab
+{
+    using System.Runtime.Serialization;
+    using Newtonsoft.Json;
+    using STJS = System.Text.Json.Serialization;
+
+    /// <summary>Represents job status values.</summary>
+    [JsonConverter(typeof(RetabNewtonsoftStringEnumConverter))]
+    [STJS.JsonConverter(typeof(RetabStringEnumConverterFactory))]
+    public enum JobStatus
+    {
+        [EnumMember(Value = "unknown")]
+        Unknown,
+
+        [EnumMember(Value = "validating")]
+        Validating,
+        [EnumMember(Value = "queued")]
+        Queued,
+        [EnumMember(Value = "in_progress")]
+        InProgress,
+        [EnumMember(Value = "completed")]
+        Completed,
+        [EnumMember(Value = "failed")]
+        Failed,
+        [EnumMember(Value = "cancelled")]
+        Cancelled,
+        [EnumMember(Value = "expired")]
+        Expired,
+    }
+}

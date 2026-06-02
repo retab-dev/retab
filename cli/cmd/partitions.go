@@ -86,7 +86,7 @@ extraction.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, partitionWaitSpec, result)
 	}),
 }
 
@@ -214,6 +214,7 @@ func init() {
 	partitionsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	partitionsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	partitionsCreateCmd.Flags().Bool("allow-overlap", true, "allow partition chunks to share pages")
+	addPrimitiveCreateWaitFlags(partitionsCreateCmd)
 	_ = partitionsCreateCmd.MarkFlagRequired("key")
 	_ = partitionsCreateCmd.MarkFlagRequired("instructions")
 	_ = partitionsCreateCmd.MarkFlagRequired("model")
@@ -222,6 +223,9 @@ func init() {
 
 	partitionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	partitionsCmd.AddCommand(partitionsCreateCmd, partitionsGetCmd, partitionsListCmd, partitionsCancelCmd, partitionsDeleteCmd)
+	partitionsWaitCmd := primitiveWaitCommand(partitionWaitSpec)
+	addPrimitiveWaitTuningFlags(partitionsWaitCmd, false)
+
+	partitionsCmd.AddCommand(partitionsCreateCmd, partitionsGetCmd, partitionsListCmd, partitionsCancelCmd, partitionsDeleteCmd, partitionsWaitCmd)
 	rootCmd.AddCommand(partitionsCmd)
 }

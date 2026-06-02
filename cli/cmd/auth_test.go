@@ -126,6 +126,19 @@ func TestWriteAuthStatusHuman_Has3LineBlock(t *testing.T) {
 	}
 }
 
+func TestWriteAuthStatusHuman_RendersBaseURL(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	payload["base_url"] = "https://api.retab.com"
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Base URL:") || !strings.Contains(out, "https://api.retab.com") {
+		t.Fatalf("human output should render the base URL:\n%s", out)
+	}
+}
+
 // Even though writeAuthStatusHuman renders the human block, the writer
 // here is a bytes.Buffer (non-TTY) — paletteFor returns the zero palette
 // for non-files, so NO ANSI escapes should appear. Catches the bug where
@@ -455,6 +468,22 @@ func TestAPIKeyLoginDefaultsToProductionInsteadOfStoredLocalhost(t *testing.T) {
 	}
 	if cfg.APIKey != "sk_live_test" {
 		t.Fatalf("APIKey = %q, want sk_live_test", cfg.APIKey)
+	}
+}
+
+func TestResolvedAuthStatusBaseURLDefaultsToProduction(t *testing.T) {
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("base-url", "", "")
+
+	got, err := resolvedAuthStatusBaseURL(cmd, retabConfig{})
+	if err != nil {
+		t.Fatalf("resolvedAuthStatusBaseURL: %v", err)
+	}
+	if got != defaultAPIBaseURL {
+		t.Fatalf("base URL = %q, want %q", got, defaultAPIBaseURL)
 	}
 }
 

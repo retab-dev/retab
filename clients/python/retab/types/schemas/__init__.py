@@ -17,6 +17,7 @@ class GenerateSchemaRequest(BaseModel):
     instructions: str | None = None
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
     stream: bool | None = Field(default=False)
+    background: bool | None = Field(default=False)
 
 
 class PartialSchema(BaseModel):

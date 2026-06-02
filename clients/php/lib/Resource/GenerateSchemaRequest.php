@@ -19,6 +19,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         /** Resolution of the image sent to the LLM */
         public ?int $imageResolutionDpi = null,
         public ?bool $stream = null,
+        public ?bool $background = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -37,6 +38,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             instructions: $data['instructions'] ?? null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             stream: $data['stream'] ?? null,
+            background: $data['background'] ?? null,
         );
     }
 
@@ -49,6 +51,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             'instructions' => $this->instructions,
             'image_resolution_dpi' => $this->imageResolutionDpi,
             'stream' => $this->stream,
+            'background' => $this->background,
         ];
     }
 }

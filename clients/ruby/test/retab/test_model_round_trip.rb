@@ -1831,7 +1831,8 @@ class ModelRoundTripTest < Minitest::Test
       "model" => "stub",
       "instructions" => nil,
       "image_resolution_dpi" => 1,
-      "stream" => true
+      "stream" => true,
+      "background" => true
     }
     model = Retab::GenerateSchemaRequest.new(fixture.to_json)
     json = model.to_h
@@ -1846,6 +1847,73 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::HttpValidationError.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_job_round_trip
+    fixture = {
+      "id" => "stub",
+      "object" => "job",
+      "status" => "stub",
+      "endpoint" => "stub",
+      "error" => nil,
+      "warnings" => nil,
+      "created_at" => nil,
+      "started_at" => nil,
+      "completed_at" => nil,
+      "expires_at" => nil,
+      "metadata" => nil,
+      "cancelled" => true,
+      "attempt_count" => 1,
+      "last_attempt_at" => nil,
+      "last_failure_code" => nil,
+      "request" => nil,
+      "response" => nil
+    }
+    model = Retab::Job.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_job_error_round_trip
+    fixture = {
+      "code" => "stub",
+      "message" => "stub",
+      "details" => nil
+    }
+    model = Retab::JobError.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["code"], json[:code])
+    assert_equal(fixture["message"], json[:message])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_job_response_round_trip
+    fixture = {
+      "status_code" => 1,
+      "body" => {}
+    }
+    model = Retab::JobResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["status_code"], json[:status_code])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_job_warning_round_trip
+    fixture = {
+      "code" => "stub",
+      "message" => "stub",
+      "details" => nil
+    }
+    model = Retab::JobWarning.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["code"], json[:code])
+    assert_equal(fixture["message"], json[:message])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

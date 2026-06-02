@@ -19,5 +19,7 @@ namespace Retab
 
         public bool? Stream { get; set; }
 
+        public bool? Background { get; set; }
+
     }
 }

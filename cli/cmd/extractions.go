@@ -126,7 +126,7 @@ For streaming output (one event per line, useful on slow extractions), see
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, extractionWaitSpec, result)
 	}),
 }
 
@@ -352,6 +352,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 
 func init() {
 	addExtractionBodyFlags(extractionsCreateCmd)
+	addPrimitiveCreateWaitFlags(extractionsCreateCmd)
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)
@@ -359,6 +360,9 @@ func init() {
 
 	extractionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsCancelCmd, extractionsDeleteCmd)
+	extractionsWaitCmd := primitiveWaitCommand(extractionWaitSpec)
+	addPrimitiveWaitTuningFlags(extractionsWaitCmd, false)
+
+	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsCancelCmd, extractionsDeleteCmd, extractionsWaitCmd)
 	rootCmd.AddCommand(extractionsCmd)
 }

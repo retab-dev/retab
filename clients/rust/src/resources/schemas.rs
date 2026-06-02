@@ -37,6 +37,7 @@ impl GenerateParams {
                 instructions: Default::default(),
                 image_resolution_dpi: Default::default(),
                 stream: Default::default(),
+                background: Default::default(),
             },
         }
     }

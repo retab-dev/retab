@@ -297,23 +297,15 @@ compact human block for interactive terminals).`,
 		case cfg.APIKey != "":
 			source = "~/.retab/config.json (api_key)"
 		}
-		baseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-		if baseURL == "" {
-			baseURL = os.Getenv("RETAB_API_BASE_URL")
-		}
-		if baseURL == "" {
-			baseURL = os.Getenv("RETAB_BASE_URL")
-		}
-		if baseURL == "" {
-			baseURL = cfg.BaseURL
+		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg)
+		if err != nil {
+			return err
 		}
 
 		out := map[string]any{
 			"authenticated": source != "",
+			"base_url":      baseURL,
 			"source":        source,
-		}
-		if baseURL != "" {
-			out["base_url"] = baseURL
 		}
 		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
 			out["oauth"] = map[string]any{
@@ -365,6 +357,27 @@ compact human block for interactive terminals).`,
 		addAuthOrganizationStatus(cmd, out)
 		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
+}
+
+func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig) (string, error) {
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+	baseURL := flagBaseURL
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_API_BASE_URL")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_BASE_URL")
+	}
+	if err := validateBaseURL(baseURL); err != nil {
+		return "", err
+	}
+	if baseURL == "" {
+		baseURL = cfg.BaseURL
+	}
+	if baseURL == "" {
+		baseURL = defaultAPIBaseURL
+	}
+	return stripLegacyV1Suffix(baseURL), nil
 }
 
 func addSelectedEnvironmentStatus(cmd *cobra.Command, cfg retabConfig, baseURL string, out map[string]any) {
@@ -539,12 +552,14 @@ func writeAuthStatusJSON(w io.Writer, out map[string]any) error {
 //
 //	Logged in as <preview>
 //	Source:  <source>
+//	Base URL:  <api base url>
 //	Organization:  <name> (<id>)  (when resolvable)
 //	Environment:  <selected environment>  (OAuth, when available)
 //	Status:  <valid|invalid|not authenticated>
 //
-// "Source" / "Environment" / "Status" labels are dim; the api-key preview
-// is bold magenta (matching the Retab wordmark elsewhere in the CLI).
+// "Source" / "Base URL" / "Environment" / "Status" labels are dim; the
+// api-key preview is bold magenta (matching the Retab wordmark elsewhere in
+// the CLI).
 func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	s := paletteFor(w)
 
@@ -574,6 +589,12 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	}
 	if _, err := fmt.Fprintf(w, "%sSource:%s  %s\n", s.dim, s.reset, source); err != nil {
 		return err
+	}
+
+	if baseURL, _ := out["base_url"].(string); baseURL != "" {
+		if _, err := fmt.Fprintf(w, "%sBase URL:%s  %s\n", s.dim, s.reset, baseURL); err != nil {
+			return err
+		}
 	}
 
 	if organizationLine := authStatusOrganizationDisplay(out); organizationLine != "" {

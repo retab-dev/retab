@@ -10,7 +10,8 @@ module Retab
       model: :model,
       instructions: :instructions,
       image_resolution_dpi: :image_resolution_dpi,
-      stream: :stream
+      stream: :stream,
+      background: :background
     }.freeze
 
     attr_accessor(
@@ -18,7 +19,8 @@ module Retab
       :model,
       :instructions,
       :image_resolution_dpi,
-      :stream
+      :stream,
+      :background
     )
 
     def initialize(json)
@@ -29,6 +31,7 @@ module Retab
       @instructions = hash[:instructions]
       @image_resolution_dpi = hash[:image_resolution_dpi]
       @stream = hash[:stream].nil? ? false : hash[:stream]
+      @background = hash[:background].nil? ? false : hash[:background]
     end
   end
 end

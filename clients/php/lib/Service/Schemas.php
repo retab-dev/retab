@@ -23,6 +23,7 @@ class Schemas
      * @param string|null $instructions
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param bool|null $stream
+     * @param bool|null $background
      * @return \Retab\Resource\PartialSchema
      * @throws \Retab\Exception\RetabException
      */
@@ -32,6 +33,7 @@ class Schemas
         ?string $instructions = null,
         ?int $imageResolutionDpi = null,
         ?bool $stream = null,
+        ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\PartialSchema {
         $documents = array_map([\Retab\Resource\MimeDataCoerce::class, 'coerce'], $documents);
@@ -41,6 +43,7 @@ class Schemas
             'instructions' => $instructions,
             'image_resolution_dpi' => $imageResolutionDpi,
             'stream' => $stream,
+            'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
