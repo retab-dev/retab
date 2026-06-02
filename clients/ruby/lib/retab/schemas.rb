@@ -16,6 +16,7 @@ module Retab
     # @param instructions [String, nil]
     # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
     # @param stream [Boolean, nil]
+    # @param background [Boolean, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PartialSchema]
     def generate(
@@ -24,6 +25,7 @@ module Retab
       instructions: nil,
       image_resolution_dpi: nil,
       stream: nil,
+      background: nil,
       request_options: {}
     )
       documents = documents.map { |d| Retab::MimeData.coerce(d) } unless documents.nil?
@@ -32,7 +34,8 @@ module Retab
         "model" => model,
         "instructions" => instructions,
         "image_resolution_dpi" => image_resolution_dpi,
-        "stream" => stream
+        "stream" => stream,
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,

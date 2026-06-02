@@ -96,7 +96,7 @@ where the default is too coarse.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, parseWaitSpec, result)
 	}),
 }
 
@@ -221,12 +221,16 @@ func init() {
 	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
+	addPrimitiveCreateWaitFlags(parsesCreateCmd)
 	_ = parsesCreateCmd.MarkFlagRequired("model")
 
 	addListFlags(parsesListCmd, false)
 
 	parsesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	parsesCmd.AddCommand(parsesCreateCmd, parsesGetCmd, parsesListCmd, parsesCancelCmd, parsesDeleteCmd)
+	parsesWaitCmd := primitiveWaitCommand(parseWaitSpec)
+	addPrimitiveWaitTuningFlags(parsesWaitCmd, false)
+
+	parsesCmd.AddCommand(parsesCreateCmd, parsesGetCmd, parsesListCmd, parsesCancelCmd, parsesDeleteCmd, parsesWaitCmd)
 	rootCmd.AddCommand(parsesCmd)
 }

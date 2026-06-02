@@ -14,7 +14,8 @@ export class Schemas {
     model?: string,
     instructions?: string | null,
     imageResolutionDpi?: number,
-    stream?: boolean
+    stream?: boolean,
+    background?: boolean
   ): Promise<PartialSchema> {
     const documentsCoerced = await Promise.all(documents.map(coerceMimeData));
     const body = {
@@ -23,6 +24,7 @@ export class Schemas {
       instructions: instructions,
       image_resolution_dpi: imageResolutionDpi,
       stream: stream,
+      background: background,
     };
     const __wire = await this.client.request<PartialSchemaResponse>({
       method: 'POST',

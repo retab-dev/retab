@@ -1,0 +1,229 @@
+package cmd
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/spf13/cobra"
+)
+
+type primitiveWaitSpec struct {
+	singular string
+	idName   string
+	path     string
+}
+
+var (
+	classificationWaitSpec = primitiveWaitSpec{singular: "classification", idName: "classification-id", path: "/v1/classifications"}
+	editWaitSpec           = primitiveWaitSpec{singular: "edit", idName: "edit-id", path: "/v1/edits"}
+	extractionWaitSpec     = primitiveWaitSpec{singular: "extraction", idName: "extraction-id", path: "/v1/extractions"}
+	parseWaitSpec          = primitiveWaitSpec{singular: "parse", idName: "parse-id", path: "/v1/parses"}
+	partitionWaitSpec      = primitiveWaitSpec{singular: "partition", idName: "partition-id", path: "/v1/partitions"}
+	splitWaitSpec          = primitiveWaitSpec{singular: "split", idName: "split-id", path: "/v1/splits"}
+)
+
+func addPrimitiveCreateWaitFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("wait", false, "block until the primitive reaches a terminal status, then print the final record")
+	addPrimitiveWaitTuningFlags(cmd, true)
+}
+
+func addPrimitiveWaitTuningFlags(cmd *cobra.Command, isCreate bool) {
+	pollDescription := "poll cadence in milliseconds"
+	timeoutDescription := "max seconds to wait before giving up"
+	if isCreate {
+		pollDescription = "poll cadence in milliseconds while --wait is set"
+		timeoutDescription = "max seconds to wait while --wait is set"
+	}
+	cmd.Flags().Int("poll-interval-ms", 2000, pollDescription)
+	cmd.Flags().Int("timeout-seconds", 600, timeoutDescription)
+}
+
+func primitiveWaitCommand(spec primitiveWaitSpec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "wait <" + spec.idName + ">",
+		Short: "Poll until a " + spec.singular + " reaches a terminal status",
+		Long: `Block until the primitive reaches a terminal status
+(` + "`completed`" + `, ` + "`error`" + `, or ` + "`cancelled`" + `),
+polling on a configurable interval. Defaults: 2-second polls, 10-minute
+timeout.
+
+Cleaner than scripting a poll loop around ` + "`get`" + ` — the CLI handles
+the interval and timeout, prints the final record, and exits non-zero if
+the primitive ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout
+elapses.`,
+		Example: `  # Wait with defaults
+  retab ` + spec.path[4:] + ` wait ` + spec.idName + `
+
+  # Faster polls, longer ceiling
+  retab ` + spec.path[4:] + ` wait ` + spec.idName + ` \
+    --poll-interval-ms 1000 --timeout-seconds 1800`,
+		Args: cobra.ExactArgs(1),
+		RunE: runE(func(cmd *cobra.Command, args []string) error {
+			pollInterval, timeout := primitiveWaitDurations(cmd)
+			return waitForPrimitiveAndPrint(cmd, spec, args[0], pollInterval, timeout)
+		}),
+	}
+}
+
+func maybeWaitForPrimitiveCreate(cmd *cobra.Command, spec primitiveWaitSpec, result any) error {
+	wait, _ := cmd.Flags().GetBool("wait")
+	if !wait {
+		return printJSON(result)
+	}
+	id, err := primitiveID(result)
+	if err != nil {
+		return err
+	}
+	pollInterval, timeout := primitiveWaitDurations(cmd)
+	return waitForPrimitiveAndPrint(cmd, spec, id, pollInterval, timeout)
+}
+
+func waitForPrimitiveAndPrint(
+	cmd *cobra.Command,
+	spec primitiveWaitSpec,
+	id string,
+	pollInterval time.Duration,
+	timeout time.Duration,
+) error {
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	final, waitErr := waitForPrimitive(ctx, cmd, spec, id, pollInterval, timeout)
+	if final != nil {
+		if err := printJSON(final); err != nil {
+			return err
+		}
+	}
+	if waitErr != nil {
+		return waitErr
+	}
+	return primitiveTerminalError(spec, final)
+}
+
+func primitiveWaitDurations(cmd *cobra.Command) (time.Duration, time.Duration) {
+	pollMS, _ := cmd.Flags().GetInt("poll-interval-ms")
+	timeoutS, _ := cmd.Flags().GetInt("timeout-seconds")
+	pollInterval := 2 * time.Second
+	if pollMS > 0 {
+		pollInterval = time.Duration(pollMS) * time.Millisecond
+	}
+	timeout := 10 * time.Minute
+	if timeoutS > 0 {
+		timeout = time.Duration(timeoutS) * time.Second
+	}
+	return pollInterval, timeout
+}
+
+func waitForPrimitive(
+	ctx context.Context,
+	cmd *cobra.Command,
+	spec primitiveWaitSpec,
+	id string,
+	pollInterval time.Duration,
+	timeout time.Duration,
+) (map[string]any, error) {
+	if pollInterval <= 0 {
+		pollInterval = 2 * time.Second
+	}
+	if timeout <= 0 {
+		timeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	var last map[string]any
+	for {
+		result, err := cliJSONRequest(cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		current, err := primitiveMap(result)
+		if err != nil {
+			return nil, err
+		}
+		last = current
+		if isTerminalPrimitiveStatus(primitiveStatus(current)) {
+			return current, nil
+		}
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return last, fmt.Errorf("timed out waiting for %s %s: %w", spec.singular, id, ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+func primitiveGetPath(spec primitiveWaitSpec, id string) string {
+	return spec.path + "/" + url.PathEscape(id)
+}
+
+func primitiveID(value any) (string, error) {
+	resource, err := primitiveMap(value)
+	if err != nil {
+		return "", err
+	}
+	id, ok := resource["id"].(string)
+	if !ok || id == "" {
+		return "", fmt.Errorf("created primitive response did not include an id")
+	}
+	return id, nil
+}
+
+func primitiveMap(value any) (map[string]any, error) {
+	if resource, ok := value.(map[string]any); ok {
+		return resource, nil
+	}
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("encode primitive response: %w", err)
+	}
+	var resource map[string]any
+	if err := json.Unmarshal(raw, &resource); err != nil {
+		return nil, fmt.Errorf("decode primitive response: %w", err)
+	}
+	return resource, nil
+}
+
+func primitiveStatus(resource map[string]any) string {
+	if status, ok := resource["status"].(string); ok {
+		return status
+	}
+	lifecycle, ok := resource["lifecycle"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	status, _ := lifecycle["status"].(string)
+	return status
+}
+
+func isTerminalPrimitiveStatus(status string) bool {
+	switch status {
+	case "completed", "error", "cancelled":
+		return true
+	default:
+		return false
+	}
+}
+
+func primitiveTerminalError(spec primitiveWaitSpec, resource map[string]any) error {
+	if resource == nil {
+		return nil
+	}
+	status := primitiveStatus(resource)
+	switch status {
+	case "", "completed":
+		return nil
+	case "error", "cancelled":
+		id, _ := resource["id"].(string)
+		if id == "" {
+			return fmt.Errorf("%s ended with status %s", spec.singular, status)
+		}
+		return fmt.Errorf("%s %s ended with status %s", spec.singular, id, status)
+	default:
+		return nil
+	}
+}

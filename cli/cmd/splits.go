@@ -125,7 +125,7 @@ returned subdocument references can be fed back into per-section
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, splitWaitSpec, result)
 	}),
 }
 
@@ -258,6 +258,7 @@ func init() {
 	splitsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	splitsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	splitsCreateCmd.Flags().String("instructions", "", "extra instructions")
+	addPrimitiveCreateWaitFlags(splitsCreateCmd)
 	_ = splitsCreateCmd.MarkFlagRequired("model")
 	_ = splitsCreateCmd.MarkFlagRequired("subdocuments-file")
 
@@ -265,6 +266,9 @@ func init() {
 
 	splitsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsCancelCmd, splitsDeleteCmd)
+	splitsWaitCmd := primitiveWaitCommand(splitWaitSpec)
+	addPrimitiveWaitTuningFlags(splitsWaitCmd, false)
+
+	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsCancelCmd, splitsDeleteCmd, splitsWaitCmd)
 	rootCmd.AddCommand(splitsCmd)
 }

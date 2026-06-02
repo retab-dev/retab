@@ -20,6 +20,7 @@ type SchemasGenerateParams struct {
 	// ImageResolutionDpi is resolution of the image sent to the LLM
 	ImageResolutionDpi *int  `json:"image_resolution_dpi,omitempty" url:"-"`
 	Stream             *bool `json:"stream,omitempty" url:"-"`
+	Background         *bool `json:"background,omitempty" url:"-"`
 }
 
 // Generate schema From Examples
@@ -31,6 +32,7 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		Instructions       *string    `json:"instructions,omitempty"`
 		ImageResolutionDpi *int       `json:"image_resolution_dpi,omitempty"`
 		Stream             *bool      `json:"stream,omitempty"`
+		Background         *bool      `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -61,6 +63,7 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		Instructions:       params.Instructions,
 		ImageResolutionDpi: params.ImageResolutionDpi,
 		Stream:             params.Stream,
+		Background:         params.Background,
 	}
 	var result PartialSchema
 	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)

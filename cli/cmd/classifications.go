@@ -133,7 +133,7 @@ when the type is obvious from the cover.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return maybeWaitForPrimitiveCreate(cmd, classificationWaitSpec, result)
 	}),
 }
 
@@ -268,12 +268,16 @@ func init() {
 	classificationsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	classificationsCreateCmd.Flags().StringArray("category", nil, "category as name=description (repeatable)")
 	classificationsCreateCmd.Flags().String("categories-file", "", "JSON array of {name, description} (or - for stdin)")
+	addPrimitiveCreateWaitFlags(classificationsCreateCmd)
 	_ = classificationsCreateCmd.MarkFlagRequired("model")
 
 	addListFlags(classificationsListCmd, false)
 
 	classificationsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsCancelCmd, classificationsDeleteCmd)
+	classificationsWaitCmd := primitiveWaitCommand(classificationWaitSpec)
+	addPrimitiveWaitTuningFlags(classificationsWaitCmd, false)
+
+	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsCancelCmd, classificationsDeleteCmd, classificationsWaitCmd)
 	rootCmd.AddCommand(classificationsCmd)
 }

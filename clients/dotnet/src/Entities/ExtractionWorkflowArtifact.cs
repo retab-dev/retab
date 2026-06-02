@@ -35,7 +35,7 @@ namespace Retab
         public ClassificationStatus? Status { get; set; }
 
         /// <summary>Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.</summary>
-        public PrimitiveError? Error { get; set; }
+        public JobError? Error { get; set; }
 
         /// <summary>Consensus metadata for multi-vote extraction runs</summary>
         public ExtractionConsensus? Consensus { get; set; }
