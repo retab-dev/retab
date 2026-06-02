@@ -7,12 +7,14 @@ module Retab
 
     HASH_ATTRS = {
       name: :name,
-      description: :description
+      description: :description,
+      project_id: :project_id
     }.freeze
 
     attr_accessor(
       :name,
-      :description
+      :description,
+      :project_id
     )
 
     def initialize(json)
@@ -20,6 +22,7 @@ module Retab
       hash = self.class.normalize(json)
       @name = hash[:name].nil? ? "Untitled Workflow" : hash[:name]
       @description = hash[:description].nil? ? "" : hash[:description]
+      @project_id = hash[:project_id]
     end
   end
 end

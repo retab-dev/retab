@@ -31,6 +31,46 @@ class WorkflowEdgesTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_list_versions_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions(\?|\z)})
+      .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
+    result = @client.workflows.edges.list_versions(workflow_id: "stub")
+    assert_kind_of(Retab::PaginatedList, result)
+  end
+
+  def test_list_versions_requires_required_query_params
+    assert_raises(ArgumentError) do
+      @client.workflows.edges.list_versions
+    end
+  end
+
+  def test_list_diff_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/diff(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.edges.list_diff(from_edge_version_id: "stub", to_edge_version_id: "stub")
+    refute_nil(result)
+  end
+
+  def test_list_diff_requires_required_query_params
+    assert_raises(ArgumentError) do
+      @client.workflows.edges.list_diff
+    end
+  end
+
+  def test_get_version_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/stub(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.edges.get_version(edge_version_id: "stub")
+    refute_nil(result)
+  end
+
+  def test_create_version_restore_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/stub/restore(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.edges.create_version_restore(edge_version_id: "stub")
+    refute_nil(result)
+  end
+
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/edges/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -53,6 +93,30 @@ class WorkflowEdgesTest < Minitest::Test
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges(\?|\z)},
       args: {workflow_id: "stub", source_block: "stub", target_block: "stub"}
+    },
+    {
+      name: :list_versions,
+      verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions(\?|\z)},
+      args: {workflow_id: "stub"}
+    },
+    {
+      name: :list_diff,
+      verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/diff(\?|\z)},
+      args: {from_edge_version_id: "stub", to_edge_version_id: "stub"}
+    },
+    {
+      name: :get_version,
+      verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/stub(\?|\z)},
+      args: {edge_version_id: "stub"}
+    },
+    {
+      name: :create_version_restore,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges/versions/stub/restore(\?|\z)},
+      args: {edge_version_id: "stub"}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows/edges/stub(\?|\z)}, args: {edge_id: "stub"}},
     {

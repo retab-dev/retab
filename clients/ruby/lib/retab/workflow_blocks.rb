@@ -112,6 +112,116 @@ module Retab
       result
     end
 
+    # List Block Versions
+    # @param workflow_id [String]
+    # @param block_id [String, nil] Filter by stable block ID
+    # @param workflow_version_id [String, nil] Filter by workflow version ID
+    # @param limit [Integer, nil] Maximum number of block versions to return
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::PaginatedList<Retab::WorkflowBlockVersion>]
+    def list_versions(
+      workflow_id:,
+      block_id: nil,
+      workflow_version_id: nil,
+      limit: 50,
+      request_options: {}
+    )
+      params = {
+        "workflow_id" => workflow_id,
+        "block_id" => block_id,
+        "workflow_version_id" => workflow_version_id,
+        "limit" => limit
+      }.compact
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/blocks/versions",
+        auth: true,
+        params: params,
+        request_options: request_options
+      )
+      Retab::PaginatedList.from_response(
+        response,
+        model: Retab::WorkflowBlockVersion,
+        filters: {workflow_id: workflow_id, block_id: block_id, workflow_version_id: workflow_version_id, limit: limit}
+      )
+    end
+
+    # Diff Block Versions
+    # @param from_block_version_id [String]
+    # @param to_block_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowBlockVersionDiff]
+    def list_diff(
+      from_block_version_id:,
+      to_block_version_id:,
+      request_options: {}
+    )
+      params = {
+        "from_block_version_id" => from_block_version_id,
+        "to_block_version_id" => to_block_version_id
+      }
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/blocks/versions/diff",
+        auth: true,
+        params: params,
+        request_options: request_options
+      )
+      result = Retab::WorkflowBlockVersionDiff.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Get Block Version
+    # @param block_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowBlockVersion]
+    def get_version(
+      block_version_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/blocks/versions/#{Retab::Util.encode_path(block_version_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::WorkflowBlockVersion.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Restore Block Version
+    # @param block_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowBlock]
+    def create_version_restore(
+      block_version_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/workflows/blocks/versions/#{Retab::Util.encode_path(block_version_id)}/restore",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::WorkflowBlock.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # Get Block
     # @param block_id [String]
     # @param workflow_id [String, nil] Disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization — otherwise the call returns 409 listing the colliding workflow_ids. Server-generated block IDs are always unique and never need this.

@@ -429,6 +429,47 @@ func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 	}
 }
 
+func TestWorkflowsTestsListTableRendersFreshnessColumn(t *testing.T) {
+	resource := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id":   "wfnodetest_smoke",
+				"name": "smoke-test",
+				"target": map[string]any{
+					"block_id": "blk_extract",
+				},
+				"freshness": map[string]any{
+					"status": "fresh",
+				},
+				"schema_drift": "none",
+				"created_at":   "2026-05-21T12:00:00Z",
+			},
+		},
+	}
+
+	var buf strings.Builder
+	if err := RenderList(&buf, OutputTable, resource, workflowTestColumns); err != nil {
+		t.Fatalf("RenderList: %v", err)
+	}
+	out := buf.String()
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("want 2 lines (header + 1 row), got %d:\n%s", len(lines), out)
+	}
+	header := lines[0]
+	row := lines[1]
+	for _, want := range []string{"TARGET_BLOCK_ID", "FRESHNESS", "SCHEMA_DRIFT"} {
+		if !strings.Contains(header, want) {
+			t.Fatalf("header missing %s column:\n%s", want, header)
+		}
+	}
+	for _, want := range []string{"blk_extract", "fresh", "none"} {
+		if !strings.Contains(row, want) {
+			t.Fatalf("row missing %s value:\n%s", want, row)
+		}
+	}
+}
+
 func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
 	for _, tc := range []struct {
 		name string

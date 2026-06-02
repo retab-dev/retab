@@ -20,6 +20,8 @@ readonly class Workflow implements \JsonSerializable
         public ?string $name = null,
         /** Description of the workflow */
         public ?string $description = null,
+        /** Project that owns this workflow. Null means the organization's shared workflows project. */
+        public ?string $projectId = null,
         /** Published workflow metadata when a published version exists */
         public ?WorkflowPublished $published = null,
     ) {}
@@ -42,6 +44,7 @@ readonly class Workflow implements \JsonSerializable
             updatedAt: new \DateTimeImmutable($data['updated_at']),
             name: $data['name'] ?? null,
             description: $data['description'] ?? null,
+            projectId: $data['project_id'] ?? null,
             published: isset($data['published']) ? WorkflowPublished::fromArray($data['published']) : null,
         );
     }
@@ -55,6 +58,7 @@ readonly class Workflow implements \JsonSerializable
             'updated_at' => $this->updatedAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'name' => $this->name,
             'description' => $this->description,
+            'project_id' => $this->projectId,
             'published' => $this->published?->toArray(),
         ];
     }

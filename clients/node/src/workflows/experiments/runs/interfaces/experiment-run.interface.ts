@@ -97,6 +97,9 @@ export interface ExperimentRun {
     | CancelledWorkflowExperimentRun;
   timing: ExperimentRunTiming;
   parentRunId?: string | null;
+  blockVersionId?: string | null;
+  metricsValidityFingerprint?: string | null;
+  metricsValidityFingerprintVersion?: number | null;
   definitionFingerprint: string;
   documentsFingerprint: string;
   score?: number | null;
@@ -128,6 +131,9 @@ export interface ExperimentRunResponse {
     | CancelledWorkflowExperimentRunResponse;
   timing: ExperimentRunTimingResponse;
   parent_run_id?: string | null;
+  block_version_id?: string | null;
+  metrics_validity_fingerprint?: string | null;
+  metrics_validity_fingerprint_version?: number | null;
   definition_fingerprint: string;
   documents_fingerprint: string;
   score?: number | null;
@@ -156,6 +162,9 @@ export const ZExperimentRun = z.object({
   ]),
   timing: ZExperimentRunTiming,
   parentRunId: z.string().nullable().optional(),
+  blockVersionId: z.string().nullable().optional(),
+  metricsValidityFingerprint: z.string().nullable().optional(),
+  metricsValidityFingerprintVersion: z.number().int().nullable().optional(),
   definitionFingerprint: z.string(),
   documentsFingerprint: z.string(),
   score: z.number().nullable().optional(),
@@ -222,6 +231,9 @@ export function deserializeExperimentRun(wire: ExperimentRunResponse): Experimen
         | CancelledWorkflowExperimentRun),
     timing: deserializeExperimentRunTiming(wire['timing']),
     parentRunId: wire['parent_run_id'],
+    blockVersionId: wire['block_version_id'],
+    metricsValidityFingerprint: wire['metrics_validity_fingerprint'],
+    metricsValidityFingerprintVersion: wire['metrics_validity_fingerprint_version'],
     definitionFingerprint: wire['definition_fingerprint'],
     documentsFingerprint: wire['documents_fingerprint'],
     score: wire['score'],
@@ -287,6 +299,9 @@ export function serializeExperimentRun(domain: ExperimentRun): ExperimentRunResp
         | CancelledWorkflowExperimentRunResponse),
     timing: serializeExperimentRunTiming(domain['timing']),
     parent_run_id: domain['parentRunId'],
+    block_version_id: domain['blockVersionId'],
+    metrics_validity_fingerprint: domain['metricsValidityFingerprint'],
+    metrics_validity_fingerprint_version: domain['metricsValidityFingerprintVersion'],
     definition_fingerprint: domain['definitionFingerprint'],
     documents_fingerprint: domain['documentsFingerprint'],
     score: domain['score'],

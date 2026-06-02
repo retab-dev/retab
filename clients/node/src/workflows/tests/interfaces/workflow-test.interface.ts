@@ -2,6 +2,24 @@
 
 import { z } from 'zod';
 import type {
+  ArtifactDrift,
+  ArtifactDriftResponse,
+} from '../../../workflows/experiments/interfaces/artifact-drift.interface.js';
+import {
+  ZArtifactDrift,
+  deserializeArtifactDrift,
+  serializeArtifactDrift,
+} from '../../../workflows/experiments/interfaces/artifact-drift.interface.js';
+import type {
+  ArtifactFreshness,
+  ArtifactFreshnessResponse,
+} from '../../../workflows/experiments/interfaces/artifact-freshness.interface.js';
+import {
+  ZArtifactFreshness,
+  deserializeArtifactFreshness,
+  serializeArtifactFreshness,
+} from '../../../workflows/experiments/interfaces/artifact-freshness.interface.js';
+import type {
   AssertionSchemaDep,
   AssertionSchemaDepResponse,
 } from './assertion-schema-dep.interface.js';
@@ -70,6 +88,8 @@ export interface WorkflowTest {
   /** @default "unknown" */
   schemaDrift?: WorkflowTestSchemaDrift;
   schemaDriftDetail?: string | null;
+  freshness?: ArtifactFreshness;
+  drift?: ArtifactDrift;
   /** @default "valid" */
   validationStatus?: string;
   /** @default [] */
@@ -94,6 +114,8 @@ export interface WorkflowTestResponse {
   assertion_drift_status?: AssertionDriftStatus | null;
   schema_drift?: WorkflowTestSchemaDrift;
   schema_drift_detail?: string | null;
+  freshness?: ArtifactFreshnessResponse;
+  drift?: ArtifactDriftResponse;
   validation_status?: string;
   validation_issues?: unknown[];
   latest_run_summary?: LatestBlockTestRunSummaryResponse | null;
@@ -114,6 +136,8 @@ export const ZWorkflowTest = z.object({
   assertionDriftStatus: ZAssertionDriftStatus.nullable().optional(),
   schemaDrift: ZWorkflowTestSchemaDrift.optional(),
   schemaDriftDetail: z.string().nullable().optional(),
+  freshness: ZArtifactFreshness.optional(),
+  drift: ZArtifactDrift.optional(),
   validationStatus: z.string().optional(),
   validationIssues: z.unknown().array().optional(),
   latestRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
@@ -156,6 +180,14 @@ export function deserializeWorkflowTest(wire: WorkflowTestResponse): WorkflowTes
     assertionDriftStatus: wire['assertion_drift_status'],
     schemaDrift: wire['schema_drift'],
     schemaDriftDetail: wire['schema_drift_detail'],
+    freshness:
+      wire['freshness'] == null
+        ? (wire['freshness'] as undefined)
+        : deserializeArtifactFreshness(wire['freshness']),
+    drift:
+      wire['drift'] == null
+        ? (wire['drift'] as undefined)
+        : deserializeArtifactDrift(wire['drift']),
     validationStatus: wire['validation_status'],
     validationIssues: wire['validation_issues'],
     latestRunSummary:
@@ -219,6 +251,14 @@ export function serializeWorkflowTest(domain: WorkflowTest): WorkflowTestRespons
     assertion_drift_status: domain['assertionDriftStatus'],
     schema_drift: domain['schemaDrift'],
     schema_drift_detail: domain['schemaDriftDetail'],
+    freshness:
+      domain['freshness'] == null
+        ? (domain['freshness'] as undefined)
+        : serializeArtifactFreshness(domain['freshness']),
+    drift:
+      domain['drift'] == null
+        ? (domain['drift'] as undefined)
+        : serializeArtifactDrift(domain['drift']),
     validation_status: domain['validationStatus'],
     validation_issues: domain['validationIssues'],
     latest_run_summary:

@@ -110,6 +110,116 @@ module Retab
       result
     end
 
+    # List Edge Versions
+    # @param workflow_id [String]
+    # @param edge_id [String, nil] Filter by stable edge ID
+    # @param workflow_version_id [String, nil] Filter by workflow version ID
+    # @param limit [Integer, nil] Maximum number of edge versions to return
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::PaginatedList<Retab::WorkflowEdgeVersion>]
+    def list_versions(
+      workflow_id:,
+      edge_id: nil,
+      workflow_version_id: nil,
+      limit: 50,
+      request_options: {}
+    )
+      params = {
+        "workflow_id" => workflow_id,
+        "edge_id" => edge_id,
+        "workflow_version_id" => workflow_version_id,
+        "limit" => limit
+      }.compact
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/edges/versions",
+        auth: true,
+        params: params,
+        request_options: request_options
+      )
+      Retab::PaginatedList.from_response(
+        response,
+        model: Retab::WorkflowEdgeVersion,
+        filters: {workflow_id: workflow_id, edge_id: edge_id, workflow_version_id: workflow_version_id, limit: limit}
+      )
+    end
+
+    # Diff Edge Versions
+    # @param from_edge_version_id [String]
+    # @param to_edge_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowEdgeVersionDiff]
+    def list_diff(
+      from_edge_version_id:,
+      to_edge_version_id:,
+      request_options: {}
+    )
+      params = {
+        "from_edge_version_id" => from_edge_version_id,
+        "to_edge_version_id" => to_edge_version_id
+      }
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/edges/versions/diff",
+        auth: true,
+        params: params,
+        request_options: request_options
+      )
+      result = Retab::WorkflowEdgeVersionDiff.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Get Edge Version
+    # @param edge_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowEdgeVersion]
+    def get_version(
+      edge_version_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :get,
+        path: "/v1/workflows/edges/versions/#{Retab::Util.encode_path(edge_version_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::WorkflowEdgeVersion.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Restore Edge Version
+    # @param edge_version_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::WorkflowEdgeDoc]
+    def create_version_restore(
+      edge_version_id:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :post,
+        path: "/v1/workflows/edges/versions/#{Retab::Util.encode_path(edge_version_id)}/restore",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::WorkflowEdgeDoc.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # Get Edge
     # @param edge_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

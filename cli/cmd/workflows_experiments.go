@@ -327,11 +327,20 @@ var workflowExperimentColumns = []TableColumn{
 	{Header: "NAME", Extract: func(row any) string { return workflowExperimentCell(row, "name") }},
 	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_kind") }},
 	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "status") }},
+	{Header: "FRESHNESS", Extract: artifactFreshnessCell},
 	{Header: "CREATED_AT", Extract: func(row any) string { return workflowExperimentCell(row, "created_at") }},
 }
 
 func workflowExperimentCell(row any, key string) string {
 	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
+}
+
+func artifactFreshnessCell(row any) string {
+	value, ok := rowField(row, "freshness.status")
 	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
 		return ""
 	}

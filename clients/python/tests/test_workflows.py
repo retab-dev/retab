@@ -10,6 +10,8 @@ from retab.resources.workflows import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges import WorkflowEdges
 from retab.resources.workflows.runs import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.blocks.executions import AsyncWorkflowBlockExecutions, WorkflowBlockExecutions
+from retab.types.workflows.blocks import WorkflowBlockVersion
+from retab.types.workflows.edges import WorkflowEdgeVersion
 from retab.resources.workflows.spec import AsyncWorkflowSpec, WorkflowSpec
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
@@ -23,6 +25,7 @@ from retab.types.workflows.model import (
     WorkflowBlockCreateRequest,
     UpdateWorkflowBlockRequest,
     WorkflowEdgeCreateRequest,
+    WorkflowGraphVersion,
     StepExecutionResponse,
     StoredBlockExecution,
 )
@@ -203,6 +206,70 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         "after": "workflow_before",
     }
     assert result.list_metadata.after == "workflow_after"
+
+
+def test_workflow_version_methods_use_version_routes() -> None:
+    workflow_client = MagicMock()
+    workflow_client._prepared_request.return_value = {
+        "id": "ver_abcdefghijklmnopqrstuvwxyz012345",
+        "workflow_id": "wrk_1",
+        "organization_id": "org_1",
+        "environment_id": "env_1",
+        "blocks": [],
+        "edges": [],
+        "block_version_ids": {},
+        "edge_version_ids": {},
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+
+    workflow_version = Workflows(client=workflow_client).get_version(
+        "ver_abcdefghijklmnopqrstuvwxyz012345",
+        workflow_id="wrk_1",
+    )
+    workflow_request = workflow_client._prepared_request.call_args.args[0]
+    assert workflow_request.method == "GET"
+    assert workflow_request.url == "/v1/workflows/versions/ver_abcdefghijklmnopqrstuvwxyz012345"
+    assert workflow_request.params == {"workflow_id": "wrk_1"}
+    assert isinstance(workflow_version, WorkflowGraphVersion)
+
+    block_client = MagicMock()
+    block_client._prepared_request.return_value = {
+        "id": "bver_abcdefghijklmnopqrstuvwxyz012345",
+        "block_id": "blk_1",
+        "workflow_id": "wrk_1",
+        "organization_id": "org_1",
+        "environment_id": "env_1",
+        "workflow_version_id": "ver_abcdefghijklmnopqrstuvwxyz012345",
+        "type": "extract",
+        "label": "Extract",
+        "position_x": 0,
+        "position_y": 0,
+        "config_hash": "hash",
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+    block_version = WorkflowBlocks(client=block_client).get_version("bver_abcdefghijklmnopqrstuvwxyz012345")
+    block_request = block_client._prepared_request.call_args.args[0]
+    assert block_request.method == "GET"
+    assert block_request.url == "/v1/workflows/blocks/versions/bver_abcdefghijklmnopqrstuvwxyz012345"
+    assert isinstance(block_version, WorkflowBlockVersion)
+
+    edge_client = MagicMock()
+    edge_client._prepared_request.return_value = {
+        "id": "ever_abcdefghijklmnopqrstuvwxyz012345",
+        "edge_id": "edg_1",
+        "workflow_id": "wrk_1",
+        "organization_id": "org_1",
+        "environment_id": "env_1",
+        "workflow_version_id": "ver_abcdefghijklmnopqrstuvwxyz012345",
+        "source": "blk_1",
+        "target": "blk_2",
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+    edge_version = WorkflowEdges(client=edge_client).get_version("ever_abcdefghijklmnopqrstuvwxyz012345")
+    edge_request = edge_client._prepared_request.call_args.args[0]
+    assert edge_request.method == "GET"
+    assert edge_request.url == "/v1/workflows/edges/versions/ever_abcdefghijklmnopqrstuvwxyz012345"
+    assert isinstance(edge_version, WorkflowEdgeVersion)
 
 
 def test_workflows_exposes_spec_subresource() -> None:

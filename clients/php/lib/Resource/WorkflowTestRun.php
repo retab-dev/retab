@@ -22,6 +22,7 @@ readonly class WorkflowTestRun implements \JsonSerializable
         public ?WorkflowTestBlockTarget $target = null,
         public ?string $testId = null,
         public ?BlockTestBatchExecutionCounts $counts = null,
+        public ?ArtifactFreshness $freshness = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -53,6 +54,7 @@ readonly class WorkflowTestRun implements \JsonSerializable
             target: isset($data['target']) ? WorkflowTestBlockTarget::fromArray($data['target']) : null,
             testId: $data['test_id'] ?? null,
             counts: isset($data['counts']) ? BlockTestBatchExecutionCounts::fromArray($data['counts']) : null,
+            freshness: isset($data['freshness']) ? ArtifactFreshness::fromArray($data['freshness']) : null,
         );
     }
 
@@ -70,6 +72,7 @@ readonly class WorkflowTestRun implements \JsonSerializable
             'target' => $this->target?->toArray(),
             'test_id' => $this->testId,
             'counts' => $this->counts?->toArray(),
+            'freshness' => $this->freshness?->toArray(),
         ];
     }
 }

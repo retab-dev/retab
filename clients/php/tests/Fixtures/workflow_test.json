@@ -35,6 +35,26 @@
   "assertion_drift_status": "valid",
   "schema_drift": "none",
   "schema_drift_detail": "test_schema_drift_detail",
+  "freshness": {
+    "status": "fresh",
+    "reasons": [
+      "validity_changed",
+      "inputs_changed",
+      "engine_changed",
+      "metrics_engine_changed",
+      "no_baseline"
+    ],
+    "validity_fingerprint": "validity_fingerprint_01234",
+    "input_fingerprint": "test_input_fingerprint",
+    "baseline_run_id": "baseline_run_id_01234"
+  },
+  "drift": {
+    "status": "none",
+    "affected_targets": [
+      "test_affected_targets"
+    ],
+    "detail": "test_detail"
+  },
   "validation_status": "validation_status_01234",
   "validation_issues": [
     {}
@@ -48,6 +68,8 @@
     "duration_ms": 1,
     "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
     "block_config_fingerprint": "test_block_config_fingerprint",
+    "validity_fingerprint": "validity_fingerprint_01234",
+    "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
     "assertions_passed": 1,
     "assertions_failed": 1,
     "blocked_assertions": 1
@@ -61,6 +83,8 @@
     "duration_ms": 1,
     "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
     "block_config_fingerprint": "test_block_config_fingerprint",
+    "validity_fingerprint": "validity_fingerprint_01234",
+    "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
     "assertions_passed": 1,
     "assertions_failed": 1,
     "blocked_assertions": 1
@@ -74,6 +98,8 @@
     "duration_ms": 1,
     "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
     "block_config_fingerprint": "test_block_config_fingerprint",
+    "validity_fingerprint": "validity_fingerprint_01234",
+    "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
     "assertions_passed": 1,
     "assertions_failed": 1,
     "blocked_assertions": 1

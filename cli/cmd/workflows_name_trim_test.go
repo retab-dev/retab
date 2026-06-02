@@ -372,6 +372,9 @@ func TestWorkflowsExperimentsListTableRendersBlockKindColumn(t *testing.T) {
 				"name":       "smoke-exp",
 				"block_kind": "extract",
 				"status":     "completed",
+				"freshness": map[string]any{
+					"status": "stale",
+				},
 				"created_at": "2026-05-21T12:00:00Z",
 			},
 		},
@@ -397,6 +400,12 @@ func TestWorkflowsExperimentsListTableRendersBlockKindColumn(t *testing.T) {
 	}
 	if !strings.Contains(row, "extract") {
 		t.Fatalf("row missing block_kind value 'extract':\n%s", row)
+	}
+	if !strings.Contains(header, "FRESHNESS") {
+		t.Fatalf("header missing FRESHNESS column:\n%s", header)
+	}
+	if !strings.Contains(row, "stale") {
+		t.Fatalf("row missing freshness value 'stale':\n%s", row)
 	}
 
 	// Locate the BLOCK_KIND column position in the header and check

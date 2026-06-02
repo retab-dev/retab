@@ -37,6 +37,42 @@ module Retab
 
     sig do
       params(
+        workflow_id: String,
+        edge_id: T.nilable(String),
+        workflow_version_id: T.nilable(String),
+        limit: T.nilable(Integer),
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::PaginatedList[Retab::WorkflowEdgeVersion])
+    end
+    def list_versions(workflow_id:, edge_id:, workflow_version_id:, limit:, request_options:); end
+
+    sig do
+      params(
+        from_edge_version_id: String,
+        to_edge_version_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::WorkflowEdgeVersionDiff)
+    end
+    def list_diff(from_edge_version_id:, to_edge_version_id:, request_options:); end
+
+    sig do
+      params(
+        edge_version_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::WorkflowEdgeVersion)
+    end
+    def get_version(edge_version_id:, request_options:); end
+
+    sig do
+      params(
+        edge_version_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::WorkflowEdgeDoc)
+    end
+    def create_version_restore(edge_version_id:, request_options:); end
+
+    sig do
+      params(
         edge_id: String,
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowEdgeDoc)
