@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+pub enum SchemaGenerationStatus {
     Pending,
     Queued,
     InProgress,
@@ -20,7 +20,7 @@ pub enum MainServerServicesV1SchemasModelsSchemaGenerationStatus {
     Unknown(String),
 }
 
-impl MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl SchemaGenerationStatus {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
@@ -37,19 +37,19 @@ impl MainServerServicesV1SchemasModelsSchemaGenerationStatus {
     }
 }
 
-impl fmt::Display for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl fmt::Display for SchemaGenerationStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl AsRef<str> for SchemaGenerationStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl FromStr for SchemaGenerationStatus {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -65,7 +65,7 @@ impl FromStr for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
     }
 }
 
-impl From<String> for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl From<String> for SchemaGenerationStatus {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -75,19 +75,19 @@ impl From<String> for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
     }
 }
 
-impl From<&str> for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl From<&str> for SchemaGenerationStatus {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl Serialize for SchemaGenerationStatus {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for MainServerServicesV1SchemasModelsSchemaGenerationStatus {
+impl<'de> Deserialize<'de> for SchemaGenerationStatus {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

@@ -52,6 +52,7 @@ class Partition(BaseModel):
     output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.")
     status: PartitionStatus | None = Field(
         default=cast(PartitionStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

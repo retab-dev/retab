@@ -94,7 +94,7 @@ class CancelWorkflowResponse(BaseModel):
     run: WorkflowRun
     redis_available: bool | None = Field(default=True, description="Whether immediate cancellation signaling was available")
     cancellation_status: CancelWorkflowResponseCancellationStatus | None = Field(
-        default=cast(CancelWorkflowResponseCancellationStatus, "cancellation_requested"), description="Cancellation delivery state from this request"
+        default=cast(CancelWorkflowResponseCancellationStatus, "cancellation_requested"), validate_default=True, description="Cancellation delivery state from this request"
     )
 
 
@@ -200,7 +200,7 @@ class WorkflowExportPayloadRequest(BaseModel):
     workflow_id: str = Field(..., description="Workflow ID to export")
     block_id: str = Field(..., description="Block ID to export")
     export_source: WorkflowExportPayloadRequestExportSource | None = Field(
-        default=cast(WorkflowExportPayloadRequestExportSource, "outputs"), description="Use block outputs or inputs"
+        default=cast(WorkflowExportPayloadRequestExportSource, "outputs"), validate_default=True, description="Use block outputs or inputs"
     )
     selected_run_ids: list[str] | None = Field(default=None, description="Run IDs filter (null means all runs)")
     selected_doc_types: list[str] | None = Field(default=None, description="Doc type filter (null/empty means all)")

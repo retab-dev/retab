@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-export type MainServerServicesV1SchemasModelsSchemaGenerationStatus =
+export type SchemaGenerationStatus =
   | 'pending'
   | 'queued'
   | 'in_progress'
@@ -10,7 +10,7 @@ export type MainServerServicesV1SchemasModelsSchemaGenerationStatus =
   | 'failed'
   | 'cancelled';
 
-export const ZMainServerServicesV1SchemasModelsSchemaGenerationStatus = z.enum([
+export const ZSchemaGenerationStatus = z.enum([
   'pending',
   'queued',
   'in_progress',

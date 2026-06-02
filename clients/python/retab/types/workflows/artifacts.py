@@ -130,6 +130,7 @@ class ClassificationWorkflowArtifact(BaseModel):
     )
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -249,6 +250,7 @@ class EditWorkflowArtifact(BaseModel):
     )
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -290,6 +292,7 @@ class ExtractionWorkflowArtifact(BaseModel):
     output: dict[str, Any] = Field(..., description="The extracted structured data")
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -335,6 +338,7 @@ class ParseWorkflowArtifact(BaseModel):
     output: ParseOutput = Field(..., description="The parsed document content")
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -360,6 +364,7 @@ class PartitionWorkflowArtifact(BaseModel):
     output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.")
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -413,6 +418,7 @@ class SplitWorkflowArtifact(BaseModel):
     output: list[SplitResult] | None = Field(default=[], description="The list of document splits with their assigned pages. Empty [] until status == 'completed'.")
     status: EditWorkflowArtifactStatus | None = Field(
         default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

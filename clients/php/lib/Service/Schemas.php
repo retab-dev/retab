@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
-use Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration;
+use Retab\Resource\SchemaGeneration;
 
 class Schemas
 {
@@ -23,7 +23,7 @@ class Schemas
      * @param string|null $instructions
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
-     * @return \Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration
+     * @return \Retab\Resource\SchemaGeneration
      * @throws \Retab\Exception\RetabException
      */
     public function generate(
@@ -33,7 +33,7 @@ class Schemas
         ?int $imageResolutionDpi = null,
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\MainServerServicesV1SchemasModelsSchemaGeneration {
+    ): \Retab\Resource\SchemaGeneration {
         $documents = array_map([\Retab\Resource\MimeDataCoerce::class, 'coerce'], $documents);
         $body = array_filter([
             'documents' => $documents,
@@ -48,6 +48,6 @@ class Schemas
             body: $body,
             options: $options,
         );
-        return MainServerServicesV1SchemasModelsSchemaGeneration::fromArray($response);
+        return SchemaGeneration::fromArray($response);
     }
 }

@@ -50,6 +50,7 @@ class Split(BaseModel):
     output: list[SplitResult] | None = Field(default=[], description="The list of document splits with their assigned pages. Empty [] until status == 'completed'.")
     status: SplitStatus | None = Field(
         default=cast(SplitStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

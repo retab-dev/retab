@@ -298,6 +298,9 @@ const (
 	ReviewEvaluationReviewDecisionRejected ReviewEvaluationReviewDecision = "rejected"
 )
 
+// SchemaGenerationStatus is an alias for ClassificationStatus.
+type SchemaGenerationStatus = ClassificationStatus
+
 // SimilarityGteConditionMethod represents similarity gte condition method values.
 type SimilarityGteConditionMethod string
 
@@ -509,9 +512,6 @@ type WorkflowTestSchemaDrift = ExperimentSchemaDriftStatus
 
 // WorkflowTestResultVerdict is an alias for AssertionOutcome.
 type WorkflowTestResultVerdict = AssertionOutcome
-
-// MainServerServicesV1SchemasModelsSchemaGenerationStatus is an alias for ClassificationStatus.
-type MainServerServicesV1SchemasModelsSchemaGenerationStatus = ClassificationStatus
 
 // WorkflowTestRunScopeType represents workflow test run scope type values.
 type WorkflowTestRunScopeType string

@@ -272,9 +272,9 @@ class SubmitDecisionResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    submission_status: SubmissionStatus | None = Field(default=cast(SubmissionStatus, "accepted"))
+    submission_status: SubmissionStatus | None = Field(default=cast(SubmissionStatus, "accepted"), validate_default=True)
     review: Review
-    resume_status: ResumeStatus | None = Field(default=cast(ResumeStatus, "resumed"))
+    resume_status: ResumeStatus | None = Field(default=cast(ResumeStatus, "resumed"), validate_default=True)
     resume_error: str | None = None
 
 

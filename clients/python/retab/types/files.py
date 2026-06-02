@@ -92,6 +92,7 @@ class FileBlueprint(BaseModel):
     output: dict[str, Any] | None = Field(default={}, description="The generated Document Blueprint payload.")
     status: FileBlueprintStatus | None = Field(
         default=cast(FileBlueprintStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(

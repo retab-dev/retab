@@ -5,7 +5,7 @@
 # typed: strong
 
 module Retab
-  class MainServerServicesV1SchemasModelsSchemaGeneration
+  class SchemaGeneration
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
@@ -33,10 +33,10 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def strict=(value); end
 
-    sig { returns(T.nilable(String)) }
+    sig { returns(String) }
     def id; end
 
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    sig { params(value: String).returns(String) }
     def id=(value); end
 
     sig { returns(T.nilable(String)) }

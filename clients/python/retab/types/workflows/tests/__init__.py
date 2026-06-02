@@ -337,7 +337,7 @@ class SimilarityGteCondition(BaseModel):
     kind: Literal["similarity_gte"] = Field(default="similarity_gte")
     reference: Any
     threshold: float
-    method: SimilarityGteConditionMethod | None = Field(default=cast(SimilarityGteConditionMethod, "levenshtein"))
+    method: SimilarityGteConditionMethod | None = Field(default=cast(SimilarityGteConditionMethod, "levenshtein"), validate_default=True)
 
 
 class SplitIouCondition(BaseModel):
@@ -383,7 +383,7 @@ class WorkflowTest(BaseModel):
     assertion: AssertionSpec | None = None
     assertion_schema_dep: AssertionSchemaDep | None = None
     assertion_drift_status: AssertionDriftStatus | None = None
-    schema_drift: WorkflowTestSchemaDrift | None = Field(default=cast(WorkflowTestSchemaDrift, "unknown"))
+    schema_drift: WorkflowTestSchemaDrift | None = Field(default=cast(WorkflowTestSchemaDrift, "unknown"), validate_default=True)
     schema_drift_detail: str | None = None
     validation_status: str | None = Field(default="valid")
     validation_issues: list[Any] | None = Field(default=[])

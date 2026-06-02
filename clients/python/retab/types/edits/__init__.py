@@ -70,6 +70,7 @@ class Edit(BaseModel):
     )
     status: EditStatus | None = Field(
         default=cast(EditStatus, "pending"),
+        validate_default=True,
         description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
     )
     error: PrimitiveError | None = Field(
@@ -83,7 +84,7 @@ class Edit(BaseModel):
 class EditConfig(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    color: str | None = Field(default=cast(str, "#000080"), description="Hex code of the color to use for the filled text.")
+    color: str | None = Field(default=cast(str, "#000080"), validate_default=True, description="Hex code of the color to use for the filled text.")
 
 
 class EditResult(BaseModel):

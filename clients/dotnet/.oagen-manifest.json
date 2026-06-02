@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-02T12:22:29.676Z",
+  "generatedAt": "2026-06-02T15:41:04.313Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -129,7 +129,6 @@
     "src/Entities/LengthCompareCondition.cs",
     "src/Entities/LlmJudgedAsCondition.cs",
     "src/Entities/LlmNotJudgedAsCondition.cs",
-    "src/Entities/MainServerServicesV1SchemasModelsSchemaGeneration.cs",
     "src/Entities/ManualWorkflowTestSource.cs",
     "src/Entities/MatcheRegexCondition.cs",
     "src/Entities/MaterializedDocument.cs",
@@ -176,6 +175,7 @@
     "src/Entities/RunStepWorkflowTestSource.cs",
     "src/Entities/RunTiming.cs",
     "src/Entities/RunningRun.cs",
+    "src/Entities/SchemaGeneration.cs",
     "src/Entities/SimilarityGteCondition.cs",
     "src/Entities/SkippedBlockExecutionLifecycle.cs",
     "src/Entities/SourcesResponse.cs",

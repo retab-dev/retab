@@ -1740,6 +1740,30 @@ type RunningWorkflowExperimentRun = RunningRun
 // RunningWorkflowTestRun is an alias for RunningRun.
 type RunningWorkflowTestRun = RunningRun
 
+// SchemaGeneration public generated schema response.
+type SchemaGeneration struct {
+	Object     string                 `json:"object,omitempty"`
+	CreatedAt  *time.Time             `json:"created_at,omitempty"`
+	JSONSchema map[string]interface{} `json:"json_schema,omitempty"`
+	Strict     bool                   `json:"strict,omitempty"`
+	// ID is unique identifier of the schema generation.
+	ID string `json:"id"`
+	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
+	Status *SchemaGenerationStatus `json:"status,omitempty"`
+	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
+	Error *PrimitiveError `json:"error,omitempty"`
+}
+
+// UnmarshalJSON applies spec-declared defaults to optional fields the
+// server may omit, so callers can read them directly without
+// nil-checks or zero-value second-guessing.
+func (r *SchemaGeneration) UnmarshalJSON(data []byte) error {
+	r.Object = "schema"
+	r.Strict = true
+	type alias SchemaGeneration
+	return json.Unmarshal(data, (*alias)(r))
+}
+
 // SimilarityGteCondition represents a similarity gte condition.
 type SimilarityGteCondition struct {
 	Kind      *string                       `json:"kind,omitempty"`
@@ -2290,30 +2314,6 @@ type WorkflowTestRunTiming = ExperimentRunTiming
 // WorkflowTestRunWorkflowScope run every saved test in the workflow.
 type WorkflowTestRunWorkflowScope struct {
 	Type string `json:"type"`
-}
-
-// MainServerServicesV1SchemasModelsSchemaGeneration public generated schema response.
-type MainServerServicesV1SchemasModelsSchemaGeneration struct {
-	Object     string                 `json:"object,omitempty"`
-	CreatedAt  *time.Time             `json:"created_at,omitempty"`
-	JSONSchema map[string]interface{} `json:"json_schema,omitempty"`
-	Strict     bool                   `json:"strict,omitempty"`
-	// ID is unique identifier of the schema generation.
-	ID *string `json:"id,omitempty"`
-	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
-	Status *MainServerServicesV1SchemasModelsSchemaGenerationStatus `json:"status,omitempty"`
-	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
-	Error *PrimitiveError `json:"error,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *MainServerServicesV1SchemasModelsSchemaGeneration) UnmarshalJSON(data []byte) error {
-	r.Object = "schema"
-	r.Strict = true
-	type alias MainServerServicesV1SchemasModelsSchemaGeneration
-	return json.Unmarshal(data, (*alias)(r))
 }
 
 // WorkflowTestRunScope execution scope for a workflow-test run. Omit scope to run every saved test in the workflow.
