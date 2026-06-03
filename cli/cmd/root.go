@@ -84,6 +84,17 @@ func init() {
 	rootCmd.PersistentFlags().String("api-key", "", "Retab API key (env: RETAB_API_KEY)")
 	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_BASE_URL)")
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
+
+	// Customer-environment selectors. These choose which stored local
+	// credential profile the CLI sends — they never override server-side
+	// API-key authorization. --live is an alias for --env production.
+	rootCmd.PersistentFlags().Bool("live", false, "use the stored production environment profile (alias for --env production)")
+	rootCmd.PersistentFlags().String("env", "", "use the stored environment profile with this slug")
+
+	// --confirm pre-approves a production-mutating command for
+	// non-interactive use. High-risk commands run against production
+	// require it (or an interactive "production" prompt) — see safety.go.
+	rootCmd.PersistentFlags().Bool("confirm", false, "pre-approve a production-mutating command (skips the confirmation prompt)")
 	rootCmd.PersistentFlags().Var(&outputFlagValue{}, "output", "output format: json | table (default: auto-detect)")
 
 	// Capture cobra's default help func *before* overriding so we can

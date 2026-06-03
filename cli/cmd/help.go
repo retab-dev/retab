@@ -267,6 +267,9 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	}{
 		{"--api-key", "KEY", "Retab API key", "RETAB_API_KEY"},
 		{"--base-url", "URL", "Retab API base URL", "RETAB_BASE_URL"},
+		{"--live", "", "use the stored production environment profile", ""},
+		{"--env", "SLUG", "use the stored environment profile with this slug", ""},
+		{"--confirm", "", "pre-approve a production-mutating command", ""},
 		{"--debug", "", "verbose debug output", ""},
 		{"--output", "FORMAT", "output format: json | table (default: auto)", ""},
 		{"-h, --help", "", "show this help", ""},
