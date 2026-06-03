@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import datetime
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.blocks import WorkflowVersionFieldDiff
 
 
 class WorkflowEdgeCreateRequest(BaseModel):
@@ -33,34 +32,6 @@ class WorkflowEdgeDoc(BaseModel):
     updated_at: datetime.datetime
 
 
-class WorkflowEdgeVersion(BaseModel):
-    """Immutable edge snapshot derived from a workflow version."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str = Field(..., description="Public content-addressed edge version ID")
-    edge_id: str = Field(..., description="Stable logical edge ID")
-    workflow_id: str = Field(..., description="Source workflow ID")
-    organization_id: str = Field(..., description="Organization ID for data isolation")
-    environment_id: str = Field(..., description="Customer environment ID for data isolation")
-    workflow_version_id: str = Field(..., description="Workflow version this edge version belongs to")
-    source: str = Field(..., description="ID of the source block")
-    source_handle: str | None = None
-    target: str = Field(..., description="ID of the target block")
-    target_handle: str | None = None
-    animated: bool | None = Field(default=True)
-    created_at: datetime.datetime | None = None
-
-
-class WorkflowEdgeVersionDiff(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    from_edge_version_id: str
-    to_edge_version_id: str
-    edge_id: str
-    changes: list[WorkflowVersionFieldDiff] | None = Field(default=[])
-
-
 # Resolve forward references (Pydantic v2). Safe no-op when
 # the model is already fully built; needed when annotations
 # are lazily evaluated strings under `from __future__ import
@@ -68,5 +39,3 @@ class WorkflowEdgeVersionDiff(BaseModel):
 # generated module via a TYPE_CHECKING-guarded import.
 WorkflowEdgeCreateRequest.model_rebuild()
 WorkflowEdgeDoc.model_rebuild()
-WorkflowEdgeVersion.model_rebuild()
-WorkflowEdgeVersionDiff.model_rebuild()

@@ -5,16 +5,8 @@ import { PaginatedList } from '../../_pagination.js';
 import type {
   WorkflowEdgeDoc,
   WorkflowEdgeDocResponse,
-  WorkflowEdgeVersion,
-  WorkflowEdgeVersionDiff,
-  WorkflowEdgeVersionDiffResponse,
-  WorkflowEdgeVersionResponse,
 } from '../../workflows/edges/interfaces/index.js';
-import {
-  deserializeWorkflowEdgeDoc,
-  deserializeWorkflowEdgeVersion,
-  deserializeWorkflowEdgeVersionDiff,
-} from '../../workflows/edges/interfaces/index.js';
+import { deserializeWorkflowEdgeDoc } from '../../workflows/edges/interfaces/index.js';
 
 export class WorkflowEdges {
   constructor(private readonly client: Retab) {}
@@ -67,71 +59,6 @@ export class WorkflowEdges {
       path: '/v1/workflows/edges',
       query: undefined,
       body: body,
-    });
-    return deserializeWorkflowEdgeDoc(__wire);
-  }
-
-  /** List Edge Versions */
-  async list_versions(options: {
-    workflowId: string;
-    edgeId?: string | null | undefined;
-    workflowVersionId?: string | null | undefined;
-    limit?: number;
-    before?: string;
-    after?: string;
-    order?: 'asc' | 'desc';
-  }): Promise<PaginatedList<WorkflowEdgeVersion>> {
-    return this.client._fetchPage(deserializeWorkflowEdgeVersion, {
-      method: 'GET',
-      path: '/v1/workflows/edges/versions',
-      query: {
-        workflow_id: options?.workflowId,
-        edge_id: options?.edgeId,
-        workflow_version_id: options?.workflowVersionId,
-        limit: options?.limit,
-        before: options?.before,
-        after: options?.after,
-        order: options?.order,
-      },
-      body: undefined,
-    });
-  }
-
-  /** Diff Edge Versions */
-  async list_diff(options: {
-    fromEdgeVersionId: string;
-    toEdgeVersionId: string;
-  }): Promise<WorkflowEdgeVersionDiff> {
-    const __wire = await this.client.request<WorkflowEdgeVersionDiffResponse>({
-      method: 'GET',
-      path: '/v1/workflows/edges/versions/diff',
-      query: {
-        from_edge_version_id: options?.fromEdgeVersionId,
-        to_edge_version_id: options?.toEdgeVersionId,
-      },
-      body: undefined,
-    });
-    return deserializeWorkflowEdgeVersionDiff(__wire);
-  }
-
-  /** Get Edge Version */
-  async get_version(edgeVersionId: string): Promise<WorkflowEdgeVersion> {
-    const __wire = await this.client.request<WorkflowEdgeVersionResponse>({
-      method: 'GET',
-      path: `/v1/workflows/edges/versions/${edgeVersionId}`,
-      query: undefined,
-      body: undefined,
-    });
-    return deserializeWorkflowEdgeVersion(__wire);
-  }
-
-  /** Restore Edge Version */
-  async create_version_restore(edgeVersionId: string): Promise<WorkflowEdgeDoc> {
-    const __wire = await this.client.request<WorkflowEdgeDocResponse>({
-      method: 'POST',
-      path: `/v1/workflows/edges/versions/${edgeVersionId}/restore`,
-      query: undefined,
-      body: undefined,
     });
     return deserializeWorkflowEdgeDoc(__wire);
   }

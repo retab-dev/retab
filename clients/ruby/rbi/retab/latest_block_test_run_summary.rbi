@@ -57,18 +57,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def block_config_fingerprint=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def validity_fingerprint; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def validity_fingerprint=(value); end
-
-    sig { returns(T.nilable(String)) }
-    def handle_inputs_fingerprint; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def handle_inputs_fingerprint=(value); end
-
     sig { returns(T.nilable(Integer)) }
     def assertions_passed; end
 

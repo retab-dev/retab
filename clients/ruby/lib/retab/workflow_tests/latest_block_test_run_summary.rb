@@ -14,8 +14,6 @@ module Retab
       duration_ms: :duration_ms,
       workflow_draft_fingerprint: :workflow_draft_fingerprint,
       block_config_fingerprint: :block_config_fingerprint,
-      validity_fingerprint: :validity_fingerprint,
-      handle_inputs_fingerprint: :handle_inputs_fingerprint,
       assertions_passed: :assertions_passed,
       assertions_failed: :assertions_failed,
       blocked_assertions: :blocked_assertions
@@ -30,8 +28,6 @@ module Retab
       :duration_ms,
       :workflow_draft_fingerprint,
       :block_config_fingerprint,
-      :validity_fingerprint,
-      :handle_inputs_fingerprint,
       :assertions_passed,
       :assertions_failed,
       :blocked_assertions
@@ -48,8 +44,6 @@ module Retab
       @duration_ms = hash[:duration_ms]
       @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
       @block_config_fingerprint = hash[:block_config_fingerprint]
-      @validity_fingerprint = hash[:validity_fingerprint]
-      @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
       @assertions_passed = hash[:assertions_passed]
       @assertions_failed = hash[:assertions_failed]
       @blocked_assertions = hash[:blocked_assertions]

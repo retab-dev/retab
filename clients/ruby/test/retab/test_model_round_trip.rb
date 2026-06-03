@@ -107,32 +107,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_artifact_drift_round_trip
-    fixture = {
-      "status" => "stub",
-      "affected_targets" => [],
-      "detail" => nil
-    }
-    model = Retab::ArtifactDrift.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_artifact_freshness_round_trip
-    fixture = {
-      "status" => "stub",
-      "reasons" => [],
-      "validity_fingerprint" => nil,
-      "input_fingerprint" => nil,
-      "baseline_run_id" => nil
-    }
-    model = Retab::ArtifactFreshness.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_assertion_failure_round_trip
     fixture = {
       "code" => "stub",
@@ -968,8 +942,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_create_workflow_request_round_trip
     fixture = {
       "name" => "stub",
-      "description" => "stub",
-      "project_id" => nil
+      "description" => "stub"
     }
     model = Retab::CreateWorkflowRequest.new(fixture.to_json)
     json = model.to_h
@@ -1982,8 +1955,6 @@ class ModelRoundTripTest < Minitest::Test
       "duration_ms" => nil,
       "workflow_draft_fingerprint" => nil,
       "block_config_fingerprint" => nil,
-      "validity_fingerprint" => nil,
-      "handle_inputs_fingerprint" => nil,
       "assertions_passed" => 1,
       "assertions_failed" => 1,
       "blocked_assertions" => 1
@@ -3212,7 +3183,6 @@ class ModelRoundTripTest < Minitest::Test
       "id" => "stub",
       "name" => "stub",
       "description" => "stub",
-      "project_id" => nil,
       "published" => nil,
       "created_at" => "stub",
       "updated_at" => "stub"
@@ -3264,104 +3234,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_workflow_block_position_round_trip
-    fixture = {
-      "x" => 1.0,
-      "y" => 1.0
-    }
-    model = Retab::WorkflowBlockPosition.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["x"], json[:x])
-    assert_equal(fixture["y"], json[:y])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_block_version_round_trip
-    fixture = {
-      "id" => "stub",
-      "block_id" => "stub",
-      "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
-      "workflow_version_id" => "stub",
-      "type" => "stub",
-      "label" => "stub",
-      "position_x" => 1.0,
-      "position_y" => 1.0,
-      "width" => nil,
-      "height" => nil,
-      "parent_id" => nil,
-      "config" => nil,
-      "field_ref_snapshot" => nil,
-      "resolved_schemas" => nil,
-      "config_hash" => "stub",
-      "created_at" => "stub"
-    }
-    model = Retab::WorkflowBlockVersion.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["block_id"], json[:block_id])
-    assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
-    assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_block_version_diff_round_trip
-    fixture = {
-      "from_block_version_id" => "stub",
-      "to_block_version_id" => "stub",
-      "block_id" => "stub",
-      "changes" => []
-    }
-    model = Retab::WorkflowBlockVersionDiff.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["from_block_version_id"], json[:from_block_version_id])
-    assert_equal(fixture["to_block_version_id"], json[:to_block_version_id])
-    assert_equal(fixture["block_id"], json[:block_id])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_config_block_round_trip
-    fixture = {
-      "id" => "stub",
-      "type" => "stub",
-      "position" => {},
-      "label" => "stub",
-      "config" => nil,
-      "resolved_schemas" => nil,
-      "width" => nil,
-      "height" => nil,
-      "parent_id" => nil
-    }
-    model = Retab::WorkflowConfigBlock.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["label"], json[:label])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_config_edge_round_trip
-    fixture = {
-      "id" => "stub",
-      "source" => "stub",
-      "target" => "stub",
-      "source_handle" => nil,
-      "target_handle" => nil,
-      "animated" => true
-    }
-    model = Retab::WorkflowConfigEdge.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["source"], json[:source])
-    assert_equal(fixture["target"], json[:target])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_workflow_edge_doc_round_trip
     fixture = {
       "id" => "stub",
@@ -3383,51 +3255,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_workflow_edge_version_round_trip
-    fixture = {
-      "id" => "stub",
-      "edge_id" => "stub",
-      "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
-      "workflow_version_id" => "stub",
-      "source" => "stub",
-      "source_handle" => nil,
-      "target" => "stub",
-      "target_handle" => nil,
-      "animated" => true,
-      "created_at" => "stub"
-    }
-    model = Retab::WorkflowEdgeVersion.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["edge_id"], json[:edge_id])
-    assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
-    assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
-    assert_equal(fixture["source"], json[:source])
-    assert_equal(fixture["target"], json[:target])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_edge_version_diff_round_trip
-    fixture = {
-      "from_edge_version_id" => "stub",
-      "to_edge_version_id" => "stub",
-      "edge_id" => "stub",
-      "changes" => []
-    }
-    model = Retab::WorkflowEdgeVersionDiff.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["from_edge_version_id"], json[:from_edge_version_id])
-    assert_equal(fixture["to_edge_version_id"], json[:to_edge_version_id])
-    assert_equal(fixture["edge_id"], json[:edge_id])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_workflow_experiment_round_trip
     fixture = {
       "id" => "stub",
@@ -3443,10 +3270,8 @@ class ModelRoundTripTest < Minitest::Test
       "block_type" => "stub",
       "score" => nil,
       "is_stale" => true,
-      "freshness" => {},
       "schema_drift" => "stub",
-      "schema_drift_detail" => nil,
-      "drift" => {}
+      "schema_drift_detail" => nil
     }
     model = Retab::WorkflowExperiment.new(fixture.to_json)
     json = model.to_h
@@ -3494,9 +3319,6 @@ class ModelRoundTripTest < Minitest::Test
       "lifecycle" => {},
       "timing" => {},
       "parent_run_id" => nil,
-      "block_version_id" => nil,
-      "metrics_validity_fingerprint" => nil,
-      "metrics_validity_fingerprint_version" => nil,
       "definition_fingerprint" => "stub",
       "documents_fingerprint" => "stub",
       "score" => nil,
@@ -3555,48 +3377,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["csv_data"], json[:csv_data])
     assert_equal(fixture["rows"], json[:rows])
     assert_equal(fixture["columns"], json[:columns])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_graph_version_round_trip
-    fixture = {
-      "id" => "stub",
-      "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
-      "blocks" => [],
-      "edges" => [],
-      "block_version_ids" => {},
-      "edge_version_ids" => {},
-      "created_at" => "stub"
-    }
-    model = Retab::WorkflowGraphVersion.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["id"], json[:id])
-    assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
-    assert_equal(fixture["created_at"], json[:created_at])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_graph_version_diff_round_trip
-    fixture = {
-      "from_workflow_version_id" => "stub",
-      "to_workflow_version_id" => "stub",
-      "added_block_ids" => [],
-      "removed_block_ids" => [],
-      "changed_block_ids" => [],
-      "added_edge_ids" => [],
-      "removed_edge_ids" => [],
-      "changed_edge_ids" => []
-    }
-    model = Retab::WorkflowGraphVersionDiff.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["from_workflow_version_id"], json[:from_workflow_version_id])
-    assert_equal(fixture["to_workflow_version_id"], json[:to_workflow_version_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -4032,8 +3812,6 @@ class ModelRoundTripTest < Minitest::Test
       "assertion_drift_status" => nil,
       "schema_drift" => "stub",
       "schema_drift_detail" => nil,
-      "freshness" => {},
-      "drift" => {},
       "validation_status" => "stub",
       "validation_issues" => [],
       "latest_run_summary" => nil,
@@ -4105,8 +3883,7 @@ class ModelRoundTripTest < Minitest::Test
       "target" => nil,
       "test_id" => nil,
       "total_tests" => 1,
-      "counts" => {},
-      "freshness" => {}
+      "counts" => {}
     }
     model = Retab::WorkflowTestRun.new(fixture.to_json)
     json = model.to_h
@@ -4162,19 +3939,6 @@ class ModelRoundTripTest < Minitest::Test
     model = Retab::WorkflowTestRunWorkflowScope.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_workflow_version_field_diff_round_trip
-    fixture = {
-      "field" => "stub",
-      "from_value" => nil,
-      "to_value" => nil
-    }
-    model = Retab::WorkflowVersionFieldDiff.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["field"], json[:field])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 end

@@ -15,8 +15,7 @@ module Retab
       target: :target,
       test_id: :test_id,
       total_tests: :total_tests,
-      counts: :counts,
-      freshness: :freshness
+      counts: :counts
     }.freeze
 
     attr_accessor(
@@ -29,8 +28,7 @@ module Retab
       :target,
       :test_id,
       :total_tests,
-      :counts,
-      :freshness
+      :counts
     )
 
     def initialize(json)
@@ -63,7 +61,6 @@ module Retab
       @test_id = hash[:test_id]
       @total_tests = hash[:total_tests]
       @counts = hash[:counts] ? Retab::BlockTestBatchExecutionCounts.new(hash[:counts]) : nil
-      @freshness = hash[:freshness] ? Retab::ArtifactFreshness.new(hash[:freshness]) : nil
     end
   end
 end

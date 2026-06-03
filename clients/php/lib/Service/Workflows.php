@@ -7,8 +7,6 @@ declare(strict_types=1);
 namespace Retab\Service;
 
 use Retab\Resource\Workflow;
-use Retab\Resource\WorkflowGraphVersion;
-use Retab\Resource\WorkflowGraphVersionDiff;
 
 class Workflows
 {
@@ -115,126 +113,22 @@ class Workflows
      * The workflow starts unpublished with a default "Document" input block.
      * @param string|null $name The name of the workflow
      * @param string|null $description Description of the workflow
-     * @param string|null $projectId Project that should own this workflow. Omit to use the organization's shared workflows project.
      * @return \Retab\Resource\Workflow
      * @throws \Retab\Exception\RetabException
      */
     public function create(
         ?string $name = null,
         ?string $description = null,
-        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Workflow {
         $body = array_filter([
             'name' => $name,
             'description' => $description,
-            'project_id' => $projectId,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows',
             body: $body,
-            options: $options,
-        );
-        return Workflow::fromArray($response);
-    }
-
-    /**
-     * List Workflow Versions Route
-     * @param string $workflowId Workflow whose versions to list
-     * @param int|null $limit Maximum number of versions to return Defaults to 50.
-     * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowGraphVersion>
-     * @throws \Retab\Exception\RetabException
-     */
-    public function listVersions(
-        string $workflowId,
-        ?int $limit = null,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\PaginatedResponse {
-        $query = array_filter([
-            'workflow_id' => $workflowId,
-            'limit' => $limit,
-        ], fn($v) => $v !== null);
-        return $this->client->requestPage(
-            method: 'GET',
-            path: 'v1/workflows/versions',
-            query: $query,
-            modelClass: WorkflowGraphVersion::class,
-            options: $options,
-        );
-    }
-
-    /**
-     * Diff Workflow Versions Route
-     * @param string $workflowId Workflow whose versions to diff
-     * @param string $fromWorkflowVersionId Base workflow version ID
-     * @param string $toWorkflowVersionId Target workflow version ID
-     * @return \Retab\Resource\WorkflowGraphVersionDiff
-     * @throws \Retab\Exception\RetabException
-     */
-    public function listDiff(
-        string $workflowId,
-        string $fromWorkflowVersionId,
-        string $toWorkflowVersionId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\WorkflowGraphVersionDiff {
-        $query = [
-            'workflow_id' => $workflowId,
-            'from_workflow_version_id' => $fromWorkflowVersionId,
-            'to_workflow_version_id' => $toWorkflowVersionId,
-        ];
-        $response = $this->client->request(
-            method: 'GET',
-            path: 'v1/workflows/versions/diff',
-            query: $query,
-            options: $options,
-        );
-        return WorkflowGraphVersionDiff::fromArray($response);
-    }
-
-    /**
-     * Get Workflow Version Route
-     * @param string $workflowVersionId
-     * @param string $workflowId Workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.
-     * @return \Retab\Resource\WorkflowGraphVersion
-     * @throws \Retab\Exception\RetabException
-     */
-    public function getVersion(
-        string $workflowVersionId,
-        string $workflowId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\WorkflowGraphVersion {
-        $query = [
-            'workflow_id' => $workflowId,
-        ];
-        $response = $this->client->request(
-            method: 'GET',
-            path: 'v1/workflows/versions/' . rawurlencode($workflowVersionId),
-            query: $query,
-            options: $options,
-        );
-        return WorkflowGraphVersion::fromArray($response);
-    }
-
-    /**
-     * Restore Workflow Version Route
-     * @param string $workflowVersionId
-     * @param string $workflowId Workflow to restore into a new draft
-     * @return \Retab\Resource\Workflow
-     * @throws \Retab\Exception\RetabException
-     */
-    public function createVersionRestore(
-        string $workflowVersionId,
-        string $workflowId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\Workflow {
-        $query = [
-            'workflow_id' => $workflowId,
-        ];
-        $response = $this->client->request(
-            method: 'POST',
-            path: 'v1/workflows/versions/' . rawurlencode($workflowVersionId) . '/restore',
-            query: $query,
             options: $options,
         );
         return Workflow::fromArray($response);

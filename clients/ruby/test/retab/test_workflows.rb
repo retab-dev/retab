@@ -25,60 +25,6 @@ class WorkflowsTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_list_versions_returns_expected_result
-    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/versions(\?|\z)})
-      .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
-    result = @client.workflows.list_versions(workflow_id: "stub")
-    assert_kind_of(Retab::PaginatedList, result)
-  end
-
-  def test_list_versions_requires_required_query_params
-    assert_raises(ArgumentError) do
-      @client.workflows.list_versions
-    end
-  end
-
-  def test_list_diff_returns_expected_result
-    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/versions/diff(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client
-      .workflows
-      .list_diff(workflow_id: "stub", from_workflow_version_id: "stub", to_workflow_version_id: "stub")
-    refute_nil(result)
-  end
-
-  def test_list_diff_requires_required_query_params
-    assert_raises(ArgumentError) do
-      @client.workflows.list_diff
-    end
-  end
-
-  def test_get_version_returns_expected_result
-    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/versions/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.workflows.get_version(workflow_version_id: "stub", workflow_id: "stub")
-    refute_nil(result)
-  end
-
-  def test_get_version_requires_required_query_params
-    assert_raises(ArgumentError) do
-      @client.workflows.get_version(workflow_version_id: "stub")
-    end
-  end
-
-  def test_create_version_restore_returns_expected_result
-    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/versions/stub/restore(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.workflows.create_version_restore(workflow_version_id: "stub", workflow_id: "stub")
-    refute_nil(result)
-  end
-
-  def test_create_version_restore_requires_required_query_params
-    assert_raises(ArgumentError) do
-      @client.workflows.create_version_restore(workflow_version_id: "stub")
-    end
-  end
-
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -118,30 +64,6 @@ class WorkflowsTest < Minitest::Test
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}},
     {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}},
-    {
-      name: :list_versions,
-      verb: :get,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/versions(\?|\z)},
-      args: {workflow_id: "stub"}
-    },
-    {
-      name: :list_diff,
-      verb: :get,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/versions/diff(\?|\z)},
-      args: {workflow_id: "stub", from_workflow_version_id: "stub", to_workflow_version_id: "stub"}
-    },
-    {
-      name: :get_version,
-      verb: :get,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/versions/stub(\?|\z)},
-      args: {workflow_version_id: "stub", workflow_id: "stub"}
-    },
-    {
-      name: :create_version_restore,
-      verb: :post,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/versions/stub/restore(\?|\z)},
-      args: {workflow_version_id: "stub", workflow_id: "stub"}
-    },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows/stub(\?|\z)}, args: {workflow_id: "stub"}},
     {
       name: :update,

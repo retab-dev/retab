@@ -64,22 +64,6 @@ type ArrayContainsCondition struct {
 	Expected map[string]interface{} `json:"expected"`
 }
 
-// ArtifactDrift represents an artifact drift.
-type ArtifactDrift struct {
-	Status          *ArtifactDriftStatus `json:"status,omitempty"`
-	AffectedTargets []string             `json:"affected_targets,omitempty"`
-	Detail          *string              `json:"detail,omitempty"`
-}
-
-// ArtifactFreshness represents an artifact freshness.
-type ArtifactFreshness struct {
-	Status              *ArtifactFreshnessStatus   `json:"status,omitempty"`
-	Reasons             []ArtifactFreshnessReasons `json:"reasons,omitempty"`
-	ValidityFingerprint *string                    `json:"validity_fingerprint,omitempty"`
-	InputFingerprint    *string                    `json:"input_fingerprint,omitempty"`
-	BaselineRunID       *string                    `json:"baseline_run_id,omitempty"`
-}
-
 // AssertionFailure represents an assertion failure.
 type AssertionFailure struct {
 	Code    string                 `json:"code"`
@@ -1270,8 +1254,6 @@ type LatestBlockTestRunSummary struct {
 	DurationMs               *int                              `json:"duration_ms,omitempty"`
 	WorkflowDraftFingerprint *string                           `json:"workflow_draft_fingerprint,omitempty"`
 	BlockConfigFingerprint   *string                           `json:"block_config_fingerprint,omitempty"`
-	ValidityFingerprint      *string                           `json:"validity_fingerprint,omitempty"`
-	HandleInputsFingerprint  *string                           `json:"handle_inputs_fingerprint,omitempty"`
 	AssertionsPassed         *int                              `json:"assertions_passed,omitempty"`
 	AssertionsFailed         *int                              `json:"assertions_failed,omitempty"`
 	BlockedAssertions        *int                              `json:"blocked_assertions,omitempty"`
@@ -2070,8 +2052,6 @@ type Workflow struct {
 	Name string `json:"name,omitempty"`
 	// Description is description of the workflow
 	Description *string `json:"description,omitempty"`
-	// ProjectID is project that owns this workflow. Null means the organization's shared workflows project.
-	ProjectID *string `json:"project_id,omitempty"`
 	// Published is published workflow metadata when a published version exists
 	Published *WorkflowPublished `json:"published,omitempty"`
 	CreatedAt time.Time          `json:"created_at"`
@@ -2125,88 +2105,6 @@ type WorkflowBlock struct {
 	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
 }
 
-// WorkflowBlockPosition represents a workflow block position.
-type WorkflowBlockPosition struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-}
-
-// WorkflowBlockVersion immutable block snapshot derived from a workflow version.
-type WorkflowBlockVersion struct {
-	// ID is public content-addressed block version ID
-	ID string `json:"id"`
-	// BlockID is stable logical block ID
-	BlockID string `json:"block_id"`
-	// WorkflowID is source workflow ID
-	WorkflowID string `json:"workflow_id"`
-	// OrganizationID is organization ID for data isolation
-	OrganizationID string `json:"organization_id"`
-	// EnvironmentID is customer environment ID for data isolation
-	EnvironmentID string `json:"environment_id"`
-	// WorkflowVersionID is workflow version this block version belongs to
-	WorkflowVersionID string                   `json:"workflow_version_id"`
-	Type              WorkflowBlockVersionType `json:"type"`
-	Label             *string                  `json:"label,omitempty"`
-	PositionX         *float64                 `json:"position_x,omitempty"`
-	PositionY         *float64                 `json:"position_y,omitempty"`
-	Width             *float64                 `json:"width,omitempty"`
-	Height            *float64                 `json:"height,omitempty"`
-	ParentID          *string                  `json:"parent_id,omitempty"`
-	Config            map[string]interface{}   `json:"config,omitempty"`
-	FieldRefSnapshot  map[string]string        `json:"field_ref_snapshot,omitempty"`
-	ResolvedSchemas   map[string]interface{}   `json:"resolved_schemas,omitempty"`
-	// ConfigHash is stable SHA-256 hash of the executable block config
-	ConfigHash *string    `json:"config_hash,omitempty"`
-	CreatedAt  *time.Time `json:"created_at,omitempty"`
-}
-
-// WorkflowBlockVersionDiff represents a workflow block version diff.
-type WorkflowBlockVersionDiff struct {
-	FromBlockVersionID string                      `json:"from_block_version_id"`
-	ToBlockVersionID   string                      `json:"to_block_version_id"`
-	BlockID            string                      `json:"block_id"`
-	Changes            []*WorkflowVersionFieldDiff `json:"changes,omitempty"`
-}
-
-// WorkflowConfigBlock represents a workflow config block.
-type WorkflowConfigBlock struct {
-	ID       *string                 `json:"id,omitempty"`
-	Type     WorkflowConfigBlockType `json:"type"`
-	Position WorkflowBlockPosition   `json:"position"`
-	Label    string                  `json:"label"`
-	// Config is block-specific configuration
-	Config map[string]interface{} `json:"config,omitempty"`
-	// ResolvedSchemas is derived schema transport sidecar for UI/runtime consumers. Not authored config.
-	ResolvedSchemas map[string]interface{} `json:"resolved_schemas,omitempty"`
-	// Width is block width for resizable blocks
-	Width *float64 `json:"width,omitempty"`
-	// Height is block height for resizable blocks
-	Height *float64 `json:"height,omitempty"`
-	// ParentID is id of parent container block (while_loop, for_each)
-	ParentID *string `json:"parent_id,omitempty"`
-}
-
-// WorkflowConfigEdge represents a workflow config edge.
-type WorkflowConfigEdge struct {
-	ID *string `json:"id,omitempty"`
-	// Source is id of the source block
-	Source string `json:"source"`
-	// Target is id of the target block
-	Target       string  `json:"target"`
-	SourceHandle *string `json:"source_handle,omitempty"`
-	TargetHandle *string `json:"target_handle,omitempty"`
-	Animated     bool    `json:"animated,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *WorkflowConfigEdge) UnmarshalJSON(data []byte) error {
-	r.Animated = true
-	type alias WorkflowConfigEdge
-	return json.Unmarshal(data, (*alias)(r))
-}
-
 // WorkflowEdgeDoc public live workflow edge object.
 type WorkflowEdgeDoc struct {
 	ID string `json:"id"`
@@ -2221,47 +2119,6 @@ type WorkflowEdgeDoc struct {
 	// TargetHandle is input handle on target block
 	TargetHandle *string   `json:"target_handle,omitempty"`
 	UpdatedAt    time.Time `json:"updated_at"`
-}
-
-// WorkflowEdgeVersion immutable edge snapshot derived from a workflow version.
-type WorkflowEdgeVersion struct {
-	// ID is public content-addressed edge version ID
-	ID string `json:"id"`
-	// EdgeID is stable logical edge ID
-	EdgeID string `json:"edge_id"`
-	// WorkflowID is source workflow ID
-	WorkflowID string `json:"workflow_id"`
-	// OrganizationID is organization ID for data isolation
-	OrganizationID string `json:"organization_id"`
-	// EnvironmentID is customer environment ID for data isolation
-	EnvironmentID string `json:"environment_id"`
-	// WorkflowVersionID is workflow version this edge version belongs to
-	WorkflowVersionID string `json:"workflow_version_id"`
-	// Source is id of the source block
-	Source       string  `json:"source"`
-	SourceHandle *string `json:"source_handle,omitempty"`
-	// Target is id of the target block
-	Target       string     `json:"target"`
-	TargetHandle *string    `json:"target_handle,omitempty"`
-	Animated     bool       `json:"animated,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *WorkflowEdgeVersion) UnmarshalJSON(data []byte) error {
-	r.Animated = true
-	type alias WorkflowEdgeVersion
-	return json.Unmarshal(data, (*alias)(r))
-}
-
-// WorkflowEdgeVersionDiff represents a workflow edge version diff.
-type WorkflowEdgeVersionDiff struct {
-	FromEdgeVersionID string                      `json:"from_edge_version_id"`
-	ToEdgeVersionID   string                      `json:"to_edge_version_id"`
-	EdgeID            string                      `json:"edge_id"`
-	Changes           []*WorkflowVersionFieldDiff `json:"changes,omitempty"`
 }
 
 // WorkflowExperiment an experiment that evaluates a workflow block against a set of documents, with its latest run status and score.
@@ -2281,10 +2138,8 @@ type WorkflowExperiment struct {
 	BlockType         ExperimentBlockType          `json:"block_type"`
 	Score             *float64                     `json:"score,omitempty"`
 	IsStale           *bool                        `json:"is_stale,omitempty"`
-	Freshness         *ArtifactFreshness           `json:"freshness,omitempty"`
 	SchemaDrift       *ExperimentSchemaDriftStatus `json:"schema_drift,omitempty"`
 	SchemaDriftDetail *string                      `json:"schema_drift_detail,omitempty"`
-	Drift             *ArtifactDrift               `json:"drift,omitempty"`
 }
 
 // ExperimentResult one experiment result for a single document, addressed by `run_id` and `document_id`.
@@ -2303,27 +2158,24 @@ type ExperimentResult struct {
 
 // ExperimentRun a single execution of an experiment, identified by `id`.
 type ExperimentRun struct {
-	ID                                string                  `json:"id"`
-	WorkflowID                        string                  `json:"workflow_id"`
-	WorkflowVersionID                 string                  `json:"workflow_version_id"`
-	Trigger                           ExperimentRunTrigger    `json:"trigger"`
-	ExperimentID                      string                  `json:"experiment_id"`
-	BlockID                           string                  `json:"block_id"`
-	BlockType                         ExperimentRunBlockType  `json:"block_type"`
-	NConsensus                        ExperimentRunNConsensus `json:"n_consensus"`
-	Lifecycle                         WorkflowExperimentRun   `json:"lifecycle"`
-	Timing                            ExperimentRunTiming     `json:"timing"`
-	ParentRunID                       *string                 `json:"parent_run_id,omitempty"`
-	BlockVersionID                    *string                 `json:"block_version_id,omitempty"`
-	MetricsValidityFingerprint        *string                 `json:"metrics_validity_fingerprint,omitempty"`
-	MetricsValidityFingerprintVersion *int                    `json:"metrics_validity_fingerprint_version,omitempty"`
-	DefinitionFingerprint             string                  `json:"definition_fingerprint"`
-	DocumentsFingerprint              string                  `json:"documents_fingerprint"`
-	Score                             *float64                `json:"score,omitempty"`
-	TotalDocumentCount                *int                    `json:"total_document_count,omitempty"`
-	CompletedDocumentCount            *int                    `json:"completed_document_count,omitempty"`
-	DocumentCount                     *int                    `json:"document_count,omitempty"`
-	ErrorCount                        *int                    `json:"error_count,omitempty"`
+	ID                     string                  `json:"id"`
+	WorkflowID             string                  `json:"workflow_id"`
+	WorkflowVersionID      string                  `json:"workflow_version_id"`
+	Trigger                ExperimentRunTrigger    `json:"trigger"`
+	ExperimentID           string                  `json:"experiment_id"`
+	BlockID                string                  `json:"block_id"`
+	BlockType              ExperimentRunBlockType  `json:"block_type"`
+	NConsensus             ExperimentRunNConsensus `json:"n_consensus"`
+	Lifecycle              WorkflowExperimentRun   `json:"lifecycle"`
+	Timing                 ExperimentRunTiming     `json:"timing"`
+	ParentRunID            *string                 `json:"parent_run_id,omitempty"`
+	DefinitionFingerprint  string                  `json:"definition_fingerprint"`
+	DocumentsFingerprint   string                  `json:"documents_fingerprint"`
+	Score                  *float64                `json:"score,omitempty"`
+	TotalDocumentCount     *int                    `json:"total_document_count,omitempty"`
+	CompletedDocumentCount *int                    `json:"completed_document_count,omitempty"`
+	DocumentCount          *int                    `json:"document_count,omitempty"`
+	ErrorCount             *int                    `json:"error_count,omitempty"`
 }
 
 // WorkflowExportPayloadResponse the exported data as CSV, with its row and column counts.
@@ -2334,32 +2186,6 @@ type WorkflowExportPayloadResponse struct {
 	Rows int `json:"rows"`
 	// Columns is column count including fixed columns
 	Columns int `json:"columns"`
-}
-
-// WorkflowGraphVersion public workflow version resource.
-type WorkflowGraphVersion struct {
-	// ID is public content-addressed workflow version ID
-	ID              string                 `json:"id"`
-	WorkflowID      string                 `json:"workflow_id"`
-	OrganizationID  string                 `json:"organization_id"`
-	EnvironmentID   string                 `json:"environment_id"`
-	Blocks          []*WorkflowConfigBlock `json:"blocks,omitempty"`
-	Edges           []*WorkflowConfigEdge  `json:"edges,omitempty"`
-	BlockVersionIDs map[string]string      `json:"block_version_ids,omitempty"`
-	EdgeVersionIDs  map[string]string      `json:"edge_version_ids,omitempty"`
-	CreatedAt       time.Time              `json:"created_at"`
-}
-
-// WorkflowGraphVersionDiff represents a workflow graph version diff.
-type WorkflowGraphVersionDiff struct {
-	FromWorkflowVersionID string   `json:"from_workflow_version_id"`
-	ToWorkflowVersionID   string   `json:"to_workflow_version_id"`
-	AddedBlockIDs         []string `json:"added_block_ids,omitempty"`
-	RemovedBlockIDs       []string `json:"removed_block_ids,omitempty"`
-	ChangedBlockIDs       []string `json:"changed_block_ids,omitempty"`
-	AddedEdgeIDs          []string `json:"added_edge_ids,omitempty"`
-	RemovedEdgeIDs        []string `json:"removed_edge_ids,omitempty"`
-	ChangedEdgeIDs        []string `json:"changed_edge_ids,omitempty"`
 }
 
 // WorkflowPublished represents a workflow published.
@@ -2636,8 +2462,6 @@ type WorkflowTest struct {
 	AssertionDriftStatus    *AssertionDriftStatus      `json:"assertion_drift_status,omitempty"`
 	SchemaDrift             *WorkflowTestSchemaDrift   `json:"schema_drift,omitempty"`
 	SchemaDriftDetail       *string                    `json:"schema_drift_detail,omitempty"`
-	Freshness               *ArtifactFreshness         `json:"freshness,omitempty"`
-	Drift                   *ArtifactDrift             `json:"drift,omitempty"`
 	ValidationStatus        string                     `json:"validation_status,omitempty"`
 	ValidationIssues        []string                   `json:"validation_issues,omitempty"`
 	LatestRunSummary        *LatestBlockTestRunSummary `json:"latest_run_summary,omitempty"`
@@ -2703,7 +2527,6 @@ type WorkflowTestRun struct {
 	TestID            *string                        `json:"test_id,omitempty"`
 	TotalTests        int                            `json:"total_tests"`
 	Counts            *BlockTestBatchExecutionCounts `json:"counts,omitempty"`
-	Freshness         *ArtifactFreshness             `json:"freshness,omitempty"`
 }
 
 // WorkflowTestRunBlockScope run every workflow test for one block in the workflow.
@@ -2724,13 +2547,6 @@ type WorkflowTestRunTiming = ExperimentRunTiming
 // WorkflowTestRunWorkflowScope run every saved test in the workflow.
 type WorkflowTestRunWorkflowScope struct {
 	Type string `json:"type"`
-}
-
-// WorkflowVersionFieldDiff one changed field between two immutable version resources.
-type WorkflowVersionFieldDiff struct {
-	Field     string       `json:"field"`
-	FromValue *interface{} `json:"from_value,omitempty"`
-	ToValue   *interface{} `json:"to_value,omitempty"`
 }
 
 // WorkflowTestRunScope execution scope for a workflow-test run. Omit scope to run every saved test in the workflow.

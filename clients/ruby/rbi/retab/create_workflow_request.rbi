@@ -21,12 +21,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def description=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def project_id; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def project_id=(value); end
-
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

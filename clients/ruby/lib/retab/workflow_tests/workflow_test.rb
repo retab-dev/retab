@@ -16,8 +16,6 @@ module Retab
       assertion_drift_status: :assertion_drift_status,
       schema_drift: :schema_drift,
       schema_drift_detail: :schema_drift_detail,
-      freshness: :freshness,
-      drift: :drift,
       validation_status: :validation_status,
       validation_issues: :validation_issues,
       latest_run_summary: :latest_run_summary,
@@ -38,8 +36,6 @@ module Retab
       :assertion_drift_status,
       :schema_drift,
       :schema_drift_detail,
-      :freshness,
-      :drift,
       :validation_status,
       :validation_issues,
       :latest_run_summary,
@@ -71,8 +67,6 @@ module Retab
       @assertion_drift_status = hash[:assertion_drift_status]
       @schema_drift = hash[:schema_drift].nil? ? "unknown" : hash[:schema_drift]
       @schema_drift_detail = hash[:schema_drift_detail]
-      @freshness = hash[:freshness] ? Retab::ArtifactFreshness.new(hash[:freshness]) : nil
-      @drift = hash[:drift] ? Retab::ArtifactDrift.new(hash[:drift]) : nil
       @validation_status = hash[:validation_status].nil? ? "valid" : hash[:validation_status]
       @validation_issues = (hash[:validation_issues] || [])
       @latest_run_summary = hash[:latest_run_summary] ? Retab::LatestBlockTestRunSummary.new(hash[:latest_run_summary]) : nil

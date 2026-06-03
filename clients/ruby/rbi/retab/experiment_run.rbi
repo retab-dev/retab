@@ -75,24 +75,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def parent_run_id=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def block_version_id; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def block_version_id=(value); end
-
-    sig { returns(T.nilable(String)) }
-    def metrics_validity_fingerprint; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def metrics_validity_fingerprint=(value); end
-
-    sig { returns(T.nilable(Integer)) }
-    def metrics_validity_fingerprint_version; end
-
-    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
-    def metrics_validity_fingerprint_version=(value); end
-
     sig { returns(String) }
     def definition_fingerprint; end
 

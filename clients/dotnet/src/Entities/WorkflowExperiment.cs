@@ -28,10 +28,8 @@ namespace Retab
         public ExperimentBlockType BlockType { get; set; }
         public double? Score { get; set; }
         public bool? IsStale { get; set; } = false;
-        public ArtifactFreshness? Freshness { get; set; }
         public ExperimentSchemaDriftStatus? SchemaDrift { get; set; }
         public string? SchemaDriftDetail { get; set; }
-        public ArtifactDrift? Drift { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

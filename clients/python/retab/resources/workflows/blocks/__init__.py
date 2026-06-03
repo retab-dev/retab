@@ -16,8 +16,6 @@ from retab.types.workflows.blocks import (
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockCreateRequestType,
-    WorkflowBlockVersion,
-    WorkflowBlockVersionDiff,
 )
 
 from .executions import WorkflowBlockExecutions, AsyncWorkflowBlockExecutions
@@ -71,52 +69,6 @@ class WorkflowBlocksMixin:
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/blocks", params=params or None, data=data)
-
-    def prepare_list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
-    ) -> PreparedRequest:
-        """List Block Versions"""
-        params: dict[str, Any] = {
-            "workflow_id": workflow_id,
-            "block_id": block_id,
-            "workflow_version_id": workflow_version_id,
-            "limit": limit,
-        }
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="GET", url="/v1/workflows/blocks/versions", params=params or None, data=data)
-
-    def prepare_list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> PreparedRequest:
-        """Diff Block Versions"""
-        params: dict[str, Any] = {
-            "from_block_version_id": from_block_version_id,
-            "to_block_version_id": to_block_version_id,
-        }
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="GET", url="/v1/workflows/blocks/versions/diff", params=params or None, data=data)
-
-    def prepare_get_version(self, block_version_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Block Version"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="GET", url=f"/v1/workflows/blocks/versions/{block_version_id}", params=params or None, data=data)
-
-    def prepare_create_version_restore(self, block_version_id: str, **extra_params: Any) -> PreparedRequest:
-        """Restore Block Version"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="POST", url=f"/v1/workflows/blocks/versions/{block_version_id}/restore", params=params or None, data=data)
 
     def prepare_get(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Get Block Get a single block by ID."""
@@ -237,31 +189,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    def list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
-    ) -> PaginatedList[WorkflowBlockVersion]:
-        """List Block Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
-        return self.request_page(prepared_request, model=WorkflowBlockVersion)
-
-    def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
-        """Diff Block Versions"""
-        prepared_request = self.prepare_list_diff(from_block_version_id=from_block_version_id, to_block_version_id=to_block_version_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return WorkflowBlockVersionDiff.model_validate(response)
-
-    def get_version(self, block_version_id: str, **extra_params: Any) -> WorkflowBlockVersion:
-        """Get Block Version"""
-        prepared_request = self.prepare_get_version(block_version_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return WorkflowBlockVersion.model_validate(response)
-
-    def create_version_restore(self, block_version_id: str, **extra_params: Any) -> WorkflowBlock:
-        """Restore Block Version"""
-        prepared_request = self.prepare_create_version_restore(block_version_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return WorkflowBlock.model_validate(response)
-
     def get(self, block_id: str, workflow_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Get Block Get a single block by ID."""
         prepared_request = self.prepare_get(block_id, workflow_id=workflow_id, **extra_params)
@@ -359,31 +286,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             parent_id=parent_id,
             **extra_params,
         )
-        response = await self._client._prepared_request(prepared_request)
-        return WorkflowBlock.model_validate(response)
-
-    async def list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
-    ) -> AsyncPaginatedList[WorkflowBlockVersion]:
-        """List Block Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
-        return await self.request_page(prepared_request, model=WorkflowBlockVersion)
-
-    async def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
-        """Diff Block Versions"""
-        prepared_request = self.prepare_list_diff(from_block_version_id=from_block_version_id, to_block_version_id=to_block_version_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return WorkflowBlockVersionDiff.model_validate(response)
-
-    async def get_version(self, block_version_id: str, **extra_params: Any) -> WorkflowBlockVersion:
-        """Get Block Version"""
-        prepared_request = self.prepare_get_version(block_version_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return WorkflowBlockVersion.model_validate(response)
-
-    async def create_version_restore(self, block_version_id: str, **extra_params: Any) -> WorkflowBlock:
-        """Restore Block Version"""
-        prepared_request = self.prepare_create_version_restore(block_version_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
