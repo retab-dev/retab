@@ -27,10 +27,8 @@ readonly class WorkflowExperiment implements \JsonSerializable
         public ?ExperimentPublicStatus $status = null,
         public ?float $score = null,
         public ?bool $isStale = null,
-        public ?ArtifactFreshness $freshness = null,
         public ?WorkflowTestSchemaDrift $schemaDrift = null,
         public ?string $schemaDriftDetail = null,
-        public ?ArtifactDrift $drift = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -62,10 +60,8 @@ readonly class WorkflowExperiment implements \JsonSerializable
             status: isset($data['status']) ? ExperimentPublicStatus::from($data['status']) : null,
             score: $data['score'] ?? null,
             isStale: $data['is_stale'] ?? null,
-            freshness: isset($data['freshness']) ? ArtifactFreshness::fromArray($data['freshness']) : null,
             schemaDrift: isset($data['schema_drift']) ? WorkflowTestSchemaDrift::from($data['schema_drift']) : null,
             schemaDriftDetail: $data['schema_drift_detail'] ?? null,
-            drift: isset($data['drift']) ? ArtifactDrift::fromArray($data['drift']) : null,
         );
     }
 
@@ -86,10 +82,8 @@ readonly class WorkflowExperiment implements \JsonSerializable
             'status' => $this->status?->value,
             'score' => $this->score,
             'is_stale' => $this->isStale,
-            'freshness' => $this->freshness?->toArray(),
             'schema_drift' => $this->schemaDrift?->value,
             'schema_drift_detail' => $this->schemaDriftDetail,
-            'drift' => $this->drift?->toArray(),
         ];
     }
 }

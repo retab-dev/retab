@@ -87,12 +87,6 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def is_stale=(value); end
 
-    sig { returns(T.nilable(Retab::ArtifactFreshness)) }
-    def freshness; end
-
-    sig { params(value: T.nilable(Retab::ArtifactFreshness)).returns(T.nilable(Retab::ArtifactFreshness)) }
-    def freshness=(value); end
-
     sig { returns(T.nilable(String)) }
     def schema_drift; end
 
@@ -104,12 +98,6 @@ module Retab
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def schema_drift_detail=(value); end
-
-    sig { returns(T.nilable(Retab::ArtifactDrift)) }
-    def drift; end
-
-    sig { params(value: T.nilable(Retab::ArtifactDrift)).returns(T.nilable(Retab::ArtifactDrift)) }
-    def drift=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end

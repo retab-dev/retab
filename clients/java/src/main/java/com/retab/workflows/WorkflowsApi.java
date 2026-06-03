@@ -8,8 +8,6 @@ import com.retab.RetabClient;
 import com.retab.models.CreateWorkflowRequest;
 import com.retab.models.UpdateWorkflowRequest;
 import com.retab.models.Workflow;
-import com.retab.models.WorkflowGraphVersion;
-import com.retab.models.WorkflowGraphVersionDiff;
 import com.retab.types.SortOrder;
 import com.retab.workflowartifacts.WorkflowArtifactsApi;
 import com.retab.workflowblocks.WorkflowBlocksApi;
@@ -115,12 +113,10 @@ public final class WorkflowsApi {
   public Workflow create(CreateWorkflowRequest request) throws IOException, InterruptedException {
     return create(
         request == null ? null : request.getName(),
-        request == null ? null : request.getDescription(),
-        request == null ? null : request.getProjectId());
+        request == null ? null : request.getDescription());
   }
 
-  public Workflow create(String name, String description, String projectId)
-      throws IOException, InterruptedException {
+  public Workflow create(String name, String description) throws IOException, InterruptedException {
     String path = "/v1/workflows";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
@@ -131,9 +127,6 @@ public final class WorkflowsApi {
     if (description != null) {
       body.put("description", description);
     }
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -141,111 +134,6 @@ public final class WorkflowsApi {
             .header("Accept", "application/json")
             .header("Api-Key", client.getApiKey());
     requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), Workflow.class);
-  }
-
-  public List<WorkflowGraphVersion> listVersions(String workflowId, Long limit)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/versions";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "workflow_id", workflowId);
-    appendQueryParam(query, "limit", limit);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    JsonNode root = client.getObjectMapper().readTree(response.body());
-    JsonNode data = root.isArray() ? root : root.get("data");
-    if (data == null || data.isNull()) {
-      return List.of();
-    }
-    return client
-        .getObjectMapper()
-        .readValue(
-            data.traverse(client.getObjectMapper()),
-            new TypeReference<List<WorkflowGraphVersion>>() {});
-  }
-
-  public WorkflowGraphVersionDiff listDiff(
-      String workflowId, String fromWorkflowVersionId, String toWorkflowVersionId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/versions/diff";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "workflow_id", workflowId);
-    appendQueryParam(query, "from_workflow_version_id", fromWorkflowVersionId);
-    appendQueryParam(query, "to_workflow_version_id", toWorkflowVersionId);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), WorkflowGraphVersionDiff.class);
-  }
-
-  public WorkflowGraphVersion getVersion(String workflowVersionId, String workflowId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/versions/" + encodePathSegment(workflowVersionId);
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "workflow_id", workflowId);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), WorkflowGraphVersion.class);
-  }
-
-  public Workflow createVersionRestore(String workflowVersionId, String workflowId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/versions/" + encodePathSegment(workflowVersionId) + "/restore";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "workflow_id", workflowId);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());

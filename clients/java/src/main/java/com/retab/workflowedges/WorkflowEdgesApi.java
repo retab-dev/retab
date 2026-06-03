@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.WorkflowEdgeCreateRequest;
 import com.retab.models.WorkflowEdgeDoc;
-import com.retab.models.WorkflowEdgeVersion;
-import com.retab.models.WorkflowEdgeVersionDiff;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -114,110 +112,6 @@ public final class WorkflowEdgesApi {
             .header("Accept", "application/json")
             .header("Api-Key", client.getApiKey());
     requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), WorkflowEdgeDoc.class);
-  }
-
-  public List<WorkflowEdgeVersion> listVersions(
-      String workflowId, String edgeId, String workflowVersionId, Long limit)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/edges/versions";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "workflow_id", workflowId);
-    appendQueryParam(query, "edge_id", edgeId);
-    appendQueryParam(query, "workflow_version_id", workflowVersionId);
-    appendQueryParam(query, "limit", limit);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    JsonNode root = client.getObjectMapper().readTree(response.body());
-    JsonNode data = root.isArray() ? root : root.get("data");
-    if (data == null || data.isNull()) {
-      return List.of();
-    }
-    return client
-        .getObjectMapper()
-        .readValue(
-            data.traverse(client.getObjectMapper()),
-            new TypeReference<List<WorkflowEdgeVersion>>() {});
-  }
-
-  public WorkflowEdgeVersionDiff listDiff(String fromEdgeVersionId, String toEdgeVersionId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/edges/versions/diff";
-    StringBuilder query = new StringBuilder();
-    appendQueryParam(query, "from_edge_version_id", fromEdgeVersionId);
-    appendQueryParam(query, "to_edge_version_id", toEdgeVersionId);
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), WorkflowEdgeVersionDiff.class);
-  }
-
-  public WorkflowEdgeVersion getVersion(String edgeVersionId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/edges/versions/" + encodePathSegment(edgeVersionId);
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), WorkflowEdgeVersion.class);
-  }
-
-  public WorkflowEdgeDoc createVersionRestore(String edgeVersionId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/edges/versions/" + encodePathSegment(edgeVersionId) + "/restore";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());

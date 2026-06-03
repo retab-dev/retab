@@ -16,8 +16,6 @@ readonly class CreateWorkflowRequest implements \JsonSerializable
         public ?string $name = null,
         /** Description of the workflow */
         public ?string $description = null,
-        /** Project that should own this workflow. Omit to use the organization's shared workflows project. */
-        public ?string $projectId = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -26,7 +24,6 @@ readonly class CreateWorkflowRequest implements \JsonSerializable
         return new self(
             name: $data['name'] ?? null,
             description: $data['description'] ?? null,
-            projectId: $data['project_id'] ?? null,
         );
     }
 
@@ -36,7 +33,6 @@ readonly class CreateWorkflowRequest implements \JsonSerializable
         return [
             'name' => $this->name,
             'description' => $this->description,
-            'project_id' => $this->projectId,
         ];
     }
 }

@@ -17,9 +17,6 @@ module Retab
       lifecycle: :lifecycle,
       timing: :timing,
       parent_run_id: :parent_run_id,
-      block_version_id: :block_version_id,
-      metrics_validity_fingerprint: :metrics_validity_fingerprint,
-      metrics_validity_fingerprint_version: :metrics_validity_fingerprint_version,
       definition_fingerprint: :definition_fingerprint,
       documents_fingerprint: :documents_fingerprint,
       score: :score,
@@ -41,9 +38,6 @@ module Retab
       :lifecycle,
       :timing,
       :parent_run_id,
-      :block_version_id,
-      :metrics_validity_fingerprint,
-      :metrics_validity_fingerprint_version,
       :definition_fingerprint,
       :documents_fingerprint,
       :score,
@@ -84,9 +78,6 @@ module Retab
       ) : nil
       @timing = hash[:timing] ? Retab::ExperimentRunTiming.new(hash[:timing]) : nil
       @parent_run_id = hash[:parent_run_id]
-      @block_version_id = hash[:block_version_id]
-      @metrics_validity_fingerprint = hash[:metrics_validity_fingerprint]
-      @metrics_validity_fingerprint_version = hash[:metrics_validity_fingerprint_version]
       @definition_fingerprint = hash[:definition_fingerprint]
       @documents_fingerprint = hash[:documents_fingerprint]
       @score = hash[:score]

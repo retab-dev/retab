@@ -317,6 +317,116 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 	}
 }
 
+func TestWorkflowsSpecApplyPrintsForEachMinimumCanvasSize(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits, applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		var body struct {
+			YamlDefinition string `json:"yaml_definition"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !strings.Contains(body.YamlDefinition, "type: for_each") {
+			t.Fatalf("request YAML should contain for_each block, got:\n%s", body.YamlDefinition)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/workflows/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wrk_cli_for_each_min_size",
+				"action":      "create",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 3, "change": 0, "destroy": 0,
+					"replace": 0, "noop": 0, "total": 3,
+					"has_changes": true,
+				},
+			})
+		case "/v1/workflows/spec/apply":
+			applyHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wrk_cli_for_each_min_size",
+				"action":      "create",
+				"created":     true,
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 3, "change": 0, "destroy": 0,
+					"replace": 0, "noop": 0, "total": 3,
+					"has_changes": true,
+				},
+				"resource_changes": []map[string]any{
+					{
+						"address":   "workflow.wrk_cli_for_each_min_size.block.fanout",
+						"target":    "block",
+						"target_id": "block_fanout",
+						"name":      "fanout",
+						"type":      "for_each",
+						"actions":   []string{"create"},
+						"change": map[string]any{
+							"after": map[string]any{
+								"type":   "for_each",
+								"width":  800.0,
+								"height": 800.0,
+							},
+						},
+					},
+				},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	spec := `apiVersion: workflows.retab.com/v1alpha2
+kind: Workflow
+metadata:
+  id: wrk_cli_for_each_min_size
+  name: CLI For Each Minimum Size
+spec:
+  blocks:
+    start:
+      type: start_json
+    fanout:
+      type: for_each
+      width: 320.0
+      height: 640.0
+      config:
+        map_method: iterate_array
+        map_source_path: orders
+  edges:
+    - from: { block: start, handle: output-json-0 }
+      to:   { block: fanout, handle: fe-left-in }
+`
+	if err := os.WriteFile(path, []byte(spec), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path}); err != nil {
+			t.Fatalf("spec apply: %v", err)
+		}
+	})
+	if planHits.Load() != 1 || applyHits.Load() != 1 {
+		t.Fatalf("plan hits = %d apply hits = %d, want 1 each", planHits.Load(), applyHits.Load())
+	}
+	if !strings.Contains(stdout, `"type": "for_each"`) {
+		t.Fatalf("stdout should include for_each resource, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"width": 800`) || !strings.Contains(stdout, `"height": 800`) {
+		t.Fatalf("stdout should include clamped 800x800 dimensions, got:\n%s", stdout)
+	}
+}
+
 func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

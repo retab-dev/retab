@@ -33,15 +33,11 @@ pub struct WorkflowExperiment {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub is_stale: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub freshness: Option<ArtifactFreshness>,
     /// Defaults to `unknown`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift: Option<ExperimentSchemaDriftStatus>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift_detail: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub drift: Option<ArtifactDrift>,
 }
 impl WorkflowExperiment {
     /// Construct a new `WorkflowExperiment` with the required fields set.
@@ -68,10 +64,8 @@ impl WorkflowExperiment {
             block_type,
             score: Default::default(),
             is_stale: Default::default(),
-            freshness: Default::default(),
             schema_drift: Default::default(),
             schema_drift_detail: Default::default(),
-            drift: Default::default(),
         }
     }
 }

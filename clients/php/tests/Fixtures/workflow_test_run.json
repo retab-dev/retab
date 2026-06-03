@@ -34,18 +34,5 @@
       "failed": 1,
       "blocked": 1
     }
-  },
-  "freshness": {
-    "status": "fresh",
-    "reasons": [
-      "validity_changed",
-      "inputs_changed",
-      "engine_changed",
-      "metrics_engine_changed",
-      "no_baseline"
-    ],
-    "validity_fingerprint": "validity_fingerprint_01234",
-    "input_fingerprint": "test_input_fingerprint",
-    "baseline_run_id": "baseline_run_id_01234"
   }
 }

@@ -3,31 +3,7 @@
 from __future__ import annotations
 
 import datetime
-from enum import Enum
-from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
-
-
-class WorkflowConfigBlockType(str, Enum):
-    START_DOCUMENT = "start_document"
-    START_JSON = "start_json"
-    NOTE = "note"
-    PARSE = "parse"
-    EDIT = "edit"
-    EXTRACT = "extract"
-    SPLIT = "split"
-    CLASSIFIER = "classifier"
-    CONDITIONAL = "conditional"
-    API_CALL = "api_call"
-    REVIEW = "review"
-    FUNCTION = "function"
-    WHILE_LOOP = "while_loop"
-    FOR_EACH = "for_each"
-    MERGE_DICTS = "merge_dicts"
-    WHILE_LOOP_SENTINEL_START = "while_loop_sentinel_start"
-    WHILE_LOOP_SENTINEL_END = "while_loop_sentinel_end"
-    FOR_EACH_SENTINEL_START = "for_each_sentinel_start"
-    FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
 
 
 class CreateWorkflowRequest(BaseModel):
@@ -37,7 +13,6 @@ class CreateWorkflowRequest(BaseModel):
 
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
-    project_id: str | None = Field(default=None, description="Project that should own this workflow. Omit to use the organization's shared workflows project.")
 
 
 class PublishWorkflowRequest(BaseModel):
@@ -65,74 +40,9 @@ class Workflow(BaseModel):
     id: str = Field(..., description="Unique ID for this workflow")
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
-    project_id: str | None = Field(default=None, description="Project that owns this workflow. Null means the organization's shared workflows project.")
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
     created_at: datetime.datetime
     updated_at: datetime.datetime
-
-
-class WorkflowBlockPosition(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    x: float
-    y: float
-
-
-class WorkflowConfigBlock(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str | None = None
-    type: WorkflowConfigBlockType
-    position: WorkflowBlockPosition
-    label: str
-    config: dict[str, Any] | None = Field(
-        default=None,
-        description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.",
-    )
-    resolved_schemas: dict[str, Any] | None = Field(default=None, description="Derived schema transport sidecar for UI/runtime consumers. Not authored config.")
-    width: float | None = Field(default=None, description="Block width for resizable blocks")
-    height: float | None = Field(default=None, description="Block height for resizable blocks")
-    parent_id: str | None = Field(default=None, description="ID of parent container block (while_loop, for_each)")
-
-
-class WorkflowConfigEdge(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str | None = None
-    source: str = Field(..., description="ID of the source block")
-    target: str = Field(..., description="ID of the target block")
-    source_handle: str | None = None
-    target_handle: str | None = None
-    animated: bool | None = Field(default=True)
-
-
-class WorkflowGraphVersion(BaseModel):
-    """Public workflow version resource."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str = Field(..., description="Public content-addressed workflow version ID")
-    workflow_id: str
-    organization_id: str
-    environment_id: str
-    blocks: list[WorkflowConfigBlock] | None = Field(default=[])
-    edges: list[WorkflowConfigEdge] | None = Field(default=[])
-    block_version_ids: dict[str, str] | None = Field(default={})
-    edge_version_ids: dict[str, str] | None = Field(default={})
-    created_at: datetime.datetime
-
-
-class WorkflowGraphVersionDiff(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    from_workflow_version_id: str
-    to_workflow_version_id: str
-    added_block_ids: list[str] | None = Field(default=[])
-    removed_block_ids: list[str] | None = Field(default=[])
-    changed_block_ids: list[str] | None = Field(default=[])
-    added_edge_ids: list[str] | None = Field(default=[])
-    removed_edge_ids: list[str] | None = Field(default=[])
-    changed_edge_ids: list[str] | None = Field(default=[])
 
 
 class WorkflowPublished(BaseModel):
@@ -173,11 +83,6 @@ __all__ = [
     "ApiCallInvocation",
     "ApproveReviewRequest",
     "ArrayContainsCondition",
-    "ArtifactDrift",
-    "ArtifactDriftStatus",
-    "ArtifactFreshness",
-    "ArtifactFreshnessReasons",
-    "ArtifactFreshnessStatus",
     "AssertionDriftStatus",
     "AssertionFailure",
     "AssertionOutcome",
@@ -398,18 +303,9 @@ __all__ = [
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",
-    "WorkflowBlockPosition",
     "WorkflowBlockType",
-    "WorkflowBlockVersion",
-    "WorkflowBlockVersionDiff",
-    "WorkflowBlockVersionType",
-    "WorkflowConfigBlock",
-    "WorkflowConfigBlockType",
-    "WorkflowConfigEdge",
     "WorkflowEdgeCreateRequest",
     "WorkflowEdgeDoc",
-    "WorkflowEdgeVersion",
-    "WorkflowEdgeVersionDiff",
     "WorkflowExperiment",
     "WorkflowExportPayloadRequest",
     "WorkflowExportPayloadRequestExcludeStatus",
@@ -417,8 +313,6 @@ __all__ = [
     "WorkflowExportPayloadRequestStatus",
     "WorkflowExportPayloadRequestTriggerType",
     "WorkflowExportPayloadResponse",
-    "WorkflowGraphVersion",
-    "WorkflowGraphVersionDiff",
     "WorkflowPublished",
     "WorkflowRun",
     "WorkflowRunStep",
@@ -433,7 +327,6 @@ __all__ = [
     "WorkflowTestRunTiming",
     "WorkflowTestRunWorkflowScope",
     "WorkflowTestSchemaDrift",
-    "WorkflowVersionFieldDiff",
     "_MetricsStaleErrorLastRun",
 ]
 
@@ -447,9 +340,4 @@ CreateWorkflowRequest.model_rebuild()
 PublishWorkflowRequest.model_rebuild()
 UpdateWorkflowRequest.model_rebuild()
 Workflow.model_rebuild()
-WorkflowBlockPosition.model_rebuild()
-WorkflowConfigBlock.model_rebuild()
-WorkflowConfigEdge.model_rebuild()
-WorkflowGraphVersion.model_rebuild()
-WorkflowGraphVersionDiff.model_rebuild()
 WorkflowPublished.model_rebuild()

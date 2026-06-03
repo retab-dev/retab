@@ -25,10 +25,6 @@ pub struct LatestBlockTestRunSummary {
     pub workflow_draft_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config_fingerprint: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub validity_fingerprint: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub handle_inputs_fingerprint: Option<String>,
     /// Defaults to `0`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub assertions_passed: Option<i64>,
@@ -56,8 +52,6 @@ impl LatestBlockTestRunSummary {
             duration_ms: Default::default(),
             workflow_draft_fingerprint: Default::default(),
             block_config_fingerprint: Default::default(),
-            validity_fingerprint: Default::default(),
-            handle_inputs_fingerprint: Default::default(),
             assertions_passed: Default::default(),
             assertions_failed: Default::default(),
             blocked_assertions: Default::default(),

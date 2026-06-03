@@ -51,7 +51,6 @@ class WorkflowBlockType(str, Enum):
     FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
 
 
-WorkflowBlockVersionType = WorkflowBlockType
 ValidateWorkflowBlockConfigRequestConfigMode = UpdateWorkflowBlockRequestConfigMode
 
 
@@ -152,50 +151,6 @@ class WorkflowBlock(BaseModel):
     resolved_schemas: dict[str, Any] | None = Field(default=None, description="Schemas resolved for this block from the workflow graph.")
 
 
-class WorkflowBlockVersion(BaseModel):
-    """Immutable block snapshot derived from a workflow version."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str = Field(..., description="Public content-addressed block version ID")
-    block_id: str = Field(..., description="Stable logical block ID")
-    workflow_id: str = Field(..., description="Source workflow ID")
-    organization_id: str = Field(..., description="Organization ID for data isolation")
-    environment_id: str = Field(..., description="Customer environment ID for data isolation")
-    workflow_version_id: str = Field(..., description="Workflow version this block version belongs to")
-    type: WorkflowBlockType
-    label: str | None = Field(default="")
-    position_x: float | None = Field(default=0)
-    position_y: float | None = Field(default=0)
-    width: float | None = None
-    height: float | None = None
-    parent_id: str | None = None
-    config: dict[str, Any] | None = None
-    field_ref_snapshot: dict[str, str] | None = None
-    resolved_schemas: dict[str, Any] | None = None
-    config_hash: str | None = Field(default="", description="Stable SHA-256 hash of the executable block config")
-    created_at: datetime.datetime | None = None
-
-
-class WorkflowBlockVersionDiff(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    from_block_version_id: str
-    to_block_version_id: str
-    block_id: str
-    changes: list[WorkflowVersionFieldDiff] | None = Field(default=[])
-
-
-class WorkflowVersionFieldDiff(BaseModel):
-    """One changed field between two immutable version resources."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    field: str
-    from_value: Any | None = None
-    to_value: Any | None = None
-
-
 from .executions import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 __all__ = [
@@ -215,10 +170,6 @@ __all__ = [
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",
     "WorkflowBlockType",
-    "WorkflowBlockVersion",
-    "WorkflowBlockVersionDiff",
-    "WorkflowBlockVersionType",
-    "WorkflowVersionFieldDiff",
 ]
 
 
@@ -232,6 +183,3 @@ UpdateWorkflowBlockRequest.model_rebuild()
 ValidateWorkflowBlockConfigRequest.model_rebuild()
 ValidateWorkflowBlockConfigResponse.model_rebuild()
 WorkflowBlock.model_rebuild()
-WorkflowBlockVersion.model_rebuild()
-WorkflowBlockVersionDiff.model_rebuild()
-WorkflowVersionFieldDiff.model_rebuild()

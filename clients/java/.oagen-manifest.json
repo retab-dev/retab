@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-03T13:56:41.485Z",
+  "generatedAt": "2026-06-03T18:11:34.421Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -23,8 +23,6 @@
     "src/main/java/com/retab/models/ApiCallInvocation.java",
     "src/main/java/com/retab/models/ApproveReviewRequest.java",
     "src/main/java/com/retab/models/ArrayContainsCondition.java",
-    "src/main/java/com/retab/models/ArtifactDrift.java",
-    "src/main/java/com/retab/models/ArtifactFreshness.java",
     "src/main/java/com/retab/models/AssertionFailure.java",
     "src/main/java/com/retab/models/AssertionResult.java",
     "src/main/java/com/retab/models/AssertionSchemaDep.java",
@@ -257,22 +255,13 @@
     "src/main/java/com/retab/models/WorkflowArtifactOperation2.java",
     "src/main/java/com/retab/models/WorkflowBlock.java",
     "src/main/java/com/retab/models/WorkflowBlockCreateRequest.java",
-    "src/main/java/com/retab/models/WorkflowBlockPosition.java",
-    "src/main/java/com/retab/models/WorkflowBlockVersion.java",
-    "src/main/java/com/retab/models/WorkflowBlockVersionDiff.java",
-    "src/main/java/com/retab/models/WorkflowConfigBlock.java",
-    "src/main/java/com/retab/models/WorkflowConfigEdge.java",
     "src/main/java/com/retab/models/WorkflowEdgeCreateRequest.java",
     "src/main/java/com/retab/models/WorkflowEdgeDoc.java",
-    "src/main/java/com/retab/models/WorkflowEdgeVersion.java",
-    "src/main/java/com/retab/models/WorkflowEdgeVersionDiff.java",
     "src/main/java/com/retab/models/WorkflowExperiment.java",
     "src/main/java/com/retab/models/WorkflowExperimentResult.java",
     "src/main/java/com/retab/models/WorkflowExperimentRun.java",
     "src/main/java/com/retab/models/WorkflowExportPayloadRequest.java",
     "src/main/java/com/retab/models/WorkflowExportPayloadResponse.java",
-    "src/main/java/com/retab/models/WorkflowGraphVersion.java",
-    "src/main/java/com/retab/models/WorkflowGraphVersionDiff.java",
     "src/main/java/com/retab/models/WorkflowPublished.java",
     "src/main/java/com/retab/models/WorkflowRun.java",
     "src/main/java/com/retab/models/WorkflowRunLifecycle.java",
@@ -308,7 +297,6 @@
     "src/main/java/com/retab/models/WorkflowTestRunTiming.java",
     "src/main/java/com/retab/models/WorkflowTestRunWorkflowScope.java",
     "src/main/java/com/retab/models/WorkflowTestSource.java",
-    "src/main/java/com/retab/models/WorkflowVersionFieldDiff.java",
     "src/main/java/com/retab/parses/ParsesApi.java",
     "src/main/java/com/retab/partitions/PartitionsApi.java",
     "src/main/java/com/retab/schemas/SchemasApi.java",
@@ -316,9 +304,6 @@
     "src/main/java/com/retab/splits/SplitsApi.java",
     "src/main/java/com/retab/tables/TablesApi.java",
     "src/main/java/com/retab/types/ActorKind.java",
-    "src/main/java/com/retab/types/ArtifactDriftStatus.java",
-    "src/main/java/com/retab/types/ArtifactFreshnessReasons.java",
-    "src/main/java/com/retab/types/ArtifactFreshnessStatus.java",
     "src/main/java/com/retab/types/AssertionDriftStatus.java",
     "src/main/java/com/retab/types/AssertionOutcome.java",
     "src/main/java/com/retab/types/CancelWorkflowResponseCancellationStatus.java",
@@ -393,8 +378,6 @@
     "src/main/java/com/retab/types/WorkflowArtifactsOperation.java",
     "src/main/java/com/retab/types/WorkflowBlockCreateRequestType.java",
     "src/main/java/com/retab/types/WorkflowBlockType.java",
-    "src/main/java/com/retab/types/WorkflowBlockVersionType.java",
-    "src/main/java/com/retab/types/WorkflowConfigBlockType.java",
     "src/main/java/com/retab/types/WorkflowExperimentsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowExperimentsStatus.java",
     "src/main/java/com/retab/types/WorkflowExportPayloadRequestExcludeStatus.java",
@@ -684,22 +667,6 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
-    "GET /v1/workflows/versions": {
-      "sdkMethod": "listVersions",
-      "service": "workflows"
-    },
-    "GET /v1/workflows/versions/diff": {
-      "sdkMethod": "listDiff",
-      "service": "workflows"
-    },
-    "GET /v1/workflows/versions/{workflow_version_id}": {
-      "sdkMethod": "getVersion",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
-      "sdkMethod": "createVersionRestore",
-      "service": "workflows"
-    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "get",
       "service": "workflows"
@@ -736,22 +703,6 @@
       "sdkMethod": "create",
       "service": "workflows.blocks"
     },
-    "GET /v1/workflows/blocks/versions": {
-      "sdkMethod": "listVersions",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/blocks/versions/diff": {
-      "sdkMethod": "listDiff",
-      "service": "workflows.blocks"
-    },
-    "GET /v1/workflows/blocks/versions/{block_version_id}": {
-      "sdkMethod": "getVersion",
-      "service": "workflows.blocks"
-    },
-    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
-      "sdkMethod": "createVersionRestore",
-      "service": "workflows.blocks"
-    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "get",
       "service": "workflows.blocks"
@@ -782,22 +733,6 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "create",
-      "service": "workflows.edges"
-    },
-    "GET /v1/workflows/edges/versions": {
-      "sdkMethod": "listVersions",
-      "service": "workflows.edges"
-    },
-    "GET /v1/workflows/edges/versions/diff": {
-      "sdkMethod": "listDiff",
-      "service": "workflows.edges"
-    },
-    "GET /v1/workflows/edges/versions/{edge_version_id}": {
-      "sdkMethod": "getVersion",
-      "service": "workflows.edges"
-    },
-    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
-      "sdkMethod": "createVersionRestore",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {

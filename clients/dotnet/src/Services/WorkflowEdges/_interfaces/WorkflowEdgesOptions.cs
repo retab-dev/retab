@@ -40,29 +40,4 @@ namespace Retab
         public string? TargetHandle { get; set; }
 
     }
-
-    /// <summary>Request options for <see cref="WorkflowEdgesService.ListVersionsAsync"/>: List Edge Versions</summary>
-    public class WorkflowEdgesListVersionsOptions : BaseOptions
-    {
-        public string WorkflowId { get; set; } = default!;
-
-        /// <summary>Filter by stable edge ID</summary>
-        public string? EdgeId { get; set; }
-
-        /// <summary>Filter by workflow version ID</summary>
-        public string? WorkflowVersionId { get; set; }
-
-        /// <summary>Maximum number of edge versions to return</summary>
-        public long? Limit { get; set; }
-
-    }
-
-    /// <summary>Request options for <see cref="WorkflowEdgesService.ListDiffAsync"/>: Diff Edge Versions</summary>
-    public class WorkflowEdgesListDiffOptions : BaseOptions
-    {
-        public string FromEdgeVersionId { get; set; } = default!;
-
-        public string ToEdgeVersionId { get; set; } = default!;
-
-    }
 }

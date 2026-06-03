@@ -18,7 +18,6 @@ public final class WorkflowTestRun {
   private final String testId;
   private final Long totalTests;
   private final BlockTestBatchExecutionCounts counts;
-  private final ArtifactFreshness freshness;
 
   @JsonCreator
   public WorkflowTestRun(
@@ -31,8 +30,7 @@ public final class WorkflowTestRun {
       @JsonProperty(value = "target", required = false) WorkflowTestBlockTarget target,
       @JsonProperty(value = "test_id", required = false) String testId,
       @JsonProperty(value = "total_tests", required = true) Long totalTests,
-      @JsonProperty(value = "counts", required = false) BlockTestBatchExecutionCounts counts,
-      @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness) {
+      @JsonProperty(value = "counts", required = false) BlockTestBatchExecutionCounts counts) {
     this.id = id;
     this.workflowId = workflowId;
     this.workflowVersionId = workflowVersionId;
@@ -43,7 +41,6 @@ public final class WorkflowTestRun {
     this.testId = testId;
     this.totalTests = totalTests;
     this.counts = counts;
-    this.freshness = freshness;
   }
 
   @JsonProperty("id")
@@ -94,10 +91,5 @@ public final class WorkflowTestRun {
   @JsonProperty("counts")
   public BlockTestBatchExecutionCounts getCounts() {
     return counts;
-  }
-
-  @JsonProperty("freshness")
-  public ArtifactFreshness getFreshness() {
-    return freshness;
   }
 }

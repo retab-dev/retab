@@ -26,10 +26,8 @@ public final class WorkflowExperiment {
   private final ExperimentBlockType blockType;
   private final Double score;
   private final Boolean isStale;
-  private final ArtifactFreshness freshness;
   private final ExperimentSchemaDriftStatus schemaDrift;
   private final String schemaDriftDetail;
-  private final ArtifactDrift drift;
 
   @JsonCreator
   public WorkflowExperiment(
@@ -46,11 +44,9 @@ public final class WorkflowExperiment {
       @JsonProperty(value = "block_type", required = true) ExperimentBlockType blockType,
       @JsonProperty(value = "score", required = false) Double score,
       @JsonProperty(value = "is_stale", required = false) Boolean isStale,
-      @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness,
       @JsonProperty(value = "schema_drift", required = false)
           ExperimentSchemaDriftStatus schemaDrift,
-      @JsonProperty(value = "schema_drift_detail", required = false) String schemaDriftDetail,
-      @JsonProperty(value = "drift", required = false) ArtifactDrift drift) {
+      @JsonProperty(value = "schema_drift_detail", required = false) String schemaDriftDetail) {
     this.id = id;
     this.workflowId = workflowId;
     this.blockId = blockId;
@@ -64,10 +60,8 @@ public final class WorkflowExperiment {
     this.blockType = blockType;
     this.score = score;
     this.isStale = isStale != null ? isStale : false;
-    this.freshness = freshness;
     this.schemaDrift = schemaDrift;
     this.schemaDriftDetail = schemaDriftDetail;
-    this.drift = drift;
   }
 
   @JsonProperty("id")
@@ -135,11 +129,6 @@ public final class WorkflowExperiment {
     return isStale;
   }
 
-  @JsonProperty("freshness")
-  public ArtifactFreshness getFreshness() {
-    return freshness;
-  }
-
   @JsonProperty("schema_drift")
   public ExperimentSchemaDriftStatus getSchemaDrift() {
     return schemaDrift;
@@ -148,10 +137,5 @@ public final class WorkflowExperiment {
   @JsonProperty("schema_drift_detail")
   public String getSchemaDriftDetail() {
     return schemaDriftDetail;
-  }
-
-  @JsonProperty("drift")
-  public ArtifactDrift getDrift() {
-    return drift;
   }
 }

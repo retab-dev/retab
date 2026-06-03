@@ -144,9 +144,6 @@ class ExperimentRun(BaseModel):
     ) = Field(..., discriminator="status")
     timing: ExperimentRunTiming
     parent_run_id: str | None = None
-    block_version_id: str | None = None
-    metrics_validity_fingerprint: str | None = None
-    metrics_validity_fingerprint_version: int | None = None
     definition_fingerprint: str
     documents_fingerprint: str
     score: float | None = None

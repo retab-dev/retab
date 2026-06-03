@@ -7,8 +7,6 @@ declare(strict_types=1);
 namespace Retab\Service;
 
 use Retab\Resource\WorkflowEdgeDoc;
-use Retab\Resource\WorkflowEdgeVersion;
-use Retab\Resource\WorkflowEdgeVersionDiff;
 
 class WorkflowEdges
 {
@@ -97,98 +95,6 @@ class WorkflowEdges
             method: 'POST',
             path: 'v1/workflows/edges',
             body: $body,
-            options: $options,
-        );
-        return WorkflowEdgeDoc::fromArray($response);
-    }
-
-    /**
-     * List Edge Versions
-     * @param string $workflowId
-     * @param string|null $edgeId Filter by stable edge ID
-     * @param string|null $workflowVersionId Filter by workflow version ID
-     * @param int|null $limit Maximum number of edge versions to return Defaults to 50.
-     * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowEdgeVersion>
-     * @throws \Retab\Exception\RetabException
-     */
-    public function listVersions(
-        string $workflowId,
-        ?string $edgeId = null,
-        ?string $workflowVersionId = null,
-        ?int $limit = null,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\PaginatedResponse {
-        $query = array_filter([
-            'workflow_id' => $workflowId,
-            'edge_id' => $edgeId,
-            'workflow_version_id' => $workflowVersionId,
-            'limit' => $limit,
-        ], fn($v) => $v !== null);
-        return $this->client->requestPage(
-            method: 'GET',
-            path: 'v1/workflows/edges/versions',
-            query: $query,
-            modelClass: WorkflowEdgeVersion::class,
-            options: $options,
-        );
-    }
-
-    /**
-     * Diff Edge Versions
-     * @param string $fromEdgeVersionId
-     * @param string $toEdgeVersionId
-     * @return \Retab\Resource\WorkflowEdgeVersionDiff
-     * @throws \Retab\Exception\RetabException
-     */
-    public function listDiff(
-        string $fromEdgeVersionId,
-        string $toEdgeVersionId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\WorkflowEdgeVersionDiff {
-        $query = [
-            'from_edge_version_id' => $fromEdgeVersionId,
-            'to_edge_version_id' => $toEdgeVersionId,
-        ];
-        $response = $this->client->request(
-            method: 'GET',
-            path: 'v1/workflows/edges/versions/diff',
-            query: $query,
-            options: $options,
-        );
-        return WorkflowEdgeVersionDiff::fromArray($response);
-    }
-
-    /**
-     * Get Edge Version
-     * @param string $edgeVersionId
-     * @return \Retab\Resource\WorkflowEdgeVersion
-     * @throws \Retab\Exception\RetabException
-     */
-    public function getVersion(
-        string $edgeVersionId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\WorkflowEdgeVersion {
-        $response = $this->client->request(
-            method: 'GET',
-            path: 'v1/workflows/edges/versions/' . rawurlencode($edgeVersionId),
-            options: $options,
-        );
-        return WorkflowEdgeVersion::fromArray($response);
-    }
-
-    /**
-     * Restore Edge Version
-     * @param string $edgeVersionId
-     * @return \Retab\Resource\WorkflowEdgeDoc
-     * @throws \Retab\Exception\RetabException
-     */
-    public function createVersionRestore(
-        string $edgeVersionId,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\WorkflowEdgeDoc {
-        $response = $this->client->request(
-            method: 'POST',
-            path: 'v1/workflows/edges/versions/' . rawurlencode($edgeVersionId) . '/restore',
             options: $options,
         );
         return WorkflowEdgeDoc::fromArray($response);

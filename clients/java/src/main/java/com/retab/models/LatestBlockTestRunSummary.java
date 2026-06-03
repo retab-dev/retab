@@ -19,8 +19,6 @@ public final class LatestBlockTestRunSummary {
   private final Long durationMs;
   private final String workflowDraftFingerprint;
   private final String blockConfigFingerprint;
-  private final String validityFingerprint;
-  private final String handleInputsFingerprint;
   private final Long assertionsPassed;
   private final Long assertionsFailed;
   private final Long blockedAssertions;
@@ -37,9 +35,6 @@ public final class LatestBlockTestRunSummary {
           String workflowDraftFingerprint,
       @JsonProperty(value = "block_config_fingerprint", required = false)
           String blockConfigFingerprint,
-      @JsonProperty(value = "validity_fingerprint", required = false) String validityFingerprint,
-      @JsonProperty(value = "handle_inputs_fingerprint", required = false)
-          String handleInputsFingerprint,
       @JsonProperty(value = "assertions_passed", required = false) Long assertionsPassed,
       @JsonProperty(value = "assertions_failed", required = false) Long assertionsFailed,
       @JsonProperty(value = "blocked_assertions", required = false) Long blockedAssertions) {
@@ -51,8 +46,6 @@ public final class LatestBlockTestRunSummary {
     this.durationMs = durationMs;
     this.workflowDraftFingerprint = workflowDraftFingerprint;
     this.blockConfigFingerprint = blockConfigFingerprint;
-    this.validityFingerprint = validityFingerprint;
-    this.handleInputsFingerprint = handleInputsFingerprint;
     this.assertionsPassed = assertionsPassed;
     this.assertionsFailed = assertionsFailed;
     this.blockedAssertions = blockedAssertions;
@@ -96,16 +89,6 @@ public final class LatestBlockTestRunSummary {
   @JsonProperty("block_config_fingerprint")
   public String getBlockConfigFingerprint() {
     return blockConfigFingerprint;
-  }
-
-  @JsonProperty("validity_fingerprint")
-  public String getValidityFingerprint() {
-    return validityFingerprint;
-  }
-
-  @JsonProperty("handle_inputs_fingerprint")
-  public String getHandleInputsFingerprint() {
-    return handleInputsFingerprint;
   }
 
   @JsonProperty("assertions_passed")

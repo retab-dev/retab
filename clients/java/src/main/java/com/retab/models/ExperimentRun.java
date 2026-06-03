@@ -21,9 +21,6 @@ public final class ExperimentRun {
   private final WorkflowExperimentRun lifecycle;
   private final ExperimentRunTiming timing;
   private final String parentRunId;
-  private final String blockVersionId;
-  private final String metricsValidityFingerprint;
-  private final Long metricsValidityFingerprintVersion;
   private final String definitionFingerprint;
   private final String documentsFingerprint;
   private final Double score;
@@ -45,11 +42,6 @@ public final class ExperimentRun {
       @JsonProperty(value = "lifecycle", required = true) WorkflowExperimentRun lifecycle,
       @JsonProperty(value = "timing", required = true) ExperimentRunTiming timing,
       @JsonProperty(value = "parent_run_id", required = false) String parentRunId,
-      @JsonProperty(value = "block_version_id", required = false) String blockVersionId,
-      @JsonProperty(value = "metrics_validity_fingerprint", required = false)
-          String metricsValidityFingerprint,
-      @JsonProperty(value = "metrics_validity_fingerprint_version", required = false)
-          Long metricsValidityFingerprintVersion,
       @JsonProperty(value = "definition_fingerprint", required = true) String definitionFingerprint,
       @JsonProperty(value = "documents_fingerprint", required = true) String documentsFingerprint,
       @JsonProperty(value = "score", required = false) Double score,
@@ -69,9 +61,6 @@ public final class ExperimentRun {
     this.lifecycle = lifecycle;
     this.timing = timing;
     this.parentRunId = parentRunId;
-    this.blockVersionId = blockVersionId;
-    this.metricsValidityFingerprint = metricsValidityFingerprint;
-    this.metricsValidityFingerprintVersion = metricsValidityFingerprintVersion;
     this.definitionFingerprint = definitionFingerprint;
     this.documentsFingerprint = documentsFingerprint;
     this.score = score;
@@ -134,21 +123,6 @@ public final class ExperimentRun {
   @JsonProperty("parent_run_id")
   public String getParentRunId() {
     return parentRunId;
-  }
-
-  @JsonProperty("block_version_id")
-  public String getBlockVersionId() {
-    return blockVersionId;
-  }
-
-  @JsonProperty("metrics_validity_fingerprint")
-  public String getMetricsValidityFingerprint() {
-    return metricsValidityFingerprint;
-  }
-
-  @JsonProperty("metrics_validity_fingerprint_version")
-  public Long getMetricsValidityFingerprintVersion() {
-    return metricsValidityFingerprintVersion;
   }
 
   @JsonProperty("definition_fingerprint")

@@ -9,7 +9,6 @@ module Retab
       id: :id,
       name: :name,
       description: :description,
-      project_id: :project_id,
       published: :published,
       created_at: :created_at,
       updated_at: :updated_at
@@ -19,7 +18,6 @@ module Retab
       :id,
       :name,
       :description,
-      :project_id,
       :published,
       :created_at,
       :updated_at
@@ -31,7 +29,6 @@ module Retab
       @id = hash[:id]
       @name = hash[:name].nil? ? "Untitled Workflow" : hash[:name]
       @description = hash[:description].nil? ? "" : hash[:description]
-      @project_id = hash[:project_id]
       @published = hash[:published] ? Retab::WorkflowPublished.new(hash[:published]) : nil
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]
