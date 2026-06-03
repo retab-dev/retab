@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -34,7 +35,8 @@ hydrate when you need to repair or regenerate local support files:
 Hydration writes input.py, output.py, .env.local placeholders, local table
 fixture paths in mounts.json, and a run.py wrapper. Secrets are not downloaded
 by default. If your local environment already defines the variables declared in
-mounts.secrets, run.py uses them without prompting.`,
+mounts.secrets, the local runner uses them without prompting. Python functions
+hydrate as Python files; TypeScript functions hydrate as TypeScript files.`,
 }
 
 var workflowsFunctionsHydrateCmd = &cobra.Command{
@@ -62,21 +64,32 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 				return err
 			}
 		}
-		return printJSON(map[string]any{
-			"ok":          true,
-			"dir":         args[0],
-			"mode":        "repair",
-			"workflow_id": manifest.WorkflowID,
-			"block_id":    manifest.BlockID,
-			"files": []string{
-				"input.py",
-				"output.py",
-				"run.py",
+		files := []string{
+			"input.py",
+			"output.py",
+			"run.py",
+			".env.example",
+			".env.local",
+			".retab/runtime.py",
+		}
+		if functionLanguage(config) == "typescript" {
+			files = []string{
+				"models.generated.ts",
+				"schemas.generated.ts",
+				"run.mjs",
 				".env.example",
 				".env.local",
-				"mounts.json",
-				".retab/runtime.py",
-			},
+				".retab/runtime.mjs",
+			}
+		}
+		return printJSON(map[string]any{
+			"ok":             true,
+			"dir":            args[0],
+			"mode":           "repair",
+			"workflow_id":    manifest.WorkflowID,
+			"block_id":       manifest.BlockID,
+			"language":       functionLanguage(config),
+			"files":          files,
 			"filled_secrets": filledSecrets,
 		})
 	}),
@@ -91,13 +104,29 @@ var workflowsFunctionsRunCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		runPath := filepath.Join(dir, "run.py")
+		manifest, config, err := readBlockConfigBundle(dir)
+		if err != nil {
+			return err
+		}
+		if manifest.BlockType != "function" {
+			return fmt.Errorf("bundle block_type is %q, expected function", manifest.BlockType)
+		}
+		language := functionLanguage(config)
+		runFile := "run.py"
+		if language == "typescript" {
+			runFile = "run.mjs"
+		}
+		runPath := filepath.Join(dir, runFile)
 		if _, err := os.Stat(runPath); err != nil {
-			return fmt.Errorf("run.py not found; run `retab workflows blocks functions hydrate %s` first: %w", dir, err)
+			return fmt.Errorf("%s not found; run `retab workflows blocks functions hydrate %s` first: %w", runFile, dir, err)
 		}
 		python, _ := cmd.Flags().GetString("python")
 		if strings.TrimSpace(python) == "" {
 			python = "python3"
+		}
+		node, _ := cmd.Flags().GetString("node")
+		if strings.TrimSpace(node) == "" {
+			node = "node"
 		}
 		outDir, _ := cmd.Flags().GetString("out")
 		jobs, _ := cmd.Flags().GetString("jobs")
@@ -135,11 +164,15 @@ var workflowsFunctionsRunCmd = &cobra.Command{
 			childArgs = append(childArgs, "--clean")
 		}
 		childArgs = append(childArgs, inputs...)
-		return runFunctionPythonChild(cmd.Context(), functionPythonChildOptions{
-			Python:  python,
-			Args:    childArgs,
-			Dir:     dir,
-			Timeout: timeout,
+		executable := python
+		if language == "typescript" {
+			executable = node
+		}
+		return runFunctionChild(cmd.Context(), functionChildOptions{
+			Executable: executable,
+			Args:       childArgs,
+			Dir:        dir,
+			Timeout:    timeout,
 		})
 	}),
 }
@@ -152,6 +185,22 @@ type functionPythonChildOptions struct {
 }
 
 func runFunctionPythonChild(ctx context.Context, opts functionPythonChildOptions) error {
+	return runFunctionChild(ctx, functionChildOptions{
+		Executable: opts.Python,
+		Args:       opts.Args,
+		Dir:        opts.Dir,
+		Timeout:    opts.Timeout,
+	})
+}
+
+type functionChildOptions struct {
+	Executable string
+	Args       []string
+	Dir        string
+	Timeout    time.Duration
+}
+
+func runFunctionChild(ctx context.Context, opts functionChildOptions) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -160,7 +209,7 @@ func runFunctionPythonChild(ctx context.Context, opts functionPythonChildOptions
 		ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
 		defer cancel()
 	}
-	child := exec.CommandContext(ctx, opts.Python, opts.Args...)
+	child := exec.CommandContext(ctx, opts.Executable, opts.Args...)
 	child.Dir = opts.Dir
 	child.Stdout = os.Stdout
 	child.Stderr = os.Stderr
@@ -222,6 +271,13 @@ func validateFunctionRunOutDir(raw string) error {
 }
 
 func hydrateFunctionBundle(dir string, config map[string]any, force bool) error {
+	if functionLanguage(config) == "typescript" {
+		return hydrateTypescriptFunctionBundle(dir, config, force)
+	}
+	return hydratePythonFunctionBundle(dir, config, force)
+}
+
+func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) error {
 	files := map[string]string{
 		"input.py":          generateFunctionInputModule(),
 		"output.py":         generateFunctionOutputModule(config),
@@ -234,12 +290,38 @@ func hydrateFunctionBundle(dir string, config map[string]any, force bool) error 
 		}
 	}
 	if force {
-		for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"} {
+		for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs"} {
 			if err := os.Remove(filepath.Join(dir, rel)); err != nil && !os.IsNotExist(err) {
 				return err
 			}
 		}
 	}
+	return hydrateFunctionCommonFiles(dir, config, force)
+}
+
+func hydrateTypescriptFunctionBundle(dir string, config map[string]any, force bool) error {
+	files := map[string]string{
+		"models.generated.ts":  generateTypescriptModelModule(),
+		"schemas.generated.ts": generateTypescriptSchemaModule(config),
+		"run.mjs":              generatedFunctionRunMjs,
+		".retab/runtime.mjs":   generatedFunctionRuntimeMjs,
+	}
+	for rel, content := range files {
+		if err := writeTextFileIfAllowed(filepath.Join(dir, rel), content, force, 0o700); err != nil {
+			return err
+		}
+	}
+	if force {
+		for _, rel := range []string{"input.py", "output.py", "run.py", ".retab/runtime.py", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"} {
+			if err := os.Remove(filepath.Join(dir, rel)); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+		}
+	}
+	return hydrateFunctionCommonFiles(dir, config, force)
+}
+
+func hydrateFunctionCommonFiles(dir string, config map[string]any, force bool) error {
 	secrets := collectFunctionSecretEnvNames(config)
 	if err := writeTextFileIfAllowed(filepath.Join(dir, ".env.example"), renderEnvFile(secrets, false), force, 0o600); err != nil {
 		return err
@@ -438,6 +520,25 @@ func generateFunctionInputModule() string {
 	return b.String()
 }
 
+func generateTypescriptModelModule() string {
+	return `export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
+export type Input = Record<string, any>;
+export type Output = Record<string, any>;
+`
+}
+
+func generateTypescriptSchemaModule(config map[string]any) string {
+	outputSchema := map[string]any{"type": "object"}
+	if schema, ok := config["output_schema"].(map[string]any); ok {
+		outputSchema = schema
+	}
+	inputRaw, _ := json.MarshalIndent(map[string]any{"type": "object"}, "", "  ")
+	outputRaw, _ := json.MarshalIndent(outputSchema, "", "  ")
+	return fmt.Sprintf("export const inputSchema = %s as const;\n\nexport const outputSchema = %s as const;\n", inputRaw, outputRaw)
+}
+
 func sanitizePythonClassName(raw string) string {
 	identifier := sanitizeIdentifier(raw)
 	if identifier == "" {
@@ -530,6 +631,11 @@ def _load_runtime():
 
 if __name__ == "__main__":
     _load_runtime().main()
+`
+
+const generatedFunctionRunMjs = `import { main } from "./.retab/runtime.mjs";
+
+await main();
 `
 
 const generatedFunctionRuntimePy = `from __future__ import annotations
@@ -649,7 +755,7 @@ def main(argv=None):
     parser.add_argument("--clean", action="store_true")
     args = parser.parse_args(argv)
 
-    bundle_dir = Path(__file__).resolve().parent
+    bundle_dir = Path(__file__).resolve().parent.parent
     os.chdir(bundle_dir)
     sys.path.insert(0, str(bundle_dir))
     load_env_file(bundle_dir / ".env.local")
@@ -714,11 +820,151 @@ if __name__ == "__main__":
     main()
 `
 
+const generatedFunctionRuntimeMjs = `import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { cpus } from "node:os";
+
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  for (const rawLine of fs.readFileSync(filePath, "utf8").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#") || !line.includes("=")) continue;
+    const [key, ...rest] = line.split("=");
+    if (!(key.trim() in process.env)) {
+      process.env[key.trim()] = rest.join("=").trim();
+    }
+  }
+}
+
+function prepareLocalMounts(bundleDir) {
+  const mountsPath = path.join(bundleDir, "mounts.json");
+  if (!fs.existsSync(mountsPath)) return;
+  const mounts = JSON.parse(fs.readFileSync(mountsPath, "utf8"));
+  for (const table of mounts.tables ?? []) {
+    if (!table.local_path || !table.path) continue;
+    const localPath = path.join(bundleDir, table.local_path);
+    if (!fs.existsSync(localPath)) continue;
+    fs.mkdirSync(path.dirname(table.path), { recursive: true });
+    fs.copyFileSync(localPath, table.path);
+  }
+}
+
+function parseArgs(argv) {
+  const args = { inputs: [], out: "outputs", recursive: false, jobs: "auto", continueOnError: false, clean: false };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "--out") args.out = argv[++i];
+    else if (arg === "--recursive") args.recursive = true;
+    else if (arg === "--jobs") args.jobs = argv[++i];
+    else if (arg === "--continue-on-error") args.continueOnError = true;
+    else if (arg === "--clean") args.clean = true;
+    else args.inputs.push(arg);
+  }
+  if (args.inputs.length === 0) {
+    throw new Error("at least one input JSON file or directory is required");
+  }
+  return args;
+}
+
+function walkInputs(rawInputs, recursive) {
+  const out = [];
+  for (const raw of rawInputs) {
+    const resolved = path.resolve(raw);
+    const stat = fs.statSync(resolved);
+    if (!stat.isDirectory()) {
+      out.push(resolved);
+      continue;
+    }
+    const stack = [resolved];
+    while (stack.length > 0) {
+      const current = stack.pop();
+      for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+        const child = path.join(current, entry.name);
+        if (entry.isDirectory() && recursive) stack.push(child);
+        else if (entry.isFile() && entry.name.endsWith(".json")) out.push(child);
+      }
+    }
+  }
+  return out.sort();
+}
+
+function outputStem(inputPath) {
+  const parsed = path.parse(inputPath);
+  return parsed.name;
+}
+
+async function runOne({ bundleDir, transform, inputPath, outDir, traceDir }) {
+  const payload = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+  const output = await transform(payload);
+  const stem = outputStem(inputPath);
+  const outPath = path.join(outDir, stem + ".out.json");
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, JSON.stringify(output, null, 2) + "\n", "utf8");
+  const tracePath = path.join(traceDir, stem + ".trace.json");
+  fs.mkdirSync(path.dirname(tracePath), { recursive: true });
+  fs.writeFileSync(tracePath, JSON.stringify({ input: inputPath, output: outPath, ok: true }, null, 2) + "\n", "utf8");
+  return { input: inputPath, output: outPath, ok: true };
+}
+
+export async function main(argv = process.argv.slice(2)) {
+  const runtimeDir = path.dirname(fileURLToPath(import.meta.url));
+  const bundleDir = path.dirname(runtimeDir);
+  process.chdir(bundleDir);
+  loadEnvFile(path.join(bundleDir, ".env.local"));
+  prepareLocalMounts(bundleDir);
+  const config = JSON.parse(fs.readFileSync(path.join(bundleDir, "config.json"), "utf8"));
+  const entrypoint = config.entrypoint ?? "transform";
+  let module;
+  try {
+    module = await import(pathToFileURL(path.join(bundleDir, "function.ts")).href);
+  } catch (error) {
+    throw new Error("could not load function.ts with local Node.js. Use Node.js with TypeScript execution support, or run the bundle with a TypeScript runner. " + error.message);
+  }
+  const transform = module[entrypoint];
+  if (typeof transform !== "function") {
+    throw new Error("function.ts must export " + entrypoint + "()");
+  }
+  const args = parseArgs(argv);
+  const outDir = path.join(bundleDir, args.out);
+  const traceDir = path.join(bundleDir, "traces");
+  if (args.clean) {
+    fs.rmSync(outDir, { recursive: true, force: true });
+    fs.rmSync(traceDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.mkdirSync(traceDir, { recursive: true });
+  const inputPaths = walkInputs(args.inputs, args.recursive);
+  if (inputPaths.length === 0) throw new Error("no input JSON files matched");
+  const jobs = args.jobs === "auto" ? Math.max(1, cpus().length) : Math.max(1, Number.parseInt(args.jobs, 10));
+  const queue = [...inputPaths];
+  let failed = false;
+  async function worker() {
+    while (queue.length > 0 && (!failed || args.continueOnError)) {
+      const inputPath = queue.shift();
+      try {
+        const result = await runOne({ bundleDir, transform, inputPath, outDir, traceDir });
+        console.log(JSON.stringify(result));
+      } catch (error) {
+        failed = true;
+        const tracePath = path.join(traceDir, outputStem(inputPath) + ".trace.json");
+        fs.writeFileSync(tracePath, JSON.stringify({ input: inputPath, ok: false, error: error.message }, null, 2) + "\n", "utf8");
+        console.log(JSON.stringify({ input: inputPath, ok: false, error: error.message }));
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(jobs, inputPaths.length) }, () => worker()));
+  if (failed) process.exitCode = 1;
+}
+`
+
 func init() {
 	workflowsFunctionsHydrateCmd.Flags().Bool("force", false, "overwrite generated runtime files if they already exist")
 	workflowsFunctionsHydrateCmd.Flags().Bool("fill-secrets", false, "fill .env.local from Retab secrets when the API supports secret value reads")
 	workflowsFunctionsHydrateCmd.Flags().Bool("force-secrets", false, "overwrite existing .env.local secret values when used with --fill-secrets")
 	workflowsFunctionsRunCmd.Flags().String("python", "python3", "Python interpreter to use")
+	workflowsFunctionsRunCmd.Flags().String("node", "node", "Node.js executable to use for TypeScript functions")
 	workflowsFunctionsRunCmd.Flags().String("out", "outputs", "output directory inside the bundle")
 	workflowsFunctionsRunCmd.Flags().String("jobs", "auto", "parallel local executions: auto or a positive integer")
 	workflowsFunctionsRunCmd.Flags().String("timeout", "0", "maximum wall-clock duration for the local run, e.g. 30s or 5m; 0 disables")

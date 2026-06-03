@@ -136,7 +136,7 @@ config_mode=replace.`,
 }
 
 var workflowsBlocksValidateConfigCmd = &cobra.Command{
-	Use:   "validate-config <block-id>",
+	Use:   "validate-config [<workflow-id>] <block-id>",
 	Short: "Validate a local block config bundle",
 	Long: `Validate a local workflow block config bundle without mutating remote state.
 
@@ -151,9 +151,15 @@ Offline validation is useful but is not authoritative for backend block
 semantics.`,
 	Example: `  retab workflows blocks validate-config block_def456 --dir tmp/block_def456
 
+  retab workflows blocks validate-config wf_abc123 block_def456 --dir tmp/block_def456
+
   retab workflows blocks validate-config block_def456 --dir tmp/block_def456 --offline`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
+		if err != nil {
+			return err
+		}
 		dir, _ := cmd.Flags().GetString("dir")
 		dir = strings.TrimSpace(dir)
 		if dir == "" {
@@ -163,8 +169,8 @@ semantics.`,
 		if err != nil {
 			return err
 		}
-		if manifest.BlockID != args[0] {
-			return fmt.Errorf("directory %s belongs to block %s, not %s", dir, manifest.BlockID, args[0])
+		if err := validateBlockConfigTarget(dir, manifest, blockID, workflowID); err != nil {
+			return err
 		}
 		if err := validateBlockConfigBundle(manifest, config); err != nil {
 			return err
@@ -181,7 +187,7 @@ semantics.`,
 			result, err := client.Workflows.Blocks.CreateBlockValidateConfig(ctx, manifest.BlockID, &retab.WorkflowBlocksCreateBlockValidateConfigParams{
 				Config:     config,
 				ConfigMode: &mode,
-				WorkflowID: workflowIDFromManifestOrArg(manifest, nil),
+				WorkflowID: workflowIDFromManifestOrArg(manifest, workflowID),
 			})
 			if err != nil {
 				return err
@@ -381,7 +387,7 @@ func diagnoseBlockConfigBundle(dir string) map[string]any {
 			"problems": problems,
 		}
 	}
-	config, err := readBlockConfigBundleConfigOnly(dir, manifest)
+	_, config, err := readBlockConfigBundle(dir)
 	if err != nil {
 		problems = append(problems, map[string]any{
 			"kind":  "invalid_bundle_files",
@@ -464,7 +470,7 @@ func diagnoseBlockRuntimeFiles(dir string, manifest blockConfigBundleManifest) [
 			}
 		}
 	case "function":
-		for _, rel := range []string{"input.py", "output.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local", "mounts.json", "samples", "outputs", "traces"} {
+		for _, rel := range functionRuntimeFiles(manifest) {
 			if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 				problems = append(problems, map[string]any{
 					"kind":  "missing_runtime_file",
@@ -474,7 +480,7 @@ func diagnoseBlockRuntimeFiles(dir string, manifest blockConfigBundleManifest) [
 				})
 			}
 		}
-		for _, rel := range []string{"retab_runtime.py", "mounts.local.json"} {
+		for _, rel := range staleFunctionRuntimeFiles(manifest) {
 			if _, err := os.Stat(filepath.Join(dir, rel)); err == nil {
 				problems = append(problems, map[string]any{
 					"kind": "stale_runtime_file",
@@ -560,7 +566,7 @@ func splitLargeConfigFields(blockType string, config map[string]any, files map[s
 	}
 	if blockType == "function" {
 		if _, ok := config["code"].(string); ok {
-			files["function"] = "function.py"
+			files["function"] = functionCodeFile(config)
 			delete(config, "code")
 		}
 		if _, ok := config["output_schema"]; ok {
@@ -724,8 +730,9 @@ func readBlockConfigManifest(path string) (blockConfigBundleManifest, error) {
 		if role == "" {
 			return blockConfigBundleManifest{}, fmt.Errorf("manifest files role is required")
 		}
-		if file.Format != blockConfigFileFormat(role) {
-			return blockConfigBundleManifest{}, fmt.Errorf("manifest files.%s format %q does not match expected %q", role, file.Format, blockConfigFileFormat(role))
+		expectedFormat := blockConfigFileFormat(role, file.Path)
+		if file.Format != expectedFormat {
+			return blockConfigBundleManifest{}, fmt.Errorf("manifest files.%s format %q does not match expected %q", role, file.Format, expectedFormat)
 		}
 		if _, exists := files[role]; exists {
 			return blockConfigBundleManifest{}, fmt.Errorf("manifest files.%s is duplicated", role)
@@ -784,15 +791,18 @@ func blockConfigManifestFiles(files map[string]string) []blockConfigBundleFileJS
 		out = append(out, blockConfigBundleFileJSON{
 			Role:   role,
 			Path:   files[role],
-			Format: blockConfigFileFormat(role),
+			Format: blockConfigFileFormat(role, files[role]),
 		})
 	}
 	return out
 }
 
-func blockConfigFileFormat(role string) string {
+func blockConfigFileFormat(role string, path string) string {
 	switch role {
 	case "function":
+		if strings.EqualFold(filepath.Ext(path), ".ts") || strings.EqualFold(filepath.Ext(path), ".tsx") {
+			return "typescript"
+		}
 		return "python"
 	default:
 		return "json"
@@ -824,7 +834,7 @@ func validateBlockConfigBundle(manifest blockConfigBundleManifest, config map[st
 	}
 	if manifest.BlockType == "function" {
 		if code, ok := config["code"].(string); !ok || strings.TrimSpace(code) == "" {
-			return fmt.Errorf("function bundle requires non-empty function.py/config.code")
+			return fmt.Errorf("function bundle requires non-empty %s/config.code", manifest.Files["function"])
 		}
 	}
 	return rejectLegacyReviewConfig(&config)
@@ -918,6 +928,57 @@ func blockConfigFileRoles(blockType string) map[string]bool {
 		roles["mounts"] = true
 	}
 	return roles
+}
+
+func functionLanguage(config map[string]any) string {
+	language := strings.ToLower(strings.TrimSpace(stringFromAny(config["language"])))
+	switch language {
+	case "typescript", "ts":
+		return "typescript"
+	default:
+		return "python"
+	}
+}
+
+func functionManifestLanguage(manifest blockConfigBundleManifest) string {
+	path := manifest.Files["function"]
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".ts", ".tsx":
+		return "typescript"
+	default:
+		return "python"
+	}
+}
+
+func functionCodeFile(config map[string]any) string {
+	if functionLanguage(config) == "typescript" {
+		return "function.ts"
+	}
+	return "function.py"
+}
+
+func functionRuntimeFiles(manifest blockConfigBundleManifest) []string {
+	if functionManifestLanguage(manifest) == "typescript" {
+		return []string{
+			"models.generated.ts",
+			"schemas.generated.ts",
+			"run.mjs",
+			".retab/runtime.mjs",
+			".env.example",
+			".env.local",
+			"samples",
+			"outputs",
+			"traces",
+		}
+	}
+	return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local", "samples", "outputs", "traces"}
+}
+
+func staleFunctionRuntimeFiles(manifest blockConfigBundleManifest) []string {
+	if functionManifestLanguage(manifest) == "typescript" {
+		return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
+	}
+	return []string{"models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 }
 
 func cloneJSONMap(value map[string]any) (map[string]any, error) {
@@ -1050,6 +1111,7 @@ func init() {
 	workflowsBlocksDiffConfigCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
 	workflowsBlocksDiffConfigCmd.Flags().String("dir", "", "directory containing the editable bundle")
 
+	workflowsBlocksValidateConfigCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
 	workflowsBlocksValidateConfigCmd.Flags().String("dir", "", "directory containing the editable bundle")
 	workflowsBlocksValidateConfigCmd.Flags().Bool("offline", false, "validate only local bundle structure without contacting the backend")
 

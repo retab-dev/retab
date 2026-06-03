@@ -210,6 +210,96 @@ func TestWorkflowsBlocksPullConfigAutoHydratesFunctionRuntime(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksPullConfigAutoHydratesTypescriptFunctionRuntime(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          "block_fn_ts",
+			"workflow_id": "wf_cfg",
+			"type":        "function",
+			"label":       "TypeScript Function",
+			"updated_at":  "2026-06-03T10:00:00Z",
+			"config": map[string]any{
+				"language": "typescript",
+				"code":     "import type { Input, Output } from \"./models.generated\";\n\nexport function transform(input: Input): Output {\n  return { ok: true };\n}\n",
+				"output_schema": map[string]any{
+					"type":       "object",
+					"properties": map[string]any{"ok": map[string]any{"type": "boolean"}},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := filepath.Join(t.TempDir(), "bundle")
+	if err := workflowsBlocksPullConfigCmd.Flags().Set("out", dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksPullConfigCmd.Flags().Set("out", "")
+		_ = workflowsBlocksPullConfigCmd.Flags().Set("workflow-id", "")
+		_ = workflowsBlocksPullConfigCmd.Flags().Set("force", "false")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksPullConfigCmd.RunE(workflowsBlocksPullConfigCmd, []string{"wf_cfg", "block_fn_ts"}); err != nil {
+			t.Fatalf("pull-config: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, `"runtime_hydrated": true`) {
+		t.Fatalf("function pull-config should report runtime_hydrated=true, got:\n%s", stdout)
+	}
+	for _, rel := range []string{"function.ts", "output_schema.json", "models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs", ".env.example", ".env.local"} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
+			t.Fatalf("expected %s to be written: %v", rel, err)
+		}
+	}
+	for _, rel := range []string{"function.py", "input.py", "output.py", "run.py", ".retab/runtime.py"} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); !os.IsNotExist(err) {
+			t.Fatalf("python support file %s should not exist for TypeScript bundle, stat err=%v", rel, err)
+		}
+	}
+
+	var manifestJSON blockConfigBundleManifestJSON
+	if err := readJSONFileStrict(filepath.Join(dir, "manifest.json"), &manifestJSON); err != nil {
+		t.Fatalf("function manifest: %v", err)
+	}
+	paths := map[string]string{}
+	formats := map[string]string{}
+	for _, file := range manifestJSON.Files {
+		paths[file.Role] = file.Path
+		formats[file.Role] = file.Format
+	}
+	if paths["function"] != "function.ts" {
+		t.Fatalf("function file path = %s, want function.ts", paths["function"])
+	}
+	if formats["function"] != "typescript" {
+		t.Fatalf("function file format = %s, want typescript", formats["function"])
+	}
+	manifest, config, err := readBlockConfigBundle(dir)
+	if err != nil {
+		t.Fatalf("read bundle: %v", err)
+	}
+	if err := validateBlockConfigBundle(manifest, config); err != nil {
+		t.Fatalf("validate bundle: %v", err)
+	}
+	if got := config["code"].(string); !strings.Contains(got, "export function transform") {
+		t.Fatalf("reassembled code should come from function.ts, got:\n%s", got)
+	}
+	stdout, _ = captureStd(t, func() {
+		if err := workflowsBlocksDoctorConfigCmd.RunE(workflowsBlocksDoctorConfigCmd, []string{dir}); err != nil {
+			t.Fatalf("doctor-config: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, `"ok": true`) {
+		t.Fatalf("doctor-config should accept freshly pulled TypeScript bundle, got:\n%s", stdout)
+	}
+}
+
 func TestBlockConfigBundleRoundTripsSmokeMatrix(t *testing.T) {
 	matrix := []struct {
 		blockType string
