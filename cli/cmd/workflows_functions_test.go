@@ -100,6 +100,33 @@ func TestHydrateFunctionBundleWritesLocalMountsWithoutMutatingConfigMounts(t *te
 	}
 }
 
+func TestHydrateFunctionBundleWritesTinyRunPyAndRuntimeSupport(t *testing.T) {
+	dir := t.TempDir()
+	config := map[string]any{
+		"entrypoint": "transform",
+	}
+	if err := hydrateFunctionBundle(dir, config, false); err != nil {
+		t.Fatalf("hydrate: %v", err)
+	}
+	runPy, err := os.ReadFile(filepath.Join(dir, "run.py"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(runPy), "ThreadPoolExecutor") {
+		t.Fatalf("run.py should be a tiny launcher, got:\n%s", runPy)
+	}
+	if !strings.Contains(string(runPy), ".retab") || !strings.Contains(string(runPy), "runtime.py") {
+		t.Fatalf("run.py should load .retab/runtime.py, got:\n%s", runPy)
+	}
+	runtimePy, err := os.ReadFile(filepath.Join(dir, ".retab", "runtime.py"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(runtimePy), "ThreadPoolExecutor") {
+		t.Fatalf(".retab/runtime.py should contain the generated runtime implementation")
+	}
+}
+
 func TestRunFunctionPythonChildForwardsArgsAndDetachesStdin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell fixture is unix-specific")
