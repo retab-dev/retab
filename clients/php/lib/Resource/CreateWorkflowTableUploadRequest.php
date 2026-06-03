@@ -6,11 +6,12 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-readonly class BodyReplaceTableV1TablesTableIdPut implements \JsonSerializable
+readonly class CreateWorkflowTableUploadRequest implements \JsonSerializable
 {
     use JsonSerializableTrait;
 
     public function __construct(
+        public string $name,
         public string $file,
         public ?string $columnSchemaOverrides = null,
     ) {}
@@ -19,13 +20,15 @@ readonly class BodyReplaceTableV1TablesTableIdPut implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         foreach ([
+            'name',
             'file',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
-                throw new \UnexpectedValueException("Missing required field '$__required' for BodyReplaceTableV1TablesTableIdPut::fromArray()");
+                throw new \UnexpectedValueException("Missing required field '$__required' for CreateWorkflowTableUploadRequest::fromArray()");
             }
         }
         return new self(
+            name: $data['name'],
             file: $data['file'],
             columnSchemaOverrides: $data['column_schema_overrides'] ?? null,
         );
@@ -35,6 +38,7 @@ readonly class BodyReplaceTableV1TablesTableIdPut implements \JsonSerializable
     public function toArray(): array
     {
         return [
+            'name' => $this->name,
             'file' => $this->file,
             'column_schema_overrides' => $this->columnSchemaOverrides,
         ];

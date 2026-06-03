@@ -1,5 +1,5 @@
 {
-  "type": "test_type",
+  "type": "array",
   "format": "test_format",
   "is_not_empty": true
 }

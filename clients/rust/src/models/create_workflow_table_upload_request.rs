@@ -6,16 +6,18 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BodyReplaceTableV1TablesTableIdPut {
+pub struct CreateWorkflowTableUploadRequest {
+    pub name: String,
     pub file: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub column_schema_overrides: Option<String>,
 }
-impl BodyReplaceTableV1TablesTableIdPut {
-    /// Construct a new `BodyReplaceTableV1TablesTableIdPut` with the required fields set.
+impl CreateWorkflowTableUploadRequest {
+    /// Construct a new `CreateWorkflowTableUploadRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(file: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, file: impl Into<String>) -> Self {
         Self {
+            name: name.into(),
             file: file.into(),
             column_schema_overrides: Default::default(),
         }

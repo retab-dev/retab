@@ -152,41 +152,35 @@ module Retab
     # Delete Table
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::WorkflowTableListResponse]
+    # @return [void]
     def delete(
       table_id:,
       request_options: {}
     )
-      response = @client.request(
+      @client.request(
         method: :delete,
         path: "/v1/tables/#{Retab::Util.encode_path(table_id)}",
         auth: true,
         request_options: request_options
       )
-      result = Retab::WorkflowTableListResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
+      nil
     end
 
     # Download Table Csv
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [void]
+    # @return [String]
     def download(
       table_id:,
       request_options: {}
     )
-      @client.request(
+      response = @client.request(
         method: :get,
         path: "/v1/tables/#{Retab::Util.encode_path(table_id)}/download",
         auth: true,
         request_options: request_options
       )
-      nil
+      JSON.parse(response.body)
     end
 
     # Profile Table

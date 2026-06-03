@@ -290,32 +290,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_body_create_table_v_1_tables_post_round_trip
-    fixture = {
-      "name" => "stub",
-      "file" => "stub",
-      "column_schema_overrides" => nil
-    }
-    model = Retab::BodyCreateTableV1TablesPost.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["name"], json[:name])
-    assert_equal(fixture["file"], json[:file])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
-  def test_body_replace_table_v_1_tables_table_id_put_round_trip
-    fixture = {
-      "file" => "stub",
-      "column_schema_overrides" => nil
-    }
-    model = Retab::BodyReplaceTableV1TablesTableIdPut.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["file"], json[:file])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_cancel_workflow_experiment_run_response_round_trip
     fixture = {
       "id" => "stub",
@@ -961,6 +935,20 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["workflow_id"], json[:workflow_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_create_workflow_table_upload_request_round_trip
+    fixture = {
+      "name" => "stub",
+      "file" => "stub",
+      "column_schema_overrides" => nil
+    }
+    model = Retab::CreateWorkflowTableUploadRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["file"], json[:file])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2451,6 +2439,18 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["version_id"], json[:version_id])
     assert_equal(fixture["reason"], json[:reason])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_replace_workflow_table_upload_request_round_trip
+    fixture = {
+      "file" => "stub",
+      "column_schema_overrides" => nil
+    }
+    model = Retab::ReplaceWorkflowTableUploadRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["file"], json[:file])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

@@ -5,16 +5,17 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.WorkflowTableValidationColumnRuleType;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowTableValidationColumnRule {
-  private final String type;
+  private final WorkflowTableValidationColumnRuleType type;
   private final String format;
   private final Boolean isNotEmpty;
 
   @JsonCreator
   public WorkflowTableValidationColumnRule(
-      @JsonProperty(value = "type", required = false) String type,
+      @JsonProperty(value = "type", required = false) WorkflowTableValidationColumnRuleType type,
       @JsonProperty(value = "format", required = false) String format,
       @JsonProperty(value = "is_not_empty", required = false) Boolean isNotEmpty) {
     this.type = type;
@@ -23,7 +24,7 @@ public final class WorkflowTableValidationColumnRule {
   }
 
   @JsonProperty("type")
-  public String getType() {
+  public WorkflowTableValidationColumnRuleType getType() {
     return type;
   }
 

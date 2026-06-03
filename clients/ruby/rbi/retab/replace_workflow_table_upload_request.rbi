@@ -5,7 +5,7 @@
 # typed: strong
 
 module Retab
-  class BodyReplaceTableV1TablesTableIdPut
+  class ReplaceWorkflowTableUploadRequest
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 

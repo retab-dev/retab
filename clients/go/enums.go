@@ -545,6 +545,19 @@ const (
 // WorkflowRunStepBlockType is an alias for WorkflowBlockType.
 type WorkflowRunStepBlockType = WorkflowBlockType
 
+// WorkflowTableValidationColumnRuleType represents workflow table validation column rule type values.
+type WorkflowTableValidationColumnRuleType string
+
+const (
+	WorkflowTableValidationColumnRuleTypeArray   WorkflowTableValidationColumnRuleType = "array"
+	WorkflowTableValidationColumnRuleTypeBoolean WorkflowTableValidationColumnRuleType = "boolean"
+	WorkflowTableValidationColumnRuleTypeInteger WorkflowTableValidationColumnRuleType = "integer"
+	WorkflowTableValidationColumnRuleTypeNull    WorkflowTableValidationColumnRuleType = "null"
+	WorkflowTableValidationColumnRuleTypeNumber  WorkflowTableValidationColumnRuleType = "number"
+	WorkflowTableValidationColumnRuleTypeObject  WorkflowTableValidationColumnRuleType = "object"
+	WorkflowTableValidationColumnRuleTypeString  WorkflowTableValidationColumnRuleType = "string"
+)
+
 // AssertionDriftStatus represents assertion drift status values.
 type AssertionDriftStatus string
 

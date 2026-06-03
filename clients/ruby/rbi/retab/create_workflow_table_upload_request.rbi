@@ -5,7 +5,7 @@
 # typed: strong
 
 module Retab
-  class BodyCreateTableV1TablesPost
+  class CreateWorkflowTableUploadRequest
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 

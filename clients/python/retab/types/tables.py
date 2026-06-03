@@ -42,17 +42,20 @@ class WorkflowTableValidationSeverity(str, Enum):
     WARNING = "warning"
 
 
-class BodyCreateTableV1TablesPost(BaseModel):
+class WorkflowTableValidationColumnRuleType(str, Enum):
+    ARRAY = "array"
+    BOOLEAN = "boolean"
+    INTEGER = "integer"
+    NULL = "null"
+    NUMBER = "number"
+    OBJECT = "object"
+    STRING = "string"
+
+
+class CreateWorkflowTableUploadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str
-    file: str
-    column_schema_overrides: str | None = None
-
-
-class BodyReplaceTableV1TablesTableIdPut(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
     file: str
     column_schema_overrides: str | None = None
 
@@ -77,6 +80,13 @@ class QueryWorkflowTableRequest(BaseModel):
     viewer_mode: Literal["windowed"] | None = None
     offset: int | None = Field(default=0)
     limit: int | None = None
+
+
+class ReplaceWorkflowTableUploadRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    file: str
+    column_schema_overrides: str | None = None
 
 
 class UpdateWorkflowTableRequest(BaseModel):
@@ -246,7 +256,7 @@ class WorkflowTableTailRequest(BaseModel):
 class WorkflowTableValidationColumnRule(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    type: str | None = None
+    type: WorkflowTableValidationColumnRuleType | None = None
     format: str | None = None
     is_not_empty: bool | None = Field(default=False)
 
@@ -281,9 +291,9 @@ class WorkflowTableValidationResponse(BaseModel):
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
-BodyCreateTableV1TablesPost.model_rebuild()
-BodyReplaceTableV1TablesTableIdPut.model_rebuild()
+CreateWorkflowTableUploadRequest.model_rebuild()
 QueryWorkflowTableRequest.model_rebuild()
+ReplaceWorkflowTableUploadRequest.model_rebuild()
 UpdateWorkflowTableRequest.model_rebuild()
 WorkflowTable.model_rebuild()
 WorkflowTableAggregationRequest.model_rebuild()
