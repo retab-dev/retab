@@ -54,7 +54,11 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 		if manifest.BlockType != "function" {
 			return fmt.Errorf("bundle block_type is %q, expected function", manifest.BlockType)
 		}
-		if err := hydrateFunctionBundle(args[0], config, force); err != nil {
+		sourceSchema, err := readFunctionInputSchemaSidecar(args[0])
+		if err != nil {
+			return err
+		}
+		if err := hydrateFunctionBundle(args[0], config, sourceSchema, force); err != nil {
 			return err
 		}
 		filledSecrets := []map[string]any{}
@@ -74,8 +78,10 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 		}
 		if functionLanguage(config) == "typescript" {
 			files = []string{
+				"input_schema.json",
 				"models.generated.ts",
 				"schemas.generated.ts",
+				"tsconfig.json",
 				"run.mjs",
 				".env.example",
 				".env.local",
@@ -270,9 +276,9 @@ func validateFunctionRunOutDir(raw string) error {
 	return nil
 }
 
-func hydrateFunctionBundle(dir string, config map[string]any, force bool) error {
+func hydrateFunctionBundle(dir string, config map[string]any, sourceSchema map[string]any, force bool) error {
 	if functionLanguage(config) == "typescript" {
-		return hydrateTypescriptFunctionBundle(dir, config, force)
+		return hydrateTypescriptFunctionBundle(dir, config, sourceSchema, force)
 	}
 	return hydratePythonFunctionBundle(dir, config, force)
 }
@@ -290,7 +296,7 @@ func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) 
 		}
 	}
 	if force {
-		for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs"} {
+		for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs"} {
 			if err := os.Remove(filepath.Join(dir, rel)); err != nil && !os.IsNotExist(err) {
 				return err
 			}
@@ -299,10 +305,11 @@ func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) 
 	return hydrateFunctionCommonFiles(dir, config, force)
 }
 
-func hydrateTypescriptFunctionBundle(dir string, config map[string]any, force bool) error {
+func hydrateTypescriptFunctionBundle(dir string, config map[string]any, sourceSchema map[string]any, force bool) error {
 	files := map[string]string{
-		"models.generated.ts":  generateTypescriptModelModule(),
-		"schemas.generated.ts": generateTypescriptSchemaModule(config),
+		"models.generated.ts":  generateTypescriptModelModule(sourceSchema, config),
+		"schemas.generated.ts": generateTypescriptSchemaModule(sourceSchema, config),
+		"tsconfig.json":        generateTypescriptTsConfig(),
 		"run.mjs":              generatedFunctionRunMjs,
 		".retab/runtime.mjs":   generatedFunctionRuntimeMjs,
 	}
@@ -318,7 +325,22 @@ func hydrateTypescriptFunctionBundle(dir string, config map[string]any, force bo
 			}
 		}
 	}
+	if err := writeJSONFile(filepath.Join(dir, "input_schema.json"), typescriptInputSchema(sourceSchema)); err != nil {
+		return err
+	}
 	return hydrateFunctionCommonFiles(dir, config, force)
+}
+
+func readFunctionInputSchemaSidecar(dir string) (map[string]any, error) {
+	path := filepath.Join(dir, "input_schema.json")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, nil
+	}
+	schema, err := readJSONMap(path)
+	if err != nil {
+		return nil, fmt.Errorf("read input_schema.json: %w", err)
+	}
+	return schema, nil
 }
 
 func hydrateFunctionCommonFiles(dir string, config map[string]any, force bool) error {
@@ -520,23 +542,253 @@ func generateFunctionInputModule() string {
 	return b.String()
 }
 
-func generateTypescriptModelModule() string {
-	return `export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+func generateTypescriptModelModule(sourceSchema map[string]any, config map[string]any) string {
+	inputSchema := typescriptInputSchema(sourceSchema)
+	outputSchema := typescriptOutputSchema(config)
+	defs := collectTypescriptDefs(inputSchema)
+	for name, schema := range collectTypescriptDefs(outputSchema) {
+		defs[name] = schema
+	}
+	defNames := make([]string, 0, len(defs))
+	for name := range defs {
+		defNames = append(defNames, name)
+	}
+	sort.Strings(defNames)
 
-export type Input = Record<string, any>;
-export type Output = Record<string, any>;
+	chunks := []string{}
+	for _, defName := range defNames {
+		defSchema, _ := defs[defName].(map[string]any)
+		if defSchema == nil {
+			continue
+		}
+		chunks = append(chunks, fmt.Sprintf(
+			"export type %s = %s;",
+			sanitizeTypescriptTypeName(defName),
+			typescriptSchemaType(defSchema, defName),
+		))
+	}
+	chunks = append(chunks, fmt.Sprintf(
+		"export type Input = %s;",
+		typescriptSchemaType(inputSchema, "Input"),
+	))
+	chunks = append(chunks, fmt.Sprintf(
+		"export type Output = %s;",
+		typescriptSchemaType(outputSchema, "Output"),
+	))
+	return strings.Join(chunks, "\n\n") + "\n"
+}
+
+func generateTypescriptSchemaModule(sourceSchema map[string]any, config map[string]any) string {
+	inputRaw, _ := json.MarshalIndent(typescriptInputSchema(sourceSchema), "", "  ")
+	outputRaw, _ := json.MarshalIndent(typescriptOutputSchema(config), "", "  ")
+	return fmt.Sprintf("export const inputSchema = %s as const;\n\nexport const outputSchema = %s as const;\n", inputRaw, outputRaw)
+}
+
+func generateTypescriptTsConfig() string {
+	return `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "function.ts",
+    "models.generated.ts",
+    "schemas.generated.ts"
+  ]
+}
 `
 }
 
-func generateTypescriptSchemaModule(config map[string]any) string {
-	outputSchema := map[string]any{"type": "object"}
-	if schema, ok := config["output_schema"].(map[string]any); ok {
-		outputSchema = schema
+func typescriptInputSchema(sourceSchema map[string]any) map[string]any {
+	if sourceSchema == nil {
+		return map[string]any{"type": "object"}
 	}
-	inputRaw, _ := json.MarshalIndent(map[string]any{"type": "object"}, "", "  ")
-	outputRaw, _ := json.MarshalIndent(outputSchema, "", "  ")
-	return fmt.Sprintf("export const inputSchema = %s as const;\n\nexport const outputSchema = %s as const;\n", inputRaw, outputRaw)
+	return sourceSchema
+}
+
+func typescriptOutputSchema(config map[string]any) map[string]any {
+	if schema, ok := config["output_schema"].(map[string]any); ok {
+		return schema
+	}
+	return map[string]any{"type": "object"}
+}
+
+func collectTypescriptDefs(schema map[string]any) map[string]any {
+	defs := map[string]any{}
+	for _, key := range []string{"$defs", "definitions"} {
+		rawDefs, _ := schema[key].(map[string]any)
+		for name, value := range rawDefs {
+			defs[name] = value
+		}
+	}
+	return defs
+}
+
+func typescriptSchemaType(schema map[string]any, fallbackName string) string {
+	if ref, ok := schema["$ref"].(string); ok && strings.TrimSpace(ref) != "" {
+		parts := strings.Split(ref, "/")
+		return sanitizeTypescriptTypeName(parts[len(parts)-1])
+	}
+	if enumValues, ok := schema["enum"].([]any); ok && len(enumValues) > 0 {
+		parts := make([]string, 0, len(enumValues))
+		for _, value := range enumValues {
+			parts = append(parts, typescriptLiteralType(value))
+		}
+		return strings.Join(parts, " | ")
+	}
+	for _, unionKey := range []string{"anyOf", "oneOf"} {
+		if variants, ok := schema[unionKey].([]any); ok && len(variants) > 0 {
+			parts := make([]string, 0, len(variants))
+			for _, variant := range variants {
+				if variantSchema, ok := variant.(map[string]any); ok {
+					parts = append(parts, typescriptSchemaType(variantSchema, fallbackName))
+				} else {
+					parts = append(parts, "unknown")
+				}
+			}
+			return strings.Join(parts, " | ")
+		}
+	}
+	if typeList, ok := schema["type"].([]any); ok {
+		parts := make([]string, 0, len(typeList))
+		for _, rawType := range typeList {
+			if schemaType, ok := rawType.(string); ok {
+				cloned := cloneShallowJSONMap(schema)
+				cloned["type"] = schemaType
+				parts = append(parts, typescriptSchemaType(cloned, fallbackName))
+			}
+		}
+		if len(parts) > 0 {
+			return strings.Join(parts, " | ")
+		}
+	}
+	schemaType, _ := schema["type"].(string)
+	switch schemaType {
+	case "string":
+		return "string"
+	case "integer", "number":
+		return "number"
+	case "boolean":
+		return "boolean"
+	case "null":
+		return "null"
+	case "array":
+		items, _ := schema["items"].(map[string]any)
+		itemType := "unknown"
+		if items != nil {
+			itemType = typescriptSchemaType(items, fallbackName+"Item")
+		}
+		return fmt.Sprintf("Array<%s>", itemType)
+	case "object":
+		return typescriptObjectType(schema, fallbackName)
+	default:
+		if _, ok := schema["properties"].(map[string]any); ok {
+			return typescriptObjectType(schema, fallbackName)
+		}
+		return "unknown"
+	}
+}
+
+func typescriptObjectType(schema map[string]any, fallbackName string) string {
+	properties, _ := schema["properties"].(map[string]any)
+	if len(properties) == 0 {
+		if additional, ok := schema["additionalProperties"].(map[string]any); ok {
+			return fmt.Sprintf("Record<string, %s>", typescriptSchemaType(additional, fallbackName+"Value"))
+		}
+		return "Record<string, unknown>"
+	}
+	required := map[string]bool{}
+	if rawRequired, ok := schema["required"].([]any); ok {
+		for _, raw := range rawRequired {
+			if name, ok := raw.(string); ok {
+				required[name] = true
+			}
+		}
+	}
+	names := make([]string, 0, len(properties))
+	for name := range properties {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	lines := []string{"{"}
+	for _, name := range names {
+		propSchema, _ := properties[name].(map[string]any)
+		propType := "unknown"
+		if propSchema != nil {
+			propType = typescriptSchemaType(propSchema, fallbackName+sanitizeTypescriptTypeName(name))
+		}
+		optional := "?"
+		if required[name] {
+			optional = ""
+		}
+		lines = append(lines, fmt.Sprintf("  %s%s: %s;", quoteTypescriptProperty(name), optional, propType))
+	}
+	lines = append(lines, "}")
+	return strings.Join(lines, "\n")
+}
+
+func typescriptLiteralType(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return "null"
+	case bool:
+		if typed {
+			return "true"
+		}
+		return "false"
+	case float64, int, int64:
+		return fmt.Sprintf("%v", typed)
+	case string:
+		raw, _ := json.Marshal(typed)
+		return string(raw)
+	default:
+		return "unknown"
+	}
+}
+
+var typescriptIdentifierRegexp = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
+
+func quoteTypescriptProperty(name string) string {
+	if typescriptIdentifierRegexp.MatchString(name) {
+		return name
+	}
+	raw, _ := json.Marshal(name)
+	return string(raw)
+}
+
+func sanitizeTypescriptTypeName(raw string) string {
+	identifier := sanitizeIdentifier(raw)
+	if identifier == "" {
+		return "Model"
+	}
+	parts := strings.Split(identifier, "_")
+	for index, part := range parts {
+		if part == "" {
+			continue
+		}
+		parts[index] = strings.ToUpper(part[:1]) + part[1:]
+	}
+	name := strings.Join(parts, "")
+	if name == "" {
+		return "Model"
+	}
+	if name[0] >= '0' && name[0] <= '9' {
+		return "_" + name
+	}
+	return name
+}
+
+func cloneShallowJSONMap(value map[string]any) map[string]any {
+	out := make(map[string]any, len(value))
+	for key, item := range value {
+		out[key] = item
+	}
+	return out
 }
 
 func sanitizePythonClassName(raw string) string {

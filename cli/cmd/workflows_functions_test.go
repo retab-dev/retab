@@ -79,7 +79,7 @@ func TestHydrateFunctionBundleWritesLocalMountsWithoutMutatingConfigMounts(t *te
 		t.Fatalf("write mounts.json: %v", err)
 	}
 
-	if err := hydrateFunctionBundle(dir, config, false); err != nil {
+	if err := hydrateFunctionBundle(dir, config, nil, false); err != nil {
 		t.Fatalf("hydrate: %v", err)
 	}
 
@@ -105,7 +105,7 @@ func TestHydrateFunctionBundleWritesTinyRunPyAndRuntimeSupport(t *testing.T) {
 	config := map[string]any{
 		"entrypoint": "transform",
 	}
-	if err := hydrateFunctionBundle(dir, config, false); err != nil {
+	if err := hydrateFunctionBundle(dir, config, nil, false); err != nil {
 		t.Fatalf("hydrate: %v", err)
 	}
 	runPy, err := os.ReadFile(filepath.Join(dir, "run.py"))
@@ -207,5 +207,58 @@ func TestRunFunctionPythonChildExitErrorMentionsTraces(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), filepath.Join(dir, "traces")) {
 		t.Fatalf("expected trace directory in error, got %v", err)
+	}
+}
+
+func TestGenerateTypescriptModelModuleUsesInputAndOutputSchemas(t *testing.T) {
+	sourceSchema := map[string]any{
+		"type": "object",
+		"$defs": map[string]any{
+			"line_item": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"sku":      map[string]any{"type": "string"},
+					"quantity": map[string]any{"type": "integer"},
+				},
+				"required": []any{"sku"},
+			},
+		},
+		"properties": map[string]any{
+			"customer_name": map[string]any{"type": "string"},
+			"items": map[string]any{
+				"type":  "array",
+				"items": map[string]any{"$ref": "#/$defs/line_item"},
+			},
+			"priority": map[string]any{"enum": []any{"standard", "rush"}},
+		},
+		"required": []any{"customer_name", "items"},
+	}
+	config := map[string]any{
+		"output_schema": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"ok":     map[string]any{"type": "boolean"},
+				"status": map[string]any{"type": []any{"string", "null"}},
+			},
+			"required": []any{"ok"},
+		},
+	}
+
+	got := generateTypescriptModelModule(sourceSchema, config)
+	for _, want := range []string{
+		"export type LineItem = {",
+		"  quantity?: number;",
+		"  sku: string;",
+		"export type Input = {",
+		"  customer_name: string;",
+		"  items: Array<LineItem>;",
+		"  priority?: \"standard\" | \"rush\";",
+		"export type Output = {",
+		"  ok: boolean;",
+		"  status?: string | null;",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("generated TypeScript models should contain %q, got:\n%s", want, got)
+		}
 	}
 }

@@ -4,10 +4,12 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -134,6 +136,19 @@ func TestWorkflowsBlocksPullConfigAutoHydratesFunctionRuntime(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/workflows/blocks/block_fn/resolved-schemas" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_cfg",
+				"block_id":    "block_fn",
+				"schema": map[string]any{
+					"input_schemas": map[string]any{
+						"default": map[string]any{"type": "object"},
+					},
+					"output_schemas": map[string]any{},
+				},
+			})
+			return
+		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":          "block_fn",
 			"workflow_id": "wf_cfg",
@@ -216,6 +231,26 @@ func TestWorkflowsBlocksPullConfigAutoHydratesTypescriptFunctionRuntime(t *testi
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/workflows/blocks/block_fn_ts/resolved-schemas" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_cfg",
+				"block_id":    "block_fn_ts",
+				"schema": map[string]any{
+					"input_schemas": map[string]any{
+						"default": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"amount":   map[string]any{"type": "number"},
+								"customer": map[string]any{"type": "string"},
+							},
+							"required": []any{"amount"},
+						},
+					},
+					"output_schemas": map[string]any{},
+				},
+			})
+			return
+		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":          "block_fn_ts",
 			"workflow_id": "wf_cfg",
@@ -228,6 +263,7 @@ func TestWorkflowsBlocksPullConfigAutoHydratesTypescriptFunctionRuntime(t *testi
 				"output_schema": map[string]any{
 					"type":       "object",
 					"properties": map[string]any{"ok": map[string]any{"type": "boolean"}},
+					"required":   []any{"ok"},
 				},
 			},
 		})
@@ -253,9 +289,25 @@ func TestWorkflowsBlocksPullConfigAutoHydratesTypescriptFunctionRuntime(t *testi
 	if !strings.Contains(stdout, `"runtime_hydrated": true`) {
 		t.Fatalf("function pull-config should report runtime_hydrated=true, got:\n%s", stdout)
 	}
-	for _, rel := range []string{"function.ts", "output_schema.json", "models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs", ".env.example", ".env.local"} {
+	for _, rel := range []string{"function.ts", "output_schema.json", "input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", ".env.example", ".env.local"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Fatalf("expected %s to be written: %v", rel, err)
+		}
+	}
+	modelsRaw, err := os.ReadFile(filepath.Join(dir, "models.generated.ts"))
+	if err != nil {
+		t.Fatalf("read models.generated.ts: %v", err)
+	}
+	models := string(modelsRaw)
+	for _, want := range []string{
+		"export type Input = {",
+		"  amount: number;",
+		"  customer?: string;",
+		"export type Output = {",
+		"  ok: boolean;",
+	} {
+		if !strings.Contains(models, want) {
+			t.Fatalf("models.generated.ts should contain %q, got:\n%s", want, models)
 		}
 	}
 	for _, rel := range []string{"function.py", "input.py", "output.py", "run.py", ".retab/runtime.py"} {
@@ -874,6 +926,152 @@ func TestWorkflowsBlocksValidateConfigDefaultsToRemoteDryRun(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksValidateConfigReportsMissingTypescriptToolAsSkipped(t *testing.T) {
+	dir := writeTestTypescriptFunctionBundle(t)
+	t.Setenv("RETAB_TSC", filepath.Join(t.TempDir(), "missing-tsc"))
+
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("dir", dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("offline", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("dir", "")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("offline", "false")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("workflow-id", "")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksValidateConfigCmd.RunE(workflowsBlocksValidateConfigCmd, []string{"wf_cfg", "blk_ts"}); err != nil {
+			t.Fatalf("validate-config: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"local_checks"`) {
+		t.Fatalf("validate output should include local_checks, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"name": "tsc"`) || !strings.Contains(stdout, `"status": "skipped"`) {
+		t.Fatalf("missing tsc should be reported as skipped, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"authoritative": false`) {
+		t.Fatalf("offline validation should remain successful, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsBlocksValidateConfigReportsPassingTypescriptTool(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake shell tool is unix-specific")
+	}
+	dir := writeTestTypescriptFunctionBundle(t)
+	t.Setenv("RETAB_TSC", writeFakeLocalCheckTool(t, "tsc", 0, "clean\n", ""))
+
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("dir", dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("offline", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("dir", "")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("offline", "false")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("workflow-id", "")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksValidateConfigCmd.RunE(workflowsBlocksValidateConfigCmd, []string{"wf_cfg", "blk_ts"}); err != nil {
+			t.Fatalf("validate-config: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"name": "tsc"`) || !strings.Contains(stdout, `"status": "passed"`) || !strings.Contains(stdout, `"exit_code": 0`) {
+		t.Fatalf("passing tsc should be reported as passed, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsBlocksValidateConfigReportsFailingTypescriptToolWithoutBlockingRemote(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake shell tool is unix-specific")
+	}
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+	dir := writeTestTypescriptFunctionBundle(t)
+	fakeTsc := writeFakeLocalCheckTool(t, "tsc", 2, "", "type error\n")
+	t.Setenv("RETAB_TSC", fakeTsc)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/blocks/blk_ts/validate-config" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":          true,
+			"workflow_id": "wf_cfg",
+			"block_id":    "blk_ts",
+			"block_type":  "function",
+			"config_hash": "server-hash",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("dir", dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("dir", "")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("offline", "false")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("workflow-id", "")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksValidateConfigCmd.RunE(workflowsBlocksValidateConfigCmd, []string{"wf_cfg", "blk_ts"}); err != nil {
+			t.Fatalf("validate-config should not fail on local tsc failure: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"mode": "remote"`) || !strings.Contains(stdout, `"config_hash": "server-hash"`) {
+		t.Fatalf("remote validation should still run and pass, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"name": "tsc"`) || !strings.Contains(stdout, `"status": "failed"`) || !strings.Contains(stdout, `"exit_code": 2`) {
+		t.Fatalf("failing tsc should be reported but non-blocking, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsBlocksValidateConfigReportsPythonLocalChecksIndependently(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake shell tool is unix-specific")
+	}
+	dir := writeTestPythonFunctionBundle(t)
+	t.Setenv("RETAB_RUFF", writeFakeLocalCheckTool(t, "ruff", 0, "ok\n", ""))
+	t.Setenv("RETAB_PYRIGHT", writeFakeLocalCheckTool(t, "pyright", 1, "", "diagnostic\n"))
+
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("dir", dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksValidateConfigCmd.Flags().Set("offline", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("dir", "")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("offline", "false")
+		_ = workflowsBlocksValidateConfigCmd.Flags().Set("workflow-id", "")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksValidateConfigCmd.RunE(workflowsBlocksValidateConfigCmd, []string{"wf_cfg", "blk_py"}); err != nil {
+			t.Fatalf("validate-config should not fail on pyright diagnostics: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"name": "ruff"`) || !strings.Contains(stdout, `"status": "passed"`) {
+		t.Fatalf("ruff should be reported as passed, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"name": "pyright"`) || !strings.Contains(stdout, `"status": "failed"`) || !strings.Contains(stdout, `"exit_code": 1`) {
+		t.Fatalf("pyright should be reported as failed but non-blocking, got:\n%s", stdout)
+	}
+}
+
 func TestWorkflowsBlocksValidateConfigHelpDescribesRemoteAndOfflineModes(t *testing.T) {
 	if !strings.Contains(workflowsBlocksValidateConfigCmd.Long, "backend to dry-run") {
 		t.Fatalf("validate-config long help should describe remote validation:\n%s", workflowsBlocksValidateConfigCmd.Long)
@@ -1377,4 +1575,80 @@ func writeTestBlockConfigBundle(t *testing.T, dir string, config map[string]any)
 	if err := writeBlockConfigBundle(dir, block, true); err != nil {
 		t.Fatalf("write bundle: %v", err)
 	}
+}
+
+func writeTestTypescriptFunctionBundle(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	config := map[string]any{
+		"language": "typescript",
+		"code":     "import type { Input, Output } from \"./models.generated\";\n\nexport function transform(input: Input): Output {\n  return { ok: true };\n}\n",
+		"output_schema": map[string]any{
+			"type":       "object",
+			"properties": map[string]any{"ok": map[string]any{"type": "boolean"}},
+		},
+	}
+	label := "TypeScript"
+	block := retab.WorkflowBlock{
+		ID:         "blk_ts",
+		WorkflowID: "wf_cfg",
+		Type:       retab.WorkflowBlockTypeFunction,
+		Label:      &label,
+		Config:     config,
+		UpdatedAt:  time.Date(2026, 6, 3, 10, 0, 0, 0, time.UTC),
+	}
+	if err := writeBlockConfigBundle(dir, block, true); err != nil {
+		t.Fatalf("write bundle: %v", err)
+	}
+	if err := hydrateFunctionBundle(dir, config, nil, true); err != nil {
+		t.Fatalf("hydrate bundle: %v", err)
+	}
+	return dir
+}
+
+func writeTestPythonFunctionBundle(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	config := map[string]any{
+		"code":          "from output import Output\n\ndef transform(input):\n    return Output(ok=True)\n",
+		"output_schema": map[string]any{"type": "object"},
+	}
+	label := "Python"
+	block := retab.WorkflowBlock{
+		ID:         "blk_py",
+		WorkflowID: "wf_cfg",
+		Type:       retab.WorkflowBlockTypeFunction,
+		Label:      &label,
+		Config:     config,
+		UpdatedAt:  time.Date(2026, 6, 3, 10, 0, 0, 0, time.UTC),
+	}
+	if err := writeBlockConfigBundle(dir, block, true); err != nil {
+		t.Fatalf("write bundle: %v", err)
+	}
+	if err := hydrateFunctionBundle(dir, config, nil, true); err != nil {
+		t.Fatalf("hydrate bundle: %v", err)
+	}
+	return dir
+}
+
+func writeFakeLocalCheckTool(t *testing.T, name string, exitCode int, stdout string, stderr string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, name)
+	script := "#!/bin/sh\n"
+	if stdout != "" {
+		script += "printf '%s' " + shellQuote(stdout) + "\n"
+	}
+	if stderr != "" {
+		script += "printf '%s' " + shellQuote(stderr) + " >&2\n"
+	}
+	script += "exit " + fmt.Sprintf("%d", exitCode) + "\n"
+	if err := os.WriteFile(path, []byte(script), 0o700); err != nil {
+		t.Fatalf("write fake tool: %v", err)
+	}
+	return path
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }

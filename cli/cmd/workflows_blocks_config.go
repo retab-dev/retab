@@ -4,15 +4,21 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -108,7 +114,11 @@ config_mode=replace.`,
 		runtimeHydrated := false
 		runtimeAdapter := ""
 		if block.Type == retab.WorkflowBlockTypeFunction {
-			if err := hydrateFunctionBundle(dir, block.Config, force); err != nil {
+			sourceSchema, err := fetchFunctionSourceSchema(cmd, *block)
+			if err != nil {
+				return err
+			}
+			if err := hydrateFunctionBundle(dir, block.Config, sourceSchema, force); err != nil {
 				return err
 			}
 			runtimeHydrated = true
@@ -133,6 +143,37 @@ config_mode=replace.`,
 			"runtime_adapter":    runtimeAdapter,
 		})
 	}),
+}
+
+type blockResolvedSchemasResponse struct {
+	WorkflowID string                    `json:"workflow_id"`
+	BlockID    string                    `json:"block_id"`
+	Schema     blockResolvedSchemasValue `json:"schema"`
+}
+
+type blockResolvedSchemasValue struct {
+	InputSchemas map[string]any `json:"input_schemas"`
+}
+
+func fetchFunctionSourceSchema(cmd *cobra.Command, block retab.WorkflowBlock) (map[string]any, error) {
+	if block.WorkflowID == "" || block.ID == "" {
+		return nil, nil
+	}
+	var response blockResolvedSchemasResponse
+	query := url.Values{"workflow_id": []string{block.WorkflowID}}
+	err := cliJSONRequestInto(
+		cmd,
+		http.MethodGet,
+		"/v1/workflows/blocks/"+url.PathEscape(block.ID)+"/resolved-schemas",
+		query,
+		nil,
+		&response,
+	)
+	if err != nil {
+		return nil, err
+	}
+	sourceSchema, _ := response.Schema.InputSchemas["default"].(map[string]any)
+	return sourceSchema, nil
 }
 
 var workflowsBlocksValidateConfigCmd = &cobra.Command{
@@ -175,6 +216,7 @@ semantics.`,
 		if err := validateBlockConfigBundle(manifest, config); err != nil {
 			return err
 		}
+		localChecks := runLocalBlockConfigChecks(dir, manifest, config)
 		offline, _ := cmd.Flags().GetBool("offline")
 		if !offline {
 			client, err := newClient(cmd)
@@ -201,6 +243,7 @@ semantics.`,
 				"block_type":    result.BlockType,
 				"adapter":       manifest.Adapter,
 				"config_hash":   result.ConfigHash,
+				"local_checks":  localChecks,
 			})
 		}
 		return printJSON(map[string]any{
@@ -212,6 +255,7 @@ semantics.`,
 			"block_type":    manifest.BlockType,
 			"adapter":       manifest.Adapter,
 			"config_hash":   hashJSONMap(config),
+			"local_checks":  localChecks,
 		})
 	}),
 }
@@ -423,14 +467,19 @@ func diagnoseBlockConfigBundle(dir string) map[string]any {
 		}
 	}
 	problems = append(problems, diagnoseBlockRuntimeFiles(dir, manifest)...)
+	localChecks := []localBlockConfigCheck{}
+	if config != nil {
+		localChecks = runLocalBlockConfigChecks(dir, manifest, config)
+	}
 	return map[string]any{
-		"ok":          len(problems) == 0,
-		"dir":         dir,
-		"workflow_id": manifest.WorkflowID,
-		"block_id":    manifest.BlockID,
-		"block_type":  manifest.BlockType,
-		"adapter":     manifest.Adapter,
-		"problems":    problems,
+		"ok":           len(problems) == 0,
+		"dir":          dir,
+		"workflow_id":  manifest.WorkflowID,
+		"block_id":     manifest.BlockID,
+		"block_type":   manifest.BlockType,
+		"adapter":      manifest.Adapter,
+		"problems":     problems,
+		"local_checks": localChecks,
 	}
 }
 
@@ -960,8 +1009,10 @@ func functionCodeFile(config map[string]any) string {
 func functionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 	if functionManifestLanguage(manifest) == "typescript" {
 		return []string{
+			"input_schema.json",
 			"models.generated.ts",
 			"schemas.generated.ts",
+			"tsconfig.json",
 			"run.mjs",
 			".retab/runtime.mjs",
 			".env.example",
@@ -978,7 +1029,176 @@ func staleFunctionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 	if functionManifestLanguage(manifest) == "typescript" {
 		return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 	}
-	return []string{"models.generated.ts", "schemas.generated.ts", "run.mjs", ".retab/runtime.mjs", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
+	return []string{"input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
+}
+
+const localCheckOutputLimit = 8 * 1024
+const localCheckTimeout = 30 * time.Second
+
+type localBlockConfigCheck struct {
+	Name        string `json:"name"`
+	Language    string `json:"language"`
+	Status      string `json:"status"`
+	Required    bool   `json:"required"`
+	Command     string `json:"command,omitempty"`
+	ExitCode    *int   `json:"exit_code,omitempty"`
+	Stdout      string `json:"stdout,omitempty"`
+	Stderr      string `json:"stderr,omitempty"`
+	Message     string `json:"message,omitempty"`
+	InstallHint string `json:"install_hint,omitempty"`
+}
+
+func runLocalBlockConfigChecks(dir string, manifest blockConfigBundleManifest, config map[string]any) []localBlockConfigCheck {
+	if manifest.BlockType != "function" {
+		return []localBlockConfigCheck{}
+	}
+	switch functionManifestLanguage(manifest) {
+	case "typescript":
+		return runTypescriptFunctionChecks(dir)
+	default:
+		return runPythonFunctionChecks(dir, manifest)
+	}
+}
+
+func runTypescriptFunctionChecks(dir string) []localBlockConfigCheck {
+	if _, err := os.Stat(filepath.Join(dir, "tsconfig.json")); err != nil {
+		return []localBlockConfigCheck{{
+			Name:        "tsc",
+			Language:    "typescript",
+			Status:      "skipped",
+			Required:    false,
+			Message:     "tsconfig.json is missing",
+			InstallHint: "run `retab workflows blocks functions hydrate <bundle-dir> --force`",
+		}}
+	}
+	return []localBlockConfigCheck{
+		runOptionalLocalToolCheck(localToolCheckSpec{
+			Name:        "tsc",
+			Language:    "typescript",
+			EnvVar:      "RETAB_TSC",
+			DefaultBin:  "tsc",
+			Args:        []string{"--noEmit", "--pretty", "false", "--project", "tsconfig.json"},
+			Dir:         dir,
+			InstallHint: "install TypeScript, for example `npm install -g typescript`",
+		}),
+	}
+}
+
+func runPythonFunctionChecks(dir string, manifest blockConfigBundleManifest) []localBlockConfigCheck {
+	functionPath := manifest.Files["function"]
+	if strings.TrimSpace(functionPath) == "" {
+		functionPath = "function.py"
+	}
+	return []localBlockConfigCheck{
+		runOptionalLocalToolCheck(localToolCheckSpec{
+			Name:        "ruff",
+			Language:    "python",
+			EnvVar:      "RETAB_RUFF",
+			DefaultBin:  "ruff",
+			Args:        []string{"check", functionPath},
+			Dir:         dir,
+			InstallHint: "install Ruff, for example `pip install ruff`",
+		}),
+		runOptionalLocalToolCheck(localToolCheckSpec{
+			Name:        "pyright",
+			Language:    "python",
+			EnvVar:      "RETAB_PYRIGHT",
+			DefaultBin:  "pyright",
+			Args:        []string{functionPath},
+			Dir:         dir,
+			InstallHint: "install Pyright, for example `npm install -g pyright`",
+		}),
+	}
+}
+
+type localToolCheckSpec struct {
+	Name        string
+	Language    string
+	EnvVar      string
+	DefaultBin  string
+	Args        []string
+	Dir         string
+	InstallHint string
+}
+
+func runOptionalLocalToolCheck(spec localToolCheckSpec) localBlockConfigCheck {
+	result := localBlockConfigCheck{
+		Name:        spec.Name,
+		Language:    spec.Language,
+		Status:      "skipped",
+		Required:    false,
+		InstallHint: spec.InstallHint,
+	}
+	bin, source, err := resolveOptionalLocalTool(spec.EnvVar, spec.DefaultBin)
+	if err != nil {
+		result.Message = err.Error()
+		return result
+	}
+	args := append([]string{}, spec.Args...)
+	result.Command = strings.Join(append([]string{source}, args...), " ")
+
+	ctx, cancel := context.WithTimeout(context.Background(), localCheckTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Dir = spec.Dir
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	result.Stdout = truncateLocalCheckOutput(stdout.String())
+	result.Stderr = truncateLocalCheckOutput(stderr.String())
+	if ctx.Err() == context.DeadlineExceeded {
+		result.Status = "failed"
+		result.Message = fmt.Sprintf("%s timed out after %s", spec.Name, localCheckTimeout)
+		return result
+	}
+	if err != nil {
+		result.Status = "failed"
+		result.Message = err.Error()
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode := exitErr.ExitCode()
+			result.ExitCode = &exitCode
+		}
+		return result
+	}
+	exitCode := 0
+	result.ExitCode = &exitCode
+	result.Status = "passed"
+	result.Message = ""
+	return result
+}
+
+func resolveOptionalLocalTool(envVar string, defaultBin string) (string, string, error) {
+	if override := strings.TrimSpace(os.Getenv(envVar)); override != "" {
+		if filepath.IsAbs(override) || strings.ContainsRune(override, filepath.Separator) {
+			if info, err := os.Stat(override); err != nil {
+				return "", override, fmt.Errorf("%s is set to %q, but that executable was not found", envVar, override)
+			} else if info.IsDir() {
+				return "", override, fmt.Errorf("%s is set to %q, but it is a directory", envVar, override)
+			} else if runtime.GOOS != "windows" && info.Mode().Perm()&0o111 == 0 {
+				return "", override, fmt.Errorf("%s is set to %q, but that file is not executable", envVar, override)
+			}
+			return override, override, nil
+		}
+		resolved, err := exec.LookPath(override)
+		if err != nil {
+			return "", override, fmt.Errorf("%s is set to %q, but that executable was not found on PATH", envVar, override)
+		}
+		return resolved, override, nil
+	}
+	resolved, err := exec.LookPath(defaultBin)
+	if err != nil {
+		return "", defaultBin, fmt.Errorf("%s is not installed", defaultBin)
+	}
+	return resolved, defaultBin, nil
+}
+
+func truncateLocalCheckOutput(value string) string {
+	if len(value) <= localCheckOutputLimit {
+		return value
+	}
+	return value[:localCheckOutputLimit] + "\n[truncated]\n"
 }
 
 func cloneJSONMap(value map[string]any) (map[string]any, error) {
