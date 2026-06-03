@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-03T11:17:02.240Z",
+  "generatedAt": "2026-06-03T13:55:46.719Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -221,6 +221,10 @@
     },
     "DELETE /v1/secrets/{name}": {
       "sdkMethod": "Delete",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "ListValue",
       "service": "secrets"
     },
     "GET /v1/splits": {

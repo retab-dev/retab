@@ -98,6 +98,29 @@ pub struct DeleteParams {
     pub workflow_id: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateBlockValidateConfigParams {
+    /// Workflow ID to disambiguate legacy duplicate block IDs. Omit for normal server-generated block IDs.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow_id: Option<String>,
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: ValidateWorkflowBlockConfigRequest,
+}
+
+impl CreateBlockValidateConfigParams {
+    /// Construct a new `CreateBlockValidateConfigParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: ValidateWorkflowBlockConfigRequest) -> Self {
+        Self {
+            workflow_id: Default::default(),
+            body,
+        }
+    }
+}
+
 impl<'a> WorkflowBlocksApi<'a> {
     /// Access the `executions` sub-resource.
     pub fn executions(&self) -> WorkflowBlockExecutionsApi<'a> {
@@ -223,6 +246,33 @@ impl<'a> WorkflowBlocksApi<'a> {
         let method = http::Method::DELETE;
         self.client
             .request_with_query_opts_empty(method, &path, &params, options)
+            .await
+    }
+
+    /// Validate Block Config Dry Run
+    ///
+    /// Validate an assembled block config without mutating the workflow draft.
+    pub async fn create_block_validate_config(
+        &self,
+        block_id: &str,
+        params: CreateBlockValidateConfigParams,
+    ) -> Result<ValidateWorkflowBlockConfigResponse, Error> {
+        self.create_block_validate_config_with_options(block_id, params, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_block_validate_config`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_block_validate_config_with_options(
+        &self,
+        block_id: &str,
+        params: CreateBlockValidateConfigParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<ValidateWorkflowBlockConfigResponse, Error> {
+        let block_id = crate::client::path_segment(block_id);
+        let path = format!("/v1/workflows/blocks/{block_id}/validate-config");
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 }

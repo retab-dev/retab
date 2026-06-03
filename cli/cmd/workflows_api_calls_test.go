@@ -256,18 +256,53 @@ func TestAPICallLocalRunExecutePostsToLocalServer(t *testing.T) {
 	}
 }
 
-func TestAPICallHydrateFillSecretsFailsClearlyWhenValuesAreUnavailable(t *testing.T) {
+func TestAPICallLocalRunCanEmitAbsolutePaths(t *testing.T) {
+	t.Setenv("API_TOKEN", "")
+	dir := createHydratedAPICallBundle(t, map[string]any{
+		"method":  "POST",
+		"url":     "https://api.example.com/orders",
+		"headers": map[string]any{"Authorization": "Bearer ${API_TOKEN}"},
+		"mounts": map[string]any{
+			"secrets": []any{map[string]any{"name": "api_token", "env": "API_TOKEN", "required": true}},
+		},
+	})
+	if err := os.WriteFile(filepath.Join(dir, ".env.local"), []byte("API_TOKEN=local-token\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sample := filepath.Join(dir, "samples", "order.json")
+	if err := os.WriteFile(sample, []byte(`{"id":"ord_123"}`+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := workflowsAPICallsRunCmd.Flags()
+	if err := flags.Set("absolute-paths", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = flags.Set("absolute-paths", "false")
+	})
+	stdout := runAPICallCommandForTest(t, dir, sample, false)
+	if !strings.Contains(stdout, filepath.Join(dir, "rendered", "samples", "order.request.json")) {
+		t.Fatalf("stdout should include absolute request path, got:\n%s", stdout)
+	}
+	request := readJSONMapFromPath(t, filepath.Join(dir, "rendered", "samples", "order.request.json"))
+	if request["input"] != sample {
+		t.Fatalf("request artifact should use absolute input path: %+v", request)
+	}
+}
+
+func TestAPICallHydrateFillSecretsWritesEnvLocalWithoutPrintingValues(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "test-key")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/v1/secrets/api_token" {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/secrets/api_token/value" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"secret": map[string]any{
 				"name":       "api_token",
-				"created_at": "2026-06-03T10:00:00Z",
+				"value":      "server-secret-token",
 				"updated_at": "2026-06-03T10:00:00Z",
 			},
 		})
@@ -292,12 +327,67 @@ func TestAPICallHydrateFillSecretsFailsClearlyWhenValuesAreUnavailable(t *testin
 		_ = flags.Set("force-secrets", "false")
 	})
 
-	err := workflowsAPICallsHydrateCmd.RunE(workflowsAPICallsHydrateCmd, []string{dir})
-	if err == nil {
-		t.Fatal("expected --fill-secrets to fail until secret value reads are available")
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsAPICallsHydrateCmd.RunE(workflowsAPICallsHydrateCmd, []string{dir}); err != nil {
+			t.Fatalf("hydrate --fill-secrets: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(err.Error(), "metadata only") {
-		t.Fatalf("expected metadata-only error, got %v", err)
+	if strings.Contains(stdout, "server-secret-token") {
+		t.Fatalf("hydrate output leaked secret value:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"written": true`) {
+		t.Fatalf("hydrate output should report written=true, got:\n%s", stdout)
+	}
+	envLocal, err := os.ReadFile(filepath.Join(dir, ".env.local"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(envLocal), "API_TOKEN=server-secret-token") {
+		t.Fatalf(".env.local did not receive filled value:\n%s", envLocal)
+	}
+}
+
+func TestFillSecretsEnvFilePreservesExistingValuesUnlessForced(t *testing.T) {
+	path := filepath.Join(t.TempDir(), ".env.local")
+	if err := os.WriteFile(path, []byte("API_TOKEN=local-token\nOTHER=value\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	written, err := writeLocalSecretsEnvFile(path, map[string]string{"API_TOKEN": "server-token", "NEW_TOKEN": "new-token"}, false)
+	if err != nil {
+		t.Fatalf("write env file: %v", err)
+	}
+	if written["API_TOKEN"] {
+		t.Fatal("existing API_TOKEN should not be overwritten without force")
+	}
+	if !written["NEW_TOKEN"] {
+		t.Fatal("missing NEW_TOKEN should be appended")
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"API_TOKEN=local-token", "OTHER=value", "NEW_TOKEN=new-token"} {
+		if !strings.Contains(string(content), want) {
+			t.Fatalf(".env.local missing %q:\n%s", want, content)
+		}
+	}
+
+	written, err = writeLocalSecretsEnvFile(path, map[string]string{"API_TOKEN": "server-token"}, true)
+	if err != nil {
+		t.Fatalf("force write env file: %v", err)
+	}
+	if !written["API_TOKEN"] {
+		t.Fatal("force should report API_TOKEN written")
+	}
+	content, err = os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "API_TOKEN=server-token") {
+		t.Fatalf("force did not overwrite API_TOKEN:\n%s", content)
 	}
 }
 

@@ -6,10 +6,13 @@ import type {
   SecretListResponseResponse,
   SecretResponse,
   SecretResponseResponse,
+  SecretValueResponse,
+  SecretValueResponseResponse,
 } from '../secrets/interfaces/index.js';
 import {
   deserializeSecretListResponse,
   deserializeSecretResponse,
+  deserializeSecretValueResponse,
 } from '../secrets/interfaces/index.js';
 
 export class Secrets {
@@ -74,5 +77,16 @@ export class Secrets {
       query: undefined,
       body: undefined,
     });
+  }
+
+  /** Get Secret Value */
+  async list_secret_value(name: string): Promise<SecretValueResponse> {
+    const __wire = await this.client.request<SecretValueResponseResponse>({
+      method: 'GET',
+      path: `/v1/secrets/${name}/value`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeSecretValueResponse(__wire);
   }
 }

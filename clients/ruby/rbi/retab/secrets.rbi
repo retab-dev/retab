@@ -50,5 +50,13 @@ module Retab
     end
     def delete_secret(name:, request_options:); end
 
+    sig do
+      params(
+        name: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::SecretValueResponse)
+    end
+    def list_secret_value(name:, request_options:); end
+
   end
 end

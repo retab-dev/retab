@@ -46,6 +46,13 @@ class SecretsTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_list_secret_value_returns_expected_result
+    stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/secrets/stub/value(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.secrets.list_secret_value(name: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list_secrets, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/secrets(\?|\z)}},
@@ -66,6 +73,12 @@ class SecretsTest < Minitest::Test
       name: :delete_secret,
       verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/secrets/stub(\?|\z)},
+      args: {name: "stub"}
+    },
+    {
+      name: :list_secret_value,
+      verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/secrets/stub/value(\?|\z)},
       args: {name: "stub"}
     }
   ].each do |spec|

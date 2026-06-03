@@ -78,3 +78,16 @@ func (s *SecretService) Delete(ctx context.Context, name string, opts ...Request
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/secrets/%s", url.PathEscape(name)), nil, nil, nil, opts)
 	return err
 }
+
+// ListValue get Secret Value
+func (s *SecretService) ListValue(ctx context.Context, name string, opts ...RequestOption) (*SecretValueResponse, error) {
+	if name == "" {
+		return nil, fmt.Errorf("retab: name is required")
+	}
+	var result SecretValueResponse
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/secrets/%s/value", url.PathEscape(name)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

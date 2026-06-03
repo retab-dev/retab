@@ -127,5 +127,28 @@ module Retab
       )
       nil
     end
+
+    # Get Secret Value
+    # @param name [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::SecretValueResponse]
+    def list_secret_value(
+      name:,
+      request_options: {}
+    )
+      response = @client.request(
+        method: :get,
+        path: "/v1/secrets/#{Retab::Util.encode_path(name)}/value",
+        auth: true,
+        request_options: request_options
+      )
+      result = Retab::SecretValueResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
   end
 end

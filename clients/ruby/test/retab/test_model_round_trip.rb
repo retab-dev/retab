@@ -2792,6 +2792,31 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_secret_value_round_trip
+    fixture = {
+      "name" => "stub",
+      "value" => "stub",
+      "updated_at" => "stub"
+    }
+    model = Retab::SecretValue.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["value"], json[:value])
+    assert_equal(fixture["updated_at"], json[:updated_at])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_secret_value_response_round_trip
+    fixture = {
+      "secret" => {}
+    }
+    model = Retab::SecretValueResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_set_secret_request_round_trip
     fixture = {
       "value" => "stub"
@@ -3070,6 +3095,35 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["filename"], json[:filename])
     assert_equal(fixture["size_bytes"], json[:size_bytes])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_validate_workflow_block_config_request_round_trip
+    fixture = {
+      "config" => {},
+      "config_mode" => nil
+    }
+    model = Retab::ValidateWorkflowBlockConfigRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_validate_workflow_block_config_response_round_trip
+    fixture = {
+      "ok" => true,
+      "workflow_id" => "stub",
+      "block_id" => "stub",
+      "block_type" => "stub",
+      "config_hash" => "stub"
+    }
+    model = Retab::ValidateWorkflowBlockConfigResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["workflow_id"], json[:workflow_id])
+    assert_equal(fixture["block_id"], json[:block_id])
+    assert_equal(fixture["block_type"], json[:block_type])
+    assert_equal(fixture["config_hash"], json[:config_hash])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

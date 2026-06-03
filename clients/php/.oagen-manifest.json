@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-03T10:59:16.216Z",
+  "generatedAt": "2026-06-03T13:56:04.772Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -231,6 +231,8 @@
     "lib/Resource/Secret.php",
     "lib/Resource/SecretListResponse.php",
     "lib/Resource/SecretResponse.php",
+    "lib/Resource/SecretValue.php",
+    "lib/Resource/SecretValueResponse.php",
     "lib/Resource/SetSecretRequest.php",
     "lib/Resource/SimilarityGteCondition.php",
     "lib/Resource/SimilarityGteConditionMethod.php",
@@ -263,6 +265,8 @@
     "lib/Resource/UpdateWorkflowTableRequest.php",
     "lib/Resource/UpdateWorkflowTestRequest.php",
     "lib/Resource/UploadFileRequest.php",
+    "lib/Resource/ValidateWorkflowBlockConfigRequest.php",
+    "lib/Resource/ValidateWorkflowBlockConfigResponse.php",
     "lib/Resource/ValidationError.php",
     "lib/Resource/VerdictSummary.php",
     "lib/Resource/WhileLoopTermination.php",
@@ -565,6 +569,8 @@
     "tests/Fixtures/secret.json",
     "tests/Fixtures/secret_list_response.json",
     "tests/Fixtures/secret_response.json",
+    "tests/Fixtures/secret_value.json",
+    "tests/Fixtures/secret_value_response.json",
     "tests/Fixtures/set_secret_request.json",
     "tests/Fixtures/similarity_gte_condition.json",
     "tests/Fixtures/skipped_block_execution_lifecycle.json",
@@ -590,6 +596,8 @@
     "tests/Fixtures/update_workflow_table_request.json",
     "tests/Fixtures/update_workflow_test_request.json",
     "tests/Fixtures/upload_file_request.json",
+    "tests/Fixtures/validate_workflow_block_config_request.json",
+    "tests/Fixtures/validate_workflow_block_config_response.json",
     "tests/Fixtures/validation_error.json",
     "tests/Fixtures/verdict_summary.json",
     "tests/Fixtures/while_loop_termination.json",
@@ -844,6 +852,10 @@
       "sdkMethod": "deleteSecret",
       "service": "secrets"
     },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "listSecretValue",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -962,6 +974,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "createBlockValidateConfig",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

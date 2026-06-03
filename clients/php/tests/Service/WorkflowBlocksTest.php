@@ -88,6 +88,21 @@ class WorkflowBlocksTest extends TestCase
         $this->assertSame('test_value', $query['workflow_id']);
     }
 
+    public function testCreateBlockValidateConfig(): void
+    {
+        $fixture = $this->loadFixture('validate_workflow_block_config_response');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->blocks()->createBlockValidateConfig('test_block_id', config: [], configMode: \Retab\Resource\UpdateWorkflowBlockRequestConfigMode::Merge, workflowId: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\ValidateWorkflowBlockConfigResponse::class, $result);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/blocks/test_block_id/validate-config', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+    }
+
     public function testPaginationBoundary(): void
     {
         $fixture = $this->loadFixture('list_workflow_block');

@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "workflow_id": "workflow_id_01234",
+  "block_id": "block_id_01234",
+  "block_type": "test_block_type",
+  "config_hash": "test_config_hash"
+}

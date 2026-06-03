@@ -4,4 +4,6 @@ export * from './create-secret-request.interface.js';
 export * from './secret.interface.js';
 export * from './secret-list-response.interface.js';
 export * from './secret-response.interface.js';
+export * from './secret-value.interface.js';
+export * from './secret-value-response.interface.js';
 export * from './set-secret-request.interface.js';

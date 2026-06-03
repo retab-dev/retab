@@ -74,4 +74,16 @@ class SecretsTest extends TestCase
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('v1/secrets/test_name', $request->getUri()->getPath());
     }
+
+    public function testListSecretValue(): void
+    {
+        $fixture = $this->loadFixture('secret_value_response');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->secrets()->listSecretValue('test_name');
+        $this->assertInstanceOf(\Retab\Resource\SecretValueResponse::class, $result);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/secrets/test_name/value', $request->getUri()->getPath());
+    }
 }

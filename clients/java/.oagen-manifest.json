@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-03T10:59:20.312Z",
+  "generatedAt": "2026-06-03T13:56:41.485Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -217,6 +217,8 @@
     "src/main/java/com/retab/models/Secret.java",
     "src/main/java/com/retab/models/SecretListResponse.java",
     "src/main/java/com/retab/models/SecretResponse.java",
+    "src/main/java/com/retab/models/SecretValue.java",
+    "src/main/java/com/retab/models/SecretValueResponse.java",
     "src/main/java/com/retab/models/SetSecretRequest.java",
     "src/main/java/com/retab/models/SimilarityGteCondition.java",
     "src/main/java/com/retab/models/SkippedBlockExecutionLifecycle.java",
@@ -243,6 +245,8 @@
     "src/main/java/com/retab/models/UpdateWorkflowTableRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowTestRequest.java",
     "src/main/java/com/retab/models/UploadFileRequest.java",
+    "src/main/java/com/retab/models/ValidateWorkflowBlockConfigRequest.java",
+    "src/main/java/com/retab/models/ValidateWorkflowBlockConfigResponse.java",
     "src/main/java/com/retab/models/ValidationError.java",
     "src/main/java/com/retab/models/VerdictSummary.java",
     "src/main/java/com/retab/models/WhileLoopTermination.java",
@@ -368,6 +372,7 @@
     "src/main/java/com/retab/types/TriggerInfoType.java",
     "src/main/java/com/retab/types/UpdateExperimentRequestNConsensus.java",
     "src/main/java/com/retab/types/UpdateWorkflowBlockRequestConfigMode.java",
+    "src/main/java/com/retab/types/ValidateWorkflowBlockConfigRequestConfigMode.java",
     "src/main/java/com/retab/types/WhileLoopTerminationTerminationReason.java",
     "src/main/java/com/retab/types/WorkflowArtifactOperation.java",
     "src/main/java/com/retab/types/WorkflowArtifactsOperation.java",
@@ -586,6 +591,10 @@
       "sdkMethod": "delete",
       "service": "secrets"
     },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "listValue",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -704,6 +713,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "createBlockValidateConfig",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

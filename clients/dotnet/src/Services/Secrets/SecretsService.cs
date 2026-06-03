@@ -94,5 +94,21 @@ namespace Retab
         {
             return this.DeleteAsync(name, requestOptions, cancellationToken);
         }
+
+        /// <summary>Get Secret Value</summary>
+        /// <param name="name">The name.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="SecretValueResponse"/> result.</returns>
+        public virtual async Task<SecretValueResponse> ListValueAsync(string name, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.GetAsync<SecretValueResponse>($"/v1/secrets/{Uri.EscapeDataString(name)}/value", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ListValueAsync"/>.</summary>
+        public virtual Task<SecretValueResponse> ListValue(string name, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ListValueAsync(name, requestOptions, cancellationToken);
+        }
     }
 }
