@@ -65,6 +65,7 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 		return printJSON(map[string]any{
 			"ok":          true,
 			"dir":         args[0],
+			"mode":        "repair",
 			"workflow_id": manifest.WorkflowID,
 			"block_id":    manifest.BlockID,
 			"files": []string{
