@@ -290,6 +290,32 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_body_create_table_v_1_tables_post_round_trip
+    fixture = {
+      "name" => "stub",
+      "file" => "stub",
+      "column_schema_overrides" => nil
+    }
+    model = Retab::BodyCreateTableV1TablesPost.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["file"], json[:file])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_body_replace_table_v_1_tables_table_id_put_round_trip
+    fixture = {
+      "file" => "stub",
+      "column_schema_overrides" => nil
+    }
+    model = Retab::BodyReplaceTableV1TablesTableIdPut.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["file"], json[:file])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_cancel_workflow_experiment_run_response_round_trip
     fixture = {
       "id" => "stub",
@@ -843,6 +869,19 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["review_id"], json[:review_id])
     assert_equal(fixture["parent_id"], json[:parent_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_create_secret_request_round_trip
+    fixture = {
+      "name" => "stub",
+      "value" => "stub"
+    }
+    model = Retab::CreateSecretRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["value"], json[:value])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -2336,6 +2375,32 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_query_workflow_table_request_round_trip
+    fixture = {
+      "filters" => [],
+      "search" => nil,
+      "case_sensitive" => true,
+      "select" => [],
+      "distinct" => nil,
+      "group_by" => [],
+      "aggregations" => [],
+      "sort" => [],
+      "sample" => nil,
+      "tail" => nil,
+      "count_only" => true,
+      "include_explain" => true,
+      "sort_column" => nil,
+      "sort_direction" => nil,
+      "viewer_mode" => nil,
+      "offset" => 1,
+      "limit" => nil
+    }
+    model = Retab::QueryWorkflowTableRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_queued_step_lifecycle_round_trip
     fixture = {
       "status" => "queued"
@@ -2690,6 +2755,54 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_secret_round_trip
+    fixture = {
+      "name" => "stub",
+      "created_at" => "stub",
+      "updated_at" => "stub",
+      "created_by" => nil,
+      "updated_by" => nil
+    }
+    model = Retab::Secret.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["created_at"], json[:created_at])
+    assert_equal(fixture["updated_at"], json[:updated_at])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_secret_list_response_round_trip
+    fixture = {
+      "secrets" => []
+    }
+    model = Retab::SecretListResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_secret_response_round_trip
+    fixture = {
+      "secret" => {}
+    }
+    model = Retab::SecretResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_set_secret_request_round_trip
+    fixture = {
+      "value" => "stub"
+    }
+    model = Retab::SetSecretRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["value"], json[:value])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_similarity_gte_condition_round_trip
     fixture = {
       "kind" => "similarity_gte",
@@ -2917,6 +3030,17 @@ class ModelRoundTripTest < Minitest::Test
       "description" => nil
     }
     model = Retab::UpdateWorkflowRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_update_workflow_table_request_round_trip
+    fixture = {
+      "name" => nil,
+      "metadata" => nil
+    }
+    model = Retab::UpdateWorkflowTableRequest.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -3318,6 +3442,307 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["step_id"], json[:step_id])
     assert_equal(fixture["block_label"], json[:block_label])
     assert_equal(fixture["run_id"], json[:run_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_round_trip
+    fixture = {
+      "id" => "stub",
+      "name" => "stub",
+      "filename" => "stub",
+      "source_file_id" => "stub",
+      "snapshot_file_id" => "stub",
+      "row_count" => 1,
+      "columns" => [],
+      "sample_rows" => [],
+      "metadata" => {},
+      "uploaded_by_user_id" => nil,
+      "created_at" => "stub",
+      "updated_at" => "stub"
+    }
+    model = Retab::WorkflowTable.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["filename"], json[:filename])
+    assert_equal(fixture["row_count"], json[:row_count])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_aggregation_request_round_trip
+    fixture = {
+      "function" => "stub",
+      "column" => nil,
+      "alias" => nil
+    }
+    model = Retab::WorkflowTableAggregationRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_column_round_trip
+    fixture = {
+      "name" => "stub",
+      "json_schema" => {},
+      "sample_values" => [],
+      "required" => true,
+      "unique" => true
+    }
+    model = Retab::WorkflowTableColumn.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_distinct_request_round_trip
+    fixture = {
+      "column" => "stub"
+    }
+    model = Retab::WorkflowTableDistinctRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["column"], json[:column])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_explain_round_trip
+    fixture = {
+      "table_id" => "stub",
+      "snapshot_file_id" => "stub",
+      "selected_columns" => [],
+      "filters" => [],
+      "search" => nil,
+      "sort" => [],
+      "offset" => 1,
+      "limit" => nil,
+      "distinct" => nil,
+      "group_by" => [],
+      "aggregations" => []
+    }
+    model = Retab::WorkflowTableExplain.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["table_id"], json[:table_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_filter_rule_round_trip
+    fixture = {
+      "column" => "stub",
+      "operator" => "stub",
+      "value" => nil
+    }
+    model = Retab::WorkflowTableFilterRule.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["column"], json[:column])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_list_response_round_trip
+    fixture = {
+      "tables" => []
+    }
+    model = Retab::WorkflowTableListResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_profile_column_round_trip
+    fixture = {
+      "name" => "stub",
+      "json_schema" => {},
+      "row_count" => 1,
+      "null_count" => 1,
+      "empty_count" => 1,
+      "distinct_count" => 1,
+      "min" => nil,
+      "max" => nil,
+      "sample_values" => [],
+      "is_estimated" => true
+    }
+    model = Retab::WorkflowTableProfileColumn.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    assert_equal(fixture["row_count"], json[:row_count])
+    assert_equal(fixture["null_count"], json[:null_count])
+    assert_equal(fixture["empty_count"], json[:empty_count])
+    assert_equal(fixture["distinct_count"], json[:distinct_count])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_profile_response_round_trip
+    fixture = {
+      "table_id" => "stub",
+      "row_count" => 1,
+      "columns" => []
+    }
+    model = Retab::WorkflowTableProfileResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["table_id"], json[:table_id])
+    assert_equal(fixture["row_count"], json[:row_count])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_response_round_trip
+    fixture = {
+      "table" => {}
+    }
+    model = Retab::WorkflowTableResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_row_round_trip
+    fixture = {
+      "id" => "stub",
+      "data" => {},
+      "position" => 1
+    }
+    model = Retab::WorkflowTableRow.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["position"], json[:position])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_rows_response_round_trip
+    fixture = {
+      "table_id" => "stub",
+      "columns" => [],
+      "rows" => [],
+      "row_count" => 1,
+      "filtered_row_count" => nil,
+      "offset" => 1,
+      "limit" => nil,
+      "has_more" => true,
+      "next_cursor" => nil,
+      "previous_cursor" => nil,
+      "explain" => nil
+    }
+    model = Retab::WorkflowTableRowsResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["table_id"], json[:table_id])
+    assert_equal(fixture["row_count"], json[:row_count])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_sample_request_round_trip
+    fixture = {
+      "size" => 1
+    }
+    model = Retab::WorkflowTableSampleRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["size"], json[:size])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_schema_response_round_trip
+    fixture = {
+      "table_id" => "stub",
+      "columns" => []
+    }
+    model = Retab::WorkflowTableSchemaResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["table_id"], json[:table_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_search_request_round_trip
+    fixture = {
+      "query" => "stub",
+      "columns" => nil
+    }
+    model = Retab::WorkflowTableSearchRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["query"], json[:query])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_sort_rule_round_trip
+    fixture = {
+      "column" => "stub",
+      "direction" => "stub"
+    }
+    model = Retab::WorkflowTableSortRule.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["column"], json[:column])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_tail_request_round_trip
+    fixture = {
+      "size" => 1
+    }
+    model = Retab::WorkflowTableTailRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["size"], json[:size])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_validation_column_rule_round_trip
+    fixture = {
+      "type" => nil,
+      "format" => nil,
+      "is_not_empty" => true
+    }
+    model = Retab::WorkflowTableValidationColumnRule.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_validation_diagnostic_round_trip
+    fixture = {
+      "severity" => "stub",
+      "column" => nil,
+      "rule" => "stub",
+      "message" => "stub"
+    }
+    model = Retab::WorkflowTableValidationDiagnostic.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["rule"], json[:rule])
+    assert_equal(fixture["message"], json[:message])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_validation_request_round_trip
+    fixture = {
+      "required_columns" => [],
+      "columns" => {},
+      "unique" => []
+    }
+    model = Retab::WorkflowTableValidationRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_table_validation_response_round_trip
+    fixture = {
+      "table_id" => "stub",
+      "diagnostics" => [],
+      "has_errors" => true
+    }
+    model = Retab::WorkflowTableValidationResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["table_id"], json[:table_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

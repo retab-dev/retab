@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-02T15:41:07.679Z",
+  "generatedAt": "2026-06-03T10:59:18.806Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -98,6 +98,12 @@
     "lib/retab/schemas.rb",
     "lib/retab/schemas/generate_schema_request.rb",
     "lib/retab/schemas/schema_generation.rb",
+    "lib/retab/secrets.rb",
+    "lib/retab/secrets/create_secret_request.rb",
+    "lib/retab/secrets/secret.rb",
+    "lib/retab/secrets/secret_list_response.rb",
+    "lib/retab/secrets/secret_response.rb",
+    "lib/retab/secrets/set_secret_request.rb",
     "lib/retab/shared/http_validation_error.rb",
     "lib/retab/shared/validation_error.rb",
     "lib/retab/splits.rb",
@@ -107,6 +113,32 @@
     "lib/retab/splits/split_result.rb",
     "lib/retab/splits/split_subdocument_likelihood.rb",
     "lib/retab/splits/subdocument.rb",
+    "lib/retab/tables.rb",
+    "lib/retab/tables/body_create_table_v_1_tables_post.rb",
+    "lib/retab/tables/body_replace_table_v_1_tables_table_id_put.rb",
+    "lib/retab/tables/query_workflow_table_request.rb",
+    "lib/retab/tables/update_workflow_table_request.rb",
+    "lib/retab/tables/workflow_table.rb",
+    "lib/retab/tables/workflow_table_aggregation_request.rb",
+    "lib/retab/tables/workflow_table_column.rb",
+    "lib/retab/tables/workflow_table_distinct_request.rb",
+    "lib/retab/tables/workflow_table_explain.rb",
+    "lib/retab/tables/workflow_table_filter_rule.rb",
+    "lib/retab/tables/workflow_table_list_response.rb",
+    "lib/retab/tables/workflow_table_profile_column.rb",
+    "lib/retab/tables/workflow_table_profile_response.rb",
+    "lib/retab/tables/workflow_table_response.rb",
+    "lib/retab/tables/workflow_table_row.rb",
+    "lib/retab/tables/workflow_table_rows_response.rb",
+    "lib/retab/tables/workflow_table_sample_request.rb",
+    "lib/retab/tables/workflow_table_schema_response.rb",
+    "lib/retab/tables/workflow_table_search_request.rb",
+    "lib/retab/tables/workflow_table_sort_rule.rb",
+    "lib/retab/tables/workflow_table_tail_request.rb",
+    "lib/retab/tables/workflow_table_validation_column_rule.rb",
+    "lib/retab/tables/workflow_table_validation_diagnostic.rb",
+    "lib/retab/tables/workflow_table_validation_request.rb",
+    "lib/retab/tables/workflow_table_validation_response.rb",
     "lib/retab/types/actor_kind.rb",
     "lib/retab/types/api_response.rb",
     "lib/retab/types/assertion_drift_status.rb",
@@ -207,6 +239,10 @@
     "lib/retab/types/workflow_runs_order.rb",
     "lib/retab/types/workflow_runs_status.rb",
     "lib/retab/types/workflow_runs_trigger_type.rb",
+    "lib/retab/types/workflow_table_aggregation_function.rb",
+    "lib/retab/types/workflow_table_filter_operator.rb",
+    "lib/retab/types/workflow_table_sort_direction.rb",
+    "lib/retab/types/workflow_table_validation_severity.rb",
     "lib/retab/types/workflow_test_result_verdict.rb",
     "lib/retab/types/workflow_test_run_results_order.rb",
     "lib/retab/types/workflow_test_runs_order.rb",
@@ -397,6 +433,8 @@
     "rbi/retab/block_test_batch_execution_counts.rbi",
     "rbi/retab/block_test_lifecycle_counts.rbi",
     "rbi/retab/block_test_outcome_counts.rbi",
+    "rbi/retab/body_create_table_v_1_tables_post.rbi",
+    "rbi/retab/body_replace_table_v_1_tables_table_id_put.rbi",
     "rbi/retab/cancel_workflow_experiment_run_response.rbi",
     "rbi/retab/cancel_workflow_request.rbi",
     "rbi/retab/cancel_workflow_response.rbi",
@@ -433,6 +471,7 @@
     "rbi/retab/create_experiment_run_request.rbi",
     "rbi/retab/create_file_blueprint_request.rbi",
     "rbi/retab/create_review_version_request.rbi",
+    "rbi/retab/create_secret_request.rbi",
     "rbi/retab/create_upload_response.rbi",
     "rbi/retab/create_workflow_request.rbi",
     "rbi/retab/create_workflow_run_request.rbi",
@@ -544,6 +583,7 @@
     "rbi/retab/primitive_error.rbi",
     "rbi/retab/public_handle_payload.rbi",
     "rbi/retab/publish_workflow_request.rbi",
+    "rbi/retab/query_workflow_table_request.rbi",
     "rbi/retab/queued_step_lifecycle.rbi",
     "rbi/retab/queued_workflow_experiment_result.rbi",
     "rbi/retab/queued_workflow_experiment_run.rbi",
@@ -578,6 +618,11 @@
     "rbi/retab/running_workflow_test_run.rbi",
     "rbi/retab/schema_generation.rbi",
     "rbi/retab/schemas.rbi",
+    "rbi/retab/secret.rbi",
+    "rbi/retab/secret_list_response.rbi",
+    "rbi/retab/secret_response.rbi",
+    "rbi/retab/secrets.rbi",
+    "rbi/retab/set_secret_request.rbi",
     "rbi/retab/similarity_gte_condition.rbi",
     "rbi/retab/skipped_block_execution_lifecycle.rbi",
     "rbi/retab/skipped_step_lifecycle.rbi",
@@ -595,11 +640,13 @@
     "rbi/retab/stored_block_execution.rbi",
     "rbi/retab/subdocument.rbi",
     "rbi/retab/submit_decision_response.rbi",
+    "rbi/retab/tables.rbi",
     "rbi/retab/trigger_info.rbi",
     "rbi/retab/update_edit_template_request.rbi",
     "rbi/retab/update_experiment_request.rbi",
     "rbi/retab/update_workflow_block_request.rbi",
     "rbi/retab/update_workflow_request.rbi",
+    "rbi/retab/update_workflow_table_request.rbi",
     "rbi/retab/update_workflow_test_request.rbi",
     "rbi/retab/upload_file_request.rbi",
     "rbi/retab/validation_error.rbi",
@@ -627,6 +674,27 @@
     "rbi/retab/workflow_runs.rbi",
     "rbi/retab/workflow_spec.rbi",
     "rbi/retab/workflow_steps.rbi",
+    "rbi/retab/workflow_table.rbi",
+    "rbi/retab/workflow_table_aggregation_request.rbi",
+    "rbi/retab/workflow_table_column.rbi",
+    "rbi/retab/workflow_table_distinct_request.rbi",
+    "rbi/retab/workflow_table_explain.rbi",
+    "rbi/retab/workflow_table_filter_rule.rbi",
+    "rbi/retab/workflow_table_list_response.rbi",
+    "rbi/retab/workflow_table_profile_column.rbi",
+    "rbi/retab/workflow_table_profile_response.rbi",
+    "rbi/retab/workflow_table_response.rbi",
+    "rbi/retab/workflow_table_row.rbi",
+    "rbi/retab/workflow_table_rows_response.rbi",
+    "rbi/retab/workflow_table_sample_request.rbi",
+    "rbi/retab/workflow_table_schema_response.rbi",
+    "rbi/retab/workflow_table_search_request.rbi",
+    "rbi/retab/workflow_table_sort_rule.rbi",
+    "rbi/retab/workflow_table_tail_request.rbi",
+    "rbi/retab/workflow_table_validation_column_rule.rbi",
+    "rbi/retab/workflow_table_validation_diagnostic.rbi",
+    "rbi/retab/workflow_table_validation_request.rbi",
+    "rbi/retab/workflow_table_validation_response.rbi",
     "rbi/retab/workflow_test.rbi",
     "rbi/retab/workflow_test_block_target.rbi",
     "rbi/retab/workflow_test_result.rbi",
@@ -652,7 +720,9 @@
     "test/retab/test_parses.rb",
     "test/retab/test_partitions.rb",
     "test/retab/test_schemas.rb",
+    "test/retab/test_secrets.rb",
     "test/retab/test_splits.rb",
+    "test/retab/test_tables.rb",
     "test/retab/test_workflow_artifacts.rb",
     "test/retab/test_workflow_block_executions.rb",
     "test/retab/test_workflow_blocks.rb",
@@ -832,6 +902,26 @@
       "sdkMethod": "generate",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "list_secrets",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "create_secret",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "get_secret",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "update_secret",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "delete_secret",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -851,6 +941,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "create_split_cancel",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "list",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "create",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "get",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "replace",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "update_table",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "delete",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "download",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "profile",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "query",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "schema",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "validate",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

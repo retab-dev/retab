@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-02T13:42:59.536Z",
+  "generatedAt": "2026-06-03T10:59:20.312Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -35,6 +35,8 @@
     "src/main/java/com/retab/models/BlockTestBatchExecutionCounts.java",
     "src/main/java/com/retab/models/BlockTestLifecycleCounts.java",
     "src/main/java/com/retab/models/BlockTestOutcomeCounts.java",
+    "src/main/java/com/retab/models/BodyCreateTableV1TablesPost.java",
+    "src/main/java/com/retab/models/BodyReplaceTableV1TablesTableIdPut.java",
     "src/main/java/com/retab/models/CancelWorkflowExperimentRunResponse.java",
     "src/main/java/com/retab/models/CancelWorkflowRequest.java",
     "src/main/java/com/retab/models/CancelWorkflowResponse.java",
@@ -70,6 +72,7 @@
     "src/main/java/com/retab/models/CreateExperimentRunRequest.java",
     "src/main/java/com/retab/models/CreateFileBlueprintRequest.java",
     "src/main/java/com/retab/models/CreateReviewVersionRequest.java",
+    "src/main/java/com/retab/models/CreateSecretRequest.java",
     "src/main/java/com/retab/models/CreateUploadResponse.java",
     "src/main/java/com/retab/models/CreateWorkflowRequest.java",
     "src/main/java/com/retab/models/CreateWorkflowRunRequest.java",
@@ -175,6 +178,7 @@
     "src/main/java/com/retab/models/PrimitiveError.java",
     "src/main/java/com/retab/models/PublicHandlePayload.java",
     "src/main/java/com/retab/models/PublishWorkflowRequest.java",
+    "src/main/java/com/retab/models/QueryWorkflowTableRequest.java",
     "src/main/java/com/retab/models/QueuedStepLifecycle.java",
     "src/main/java/com/retab/models/QueuedWorkflowExperimentResult.java",
     "src/main/java/com/retab/models/QueuedWorkflowExperimentRun.java",
@@ -210,6 +214,10 @@
     "src/main/java/com/retab/models/RunningWorkflowTestRun.java",
     "src/main/java/com/retab/models/SchemaGeneration.java",
     "src/main/java/com/retab/models/Scope.java",
+    "src/main/java/com/retab/models/Secret.java",
+    "src/main/java/com/retab/models/SecretListResponse.java",
+    "src/main/java/com/retab/models/SecretResponse.java",
+    "src/main/java/com/retab/models/SetSecretRequest.java",
     "src/main/java/com/retab/models/SimilarityGteCondition.java",
     "src/main/java/com/retab/models/SkippedBlockExecutionLifecycle.java",
     "src/main/java/com/retab/models/SkippedStepLifecycle.java",
@@ -232,6 +240,7 @@
     "src/main/java/com/retab/models/UpdateExperimentRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowBlockRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowRequest.java",
+    "src/main/java/com/retab/models/UpdateWorkflowTableRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowTestRequest.java",
     "src/main/java/com/retab/models/UploadFileRequest.java",
     "src/main/java/com/retab/models/ValidationError.java",
@@ -253,6 +262,27 @@
     "src/main/java/com/retab/models/WorkflowRun.java",
     "src/main/java/com/retab/models/WorkflowRunLifecycle.java",
     "src/main/java/com/retab/models/WorkflowRunStep.java",
+    "src/main/java/com/retab/models/WorkflowTable.java",
+    "src/main/java/com/retab/models/WorkflowTableAggregationRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableColumn.java",
+    "src/main/java/com/retab/models/WorkflowTableDistinctRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableExplain.java",
+    "src/main/java/com/retab/models/WorkflowTableFilterRule.java",
+    "src/main/java/com/retab/models/WorkflowTableListResponse.java",
+    "src/main/java/com/retab/models/WorkflowTableProfileColumn.java",
+    "src/main/java/com/retab/models/WorkflowTableProfileResponse.java",
+    "src/main/java/com/retab/models/WorkflowTableResponse.java",
+    "src/main/java/com/retab/models/WorkflowTableRow.java",
+    "src/main/java/com/retab/models/WorkflowTableRowsResponse.java",
+    "src/main/java/com/retab/models/WorkflowTableSampleRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableSchemaResponse.java",
+    "src/main/java/com/retab/models/WorkflowTableSearchRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableSortRule.java",
+    "src/main/java/com/retab/models/WorkflowTableTailRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableValidationColumnRule.java",
+    "src/main/java/com/retab/models/WorkflowTableValidationDiagnostic.java",
+    "src/main/java/com/retab/models/WorkflowTableValidationRequest.java",
+    "src/main/java/com/retab/models/WorkflowTableValidationResponse.java",
     "src/main/java/com/retab/models/WorkflowTest.java",
     "src/main/java/com/retab/models/WorkflowTestBlockTarget.java",
     "src/main/java/com/retab/models/WorkflowTestResult.java",
@@ -266,7 +296,9 @@
     "src/main/java/com/retab/parses/ParsesApi.java",
     "src/main/java/com/retab/partitions/PartitionsApi.java",
     "src/main/java/com/retab/schemas/SchemasApi.java",
+    "src/main/java/com/retab/secrets/SecretsApi.java",
     "src/main/java/com/retab/splits/SplitsApi.java",
+    "src/main/java/com/retab/tables/TablesApi.java",
     "src/main/java/com/retab/types/ActorKind.java",
     "src/main/java/com/retab/types/AssertionDriftStatus.java",
     "src/main/java/com/retab/types/AssertionOutcome.java",
@@ -351,6 +383,9 @@
     "src/main/java/com/retab/types/WorkflowRunsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsTriggerType.java",
+    "src/main/java/com/retab/types/WorkflowTableAggregationFunction.java",
+    "src/main/java/com/retab/types/WorkflowTableFilterOperator.java",
+    "src/main/java/com/retab/types/WorkflowTableValidationSeverity.java",
     "src/main/java/com/retab/types/WorkflowTestResultVerdict.java",
     "src/main/java/com/retab/types/WorkflowTestSchemaDrift.java",
     "src/main/java/com/retab/workflowartifacts/WorkflowArtifactsApi.java",
@@ -531,6 +566,26 @@
       "sdkMethod": "generate",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "list",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "create",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "get",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "update",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "delete",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -550,6 +605,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "createCancel",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "list",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "create",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "get",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "replace",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "update",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "delete",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "download",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "profile",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "query",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "schema",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "validate",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

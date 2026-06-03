@@ -379,10 +379,10 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 				for key, value := range sourceRun.Inputs.Documents {
 					documents[key] = value
 				}
-				params.Documents = documents
+				params.Documents = &documents
 			}
 			if sourceRun.Inputs.JSONData != nil {
-				params.JSONInputs = sourceRun.Inputs.JSONData
+				params.JSONInputs = &sourceRun.Inputs.JSONData
 			}
 		}
 		result, err := client.Workflows.Runs.Create(ctx, params)

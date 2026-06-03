@@ -33,8 +33,16 @@ module Retab
       @schemas ||= Retab::Schemas.new(self)
     end
 
+    def secrets
+      @secrets ||= Retab::Secrets.new(self)
+    end
+
     def splits
       @splits ||= Retab::Splits.new(self)
+    end
+
+    def tables
+      @tables ||= Retab::Tables.new(self)
     end
 
     def workflows

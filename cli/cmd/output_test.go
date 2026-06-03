@@ -726,6 +726,7 @@ func TestResolveOutputFormat(t *testing.T) {
 		{"auto defaults to json on buffer", "auto", OutputJSON, false},
 		{"json explicit", "json", OutputJSON, false},
 		{"table explicit", "table", OutputTable, false},
+		{"csv explicit", "csv", OutputCSV, false},
 		{"bad value rejected", "bogus", "", true},
 	}
 	for _, tc := range cases {

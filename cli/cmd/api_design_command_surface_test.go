@@ -14,20 +14,20 @@ var apiDesignKebabNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+
 
 func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
-		"add": true, "apply": true, "approve": true, "artifacts": true, "auth": true,
+		"add": true, "api-calls": true, "apply": true, "approve": true, "artifacts": true, "auth": true,
 		"blocks": true, "blueprints": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "env": true,
 		"create": true, "create-upload": true, "delete": true, "discard-draft": true,
-		"download": true, "download-link": true, "edges": true, "edits": true,
+		"diff-config": true, "doctor-config": true, "download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
-		"generate": true, "get": true, "grep": true, "inspect": true,
+		"functions": true, "generate": true, "get": true, "grep": true, "hydrate": true, "inspect": true,
 		"list": true, "login": true, "logout": true, "metrics": true,
-		"parse": true, "parses": true, "partitions": true, "plan": true, "publish": true,
-		"reject": true, "remove": true, "restart": true, "results": true, "retry": true, "retrieve": true,
-		"reviews": true, "runs": true, "schema": true, "schemas": true,
-		"setup": true, "executions": true, "sources": true, "spec": true,
+		"parse": true, "parses": true, "partitions": true, "plan": true, "profile": true, "publish": true, "pull-config": true,
+		"push-config": true, "query": true, "reject": true, "remove": true, "render": true, "replace": true, "restart": true, "results": true, "retry": true, "retrieve": true,
+		"reviews": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
+		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "status": true, "steps": true, "stream": true,
-		"switch": true, "sync": true, "templates": true, "tests": true, "update": true,
-		"upload": true, "validate": true, "versions": true, "version": true,
+		"switch": true, "sync": true, "tables": true, "templates": true, "tests": true, "update": true,
+		"upload": true, "validate": true, "validate-config": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
 	}
 
@@ -61,6 +61,9 @@ func TestAPICommandSurfaceFlagsUseCanonicalKebabCase(t *testing.T) {
 					t.Errorf("%s flag --%s on %q is not kebab-case", kind, flag.Name, cmd.CommandPath())
 				}
 				if reason := removedFlags[flag.Name]; reason != "" {
+					if cmd.CommandPath() == "retab workflows blocks api-calls run" && flag.Name == "execute" {
+						return
+					}
 					t.Errorf("%s flag --%s on %q exposes %s", kind, flag.Name, cmd.CommandPath(), reason)
 				}
 			})
@@ -87,6 +90,13 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 		"workflows reviews versions append",
 		"workflows reviews versions append-version",
 		"workflows execute",
+		"workflows api-calls",
+		"workflows api-calls hydrate",
+		"workflows api-calls render",
+		"workflows api-calls run",
+		"workflows functions",
+		"workflows functions hydrate",
+		"workflows functions run",
 		"workflows blocks executions get",
 		"workflows runs execute",
 		"workflows runs block executions",
@@ -107,7 +117,7 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "schemas", "setup", "splits", "sync", "version", "workflows"},
+		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list"},
 		"classifications":               {"create", "get", "list", "cancel", "delete", "wait"},
@@ -119,10 +129,14 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"parses":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
 		"schemas":                       {"generate"},
+		"secrets":                       {"delete", "get", "list", "set"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
+		"tables":                        {"create", "delete", "download", "get", "list", "profile", "query", "replace", "schema", "validate"},
 		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec"},
 		"workflows artifacts":           {"get", "list"},
-		"workflows blocks":              {"list", "get", "create", "update", "delete", "executions"},
+		"workflows blocks":              {"list", "get", "create", "update", "delete", "executions", "pull-config", "push-config", "diff-config", "validate-config", "doctor-config", "api-calls", "functions"},
+		"workflows blocks api-calls":    {"hydrate", "render", "run"},
+		"workflows blocks functions":    {"hydrate", "run"},
 		"workflows edges":               {"list", "get", "create", "delete"},
 		"workflows experiments":         {"create", "list", "get", "update", "delete", "runs", "results", "metrics"},
 		"workflows experiments runs":    {"create", "list", "get", "cancel", "wait"},

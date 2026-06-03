@@ -75,13 +75,13 @@ func TestWorkflowsBlocksHelpDoesNotAdvertiseStandaloneReviewBlock(t *testing.T) 
 		}
 	}
 	if !strings.Contains(workflowsBlocksCreateCmd.Long, "Review is not a standalone block type") {
-		t.Fatalf("blocks create help should explicitly steer users away from standalone review blocks:\n%s", workflowsBlocksCreateCmd.Long)
+		t.Fatalf("blocks create help should state that review is configured inside block configs:\n%s", workflowsBlocksCreateCmd.Long)
 	}
 }
 
 func TestParseBlockCreateAcceptsOmittedID(t *testing.T) {
 	// `id` is optional — the server's CreateBlockRequest carries a
-	// default_factory that mints an opaque `blk_<nanoid>`. Block ids are
+	// default_factory that mints an opaque `block_<nanoid>`. Block ids are
 	// org-globally unique, so forcing a user-chosen id was a footgun: pick
 	// any common name and you collide with another workflow. The server's
 	// own 409 already tells users to "Create blocks with server-generated
@@ -97,19 +97,6 @@ func TestParseBlockCreateAcceptsOmittedID(t *testing.T) {
 	}
 	if req.Type != "extract" {
 		t.Fatalf("expected type to round-trip, got %q", req.Type)
-	}
-}
-
-func TestParseBlockCreateRejectsStandaloneReviewBlock(t *testing.T) {
-	_, err := parseBlockCreate(map[string]any{
-		"id":   "legacy_review",
-		"type": "review",
-	})
-	if err == nil {
-		t.Fatal("expected standalone review block to be rejected")
-	}
-	if !strings.Contains(err.Error(), "config.review") || !strings.Contains(err.Error(), "reviewable block") {
-		t.Fatalf("error should guide toward embedded review config, got %q", err.Error())
 	}
 }
 

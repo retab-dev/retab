@@ -1,9 +1,10 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-02T15:40:59.058Z",
+  "generatedAt": "2026-06-03T11:17:02.240Z",
   "files": [
     "classifications.go",
+    "compat.go",
     "edit_templates.go",
     "edits.go",
     "enums.go",
@@ -22,7 +23,9 @@
     "request.go",
     "retab.go",
     "schemas.go",
+    "secrets.go",
     "splits.go",
+    "tables.go",
     "workflow_artifacts.go",
     "workflow_block_executions.go",
     "workflow_blocks.go",
@@ -200,6 +203,26 @@
       "sdkMethod": "Generate",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "List",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "Create",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "Get",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "Update",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "Delete",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "List",
       "service": "splits"
@@ -219,6 +242,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "CreateCancel",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "List",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "Create",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "Get",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "Replace",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "Update",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "Delete",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "Download",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "Profile",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "Query",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "Schema",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "Validate",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "List",
@@ -274,6 +341,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "Delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "CreateBlockValidateConfig",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

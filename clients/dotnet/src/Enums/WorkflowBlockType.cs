@@ -32,8 +32,6 @@ namespace Retab
         Conditional,
         [EnumMember(Value = "api_call")]
         ApiCall,
-        [EnumMember(Value = "review")]
-        Review,
         [EnumMember(Value = "function")]
         Function,
         [EnumMember(Value = "while_loop")]

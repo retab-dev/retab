@@ -18,7 +18,6 @@ enum WorkflowBlockType: string
     case Classifier = 'classifier';
     case Conditional = 'conditional';
     case ApiCall = 'api_call';
-    case Review = 'review';
     case Function = 'function';
     case WhileLoop = 'while_loop';
     case ForEach = 'for_each';

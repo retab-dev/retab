@@ -42,10 +42,20 @@ namespace Retab
         /// <summary>Gets the <see cref="SchemasService"/> for schemas API operations.</summary>
         public virtual SchemasService Schemas => this.schemas ??= new SchemasService(this);
 
+        private SecretsService? secrets;
+
+        /// <summary>Gets the <see cref="SecretsService"/> for secrets API operations.</summary>
+        public virtual SecretsService Secrets => this.secrets ??= new SecretsService(this);
+
         private SplitsService? splits;
 
         /// <summary>Gets the <see cref="SplitsService"/> for splits API operations.</summary>
         public virtual SplitsService Splits => this.splits ??= new SplitsService(this);
+
+        private TablesService? tables;
+
+        /// <summary>Gets the <see cref="TablesService"/> for tables API operations.</summary>
+        public virtual TablesService Tables => this.tables ??= new TablesService(this);
 
         private WorkflowsService? workflows;
 

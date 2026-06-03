@@ -284,7 +284,8 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		{"--base-url", "URL", "Retab API base URL", "RETAB_API_BASE_URL"},
 		{"--environment-id", "ID", "Retab environment id for OAuth dashboard context", "RETAB_ENVIRONMENT_ID"},
 		{"--debug", "", "verbose debug output", ""},
-		{"--output", "FORMAT", "output format: json | table (default: auto)", ""},
+		{"--output", "FORMAT", "output format: json | table | csv (default: auto)", ""},
+		{"--output-table", "", "shortcut for --output table", ""},
 		{"-h, --help", "", "show this help", ""},
 		{"-v, --version", "", "show version", ""},
 	}

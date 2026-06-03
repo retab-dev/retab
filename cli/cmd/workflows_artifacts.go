@@ -50,7 +50,7 @@ by id with ` + "`get`" + `.`,
   retab workflows artifacts list run_xyz789
 
   # Just the extract block's artifacts
-  retab workflows artifacts list run_xyz789 --block-id blk_extract_1
+  retab workflows artifacts list run_xyz789 --block-id block_extract_1
 
   # Fetch one artifact by id
   retab workflows artifacts get extr_lz1_abc`,
@@ -109,7 +109,7 @@ one. The two are mutually exclusive.`,
   retab workflows artifacts list run_xyz789
 
   # Just one block's outputs
-  retab workflows artifacts list run_xyz789 --block-id blk_extract_1
+  retab workflows artifacts list run_xyz789 --block-id block_extract_1
 
   # Just parse-block artifacts
   retab workflows artifacts list run_xyz789 --operation parse

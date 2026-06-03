@@ -1,0 +1,17 @@
+{
+  "required_columns": [
+    "test_required_columns"
+  ],
+  "columns": {
+    "key": {
+      "type": "test_type",
+      "format": "test_format",
+      "is_not_empty": true
+    }
+  },
+  "unique": [
+    [
+      "test_unique"
+    ]
+  ]
+}
