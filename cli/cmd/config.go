@@ -10,15 +10,26 @@ import (
 
 // retabConfig is the on-disk shape at ~/.retab/config.json.
 //
-// Two auth shapes are supported, and the file may hold both at once. At
-// request time the CLI prefers OAuth tokens when present; the legacy
-// `api_key` field is still honored so that long-standing setups don't
-// break when users upgrade.
+// This is "config v2": it adds named customer-environment profiles and a
+// local default on top of the original legacy fields. The file may hold
+// any mix of the shapes at once, and old config files (legacy `api_key`
+// only, or `oauth` only) keep loading and behaving exactly as before.
+//
+// Auth-shape precedence is resolved by resolveCredential (see common.go);
+// this struct is purely the storage format.
 type retabConfig struct {
-	// APIKey is the legacy auth path. Still fully supported.
+	// Version marks the config schema. Absent / 0 means a legacy file
+	// written by an older CLI; the loader still accepts it. New writes
+	// stamp configVersion so future migrations can branch on it.
+	Version int `json:"version,omitempty"`
+
+	// APIKey is the legacy auth path. Still fully supported — treated as
+	// a production-scoped credential during the environments rollout.
 	APIKey string `json:"api_key,omitempty"`
 
-	// BaseURL overrides the default API endpoint. Useful for staging.
+	// BaseURL overrides the default API endpoint. This selects a Retab
+	// *deployment* (local dev, staging API host); it is NOT the customer
+	// environment selector — that is determined by the API key.
 	BaseURL string `json:"base_url,omitempty"`
 
 	// EnvironmentID is the dashboard/API environment selected for OAuth
@@ -30,6 +41,46 @@ type retabConfig struct {
 
 	// OAuth holds tokens issued by WorkOS via `retab auth login`. Optional.
 	OAuth *oauthTokens `json:"oauth,omitempty"`
+
+	// Environments holds named customer-environment profiles, keyed by
+	// slug ("test", "production", "staging", ...). Absent on legacy files,
+	// in which case the CLI behaves exactly as it did pre-v2.
+	Environments map[string]*environmentProfile `json:"environments,omitempty"`
+
+	// DefaultEnvironment is the slug of the profile used when no --env,
+	// --live, --api-key, or RETAB_API_KEY override is supplied.
+	DefaultEnvironment string `json:"default_environment,omitempty"`
+}
+
+// configVersion is stamped onto every config file the v2 CLI writes.
+const configVersion = 2
+
+// environmentProfile is one named local credential profile. The slug is
+// the map key, not a field. These are CLI-local names — the server
+// decides the real environment from the API key document.
+type environmentProfile struct {
+	// Name is a display-only label ("Test", "Production", "QA").
+	Name string `json:"name,omitempty"`
+
+	// APIKey is the stored credential for this profile.
+	APIKey string `json:"api_key,omitempty"`
+
+	// APIKeyPreview is a redacted preview ("rt_test_...abcd") kept so list
+	// views never need to touch the raw key.
+	APIKeyPreview string `json:"api_key_preview,omitempty"`
+
+	// ServerEnvironmentSlug / ServerEnvironmentID are filled from a
+	// /v1/auth/status probe when available. Advisory only.
+	ServerEnvironmentSlug string `json:"server_environment_slug,omitempty"`
+	ServerEnvironmentID   string `json:"server_environment_id,omitempty"`
+
+	// BaseURL optionally pins a Retab deployment for this profile
+	// (advanced / local-dev use only).
+	BaseURL string `json:"base_url,omitempty"`
+
+	CreatedAt      string `json:"created_at,omitempty"`
+	LastUsedAt     string `json:"last_used_at,omitempty"`
+	LastVerifiedAt string `json:"last_verified_at,omitempty"`
 }
 
 // oauthTokens is the persisted OAuth state. Mirrors the WorkOS token
@@ -108,6 +159,10 @@ func saveConfig(cfg retabConfig) error {
 	if err != nil {
 		return err
 	}
+	// Stamp the current schema version on every write so a file touched
+	// by the v2 CLI is self-identifying. Legacy reads still tolerate a
+	// missing version, so this never breaks downgrades that ignore it.
+	cfg.Version = configVersion
 	raw, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return err
