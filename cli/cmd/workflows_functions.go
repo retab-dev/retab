@@ -344,7 +344,7 @@ func readFunctionInputSchemaSidecar(dir string) (map[string]any, error) {
 }
 
 func hydrateFunctionCommonFiles(dir string, config map[string]any, force bool) error {
-	secrets := collectFunctionSecretEnvNames(config)
+	secrets := collectFunctionSecretNames(config)
 	if err := writeTextFileIfAllowed(filepath.Join(dir, ".env.example"), renderEnvFile(secrets, false), force, 0o600); err != nil {
 		return err
 	}
@@ -378,6 +378,28 @@ func writeTextFileIfAllowed(path string, content string, force bool, perm os.Fil
 		return err
 	}
 	return os.WriteFile(path, []byte(content), perm)
+}
+
+func collectFunctionSecretNames(config map[string]any) []string {
+	mounts, _ := config["mounts"].(map[string]any)
+	rawSecrets, _ := mounts["secrets"].([]any)
+	seen := map[string]bool{}
+	var names []string
+	for _, raw := range rawSecrets {
+		secret, _ := raw.(map[string]any)
+		name, _ := secret["name"].(string)
+		if strings.TrimSpace(name) == "" {
+			name, _ = secret["env"].(string)
+		}
+		name = strings.TrimSpace(name)
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func collectFunctionSecretEnvNames(config map[string]any) []string {

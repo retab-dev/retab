@@ -12,9 +12,8 @@ import (
 )
 
 type workflowSecretMount struct {
-	Name     string
-	Env      string
-	Required bool
+	Name string
+	Env  string
 }
 
 func workflowSecretMounts(config map[string]any) []workflowSecretMount {
@@ -37,14 +36,9 @@ func workflowSecretMounts(config map[string]any) []workflowSecretMount {
 		if name == "" || env == "" {
 			continue
 		}
-		required := true
-		if rawRequired, ok := secret["required"].(bool); ok {
-			required = rawRequired
-		}
 		secrets = append(secrets, workflowSecretMount{
-			Name:     name,
-			Env:      env,
-			Required: required,
+			Name: name,
+			Env:  env,
 		})
 	}
 	return secrets
