@@ -478,6 +478,37 @@ func TestReadBlockConfigBundleRejectsEscapingManifestPath(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksDoctorConfigReportsMissingRuntimeFile(t *testing.T) {
+	dir := t.TempDir()
+	block := retab.WorkflowBlock{
+		ID:         "blk_api",
+		WorkflowID: "wf_cfg",
+		Type:       retab.WorkflowBlockTypeAPICall,
+		Config: map[string]any{
+			"method": "POST",
+			"url":    "https://example.com",
+		},
+		UpdatedAt: time.Date(2026, 6, 3, 10, 0, 0, 0, time.UTC),
+	}
+	if err := writeBlockConfigBundle(dir, block, false); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksDoctorConfigCmd.RunE(workflowsBlocksDoctorConfigCmd, []string{dir}); err != nil {
+			t.Fatalf("doctor-config: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, `"ok": false`) {
+		t.Fatalf("doctor-config should report problems, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"path": "run.sh"`) {
+		t.Fatalf("doctor-config should report missing run.sh, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "retab workflows blocks api-calls hydrate") {
+		t.Fatalf("doctor-config should include hydrate fix, got:\n%s", stdout)
+	}
+}
+
 func TestReadBlockConfigBundleRejectsUnknownManifestFileRole(t *testing.T) {
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})

@@ -256,6 +256,51 @@ func TestAPICallLocalRunExecutePostsToLocalServer(t *testing.T) {
 	}
 }
 
+func TestAPICallHydrateFillSecretsFailsClearlyWhenValuesAreUnavailable(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/secrets/api_token" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"secret": map[string]any{
+				"name":       "api_token",
+				"created_at": "2026-06-03T10:00:00Z",
+				"updated_at": "2026-06-03T10:00:00Z",
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := createHydratedAPICallBundle(t, map[string]any{
+		"method": "POST",
+		"url":    "https://api.example.com/orders",
+		"mounts": map[string]any{
+			"secrets": []any{map[string]any{"name": "api_token", "env": "API_TOKEN", "required": true}},
+		},
+	})
+	flags := workflowsAPICallsHydrateCmd.Flags()
+	if err := flags.Set("fill-secrets", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = flags.Set("force", "false")
+		_ = flags.Set("fill-secrets", "false")
+		_ = flags.Set("force-secrets", "false")
+	})
+
+	err := workflowsAPICallsHydrateCmd.RunE(workflowsAPICallsHydrateCmd, []string{dir})
+	if err == nil {
+		t.Fatal("expected --fill-secrets to fail until secret value reads are available")
+	}
+	if !strings.Contains(err.Error(), "metadata only") {
+		t.Fatalf("expected metadata-only error, got %v", err)
+	}
+}
+
 func createHydratedAPICallBundle(t *testing.T, config map[string]any) string {
 	t.Helper()
 	dir := t.TempDir()
