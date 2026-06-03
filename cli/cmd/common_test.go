@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -558,7 +559,9 @@ func TestConfigRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != cfg {
+	// saveConfig stamps the current schema version on every write.
+	cfg.Version = configVersion
+	if !reflect.DeepEqual(got, cfg) {
 		t.Fatalf("round trip mismatch: got %+v want %+v", got, cfg)
 	}
 	if err := deleteConfig(); err != nil {
@@ -568,7 +571,7 @@ func TestConfigRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if (got != retabConfig{}) {
+	if !reflect.DeepEqual(got, retabConfig{}) {
 		t.Fatalf("expected empty after delete, got %+v", got)
 	}
 }

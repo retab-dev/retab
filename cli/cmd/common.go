@@ -59,33 +59,19 @@ func (e renderedError) Unwrap() error {
 	return e.err
 }
 
+// newClient builds an SDK client using the shared credential resolver.
+// Credential precedence (and conflict rejection) lives entirely in
+// resolveCredential — see credential.go — so SDK-backed commands and raw
+// JSON commands (cliJSONRequest) resolve auth identically.
 func newClient(cmd *cobra.Command) (*retab.Client, error) {
-	// Resolution order (first match wins):
-	//   1. `--api-key` flag        -> Api-Key header
-	//   2. `RETAB_API_KEY` env     -> Api-Key header
-	//   3. Stored OAuth tokens     -> Bearer header, with transparent refresh
-	//   4. Stored legacy api_key   -> Api-Key header
-	//   5. nothing                 -> error
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
-	}
-
-	cfg, _ := loadConfig()
-	if baseURL == "" {
-		baseURL = cfg.BaseURL
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		return nil, err
 	}
 
 	var opts []retab.Option
-	if baseURL != "" {
-		opts = append(opts, retab.WithBaseURL(baseURL))
+	if cred.BaseURL != "" {
+		opts = append(opts, retab.WithBaseURL(cred.BaseURL))
 	}
 
 	// --debug wires a logging RoundTripper into the SDK's HTTP client so
@@ -100,62 +86,36 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 		}))
 	}
 
-	// Flag/env API key wins outright — the documented CI escape hatch.
-	if apiKey != "" {
-		return retab.NewClient(apiKey, opts...)
-	}
-
 	// OAuth path. WithBearerTokenProvider is invoked on every request, so
 	// a command that straddles token expiry still gets a fresh token
 	// without rebuilding the Client.
-	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-		opts = append(opts, retab.WithBearerTokenProvider(makeOAuthTokenProvider(cfg.OAuth)))
+	if cred.OAuth != nil {
+		opts = append(opts, retab.WithBearerTokenProvider(makeOAuthTokenProvider(cred.OAuth)))
 		return retab.NewClient("", opts...)
 	}
 
-	// Legacy `api_key` field from ~/.retab/config.json.
-	if cfg.APIKey != "" {
-		return retab.NewClient(cfg.APIKey, opts...)
-	}
-
-	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	return retab.NewClient(cred.APIKey, opts...)
 }
 
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		return nil, err
 	}
 
-	cfg, _ := loadConfig()
-	if baseURL == "" {
-		baseURL = cfg.BaseURL
-	}
+	baseURL := cred.BaseURL
 	if baseURL == "" {
 		baseURL = "https://api.retab.com/v1"
 	}
 
+	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" {
-		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-			token, err := makeOAuthTokenProvider(cfg.OAuth)(cmd.Context())
-			if err != nil {
-				return nil, err
-			}
-			bearerToken = token
-		} else if cfg.APIKey != "" {
-			apiKey = cfg.APIKey
+	if cred.OAuth != nil {
+		token, err := makeOAuthTokenProvider(cred.OAuth)(cmd.Context())
+		if err != nil {
+			return nil, err
 		}
-	}
-	if apiKey == "" && bearerToken == "" {
-		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+		bearerToken = token
 	}
 
 	if body == nil && method != http.MethodGet {
