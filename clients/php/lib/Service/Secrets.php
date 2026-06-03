@@ -8,6 +8,7 @@ namespace Retab\Service;
 
 use Retab\Resource\SecretListResponse;
 use Retab\Resource\SecretResponse;
+use Retab\Resource\SecretValueResponse;
 
 class Secrets
 {
@@ -113,5 +114,23 @@ class Secrets
             path: 'v1/secrets/' . rawurlencode($name),
             options: $options,
         );
+    }
+
+    /**
+     * Get Secret Value
+     * @param string $name
+     * @return \Retab\Resource\SecretValueResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function listSecretValue(
+        string $name,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\SecretValueResponse {
+        $response = $this->client->request(
+            method: 'GET',
+            path: 'v1/secrets/' . rawurlencode($name) . '/value',
+            options: $options,
+        );
+        return SecretValueResponse::fromArray($response);
     }
 }

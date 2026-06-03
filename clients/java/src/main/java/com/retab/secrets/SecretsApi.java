@@ -6,6 +6,7 @@ import com.retab.RetabClient;
 import com.retab.models.CreateSecretRequest;
 import com.retab.models.SecretListResponse;
 import com.retab.models.SecretResponse;
+import com.retab.models.SecretValueResponse;
 import com.retab.models.SetSecretRequest;
 import java.io.IOException;
 import java.net.URI;
@@ -150,6 +151,27 @@ public final class SecretsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public SecretValueResponse listValue(String name) throws IOException, InterruptedException {
+    String path = "/v1/secrets/" + encodePathSegment(name) + "/value";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), SecretValueResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

@@ -219,5 +219,43 @@ module Retab
       )
       nil
     end
+
+    # Validate Block Config Dry Run
+    # @param block_id [String]
+    # @param config [Hash{String => Object}] Assembled block config to validate.
+    # @param config_mode [Retab::Types::ValidateWorkflowBlockConfigRequestConfigMode, nil] How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.
+    # @param workflow_id [String, nil] Workflow ID to disambiguate legacy duplicate block IDs. Omit for normal server-generated block IDs.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::ValidateWorkflowBlockConfigResponse]
+    def create_block_validate_config(
+      block_id:,
+      config:,
+      config_mode: nil,
+      workflow_id: nil,
+      request_options: {}
+    )
+      params = {
+        "workflow_id" => workflow_id
+      }.compact
+      body = {
+        "config" => config,
+        "config_mode" => config_mode
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: "/v1/workflows/blocks/#{Retab::Util.encode_path(block_id)}/validate-config",
+        auth: true,
+        params: params,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::ValidateWorkflowBlockConfigResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
   end
 end

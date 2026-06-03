@@ -52,6 +52,13 @@ class WorkflowBlocksTest < Minitest::Test
     assert_nil(result)
   end
 
+  def test_create_block_validate_config_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/blocks/stub/validate-config(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.blocks.create_block_validate_config(block_id: "stub", config: {})
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {
@@ -83,6 +90,12 @@ class WorkflowBlocksTest < Minitest::Test
       verb: :delete,
       url: %r{\Ahttps://api\.retab\.com/v1/workflows/blocks/stub(\?|\z)},
       args: {block_id: "stub"}
+    },
+    {
+      name: :create_block_validate_config,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/blocks/stub/validate-config(\?|\z)},
+      args: {block_id: "stub", config: {}}
     }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do

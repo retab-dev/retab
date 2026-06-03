@@ -4,6 +4,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -48,7 +50,7 @@ func workflowSecretMounts(config map[string]any) []workflowSecretMount {
 	return secrets
 }
 
-func fillLocalSecretsFromRetab(cmd *cobra.Command, config map[string]any, forceSecrets bool) ([]map[string]any, error) {
+func fillLocalSecretsFromRetab(cmd *cobra.Command, bundleDir string, config map[string]any, forceSecrets bool) ([]map[string]any, error) {
 	secrets := workflowSecretMounts(config)
 	if len(secrets) == 0 {
 		return []map[string]any{}, nil
@@ -59,16 +61,94 @@ func fillLocalSecretsFromRetab(cmd *cobra.Command, config map[string]any, forceS
 	}
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
-	checked := make([]map[string]any, 0, len(secrets))
+	values := map[string]string{}
+	results := make([]map[string]any, 0, len(secrets))
 	for _, secret := range secrets {
-		if _, err := client.Secrets.Get(ctx, secret.Name); err != nil {
-			return nil, fmt.Errorf("read secret metadata %s: %w", secret.Name, err)
+		response, err := client.Secrets.GetValue(ctx, secret.Name)
+		if err != nil {
+			return nil, fmt.Errorf("read secret value %s: %w", secret.Name, err)
 		}
-		checked = append(checked, map[string]any{
+		values[secret.Env] = response.Secret.Value
+		results = append(results, map[string]any{
 			"name":    secret.Name,
 			"env":     secret.Env,
 			"written": false,
 		})
 	}
-	return checked, fmt.Errorf("--fill-secrets requested, but the current Retab secrets API exposes metadata only and does not return secret values; leave .env.local placeholders or export the env vars locally")
+	written, err := writeLocalSecretsEnvFile(filepath.Join(bundleDir, ".env.local"), values, forceSecrets)
+	if err != nil {
+		return nil, err
+	}
+	for _, result := range results {
+		env, _ := result["env"].(string)
+		result["written"] = written[env]
+	}
+	return results, nil
+}
+
+func writeLocalSecretsEnvFile(path string, values map[string]string, force bool) (map[string]bool, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	lines := []string{}
+	if err == nil {
+		lines = strings.Split(string(raw), "\n")
+		if len(lines) > 0 && lines[len(lines)-1] == "" {
+			lines = lines[:len(lines)-1]
+		}
+	}
+	seen := map[string]bool{}
+	written := map[string]bool{}
+	for idx, line := range lines {
+		key, value, ok := parseLocalEnvAssignment(line)
+		if !ok {
+			continue
+		}
+		secretValue, exists := values[key]
+		if !exists {
+			continue
+		}
+		seen[key] = true
+		if force || value == "" || value == "__REPLACE_ME__" {
+			lines[idx] = key + "=" + secretValue
+			written[key] = true
+		} else {
+			written[key] = false
+		}
+	}
+	for key, value := range values {
+		if seen[key] {
+			continue
+		}
+		lines = append(lines, key+"="+value)
+		written[key] = true
+	}
+	content := strings.Join(lines, "\n")
+	if content != "" {
+		content += "\n"
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		return nil, err
+	}
+	return written, nil
+}
+
+func parseLocalEnvAssignment(line string) (string, string, bool) {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+		return "", "", false
+	}
+	key, value, ok := strings.Cut(trimmed, "=")
+	if !ok {
+		return "", "", false
+	}
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return "", "", false
+	}
+	return key, strings.TrimSpace(value), true
 }

@@ -1806,6 +1806,19 @@ type SecretResponse struct {
 	Secret Secret `json:"secret"`
 }
 
+// SecretValue represents a secret value.
+type SecretValue struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	// UpdatedAt is when the secret value was last updated.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// SecretValueResponse represents a secret value response.
+type SecretValueResponse struct {
+	Secret SecretValue `json:"secret"`
+}
+
 // SimilarityGteCondition represents a similarity gte condition.
 type SimilarityGteCondition struct {
 	Kind      *string                       `json:"kind,omitempty"`

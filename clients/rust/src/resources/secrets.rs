@@ -144,4 +144,23 @@ impl<'a> SecretsApi<'a> {
             .request_with_query_opts_empty(method, &path, &(), options)
             .await
     }
+
+    /// Get Secret Value
+    pub async fn list_secret_value(&self, name: &str) -> Result<SecretValueResponse, Error> {
+        self.list_secret_value_with_options(name, None).await
+    }
+
+    /// Variant of [`Self::list_secret_value`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_secret_value_with_options(
+        &self,
+        name: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<SecretValueResponse, Error> {
+        let name = crate::client::path_segment(name);
+        let path = format!("/v1/secrets/{name}/value");
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
+            .await
+    }
 }

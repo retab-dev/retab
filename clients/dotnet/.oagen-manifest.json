@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-03T10:59:14.152Z",
+  "generatedAt": "2026-06-03T13:55:57.463Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -180,6 +180,8 @@
     "src/Entities/Secret.cs",
     "src/Entities/SecretListResponse.cs",
     "src/Entities/SecretResponse.cs",
+    "src/Entities/SecretValue.cs",
+    "src/Entities/SecretValueResponse.cs",
     "src/Entities/SimilarityGteCondition.cs",
     "src/Entities/SkippedBlockExecutionLifecycle.cs",
     "src/Entities/SourcesResponse.cs",
@@ -195,6 +197,7 @@
     "src/Entities/Subdocument.cs",
     "src/Entities/SubmitDecisionResponse.cs",
     "src/Entities/TriggerInfo.cs",
+    "src/Entities/ValidateWorkflowBlockConfigResponse.cs",
     "src/Entities/ValidationError.cs",
     "src/Entities/VerdictSummary.cs",
     "src/Entities/WhileLoopTermination.cs",
@@ -519,6 +522,10 @@
       "sdkMethod": "DeleteAsync",
       "service": "secrets"
     },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "ListValueAsync",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "ListAsync",
       "service": "splits"
@@ -637,6 +644,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "DeleteAsync",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "CreateBlockValidateConfigAsync",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

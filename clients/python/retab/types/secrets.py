@@ -34,6 +34,20 @@ class SecretResponse(BaseModel):
     secret: Secret
 
 
+class SecretValue(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    name: str
+    value: str
+    updated_at: datetime.datetime = Field(..., description="When the secret value was last updated.")
+
+
+class SecretValueResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    secret: SecretValue
+
+
 class SetSecretRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -49,4 +63,6 @@ CreateSecretRequest.model_rebuild()
 Secret.model_rebuild()
 SecretListResponse.model_rebuild()
 SecretResponse.model_rebuild()
+SecretValue.model_rebuild()
+SecretValueResponse.model_rebuild()
 SetSecretRequest.model_rebuild()

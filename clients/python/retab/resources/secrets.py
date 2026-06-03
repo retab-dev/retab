@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.secrets import CreateSecretRequest, SecretListResponse, SecretResponse, SetSecretRequest
+from retab.types.secrets import CreateSecretRequest, SecretListResponse, SecretResponse, SecretValueResponse, SetSecretRequest
 
 
 class SecretsMixin:
@@ -56,6 +56,15 @@ class SecretsMixin:
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/secrets/{name}", params=params or None, data=data)
 
+    def prepare_list_secret_value(self, name: str, **extra_params: Any) -> PreparedRequest:
+        """Get Secret Value"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url=f"/v1/secrets/{name}/value", params=params or None, data=data)
+
 
 class Secrets(SyncAPIResource, SecretsMixin):
     """Secrets API wrapper."""
@@ -90,6 +99,12 @@ class Secrets(SyncAPIResource, SecretsMixin):
         self._client._prepared_request(prepared_request)
         return None
 
+    def list_secret_value(self, name: str, **extra_params: Any) -> SecretValueResponse:
+        """Get Secret Value"""
+        prepared_request = self.prepare_list_secret_value(name, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return SecretValueResponse.model_validate(response)
+
 
 class AsyncSecrets(AsyncAPIResource, SecretsMixin):
     """Async Secrets API wrapper."""
@@ -123,6 +138,12 @@ class AsyncSecrets(AsyncAPIResource, SecretsMixin):
         prepared_request = self.prepare_delete_secret(name, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def list_secret_value(self, name: str, **extra_params: Any) -> SecretValueResponse:
+        """Get Secret Value"""
+        prepared_request = self.prepare_list_secret_value(name, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return SecretValueResponse.model_validate(response)
 
 
 __all__ = ["Secrets", "AsyncSecrets", "SecretsMixin"]

@@ -53,8 +53,10 @@ var sdkResourceCommandAliases = map[string]string{
 var sdkOperationCommandAliases = map[string]string{
 	// Secrets use one CLI-safe command that reads values from prompt/stdin/file
 	// instead of exposing raw secret values as shell-history-friendly flags.
-	"secrets.Create": "secrets set",
-	"secrets.Update": "secrets set",
+	"secrets.Create":    "secrets set",
+	"secrets.GetValue":  "secrets value",
+	"secrets.ListValue": "secrets value",
+	"secrets.Update":    "secrets set",
 	// The table PATCH route currently edits table metadata/name only. The
 	// public CLI intentionally exposes CSV lifecycle commands, not metadata-only
 	// table mutation, so `retab tables update` remains absent.

@@ -2,6 +2,9 @@
 
 export * from './update-workflow-block-request.interface.js';
 export * from './update-workflow-block-request-config-mode.interface.js';
+export * from './validate-workflow-block-config-request.interface.js';
+export * from './validate-workflow-block-config-request-config-mode.interface.js';
+export * from './validate-workflow-block-config-response.interface.js';
 export * from './workflow-block.interface.js';
 export * from './workflow-block-create-request.interface.js';
 export * from './workflow-block-create-request-type.interface.js';

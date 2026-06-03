@@ -54,6 +54,33 @@ var secretsGetCmd = &cobra.Command{
 	}),
 }
 
+var secretsValueCmd = &cobra.Command{
+	Use:   "value <name>",
+	Short: "Print a secret value",
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Secrets.GetValue(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		rawOutput := ""
+		if flag := cmd.Root().PersistentFlags().Lookup("output"); flag != nil {
+			rawOutput = flag.Value.String()
+		}
+		if rawOutput == string(OutputJSON) {
+			return printJSON(result)
+		}
+		_, err = fmt.Fprint(os.Stdout, result.Secret.Value)
+		return err
+	}),
+}
+
 var secretsSetCmd = &cobra.Command{
 	Use:   "set <name>",
 	Short: "Set a secret value",
@@ -179,6 +206,6 @@ func init() {
 	secretsSetCmd.Flags().Bool("from-stdin", false, "read secret value from stdin")
 	secretsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
-	secretsCmd.AddCommand(secretsListCmd, secretsGetCmd, secretsSetCmd, secretsDeleteCmd)
+	secretsCmd.AddCommand(secretsListCmd, secretsGetCmd, secretsValueCmd, secretsSetCmd, secretsDeleteCmd)
 	rootCmd.AddCommand(secretsCmd)
 }

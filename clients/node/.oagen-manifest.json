@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-03T10:59:07.197Z",
+  "generatedAt": "2026-06-03T13:55:33.671Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -114,6 +114,8 @@
     "src/secrets/interfaces/index.ts",
     "src/secrets/interfaces/secret-list-response.interface.ts",
     "src/secrets/interfaces/secret-response.interface.ts",
+    "src/secrets/interfaces/secret-value-response.interface.ts",
+    "src/secrets/interfaces/secret-value.interface.ts",
     "src/secrets/interfaces/secret.interface.ts",
     "src/secrets/interfaces/set-secret-request.interface.ts",
     "src/secrets/secrets.ts",
@@ -201,6 +203,9 @@
     "src/workflows/blocks/interfaces/index.ts",
     "src/workflows/blocks/interfaces/update-workflow-block-request-config-mode.interface.ts",
     "src/workflows/blocks/interfaces/update-workflow-block-request.interface.ts",
+    "src/workflows/blocks/interfaces/validate-workflow-block-config-request-config-mode.interface.ts",
+    "src/workflows/blocks/interfaces/validate-workflow-block-config-request.interface.ts",
+    "src/workflows/blocks/interfaces/validate-workflow-block-config-response.interface.ts",
     "src/workflows/blocks/interfaces/workflow-block-create-request-type.interface.ts",
     "src/workflows/blocks/interfaces/workflow-block-create-request.interface.ts",
     "src/workflows/blocks/interfaces/workflow-block-type.interface.ts",

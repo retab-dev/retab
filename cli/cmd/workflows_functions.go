@@ -57,7 +57,7 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 		}
 		filledSecrets := []map[string]any{}
 		if fillSecrets {
-			filledSecrets, err = fillLocalSecretsFromRetab(cmd, config, forceSecrets)
+			filledSecrets, err = fillLocalSecretsFromRetab(cmd, args[0], config, forceSecrets)
 			if err != nil {
 				return err
 			}

@@ -19,6 +19,7 @@ func TestSecretsCommandsAreRegistered(t *testing.T) {
 	for _, path := range [][]string{
 		{"secrets", "list"},
 		{"secrets", "get"},
+		{"secrets", "value"},
 		{"secrets", "set"},
 		{"secrets", "delete"},
 	} {
@@ -32,6 +33,61 @@ func TestSecretsCommandsAreRegistered(t *testing.T) {
 	}
 	if secretsSetCmd.Flags().Lookup("value") != nil {
 		t.Fatal("retab secrets set must not expose --value")
+	}
+}
+
+func TestSecretsValuePrintsRawValueByDefaultAndJSONWhenRequested(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	resetOutputFlag(t)
+
+	var sawValuePath bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/secrets/RESEND_API_KEY/value" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		sawValuePath = true
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"secret": map[string]any{
+				"name":       "RESEND_API_KEY",
+				"value":      "super-secret-value",
+				"updated_at": "2026-06-03T10:00:00Z",
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := runRootForTest(t, "secrets", "value", "RESEND_API_KEY"); err != nil {
+			t.Fatalf("secrets value: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	if !sawValuePath {
+		t.Fatal("server did not receive secret value request")
+	}
+	if stdout != "super-secret-value" {
+		t.Fatalf("stdout = %q, want raw secret value", stdout)
+	}
+
+	jsonStdout, jsonStderr := captureStd(t, func() {
+		if err := runRootForTest(t, "--output", "json", "secrets", "value", "RESEND_API_KEY"); err != nil {
+			t.Fatalf("secrets value --output json: %v", err)
+		}
+	})
+	if jsonStderr != "" {
+		t.Fatalf("stderr = %q, want empty", jsonStderr)
+	}
+	var payload map[string]map[string]any
+	if err := json.Unmarshal([]byte(jsonStdout), &payload); err != nil {
+		t.Fatalf("json output did not parse: %v\n%s", err, jsonStdout)
+	}
+	if payload["secret"]["value"] != "super-secret-value" {
+		t.Fatalf("json output should include secret value envelope, got:\n%s", jsonStdout)
 	}
 }
 

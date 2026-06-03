@@ -6,9 +6,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.UpdateWorkflowBlockRequest;
+import com.retab.models.ValidateWorkflowBlockConfigRequest;
+import com.retab.models.ValidateWorkflowBlockConfigResponse;
 import com.retab.models.WorkflowBlock;
 import com.retab.models.WorkflowBlockCreateRequest;
 import com.retab.types.UpdateWorkflowBlockRequestConfigMode;
+import com.retab.types.ValidateWorkflowBlockConfigRequestConfigMode;
 import com.retab.types.WorkflowBlockCreateRequestType;
 import com.retab.workflowblockexecutions.WorkflowBlockExecutionsApi;
 import java.io.IOException;
@@ -264,6 +267,52 @@ public final class WorkflowBlocksApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public ValidateWorkflowBlockConfigResponse createBlockValidateConfig(
+      String blockId, String workflowId, ValidateWorkflowBlockConfigRequest request)
+      throws IOException, InterruptedException {
+    return createBlockValidateConfig(
+        blockId,
+        workflowId,
+        request == null ? null : request.getConfig(),
+        request == null ? null : request.getConfigMode());
+  }
+
+  public ValidateWorkflowBlockConfigResponse createBlockValidateConfig(
+      String blockId,
+      String workflowId,
+      Map<String, Object> config,
+      ValidateWorkflowBlockConfigRequestConfigMode configMode)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/blocks/" + encodePathSegment(blockId) + "/validate-config";
+    StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "workflow_id", workflowId);
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("config", config);
+    if (configMode != null) {
+      body.put("config_mode", configMode);
+    }
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client
+        .getObjectMapper()
+        .readValue(response.body(), ValidateWorkflowBlockConfigResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

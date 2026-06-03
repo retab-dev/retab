@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-03T10:59:18.806Z",
+  "generatedAt": "2026-06-03T13:56:27.654Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -103,6 +103,8 @@
     "lib/retab/secrets/secret.rb",
     "lib/retab/secrets/secret_list_response.rb",
     "lib/retab/secrets/secret_response.rb",
+    "lib/retab/secrets/secret_value.rb",
+    "lib/retab/secrets/secret_value_response.rb",
     "lib/retab/secrets/set_secret_request.rb",
     "lib/retab/shared/http_validation_error.rb",
     "lib/retab/shared/validation_error.rb",
@@ -221,6 +223,7 @@
     "lib/retab/types/trigger_info_type.rb",
     "lib/retab/types/update_experiment_request_n_consensus.rb",
     "lib/retab/types/update_workflow_block_request_config_mode.rb",
+    "lib/retab/types/validate_workflow_block_config_request_config_mode.rb",
     "lib/retab/types/while_loop_termination_termination_reason.rb",
     "lib/retab/types/workflow_artifact_operation.rb",
     "lib/retab/types/workflow_artifacts_operation.rb",
@@ -279,6 +282,8 @@
     "lib/retab/workflow_block_executions/stored_block_execution.rb",
     "lib/retab/workflow_blocks.rb",
     "lib/retab/workflow_blocks/update_workflow_block_request.rb",
+    "lib/retab/workflow_blocks/validate_workflow_block_config_request.rb",
+    "lib/retab/workflow_blocks/validate_workflow_block_config_response.rb",
     "lib/retab/workflow_blocks/workflow_block.rb",
     "lib/retab/workflow_blocks/workflow_block_create_request.rb",
     "lib/retab/workflow_edges.rb",
@@ -621,6 +626,8 @@
     "rbi/retab/secret.rbi",
     "rbi/retab/secret_list_response.rbi",
     "rbi/retab/secret_response.rbi",
+    "rbi/retab/secret_value.rbi",
+    "rbi/retab/secret_value_response.rbi",
     "rbi/retab/secrets.rbi",
     "rbi/retab/set_secret_request.rbi",
     "rbi/retab/similarity_gte_condition.rbi",
@@ -649,6 +656,8 @@
     "rbi/retab/update_workflow_table_request.rbi",
     "rbi/retab/update_workflow_test_request.rbi",
     "rbi/retab/upload_file_request.rbi",
+    "rbi/retab/validate_workflow_block_config_request.rbi",
+    "rbi/retab/validate_workflow_block_config_response.rbi",
     "rbi/retab/validation_error.rbi",
     "rbi/retab/verdict_summary.rbi",
     "rbi/retab/while_loop_termination.rbi",
@@ -922,6 +931,10 @@
       "sdkMethod": "delete_secret",
       "service": "secrets"
     },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "list_secret_value",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -1040,6 +1053,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "create_block_validate_config",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

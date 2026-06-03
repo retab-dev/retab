@@ -27,7 +27,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "status": true, "steps": true, "stream": true,
 		"switch": true, "sync": true, "tables": true, "templates": true, "tests": true, "update": true,
-		"upload": true, "validate": true, "validate-config": true, "versions": true, "version": true,
+		"upload": true, "validate": true, "validate-config": true, "value": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
 	}
 
@@ -129,7 +129,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"parses":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
 		"schemas":                       {"generate"},
-		"secrets":                       {"delete", "get", "list", "set"},
+		"secrets":                       {"delete", "get", "list", "set", "value"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"tables":                        {"create", "delete", "download", "get", "list", "profile", "query", "replace", "schema", "validate"},
 		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec"},
