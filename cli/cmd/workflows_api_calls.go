@@ -31,11 +31,12 @@ Start by pulling an api_call block:
 
   retab workflows blocks pull-config <workflow-id> <block-id> --out tmp/api
 
-Then hydrate local execution files:
+Bundles pulled with pull-config are hydrated automatically. Re-run hydrate when
+you need to repair or regenerate local support files:
 
   retab workflows blocks api-calls hydrate tmp/api
 
-Then render requests against local samples without making network calls:
+Render requests against local samples without making network calls:
 
   retab workflows blocks api-calls run tmp/api samples/*.json
 
