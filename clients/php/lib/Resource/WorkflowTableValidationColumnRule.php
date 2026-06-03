@@ -11,7 +11,7 @@ readonly class WorkflowTableValidationColumnRule implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        public ?string $type = null,
+        public ?WorkflowTableValidationColumnRuleType $type = null,
         public ?string $format = null,
         public ?bool $isNotEmpty = null,
     ) {}
@@ -20,7 +20,7 @@ readonly class WorkflowTableValidationColumnRule implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         return new self(
-            type: $data['type'] ?? null,
+            type: isset($data['type']) ? WorkflowTableValidationColumnRuleType::from($data['type']) : null,
             format: $data['format'] ?? null,
             isNotEmpty: $data['is_not_empty'] ?? null,
         );
@@ -30,7 +30,7 @@ readonly class WorkflowTableValidationColumnRule implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'type' => $this->type,
+            'type' => $this->type?->value,
             'format' => $this->format,
             'is_not_empty' => $this->isNotEmpty,
         ];

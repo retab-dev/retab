@@ -2430,9 +2430,9 @@ type WorkflowTableTailRequest = WorkflowTableSampleRequest
 
 // WorkflowTableValidationColumnRule represents a workflow table validation column rule.
 type WorkflowTableValidationColumnRule struct {
-	Type       *string `json:"type,omitempty"`
-	Format     *string `json:"format,omitempty"`
-	IsNotEmpty *bool   `json:"is_not_empty,omitempty"`
+	Type       *WorkflowTableValidationColumnRuleType `json:"type,omitempty"`
+	Format     *string                                `json:"format,omitempty"`
+	IsNotEmpty *bool                                  `json:"is_not_empty,omitempty"`
 }
 
 // WorkflowTableValidationDiagnostic represents a workflow table validation diagnostic.

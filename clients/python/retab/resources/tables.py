@@ -7,9 +7,9 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import PaginationOrder
 from retab.types.tables import (
-    BodyCreateTableV1TablesPost,
-    BodyReplaceTableV1TablesTableIdPut,
+    CreateWorkflowTableUploadRequest,
     QueryWorkflowTableRequest,
+    ReplaceWorkflowTableUploadRequest,
     UpdateWorkflowTableRequest,
     WorkflowTableAggregationRequest,
     WorkflowTableDistinctRequest,
@@ -45,7 +45,7 @@ class TablesMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = BodyCreateTableV1TablesPost(name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
+        payload = CreateWorkflowTableUploadRequest(name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/tables", params=params or None, data=data)
 
@@ -64,7 +64,7 @@ class TablesMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = BodyReplaceTableV1TablesTableIdPut(file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
+        payload = ReplaceWorkflowTableUploadRequest(file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PUT", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
@@ -216,13 +216,13 @@ class Tables(SyncAPIResource, TablesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    def delete(self, table_id: str, **extra_params: Any) -> WorkflowTableListResponse:
+    def delete(self, table_id: str, **extra_params: Any) -> None:
         """Delete Table"""
         prepared_request = self.prepare_delete(table_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return WorkflowTableListResponse.model_validate(response)
+        self._client._prepared_request(prepared_request)
+        return None
 
-    def download(self, table_id: str, **extra_params: Any) -> Any:
+    def download(self, table_id: str, **extra_params: Any) -> bytes:
         """Download Table Csv"""
         prepared_request = self.prepare_download(table_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -334,13 +334,13 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    async def delete(self, table_id: str, **extra_params: Any) -> WorkflowTableListResponse:
+    async def delete(self, table_id: str, **extra_params: Any) -> None:
         """Delete Table"""
         prepared_request = self.prepare_delete(table_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return WorkflowTableListResponse.model_validate(response)
+        await self._client._prepared_request(prepared_request)
+        return None
 
-    async def download(self, table_id: str, **extra_params: Any) -> Any:
+    async def download(self, table_id: str, **extra_params: Any) -> bytes:
         """Download Table Csv"""
         prepared_request = self.prepare_download(table_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)

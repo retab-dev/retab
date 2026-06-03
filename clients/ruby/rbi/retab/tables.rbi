@@ -58,7 +58,7 @@ module Retab
       params(
         table_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::WorkflowTableListResponse)
+      ).returns(NilClass)
     end
     def delete(table_id:, request_options:); end
 
@@ -66,7 +66,7 @@ module Retab
       params(
         table_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(NilClass)
+      ).returns(String)
     end
     def download(table_id:, request_options:); end
 

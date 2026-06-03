@@ -7,12 +7,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class BodyReplaceTableV1TablesTableIdPut {
+public final class ReplaceWorkflowTableUploadRequest {
   private final String file;
   private final String columnSchemaOverrides;
 
   @JsonCreator
-  public BodyReplaceTableV1TablesTableIdPut(
+  public ReplaceWorkflowTableUploadRequest(
       @JsonProperty(value = "file", required = true) String file,
       @JsonProperty(value = "column_schema_overrides", required = false)
           String columnSchemaOverrides) {

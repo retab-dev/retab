@@ -3,8 +3,8 @@
 package com.retab.tables;
 
 import com.retab.RetabClient;
-import com.retab.models.BodyCreateTableV1TablesPost;
-import com.retab.models.BodyReplaceTableV1TablesTableIdPut;
+import com.retab.models.CreateWorkflowTableUploadRequest;
+import com.retab.models.ReplaceWorkflowTableUploadRequest;
 import com.retab.models.UpdateWorkflowTableRequest;
 import com.retab.models.WorkflowTableListResponse;
 import com.retab.models.WorkflowTableProfileResponse;
@@ -56,7 +56,7 @@ public final class TablesApi {
     return client.getObjectMapper().readValue(response.body(), WorkflowTableListResponse.class);
   }
 
-  public WorkflowTableListResponse create(BodyCreateTableV1TablesPost request)
+  public WorkflowTableListResponse create(CreateWorkflowTableUploadRequest request)
       throws IOException, InterruptedException {
     return create(
         request == null ? null : request.getName(),
@@ -116,7 +116,7 @@ public final class TablesApi {
   }
 
   public WorkflowTableListResponse replace(
-      String tableId, BodyReplaceTableV1TablesTableIdPut request)
+      String tableId, ReplaceWorkflowTableUploadRequest request)
       throws IOException, InterruptedException {
     return replace(
         tableId,

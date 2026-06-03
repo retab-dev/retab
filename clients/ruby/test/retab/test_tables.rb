@@ -50,7 +50,7 @@ class TablesTest < Minitest::Test
     stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/tables/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
     result = @client.tables.delete(table_id: "stub")
-    refute_nil(result)
+    assert_nil(result)
   end
 
   def test_download_returns_expected_result

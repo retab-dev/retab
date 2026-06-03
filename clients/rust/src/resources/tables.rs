@@ -19,13 +19,13 @@ pub struct CreateParams {
     ///
     /// Required.
     #[serde(skip)]
-    pub body: BodyCreateTableV1TablesPost,
+    pub body: CreateWorkflowTableUploadRequest,
 }
 
 impl CreateParams {
     /// Construct a new `CreateParams` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(body: BodyCreateTableV1TablesPost) -> Self {
+    pub fn new(body: CreateWorkflowTableUploadRequest) -> Self {
         Self { body }
     }
 }
@@ -36,13 +36,13 @@ pub struct ReplaceParams {
     ///
     /// Required.
     #[serde(skip)]
-    pub body: BodyReplaceTableV1TablesTableIdPut,
+    pub body: ReplaceWorkflowTableUploadRequest,
 }
 
 impl ReplaceParams {
     /// Construct a new `ReplaceParams` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(body: BodyReplaceTableV1TablesTableIdPut) -> Self {
+    pub fn new(body: ReplaceWorkflowTableUploadRequest) -> Self {
         Self { body }
     }
 }
@@ -199,7 +199,7 @@ impl<'a> TablesApi<'a> {
     }
 
     /// Delete Table
-    pub async fn delete(&self, table_id: &str) -> Result<WorkflowTableListResponse, Error> {
+    pub async fn delete(&self, table_id: &str) -> Result<(), Error> {
         self.delete_with_options(table_id, None).await
     }
 
@@ -208,17 +208,17 @@ impl<'a> TablesApi<'a> {
         &self,
         table_id: &str,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<WorkflowTableListResponse, Error> {
+    ) -> Result<(), Error> {
         let table_id = crate::client::path_segment(table_id);
         let path = format!("/v1/tables/{table_id}");
         let method = http::Method::DELETE;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts_empty(method, &path, &(), options)
             .await
     }
 
     /// Download Table Csv
-    pub async fn download(&self, table_id: &str) -> Result<(), Error> {
+    pub async fn download(&self, table_id: &str) -> Result<Vec<u8>, Error> {
         self.download_with_options(table_id, None).await
     }
 
@@ -227,12 +227,12 @@ impl<'a> TablesApi<'a> {
         &self,
         table_id: &str,
         options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
+    ) -> Result<Vec<u8>, Error> {
         let table_id = crate::client::path_segment(table_id);
         let path = format!("/v1/tables/{table_id}/download");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 

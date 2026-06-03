@@ -4,7 +4,7 @@ namespace Retab
     /// <summary>Represents a workflow table validation column rule.</summary>
     public class WorkflowTableValidationColumnRule
     {
-        public string? Type { get; set; }
+        public WorkflowTableValidationColumnRuleType? Type { get; set; }
         public string? Format { get; set; }
         public bool? IsNotEmpty { get; set; } = false;
 

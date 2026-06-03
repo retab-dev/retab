@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct WorkflowTableValidationColumnRule {
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub type_: Option<String>,
+    pub type_: Option<WorkflowTableValidationColumnRuleType>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub format: Option<String>,
     /// Defaults to `false`.

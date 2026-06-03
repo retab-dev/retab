@@ -125,25 +125,24 @@ export class Tables {
   }
 
   /** Delete Table */
-  async delete(tableId: string): Promise<WorkflowTableListResponse> {
-    const __wire = await this.client.request<WorkflowTableListResponseResponse>({
+  async delete(tableId: string): Promise<void> {
+    await this.client.request<unknown>({
       method: 'DELETE',
       path: `/v1/tables/${tableId}`,
       query: undefined,
       body: undefined,
     });
-    return deserializeWorkflowTableListResponse(__wire);
   }
 
   /** Download Table Csv */
-  async download(tableId: string): Promise<unknown> {
-    const __wire = await this.client.request<unknown>({
+  async download(tableId: string): Promise<Blob> {
+    const __wire = await this.client.request<string>({
       method: 'GET',
       path: `/v1/tables/${tableId}/download`,
       query: undefined,
       body: undefined,
     });
-    return __wire as unknown as unknown;
+    return __wire as unknown as Blob;
   }
 
   /** Profile Table */
