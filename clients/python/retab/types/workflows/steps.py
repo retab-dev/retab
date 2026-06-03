@@ -42,7 +42,6 @@ class WorkflowRunStepBlockType(str, Enum):
     CLASSIFIER = "classifier"
     CONDITIONAL = "conditional"
     API_CALL = "api_call"
-    REVIEW = "review"
     FUNCTION = "function"
     WHILE_LOOP = "while_loop"
     FOR_EACH = "for_each"

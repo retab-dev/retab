@@ -36,7 +36,7 @@ For deterministic regression testing of a single pinned assertion, see
 
   # Create an experiment on one block, capturing documents from real runs
   retab workflows experiments create wf_abc123 \
-    --block-id blk_extract_1 \
+    --block-id block_extract_1 \
     --name "Tighter schema v2" \
     --captures-file ./captures.json
 
@@ -204,7 +204,7 @@ After creation, create a run with
 ` + "`workflows experiments runs create`" + `.`,
 	Example: `  # Capture documents from real production runs
   retab workflows experiments create wf_abc123 \
-    --block-id blk_extract_1 \
+    --block-id block_extract_1 \
     --name "Try gpt-4o-mini" \
     --captures-file ./captures.json \
     --n-consensus 3`,
@@ -246,7 +246,7 @@ After creation, create a run with
 		}
 		req.DocumentCaptures = captures
 		req.Documents = explicit
-		if len(req.DocumentCaptures) == 0 && len(req.Documents) == 0 {
+		if len(captures) == 0 && len(explicit) == 0 {
 			return fmt.Errorf("at least one document or document capture is required (--captures-file or --documents-file)")
 		}
 		client, err := newClient(cmd)

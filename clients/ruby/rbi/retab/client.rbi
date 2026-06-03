@@ -27,8 +27,14 @@ module Retab
     sig { returns(Retab::Schemas) }
     def schemas; end
 
+    sig { returns(Retab::Secrets) }
+    def secrets; end
+
     sig { returns(Retab::Splits) }
     def splits; end
+
+    sig { returns(Retab::Tables) }
+    def tables; end
 
     sig { returns(Retab::Workflows) }
     def workflows; end

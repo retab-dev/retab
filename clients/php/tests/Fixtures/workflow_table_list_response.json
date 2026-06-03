@@ -1,0 +1,36 @@
+{
+  "tables": [
+    {
+      "id": "01234",
+      "name": "Test",
+      "filename": "Test",
+      "source_file_id": "source_file_id_01234",
+      "snapshot_file_id": "snapshot_file_id_01234",
+      "row_count": 1,
+      "columns": [
+        {
+          "name": "Test",
+          "json_schema": {
+            "key": {}
+          },
+          "sample_values": [
+            "test_sample_values"
+          ],
+          "required": true,
+          "unique": true
+        }
+      ],
+      "sample_rows": [
+        {
+          "key": {}
+        }
+      ],
+      "metadata": {
+        "key": {}
+      },
+      "uploaded_by_user_id": "uploaded_by_user_id_01234",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-01T00:00:00.000Z"
+    }
+  ]
+}

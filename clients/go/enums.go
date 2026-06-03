@@ -10,6 +10,52 @@ const (
 	FieldTypeCheckbox FieldType = "checkbox"
 )
 
+// WorkflowTableAggregationFunction represents workflow table aggregation function values.
+type WorkflowTableAggregationFunction string
+
+const (
+	WorkflowTableAggregationFunctionCount         WorkflowTableAggregationFunction = "count"
+	WorkflowTableAggregationFunctionCountDistinct WorkflowTableAggregationFunction = "count_distinct"
+	WorkflowTableAggregationFunctionMin           WorkflowTableAggregationFunction = "min"
+	WorkflowTableAggregationFunctionMax           WorkflowTableAggregationFunction = "max"
+	WorkflowTableAggregationFunctionSum           WorkflowTableAggregationFunction = "sum"
+	WorkflowTableAggregationFunctionAvg           WorkflowTableAggregationFunction = "avg"
+)
+
+// WorkflowTableFilterOperator represents workflow table filter operator values.
+type WorkflowTableFilterOperator string
+
+const (
+	WorkflowTableFilterOperatorEq          WorkflowTableFilterOperator = "eq"
+	WorkflowTableFilterOperatorNe          WorkflowTableFilterOperator = "ne"
+	WorkflowTableFilterOperatorGt          WorkflowTableFilterOperator = "gt"
+	WorkflowTableFilterOperatorGte         WorkflowTableFilterOperator = "gte"
+	WorkflowTableFilterOperatorLt          WorkflowTableFilterOperator = "lt"
+	WorkflowTableFilterOperatorLte         WorkflowTableFilterOperator = "lte"
+	WorkflowTableFilterOperatorContains    WorkflowTableFilterOperator = "contains"
+	WorkflowTableFilterOperatorNotContains WorkflowTableFilterOperator = "not_contains"
+	WorkflowTableFilterOperatorStartsWith  WorkflowTableFilterOperator = "starts_with"
+	WorkflowTableFilterOperatorEndsWith    WorkflowTableFilterOperator = "ends_with"
+	WorkflowTableFilterOperatorIn          WorkflowTableFilterOperator = "in"
+	WorkflowTableFilterOperatorNotIn       WorkflowTableFilterOperator = "not_in"
+	WorkflowTableFilterOperatorBetween     WorkflowTableFilterOperator = "between"
+	WorkflowTableFilterOperatorIsEmpty     WorkflowTableFilterOperator = "is_empty"
+	WorkflowTableFilterOperatorIsNotEmpty  WorkflowTableFilterOperator = "is_not_empty"
+	WorkflowTableFilterOperatorIsNull      WorkflowTableFilterOperator = "is_null"
+	WorkflowTableFilterOperatorIsNotNull   WorkflowTableFilterOperator = "is_not_null"
+)
+
+// WorkflowTableSortDirection is an alias for ClassificationsOrder.
+type WorkflowTableSortDirection = ClassificationsOrder
+
+// WorkflowTableValidationSeverity represents workflow table validation severity values.
+type WorkflowTableValidationSeverity string
+
+const (
+	WorkflowTableValidationSeverityError   WorkflowTableValidationSeverity = "error"
+	WorkflowTableValidationSeverityWarning WorkflowTableValidationSeverity = "warning"
+)
+
 // ActorKind represents actor kind values.
 type ActorKind string
 
@@ -186,7 +232,6 @@ const (
 	DeclarativePlanResourceChangeTypeClassifier             DeclarativePlanResourceChangeType = "classifier"
 	DeclarativePlanResourceChangeTypeConditional            DeclarativePlanResourceChangeType = "conditional"
 	DeclarativePlanResourceChangeTypeAPICall                DeclarativePlanResourceChangeType = "api_call"
-	DeclarativePlanResourceChangeTypeReview                 DeclarativePlanResourceChangeType = "review"
 	DeclarativePlanResourceChangeTypeFunction               DeclarativePlanResourceChangeType = "function"
 	DeclarativePlanResourceChangeTypeWhileLoop              DeclarativePlanResourceChangeType = "while_loop"
 	DeclarativePlanResourceChangeTypeForEach                DeclarativePlanResourceChangeType = "for_each"
@@ -386,6 +431,9 @@ const (
 	UpdateWorkflowBlockRequestConfigModeReplace UpdateWorkflowBlockRequestConfigMode = "replace"
 )
 
+// ValidateWorkflowBlockConfigRequestConfigMode is an alias for UpdateWorkflowBlockRequestConfigMode.
+type ValidateWorkflowBlockConfigRequestConfigMode = UpdateWorkflowBlockRequestConfigMode
+
 // WhileLoopTerminationTerminationReason represents while loop termination termination reason values.
 type WhileLoopTerminationTerminationReason string
 
@@ -412,7 +460,6 @@ const (
 	WorkflowBlockTypeClassifier             WorkflowBlockType = "classifier"
 	WorkflowBlockTypeConditional            WorkflowBlockType = "conditional"
 	WorkflowBlockTypeAPICall                WorkflowBlockType = "api_call"
-	WorkflowBlockTypeReview                 WorkflowBlockType = "review"
 	WorkflowBlockTypeFunction               WorkflowBlockType = "function"
 	WorkflowBlockTypeWhileLoop              WorkflowBlockType = "while_loop"
 	WorkflowBlockTypeForEach                WorkflowBlockType = "for_each"

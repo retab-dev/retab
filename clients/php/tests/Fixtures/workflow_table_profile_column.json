@@ -1,0 +1,16 @@
+{
+  "name": "Test",
+  "json_schema": {
+    "key": {}
+  },
+  "row_count": 1,
+  "null_count": 1,
+  "empty_count": 1,
+  "distinct_count": 1,
+  "min": {},
+  "max": {},
+  "sample_values": [
+    "test_sample_values"
+  ],
+  "is_estimated": true
+}

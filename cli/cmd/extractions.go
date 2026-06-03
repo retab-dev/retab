@@ -73,7 +73,7 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		ImageResolutionDpi: ptr(imageDPI),
 		NConsensus:         ptr(nConsensus),
 		Instructions:       ptr(instructions),
-		Metadata:           metadata,
+		Metadata:           &metadata,
 		AdditionalMessages: messages,
 		BustCache:          ptr(bustCache),
 	}, nil

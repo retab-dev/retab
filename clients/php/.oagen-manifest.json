@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-02T19:57:46.633Z",
+  "generatedAt": "2026-06-03T13:56:04.772Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -36,6 +36,8 @@
     "lib/Resource/BlockTestBatchExecutionCounts.php",
     "lib/Resource/BlockTestLifecycleCounts.php",
     "lib/Resource/BlockTestOutcomeCounts.php",
+    "lib/Resource/BodyCreateTableV1TablesPost.php",
+    "lib/Resource/BodyReplaceTableV1TablesTableIdPut.php",
     "lib/Resource/CancelWorkflowExperimentRunResponse.php",
     "lib/Resource/CancelWorkflowRequest.php",
     "lib/Resource/CancelWorkflowResponse.php",
@@ -72,6 +74,7 @@
     "lib/Resource/CreateExperimentRunRequest.php",
     "lib/Resource/CreateFileBlueprintRequest.php",
     "lib/Resource/CreateReviewVersionRequest.php",
+    "lib/Resource/CreateSecretRequest.php",
     "lib/Resource/CreateUploadResponse.php",
     "lib/Resource/CreateWorkflowRequest.php",
     "lib/Resource/CreateWorkflowRunRequest.php",
@@ -192,6 +195,7 @@
     "lib/Resource/PublicHandlePayload.php",
     "lib/Resource/PublicHandlePayloadType.php",
     "lib/Resource/PublishWorkflowRequest.php",
+    "lib/Resource/QueryWorkflowTableRequest.php",
     "lib/Resource/QueuedStepLifecycle.php",
     "lib/Resource/QueuedWorkflowExperimentResult.php",
     "lib/Resource/QueuedWorkflowExperimentRun.php",
@@ -229,6 +233,12 @@
     "lib/Resource/RunningWorkflowExperimentRun.php",
     "lib/Resource/RunningWorkflowTestRun.php",
     "lib/Resource/SchemaGeneration.php",
+    "lib/Resource/Secret.php",
+    "lib/Resource/SecretListResponse.php",
+    "lib/Resource/SecretResponse.php",
+    "lib/Resource/SecretValue.php",
+    "lib/Resource/SecretValueResponse.php",
+    "lib/Resource/SetSecretRequest.php",
     "lib/Resource/SimilarityGteCondition.php",
     "lib/Resource/SimilarityGteConditionMethod.php",
     "lib/Resource/SkippedBlockExecutionLifecycle.php",
@@ -257,8 +267,11 @@
     "lib/Resource/UpdateWorkflowBlockRequest.php",
     "lib/Resource/UpdateWorkflowBlockRequestConfigMode.php",
     "lib/Resource/UpdateWorkflowRequest.php",
+    "lib/Resource/UpdateWorkflowTableRequest.php",
     "lib/Resource/UpdateWorkflowTestRequest.php",
     "lib/Resource/UploadFileRequest.php",
+    "lib/Resource/ValidateWorkflowBlockConfigRequest.php",
+    "lib/Resource/ValidateWorkflowBlockConfigResponse.php",
     "lib/Resource/ValidationError.php",
     "lib/Resource/VerdictSummary.php",
     "lib/Resource/WhileLoopTermination.php",
@@ -290,6 +303,30 @@
     "lib/Resource/WorkflowRunStep.php",
     "lib/Resource/WorkflowRunsStatus.php",
     "lib/Resource/WorkflowRunsTriggerType.php",
+    "lib/Resource/WorkflowTable.php",
+    "lib/Resource/WorkflowTableAggregationFunction.php",
+    "lib/Resource/WorkflowTableAggregationRequest.php",
+    "lib/Resource/WorkflowTableColumn.php",
+    "lib/Resource/WorkflowTableDistinctRequest.php",
+    "lib/Resource/WorkflowTableExplain.php",
+    "lib/Resource/WorkflowTableFilterOperator.php",
+    "lib/Resource/WorkflowTableFilterRule.php",
+    "lib/Resource/WorkflowTableListResponse.php",
+    "lib/Resource/WorkflowTableProfileColumn.php",
+    "lib/Resource/WorkflowTableProfileResponse.php",
+    "lib/Resource/WorkflowTableResponse.php",
+    "lib/Resource/WorkflowTableRow.php",
+    "lib/Resource/WorkflowTableRowsResponse.php",
+    "lib/Resource/WorkflowTableSampleRequest.php",
+    "lib/Resource/WorkflowTableSchemaResponse.php",
+    "lib/Resource/WorkflowTableSearchRequest.php",
+    "lib/Resource/WorkflowTableSortRule.php",
+    "lib/Resource/WorkflowTableTailRequest.php",
+    "lib/Resource/WorkflowTableValidationColumnRule.php",
+    "lib/Resource/WorkflowTableValidationDiagnostic.php",
+    "lib/Resource/WorkflowTableValidationRequest.php",
+    "lib/Resource/WorkflowTableValidationResponse.php",
+    "lib/Resource/WorkflowTableValidationSeverity.php",
     "lib/Resource/WorkflowTest.php",
     "lib/Resource/WorkflowTestBlockTarget.php",
     "lib/Resource/WorkflowTestResult.php",
@@ -311,7 +348,9 @@
     "lib/Service/Parses.php",
     "lib/Service/Partitions.php",
     "lib/Service/Schemas.php",
+    "lib/Service/Secrets.php",
     "lib/Service/Splits.php",
+    "lib/Service/Tables.php",
     "lib/Service/WorkflowArtifacts.php",
     "lib/Service/WorkflowBlockExecutions.php",
     "lib/Service/WorkflowBlocks.php",
@@ -347,6 +386,8 @@
     "tests/Fixtures/block_test_batch_execution_counts.json",
     "tests/Fixtures/block_test_lifecycle_counts.json",
     "tests/Fixtures/block_test_outcome_counts.json",
+    "tests/Fixtures/body_create_table_v_1_tables_post.json",
+    "tests/Fixtures/body_replace_table_v_1_tables_table_id_put.json",
     "tests/Fixtures/cancel_workflow_experiment_run_response.json",
     "tests/Fixtures/cancel_workflow_request.json",
     "tests/Fixtures/cancel_workflow_response.json",
@@ -381,6 +422,7 @@
     "tests/Fixtures/create_experiment_run_request.json",
     "tests/Fixtures/create_file_blueprint_request.json",
     "tests/Fixtures/create_review_version_request.json",
+    "tests/Fixtures/create_secret_request.json",
     "tests/Fixtures/create_upload_response.json",
     "tests/Fixtures/create_workflow_request.json",
     "tests/Fixtures/create_workflow_run_request.json",
@@ -510,6 +552,7 @@
     "tests/Fixtures/primitive_error.json",
     "tests/Fixtures/public_handle_payload.json",
     "tests/Fixtures/publish_workflow_request.json",
+    "tests/Fixtures/query_workflow_table_request.json",
     "tests/Fixtures/queued_step_lifecycle.json",
     "tests/Fixtures/queued_workflow_experiment_result.json",
     "tests/Fixtures/queued_workflow_experiment_run.json",
@@ -543,6 +586,12 @@
     "tests/Fixtures/running_workflow_experiment_run.json",
     "tests/Fixtures/running_workflow_test_run.json",
     "tests/Fixtures/schema_generation.json",
+    "tests/Fixtures/secret.json",
+    "tests/Fixtures/secret_list_response.json",
+    "tests/Fixtures/secret_response.json",
+    "tests/Fixtures/secret_value.json",
+    "tests/Fixtures/secret_value_response.json",
+    "tests/Fixtures/set_secret_request.json",
     "tests/Fixtures/similarity_gte_condition.json",
     "tests/Fixtures/skipped_block_execution_lifecycle.json",
     "tests/Fixtures/skipped_step_lifecycle.json",
@@ -564,8 +613,11 @@
     "tests/Fixtures/update_experiment_request.json",
     "tests/Fixtures/update_workflow_block_request.json",
     "tests/Fixtures/update_workflow_request.json",
+    "tests/Fixtures/update_workflow_table_request.json",
     "tests/Fixtures/update_workflow_test_request.json",
     "tests/Fixtures/upload_file_request.json",
+    "tests/Fixtures/validate_workflow_block_config_request.json",
+    "tests/Fixtures/validate_workflow_block_config_response.json",
     "tests/Fixtures/validation_error.json",
     "tests/Fixtures/verdict_summary.json",
     "tests/Fixtures/while_loop_termination.json",
@@ -590,6 +642,27 @@
     "tests/Fixtures/workflow_published.json",
     "tests/Fixtures/workflow_run.json",
     "tests/Fixtures/workflow_run_step.json",
+    "tests/Fixtures/workflow_table.json",
+    "tests/Fixtures/workflow_table_aggregation_request.json",
+    "tests/Fixtures/workflow_table_column.json",
+    "tests/Fixtures/workflow_table_distinct_request.json",
+    "tests/Fixtures/workflow_table_explain.json",
+    "tests/Fixtures/workflow_table_filter_rule.json",
+    "tests/Fixtures/workflow_table_list_response.json",
+    "tests/Fixtures/workflow_table_profile_column.json",
+    "tests/Fixtures/workflow_table_profile_response.json",
+    "tests/Fixtures/workflow_table_response.json",
+    "tests/Fixtures/workflow_table_row.json",
+    "tests/Fixtures/workflow_table_rows_response.json",
+    "tests/Fixtures/workflow_table_sample_request.json",
+    "tests/Fixtures/workflow_table_schema_response.json",
+    "tests/Fixtures/workflow_table_search_request.json",
+    "tests/Fixtures/workflow_table_sort_rule.json",
+    "tests/Fixtures/workflow_table_tail_request.json",
+    "tests/Fixtures/workflow_table_validation_column_rule.json",
+    "tests/Fixtures/workflow_table_validation_diagnostic.json",
+    "tests/Fixtures/workflow_table_validation_request.json",
+    "tests/Fixtures/workflow_table_validation_response.json",
     "tests/Fixtures/workflow_test.json",
     "tests/Fixtures/workflow_test_block_target.json",
     "tests/Fixtures/workflow_test_result.json",
@@ -610,7 +683,9 @@
     "tests/Service/ParsesTest.php",
     "tests/Service/PartitionsTest.php",
     "tests/Service/SchemasTest.php",
+    "tests/Service/SecretsTest.php",
     "tests/Service/SplitsTest.php",
+    "tests/Service/TablesTest.php",
     "tests/Service/WorkflowArtifactsTest.php",
     "tests/Service/WorkflowBlockExecutionsTest.php",
     "tests/Service/WorkflowBlocksTest.php",
@@ -787,6 +862,30 @@
       "sdkMethod": "generate",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "listSecrets",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "createSecret",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "getSecret",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "updateSecret",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "deleteSecret",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "listSecretValue",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -806,6 +905,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "createSplitCancel",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "list",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "create",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "get",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "replace",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "updateTable",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "delete",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "download",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "profile",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "query",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "schema",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "validate",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",
@@ -893,6 +1036,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "createBlockValidateConfig",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

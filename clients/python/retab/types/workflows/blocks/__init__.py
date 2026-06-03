@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -41,7 +41,6 @@ class WorkflowBlockType(str, Enum):
     CLASSIFIER = "classifier"
     CONDITIONAL = "conditional"
     API_CALL = "api_call"
-    REVIEW = "review"
     FUNCTION = "function"
     WHILE_LOOP = "while_loop"
     FOR_EACH = "for_each"
@@ -53,6 +52,7 @@ class WorkflowBlockType(str, Enum):
 
 
 WorkflowBlockVersionType = WorkflowBlockType
+ValidateWorkflowBlockConfigRequestConfigMode = UpdateWorkflowBlockRequestConfigMode
 
 
 class WorkflowBlockCreateRequest(BaseModel):
@@ -103,6 +103,29 @@ class UpdateWorkflowBlockRequest(BaseModel):
         default=None,
         description="How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.",
     )
+
+
+class ValidateWorkflowBlockConfigRequest(BaseModel):
+    """Dry-run validation for an assembled workflow block config."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    config: dict[str, Any] = Field(..., description="Assembled block config to validate.")
+    config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(
+        default=cast(UpdateWorkflowBlockRequestConfigMode, "replace"),
+        validate_default=True,
+        description="How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.",
+    )
+
+
+class ValidateWorkflowBlockConfigResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    ok: bool | None = Field(default=True)
+    workflow_id: str
+    block_id: str
+    block_type: str
+    config_hash: str
 
 
 class WorkflowBlock(BaseModel):
@@ -185,6 +208,9 @@ __all__ = [
     "StoredBlockExecution",
     "UpdateWorkflowBlockRequest",
     "UpdateWorkflowBlockRequestConfigMode",
+    "ValidateWorkflowBlockConfigRequest",
+    "ValidateWorkflowBlockConfigRequestConfigMode",
+    "ValidateWorkflowBlockConfigResponse",
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",
@@ -203,6 +229,8 @@ __all__ = [
 # generated module via a TYPE_CHECKING-guarded import.
 WorkflowBlockCreateRequest.model_rebuild()
 UpdateWorkflowBlockRequest.model_rebuild()
+ValidateWorkflowBlockConfigRequest.model_rebuild()
+ValidateWorkflowBlockConfigResponse.model_rebuild()
 WorkflowBlock.model_rebuild()
 WorkflowBlockVersion.model_rebuild()
 WorkflowBlockVersionDiff.model_rebuild()

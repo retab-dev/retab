@@ -39,7 +39,7 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 		req.ParentID = ptr(v)
 	}
 	if v, ok := obj["config"].(map[string]any); ok {
-		req.Config = v
+		req.Config = &v
 	}
 	if err := rejectLegacyReviewConfig(req.Config); err != nil {
 		return req, err
@@ -47,8 +47,8 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 	if req.Type == "" {
 		return req, fmt.Errorf("block type is required")
 	}
-	if req.Type == "review" || req.Type == "hil" {
-		return req, fmt.Errorf("standalone review blocks are no longer supported; add config.review to a reviewable block instead")
+	if req.Type == "hil" {
+		return req, fmt.Errorf("legacy hil blocks are no longer supported; add config.review to a reviewable block instead")
 	}
 	return req, nil
 }
@@ -60,11 +60,11 @@ func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.W
 	return parseBlockCreate(obj)
 }
 
-func rejectLegacyReviewConfig(config map[string]any) error {
+func rejectLegacyReviewConfig(config *map[string]any) error {
 	if config == nil {
 		return nil
 	}
-	if _, ok := config["hil"]; ok {
+	if _, ok := (*config)["hil"]; ok {
 		return fmt.Errorf("legacy config.hil is no longer supported; use config.review instead")
 	}
 	return nil
@@ -124,7 +124,7 @@ func resolveBlockPositionalWorkflowID(cmd *cobra.Command, args []string) (*strin
 var workflowsBlocksCmd = &cobra.Command{
 	Use:     "blocks",
 	Short:   "Manage workflow blocks",
-	Long:    "Add, configure, and inspect the nodes of a workflow graph.\n\nA block is one processing step - `extract`, `split`, `classifier`, `edit`,\n`conditional`, `api_call`, `function`, etc. Each block has a typed input,\ntyped output, and a JSON config blob shaped by its type.\n\nThe workhorse here is update. Once a block is on the graph, swap its full\nconfig with workflows blocks update --config-file ./cfg.json (REPLACE) or\npatch a slice with `--merge-config-file` ./patch.json (deep merge, RFC 7396)\nrather than deleting and re-creating. Use review config inside supported\nblock configs instead of adding a separate review block.",
+	Long:    "Add, configure, and inspect the nodes of a workflow graph.\n\nA block is one processing step - `extract`, `split`, `classifier`, `edit`,\n`conditional`, `api_call`, `function`, etc. Each block has a typed input,\ntyped output, and a JSON config blob shaped by its type.\n\nThe workhorse here is update. Once a block is on the graph, swap its full\nconfig with workflows blocks update --config-file ./cfg.json (REPLACE) or\npatch a slice with `--merge-config-file` ./patch.json (deep merge, RFC 7396)\nrather than deleting and re-creating. Configure review inside supported\nblock configs.",
 	Example: "  # List blocks\n  retab workflows blocks list wf_abc123\n\n  # Add a block from a JSON definition\n  retab workflows blocks create wf_abc123 --block-file ./extract.json\n\n  # Tune just the config of an existing block\n  retab workflows blocks update blk_def456 \\\n    --config-file ./new-config.json",
 }
 
@@ -297,10 +297,10 @@ var workflowsBlocksUpdateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
-			if err := rejectLegacyReviewConfig(cfg); err != nil {
+			if err := rejectLegacyReviewConfig(&cfg); err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
-			req.Config = cfg
+			req.Config = &cfg
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeReplace)
 		}
 		client, err := newClient(cmd)
@@ -314,13 +314,13 @@ var workflowsBlocksUpdateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
-			if err := rejectLegacyReviewConfig(patch); err != nil {
+			if err := rejectLegacyReviewConfig(&patch); err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
 			if len(patch) == 0 {
 				return fmt.Errorf("--merge-config-file %s: patch contains no keys; nothing to merge", mergeConfigPath)
 			}
-			req.Config = patch
+			req.Config = &patch
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
 		req.WorkflowID = workflowID

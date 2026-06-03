@@ -17,7 +17,6 @@ module Retab
       CLASSIFIER = "classifier"
       CONDITIONAL = "conditional"
       API_CALL = "api_call"
-      REVIEW = "review"
       FUNCTION = "function"
       WHILE_LOOP = "while_loop"
       FOR_EACH = "for_each"
@@ -39,7 +38,6 @@ module Retab
         CLASSIFIER,
         CONDITIONAL,
         API_CALL,
-        REVIEW,
         FUNCTION,
         WHILE_LOOP,
         FOR_EACH,

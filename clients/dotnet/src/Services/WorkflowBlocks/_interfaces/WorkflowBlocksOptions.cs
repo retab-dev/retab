@@ -114,4 +114,18 @@ namespace Retab
         public string? WorkflowId { get; set; }
 
     }
+
+    /// <summary>Request options for <see cref="WorkflowBlocksService.CreateBlockValidateConfigAsync"/>: Validate Block Config Dry Run</summary>
+    public class WorkflowBlocksCreateBlockValidateConfigOptions : BaseOptions
+    {
+        /// <summary>Assembled block config to validate.</summary>
+        public Dictionary<string, object> Config { get; set; } = default!;
+
+        /// <summary>How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.</summary>
+        public UpdateWorkflowBlockRequestConfigMode? ConfigMode { get; set; }
+
+        /// <summary>Workflow ID to disambiguate legacy duplicate block IDs. Omit for normal server-generated block IDs.</summary>
+        public string? WorkflowId { get; set; }
+
+    }
 }

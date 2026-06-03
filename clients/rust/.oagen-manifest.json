@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-02T19:57:49.117Z",
+  "generatedAt": "2026-06-03T13:55:51.703Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -89,6 +89,7 @@
     "src/enums/trigger_info_type.rs",
     "src/enums/update_experiment_request_n_consensus.rs",
     "src/enums/update_workflow_block_request_config_mode.rs",
+    "src/enums/validate_workflow_block_config_request_config_mode.rs",
     "src/enums/while_loop_termination_termination_reason.rs",
     "src/enums/workflow_artifact_operation.rs",
     "src/enums/workflow_artifacts_operation.rs",
@@ -109,6 +110,10 @@
     "src/enums/workflow_runs_order.rs",
     "src/enums/workflow_runs_status.rs",
     "src/enums/workflow_runs_trigger_type.rs",
+    "src/enums/workflow_table_aggregation_function.rs",
+    "src/enums/workflow_table_filter_operator.rs",
+    "src/enums/workflow_table_sort_direction.rs",
+    "src/enums/workflow_table_validation_severity.rs",
     "src/enums/workflow_test_result_verdict.rs",
     "src/enums/workflow_test_run_results_order.rs",
     "src/enums/workflow_test_runs_order.rs",
@@ -140,6 +145,8 @@
     "src/models/block_test_batch_execution_counts.rs",
     "src/models/block_test_lifecycle_counts.rs",
     "src/models/block_test_outcome_counts.rs",
+    "src/models/body_create_table_v_1_tables_post.rs",
+    "src/models/body_replace_table_v_1_tables_table_id_put.rs",
     "src/models/cancel_workflow_experiment_run_response.rs",
     "src/models/cancel_workflow_request.rs",
     "src/models/cancel_workflow_response.rs",
@@ -175,6 +182,7 @@
     "src/models/create_experiment_run_request.rs",
     "src/models/create_file_blueprint_request.rs",
     "src/models/create_review_version_request.rs",
+    "src/models/create_secret_request.rs",
     "src/models/create_upload_response.rs",
     "src/models/create_workflow_request.rs",
     "src/models/create_workflow_run_request.rs",
@@ -286,6 +294,7 @@
     "src/models/primitive_error.rs",
     "src/models/public_handle_payload.rs",
     "src/models/publish_workflow_request.rs",
+    "src/models/query_workflow_table_request.rs",
     "src/models/queued_step_lifecycle.rs",
     "src/models/queued_workflow_experiment_result.rs",
     "src/models/queued_workflow_experiment_run.rs",
@@ -319,6 +328,12 @@
     "src/models/running_workflow_experiment_run.rs",
     "src/models/running_workflow_test_run.rs",
     "src/models/schema_generation.rs",
+    "src/models/secret.rs",
+    "src/models/secret_list_response.rs",
+    "src/models/secret_response.rs",
+    "src/models/secret_value.rs",
+    "src/models/secret_value_response.rs",
+    "src/models/set_secret_request.rs",
     "src/models/similarity_gte_condition.rs",
     "src/models/skipped_block_execution_lifecycle.rs",
     "src/models/skipped_step_lifecycle.rs",
@@ -341,8 +356,11 @@
     "src/models/update_experiment_request.rs",
     "src/models/update_workflow_block_request.rs",
     "src/models/update_workflow_request.rs",
+    "src/models/update_workflow_table_request.rs",
     "src/models/update_workflow_test_request.rs",
     "src/models/upload_file_request.rs",
+    "src/models/validate_workflow_block_config_request.rs",
+    "src/models/validate_workflow_block_config_response.rs",
     "src/models/validation_error.rs",
     "src/models/verdict_summary.rs",
     "src/models/while_loop_termination.rs",
@@ -381,6 +399,27 @@
     "src/models/workflow_run_list.rs",
     "src/models/workflow_run_step.rs",
     "src/models/workflow_step_list.rs",
+    "src/models/workflow_table.rs",
+    "src/models/workflow_table_aggregation_request.rs",
+    "src/models/workflow_table_column.rs",
+    "src/models/workflow_table_distinct_request.rs",
+    "src/models/workflow_table_explain.rs",
+    "src/models/workflow_table_filter_rule.rs",
+    "src/models/workflow_table_list_response.rs",
+    "src/models/workflow_table_profile_column.rs",
+    "src/models/workflow_table_profile_response.rs",
+    "src/models/workflow_table_response.rs",
+    "src/models/workflow_table_row.rs",
+    "src/models/workflow_table_rows_response.rs",
+    "src/models/workflow_table_sample_request.rs",
+    "src/models/workflow_table_schema_response.rs",
+    "src/models/workflow_table_search_request.rs",
+    "src/models/workflow_table_sort_rule.rs",
+    "src/models/workflow_table_tail_request.rs",
+    "src/models/workflow_table_validation_column_rule.rs",
+    "src/models/workflow_table_validation_diagnostic.rs",
+    "src/models/workflow_table_validation_request.rs",
+    "src/models/workflow_table_validation_response.rs",
     "src/models/workflow_test.rs",
     "src/models/workflow_test_block_target.rs",
     "src/models/workflow_test_list.rs",
@@ -407,7 +446,9 @@
     "src/resources/parses.rs",
     "src/resources/partitions.rs",
     "src/resources/schemas.rs",
+    "src/resources/secrets.rs",
     "src/resources/splits.rs",
+    "src/resources/tables.rs",
     "src/resources/workflow_artifacts.rs",
     "src/resources/workflow_block_executions.rs",
     "src/resources/workflow_blocks.rs",
@@ -588,6 +629,30 @@
       "sdkMethod": "generate",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "list_secrets",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "create_secret",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "get_secret",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "update_secret",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "delete_secret",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}/value": {
+      "sdkMethod": "list_secret_value",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "list",
       "service": "splits"
@@ -607,6 +672,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "create_split_cancel",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "list",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "create",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "get",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "replace",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "update_table",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "delete",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "download",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "profile",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "query",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "schema",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "validate",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",
@@ -694,6 +803,10 @@
     },
     "DELETE /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "delete",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/{block_id}/validate-config": {
+      "sdkMethod": "create_block_validate_config",
       "service": "workflows.blocks"
     },
     "GET /v1/workflows/blocks/executions": {

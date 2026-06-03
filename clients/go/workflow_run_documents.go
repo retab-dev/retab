@@ -39,13 +39,13 @@ func (d WorkflowRunDocuments) Set(blockID string, document any) error {
 // SetDocument inserts one workflow start_document input into Create params.
 func (p *WorkflowRunsCreateParams) SetDocument(blockID string, document any) error {
 	if p.Documents == nil {
-		p.Documents = map[string]any{}
+		p.Documents = &map[string]interface{}{}
 	}
 	coerced, err := CoerceWorkflowRunDocument(document)
 	if err != nil {
 		return fmt.Errorf("retab: invalid documents[%q]: %w", blockID, err)
 	}
-	p.Documents[blockID] = coerced
+	(*p.Documents)[blockID] = coerced
 	return nil
 }
 
@@ -99,15 +99,25 @@ func (d WorkflowRunDocuments) MarshalJSON() ([]byte, error) {
 
 func (p WorkflowRunsCreateParams) MarshalJSON() ([]byte, error) {
 	type workflowRunsCreateRequest struct {
-		WorkflowID string               `json:"workflow_id"`
-		Documents  WorkflowRunDocuments `json:"documents,omitempty"`
-		JSONInputs map[string]any       `json:"json_inputs,omitempty"`
-		Version    *string              `json:"version,omitempty"`
+		WorkflowID string                `json:"workflow_id"`
+		Documents  *WorkflowRunDocuments `json:"documents,omitempty"`
+		JSONInputs *map[string]any       `json:"json_inputs,omitempty"`
+		Version    *string               `json:"version,omitempty"`
+	}
+	var documents *WorkflowRunDocuments
+	if p.Documents != nil {
+		value := WorkflowRunDocuments(*p.Documents)
+		documents = &value
+	}
+	var jsonInputs *map[string]any
+	if p.JSONInputs != nil {
+		value := *p.JSONInputs
+		jsonInputs = &value
 	}
 	return json.Marshal(workflowRunsCreateRequest{
 		WorkflowID: p.WorkflowID,
-		Documents:  WorkflowRunDocuments(p.Documents),
-		JSONInputs: p.JSONInputs,
+		Documents:  documents,
+		JSONInputs: jsonInputs,
 		Version:    p.Version,
 	})
 }

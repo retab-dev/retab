@@ -35,7 +35,9 @@ type Client struct {
 	Parses          *ParseService
 	Partitions      *PartitionService
 	Schemas         *SchemaService
+	Secrets         *SecretService
 	Splits          *SplitService
+	Tables          *TableService
 	Workflows       *WorkflowService
 }
 
@@ -132,7 +134,9 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	c.Parses = &ParseService{client: c}
 	c.Partitions = &PartitionService{client: c}
 	c.Schemas = &SchemaService{client: c}
+	c.Secrets = &SecretService{client: c}
 	c.Splits = &SplitService{client: c}
+	c.Tables = &TableService{client: c}
 	c.Workflows = &WorkflowService{client: c}
 	workflowArtifacts := &WorkflowArtifactService{client: c}
 	workflowBlocks := &WorkflowBlockService{client: c}

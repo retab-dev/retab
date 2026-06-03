@@ -1,0 +1,6 @@
+{
+  "severity": "error",
+  "column": "test_column",
+  "rule": "test_rule",
+  "message": "test_message"
+}

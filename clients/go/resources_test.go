@@ -63,7 +63,7 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 					ImageResolutionDpi: ptrTo(192),
 					NConsensus:         ptrTo(2),
 					Instructions:       ptrTo("read totals"),
-					Metadata:           map[string]string{"source": "test"},
+					Metadata:           ptrTo(map[string]string{"source": "test"}),
 					AdditionalMessages: []map[string]interface{}{{"role": "user", "content": "extra"}},
 					BustCache:          ptrTo(true),
 				})
