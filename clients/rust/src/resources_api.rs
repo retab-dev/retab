@@ -8,7 +8,9 @@ use crate::resources::FilesApi;
 use crate::resources::ParsesApi;
 use crate::resources::PartitionsApi;
 use crate::resources::SchemasApi;
+use crate::resources::SecretsApi;
 use crate::resources::SplitsApi;
+use crate::resources::TablesApi;
 use crate::resources::WorkflowsApi;
 
 impl Retab {
@@ -47,9 +49,19 @@ impl Retab {
         SchemasApi { client: self }
     }
 
+    /// Access the `secrets` resource.
+    pub fn secrets(&self) -> SecretsApi<'_> {
+        SecretsApi { client: self }
+    }
+
     /// Access the `splits` resource.
     pub fn splits(&self) -> SplitsApi<'_> {
         SplitsApi { client: self }
+    }
+
+    /// Access the `tables` resource.
+    pub fn tables(&self) -> TablesApi<'_> {
+        TablesApi { client: self }
     }
 
     /// Access the `workflows` resource.

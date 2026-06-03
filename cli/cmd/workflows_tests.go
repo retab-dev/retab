@@ -218,7 +218,7 @@ var workflowsTestsCreateCmd = &cobra.Command{
 You'll typically capture the three files from a successful past run:
 
   ` + "`--target-file`" + `     — which block to test (e.g.
-  ` + `{"type": "block", "block_id": "blk_extract_1"}` + `).
+  ` + `{"type": "block", "block_id": "block_extract_1"}` + `).
 
   ` + "`--source-file`" + `     — the input the target block will see.
   Two accepted shapes (discriminated by ` + "`type`" + `):
@@ -349,7 +349,7 @@ workflow id is required: tests have no org-wide listing.`,
   retab workflows tests list --workflow-id wf_abc123
 
   # Just the tests guarding one block
-  retab workflows tests list wf_abc123 --target-block-id blk_extract_1`,
+  retab workflows tests list wf_abc123 --target-block-id block_extract_1`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Workflow id positionally OR via --workflow-id (co-equal forms);

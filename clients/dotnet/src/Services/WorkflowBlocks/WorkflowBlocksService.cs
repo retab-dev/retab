@@ -241,5 +241,45 @@ namespace Retab
         {
             return this.DeleteAsync(blockId, options, requestOptions, cancellationToken);
         }
+
+        /// <summary>Validate Block Config Dry Run</summary>
+        /// <remarks>
+        /// Validate an assembled block config without mutating the workflow draft.
+        /// </remarks>
+        /// <param name="blockId">The block id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="ValidateWorkflowBlockConfigResponse"/> result.</returns>
+        public virtual async Task<ValidateWorkflowBlockConfigResponse> CreateBlockValidateConfigAsync(string blockId, WorkflowBlocksCreateBlockValidateConfigOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            var request = new RetabRequest
+            {
+                Method = HttpMethod.Post,
+                Path = $"/v1/workflows/blocks/{Uri.EscapeDataString(blockId)}/validate-config",
+                RequestOptions = requestOptions,
+            };
+
+            if (options.WorkflowId != null)
+            {
+                request.AddQueryParam("workflow_id", options.WorkflowId);
+            }
+            if (options.Config != null)
+            {
+                request.AddBodyParam("config", options.Config);
+            }
+            if (options.ConfigMode != null)
+            {
+                request.AddBodyParam("config_mode", JsonConvert.SerializeObject(options.ConfigMode).Trim('"'));
+            }
+
+            return await this.Client.MakeAPIRequest<ValidateWorkflowBlockConfigResponse>(request, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateBlockValidateConfigAsync"/>.</summary>
+        public virtual Task<ValidateWorkflowBlockConfigResponse> CreateBlockValidateConfig(string blockId, WorkflowBlocksCreateBlockValidateConfigOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateBlockValidateConfigAsync(blockId, options, requestOptions, cancellationToken);
+        }
     }
 }

@@ -25,7 +25,7 @@ The workhorse here is ` + "`update`" + `. Once a block is on the graph,
 swap its full config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
 (REPLACE) or patch a slice with ` + "`--merge-config-file ./patch.json`" + `
 (deep merge, RFC 7396) rather than deleting and re-creating. Use review config
-inside supported block configs instead of adding a separate review block.`,
+inside supported block configs.`,
 	Example: `  # List blocks
   retab workflows blocks list wf_abc123
 
@@ -33,7 +33,7 @@ inside supported block configs instead of adding a separate review block.`,
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
   # Tune just the config of an existing block
-  retab workflows blocks update blk_def456 \
+  retab workflows blocks update block_def456 \
     --config-file ./new-config.json`,
 }
 
@@ -64,21 +64,21 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 		req.ParentID = ptr(v)
 	}
 	if v, ok := obj["config"].(map[string]any); ok {
-		req.Config = v
+		req.Config = &v
 	}
 	if err := rejectLegacyReviewConfig(req.Config); err != nil {
 		return req, err
 	}
 	// id is optional: when omitted the server generates an opaque
-	// `blk_<nanoid>` via default_factory. Client-side requiring a user-chosen
+	// `block_<nanoid>` via default_factory. Client-side requiring a user-chosen
 	// id forced collisions because block ids are org-globally unique, and the
 	// server's own 409 message points users at server-generated ids — which
 	// this client used to make unreachable.
 	if req.Type == "" {
 		return req, fmt.Errorf("block type is required")
 	}
-	if req.Type == "review" || req.Type == "hil" {
-		return req, fmt.Errorf("standalone review blocks are no longer supported; add config.review to a reviewable block instead")
+	if req.Type == "hil" {
+		return req, fmt.Errorf("legacy hil blocks are no longer supported; add config.review to a reviewable block instead")
 	}
 	return req, nil
 }
@@ -90,11 +90,11 @@ func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.W
 	return parseBlockCreate(obj)
 }
 
-func rejectLegacyReviewConfig(config map[string]any) error {
+func rejectLegacyReviewConfig(config *map[string]any) error {
 	if config == nil {
 		return nil
 	}
-	if _, ok := config["hil"]; ok {
+	if _, ok := (*config)["hil"]; ok {
 		return fmt.Errorf("legacy config.hil is no longer supported; use config.review instead")
 	}
 	return nil
@@ -194,16 +194,16 @@ dev / staging data where custom block ids (` + "`block_split`" + `,
 409 response on a duplicate lists the colliding workflow_ids so you know
 what to pass.`,
 	Example: `  # Inspect a block
-  retab workflows blocks get blk_def456
+  retab workflows blocks get block_def456
 
   # Two-positional convenience form (same effect as --workflow-id)
-  retab workflows blocks get wf_abc123 blk_def456
+  retab workflows blocks get wf_abc123 block_def456
 
   # Disambiguate a legacy duplicate id
   retab workflows blocks get block_split --workflow-id wf_abc123
 
   # Save a block's config for offline editing
-  retab workflows blocks get blk_def456 \
+  retab workflows blocks get block_def456 \
     | jq '.config' > cfg.json`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -277,7 +277,7 @@ JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required)
 Block IDs are unique per ORGANIZATION, not per workflow. Reusing a
 human-friendly id like ` + "`block_extract`" + ` across two workflows in
 the same org will fail with 409. Prefer the server-generated
-` + "`blk_<nanoid>`" + ` form (omit ` + "`id`" + ` to get one) unless you
+` + "`block_<nanoid>`" + ` form (omit ` + "`id`" + ` to get one) unless you
 have a reason to pin a stable name.
 
 Review is configured inside the block's typed config as
@@ -298,7 +298,7 @@ Review is not a standalone block type.`,
 
   # Minimal extract block with review (replace the id with one unique
   # to your organization, or drop the field entirely to let the server
-  # generate an opaque blk_<nanoid>)
+  # generate an opaque block_<nanoid>)
   cat > extract-review.json <<'JSON'
   {
     "id": "your-extract-block-id",
@@ -388,19 +388,19 @@ Block IDs are unique per organization, so the canonical form is
 through to the same ` + "`--workflow-id`" + ` disambiguator used for legacy
 duplicate block ids.`,
 	Example: `  # Swap the config blob
-  retab workflows blocks update blk_def456 \
+  retab workflows blocks update block_def456 \
     --config-file ./new-config.json
 
   # Two-positional convenience form (same effect as --workflow-id)
-  retab workflows blocks update wf_abc123 blk_def456 \
+  retab workflows blocks update wf_abc123 block_def456 \
     --config-file ./new-config.json
 
   # Add review to an existing block
   printf '{"review":{"predicate":{"kind":"always"}}}' |
-    retab workflows blocks update blk_def456 --merge-config-file -
+    retab workflows blocks update block_def456 --merge-config-file -
 
   # Rename a block's label
-  retab workflows blocks update blk_def456 \
+  retab workflows blocks update block_def456 \
     --label "Extract line items"`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -451,10 +451,10 @@ duplicate block ids.`,
 			if err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
-			if err := rejectLegacyReviewConfig(cfg); err != nil {
+			if err := rejectLegacyReviewConfig(&cfg); err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
-			req.Config = cfg
+			req.Config = &cfg
 			// Tell the server this is a full replacement, not a merge.
 			// Without this, the route keeps any existing keys that aren't
 			// in cfg (e.g. ``review``), which silently defeats
@@ -472,7 +472,7 @@ duplicate block ids.`,
 			if err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
-			if err := rejectLegacyReviewConfig(patch); err != nil {
+			if err := rejectLegacyReviewConfig(&patch); err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
 			// Empty patches must be rejected client-side. Go's
@@ -492,7 +492,7 @@ duplicate block ids.`,
 			// its own null-as-delete pass to stay consistent and (b)
 			// double-merge against pre-config_mode servers in subtle ways
 			// — easier to make the server authoritative.
-			req.Config = patch
+			req.Config = &patch
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
 		req.WorkflowID = workflowID
@@ -522,13 +522,13 @@ Block IDs are unique per organization, so the canonical form is
 through to the same ` + "`--workflow-id`" + ` disambiguator used for legacy
 duplicate block ids.`,
 	Example: `  # Remove a block (interactive, asks to confirm)
-  retab workflows blocks delete blk_def456
+  retab workflows blocks delete block_def456
 
   # Two-positional convenience form (same effect as --workflow-id)
-  retab workflows blocks delete wf_abc123 blk_def456
+  retab workflows blocks delete wf_abc123 block_def456
 
   # Skip the prompt in scripts
-  retab workflows blocks delete blk_def456 --yes`,
+  retab workflows blocks delete block_def456 --yes`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)

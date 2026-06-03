@@ -1,0 +1,12 @@
+{
+  "table_id": "table_id_01234",
+  "diagnostics": [
+    {
+      "severity": "error",
+      "column": "test_column",
+      "rule": "test_rule",
+      "message": "test_message"
+    }
+  ],
+  "has_errors": true
+}

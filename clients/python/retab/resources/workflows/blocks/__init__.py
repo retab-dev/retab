@@ -10,6 +10,9 @@ from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.workflows.blocks import (
     UpdateWorkflowBlockRequest,
     UpdateWorkflowBlockRequestConfigMode,
+    ValidateWorkflowBlockConfigRequest,
+    ValidateWorkflowBlockConfigRequestConfigMode,
+    ValidateWorkflowBlockConfigResponse,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockCreateRequestType,
@@ -171,6 +174,25 @@ class WorkflowBlocksMixin:
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/workflows/blocks/{block_id}", params=params or None, data=data)
 
+    def prepare_create_block_validate_config(
+        self,
+        block_id: str,
+        config: dict[str, Any],
+        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
+        workflow_id: str | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
+        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        params: dict[str, Any] = {
+            "workflow_id": workflow_id,
+        }
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = ValidateWorkflowBlockConfigRequest(config=cast(Any, config), config_mode=cast(Any, config_mode))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url=f"/v1/workflows/blocks/{block_id}/validate-config", params=params or None, data=data)
+
 
 class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
     """WorkflowBlocks API wrapper."""
@@ -283,6 +305,19 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         self._client._prepared_request(prepared_request)
         return None
 
+    def create_block_validate_config(
+        self,
+        block_id: str,
+        config: dict[str, Any],
+        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
+        workflow_id: str | None = None,
+        **extra_params: Any,
+    ) -> ValidateWorkflowBlockConfigResponse:
+        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return ValidateWorkflowBlockConfigResponse.model_validate(response)
+
 
 class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
     """Async WorkflowBlocks API wrapper."""
@@ -394,6 +429,19 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         prepared_request = self.prepare_delete(block_id, workflow_id=workflow_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
+    async def create_block_validate_config(
+        self,
+        block_id: str,
+        config: dict[str, Any],
+        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
+        workflow_id: str | None = None,
+        **extra_params: Any,
+    ) -> ValidateWorkflowBlockConfigResponse:
+        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return ValidateWorkflowBlockConfigResponse.model_validate(response)
 
 
 from .executions import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)

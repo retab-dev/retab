@@ -49,9 +49,9 @@ type WorkflowRunsCreateParams struct {
 	// WorkflowID is workflow id for the fresh run.
 	WorkflowID string `json:"workflow_id" url:"-"`
 	// Documents is mapping of start_document block IDs to their input documents.
-	Documents map[string]interface{} `json:"documents,omitempty" url:"-"`
+	Documents *map[string]interface{} `json:"documents,omitempty" url:"-"`
 	// JSONInputs is mapping of start-json block IDs to their input JSON data.
-	JSONInputs map[string]interface{} `json:"json_inputs,omitempty" url:"-"`
+	JSONInputs *map[string]interface{} `json:"json_inputs,omitempty" url:"-"`
 	// Version is workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
 	Version *string `json:"version,omitempty" url:"-"`
 }

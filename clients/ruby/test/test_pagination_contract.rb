@@ -174,9 +174,9 @@ class PaginationContractTest < Minitest::Test
   ].freeze
 
   # Resources that legitimately bypass the central `request_page` helper.
-  # Empty today — Ruby's response envelope is uniform across every route.
+  # `tables` returns a non-cursor list envelope: { tables: [...] }.
   # If you add an entry here, document the reason and update the blueprint.
-  KNOWN_BYPASS = [].freeze
+  KNOWN_BYPASS = ["tables"].freeze
 
   def setup
     @client = Retab::Client.new(api_key: "sk_test_123")

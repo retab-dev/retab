@@ -35,6 +35,8 @@ const REGISTERED_LIST_MODULES: &[&str] = &[
     "workflows.rs",
 ];
 
+const NON_CURSOR_LIST_MODULES: &[&str] = &["tables.rs"];
+
 async fn start_two_page_server() -> (String, Arc<Mutex<Vec<String>>>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -358,6 +360,7 @@ fn registry_covers_every_resource_list_method() -> io::Result<()> {
         .join("src")
         .join("resources");
     let registered: BTreeSet<&str> = REGISTERED_LIST_MODULES.iter().copied().collect();
+    let non_cursor: BTreeSet<&str> = NON_CURSOR_LIST_MODULES.iter().copied().collect();
     let mut discovered = BTreeSet::new();
 
     for entry in fs::read_dir(resources_dir)? {
@@ -370,7 +373,7 @@ fn registry_covers_every_resource_list_method() -> io::Result<()> {
             continue;
         };
         let contents = fs::read_to_string(&path)?;
-        if contents.contains("pub async fn list(") {
+        if contents.contains("pub async fn list(") && !non_cursor.contains(file_name) {
             discovered.insert(file_name.to_string());
         }
     }

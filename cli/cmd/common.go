@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -529,6 +531,163 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 	return doCLIJSONRequest(ctx, httpClient, baseURL, method, requestPath, query, body, apiKey, bearerToken, result)
 }
 
+func cliRawRequestBytes(
+	cmd *cobra.Command,
+	method string,
+	requestPath string,
+	query url.Values,
+	body any,
+	accept string,
+) ([]byte, error) {
+	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+
+	apiKey := flagKey
+	baseURL := flagBaseURL
+	if apiKey == "" {
+		apiKey = os.Getenv("RETAB_API_KEY")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_API_BASE_URL")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_BASE_URL")
+	}
+	if err := validateBaseURL(baseURL); err != nil {
+		return nil, err
+	}
+
+	cfg, _ := loadConfig()
+	if baseURL == "" {
+		baseURL = cfg.BaseURL
+	}
+	if baseURL == "" {
+		baseURL = defaultAPIBaseURL
+	}
+	baseURL = stripLegacyV1Suffix(baseURL)
+
+	httpClient := http.DefaultClient
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		httpClient = &http.Client{
+			Timeout:   60 * time.Second,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+
+	var bearerToken string
+	if apiKey == "" {
+		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
+			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
+			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+			if err != nil {
+				return nil, err
+			}
+			bearerToken = token
+		} else if cfg.APIKey != "" {
+			apiKey = cfg.APIKey
+		}
+	}
+	if apiKey == "" && bearerToken == "" {
+		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	}
+
+	return doCLIRawRequest(ctx, httpClient, baseURL, method, requestPath, query, body, accept, apiKey, bearerToken)
+}
+
+func cliMultipartRequestInto(
+	cmd *cobra.Command,
+	method string,
+	requestPath string,
+	query url.Values,
+	fields map[string]string,
+	fileField string,
+	filePath string,
+	result any,
+) error {
+	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+
+	apiKey := flagKey
+	baseURL := flagBaseURL
+	if apiKey == "" {
+		apiKey = os.Getenv("RETAB_API_KEY")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_API_BASE_URL")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_BASE_URL")
+	}
+	if err := validateBaseURL(baseURL); err != nil {
+		return err
+	}
+
+	cfg, _ := loadConfig()
+	if baseURL == "" {
+		baseURL = cfg.BaseURL
+	}
+	if baseURL == "" {
+		baseURL = defaultAPIBaseURL
+	}
+	baseURL = stripLegacyV1Suffix(baseURL)
+
+	httpClient := http.DefaultClient
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		httpClient = &http.Client{
+			Timeout:   60 * time.Second,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+
+	var bearerToken string
+	if apiKey == "" {
+		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
+			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
+			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+			if err != nil {
+				return err
+			}
+			bearerToken = token
+		} else if cfg.APIKey != "" {
+			apiKey = cfg.APIKey
+		}
+	}
+	if apiKey == "" && bearerToken == "" {
+		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	}
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	for key, value := range fields {
+		if err := writer.WriteField(key, value); err != nil {
+			return fmt.Errorf("write multipart field %s: %w", key, err)
+		}
+	}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	part, err := writer.CreateFormFile(fileField, filepath.Base(filePath))
+	if err != nil {
+		return fmt.Errorf("create multipart file field %s: %w", fileField, err)
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		return fmt.Errorf("read %s: %w", filePath, err)
+	}
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("finalize multipart body: %w", err)
+	}
+
+	return doCLIBodyRequest(ctx, httpClient, baseURL, method, requestPath, query, &body, writer.FormDataContentType(), apiKey, bearerToken, result)
+}
+
 func doCLIJSONRequest(
 	ctx context.Context,
 	httpClient *http.Client,
@@ -552,7 +711,90 @@ func doCLIJSONRequest(
 		}
 		reader = bytes.NewReader(bodyBytes)
 	}
+	contentType := ""
+	if body != nil {
+		contentType = "application/json"
+	}
 
+	return doCLIBodyRequest(ctx, httpClient, baseURL, method, requestPath, query, reader, contentType, apiKey, bearerToken, result)
+}
+
+func doCLIRawRequest(
+	ctx context.Context,
+	httpClient *http.Client,
+	baseURL string,
+	method string,
+	requestPath string,
+	query url.Values,
+	body any,
+	accept string,
+	apiKey string,
+	bearerToken string,
+) ([]byte, error) {
+	if body == nil && method != http.MethodGet {
+		body = map[string]any{}
+	}
+	var reader io.Reader
+	contentType := ""
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("encode request body: %w", err)
+		}
+		reader = bytes.NewReader(bodyBytes)
+		contentType = "application/json"
+	}
+	requestURL, err := buildCLIRequestURL(baseURL, requestPath, query)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, requestURL.String(), reader)
+	if err != nil {
+		return nil, err
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	if accept == "" {
+		accept = "*/*"
+	}
+	req.Header.Set("Accept", accept)
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	} else {
+		req.Header.Set("Api-Key", apiKey)
+	}
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, retab.ParseAPIError(resp, respBody)
+	}
+	return respBody, nil
+}
+
+func doCLIBodyRequest(
+	ctx context.Context,
+	httpClient *http.Client,
+	baseURL string,
+	method string,
+	requestPath string,
+	query url.Values,
+	reader io.Reader,
+	contentType string,
+	apiKey string,
+	bearerToken string,
+	result any,
+) error {
 	requestURL, err := buildCLIRequestURL(baseURL, requestPath, query)
 	if err != nil {
 		return err
@@ -562,8 +804,8 @@ func doCLIJSONRequest(
 	if err != nil {
 		return err
 	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 	if bearerToken != "" {

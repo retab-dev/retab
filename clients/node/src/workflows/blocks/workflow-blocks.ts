@@ -4,6 +4,9 @@ import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
 import type {
   UpdateWorkflowBlockRequestConfigMode,
+  ValidateWorkflowBlockConfigRequestConfigMode,
+  ValidateWorkflowBlockConfigResponse,
+  ValidateWorkflowBlockConfigResponseResponse,
   WorkflowBlock,
   WorkflowBlockCreateRequestType,
   WorkflowBlockResponse,
@@ -13,6 +16,7 @@ import type {
   WorkflowBlockVersionResponse,
 } from '../../workflows/blocks/interfaces/index.js';
 import {
+  deserializeValidateWorkflowBlockConfigResponse,
   deserializeWorkflowBlock,
   deserializeWorkflowBlockVersion,
   deserializeWorkflowBlockVersionDiff,
@@ -204,5 +208,25 @@ export class WorkflowBlocks {
       query: { workflow_id: options?.workflowId },
       body: undefined,
     });
+  }
+
+  /** Validate Block Config Dry Run */
+  async create_block_validate_config(
+    blockId: string,
+    config: Record<string, unknown>,
+    configMode?: ValidateWorkflowBlockConfigRequestConfigMode | null,
+    options?: { workflowId?: string | null | undefined }
+  ): Promise<ValidateWorkflowBlockConfigResponse> {
+    const body = {
+      config: config,
+      config_mode: configMode,
+    };
+    const __wire = await this.client.request<ValidateWorkflowBlockConfigResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/blocks/${blockId}/validate-config`,
+      query: { workflow_id: options?.workflowId },
+      body: body,
+    });
+    return deserializeValidateWorkflowBlockConfigResponse(__wire);
   }
 }

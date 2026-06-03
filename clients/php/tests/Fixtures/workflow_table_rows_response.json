@@ -1,0 +1,73 @@
+{
+  "table_id": "table_id_01234",
+  "columns": [
+    {
+      "name": "Test",
+      "json_schema": {
+        "key": {}
+      },
+      "sample_values": [
+        "test_sample_values"
+      ],
+      "required": true,
+      "unique": true
+    }
+  ],
+  "rows": [
+    {
+      "id": "01234",
+      "data": {
+        "key": {}
+      },
+      "position": 1
+    }
+  ],
+  "row_count": 1,
+  "filtered_row_count": 1,
+  "offset": 1,
+  "limit": 1,
+  "has_more": true,
+  "next_cursor": "test_next_cursor",
+  "previous_cursor": "test_previous_cursor",
+  "explain": {
+    "table_id": "table_id_01234",
+    "snapshot_file_id": "snapshot_file_id_01234",
+    "selected_columns": [
+      "test_selected_columns"
+    ],
+    "filters": [
+      {
+        "column": "test_column",
+        "operator": "eq",
+        "value": {}
+      }
+    ],
+    "search": {
+      "query": "test_query",
+      "columns": [
+        "test_columns"
+      ]
+    },
+    "sort": [
+      {
+        "column": "test_column",
+        "direction": "asc"
+      }
+    ],
+    "offset": 1,
+    "limit": 1,
+    "distinct": {
+      "column": "test_column"
+    },
+    "group_by": [
+      "test_group_by"
+    ],
+    "aggregations": [
+      {
+        "function": "count",
+        "column": "test_column",
+        "alias": "test_alias"
+      }
+    ]
+  }
+}

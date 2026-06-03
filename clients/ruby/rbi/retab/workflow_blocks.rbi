@@ -111,5 +111,16 @@ module Retab
     end
     def delete(block_id:, workflow_id:, request_options:); end
 
+    sig do
+      params(
+        block_id: String,
+        config: T::Hash[String, T.untyped],
+        config_mode: T.nilable(String),
+        workflow_id: T.nilable(String),
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::ValidateWorkflowBlockConfigResponse)
+    end
+    def create_block_validate_config(block_id:, config:, config_mode:, workflow_id:, request_options:); end
+
   end
 end

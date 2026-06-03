@@ -13,7 +13,6 @@ export type WorkflowRunStepBlockType =
   | 'classifier'
   | 'conditional'
   | 'api_call'
-  | 'review'
   | 'function'
   | 'while_loop'
   | 'for_each'
@@ -34,7 +33,6 @@ export const ZWorkflowRunStepBlockType = z.enum([
   'classifier',
   'conditional',
   'api_call',
-  'review',
   'function',
   'while_loop',
   'for_each',

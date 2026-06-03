@@ -903,10 +903,10 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 				for key, value := range sourceRun.Inputs.Documents {
 					documents[key] = value
 				}
-				params.Documents = documents
+				params.Documents = &documents
 			}
 			if sourceRun.Inputs.JSONData != nil {
-				params.JSONInputs = sourceRun.Inputs.JSONData
+				params.JSONInputs = &sourceRun.Inputs.JSONData
 			}
 		}
 		result, err := client.Workflows.Runs.Create(ctx, params)
@@ -933,17 +933,17 @@ portable shape. ` + "`--quote`" + ` and ` + "`--line-delimiter`" + ` are
 also configurable.`,
 	Example: `  # Export every successful run of a block to CSV
   retab workflows runs export wf_abc123 \
-    --block-id blk_extract_1 \
+    --block-id block_extract_1 \
     --status completed \
     --from-date 2026-05-01
 
   # Pandas-friendly CSV (RFC-4180 delimiter)
   retab workflows runs export wf_abc123 \
-    --block-id blk_extract_1 --delimiter ,
+    --block-id block_extract_1 --delimiter ,
 
   # Export a specific set of runs with custom columns
   retab workflows runs export wf_abc123 \
-    --block-id blk_extract_1 \
+    --block-id block_extract_1 \
     --run-id run_xyz789 --run-id run_aaa000 \
     --preferred-column invoice_id --preferred-column total`,
 	Args: cobra.MaximumNArgs(1),

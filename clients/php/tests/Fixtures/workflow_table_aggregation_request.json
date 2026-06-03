@@ -1,0 +1,5 @@
+{
+  "function": "count",
+  "column": "test_column",
+  "alias": "test_alias"
+}

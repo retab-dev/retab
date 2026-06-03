@@ -11,7 +11,9 @@ import com.retab.files.FilesApi;
 import com.retab.parses.ParsesApi;
 import com.retab.partitions.PartitionsApi;
 import com.retab.schemas.SchemasApi;
+import com.retab.secrets.SecretsApi;
 import com.retab.splits.SplitsApi;
+import com.retab.tables.TablesApi;
 import com.retab.workflows.WorkflowsApi;
 import java.net.http.HttpClient;
 
@@ -29,7 +31,9 @@ public final class RetabClient {
   private final ParsesApi parses;
   private final PartitionsApi partitions;
   private final SchemasApi schemas;
+  private final SecretsApi secrets;
   private final SplitsApi splits;
+  private final TablesApi tables;
   private final WorkflowsApi workflows;
 
   public RetabClient(String apiKey) {
@@ -53,7 +57,9 @@ public final class RetabClient {
     this.parses = new ParsesApi(this);
     this.partitions = new PartitionsApi(this);
     this.schemas = new SchemasApi(this);
+    this.secrets = new SecretsApi(this);
     this.splits = new SplitsApi(this);
+    this.tables = new TablesApi(this);
     this.workflows = new WorkflowsApi(this);
   }
 
@@ -101,8 +107,16 @@ public final class RetabClient {
     return schemas;
   }
 
+  public SecretsApi secrets() {
+    return secrets;
+  }
+
   public SplitsApi splits() {
     return splits;
+  }
+
+  public TablesApi tables() {
+    return tables;
   }
 
   public WorkflowsApi workflows() {

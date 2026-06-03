@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\ValidateWorkflowBlockConfigResponse;
 use Retab\Resource\WorkflowBlock;
 use Retab\Resource\WorkflowBlockVersion;
 use Retab\Resource\WorkflowBlockVersionDiff;
@@ -311,5 +312,40 @@ class WorkflowBlocks
             query: $query,
             options: $options,
         );
+    }
+
+    /**
+     * Validate Block Config Dry Run
+     *
+     * Validate an assembled block config without mutating the workflow draft.
+     * @param string $blockId
+     * @param array<string, mixed> $config Assembled block config to validate.
+     * @param \Retab\Resource\UpdateWorkflowBlockRequestConfigMode|null $configMode How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.
+     * @param string|null $workflowId Workflow ID to disambiguate legacy duplicate block IDs. Omit for normal server-generated block IDs.
+     * @return \Retab\Resource\ValidateWorkflowBlockConfigResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createBlockValidateConfig(
+        string $blockId,
+        array $config,
+        ?\Retab\Resource\UpdateWorkflowBlockRequestConfigMode $configMode = null,
+        ?string $workflowId = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\ValidateWorkflowBlockConfigResponse {
+        $body = array_filter([
+            'config' => $config,
+            'config_mode' => $configMode?->value,
+        ], fn($v) => $v !== null);
+        $query = array_filter([
+            'workflow_id' => $workflowId,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/workflows/blocks/' . rawurlencode($blockId) . '/validate-config',
+            body: $body,
+            query: $query,
+            options: $options,
+        );
+        return ValidateWorkflowBlockConfigResponse::fromArray($response);
     }
 }

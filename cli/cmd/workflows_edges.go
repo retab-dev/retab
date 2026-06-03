@@ -40,7 +40,7 @@ dynamic ports.`,
 
   # Wire two blocks; "start" resolves to the workflow's single start_document block
   retab workflows edges create wf_abc123 \
-    --source-block start --target-block blk_extract_1`,
+    --source-block start --target-block block_extract_1`,
 }
 
 func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgesCreateParams {
@@ -212,7 +212,7 @@ Paginate by passing the cursor from a previous response's
   retab workflows edges list --workflow-id wf_abc123
 
   # Just the edges that fan out of one block
-  retab workflows edges list wf_abc123 --source-block blk_def456
+  retab workflows edges list wf_abc123 --source-block block_def456
 
   # First page of 50
   retab workflows edges list wf_abc123 --limit 50
@@ -328,17 +328,17 @@ you may pass the friendly input name from the block config, such as
     --source-block start \
     --source-handle output-file-0 \
     --target-handle document \
-    --target-block blk_extract_1
+    --target-block block_extract_1
 
   # Connect extractor output to a classifier
   retab workflows edges create wf_abc123 \
-    --source-block blk_extract_1 \
-    --target-block blk_classify_1
+    --source-block block_extract_1 \
+    --target-block block_classify_1
 
   # Connect a conditional branch whose handle_key is "needs-review"
   retab workflows edges create wf_abc123 \
-    --source-block blk_cond_1 --source-handle output-json-needs-review \
-    --target-block blk_extract_2`,
+    --source-block block_cond_1 --source-handle output-json-needs-review \
+    --target-block block_extract_2`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)

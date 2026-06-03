@@ -1,0 +1,11 @@
+{
+  "name": "Test",
+  "json_schema": {
+    "key": {}
+  },
+  "sample_values": [
+    "test_sample_values"
+  ],
+  "required": true,
+  "unique": true
+}
