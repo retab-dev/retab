@@ -51,15 +51,15 @@ type ExtractionsCreateParams struct {
 	// NConsensus is number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
 	NConsensus *int `json:"n_consensus,omitempty" url:"-"`
 	// Metadata is user-defined metadata to associate with this extraction
-	Metadata map[string]string `json:"metadata,omitempty" url:"-"`
+	Metadata *map[string]string `json:"metadata,omitempty" url:"-"`
 	// AdditionalMessages is additional chat messages forwarded to the extraction model.
 	AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
 	Stream    *bool `json:"stream,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-	Background   *bool             `json:"background,omitempty" url:"-"`
-	ChunkingKeys map[string]string `json:"chunking_keys,omitempty" url:"-"`
+	Background   *bool              `json:"background,omitempty" url:"-"`
+	ChunkingKeys *map[string]string `json:"chunking_keys,omitempty" url:"-"`
 }
 
 // Create extraction
@@ -88,12 +88,12 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
 		Instructions       *string                  `json:"instructions,omitempty"`
 		NConsensus         *int                     `json:"n_consensus,omitempty"`
-		Metadata           map[string]string        `json:"metadata,omitempty"`
+		Metadata           *map[string]string       `json:"metadata,omitempty"`
 		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
 		BustCache          *bool                    `json:"bust_cache,omitempty"`
 		Stream             *bool                    `json:"stream,omitempty"`
 		Background         *bool                    `json:"background,omitempty"`
-		ChunkingKeys       map[string]string        `json:"chunking_keys,omitempty"`
+		ChunkingKeys       *map[string]string       `json:"chunking_keys,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")

@@ -8,7 +8,9 @@ import { Files } from './files/files.js';
 import { Parses } from './parses/parses.js';
 import { Partitions } from './partitions/partitions.js';
 import { Schemas } from './schemas/schemas.js';
+import { Secrets } from './secrets/secrets.js';
 import { Splits } from './splits/splits.js';
+import { Tables } from './tables/tables.js';
 import { Workflows } from './workflows/workflows.js';
 
 /**
@@ -25,7 +27,9 @@ export class Retab extends RetabBase {
   readonly parses: Parses;
   readonly partitions: Partitions;
   readonly schemas: Schemas;
+  readonly secrets: Secrets;
   readonly splits: Splits;
+  readonly tables: Tables;
   readonly workflows: Workflows;
 
   constructor(options: RetabOptions) {
@@ -37,7 +41,9 @@ export class Retab extends RetabBase {
     this.parses = new Parses(this);
     this.partitions = new Partitions(this);
     this.schemas = new Schemas(this);
+    this.secrets = new Secrets(this);
     this.splits = new Splits(this);
+    this.tables = new Tables(this);
     this.workflows = new Workflows(this);
   }
 }

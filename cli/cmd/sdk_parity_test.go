@@ -50,11 +50,36 @@ var sdkResourceCommandAliases = map[string]string{
 	"WorkflowTests":           "workflows tests",
 }
 
+var sdkOperationCommandAliases = map[string]string{
+	// Secrets use one CLI-safe command that reads values from prompt/stdin/file
+	// instead of exposing raw secret values as shell-history-friendly flags.
+	"secrets.Create": "secrets set",
+	"secrets.Update": "secrets set",
+	// The table PATCH route currently edits table metadata/name only. The
+	// public CLI intentionally exposes CSV lifecycle commands, not metadata-only
+	// table mutation, so `retab tables update` remains absent.
+	"tables.Update": "",
+	// Server-side block config dry-run validation is exposed as the remote mode
+	// of the local bundle validator rather than the generated block-validate-config
+	// name.
+	"workflows.blocks.CreateBlockValidateConfig": "workflows blocks validate-config",
+}
+
 var workflowCLIOnlyCommands = map[string]string{
-	"workflows reviews schema":        "local schema helper composed from reviews get",
-	"workflows runs restart":          "local restart alias composed from runs create",
-	"workflows experiments runs wait": "local poll loop composed from experiments runs get",
-	"workflows view":                  "terminal graph renderer composed from workflow graph reads",
+	"workflows blocks pull-config":       "local block-config bundle export composed from workflows blocks get",
+	"workflows blocks push-config":       "local block-config bundle import composed from workflows blocks get/update",
+	"workflows blocks diff-config":       "local block-config bundle diff composed from workflows blocks get",
+	"workflows blocks validate-config":   "local block-config bundle validation with backend dry-run",
+	"workflows blocks doctor-config":     "local block-config bundle diagnostics",
+	"workflows blocks api-calls hydrate": "local api_call runtime scaffolding for pulled api_call bundles",
+	"workflows blocks api-calls render":  "local api_call request rendering for pulled api_call bundles",
+	"workflows blocks api-calls run":     "local api_call dry-run renderer and opt-in executor",
+	"workflows blocks functions hydrate": "local function runtime scaffolding for pulled function bundles",
+	"workflows blocks functions run":     "local function runner for hydrated function bundles",
+	"workflows reviews schema":           "local schema helper composed from reviews get",
+	"workflows runs restart":             "local restart alias composed from runs create",
+	"workflows experiments runs wait":    "local poll loop composed from experiments runs get",
+	"workflows view":                     "terminal graph renderer composed from workflow graph reads",
 }
 
 func TestCLIExposesGoSDKOperationSurface(t *testing.T) {
@@ -153,13 +178,25 @@ func collectSDKServiceOperations(serviceType reflect.Type, resourcePath []string
 		if !method.IsExported() || strings.HasPrefix(method.Name, "Prepare") {
 			continue
 		}
+		resourceKey := strings.Join(resourcePath, ".")
+		if alias, ok := sdkOperationCommandAliases[resourceKey+"."+method.Name]; ok {
+			if alias == "" {
+				continue
+			}
+			operations = append(operations, sdkOperation{
+				resourcePath: resourceKey,
+				methodName:   method.Name,
+				commandPath:  alias,
+			})
+			continue
+		}
 		commandName, include := sdkMethodCommandName(method.Name)
 		if !include {
 			continue
 		}
 		commandPath := append(append([]string{}, resourcePath...), commandName)
 		operations = append(operations, sdkOperation{
-			resourcePath: strings.Join(resourcePath, "."),
+			resourcePath: resourceKey,
 			methodName:   method.Name,
 			commandPath:  strings.Join(commandPath, " "),
 		})

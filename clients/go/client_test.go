@@ -194,6 +194,138 @@ func TestHandlePayloadDoesNotExposeRemovedTextField(t *testing.T) {
 	}
 }
 
+func TestWorkflowBlocksUpdateSendsExplicitEmptyConfig(t *testing.T) {
+	var updateBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/blocks/block_123" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&updateBody); err != nil {
+			t.Fatal(err)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          "block_123",
+			"workflow_id": "wf_123",
+			"type":        "function",
+			"config":      map[string]any{},
+			"updated_at":  "2026-06-03T00:00:00Z",
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode := UpdateWorkflowBlockRequestConfigModeReplace
+	_, err = client.Workflows.Blocks.Update(context.Background(), "block_123", &WorkflowBlocksUpdateParams{
+		Config:     Ptr(map[string]interface{}{}),
+		ConfigMode: &mode,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, ok := updateBody["config"].(map[string]any)
+	if !ok {
+		t.Fatalf("update body omitted explicit empty config: %#v", updateBody)
+	}
+	if len(config) != 0 {
+		t.Fatalf("config = %#v, want empty object", config)
+	}
+	if updateBody["config_mode"] != string(UpdateWorkflowBlockRequestConfigModeReplace) {
+		t.Fatalf("update body = %#v", updateBody)
+	}
+}
+
+func TestWorkflowBlocksUpdateConfigPresenceStates(t *testing.T) {
+	tests := []struct {
+		name       string
+		params     *WorkflowBlocksUpdateParams
+		assertBody func(*testing.T, map[string]any)
+	}{
+		{
+			name: "absent config omitted",
+			params: &WorkflowBlocksUpdateParams{
+				Label: Ptr("Renamed"),
+			},
+			assertBody: func(t *testing.T, body map[string]any) {
+				t.Helper()
+				if _, ok := body["config"]; ok {
+					t.Fatalf("config should be absent: %#v", body)
+				}
+				if body["label"] != "Renamed" {
+					t.Fatalf("label = %#v, want Renamed", body["label"])
+				}
+			},
+		},
+		{
+			name: "present empty config",
+			params: &WorkflowBlocksUpdateParams{
+				Config: Ptr(map[string]interface{}{}),
+			},
+			assertBody: func(t *testing.T, body map[string]any) {
+				t.Helper()
+				config, ok := body["config"].(map[string]any)
+				if !ok {
+					t.Fatalf("config should be present as object: %#v", body)
+				}
+				if len(config) != 0 {
+					t.Fatalf("config = %#v, want empty object", config)
+				}
+			},
+		},
+		{
+			name: "present non-empty config",
+			params: &WorkflowBlocksUpdateParams{
+				Config: Ptr(map[string]interface{}{"prompt": "extract totals"}),
+			},
+			assertBody: func(t *testing.T, body map[string]any) {
+				t.Helper()
+				config, ok := body["config"].(map[string]any)
+				if !ok {
+					t.Fatalf("config should be present as object: %#v", body)
+				}
+				if config["prompt"] != "extract totals" {
+					t.Fatalf("config = %#v", config)
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var updateBody map[string]any
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/blocks/block_123" {
+					t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+				}
+				if err := json.NewDecoder(r.Body).Decode(&updateBody); err != nil {
+					t.Fatal(err)
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"id":          "block_123",
+					"workflow_id": "wf_123",
+					"type":        "extract",
+					"config":      map[string]any{},
+					"updated_at":  "2026-06-03T00:00:00Z",
+				})
+			}))
+			defer server.Close()
+
+			client, err := NewClient("test-key", WithBaseURL(server.URL))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := client.Workflows.Blocks.Update(context.Background(), "block_123", test.params); err != nil {
+				t.Fatal(err)
+			}
+			test.assertBody(t, updateBody)
+		})
+	}
+}
+
 func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 	var requests []string
 	var validateBody map[string]any
@@ -617,10 +749,11 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 		t.Fatalf("cancelled = %#v body = %#v", cancelled, cancelBody)
 	}
 	version := "production"
+	jsonInputs := map[string]interface{}{"start": map[string]interface{}{"value": float64(1)}}
 	created, err := client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
 		WorkflowID: "wf_123",
 		Version:    &version,
-		JSONInputs: map[string]interface{}{"start": map[string]interface{}{"value": float64(1)}},
+		JSONInputs: &jsonInputs,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -670,13 +803,14 @@ func TestWorkflowRunsCreateCoercesDocuments(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	documentsInput := map[string]interface{}{
+		"remote":   "https://example.com/invoice.pdf",
+		"uploaded": FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"},
+		"raw_ref":  map[string]any{"id": "file_456", "filename": "raw.pdf"},
+	}
 	_, err = client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
 		WorkflowID: "wf_123",
-		Documents: map[string]interface{}{
-			"remote":   "https://example.com/invoice.pdf",
-			"uploaded": FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"},
-			"raw_ref":  map[string]any{"id": "file_456", "filename": "raw.pdf"},
-		},
+		Documents:  &documentsInput,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -718,16 +852,16 @@ func TestWorkflowRunDocumentsSetCoercesDocuments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	remote, ok := params.Documents["remote"].(MIMEData)
+	remote, ok := (*params.Documents)["remote"].(MIMEData)
 	if !ok {
-		t.Fatalf("remote = %#v", params.Documents["remote"])
+		t.Fatalf("remote = %#v", (*params.Documents)["remote"])
 	}
 	if remote.Filename != "invoice.pdf" || remote.URL != "https://example.com/invoice.pdf" {
 		t.Fatalf("remote = %#v", remote)
 	}
-	uploaded, ok := params.Documents["uploaded"].(FileRef)
+	uploaded, ok := (*params.Documents)["uploaded"].(FileRef)
 	if !ok {
-		t.Fatalf("uploaded = %#v", params.Documents["uploaded"])
+		t.Fatalf("uploaded = %#v", (*params.Documents)["uploaded"])
 	}
 	if uploaded.ID != "file_123" {
 		t.Fatalf("uploaded = %#v", uploaded)

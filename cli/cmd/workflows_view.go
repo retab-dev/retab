@@ -835,10 +835,9 @@ func workflowASCIIBlockLabel(block retab.WorkflowBlock) string {
 }
 
 func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
-	// Every cell in this column is a block, so the leading `block_`/`blk_`
-	// prefix is redundant noise; strip it before truncating so the
-	// nanoid suffix (the actually-distinguishing chars) survives the
-	// tight-budget head-tail truncation below.
+	// Every cell in this column is a block, so the leading `block_` prefix is
+	// redundant noise. Strip legacy `blk_` too so older workflows render with
+	// the same compact shape.
 	displayID := workflowASCIIStripBlockPrefix(block.ID)
 	if block.Type == "" {
 		return workflowASCIIShortID(displayID)
@@ -872,8 +871,8 @@ func workflowASCIIBlockMeta(block retab.WorkflowBlock) string {
 	}
 }
 
-// workflowASCIIStripBlockPrefix removes the redundant `block_`/`blk_` prefix
-// from a block id for display purposes only. The stored id is unchanged.
+// workflowASCIIStripBlockPrefix removes redundant block-id prefixes for display
+// purposes only. The stored id is unchanged, and legacy `blk_` remains accepted.
 func workflowASCIIStripBlockPrefix(id string) string {
 	for _, prefix := range []string{"block_", "blk_"} {
 		if rest := strings.TrimPrefix(id, prefix); rest != id && rest != "" {

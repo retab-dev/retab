@@ -1,0 +1,51 @@
+{
+  "filters": [
+    {
+      "column": "test_column",
+      "operator": "eq",
+      "value": {}
+    }
+  ],
+  "search": {
+    "query": "test_query",
+    "columns": [
+      "test_columns"
+    ]
+  },
+  "case_sensitive": true,
+  "select": [
+    "test_select"
+  ],
+  "distinct": {
+    "column": "test_column"
+  },
+  "group_by": [
+    "test_group_by"
+  ],
+  "aggregations": [
+    {
+      "function": "count",
+      "column": "test_column",
+      "alias": "test_alias"
+    }
+  ],
+  "sort": [
+    {
+      "column": "test_column",
+      "direction": "asc"
+    }
+  ],
+  "sample": {
+    "size": 1
+  },
+  "tail": {
+    "size": 1
+  },
+  "count_only": true,
+  "include_explain": true,
+  "sort_column": "test_sort_column",
+  "sort_direction": "asc",
+  "viewer_mode": "windowed",
+  "offset": 1,
+  "limit": 1
+}

@@ -15,7 +15,6 @@ export type DeclarativePlanResourceChangeType =
   | 'classifier'
   | 'conditional'
   | 'api_call'
-  | 'review'
   | 'function'
   | 'while_loop'
   | 'for_each'
@@ -38,7 +37,6 @@ export const ZDeclarativePlanResourceChangeType = z.enum([
   'classifier',
   'conditional',
   'api_call',
-  'review',
   'function',
   'while_loop',
   'for_each',

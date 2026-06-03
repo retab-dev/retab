@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -18,13 +19,35 @@ func (o *outputFlagValue) String() string { return o.value }
 func (o *outputFlagValue) Type() string   { return "string" }
 func (o *outputFlagValue) Set(raw string) error {
 	switch raw {
-	case "", "auto", string(OutputJSON), string(OutputTable):
+	case "", "auto", string(OutputJSON), string(OutputTable), string(OutputCSV):
 		o.value = raw
 		return nil
 	default:
-		return fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
+		return fmt.Errorf("invalid --output value %q (want: json | table | csv | auto)", raw)
 	}
 }
+
+type outputTableFlagValue struct {
+	output *outputFlagValue
+}
+
+func (o *outputTableFlagValue) String() string { return "false" }
+func (o *outputTableFlagValue) Type() string   { return "bool" }
+func (o *outputTableFlagValue) IsBoolFlag() bool {
+	return true
+}
+func (o *outputTableFlagValue) Set(raw string) error {
+	enabled, err := strconv.ParseBool(raw)
+	if err != nil {
+		return fmt.Errorf("invalid --output-table value %q", raw)
+	}
+	if enabled {
+		return o.output.Set(string(OutputTable))
+	}
+	return nil
+}
+
+var rootOutputFlag = &outputFlagValue{}
 
 var rootCmd = &cobra.Command{
 	Use:           "retab",
@@ -106,7 +129,11 @@ func init() {
 	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_API_BASE_URL)")
 	rootCmd.PersistentFlags().String("environment-id", "", "Retab environment id for OAuth dashboard context (env: RETAB_ENVIRONMENT_ID)")
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
-	rootCmd.PersistentFlags().Var(&outputFlagValue{}, "output", "output format: json | table (default: auto-detect)")
+	rootCmd.PersistentFlags().Var(rootOutputFlag, "output", "output format: json | table | csv (default: auto-detect)")
+	rootCmd.PersistentFlags().Var(&outputTableFlagValue{output: rootOutputFlag}, "output-table", "shortcut for --output table")
+	if flag := rootCmd.PersistentFlags().Lookup("output-table"); flag != nil {
+		flag.NoOptDefVal = "true"
+	}
 	rootCmd.InitDefaultCompletionCmd()
 	replaceTabsInHelpText(rootCmd)
 	hideDefaultCompletionCommand(rootCmd)

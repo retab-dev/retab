@@ -55,7 +55,7 @@ type WorkflowBlocksCreateParams struct {
 	// Height is block height
 	Height *float64 `json:"height,omitempty" url:"-"`
 	// Config is block configuration
-	Config map[string]interface{} `json:"config,omitempty" url:"-"`
+	Config *map[string]interface{} `json:"config,omitempty" url:"-"`
 	// ParentID is id of parent container block (while_loop, for_each)
 	ParentID *string `json:"parent_id,omitempty" url:"-"`
 }
@@ -93,13 +93,13 @@ func (s *WorkflowBlockService) Get(ctx context.Context, blockID string, params *
 
 // WorkflowBlocksUpdateParams contains the parameters for Update.
 type WorkflowBlocksUpdateParams struct {
-	Label     *string                `json:"label,omitempty" url:"-"`
-	PositionX *float64               `json:"position_x,omitempty" url:"-"`
-	PositionY *float64               `json:"position_y,omitempty" url:"-"`
-	Width     *float64               `json:"width,omitempty" url:"-"`
-	Height    *float64               `json:"height,omitempty" url:"-"`
-	Config    map[string]interface{} `json:"config,omitempty" url:"-"`
-	ParentID  *string                `json:"parent_id,omitempty" url:"-"`
+	Label     *string                 `json:"label,omitempty" url:"-"`
+	PositionX *float64                `json:"position_x,omitempty" url:"-"`
+	PositionY *float64                `json:"position_y,omitempty" url:"-"`
+	Width     *float64                `json:"width,omitempty" url:"-"`
+	Height    *float64                `json:"height,omitempty" url:"-"`
+	Config    *map[string]interface{} `json:"config,omitempty" url:"-"`
+	ParentID  *string                 `json:"parent_id,omitempty" url:"-"`
 	// ConfigMode is how to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.
 	ConfigMode *UpdateWorkflowBlockRequestConfigMode `json:"config_mode,omitempty" url:"-"`
 	// WorkflowID is disambiguates a block id that is shared by more than one workflow. Required only when the block id is not unique within your organization.
@@ -137,4 +137,28 @@ func (s *WorkflowBlockService) Delete(ctx context.Context, blockID string, param
 	}
 	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/workflows/blocks/%s", url.PathEscape(blockID)), params, nil, nil, opts)
 	return err
+}
+
+// WorkflowBlocksCreateBlockValidateConfigParams contains the parameters for CreateBlockValidateConfig.
+type WorkflowBlocksCreateBlockValidateConfigParams struct {
+	// Config is assembled block config to validate.
+	Config map[string]interface{} `json:"config" url:"-"`
+	// ConfigMode is how to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.
+	ConfigMode *ValidateWorkflowBlockConfigRequestConfigMode `json:"config_mode,omitempty" url:"-"`
+	// WorkflowID is workflow ID to disambiguate legacy duplicate block IDs. Omit for normal server-generated block IDs.
+	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
+}
+
+// CreateBlockValidateConfig validate Block Config Dry Run
+// Validate an assembled block config without mutating the workflow draft.
+func (s *WorkflowBlockService) CreateBlockValidateConfig(ctx context.Context, blockID string, params *WorkflowBlocksCreateBlockValidateConfigParams, opts ...RequestOption) (*ValidateWorkflowBlockConfigResponse, error) {
+	if blockID == "" {
+		return nil, fmt.Errorf("retab: block_id is required")
+	}
+	var result ValidateWorkflowBlockConfigResponse
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/blocks/%s/validate-config", url.PathEscape(blockID)), params, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

@@ -1555,6 +1555,27 @@ type PublishWorkflowRequest struct {
 	Description *string `json:"description,omitempty"`
 }
 
+// QueryWorkflowTableRequest represents a query workflow table request.
+type QueryWorkflowTableRequest struct {
+	Filters        []*WorkflowTableFilterRule         `json:"filters,omitempty"`
+	Search         *WorkflowTableSearchRequest        `json:"search,omitempty"`
+	CaseSensitive  *bool                              `json:"case_sensitive,omitempty"`
+	Select         []string                           `json:"select,omitempty"`
+	Distinct       *WorkflowTableDistinctRequest      `json:"distinct,omitempty"`
+	GroupBy        []string                           `json:"group_by,omitempty"`
+	Aggregations   []*WorkflowTableAggregationRequest `json:"aggregations,omitempty"`
+	Sort           []*WorkflowTableSortRule           `json:"sort,omitempty"`
+	Sample         *WorkflowTableSampleRequest        `json:"sample,omitempty"`
+	Tail           *WorkflowTableTailRequest          `json:"tail,omitempty"`
+	CountOnly      *bool                              `json:"count_only,omitempty"`
+	IncludeExplain *bool                              `json:"include_explain,omitempty"`
+	SortColumn     *string                            `json:"sort_column,omitempty"`
+	SortDirection  *WorkflowTableSortDirection        `json:"sort_direction,omitempty"`
+	ViewerMode     *string                            `json:"viewer_mode,omitempty"`
+	Offset         *int                               `json:"offset,omitempty"`
+	Limit          *int                               `json:"limit,omitempty"`
+}
+
 // QueuedStepLifecycle the step is queued for execution.
 type QueuedStepLifecycle struct {
 	Status *string `json:"status,omitempty"`
@@ -1764,6 +1785,27 @@ func (r *SchemaGeneration) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
+// Secret represents a secret.
+type Secret struct {
+	Name string `json:"name"`
+	// CreatedAt is when the secret was first created.
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt is when the secret value was last updated.
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy *string   `json:"created_by,omitempty"`
+	UpdatedBy *string   `json:"updated_by,omitempty"`
+}
+
+// SecretListResponse represents a secret list response.
+type SecretListResponse struct {
+	Secrets []*Secret `json:"secrets,omitempty"`
+}
+
+// SecretResponse represents a secret response.
+type SecretResponse struct {
+	Secret Secret `json:"secret"`
+}
+
 // SimilarityGteCondition represents a similarity gte condition.
 type SimilarityGteCondition struct {
 	Kind      *string                       `json:"kind,omitempty"`
@@ -1934,6 +1976,24 @@ type Subdocument struct {
 type TriggerInfo struct {
 	// Type is what started this run
 	Type TriggerInfoType `json:"type"`
+}
+
+// ValidateWorkflowBlockConfigResponse represents a validate workflow block config response.
+type ValidateWorkflowBlockConfigResponse struct {
+	Ok         bool   `json:"ok,omitempty"`
+	WorkflowID string `json:"workflow_id"`
+	BlockID    string `json:"block_id"`
+	BlockType  string `json:"block_type"`
+	ConfigHash string `json:"config_hash"`
+}
+
+// UnmarshalJSON applies spec-declared defaults to optional fields the
+// server may omit, so callers can read them directly without
+// nil-checks or zero-value second-guessing.
+func (r *ValidateWorkflowBlockConfigResponse) UnmarshalJSON(data []byte) error {
+	r.Ok = true
+	type alias ValidateWorkflowBlockConfigResponse
+	return json.Unmarshal(data, (*alias)(r))
 }
 
 // ValidationError represents a validation error.
@@ -2215,6 +2275,166 @@ type WorkflowRunStep struct {
 	Artifact *StepArtifactRef `json:"artifact,omitempty"`
 	// RetryCount is number of retry attempts
 	RetryCount *int `json:"retry_count,omitempty"`
+}
+
+// WorkflowTable represents a workflow table.
+type WorkflowTable struct {
+	ID               string                   `json:"id"`
+	Name             string                   `json:"name"`
+	Filename         string                   `json:"filename"`
+	SourceFileID     *string                  `json:"source_file_id,omitempty"`
+	SnapshotFileID   *string                  `json:"snapshot_file_id,omitempty"`
+	RowCount         int                      `json:"row_count"`
+	Columns          []*WorkflowTableColumn   `json:"columns,omitempty"`
+	SampleRows       []map[string]interface{} `json:"sample_rows,omitempty"`
+	Metadata         map[string]interface{}   `json:"metadata,omitempty"`
+	UploadedByUserID *string                  `json:"uploaded_by_user_id,omitempty"`
+	CreatedAt        *time.Time               `json:"created_at,omitempty"`
+	UpdatedAt        *time.Time               `json:"updated_at,omitempty"`
+}
+
+// WorkflowTableAggregationRequest represents a workflow table aggregation request.
+type WorkflowTableAggregationRequest struct {
+	Function WorkflowTableAggregationFunction `json:"function"`
+	Column   *string                          `json:"column,omitempty"`
+	Alias    *string                          `json:"alias,omitempty"`
+}
+
+// WorkflowTableColumn represents a workflow table column.
+type WorkflowTableColumn struct {
+	Name         string                 `json:"name"`
+	JSONSchema   map[string]interface{} `json:"json_schema,omitempty"`
+	SampleValues []string               `json:"sample_values,omitempty"`
+	Required     *bool                  `json:"required,omitempty"`
+	Unique       *bool                  `json:"unique,omitempty"`
+}
+
+// WorkflowTableDistinctRequest represents a workflow table distinct request.
+type WorkflowTableDistinctRequest struct {
+	Column string `json:"column"`
+}
+
+// WorkflowTableExplain represents a workflow table explain.
+type WorkflowTableExplain struct {
+	TableID         string                             `json:"table_id"`
+	SnapshotFileID  *string                            `json:"snapshot_file_id,omitempty"`
+	SelectedColumns []string                           `json:"selected_columns,omitempty"`
+	Filters         []*WorkflowTableFilterRule         `json:"filters,omitempty"`
+	Search          *WorkflowTableSearchRequest        `json:"search,omitempty"`
+	Sort            []*WorkflowTableSortRule           `json:"sort,omitempty"`
+	Offset          *int                               `json:"offset,omitempty"`
+	Limit           *int                               `json:"limit,omitempty"`
+	Distinct        *WorkflowTableDistinctRequest      `json:"distinct,omitempty"`
+	GroupBy         []string                           `json:"group_by,omitempty"`
+	Aggregations    []*WorkflowTableAggregationRequest `json:"aggregations,omitempty"`
+}
+
+// WorkflowTableFilterRule represents a workflow table filter rule.
+type WorkflowTableFilterRule struct {
+	Column   string                      `json:"column"`
+	Operator WorkflowTableFilterOperator `json:"operator"`
+	Value    *interface{}                `json:"value,omitempty"`
+}
+
+// WorkflowTableListResponse represents a workflow table list response.
+type WorkflowTableListResponse struct {
+	Tables []*WorkflowTable `json:"tables,omitempty"`
+}
+
+// WorkflowTableProfileColumn represents a workflow table profile column.
+type WorkflowTableProfileColumn struct {
+	Name          string                 `json:"name"`
+	JSONSchema    map[string]interface{} `json:"json_schema,omitempty"`
+	RowCount      int                    `json:"row_count"`
+	NullCount     int                    `json:"null_count"`
+	EmptyCount    int                    `json:"empty_count"`
+	DistinctCount int                    `json:"distinct_count"`
+	Min           *interface{}           `json:"min,omitempty"`
+	Max           *interface{}           `json:"max,omitempty"`
+	SampleValues  []string               `json:"sample_values,omitempty"`
+	IsEstimated   *bool                  `json:"is_estimated,omitempty"`
+}
+
+// WorkflowTableProfileResponse represents a workflow table profile response.
+type WorkflowTableProfileResponse struct {
+	TableID  string                        `json:"table_id"`
+	RowCount int                           `json:"row_count"`
+	Columns  []*WorkflowTableProfileColumn `json:"columns,omitempty"`
+}
+
+// WorkflowTableResponse represents a workflow table response.
+type WorkflowTableResponse struct {
+	Table WorkflowTable `json:"table"`
+}
+
+// WorkflowTableRow represents a workflow table row.
+type WorkflowTableRow struct {
+	ID       string                 `json:"id"`
+	Data     map[string]interface{} `json:"data,omitempty"`
+	Position int                    `json:"position"`
+}
+
+// WorkflowTableRowsResponse represents a workflow table rows response.
+type WorkflowTableRowsResponse struct {
+	TableID          string                 `json:"table_id"`
+	Columns          []*WorkflowTableColumn `json:"columns,omitempty"`
+	Rows             []*WorkflowTableRow    `json:"rows,omitempty"`
+	RowCount         int                    `json:"row_count"`
+	FilteredRowCount *int                   `json:"filtered_row_count,omitempty"`
+	Offset           *int                   `json:"offset,omitempty"`
+	Limit            *int                   `json:"limit,omitempty"`
+	HasMore          *bool                  `json:"has_more,omitempty"`
+	NextCursor       *string                `json:"next_cursor,omitempty"`
+	PreviousCursor   *string                `json:"previous_cursor,omitempty"`
+	Explain          *WorkflowTableExplain  `json:"explain,omitempty"`
+}
+
+// WorkflowTableSampleRequest represents a workflow table sample request.
+type WorkflowTableSampleRequest struct {
+	Size int `json:"size"`
+}
+
+// WorkflowTableSchemaResponse represents a workflow table schema response.
+type WorkflowTableSchemaResponse struct {
+	TableID string                 `json:"table_id"`
+	Columns []*WorkflowTableColumn `json:"columns,omitempty"`
+}
+
+// WorkflowTableSearchRequest represents a workflow table search request.
+type WorkflowTableSearchRequest struct {
+	Query   string   `json:"query"`
+	Columns []string `json:"columns,omitempty"`
+}
+
+// WorkflowTableSortRule represents a workflow table sort rule.
+type WorkflowTableSortRule struct {
+	Column    string                      `json:"column"`
+	Direction *WorkflowTableSortDirection `json:"direction,omitempty"`
+}
+
+// WorkflowTableTailRequest is an alias for WorkflowTableSampleRequest.
+type WorkflowTableTailRequest = WorkflowTableSampleRequest
+
+// WorkflowTableValidationColumnRule represents a workflow table validation column rule.
+type WorkflowTableValidationColumnRule struct {
+	Type       *string `json:"type,omitempty"`
+	Format     *string `json:"format,omitempty"`
+	IsNotEmpty *bool   `json:"is_not_empty,omitempty"`
+}
+
+// WorkflowTableValidationDiagnostic represents a workflow table validation diagnostic.
+type WorkflowTableValidationDiagnostic struct {
+	Severity WorkflowTableValidationSeverity `json:"severity"`
+	Column   *string                         `json:"column,omitempty"`
+	Rule     string                          `json:"rule"`
+	Message  string                          `json:"message"`
+}
+
+// WorkflowTableValidationResponse represents a workflow table validation response.
+type WorkflowTableValidationResponse struct {
+	TableID     string                               `json:"table_id"`
+	Diagnostics []*WorkflowTableValidationDiagnostic `json:"diagnostics,omitempty"`
+	HasErrors   *bool                                `json:"has_errors,omitempty"`
 }
 
 // WorkflowTest a saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output.

@@ -47,6 +47,9 @@ const (
 	OutputJSON OutputFormat = "json"
 	// OutputTable renders a compact text table via text/tabwriter.
 	OutputTable OutputFormat = "table"
+	// OutputCSV renders rows as comma-separated values when a command
+	// has a resource-specific CSV renderer.
+	OutputCSV OutputFormat = "csv"
 	// OutputAuto picks between JSON and Table based on whether the writer
 	// is a TTY. Never the final stored value — resolved before rendering.
 	OutputAuto OutputFormat = "auto"
@@ -281,8 +284,10 @@ func ResolveOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, error) 
 		return OutputJSON, nil
 	case string(OutputTable):
 		return OutputTable, nil
+	case string(OutputCSV):
+		return OutputCSV, nil
 	default:
-		return "", fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
+		return "", fmt.Errorf("invalid --output value %q (want: json | table | csv | auto)", raw)
 	}
 }
 
@@ -870,6 +875,15 @@ func stringifyCell(v any) string {
 // "(no rows)" hint goes to stderr — same UX as renderTable — so a lone
 // header row isn't mistaken for hidden output.
 func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
+	return renderAutoTableWithEmptyHint(w, rows, columns, os.Stderr)
+}
+
+func renderAutoTableWithEmptyHint(
+	w io.Writer,
+	rows []any,
+	columns []TableColumn,
+	emptyHintWriter io.Writer,
+) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for i, col := range columns {
 		if i > 0 {
@@ -902,8 +916,8 @@ func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
 	if err := tw.Flush(); err != nil {
 		return err
 	}
-	if len(rows) == 0 {
-		emitEmptyRowsHint()
+	if len(rows) == 0 && emptyHintWriter != nil {
+		fmt.Fprintln(emptyHintWriter, "(no rows)")
 	}
 	return nil
 }

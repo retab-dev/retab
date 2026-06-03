@@ -18,10 +18,10 @@ A block execution replays a block with the current draft configuration against
 inputs from an existing run. Use this to verify a block change before
 starting another full workflow run.`,
 	Example: `  # Re-run one block using inputs from a prior run
-  retab workflows blocks executions create run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions create run_xyz789 --block-id block_extract_1
 
   # List recent block executions for that run and block
-  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1`,
+  retab workflows blocks executions list run_xyz789 --block-id block_extract_1`,
 }
 
 var workflowsBlocksExecutionsCreateCmd = &cobra.Command{
@@ -34,12 +34,12 @@ The run id is positional; ` + "`--block-id`" + ` selects the block to replay.
 For for_each blocks, ` + "`--step-id`" + ` can pin a concrete iteration
 step.`,
 	Example: `  # Re-run one block
-  retab workflows blocks executions create run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions create run_xyz789 --block-id block_extract_1
 
   # Pin a for_each iteration source step
   retab workflows blocks executions create run_xyz789 \
-    --block-id blk_extract_1 \
-    --step-id step_iter_0_blk_extract_1`,
+    --block-id block_extract_1 \
+    --step-id step_iter_0_block_extract_1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		nConsensus := 0
@@ -92,10 +92,10 @@ var workflowsBlocksExecutionsListCmd = &cobra.Command{
 The run id is positional; ` + "`--block-id`" + ` selects the block whose
 block execution history should be returned.`,
 	Example: `  # List recent block executions
-  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1
+  retab workflows blocks executions list run_xyz789 --block-id block_extract_1
 
   # Limit the response size
-  retab workflows blocks executions list run_xyz789 --block-id blk_extract_1 --limit 10`,
+  retab workflows blocks executions list run_xyz789 --block-id block_extract_1 --limit 10`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)

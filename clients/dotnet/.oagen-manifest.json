@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-02T15:41:04.313Z",
+  "generatedAt": "2026-06-03T10:59:14.152Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -151,6 +151,7 @@
     "src/Entities/PrimitiveError.cs",
     "src/Entities/PublicHandlePayload.cs",
     "src/Entities/PublishWorkflowRequest.cs",
+    "src/Entities/QueryWorkflowTableRequest.cs",
     "src/Entities/QueuedStepLifecycle.cs",
     "src/Entities/RetabUsage.cs",
     "src/Entities/Review.cs",
@@ -176,6 +177,9 @@
     "src/Entities/RunTiming.cs",
     "src/Entities/RunningRun.cs",
     "src/Entities/SchemaGeneration.cs",
+    "src/Entities/Secret.cs",
+    "src/Entities/SecretListResponse.cs",
+    "src/Entities/SecretResponse.cs",
     "src/Entities/SimilarityGteCondition.cs",
     "src/Entities/SkippedBlockExecutionLifecycle.cs",
     "src/Entities/SourcesResponse.cs",
@@ -202,6 +206,25 @@
     "src/Entities/WorkflowPublished.cs",
     "src/Entities/WorkflowRun.cs",
     "src/Entities/WorkflowRunStep.cs",
+    "src/Entities/WorkflowTable.cs",
+    "src/Entities/WorkflowTableAggregationRequest.cs",
+    "src/Entities/WorkflowTableColumn.cs",
+    "src/Entities/WorkflowTableDistinctRequest.cs",
+    "src/Entities/WorkflowTableExplain.cs",
+    "src/Entities/WorkflowTableFilterRule.cs",
+    "src/Entities/WorkflowTableListResponse.cs",
+    "src/Entities/WorkflowTableProfileColumn.cs",
+    "src/Entities/WorkflowTableProfileResponse.cs",
+    "src/Entities/WorkflowTableResponse.cs",
+    "src/Entities/WorkflowTableRow.cs",
+    "src/Entities/WorkflowTableRowsResponse.cs",
+    "src/Entities/WorkflowTableSampleRequest.cs",
+    "src/Entities/WorkflowTableSchemaResponse.cs",
+    "src/Entities/WorkflowTableSearchRequest.cs",
+    "src/Entities/WorkflowTableSortRule.cs",
+    "src/Entities/WorkflowTableValidationColumnRule.cs",
+    "src/Entities/WorkflowTableValidationDiagnostic.cs",
+    "src/Entities/WorkflowTableValidationResponse.cs",
     "src/Entities/WorkflowTest.cs",
     "src/Entities/WorkflowTestBlockTarget.cs",
     "src/Entities/WorkflowTestResult.cs",
@@ -248,6 +271,9 @@
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
     "src/Enums/WorkflowExportPayloadRequestTriggerType.cs",
+    "src/Enums/WorkflowTableAggregationFunction.cs",
+    "src/Enums/WorkflowTableFilterOperator.cs",
+    "src/Enums/WorkflowTableValidationSeverity.cs",
     "src/MimeData.cs",
     "src/Retab.Generated.cs",
     "src/Retab.cs",
@@ -274,8 +300,12 @@
     "src/Services/Partitions/_interfaces/PartitionsOptions.cs",
     "src/Services/Schemas/SchemasService.cs",
     "src/Services/Schemas/_interfaces/SchemasOptions.cs",
+    "src/Services/Secrets/SecretsService.cs",
+    "src/Services/Secrets/_interfaces/SecretsOptions.cs",
     "src/Services/Splits/SplitsService.cs",
     "src/Services/Splits/_interfaces/SplitsOptions.cs",
+    "src/Services/Tables/TablesService.cs",
+    "src/Services/Tables/_interfaces/TablesOptions.cs",
     "src/Services/WorkflowArtifacts/WorkflowArtifactsService.cs",
     "src/Services/WorkflowArtifacts/_interfaces/WorkflowArtifactsOptions.cs",
     "src/Services/WorkflowBlockExecutions/WorkflowBlockExecutionsService.cs",
@@ -469,6 +499,26 @@
       "sdkMethod": "GenerateAsync",
       "service": "schemas"
     },
+    "GET /v1/secrets": {
+      "sdkMethod": "ListAsync",
+      "service": "secrets"
+    },
+    "POST /v1/secrets": {
+      "sdkMethod": "CreateAsync",
+      "service": "secrets"
+    },
+    "GET /v1/secrets/{name}": {
+      "sdkMethod": "GetAsync",
+      "service": "secrets"
+    },
+    "PUT /v1/secrets/{name}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "secrets"
+    },
+    "DELETE /v1/secrets/{name}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "secrets"
+    },
     "GET /v1/splits": {
       "sdkMethod": "ListAsync",
       "service": "splits"
@@ -488,6 +538,50 @@
     "POST /v1/splits/{split_id}/cancel": {
       "sdkMethod": "CreateCancelAsync",
       "service": "splits"
+    },
+    "GET /v1/tables": {
+      "sdkMethod": "ListAsync",
+      "service": "tables"
+    },
+    "POST /v1/tables": {
+      "sdkMethod": "CreateAsync",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "tables"
+    },
+    "PUT /v1/tables/{table_id}": {
+      "sdkMethod": "ReplaceAsync",
+      "service": "tables"
+    },
+    "PATCH /v1/tables/{table_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "tables"
+    },
+    "DELETE /v1/tables/{table_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/download": {
+      "sdkMethod": "DownloadAsync",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/profile": {
+      "sdkMethod": "ProfileAsync",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/query": {
+      "sdkMethod": "QueryAsync",
+      "service": "tables"
+    },
+    "GET /v1/tables/{table_id}/schema": {
+      "sdkMethod": "SchemaAsync",
+      "service": "tables"
+    },
+    "POST /v1/tables/{table_id}/validate": {
+      "sdkMethod": "ValidateAsync",
+      "service": "tables"
     },
     "GET /v1/workflows": {
       "sdkMethod": "ListAsync",

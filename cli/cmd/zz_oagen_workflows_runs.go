@@ -36,7 +36,7 @@ var workflowsRunsCreateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("--documents-file: %w", err)
 			}
-			req.Documents = docs
+			req.Documents = &docs
 		}
 		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")
 		if jsonInputsFile != "" {
@@ -44,7 +44,7 @@ var workflowsRunsCreateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("--json-inputs-file: %w", err)
 			}
-			req.JSONInputs = inputs
+			req.JSONInputs = &inputs
 		}
 		docFlags, _ := cmd.Flags().GetStringArray("document")
 		legacyFileFlags, _ := cmd.Flags().GetStringArray("document-file")
@@ -68,21 +68,21 @@ var workflowsRunsCreateCmd = &cobra.Command{
 		}
 		if len(fileEntries) > 0 || len(urlFlags) > 0 {
 			if req.Documents == nil {
-				req.Documents = map[string]any{}
+				req.Documents = &map[string]interface{}{}
 			}
 			for key, path := range fileEntries {
 				mime, err := inferFileMIMEData(path)
 				if err != nil {
 					return fmt.Errorf("--document %s=%s: %w", key, path, err)
 				}
-				req.Documents[key] = mime
+				(*req.Documents)[key] = mime
 			}
 			for _, raw := range urlFlags {
 				key, url, ok := splitKV(raw)
 				if !ok || strings.TrimSpace(key) == "" || url == "" {
 					return fmt.Errorf("--document-url expects block-id=url, got %q", raw)
 				}
-				req.Documents[key] = retab.MIMEData{
+				(*req.Documents)[key] = retab.MIMEData{
 					Filename: filenameFromURL(url),
 					URL:      url,
 				}
