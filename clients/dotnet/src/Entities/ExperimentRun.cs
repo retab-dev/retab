@@ -22,6 +22,9 @@ namespace Retab
         public object Lifecycle { get; set; } = default!;
         public ExperimentRunTiming Timing { get; set; } = default!;
         public string? ParentRunId { get; set; }
+        public string? BlockVersionId { get; set; }
+        public string? MetricsValidityFingerprint { get; set; }
+        public long? MetricsValidityFingerprintVersion { get; set; }
         public string DefinitionFingerprint { get; set; } = default!;
         public string DocumentsFingerprint { get; set; } = default!;
         public double? Score { get; set; }

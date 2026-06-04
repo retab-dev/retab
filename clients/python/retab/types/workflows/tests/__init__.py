@@ -6,7 +6,7 @@ import datetime
 from enum import Enum
 from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
+from retab.types.workflows.experiments import ArtifactDrift, ArtifactFreshness, FileHandleInput, JsonHandleInput
 
 
 AssertionDriftStatus: TypeAlias = Literal["valid", "drifted", "broken"]
@@ -236,6 +236,8 @@ class LatestBlockTestRunSummary(BaseModel):
     duration_ms: int | None = None
     workflow_draft_fingerprint: str | None = None
     block_config_fingerprint: str | None = None
+    validity_fingerprint: str | None = None
+    handle_inputs_fingerprint: str | None = None
     assertions_passed: int | None = Field(default=0)
     assertions_failed: int | None = Field(default=0)
     blocked_assertions: int | None = Field(default=0)
@@ -385,6 +387,8 @@ class WorkflowTest(BaseModel):
     assertion_drift_status: AssertionDriftStatus | None = None
     schema_drift: WorkflowTestSchemaDrift | None = Field(default=cast(WorkflowTestSchemaDrift, "unknown"), validate_default=True)
     schema_drift_detail: str | None = None
+    freshness: ArtifactFreshness | None = None
+    drift: ArtifactDrift | None = None
     validation_status: str | None = Field(default="valid")
     validation_issues: list[Any] | None = Field(default=[])
     latest_run_summary: LatestBlockTestRunSummary | None = None

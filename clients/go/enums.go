@@ -65,6 +65,36 @@ const (
 	ActorKindHuman ActorKind = "human"
 )
 
+// ArtifactDriftStatus represents artifact drift status values.
+type ArtifactDriftStatus string
+
+const (
+	ArtifactDriftStatusNone    ArtifactDriftStatus = "none"
+	ArtifactDriftStatusDrifted ArtifactDriftStatus = "drifted"
+	ArtifactDriftStatusBroken  ArtifactDriftStatus = "broken"
+	ArtifactDriftStatusUnknown ArtifactDriftStatus = "unknown"
+)
+
+// ArtifactFreshnessStatus represents artifact freshness status values.
+type ArtifactFreshnessStatus string
+
+const (
+	ArtifactFreshnessStatusFresh   ArtifactFreshnessStatus = "fresh"
+	ArtifactFreshnessStatusStale   ArtifactFreshnessStatus = "stale"
+	ArtifactFreshnessStatusUnknown ArtifactFreshnessStatus = "unknown"
+)
+
+// ArtifactFreshnessReasons represents artifact freshness reasons values.
+type ArtifactFreshnessReasons string
+
+const (
+	ArtifactFreshnessReasonsValidityChanged      ArtifactFreshnessReasons = "validity_changed"
+	ArtifactFreshnessReasonsInputsChanged        ArtifactFreshnessReasons = "inputs_changed"
+	ArtifactFreshnessReasonsEngineChanged        ArtifactFreshnessReasons = "engine_changed"
+	ArtifactFreshnessReasonsMetricsEngineChanged ArtifactFreshnessReasons = "metrics_engine_changed"
+	ArtifactFreshnessReasonsNoBaseline           ArtifactFreshnessReasons = "no_baseline"
+)
+
 // AssertionOutcome represents assertion outcome values.
 type AssertionOutcome string
 
@@ -439,6 +469,12 @@ const (
 	WorkflowBlockTypeForEachSentinelStart   WorkflowBlockType = "for_each_sentinel_start"
 	WorkflowBlockTypeForEachSentinelEnd     WorkflowBlockType = "for_each_sentinel_end"
 )
+
+// WorkflowBlockVersionType is an alias for WorkflowBlockType.
+type WorkflowBlockVersionType = WorkflowBlockType
+
+// WorkflowConfigBlockType is an alias for WorkflowBlockType.
+type WorkflowConfigBlockType = WorkflowBlockType
 
 // NConsensusValue is an alias for CreateExperimentRequestNConsensus.
 type NConsensusValue = CreateExperimentRequestNConsensus

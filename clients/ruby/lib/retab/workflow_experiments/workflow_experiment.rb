@@ -19,8 +19,10 @@ module Retab
       block_type: :block_type,
       score: :score,
       is_stale: :is_stale,
+      freshness: :freshness,
       schema_drift: :schema_drift,
-      schema_drift_detail: :schema_drift_detail
+      schema_drift_detail: :schema_drift_detail,
+      drift: :drift
     }.freeze
 
     attr_accessor(
@@ -37,8 +39,10 @@ module Retab
       :block_type,
       :score,
       :is_stale,
+      :freshness,
       :schema_drift,
-      :schema_drift_detail
+      :schema_drift_detail,
+      :drift
     )
 
     def initialize(json)
@@ -57,8 +61,10 @@ module Retab
       @block_type = hash[:block_type]
       @score = hash[:score]
       @is_stale = hash[:is_stale].nil? ? false : hash[:is_stale]
+      @freshness = hash[:freshness] ? Retab::ArtifactFreshness.new(hash[:freshness]) : nil
       @schema_drift = hash[:schema_drift].nil? ? "unknown" : hash[:schema_drift]
       @schema_drift_detail = hash[:schema_drift_detail]
+      @drift = hash[:drift] ? Retab::ArtifactDrift.new(hash[:drift]) : nil
     end
   end
 end

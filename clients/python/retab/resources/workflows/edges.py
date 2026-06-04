@@ -6,7 +6,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
-from retab.types.workflows.edges import WorkflowEdgeCreateRequest, WorkflowEdgeDoc
+from retab.types.workflows.edges import WorkflowEdgeCreateRequest, WorkflowEdgeDoc, WorkflowEdgeVersion, WorkflowEdgeVersionDiff
 
 
 class WorkflowEdgesMixin:
@@ -54,6 +54,52 @@ class WorkflowEdgesMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/edges", params=params or None, data=data)
 
+    def prepare_list_versions(
+        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> PreparedRequest:
+        """List Edge Versions"""
+        params: dict[str, Any] = {
+            "workflow_id": workflow_id,
+            "edge_id": edge_id,
+            "workflow_version_id": workflow_version_id,
+            "limit": limit,
+        }
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url="/v1/workflows/edges/versions", params=params or None, data=data)
+
+    def prepare_list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> PreparedRequest:
+        """Diff Edge Versions"""
+        params: dict[str, Any] = {
+            "from_edge_version_id": from_edge_version_id,
+            "to_edge_version_id": to_edge_version_id,
+        }
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url="/v1/workflows/edges/versions/diff", params=params or None, data=data)
+
+    def prepare_get_version(self, edge_version_id: str, **extra_params: Any) -> PreparedRequest:
+        """Get Edge Version"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="GET", url=f"/v1/workflows/edges/versions/{edge_version_id}", params=params or None, data=data)
+
+    def prepare_create_version_restore(self, edge_version_id: str, **extra_params: Any) -> PreparedRequest:
+        """Restore Edge Version"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="POST", url=f"/v1/workflows/edges/versions/{edge_version_id}/restore", params=params or None, data=data)
+
     def prepare_get(self, edge_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Edge Get a single edge by ID."""
         params: dict[str, Any] = {}
@@ -100,6 +146,31 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
+    def list_versions(
+        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> PaginatedList[WorkflowEdgeVersion]:
+        """List Edge Versions"""
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        return self.request_page(prepared_request, model=WorkflowEdgeVersion)
+
+    def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:
+        """Diff Edge Versions"""
+        prepared_request = self.prepare_list_diff(from_edge_version_id=from_edge_version_id, to_edge_version_id=to_edge_version_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return WorkflowEdgeVersionDiff.model_validate(response)
+
+    def get_version(self, edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersion:
+        """Get Edge Version"""
+        prepared_request = self.prepare_get_version(edge_version_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return WorkflowEdgeVersion.model_validate(response)
+
+    def create_version_restore(self, edge_version_id: str, **extra_params: Any) -> WorkflowEdgeDoc:
+        """Restore Edge Version"""
+        prepared_request = self.prepare_create_version_restore(edge_version_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return WorkflowEdgeDoc.model_validate(response)
+
     def get(self, edge_id: str, **extra_params: Any) -> WorkflowEdgeDoc:
         """Get Edge Get a single edge by ID."""
         prepared_request = self.prepare_get(edge_id, **extra_params)
@@ -137,6 +208,31 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         prepared_request = self.prepare_create(
             workflow_id=workflow_id, id=id, source_block=source_block, target_block=target_block, source_handle=source_handle, target_handle=target_handle, **extra_params
         )
+        response = await self._client._prepared_request(prepared_request)
+        return WorkflowEdgeDoc.model_validate(response)
+
+    async def list_versions(
+        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> AsyncPaginatedList[WorkflowEdgeVersion]:
+        """List Edge Versions"""
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        return await self.request_page(prepared_request, model=WorkflowEdgeVersion)
+
+    async def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:
+        """Diff Edge Versions"""
+        prepared_request = self.prepare_list_diff(from_edge_version_id=from_edge_version_id, to_edge_version_id=to_edge_version_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return WorkflowEdgeVersionDiff.model_validate(response)
+
+    async def get_version(self, edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersion:
+        """Get Edge Version"""
+        prepared_request = self.prepare_get_version(edge_version_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return WorkflowEdgeVersion.model_validate(response)
+
+    async def create_version_restore(self, edge_version_id: str, **extra_params: Any) -> WorkflowEdgeDoc:
+        """Restore Edge Version"""
+        prepared_request = self.prepare_create_version_restore(edge_version_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 

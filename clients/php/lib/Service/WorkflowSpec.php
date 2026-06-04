@@ -20,10 +20,11 @@ class WorkflowSpec
     /**
      * Apply Workflow Spec
      *
-     * Apply a declarative YAML spec to the draft workflow.
+     * Create a new workflow from a declarative YAML spec.
      *
-     * Re-applying a spec that already matches the draft makes no changes and
-     * returns an empty `resource_changes` list.
+     * The workflow id in the YAML is treated as source context, not as the target
+     * workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+     * existing workflow draft.
      * @param string $yamlDefinition Workflow YAML definition
      * @return \Retab\Resource\DeclarativeApplyResponse
      * @throws \Retab\Exception\RetabException
@@ -114,9 +115,38 @@ class WorkflowSpec
     ): \Retab\Resource\DeclarativeExportResponse {
         $response = $this->client->request(
             method: 'GET',
-            path: 'v1/workflows/spec/' . rawurlencode($workflowId),
+            path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec',
             options: $options,
         );
         return DeclarativeExportResponse::fromArray($response);
+    }
+
+    /**
+     * Apply Workflow Spec To Existing Workflow
+     *
+     * Apply a declarative YAML spec to an existing workflow draft.
+     *
+     * The URL workflow id is the update target. Any workflow id in the YAML is
+     * treated as source context.
+     * @param string $workflowId
+     * @param string $yamlDefinition Workflow YAML definition
+     * @return \Retab\Resource\DeclarativeApplyResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function applyToWorkflow(
+        string $workflowId,
+        string $yamlDefinition,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\DeclarativeApplyResponse {
+        $body = [
+            'yaml_definition' => $yamlDefinition,
+        ];
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec/apply',
+            body: $body,
+            options: $options,
+        );
+        return DeclarativeApplyResponse::fromArray($response);
     }
 }

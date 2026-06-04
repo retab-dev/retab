@@ -14,8 +14,8 @@ import (
 var workflowsSpecCmd = &cobra.Command{
 	Use:     "spec",
 	Short:   "Manage workflows declaratively from YAML",
-	Long:    "Validate, plan, apply, and get YAML workflow specs.\n\nA spec is a single YAML file describing a workflow's blocks, edges, and\nmetadata. The four verbs form a declarative workflow loop:\n\n  validate   parse + type-check the spec, no server changes\n  plan       diff the spec against the live workflow without applying\n  apply      create or update the workflow from the spec\n  get        dump a live workflow's spec back to YAML\n\nThe three POST verbs read YAML from a file path, or from stdin when the\npath is \"-\". Output is JSON on stdout, suitable for piping into `jq`.\n\n`apiVersion` is required and currently pinned at\n`workflows.retab.com/v1alpha2`. `metadata.id` is the durable identity\nused by `plan` / `apply` to decide whether to create or update; the\nsame id makes `apply` idempotent.",
-	Example: "  # Round-trip a workflow through git\n  retab workflows spec get wf_abc123 > workflow.yaml\n  $EDITOR workflow.yaml\n  retab workflows spec validate workflow.yaml\n  retab workflows spec plan     workflow.yaml\n  retab workflows spec apply    workflow.yaml\n\n  # Tail of a pipe\n  cat workflow.yaml | retab workflows spec apply -",
+	Long:    "Validate, plan, apply, and get YAML workflow specs.\n\nA spec is a single YAML file describing a workflow's blocks, edges, and\nmetadata. The verbs form a declarative workflow loop:\n\n  validate   parse + type-check the spec, no server changes\n  plan       preview spec changes without applying\n  apply      create a new workflow from the spec\n  apply-to   modify an existing workflow from the spec\n  get        dump a live workflow's spec back to YAML\n\nThe POST verbs read YAML from a file path, or from stdin when the\npath is \"-\". Output is JSON on stdout, suitable for piping into `jq`.\n\n`apiVersion` is required and currently pinned at\n`workflows.retab.com/v1alpha2`. `metadata.id` is treated as source context;\nuse `apply-to <workflow-id>` when the target workflow must be explicit.",
+	Example: "  # Round-trip a workflow through git\n  retab workflows spec get wf_abc123 > workflow.yaml\n  $EDITOR workflow.yaml\n  retab workflows spec validate workflow.yaml\n  retab workflows spec plan     workflow.yaml\n  retab workflows spec apply-to wf_abc123 workflow.yaml\n\n  # Create a new workflow from a spec\n  retab workflows spec apply workflow.yaml\n\n  # Tail of a pipe\n  cat workflow.yaml | retab workflows spec apply -",
 }
 
 var workflowsSpecValidateCmd = &cobra.Command{
@@ -76,8 +76,8 @@ var workflowsSpecPlanCmd = &cobra.Command{
 
 var workflowsSpecApplyCmd = &cobra.Command{
 	Use:     "apply <path>",
-	Short:   "Create or update a workflow from a YAML spec",
-	Long:    "Apply the YAML spec: create the workflow if it doesn't exist,\nor update it (block + edge diff) if it does. The workflow's id is read\nfrom the spec body, so the same file always targets the same workflow.\n\nMutating. Before applying, the command runs `spec plan` and inspects the\ndestroy count. When the plan would delete one or more resources, it\nrequires confirmation unless `--yes` is passed.",
+	Short:   "Create a new workflow from a YAML spec",
+	Long:    "Apply the YAML spec as a new workflow. The server creates a new\nworkflow resource and new child resources; metadata.id in the YAML is treated\nas source context, not as the target workflow id.\n\nMutating. Before applying, the command runs `spec plan` and inspects the\ndestroy count. When the plan would delete one or more resources, it\nrequires confirmation unless `--yes` is passed.",
 	Example: "  retab workflows spec apply ./workflow.yaml\n  retab workflows spec apply ./workflow.yaml --yes\n  cat workflow.yaml | retab workflows spec apply -",
 	Args:    cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -103,6 +103,34 @@ var workflowsSpecApplyCmd = &cobra.Command{
 			return err
 		}
 		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml})
+		if err != nil {
+			return translateSpecAPIError(err)
+		}
+		if err := failIfSpecValidationInvalid(applyResponseAsResource(result)); err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
+var workflowsSpecApplyToCmd = &cobra.Command{
+	Use:     "apply-to <workflow-id> <path>",
+	Short:   "Modify an existing workflow from a YAML spec",
+	Long:    "Apply the YAML spec to an existing workflow draft. The target\nworkflow id comes from the URL argument, not from metadata.id in the YAML.\n\nMutating. This updates the workflow in place and may create, update, or delete\nchild resources to match the submitted spec.",
+	Example: "  retab workflows spec apply-to wf_abc123 ./workflow.yaml\n  cat workflow.yaml | retab workflows spec apply-to wf_abc123 -",
+	Args:    cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[1])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Spec.ApplyToWorkflow(ctx, args[0], &retab.WorkflowSpecApplyToWorkflowParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -150,6 +178,6 @@ func init() {
 	workflowsSpecExportCmd.Flags().String("format", "yaml", "output format: yaml | json")
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
-	workflowsSpecCmd.AddCommand(workflowsSpecValidateCmd, workflowsSpecPlanCmd, workflowsSpecApplyCmd, workflowsSpecExportCmd)
+	workflowsSpecCmd.AddCommand(workflowsSpecValidateCmd, workflowsSpecPlanCmd, workflowsSpecApplyCmd, workflowsSpecApplyToCmd, workflowsSpecExportCmd)
 	workflowsCmd.AddCommand(workflowsSpecCmd)
 }

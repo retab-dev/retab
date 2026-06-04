@@ -67,10 +67,27 @@ export class WorkflowSpec {
   async get(workflowId: string): Promise<DeclarativeExportResponse> {
     const __wire = await this.client.request<DeclarativeExportResponseResponse>({
       method: 'GET',
-      path: `/v1/workflows/spec/${workflowId}`,
+      path: `/v1/workflows/${workflowId}/spec`,
       query: undefined,
       body: undefined,
     });
     return deserializeDeclarativeExportResponse(__wire);
+  }
+
+  /** Apply Workflow Spec To Existing Workflow */
+  async apply_to_workflow(
+    workflowId: string,
+    yamlDefinition: string
+  ): Promise<DeclarativeApplyResponse> {
+    const body = {
+      yaml_definition: yamlDefinition,
+    };
+    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/${workflowId}/spec/apply`,
+      query: undefined,
+      body: body,
+    });
+    return deserializeDeclarativeApplyResponse(__wire);
   }
 }

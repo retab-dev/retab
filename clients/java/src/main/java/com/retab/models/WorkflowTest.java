@@ -22,6 +22,8 @@ public final class WorkflowTest {
   private final AssertionDriftStatus assertionDriftStatus;
   private final WorkflowTestSchemaDrift schemaDrift;
   private final String schemaDriftDetail;
+  private final ArtifactFreshness freshness;
+  private final ArtifactDrift drift;
   private final String validationStatus;
   private final List<String> validationIssues;
   private final LatestBlockTestRunSummary latestRunSummary;
@@ -44,6 +46,8 @@ public final class WorkflowTest {
           AssertionDriftStatus assertionDriftStatus,
       @JsonProperty(value = "schema_drift", required = false) WorkflowTestSchemaDrift schemaDrift,
       @JsonProperty(value = "schema_drift_detail", required = false) String schemaDriftDetail,
+      @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness,
+      @JsonProperty(value = "drift", required = false) ArtifactDrift drift,
       @JsonProperty(value = "validation_status", required = false) String validationStatus,
       @JsonProperty(value = "validation_issues", required = false) List<String> validationIssues,
       @JsonProperty(value = "latest_run_summary", required = false)
@@ -64,6 +68,8 @@ public final class WorkflowTest {
     this.assertionDriftStatus = assertionDriftStatus;
     this.schemaDrift = schemaDrift;
     this.schemaDriftDetail = schemaDriftDetail;
+    this.freshness = freshness;
+    this.drift = drift;
     this.validationStatus = validationStatus != null ? validationStatus : "valid";
     this.validationIssues = validationIssues;
     this.latestRunSummary = latestRunSummary;
@@ -121,6 +127,16 @@ public final class WorkflowTest {
   @JsonProperty("schema_drift_detail")
   public String getSchemaDriftDetail() {
     return schemaDriftDetail;
+  }
+
+  @JsonProperty("freshness")
+  public ArtifactFreshness getFreshness() {
+    return freshness;
+  }
+
+  @JsonProperty("drift")
+  public ArtifactDrift getDrift() {
+    return drift;
   }
 
   @JsonProperty("validation_status")

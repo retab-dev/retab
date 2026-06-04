@@ -101,11 +101,40 @@ module Retab
     )
       response = @client.request(
         method: :get,
-        path: "/v1/workflows/spec/#{Retab::Util.encode_path(workflow_id)}",
+        path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec",
         auth: true,
         request_options: request_options
       )
       result = Retab::DeclarativeExportResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Apply Workflow Spec To Existing Workflow
+    # @param workflow_id [String]
+    # @param yaml_definition [String] Workflow YAML definition
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::DeclarativeApplyResponse]
+    def apply_to_workflow(
+      workflow_id:,
+      yaml_definition:,
+      request_options: {}
+    )
+      body = {
+        "yaml_definition" => yaml_definition
+      }
+      response = @client.request(
+        method: :post,
+        path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/apply",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::DeclarativeApplyResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,

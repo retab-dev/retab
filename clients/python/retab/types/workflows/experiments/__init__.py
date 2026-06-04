@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,10 +20,49 @@ ExperimentBlockType: TypeAlias = Literal["extract", "classifier", "split", "for_
 ExperimentSchemaDriftStatus: TypeAlias = Literal["none", "partial", "drifted", "unknown"]
 
 
+class ArtifactDriftStatus(str, Enum):
+    NONE = "none"
+    DRIFTED = "drifted"
+    BROKEN = "broken"
+    UNKNOWN = "unknown"
+
+
+class ArtifactFreshnessStatus(str, Enum):
+    FRESH = "fresh"
+    STALE = "stale"
+    UNKNOWN = "unknown"
+
+
+class ArtifactFreshnessReasons(str, Enum):
+    VALIDITY_CHANGED = "validity_changed"
+    INPUTS_CHANGED = "inputs_changed"
+    ENGINE_CHANGED = "engine_changed"
+    METRICS_ENGINE_CHANGED = "metrics_engine_changed"
+    NO_BASELINE = "no_baseline"
+
+
 CreateExperimentRequestNConsensus = NConsensusValue
 
 
 UpdateExperimentRequestNConsensus = NConsensusValue
+
+
+class ArtifactDrift(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: ArtifactDriftStatus | None = Field(default=cast(ArtifactDriftStatus, "unknown"), validate_default=True)
+    affected_targets: list[str] | None = Field(default=[])
+    detail: str | None = None
+
+
+class ArtifactFreshness(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: ArtifactFreshnessStatus | None = Field(default=cast(ArtifactFreshnessStatus, "unknown"), validate_default=True)
+    reasons: list[ArtifactFreshnessReasons] | None = Field(default=[])
+    validity_fingerprint: str | None = None
+    input_fingerprint: str | None = None
+    baseline_run_id: str | None = None
 
 
 class CreateExperimentRequest(BaseModel):
@@ -132,8 +172,10 @@ class WorkflowExperiment(BaseModel):
     block_type: ExperimentBlockType
     score: float | None = None
     is_stale: bool | None = Field(default=False)
+    freshness: ArtifactFreshness | None = None
     schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"), validate_default=True)
     schema_drift_detail: str | None = None
+    drift: ArtifactDrift | None = None
 
 
 from .metrics import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
@@ -144,6 +186,11 @@ from .results import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 from .runs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 __all__ = [
+    "ArtifactDrift",
+    "ArtifactDriftStatus",
+    "ArtifactFreshness",
+    "ArtifactFreshnessReasons",
+    "ArtifactFreshnessStatus",
     "CancelWorkflowExperimentRunResponse",
     "CancelledWorkflowExperimentResult",
     "CancelledWorkflowExperimentRun",
@@ -209,6 +256,8 @@ __all__ = [
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
+ArtifactDrift.model_rebuild()
+ArtifactFreshness.model_rebuild()
 CreateExperimentRequest.model_rebuild()
 ExperimentDocumentCaptureRequest.model_rebuild()
 ExperimentDocumentProvenance.model_rebuild()

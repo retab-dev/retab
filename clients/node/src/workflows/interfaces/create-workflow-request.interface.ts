@@ -13,16 +13,20 @@ export interface CreateWorkflowRequest {
    * @default ""
    */
   description?: string;
+  /** Project that should own this workflow. Omit to use the organization's shared workflows project. */
+  projectId?: string | null;
 }
 
 export interface CreateWorkflowRequestResponse {
   name?: string;
   description?: string;
+  project_id?: string | null;
 }
 
 export const ZCreateWorkflowRequest = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
+  projectId: z.string().nullable().optional(),
 }) as z.ZodType<CreateWorkflowRequest>;
 
 export function deserializeCreateWorkflowRequest(
@@ -31,6 +35,7 @@ export function deserializeCreateWorkflowRequest(
   return {
     name: wire['name'],
     description: wire['description'],
+    projectId: wire['project_id'],
   };
 }
 
@@ -40,5 +45,6 @@ export function serializeCreateWorkflowRequest(
   return {
     name: domain['name'],
     description: domain['description'],
+    project_id: domain['projectId'],
   };
 }

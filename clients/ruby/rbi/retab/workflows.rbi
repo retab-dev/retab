@@ -52,10 +52,48 @@ module Retab
       params(
         name: T.nilable(String),
         description: T.nilable(String),
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Workflow)
     end
-    def create(name:, description:, request_options:); end
+    def create(name:, description:, project_id:, request_options:); end
+
+    sig do
+      params(
+        workflow_id: String,
+        limit: T.nilable(Integer),
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::PaginatedList[Retab::WorkflowGraphVersion])
+    end
+    def list_versions(workflow_id:, limit:, request_options:); end
+
+    sig do
+      params(
+        workflow_id: String,
+        from_workflow_version_id: String,
+        to_workflow_version_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::WorkflowGraphVersionDiff)
+    end
+    def list_diff(workflow_id:, from_workflow_version_id:, to_workflow_version_id:, request_options:); end
+
+    sig do
+      params(
+        workflow_version_id: String,
+        workflow_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::WorkflowGraphVersion)
+    end
+    def get_version(workflow_version_id:, workflow_id:, request_options:); end
+
+    sig do
+      params(
+        workflow_version_id: String,
+        workflow_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::Workflow)
+    end
+    def create_version_restore(workflow_version_id:, workflow_id:, request_options:); end
 
     sig do
       params(

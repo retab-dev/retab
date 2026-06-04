@@ -29,14 +29,15 @@ var workflowsSpecCmd = &cobra.Command{
 	Long: `Validate, plan, apply, and get YAML workflow specs.
 
 A spec is a single YAML file describing a workflow's blocks, edges, and
-metadata. The four verbs form a declarative workflow loop:
+metadata. The verbs form a declarative workflow loop:
 
   validate   parse + type-check the spec, no server changes
-  plan       diff the spec against the live workflow without applying
-  apply      create or update the workflow from the spec
+  plan       preview spec changes without applying
+  apply      create a new workflow from the spec
+  apply-to   modify an existing workflow from the spec
   get        dump a live workflow's spec back to YAML
 
-The three POST verbs read YAML from a file path, or from stdin when the
+The POST verbs read YAML from a file path, or from stdin when the
 path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.
 
 Spec shape (minimum required keys):
@@ -55,15 +56,17 @@ Spec shape (minimum required keys):
 
 ` + "`apiVersion`" + ` is required and currently pinned at
 ` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.
-Workflow ids are runtime identity, not spec identity, so exported specs do not
-include ` + "`metadata.id`" + `. Applying an id-less spec creates a workflow with a
-fresh server-generated id.`,
+` + "`metadata.id`" + ` is treated as source context. Use
+` + "`apply-to <workflow-id>`" + ` when the target workflow must be explicit.`,
 	Example: `  # Round-trip a workflow through git
   retab workflows spec get wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml
   retab workflows spec validate workflow.yaml
   retab workflows spec plan     workflow.yaml
-  retab workflows spec apply    workflow.yaml
+  retab workflows spec apply-to wf_abc123 workflow.yaml
+
+  # Create a new workflow from a spec
+  retab workflows spec apply workflow.yaml
 
   # Tail of a pipe
   cat workflow.yaml | retab workflows spec apply -`,
@@ -160,10 +163,10 @@ Plan is read-only — safe to run on production specs. Pair it with
 
 var workflowsSpecApplyCmd = &cobra.Command{
 	Use:   "apply <path>",
-	Short: "Create a workflow from a YAML spec",
-	Long: `Apply the YAML spec. Id-less specs create a workflow with a fresh
-server-generated id; exported specs are id-less so round-tripping one does
-not reproduce the source workflow id.
+	Short: "Create a new workflow from a YAML spec",
+	Long: `Apply the YAML spec as a new workflow. The server creates a new
+workflow resource and new child resources; metadata.id in the YAML is source
+context, not the target workflow id.
 
 Legacy specs that explicitly include ` + "`metadata.id`" + ` are accepted for
 backward compatibility, but the id is ignored when applying.
@@ -212,6 +215,39 @@ Plans with no deletions apply immediately, no extra prompt.`,
 			return err
 		}
 		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml})
+		if err != nil {
+			return translateSpecAPIError(err)
+		}
+		if err := failIfSpecValidationInvalid(applyResponseAsResource(result)); err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
+var workflowsSpecApplyToCmd = &cobra.Command{
+	Use:   "apply-to <workflow-id> <path>",
+	Short: "Modify an existing workflow from a YAML spec",
+	Long: `Apply the YAML spec to an existing workflow draft. The target
+workflow id comes from the URL argument, not from ` + "`metadata.id`" + ` in the YAML.
+
+Mutating. This updates the workflow in place and may create, update, or delete
+child resources to match the submitted spec.`,
+	Example: `  retab workflows spec apply-to wf_abc123 ./workflow.yaml
+  cat workflow.yaml | retab workflows spec apply-to wf_abc123 -`,
+	Args: cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[1])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Spec.ApplyToWorkflow(ctx, args[0], &retab.WorkflowSpecApplyToWorkflowParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -510,6 +546,7 @@ func init() {
 		workflowsSpecValidateCmd,
 		workflowsSpecPlanCmd,
 		workflowsSpecApplyCmd,
+		workflowsSpecApplyToCmd,
 		workflowsSpecExportCmd,
 	)
 	workflowsCmd.AddCommand(workflowsSpecCmd)

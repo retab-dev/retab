@@ -2,3 +2,5 @@
 
 export * from './workflow-edge-create-request.interface.js';
 export * from './workflow-edge-doc.interface.js';
+export * from './workflow-edge-version.interface.js';
+export * from './workflow-edge-version-diff.interface.js';

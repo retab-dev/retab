@@ -522,6 +522,35 @@ def test_workflow_spec_apply_uses_spec_apply_route() -> None:
     assert response.resource_changes == []
 
 
+def test_workflow_spec_apply_to_workflow_uses_nested_apply_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "action": "update",
+        "created": False,
+        "block_count": 2,
+        "edge_count": 1,
+        "diagnostics": {"issues": []},
+        "format_version": "workflows-plan/v1",
+        "summary": {"add": 0, "change": 1, "destroy": 0, "replace": 0, "noop": 0, "total": 1, "has_changes": True},
+        "resource_changes": [],
+        "rendered_plan": "1 to change.",
+    }
+
+    response = WorkflowSpec(client=client).apply_to_workflow(
+        "wf_1",
+        INVOICE_WORKFLOW_YAML,
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/v1/workflows/wf_1/spec/apply"
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
+    assert isinstance(response, DeclarativeApplyResponse)
+    assert response.workflow_id == "wf_1"
+    assert response.created is False
+
+
 def test_workflow_spec_get_uses_spec_resource_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
@@ -533,7 +562,7 @@ def test_workflow_spec_get_uses_spec_resource_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/spec/wf_1"
+    assert request.url == "/v1/workflows/wf_1/spec"
     assert isinstance(response, DeclarativeExportResponse)
     assert response.yaml_definition.startswith("apiVersion:")
 
@@ -556,6 +585,36 @@ async def test_async_workflow_spec_validate_uses_spec_validate_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows/spec/validate"
+    assert response.workflow_id == "wf_1"
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_spec_apply_to_workflow_uses_nested_apply_route() -> None:
+    client = MagicMock()
+    client._prepared_request = AsyncMock(
+        return_value={
+            "workflow_id": "wf_1",
+            "action": "update",
+            "created": False,
+            "block_count": 2,
+            "edge_count": 1,
+            "diagnostics": {"issues": []},
+            "format_version": "workflows-plan/v1",
+            "summary": {"add": 0, "change": 1, "destroy": 0, "replace": 0, "noop": 0, "total": 1, "has_changes": True},
+            "resource_changes": [],
+            "rendered_plan": "1 to change.",
+        }
+    )
+
+    response = await AsyncWorkflowSpec(client=client).apply_to_workflow(
+        "wf_1",
+        INVOICE_WORKFLOW_YAML,
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/v1/workflows/wf_1/spec/apply"
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
     assert response.workflow_id == "wf_1"
 
 

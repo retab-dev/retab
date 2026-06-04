@@ -43,6 +43,68 @@ class WorkflowsTest extends TestCase
         $this->assertStringEndsWith('v1/workflows', $request->getUri()->getPath());
     }
 
+    public function testListVersions(): void
+    {
+        $fixture = $this->loadFixture('list_workflow_graph_version');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->listVersions(workflowId: 'test_value', limit: 1);
+        $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/versions', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+        $this->assertArrayHasKey('limit', $query);
+    }
+
+    public function testListDiff(): void
+    {
+        $fixture = $this->loadFixture('workflow_graph_version_diff');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->listDiff(workflowId: 'test_value', fromWorkflowVersionId: 'test_value', toWorkflowVersionId: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\WorkflowGraphVersionDiff::class, $result);
+        $this->assertSame($fixture['from_workflow_version_id'], $result->fromWorkflowVersionId);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/versions/diff', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+        $this->assertSame('test_value', $query['from_workflow_version_id']);
+        $this->assertSame('test_value', $query['to_workflow_version_id']);
+    }
+
+    public function testGetVersion(): void
+    {
+        $fixture = $this->loadFixture('workflow_graph_version');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->getVersion('test_workflow_version_id', workflowId: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\WorkflowGraphVersion::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/versions/test_workflow_version_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+    }
+
+    public function testCreateVersionRestore(): void
+    {
+        $fixture = $this->loadFixture('workflow');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->createVersionRestore('test_workflow_version_id', workflowId: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\Workflow::class, $result);
+        $this->assertSame($fixture['id'], $result->id);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/versions/test_workflow_version_id/restore', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
+    }
+
     public function testGet(): void
     {
         $fixture = $this->loadFixture('workflow');

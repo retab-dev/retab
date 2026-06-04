@@ -228,6 +228,25 @@ var tablesUpdateCmd = &cobra.Command{
 	}),
 }
 
+var tablesValidateCmd = &cobra.Command{
+	Use:   "validate <table-id>",
+	Short: "Validate Table",
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Tables.Validate(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 func init() {
 	tablesCreateCmd.Flags().String("name", "", "name value (required)")
 	_ = tablesCreateCmd.MarkFlagRequired("name")
@@ -247,6 +266,6 @@ func init() {
 	tablesUpdateCmd.Flags().String("name", "", "table name")
 	tablesUpdateCmd.Flags().String("metadata", "", "JSON metadata object")
 
-	tablesCmd.AddCommand(tablesCreateCmd, tablesDeleteCmd, tablesDownloadCmd, tablesGetCmd, tablesListCmd, tablesQueryCmd, tablesReplaceCmd, tablesUpdateCmd)
+	tablesCmd.AddCommand(tablesCreateCmd, tablesDeleteCmd, tablesDownloadCmd, tablesGetCmd, tablesListCmd, tablesQueryCmd, tablesReplaceCmd, tablesUpdateCmd, tablesValidateCmd)
 	rootCmd.AddCommand(tablesCmd)
 }

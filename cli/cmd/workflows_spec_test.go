@@ -317,6 +317,55 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 	}
 }
 
+func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/workflows/wf_target/spec/apply" {
+			t.Fatalf("path = %s, want /v1/workflows/wf_target/spec/apply", r.URL.Path)
+		}
+		var body struct {
+			YamlDefinition string `json:"yaml_definition"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !strings.Contains(body.YamlDefinition, "name: Existing Target") {
+			t.Fatalf("request YAML mismatch:\n%s", body.YamlDefinition)
+		}
+		applyHits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_target",
+			"action":      "update",
+			"created":     false,
+			"diagnostics": map[string]any{"is_valid": true},
+			"summary":     map[string]any{"add": 0, "change": 1, "destroy": 0},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  name: Existing Target\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	captureStd(t, func() {
+		if err := workflowsSpecApplyToCmd.RunE(workflowsSpecApplyToCmd, []string{"wf_target", path}); err != nil {
+			t.Fatalf("apply-to: %v", err)
+		}
+	})
+	if applyHits.Load() != 1 {
+		t.Fatalf("expected exactly 1 apply-to call, got %d", applyHits.Load())
+	}
+}
+
 func TestWorkflowsSpecApplyPrintsForEachMinimumCanvasSize(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

@@ -49,6 +49,31 @@ namespace Retab
 
     }
 
+    /// <summary>Request options for <see cref="WorkflowBlocksService.ListVersionsAsync"/>: List Block Versions</summary>
+    public class WorkflowBlocksListVersionsOptions : BaseOptions
+    {
+        public string WorkflowId { get; set; } = default!;
+
+        /// <summary>Filter by stable block ID</summary>
+        public string? BlockId { get; set; }
+
+        /// <summary>Filter by workflow version ID</summary>
+        public string? WorkflowVersionId { get; set; }
+
+        /// <summary>Maximum number of block versions to return</summary>
+        public long? Limit { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="WorkflowBlocksService.ListDiffAsync"/>: Diff Block Versions</summary>
+    public class WorkflowBlocksListDiffOptions : BaseOptions
+    {
+        public string FromBlockVersionId { get; set; } = default!;
+
+        public string ToBlockVersionId { get; set; } = default!;
+
+    }
+
     /// <summary>Request options for <see cref="WorkflowBlocksService.GetAsync"/>: Get Block</summary>
     public class WorkflowBlocksGetOptions : BaseOptions
     {

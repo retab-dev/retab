@@ -18,9 +18,10 @@ namespace Retab
 
         /// <summary>Apply Workflow Spec</summary>
         /// <remarks>
-        /// Apply a declarative YAML spec to the draft workflow.
-        /// Re-applying a spec that already matches the draft makes no changes and
-        /// returns an empty `resource_changes` list.
+        /// Create a new workflow from a declarative YAML spec.
+        /// The workflow id in the YAML is treated as source context, not as the target
+        /// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+        /// existing workflow draft.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -91,13 +92,35 @@ namespace Retab
         /// <returns>The <see cref="DeclarativeExportResponse"/> result.</returns>
         public virtual async Task<DeclarativeExportResponse> GetAsync(string workflowId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<DeclarativeExportResponse>($"/v1/workflows/spec/{Uri.EscapeDataString(workflowId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<DeclarativeExportResponse>($"/v1/workflows/{Uri.EscapeDataString(workflowId)}/spec", null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
         public virtual Task<DeclarativeExportResponse> Get(string workflowId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.GetAsync(workflowId, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Apply Workflow Spec To Existing Workflow</summary>
+        /// <remarks>
+        /// Apply a declarative YAML spec to an existing workflow draft.
+        /// The URL workflow id is the update target. Any workflow id in the YAML is
+        /// treated as source context.
+        /// </remarks>
+        /// <param name="workflowId">The workflow id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativeApplyResponse"/> result.</returns>
+        public virtual async Task<DeclarativeApplyResponse> ApplyToWorkflowAsync(string workflowId, WorkflowSpecApplyToWorkflowOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<DeclarativeApplyResponse>($"/v1/workflows/{Uri.EscapeDataString(workflowId)}/spec/apply", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ApplyToWorkflowAsync"/>.</summary>
+        public virtual Task<DeclarativeApplyResponse> ApplyToWorkflow(string workflowId, WorkflowSpecApplyToWorkflowOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ApplyToWorkflowAsync(workflowId, options, requestOptions, cancellationToken);
         }
     }
 }
