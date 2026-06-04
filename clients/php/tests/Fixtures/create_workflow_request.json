@@ -1,4 +1,5 @@
 {
   "name": "Test",
-  "description": "test_description"
+  "description": "test_description",
+  "project_id": "project_id_01234"
 }

@@ -20,6 +20,9 @@ pub struct Workflow {
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
+    /// Project that owns this workflow. Null means the organization's shared workflows project.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub project_id: Option<String>,
     /// Published workflow metadata when a published version exists
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub published: Option<WorkflowPublished>,
@@ -38,6 +41,7 @@ impl Workflow {
             id: id.into(),
             name: Default::default(),
             description: Default::default(),
+            project_id: Default::default(),
             published: Default::default(),
             created_at: created_at.into(),
             updated_at: updated_at.into(),

@@ -2,8 +2,19 @@
 
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
-import type { Workflow, WorkflowResponse } from '../workflows/interfaces/index.js';
-import { deserializeWorkflow } from '../workflows/interfaces/index.js';
+import type {
+  Workflow,
+  WorkflowGraphVersion,
+  WorkflowGraphVersionDiff,
+  WorkflowGraphVersionDiffResponse,
+  WorkflowGraphVersionResponse,
+  WorkflowResponse,
+} from '../workflows/interfaces/index.js';
+import {
+  deserializeWorkflow,
+  deserializeWorkflowGraphVersion,
+  deserializeWorkflowGraphVersionDiff,
+} from '../workflows/interfaces/index.js';
 import { WorkflowArtifacts } from './artifacts/workflow-artifacts.js';
 import { WorkflowBlocks } from './blocks/workflow-blocks.js';
 import { WorkflowEdges } from './edges/workflow-edges.js';
@@ -60,16 +71,86 @@ export class Workflows {
   }
 
   /** Create Workflow */
-  async create(name?: string, description?: string): Promise<Workflow> {
+  async create(name?: string, description?: string, projectId?: string | null): Promise<Workflow> {
     const body = {
       name: name,
       description: description,
+      project_id: projectId,
     };
     const __wire = await this.client.request<WorkflowResponse>({
       method: 'POST',
       path: '/v1/workflows',
       query: undefined,
       body: body,
+    });
+    return deserializeWorkflow(__wire);
+  }
+
+  /** List Workflow Versions Route */
+  async list_versions(options: {
+    workflowId: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowGraphVersion>> {
+    return this.client._fetchPage(deserializeWorkflowGraphVersion, {
+      method: 'GET',
+      path: '/v1/workflows/versions',
+      query: {
+        workflow_id: options?.workflowId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
+  }
+
+  /** Diff Workflow Versions Route */
+  async list_diff(options: {
+    workflowId: string;
+    fromWorkflowVersionId: string;
+    toWorkflowVersionId: string;
+  }): Promise<WorkflowGraphVersionDiff> {
+    const __wire = await this.client.request<WorkflowGraphVersionDiffResponse>({
+      method: 'GET',
+      path: '/v1/workflows/versions/diff',
+      query: {
+        workflow_id: options?.workflowId,
+        from_workflow_version_id: options?.fromWorkflowVersionId,
+        to_workflow_version_id: options?.toWorkflowVersionId,
+      },
+      body: undefined,
+    });
+    return deserializeWorkflowGraphVersionDiff(__wire);
+  }
+
+  /** Get Workflow Version Route */
+  async get_version(
+    workflowVersionId: string,
+    options: { workflowId: string }
+  ): Promise<WorkflowGraphVersion> {
+    const __wire = await this.client.request<WorkflowGraphVersionResponse>({
+      method: 'GET',
+      path: `/v1/workflows/versions/${workflowVersionId}`,
+      query: { workflow_id: options?.workflowId },
+      body: undefined,
+    });
+    return deserializeWorkflowGraphVersion(__wire);
+  }
+
+  /** Restore Workflow Version Route */
+  async create_version_restore(
+    workflowVersionId: string,
+    options: { workflowId: string }
+  ): Promise<Workflow> {
+    const __wire = await this.client.request<WorkflowResponse>({
+      method: 'POST',
+      path: `/v1/workflows/versions/${workflowVersionId}/restore`,
+      query: { workflow_id: options?.workflowId },
+      body: undefined,
     });
     return deserializeWorkflow(__wire);
   }

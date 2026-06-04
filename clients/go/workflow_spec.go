@@ -20,9 +20,10 @@ type WorkflowSpecApplyParams struct {
 }
 
 // Apply workflow Spec
-// Apply a declarative YAML spec to the draft workflow.
-// Re-applying a spec that already matches the draft makes no changes and
-// returns an empty `resource_changes` list.
+// Create a new workflow from a declarative YAML spec.
+// The workflow id in the YAML is treated as source context, not as the target
+// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+// existing workflow draft.
 func (s *WorkflowSpecService) Apply(ctx context.Context, params *WorkflowSpecApplyParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
 	var result DeclarativeApplyResponse
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/apply", nil, params, &result, opts)
@@ -79,7 +80,29 @@ func (s *WorkflowSpecService) Get(ctx context.Context, workflowID string, opts .
 		return nil, fmt.Errorf("retab: workflow_id is required")
 	}
 	var result DeclarativeExportResponse
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/spec/%s", url.PathEscape(workflowID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/%s/spec", url.PathEscape(workflowID)), nil, nil, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// WorkflowSpecApplyToWorkflowParams contains the parameters for ApplyToWorkflow.
+type WorkflowSpecApplyToWorkflowParams struct {
+	// YamlDefinition is workflow YAML definition
+	YamlDefinition string `json:"yaml_definition" url:"-"`
+}
+
+// ApplyToWorkflow apply Workflow Spec To Existing Workflow
+// Apply a declarative YAML spec to an existing workflow draft.
+// The URL workflow id is the update target. Any workflow id in the YAML is
+// treated as source context.
+func (s *WorkflowSpecService) ApplyToWorkflow(ctx context.Context, workflowID string, params *WorkflowSpecApplyToWorkflowParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	var result DeclarativeApplyResponse
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/spec/apply", url.PathEscape(workflowID)), nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-03T19:53:44.099Z",
+  "generatedAt": "2026-06-04T16:18:16.021Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -299,6 +299,22 @@
       "sdkMethod": "Create",
       "service": "workflows"
     },
+    "GET /v1/workflows/versions": {
+      "sdkMethod": "ListVersions",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/diff": {
+      "sdkMethod": "ListDiff",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/{workflow_version_id}": {
+      "sdkMethod": "GetVersion",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestore",
+      "service": "workflows"
+    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "Get",
       "service": "workflows"
@@ -335,6 +351,22 @@
       "sdkMethod": "Create",
       "service": "workflows.blocks"
     },
+    "GET /v1/workflows/blocks/versions": {
+      "sdkMethod": "ListVersions",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/diff": {
+      "sdkMethod": "ListDiff",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/{block_version_id}": {
+      "sdkMethod": "GetVersion",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestore",
+      "service": "workflows.blocks"
+    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "Get",
       "service": "workflows.blocks"
@@ -365,6 +397,22 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "Create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions": {
+      "sdkMethod": "ListVersions",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/diff": {
+      "sdkMethod": "ListDiff",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/{edge_version_id}": {
+      "sdkMethod": "GetVersion",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestore",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {
@@ -487,8 +535,12 @@
       "sdkMethod": "Validate",
       "service": "workflows.spec"
     },
-    "GET /v1/workflows/spec/{workflow_id}": {
+    "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "Get",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/apply": {
+      "sdkMethod": "ApplyToWorkflow",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

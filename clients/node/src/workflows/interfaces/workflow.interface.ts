@@ -25,6 +25,8 @@ export interface Workflow {
    * @default ""
    */
   description?: string;
+  /** Project that owns this workflow. Null means the organization's shared workflows project. */
+  projectId?: string | null;
   /** Published workflow metadata when a published version exists */
   published?: WorkflowPublished | null;
   createdAt: Date;
@@ -35,6 +37,7 @@ export interface WorkflowResponse {
   id: string;
   name?: string;
   description?: string;
+  project_id?: string | null;
   published?: WorkflowPublishedResponse | null;
   created_at: string;
   updated_at: string;
@@ -44,6 +47,7 @@ export const ZWorkflow = z.object({
   id: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
+  projectId: z.string().nullable().optional(),
   published: ZWorkflowPublished.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -54,6 +58,7 @@ export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
     id: wire['id'],
     name: wire['name'],
     description: wire['description'],
+    projectId: wire['project_id'],
     published:
       wire['published'] == null
         ? (wire['published'] as undefined)
@@ -70,6 +75,7 @@ export function serializeWorkflow(domain: Workflow): WorkflowResponse {
     id: domain['id'],
     name: domain['name'],
     description: domain['description'],
+    project_id: domain['projectId'],
     published:
       domain['published'] == null
         ? (domain['published'] as undefined)

@@ -122,7 +122,7 @@ public final class WorkflowSpecApi {
   }
 
   public DeclarativeExportResponse get(String workflowId) throws IOException, InterruptedException {
-    String path = "/v1/workflows/spec/" + encodePathSegment(workflowId);
+    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
@@ -140,6 +140,38 @@ public final class WorkflowSpecApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), DeclarativeExportResponse.class);
+  }
+
+  public DeclarativeApplyResponse applyToWorkflow(
+      String workflowId, DeclarativeWorkflowRequest request)
+      throws IOException, InterruptedException {
+    return applyToWorkflow(workflowId, request == null ? null : request.getYamlDefinition());
+  }
+
+  public DeclarativeApplyResponse applyToWorkflow(String workflowId, String yamlDefinition)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/apply";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("yaml_definition", yamlDefinition);
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

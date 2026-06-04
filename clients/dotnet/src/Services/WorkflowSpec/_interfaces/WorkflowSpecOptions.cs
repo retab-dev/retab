@@ -28,4 +28,12 @@ namespace Retab
         public string YamlDefinition { get; set; } = default!;
 
     }
+
+    /// <summary>Request options for <see cref="WorkflowSpecService.ApplyToWorkflowAsync"/>: Apply Workflow Spec To Existing Workflow</summary>
+    public class WorkflowSpecApplyToWorkflowOptions : BaseOptions
+    {
+        /// <summary>Workflow YAML definition</summary>
+        public string YamlDefinition { get; set; } = default!;
+
+    }
 }

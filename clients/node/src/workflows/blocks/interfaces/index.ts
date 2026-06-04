@@ -9,3 +9,7 @@ export * from './workflow-block.interface.js';
 export * from './workflow-block-create-request.interface.js';
 export * from './workflow-block-create-request-type.interface.js';
 export * from './workflow-block-type.interface.js';
+export * from './workflow-block-version.interface.js';
+export * from './workflow-block-version-diff.interface.js';
+export * from './workflow-block-version-type.interface.js';
+export * from './workflow-version-field-diff.interface.js';

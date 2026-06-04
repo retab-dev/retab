@@ -1,13 +1,16 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-03T19:53:48.417Z",
+  "generatedAt": "2026-06-04T16:18:36.369Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
     "README.md",
     "src/client.rs",
     "src/enums/actor_kind.rs",
+    "src/enums/artifact_drift_status.rs",
+    "src/enums/artifact_freshness_reasons.rs",
+    "src/enums/artifact_freshness_status.rs",
     "src/enums/assertion_drift_status.rs",
     "src/enums/assertion_outcome.rs",
     "src/enums/cancel_workflow_response_cancellation_status.rs",
@@ -93,6 +96,8 @@
     "src/enums/workflow_block_create_request_type.rs",
     "src/enums/workflow_block_executions_order.rs",
     "src/enums/workflow_block_type.rs",
+    "src/enums/workflow_block_version_type.rs",
+    "src/enums/workflow_config_block_type.rs",
     "src/enums/workflow_experiments_exclude_status.rs",
     "src/enums/workflow_experiments_order.rs",
     "src/enums/workflow_experiments_status.rs",
@@ -127,6 +132,8 @@
     "src/models/api_call_invocation.rs",
     "src/models/approve_review_request.rs",
     "src/models/array_contains_condition.rs",
+    "src/models/artifact_drift.rs",
+    "src/models/artifact_freshness.rs",
     "src/models/assertion_failure.rs",
     "src/models/assertion_result.rs",
     "src/models/assertion_schema_dep.rs",
@@ -364,15 +371,27 @@
     "src/models/workflow_block.rs",
     "src/models/workflow_block_create_request.rs",
     "src/models/workflow_block_list.rs",
+    "src/models/workflow_block_position.rs",
+    "src/models/workflow_block_version.rs",
+    "src/models/workflow_block_version_diff.rs",
+    "src/models/workflow_block_version_list.rs",
+    "src/models/workflow_config_block.rs",
+    "src/models/workflow_config_edge.rs",
     "src/models/workflow_edge_create_request.rs",
     "src/models/workflow_edge_doc.rs",
     "src/models/workflow_edge_list.rs",
+    "src/models/workflow_edge_version.rs",
+    "src/models/workflow_edge_version_diff.rs",
+    "src/models/workflow_edge_version_list.rs",
     "src/models/workflow_experiment.rs",
     "src/models/workflow_experiment_list.rs",
     "src/models/workflow_experiment_result_list.rs",
     "src/models/workflow_experiment_run_list.rs",
     "src/models/workflow_export_payload_request.rs",
     "src/models/workflow_export_payload_response.rs",
+    "src/models/workflow_graph_version.rs",
+    "src/models/workflow_graph_version_diff.rs",
+    "src/models/workflow_graph_version_list.rs",
     "src/models/workflow_list.rs",
     "src/models/workflow_published.rs",
     "src/models/workflow_review_list.rs",
@@ -413,6 +432,7 @@
     "src/models/workflow_test_run_single_scope.rs",
     "src/models/workflow_test_run_timing.rs",
     "src/models/workflow_test_run_workflow_scope.rs",
+    "src/models/workflow_version_field_diff.rs",
     "src/pagination.rs",
     "src/query.rs",
     "src/resources/classifications.rs",
@@ -706,6 +726,22 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "GET /v1/workflows/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/{workflow_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
+      "service": "workflows"
+    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "get",
       "service": "workflows"
@@ -742,6 +778,22 @@
       "sdkMethod": "create",
       "service": "workflows.blocks"
     },
+    "GET /v1/workflows/blocks/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/{block_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
+      "service": "workflows.blocks"
+    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "get",
       "service": "workflows.blocks"
@@ -772,6 +824,22 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "create",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions": {
+      "sdkMethod": "list_versions",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/diff": {
+      "sdkMethod": "list_diff",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/{edge_version_id}": {
+      "sdkMethod": "get_version",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
+      "sdkMethod": "create_version_restore",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {
@@ -894,8 +962,12 @@
       "sdkMethod": "validate",
       "service": "workflows.spec"
     },
-    "GET /v1/workflows/spec/{workflow_id}": {
+    "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "get",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/apply": {
+      "sdkMethod": "apply_to_workflow",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

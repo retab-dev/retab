@@ -68,6 +68,58 @@ impl CreateParams {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ListVersionsParams {
+    /// Required.
+    pub workflow_id: String,
+    /// Filter by stable edge ID
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub edge_id: Option<String>,
+    /// Filter by workflow version ID
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow_version_id: Option<String>,
+    /// Maximum number of edge versions to return
+    ///
+    /// Defaults to `50`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
+impl ListVersionsParams {
+    /// Construct a new `ListVersionsParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            edge_id: Default::default(),
+            workflow_version_id: Default::default(),
+            limit: Some(50),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ListDiffParams {
+    /// Required.
+    pub from_edge_version_id: String,
+    /// Required.
+    pub to_edge_version_id: String,
+}
+
+impl ListDiffParams {
+    /// Construct a new `ListDiffParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        from_edge_version_id: impl Into<String>,
+        to_edge_version_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            from_edge_version_id: from_edge_version_id.into(),
+            to_edge_version_id: to_edge_version_id.into(),
+        }
+    }
+}
+
 impl<'a> WorkflowEdgesApi<'a> {
     /// List Edges
     ///
@@ -114,6 +166,90 @@ impl<'a> WorkflowEdgesApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// List Edge Versions
+    pub async fn list_versions(
+        &self,
+        params: ListVersionsParams,
+    ) -> Result<WorkflowEdgeVersionList, Error> {
+        self.list_versions_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::list_versions`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_versions_with_options(
+        &self,
+        params: ListVersionsParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowEdgeVersionList, Error> {
+        let path = "/v1/workflows/edges/versions".to_string();
+        let method = http::Method::GET;
+        self.client
+            .request_page(method, &path, &params, "after", options)
+            .await
+    }
+
+    /// Diff Edge Versions
+    pub async fn list_diff(
+        &self,
+        params: ListDiffParams,
+    ) -> Result<WorkflowEdgeVersionDiff, Error> {
+        self.list_diff_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::list_diff`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_diff_with_options(
+        &self,
+        params: ListDiffParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowEdgeVersionDiff, Error> {
+        let path = "/v1/workflows/edges/versions/diff".to_string();
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &params, options)
+            .await
+    }
+
+    /// Get Edge Version
+    pub async fn get_version(&self, edge_version_id: &str) -> Result<WorkflowEdgeVersion, Error> {
+        self.get_version_with_options(edge_version_id, None).await
+    }
+
+    /// Variant of [`Self::get_version`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn get_version_with_options(
+        &self,
+        edge_version_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowEdgeVersion, Error> {
+        let edge_version_id = crate::client::path_segment(edge_version_id);
+        let path = format!("/v1/workflows/edges/versions/{edge_version_id}");
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
+            .await
+    }
+
+    /// Restore Edge Version
+    pub async fn create_version_restore(
+        &self,
+        edge_version_id: &str,
+    ) -> Result<WorkflowEdgeDoc, Error> {
+        self.create_version_restore_with_options(edge_version_id, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_version_restore`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_version_restore_with_options(
+        &self,
+        edge_version_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowEdgeDoc, Error> {
+        let edge_version_id = crate::client::path_segment(edge_version_id);
+        let path = format!("/v1/workflows/edges/versions/{edge_version_id}/restore");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &(), options)
             .await
     }
 

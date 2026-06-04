@@ -15,6 +15,9 @@ namespace Retab
         /// <summary>Description of the workflow</summary>
         public string? Description { get; set; } = "";
 
+        /// <summary>Project that owns this workflow. Null means the organization's shared workflows project.</summary>
+        public string? ProjectId { get; set; }
+
         /// <summary>Published workflow metadata when a published version exists</summary>
         public WorkflowPublished? Published { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

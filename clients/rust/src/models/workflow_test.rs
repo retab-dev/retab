@@ -25,6 +25,10 @@ pub struct WorkflowTest {
     pub schema_drift: Option<WorkflowTestSchemaDrift>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift_detail: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub freshness: Option<ArtifactFreshness>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub drift: Option<ArtifactDrift>,
     /// Defaults to `valid`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub validation_status: Option<String>,
@@ -64,6 +68,8 @@ impl WorkflowTest {
             assertion_drift_status: Default::default(),
             schema_drift: Default::default(),
             schema_drift_detail: Default::default(),
+            freshness: Default::default(),
+            drift: Default::default(),
             validation_status: Default::default(),
             validation_issues: Default::default(),
             latest_run_summary: Default::default(),

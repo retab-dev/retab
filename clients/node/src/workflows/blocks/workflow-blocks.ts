@@ -10,10 +10,16 @@ import type {
   WorkflowBlock,
   WorkflowBlockCreateRequestType,
   WorkflowBlockResponse,
+  WorkflowBlockVersion,
+  WorkflowBlockVersionDiff,
+  WorkflowBlockVersionDiffResponse,
+  WorkflowBlockVersionResponse,
 } from '../../workflows/blocks/interfaces/index.js';
 import {
   deserializeValidateWorkflowBlockConfigResponse,
   deserializeWorkflowBlock,
+  deserializeWorkflowBlockVersion,
+  deserializeWorkflowBlockVersionDiff,
 } from '../../workflows/blocks/interfaces/index.js';
 import { WorkflowBlockExecutions } from './executions/workflow-block-executions.js';
 
@@ -76,6 +82,71 @@ export class WorkflowBlocks {
       path: '/v1/workflows/blocks',
       query: undefined,
       body: body,
+    });
+    return deserializeWorkflowBlock(__wire);
+  }
+
+  /** List Block Versions */
+  async list_versions(options: {
+    workflowId: string;
+    blockId?: string | null | undefined;
+    workflowVersionId?: string | null | undefined;
+    limit?: number;
+    before?: string;
+    after?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedList<WorkflowBlockVersion>> {
+    return this.client._fetchPage(deserializeWorkflowBlockVersion, {
+      method: 'GET',
+      path: '/v1/workflows/blocks/versions',
+      query: {
+        workflow_id: options?.workflowId,
+        block_id: options?.blockId,
+        workflow_version_id: options?.workflowVersionId,
+        limit: options?.limit,
+        before: options?.before,
+        after: options?.after,
+        order: options?.order,
+      },
+      body: undefined,
+    });
+  }
+
+  /** Diff Block Versions */
+  async list_diff(options: {
+    fromBlockVersionId: string;
+    toBlockVersionId: string;
+  }): Promise<WorkflowBlockVersionDiff> {
+    const __wire = await this.client.request<WorkflowBlockVersionDiffResponse>({
+      method: 'GET',
+      path: '/v1/workflows/blocks/versions/diff',
+      query: {
+        from_block_version_id: options?.fromBlockVersionId,
+        to_block_version_id: options?.toBlockVersionId,
+      },
+      body: undefined,
+    });
+    return deserializeWorkflowBlockVersionDiff(__wire);
+  }
+
+  /** Get Block Version */
+  async get_version(blockVersionId: string): Promise<WorkflowBlockVersion> {
+    const __wire = await this.client.request<WorkflowBlockVersionResponse>({
+      method: 'GET',
+      path: `/v1/workflows/blocks/versions/${blockVersionId}`,
+      query: undefined,
+      body: undefined,
+    });
+    return deserializeWorkflowBlockVersion(__wire);
+  }
+
+  /** Restore Block Version */
+  async create_version_restore(blockVersionId: string): Promise<WorkflowBlock> {
+    const __wire = await this.client.request<WorkflowBlockResponse>({
+      method: 'POST',
+      path: `/v1/workflows/blocks/versions/${blockVersionId}/restore`,
+      query: undefined,
+      body: undefined,
     });
     return deserializeWorkflowBlock(__wire);
   }

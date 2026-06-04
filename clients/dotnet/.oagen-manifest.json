@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-03T19:53:56.912Z",
+  "generatedAt": "2026-06-04T16:18:29.474Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -38,6 +38,8 @@
     "src/Entities/ApiCallAttempt.cs",
     "src/Entities/ApiCallInvocation.cs",
     "src/Entities/ArrayContainsCondition.cs",
+    "src/Entities/ArtifactDrift.cs",
+    "src/Entities/ArtifactFreshness.cs",
     "src/Entities/AssertionFailure.cs",
     "src/Entities/AssertionResult.cs",
     "src/Entities/AssertionSchemaDep.cs",
@@ -203,9 +205,18 @@
     "src/Entities/WhileLoopTermination.cs",
     "src/Entities/Workflow.cs",
     "src/Entities/WorkflowBlock.cs",
+    "src/Entities/WorkflowBlockPosition.cs",
+    "src/Entities/WorkflowBlockVersion.cs",
+    "src/Entities/WorkflowBlockVersionDiff.cs",
+    "src/Entities/WorkflowConfigBlock.cs",
+    "src/Entities/WorkflowConfigEdge.cs",
     "src/Entities/WorkflowEdgeDoc.cs",
+    "src/Entities/WorkflowEdgeVersion.cs",
+    "src/Entities/WorkflowEdgeVersionDiff.cs",
     "src/Entities/WorkflowExperiment.cs",
     "src/Entities/WorkflowExportPayloadResponse.cs",
+    "src/Entities/WorkflowGraphVersion.cs",
+    "src/Entities/WorkflowGraphVersionDiff.cs",
     "src/Entities/WorkflowPublished.cs",
     "src/Entities/WorkflowRun.cs",
     "src/Entities/WorkflowRunStep.cs",
@@ -235,7 +246,11 @@
     "src/Entities/WorkflowTestRunBlockScope.cs",
     "src/Entities/WorkflowTestRunSingleScope.cs",
     "src/Entities/WorkflowTestRunWorkflowScope.cs",
+    "src/Entities/WorkflowVersionFieldDiff.cs",
     "src/Enums/ActorKind.cs",
+    "src/Enums/ArtifactDriftStatus.cs",
+    "src/Enums/ArtifactFreshnessReasons.cs",
+    "src/Enums/ArtifactFreshnessStatus.cs",
     "src/Enums/AssertionDriftStatus.cs",
     "src/Enums/AssertionOutcome.cs",
     "src/Enums/CancelWorkflowResponseCancellationStatus.cs",
@@ -599,6 +614,22 @@
       "sdkMethod": "CreateAsync",
       "service": "workflows"
     },
+    "GET /v1/workflows/versions": {
+      "sdkMethod": "ListVersionsAsync",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/diff": {
+      "sdkMethod": "ListDiffAsync",
+      "service": "workflows"
+    },
+    "GET /v1/workflows/versions/{workflow_version_id}": {
+      "sdkMethod": "GetVersionAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/versions/{workflow_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestoreAsync",
+      "service": "workflows"
+    },
     "GET /v1/workflows/{workflow_id}": {
       "sdkMethod": "GetAsync",
       "service": "workflows"
@@ -635,6 +666,22 @@
       "sdkMethod": "CreateAsync",
       "service": "workflows.blocks"
     },
+    "GET /v1/workflows/blocks/versions": {
+      "sdkMethod": "ListVersionsAsync",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/diff": {
+      "sdkMethod": "ListDiffAsync",
+      "service": "workflows.blocks"
+    },
+    "GET /v1/workflows/blocks/versions/{block_version_id}": {
+      "sdkMethod": "GetVersionAsync",
+      "service": "workflows.blocks"
+    },
+    "POST /v1/workflows/blocks/versions/{block_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestoreAsync",
+      "service": "workflows.blocks"
+    },
     "GET /v1/workflows/blocks/{block_id}": {
       "sdkMethod": "GetAsync",
       "service": "workflows.blocks"
@@ -665,6 +712,22 @@
     },
     "POST /v1/workflows/edges": {
       "sdkMethod": "CreateAsync",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions": {
+      "sdkMethod": "ListVersionsAsync",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/diff": {
+      "sdkMethod": "ListDiffAsync",
+      "service": "workflows.edges"
+    },
+    "GET /v1/workflows/edges/versions/{edge_version_id}": {
+      "sdkMethod": "GetVersionAsync",
+      "service": "workflows.edges"
+    },
+    "POST /v1/workflows/edges/versions/{edge_version_id}/restore": {
+      "sdkMethod": "CreateVersionRestoreAsync",
       "service": "workflows.edges"
     },
     "GET /v1/workflows/edges/{edge_id}": {
@@ -787,8 +850,12 @@
       "sdkMethod": "ValidateAsync",
       "service": "workflows.spec"
     },
-    "GET /v1/workflows/spec/{workflow_id}": {
+    "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "GetAsync",
+      "service": "workflows.spec"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/apply": {
+      "sdkMethod": "ApplyToWorkflowAsync",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

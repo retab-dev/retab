@@ -72,6 +72,98 @@ impl CreateParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct ListVersionsParams {
+    /// Workflow whose versions to list
+    ///
+    /// Required.
+    pub workflow_id: String,
+    /// Maximum number of versions to return
+    ///
+    /// Defaults to `50`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
+impl ListVersionsParams {
+    /// Construct a new `ListVersionsParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            limit: Some(50),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ListDiffParams {
+    /// Workflow whose versions to diff
+    ///
+    /// Required.
+    pub workflow_id: String,
+    /// Base workflow version ID
+    ///
+    /// Required.
+    pub from_workflow_version_id: String,
+    /// Target workflow version ID
+    ///
+    /// Required.
+    pub to_workflow_version_id: String,
+}
+
+impl ListDiffParams {
+    /// Construct a new `ListDiffParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(
+        workflow_id: impl Into<String>,
+        from_workflow_version_id: impl Into<String>,
+        to_workflow_version_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+            from_workflow_version_id: from_workflow_version_id.into(),
+            to_workflow_version_id: to_workflow_version_id.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GetVersionParams {
+    /// Workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.
+    ///
+    /// Required.
+    pub workflow_id: String,
+}
+
+impl GetVersionParams {
+    /// Construct a new `GetVersionParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateVersionRestoreParams {
+    /// Workflow to restore into a new draft
+    ///
+    /// Required.
+    pub workflow_id: String,
+}
+
+impl CreateVersionRestoreParams {
+    /// Construct a new `CreateVersionRestoreParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(workflow_id: impl Into<String>) -> Self {
+        Self {
+            workflow_id: workflow_id.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct UpdateParams {
     /// Request body sent with this call.
     ///
@@ -198,6 +290,98 @@ impl<'a> WorkflowsApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// List Workflow Versions Route
+    pub async fn list_versions(
+        &self,
+        params: ListVersionsParams,
+    ) -> Result<WorkflowGraphVersionList, Error> {
+        self.list_versions_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::list_versions`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_versions_with_options(
+        &self,
+        params: ListVersionsParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowGraphVersionList, Error> {
+        let path = "/v1/workflows/versions".to_string();
+        let method = http::Method::GET;
+        self.client
+            .request_page(method, &path, &params, "after", options)
+            .await
+    }
+
+    /// Diff Workflow Versions Route
+    pub async fn list_diff(
+        &self,
+        params: ListDiffParams,
+    ) -> Result<WorkflowGraphVersionDiff, Error> {
+        self.list_diff_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::list_diff`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn list_diff_with_options(
+        &self,
+        params: ListDiffParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowGraphVersionDiff, Error> {
+        let path = "/v1/workflows/versions/diff".to_string();
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &params, options)
+            .await
+    }
+
+    /// Get Workflow Version Route
+    pub async fn get_version(
+        &self,
+        workflow_version_id: &str,
+        params: GetVersionParams,
+    ) -> Result<WorkflowGraphVersion, Error> {
+        self.get_version_with_options(workflow_version_id, params, None)
+            .await
+    }
+
+    /// Variant of [`Self::get_version`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn get_version_with_options(
+        &self,
+        workflow_version_id: &str,
+        params: GetVersionParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<WorkflowGraphVersion, Error> {
+        let workflow_version_id = crate::client::path_segment(workflow_version_id);
+        let path = format!("/v1/workflows/versions/{workflow_version_id}");
+        let method = http::Method::GET;
+        self.client
+            .request_with_query_opts(method, &path, &params, options)
+            .await
+    }
+
+    /// Restore Workflow Version Route
+    pub async fn create_version_restore(
+        &self,
+        workflow_version_id: &str,
+        params: CreateVersionRestoreParams,
+    ) -> Result<Workflow, Error> {
+        self.create_version_restore_with_options(workflow_version_id, params, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_version_restore`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_version_restore_with_options(
+        &self,
+        workflow_version_id: &str,
+        params: CreateVersionRestoreParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<Workflow, Error> {
+        let workflow_version_id = crate::client::path_segment(workflow_version_id);
+        let path = format!("/v1/workflows/versions/{workflow_version_id}/restore");
+        let method = http::Method::POST;
+        self.client
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 

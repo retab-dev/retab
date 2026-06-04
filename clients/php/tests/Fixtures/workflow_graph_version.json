@@ -1,0 +1,43 @@
+{
+  "id": "01234",
+  "workflow_id": "workflow_id_01234",
+  "organization_id": "organization_id_01234",
+  "environment_id": "environment_id_01234",
+  "blocks": [
+    {
+      "id": "01234",
+      "type": "start_document",
+      "position": {
+        "x": 1,
+        "y": 1
+      },
+      "label": "test_label",
+      "config": {
+        "key": {}
+      },
+      "resolved_schemas": {
+        "key": {}
+      },
+      "width": 1,
+      "height": 1,
+      "parent_id": "parent_id_01234"
+    }
+  ],
+  "edges": [
+    {
+      "id": "01234",
+      "source": "test_source",
+      "target": "test_target",
+      "source_handle": "test_source_handle",
+      "target_handle": "test_target_handle",
+      "animated": true
+    }
+  ],
+  "block_version_ids": {
+    "key": "test_value"
+  },
+  "edge_version_ids": {
+    "key": "test_value"
+  },
+  "created_at": "2023-01-01T00:00:00.000Z"
+}

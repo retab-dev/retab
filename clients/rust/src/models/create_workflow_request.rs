@@ -18,4 +18,7 @@ pub struct CreateWorkflowRequest {
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
+    /// Project that should own this workflow. Omit to use the organization's shared workflows project.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub project_id: Option<String>,
 }
