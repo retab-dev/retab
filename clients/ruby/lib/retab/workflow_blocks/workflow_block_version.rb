@@ -9,8 +9,6 @@ module Retab
       id: :id,
       block_id: :block_id,
       workflow_id: :workflow_id,
-      organization_id: :organization_id,
-      environment_id: :environment_id,
       workflow_version_id: :workflow_version_id,
       type: :type,
       label: :label,
@@ -20,7 +18,6 @@ module Retab
       height: :height,
       parent_id: :parent_id,
       config: :config,
-      field_ref_snapshot: :field_ref_snapshot,
       resolved_schemas: :resolved_schemas,
       config_hash: :config_hash,
       created_at: :created_at
@@ -30,8 +27,6 @@ module Retab
       :id,
       :block_id,
       :workflow_id,
-      :organization_id,
-      :environment_id,
       :workflow_version_id,
       :type,
       :label,
@@ -41,7 +36,6 @@ module Retab
       :height,
       :parent_id,
       :config,
-      :field_ref_snapshot,
       :resolved_schemas,
       :config_hash,
       :created_at
@@ -53,8 +47,6 @@ module Retab
       @id = hash[:id]
       @block_id = hash[:block_id]
       @workflow_id = hash[:workflow_id]
-      @organization_id = hash[:organization_id]
-      @environment_id = hash[:environment_id]
       @workflow_version_id = hash[:workflow_version_id]
       @type = hash[:type]
       @label = hash[:label].nil? ? "" : hash[:label]
@@ -64,7 +56,6 @@ module Retab
       @height = hash[:height]
       @parent_id = hash[:parent_id]
       @config = hash[:config] || {}
-      @field_ref_snapshot = hash[:field_ref_snapshot] || {}
       @resolved_schemas = hash[:resolved_schemas] || {}
       @config_hash = hash[:config_hash].nil? ? "" : hash[:config_hash]
       @created_at = hash[:created_at]

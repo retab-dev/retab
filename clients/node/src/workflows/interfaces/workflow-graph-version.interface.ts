@@ -20,13 +20,11 @@ import {
   serializeWorkflowConfigEdge,
 } from './workflow-config-edge.interface.js';
 
-/** Public workflow version resource. */
+/** Public workflow version resource without tenant fields. */
 export interface WorkflowGraphVersion {
   /** Public content-addressed workflow version ID */
   id: string;
   workflowId: string;
-  organizationId: string;
-  environmentId: string;
   /** @default [] */
   blocks?: WorkflowConfigBlock[];
   /** @default [] */
@@ -41,8 +39,6 @@ export interface WorkflowGraphVersion {
 export interface WorkflowGraphVersionResponse {
   id: string;
   workflow_id: string;
-  organization_id: string;
-  environment_id: string;
   blocks?: WorkflowConfigBlockResponse[];
   edges?: WorkflowConfigEdgeResponse[];
   block_version_ids?: Record<string, string>;
@@ -53,8 +49,6 @@ export interface WorkflowGraphVersionResponse {
 export const ZWorkflowGraphVersion = z.object({
   id: z.string(),
   workflowId: z.string(),
-  organizationId: z.string(),
-  environmentId: z.string(),
   blocks: ZWorkflowConfigBlock.array().optional(),
   edges: ZWorkflowConfigEdge.array().optional(),
   blockVersionIds: z.record(z.string(), z.string()).optional(),
@@ -68,8 +62,6 @@ export function deserializeWorkflowGraphVersion(
   return {
     id: wire['id'],
     workflowId: wire['workflow_id'],
-    organizationId: wire['organization_id'],
-    environmentId: wire['environment_id'],
     blocks:
       wire['blocks'] == null
         ? (wire['blocks'] as undefined)
@@ -90,8 +82,6 @@ export function serializeWorkflowGraphVersion(
   return {
     id: domain['id'],
     workflow_id: domain['workflowId'],
-    organization_id: domain['organizationId'],
-    environment_id: domain['environmentId'],
     blocks:
       domain['blocks'] == null
         ? (domain['blocks'] as undefined)

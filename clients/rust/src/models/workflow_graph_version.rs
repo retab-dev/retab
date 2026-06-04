@@ -5,14 +5,12 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Public workflow version resource.
+/// Public workflow version resource without tenant fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowGraphVersion {
     /// Public content-addressed workflow version ID
     pub id: String,
     pub workflow_id: String,
-    pub organization_id: String,
-    pub environment_id: String,
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub blocks: Option<Vec<WorkflowConfigBlock>>,
@@ -33,15 +31,11 @@ impl WorkflowGraphVersion {
     pub fn new(
         id: impl Into<String>,
         workflow_id: impl Into<String>,
-        organization_id: impl Into<String>,
-        environment_id: impl Into<String>,
         created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
             workflow_id: workflow_id.into(),
-            organization_id: organization_id.into(),
-            environment_id: environment_id.into(),
             blocks: Default::default(),
             edges: Default::default(),
             block_version_ids: Default::default(),

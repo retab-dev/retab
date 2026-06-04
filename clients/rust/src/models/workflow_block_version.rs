@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Immutable block snapshot derived from a workflow version.
+/// Public block version resource without tenant or storage-only fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowBlockVersion {
     /// Public content-addressed block version ID
@@ -14,10 +14,6 @@ pub struct WorkflowBlockVersion {
     pub block_id: String,
     /// Source workflow ID
     pub workflow_id: String,
-    /// Organization ID for data isolation
-    pub organization_id: String,
-    /// Customer environment ID for data isolation
-    pub environment_id: String,
     /// Workflow version this block version belongs to
     pub workflow_version_id: String,
     #[serde(rename = "type")]
@@ -40,16 +36,13 @@ pub struct WorkflowBlockVersion {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub config: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub field_ref_snapshot: Option<std::collections::HashMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resolved_schemas: Option<std::collections::HashMap<String, serde_json::Value>>,
     /// Stable SHA-256 hash of the executable block config
     ///
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub config_hash: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
+    pub created_at: String,
 }
 impl WorkflowBlockVersion {
     /// Construct a new `WorkflowBlockVersion` with the required fields set.
@@ -58,17 +51,14 @@ impl WorkflowBlockVersion {
         id: impl Into<String>,
         block_id: impl Into<String>,
         workflow_id: impl Into<String>,
-        organization_id: impl Into<String>,
-        environment_id: impl Into<String>,
         workflow_version_id: impl Into<String>,
         type_: WorkflowBlockVersionType,
+        created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
             block_id: block_id.into(),
             workflow_id: workflow_id.into(),
-            organization_id: organization_id.into(),
-            environment_id: environment_id.into(),
             workflow_version_id: workflow_version_id.into(),
             type_,
             label: Default::default(),
@@ -78,10 +68,9 @@ impl WorkflowBlockVersion {
             height: Default::default(),
             parent_id: Default::default(),
             config: Default::default(),
-            field_ref_snapshot: Default::default(),
             resolved_schemas: Default::default(),
             config_hash: Default::default(),
-            created_at: Default::default(),
+            created_at: created_at.into(),
         }
     }
 }

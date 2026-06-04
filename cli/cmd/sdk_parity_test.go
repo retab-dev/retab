@@ -65,6 +65,10 @@ var sdkOperationCommandAliases = map[string]string{
 	// of the local bundle validator rather than the generated block-validate-config
 	// name.
 	"workflows.blocks.CreateBlockValidateConfig": "workflows blocks validate-config",
+	// The API method name includes the target object for clarity; the CLI keeps
+	// the shorter verb under the spec namespace.
+	"workflows.spec.ApplyToWorkflow": "workflows spec apply-to",
+	"workflows.CreatePlan":           "workflows spec plan-to",
 }
 
 var workflowCLIOnlyCommands = map[string]string{

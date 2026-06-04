@@ -21,18 +21,6 @@ module Retab
     sig { params(value: String).returns(String) }
     def workflow_id=(value); end
 
-    sig { returns(String) }
-    def organization_id; end
-
-    sig { params(value: String).returns(String) }
-    def organization_id=(value); end
-
-    sig { returns(String) }
-    def environment_id; end
-
-    sig { params(value: String).returns(String) }
-    def environment_id=(value); end
-
     sig { returns(T.nilable(T::Array[Retab::WorkflowConfigBlock])) }
     def blocks; end
 

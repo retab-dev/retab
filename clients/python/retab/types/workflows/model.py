@@ -247,6 +247,7 @@ __all__ = [
     "WorkflowBlockVersion",
     "WorkflowBlockVersionDiff",
     "WorkflowBlockVersionType",
+    "WorkflowCapabilities",
     "WorkflowConfigBlock",
     "WorkflowConfigBlockType",
     "WorkflowConfigEdge",

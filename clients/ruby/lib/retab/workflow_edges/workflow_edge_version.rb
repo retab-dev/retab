@@ -9,8 +9,6 @@ module Retab
       id: :id,
       edge_id: :edge_id,
       workflow_id: :workflow_id,
-      organization_id: :organization_id,
-      environment_id: :environment_id,
       workflow_version_id: :workflow_version_id,
       source: :source,
       source_handle: :source_handle,
@@ -24,8 +22,6 @@ module Retab
       :id,
       :edge_id,
       :workflow_id,
-      :organization_id,
-      :environment_id,
       :workflow_version_id,
       :source,
       :source_handle,
@@ -41,8 +37,6 @@ module Retab
       @id = hash[:id]
       @edge_id = hash[:edge_id]
       @workflow_id = hash[:workflow_id]
-      @organization_id = hash[:organization_id]
-      @environment_id = hash[:environment_id]
       @workflow_version_id = hash[:workflow_version_id]
       @source = hash[:source]
       @source_handle = hash[:source_handle]

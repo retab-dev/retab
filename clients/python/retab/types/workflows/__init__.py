@@ -4,8 +4,46 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
+
+
+DeclarativePlanFieldChangeAction: TypeAlias = Literal["create", "update", "delete"]
+
+
+class DeclarativePlanResourceChangeTarget(str, Enum):
+    WORKFLOW = "workflow"
+    BLOCK = "block"
+    EDGE = "edge"
+
+
+class DeclarativePlanResourceChangeType(str, Enum):
+    WORKFLOW = "workflow"
+    EDGE = "edge"
+    START_DOCUMENT = "start_document"
+    START_JSON = "start_json"
+    NOTE = "note"
+    PARSE = "parse"
+    EDIT = "edit"
+    EXTRACT = "extract"
+    SPLIT = "split"
+    CLASSIFIER = "classifier"
+    CONDITIONAL = "conditional"
+    API_CALL = "api_call"
+    FUNCTION = "function"
+    WHILE_LOOP = "while_loop"
+    FOR_EACH = "for_each"
+    MERGE_DICTS = "merge_dicts"
+    WHILE_LOOP_SENTINEL_START = "while_loop_sentinel_start"
+    WHILE_LOOP_SENTINEL_END = "while_loop_sentinel_end"
+    FOR_EACH_SENTINEL_START = "for_each_sentinel_start"
+    FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
+
+
+class DeclarativePlanResponseAction(str, Enum):
+    CREATE = "create"
+    UPDATE = "update"
+    NOOP = "noop"
 
 
 class WorkflowConfigBlockType(str, Enum):
@@ -29,6 +67,9 @@ class WorkflowConfigBlockType(str, Enum):
     FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
 
 
+DeclarativePlanResourceChangeActions = DeclarativePlanFieldChangeAction
+
+
 class CreateWorkflowRequest(BaseModel):
     """Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty."""
 
@@ -37,6 +78,82 @@ class CreateWorkflowRequest(BaseModel):
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
     project_id: str | None = Field(default=None, description="Project that should own this workflow. Omit to use the organization's shared workflows project.")
+
+
+class DeclarativePlanChange(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    before: Any | None = None
+    after: Any | None = None
+    before_sensitive: Any | None = Field(default=None)
+    after_sensitive: Any | None = Field(default=None)
+    field_changes: list[DeclarativePlanFieldChange] | None = Field(default=[])
+
+
+class DeclarativePlanFieldChange(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    path: list[str | int]
+    path_display: str
+    action: DeclarativePlanFieldChangeAction
+    before: Any | None = None
+    after: Any | None = None
+    before_sensitive: bool | None = Field(default=False)
+    after_sensitive: bool | None = Field(default=False)
+    unified_diff: str | None = None
+
+
+class DeclarativePlanResourceChange(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    address: str
+    target: DeclarativePlanResourceChangeTarget
+    target_id: str
+    name: str
+    type: DeclarativePlanResourceChangeType = Field(
+        ...,
+        description="Resource kind for this plan entry. `workflow` and `edge` are flat singletons; for `target='block'` this carries the block's concrete type (e.g. `extract`, `api_call`) so the plan summary can render type-specific labels.",
+    )
+    actions: list[DeclarativePlanFieldChangeAction]
+    summary: str
+    change: DeclarativePlanChange
+    path: str | None = None
+
+
+class DeclarativePlanResponse(BaseModel):
+    """A preview of the changes a workflow YAML definition would make, with a per-resource diff and a human-readable `rendered_plan`."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    workflow_id: str
+    action: DeclarativePlanResponseAction
+    block_count: int
+    edge_count: int
+    diagnostics: dict[str, Any]
+    format_version: str | None = Field(default="workflows-plan/v1")
+    summary: DeclarativePlanSummary | None = Field(default={"add": 0, "change": 0, "destroy": 0, "replace": 0, "noop": 0, "total": 0, "has_changes": False}, validate_default=True)
+    resource_changes: list[DeclarativePlanResourceChange] | None = Field(default=[])
+    rendered_plan: str | None = Field(default="No changes. Workflow spec is up to date.")
+
+
+class DeclarativePlanSummary(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    add: int | None = Field(default=0)
+    change: int | None = Field(default=0)
+    destroy: int | None = Field(default=0)
+    replace: int | None = Field(default=0)
+    noop: int | None = Field(default=0)
+    total: int | None = Field(default=0)
+    has_changes: bool | None = Field(default=False)
+
+
+class DeclarativeWorkflowRequest(BaseModel):
+    """Body carrying a workflow's full YAML definition for validate, plan, apply, or export."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    yaml_definition: str = Field(..., description="Workflow YAML definition")
 
 
 class PublishWorkflowRequest(BaseModel):
@@ -68,6 +185,7 @@ class Workflow(BaseModel):
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    capabilities: WorkflowCapabilities | None = Field(default=None, description="Server-derived permissions for the current actor.")
 
 
 class WorkflowBlockPosition(BaseModel):
@@ -75,6 +193,24 @@ class WorkflowBlockPosition(BaseModel):
 
     x: float
     y: float
+
+
+class WorkflowCapabilities(BaseModel):
+    """Server-derived permissions for the current actor.
+
+    These fields are response-only. They should not be persisted on
+    ``StoredWorkflow`` documents."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    can_view: bool | None = Field(default=False)
+    can_edit: bool | None = Field(default=False)
+    can_run: bool | None = Field(default=False)
+    can_review: bool | None = Field(default=False)
+    can_publish: bool | None = Field(default=False)
+    can_manage_members: bool | None = Field(default=False)
+    can_manage_settings: bool | None = Field(default=False)
+    can_delete: bool | None = Field(default=False)
 
 
 class WorkflowConfigBlock(BaseModel):
@@ -106,14 +242,12 @@ class WorkflowConfigEdge(BaseModel):
 
 
 class WorkflowGraphVersion(BaseModel):
-    """Public workflow version resource."""
+    """Public workflow version resource without tenant fields."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Public content-addressed workflow version ID")
     workflow_id: str
-    organization_id: str
-    environment_id: str
     blocks: list[WorkflowConfigBlock] | None = Field(default=[])
     edges: list[WorkflowConfigEdge] | None = Field(default=[])
     block_version_ids: dict[str, str] | None = Field(default={})
@@ -402,6 +536,7 @@ __all__ = [
     "WorkflowBlockVersion",
     "WorkflowBlockVersionDiff",
     "WorkflowBlockVersionType",
+    "WorkflowCapabilities",
     "WorkflowConfigBlock",
     "WorkflowConfigBlockType",
     "WorkflowConfigEdge",
@@ -443,10 +578,17 @@ __all__ = [
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 CreateWorkflowRequest.model_rebuild()
+DeclarativePlanChange.model_rebuild()
+DeclarativePlanFieldChange.model_rebuild()
+DeclarativePlanResourceChange.model_rebuild()
+DeclarativePlanResponse.model_rebuild()
+DeclarativePlanSummary.model_rebuild()
+DeclarativeWorkflowRequest.model_rebuild()
 PublishWorkflowRequest.model_rebuild()
 UpdateWorkflowRequest.model_rebuild()
 Workflow.model_rebuild()
 WorkflowBlockPosition.model_rebuild()
+WorkflowCapabilities.model_rebuild()
 WorkflowConfigBlock.model_rebuild()
 WorkflowConfigEdge.model_rebuild()
 WorkflowGraphVersion.model_rebuild()

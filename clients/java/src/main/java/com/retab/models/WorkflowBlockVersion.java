@@ -14,8 +14,6 @@ public final class WorkflowBlockVersion {
   private final String id;
   private final String blockId;
   private final String workflowId;
-  private final String organizationId;
-  private final String environmentId;
   private final String workflowVersionId;
   private final WorkflowBlockVersionType type;
   private final String label;
@@ -25,7 +23,6 @@ public final class WorkflowBlockVersion {
   private final Double height;
   private final String parentId;
   private final Map<String, Object> config;
-  private final Map<String, String> fieldRefSnapshot;
   private final Map<String, Object> resolvedSchemas;
   private final String configHash;
   private final OffsetDateTime createdAt;
@@ -35,8 +32,6 @@ public final class WorkflowBlockVersion {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "organization_id", required = true) String organizationId,
-      @JsonProperty(value = "environment_id", required = true) String environmentId,
       @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
       @JsonProperty(value = "type", required = true) WorkflowBlockVersionType type,
       @JsonProperty(value = "label", required = false) String label,
@@ -46,17 +41,13 @@ public final class WorkflowBlockVersion {
       @JsonProperty(value = "height", required = false) Double height,
       @JsonProperty(value = "parent_id", required = false) String parentId,
       @JsonProperty(value = "config", required = false) Map<String, Object> config,
-      @JsonProperty(value = "field_ref_snapshot", required = false)
-          Map<String, String> fieldRefSnapshot,
       @JsonProperty(value = "resolved_schemas", required = false)
           Map<String, Object> resolvedSchemas,
       @JsonProperty(value = "config_hash", required = false) String configHash,
-      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
+      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
     this.id = id;
     this.blockId = blockId;
     this.workflowId = workflowId;
-    this.organizationId = organizationId;
-    this.environmentId = environmentId;
     this.workflowVersionId = workflowVersionId;
     this.type = type;
     this.label = label != null ? label : "";
@@ -66,7 +57,6 @@ public final class WorkflowBlockVersion {
     this.height = height;
     this.parentId = parentId;
     this.config = config;
-    this.fieldRefSnapshot = fieldRefSnapshot;
     this.resolvedSchemas = resolvedSchemas;
     this.configHash = configHash != null ? configHash : "";
     this.createdAt = createdAt;
@@ -85,16 +75,6 @@ public final class WorkflowBlockVersion {
   @JsonProperty("workflow_id")
   public String getWorkflowId() {
     return workflowId;
-  }
-
-  @JsonProperty("organization_id")
-  public String getOrganizationId() {
-    return organizationId;
-  }
-
-  @JsonProperty("environment_id")
-  public String getEnvironmentId() {
-    return environmentId;
   }
 
   @JsonProperty("workflow_version_id")
@@ -140,11 +120,6 @@ public final class WorkflowBlockVersion {
   @JsonProperty("config")
   public Map<String, Object> getConfig() {
     return config;
-  }
-
-  @JsonProperty("field_ref_snapshot")
-  public Map<String, String> getFieldRefSnapshot() {
-    return fieldRefSnapshot;
   }
 
   @JsonProperty("resolved_schemas")

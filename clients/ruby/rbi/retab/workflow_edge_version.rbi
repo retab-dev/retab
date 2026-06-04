@@ -28,18 +28,6 @@ module Retab
     def workflow_id=(value); end
 
     sig { returns(String) }
-    def organization_id; end
-
-    sig { params(value: String).returns(String) }
-    def organization_id=(value); end
-
-    sig { returns(String) }
-    def environment_id; end
-
-    sig { params(value: String).returns(String) }
-    def environment_id=(value); end
-
-    sig { returns(String) }
     def workflow_version_id; end
 
     sig { params(value: String).returns(String) }
@@ -75,10 +63,10 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def animated=(value); end
 
-    sig { returns(T.nilable(String)) }
+    sig { returns(String) }
     def created_at; end
 
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    sig { params(value: String).returns(String) }
     def created_at=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }

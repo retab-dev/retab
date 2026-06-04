@@ -51,6 +51,12 @@ module Retab
     sig { params(value: String).returns(String) }
     def updated_at=(value); end
 
+    sig { returns(T.nilable(Retab::WorkflowCapabilities)) }
+    def capabilities; end
+
+    sig { params(value: T.nilable(Retab::WorkflowCapabilities)).returns(T.nilable(Retab::WorkflowCapabilities)) }
+    def capabilities=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

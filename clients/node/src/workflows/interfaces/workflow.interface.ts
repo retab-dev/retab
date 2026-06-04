@@ -2,6 +2,15 @@
 
 import { z } from 'zod';
 import type {
+  WorkflowCapabilities,
+  WorkflowCapabilitiesResponse,
+} from './workflow-capabilities.interface.js';
+import {
+  ZWorkflowCapabilities,
+  deserializeWorkflowCapabilities,
+  serializeWorkflowCapabilities,
+} from './workflow-capabilities.interface.js';
+import type {
   WorkflowPublished,
   WorkflowPublishedResponse,
 } from './workflow-published.interface.js';
@@ -31,6 +40,8 @@ export interface Workflow {
   published?: WorkflowPublished | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Server-derived permissions for the current actor. */
+  capabilities?: WorkflowCapabilities | null;
 }
 
 export interface WorkflowResponse {
@@ -41,6 +52,7 @@ export interface WorkflowResponse {
   published?: WorkflowPublishedResponse | null;
   created_at: string;
   updated_at: string;
+  capabilities?: WorkflowCapabilitiesResponse | null;
 }
 
 export const ZWorkflow = z.object({
@@ -51,6 +63,7 @@ export const ZWorkflow = z.object({
   published: ZWorkflowPublished.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+  capabilities: ZWorkflowCapabilities.nullable().optional(),
 }) as z.ZodType<Workflow>;
 
 export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
@@ -67,6 +80,12 @@ export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
           : deserializeWorkflowPublished(wire['published']),
     createdAt: new Date(wire['created_at']),
     updatedAt: new Date(wire['updated_at']),
+    capabilities:
+      wire['capabilities'] == null
+        ? (wire['capabilities'] as undefined)
+        : wire['capabilities'] == null
+          ? wire['capabilities']
+          : deserializeWorkflowCapabilities(wire['capabilities']),
   };
 }
 
@@ -84,5 +103,11 @@ export function serializeWorkflow(domain: Workflow): WorkflowResponse {
           : serializeWorkflowPublished(domain['published']),
     created_at: domain['createdAt'].toISOString(),
     updated_at: domain['updatedAt'].toISOString(),
+    capabilities:
+      domain['capabilities'] == null
+        ? (domain['capabilities'] as undefined)
+        : domain['capabilities'] == null
+          ? domain['capabilities']
+          : serializeWorkflowCapabilities(domain['capabilities']),
   };
 }

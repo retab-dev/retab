@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-04T16:17:49.014Z",
+  "generatedAt": "2026-06-04T17:24:23.318Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -260,6 +260,7 @@
     "src/main/java/com/retab/models/WorkflowBlockPosition.java",
     "src/main/java/com/retab/models/WorkflowBlockVersion.java",
     "src/main/java/com/retab/models/WorkflowBlockVersionDiff.java",
+    "src/main/java/com/retab/models/WorkflowCapabilities.java",
     "src/main/java/com/retab/models/WorkflowConfigBlock.java",
     "src/main/java/com/retab/models/WorkflowConfigEdge.java",
     "src/main/java/com/retab/models/WorkflowEdgeCreateRequest.java",
@@ -719,6 +720,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "createPlan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {

@@ -3,6 +3,8 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import type {
+  DeclarativePlanResponse,
+  DeclarativePlanResponseResponse,
   Workflow,
   WorkflowGraphVersion,
   WorkflowGraphVersionDiff,
@@ -11,6 +13,7 @@ import type {
   WorkflowResponse,
 } from '../workflows/interfaces/index.js';
 import {
+  deserializeDeclarativePlanResponse,
   deserializeWorkflow,
   deserializeWorkflowGraphVersion,
   deserializeWorkflowGraphVersionDiff,
@@ -218,5 +221,19 @@ export class Workflows {
       body: body,
     });
     return deserializeWorkflow(__wire);
+  }
+
+  /** Plan Workflow Spec For Existing Workflow */
+  async create_plan(workflowId: string, yamlDefinition: string): Promise<DeclarativePlanResponse> {
+    const body = {
+      yaml_definition: yamlDefinition,
+    };
+    const __wire = await this.client.request<DeclarativePlanResponseResponse>({
+      method: 'POST',
+      path: `/v1/workflows/${workflowId}/spec/plan`,
+      query: undefined,
+      body: body,
+    });
+    return deserializeDeclarativePlanResponse(__wire);
   }
 }

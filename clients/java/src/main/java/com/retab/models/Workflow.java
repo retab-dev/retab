@@ -16,6 +16,7 @@ public final class Workflow {
   private final WorkflowPublished published;
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
+  private final WorkflowCapabilities capabilities;
 
   @JsonCreator
   public Workflow(
@@ -25,7 +26,8 @@ public final class Workflow {
       @JsonProperty(value = "project_id", required = false) String projectId,
       @JsonProperty(value = "published", required = false) WorkflowPublished published,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
-      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
+      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt,
+      @JsonProperty(value = "capabilities", required = false) WorkflowCapabilities capabilities) {
     this.id = id;
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
@@ -33,6 +35,7 @@ public final class Workflow {
     this.published = published;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.capabilities = capabilities;
   }
 
   @JsonProperty("id")
@@ -68,5 +71,10 @@ public final class Workflow {
   @JsonProperty("updated_at")
   public OffsetDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  @JsonProperty("capabilities")
+  public WorkflowCapabilities getCapabilities() {
+    return capabilities;
   }
 }

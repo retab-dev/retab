@@ -155,15 +155,13 @@ class WorkflowBlock(BaseModel):
 
 
 class WorkflowBlockVersion(BaseModel):
-    """Immutable block snapshot derived from a workflow version."""
+    """Public block version resource without tenant or storage-only fields."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Public content-addressed block version ID")
     block_id: str = Field(..., description="Stable logical block ID")
     workflow_id: str = Field(..., description="Source workflow ID")
-    organization_id: str = Field(..., description="Organization ID for data isolation")
-    environment_id: str = Field(..., description="Customer environment ID for data isolation")
     workflow_version_id: str = Field(..., description="Workflow version this block version belongs to")
     type: WorkflowBlockType
     label: str | None = Field(default="")
@@ -173,10 +171,9 @@ class WorkflowBlockVersion(BaseModel):
     height: float | None = None
     parent_id: str | None = None
     config: dict[str, Any] | None = None
-    field_ref_snapshot: dict[str, str] | None = None
     resolved_schemas: dict[str, Any] | None = None
     config_hash: str | None = Field(default="", description="Stable SHA-256 hash of the executable block config")
-    created_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 class WorkflowBlockVersionDiff(BaseModel):

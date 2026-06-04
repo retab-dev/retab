@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-04T16:18:16.021Z",
+  "generatedAt": "2026-06-04T17:38:03.806Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -333,6 +333,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "Publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "CreatePlan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {

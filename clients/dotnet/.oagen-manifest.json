@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-04T16:18:29.474Z",
+  "generatedAt": "2026-06-04T17:38:11.395Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -208,6 +208,7 @@
     "src/Entities/WorkflowBlockPosition.cs",
     "src/Entities/WorkflowBlockVersion.cs",
     "src/Entities/WorkflowBlockVersionDiff.cs",
+    "src/Entities/WorkflowCapabilities.cs",
     "src/Entities/WorkflowConfigBlock.cs",
     "src/Entities/WorkflowConfigEdge.cs",
     "src/Entities/WorkflowEdgeDoc.cs",
@@ -648,6 +649,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "PublishAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "CreatePlanAsync",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {

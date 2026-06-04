@@ -260,5 +260,27 @@ namespace Retab
         {
             return this.PublishAsync(workflowId, options, requestOptions, cancellationToken);
         }
+
+        /// <summary>Plan Workflow Spec For Existing Workflow</summary>
+        /// <remarks>
+        /// Preview applying a declarative YAML spec to an existing workflow draft.
+        /// The URL workflow id is the plan target. Any workflow id in the YAML is
+        /// treated as source context.
+        /// </remarks>
+        /// <param name="workflowId">The workflow id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativePlanResponse"/> result.</returns>
+        public virtual async Task<DeclarativePlanResponse> CreatePlanAsync(string workflowId, WorkflowsCreatePlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<DeclarativePlanResponse>($"/v1/workflows/{Uri.EscapeDataString(workflowId)}/spec/plan", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreatePlanAsync"/>.</summary>
+        public virtual Task<DeclarativePlanResponse> CreatePlan(string workflowId, WorkflowsCreatePlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreatePlanAsync(workflowId, options, requestOptions, cancellationToken);
+        }
     }
 }

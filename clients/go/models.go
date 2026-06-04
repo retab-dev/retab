@@ -2076,6 +2076,8 @@ type Workflow struct {
 	Published *WorkflowPublished `json:"published,omitempty"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
+	// Capabilities is server-derived permissions for the current actor.
+	Capabilities *WorkflowCapabilities `json:"capabilities,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2131,7 +2133,7 @@ type WorkflowBlockPosition struct {
 	Y float64 `json:"y"`
 }
 
-// WorkflowBlockVersion immutable block snapshot derived from a workflow version.
+// WorkflowBlockVersion public block version resource without tenant or storage-only fields.
 type WorkflowBlockVersion struct {
 	// ID is public content-addressed block version ID
 	ID string `json:"id"`
@@ -2139,10 +2141,6 @@ type WorkflowBlockVersion struct {
 	BlockID string `json:"block_id"`
 	// WorkflowID is source workflow ID
 	WorkflowID string `json:"workflow_id"`
-	// OrganizationID is organization ID for data isolation
-	OrganizationID string `json:"organization_id"`
-	// EnvironmentID is customer environment ID for data isolation
-	EnvironmentID string `json:"environment_id"`
 	// WorkflowVersionID is workflow version this block version belongs to
 	WorkflowVersionID string                   `json:"workflow_version_id"`
 	Type              WorkflowBlockVersionType `json:"type"`
@@ -2153,11 +2151,10 @@ type WorkflowBlockVersion struct {
 	Height            *float64                 `json:"height,omitempty"`
 	ParentID          *string                  `json:"parent_id,omitempty"`
 	Config            map[string]interface{}   `json:"config,omitempty"`
-	FieldRefSnapshot  map[string]string        `json:"field_ref_snapshot,omitempty"`
 	ResolvedSchemas   map[string]interface{}   `json:"resolved_schemas,omitempty"`
 	// ConfigHash is stable SHA-256 hash of the executable block config
-	ConfigHash *string    `json:"config_hash,omitempty"`
-	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	ConfigHash *string   `json:"config_hash,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // WorkflowBlockVersionDiff represents a workflow block version diff.
@@ -2166,6 +2163,20 @@ type WorkflowBlockVersionDiff struct {
 	ToBlockVersionID   string                      `json:"to_block_version_id"`
 	BlockID            string                      `json:"block_id"`
 	Changes            []*WorkflowVersionFieldDiff `json:"changes,omitempty"`
+}
+
+// WorkflowCapabilities server-derived permissions for the current actor.
+// These fields are response-only. They should not be persisted on
+// “StoredWorkflow“ documents.
+type WorkflowCapabilities struct {
+	CanView           *bool `json:"can_view,omitempty"`
+	CanEdit           *bool `json:"can_edit,omitempty"`
+	CanRun            *bool `json:"can_run,omitempty"`
+	CanReview         *bool `json:"can_review,omitempty"`
+	CanPublish        *bool `json:"can_publish,omitempty"`
+	CanManageMembers  *bool `json:"can_manage_members,omitempty"`
+	CanManageSettings *bool `json:"can_manage_settings,omitempty"`
+	CanDelete         *bool `json:"can_delete,omitempty"`
 }
 
 // WorkflowConfigBlock represents a workflow config block.
@@ -2223,7 +2234,7 @@ type WorkflowEdgeDoc struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// WorkflowEdgeVersion immutable edge snapshot derived from a workflow version.
+// WorkflowEdgeVersion public edge version resource without tenant fields.
 type WorkflowEdgeVersion struct {
 	// ID is public content-addressed edge version ID
 	ID string `json:"id"`
@@ -2231,20 +2242,16 @@ type WorkflowEdgeVersion struct {
 	EdgeID string `json:"edge_id"`
 	// WorkflowID is source workflow ID
 	WorkflowID string `json:"workflow_id"`
-	// OrganizationID is organization ID for data isolation
-	OrganizationID string `json:"organization_id"`
-	// EnvironmentID is customer environment ID for data isolation
-	EnvironmentID string `json:"environment_id"`
 	// WorkflowVersionID is workflow version this edge version belongs to
 	WorkflowVersionID string `json:"workflow_version_id"`
 	// Source is id of the source block
 	Source       string  `json:"source"`
 	SourceHandle *string `json:"source_handle,omitempty"`
 	// Target is id of the target block
-	Target       string     `json:"target"`
-	TargetHandle *string    `json:"target_handle,omitempty"`
-	Animated     bool       `json:"animated,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
+	Target       string    `json:"target"`
+	TargetHandle *string   `json:"target_handle,omitempty"`
+	Animated     bool      `json:"animated,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2336,13 +2343,11 @@ type WorkflowExportPayloadResponse struct {
 	Columns int `json:"columns"`
 }
 
-// WorkflowGraphVersion public workflow version resource.
+// WorkflowGraphVersion public workflow version resource without tenant fields.
 type WorkflowGraphVersion struct {
 	// ID is public content-addressed workflow version ID
 	ID              string                 `json:"id"`
 	WorkflowID      string                 `json:"workflow_id"`
-	OrganizationID  string                 `json:"organization_id"`
-	EnvironmentID   string                 `json:"environment_id"`
 	Blocks          []*WorkflowConfigBlock `json:"blocks,omitempty"`
 	Edges           []*WorkflowConfigEdge  `json:"edges,omitempty"`
 	BlockVersionIDs map[string]string      `json:"block_version_ids,omitempty"`

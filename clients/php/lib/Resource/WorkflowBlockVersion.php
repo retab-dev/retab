@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Immutable block snapshot derived from a workflow version. */
+/** Public block version resource without tenant or storage-only fields. */
 readonly class WorkflowBlockVersion implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -18,13 +18,10 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
         public string $blockId,
         /** Source workflow ID */
         public string $workflowId,
-        /** Organization ID for data isolation */
-        public string $organizationId,
-        /** Customer environment ID for data isolation */
-        public string $environmentId,
         /** Workflow version this block version belongs to */
         public string $workflowVersionId,
         public WorkflowBlockType $type,
+        public \DateTimeImmutable $createdAt,
         public ?string $label = null,
         public ?float $positionX = null,
         public ?float $positionY = null,
@@ -33,13 +30,10 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
         public ?string $parentId = null,
         /** @var array<string, mixed>|null */
         public ?array $config = null,
-        /** @var array<string, string>|null */
-        public ?array $fieldRefSnapshot = null,
         /** @var array<string, mixed>|null */
         public ?array $resolvedSchemas = null,
         /** Stable SHA-256 hash of the executable block config */
         public ?string $configHash = null,
-        public ?\DateTimeImmutable $createdAt = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -49,10 +43,9 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
             'id',
             'block_id',
             'workflow_id',
-            'organization_id',
-            'environment_id',
             'workflow_version_id',
             'type',
+            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowBlockVersion::fromArray()");
@@ -62,10 +55,9 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
             id: $data['id'],
             blockId: $data['block_id'],
             workflowId: $data['workflow_id'],
-            organizationId: $data['organization_id'],
-            environmentId: $data['environment_id'],
             workflowVersionId: $data['workflow_version_id'],
             type: WorkflowBlockType::from($data['type']),
+            createdAt: new \DateTimeImmutable($data['created_at']),
             label: $data['label'] ?? null,
             positionX: $data['position_x'] ?? null,
             positionY: $data['position_y'] ?? null,
@@ -73,10 +65,8 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
             height: $data['height'] ?? null,
             parentId: $data['parent_id'] ?? null,
             config: $data['config'] ?? null,
-            fieldRefSnapshot: $data['field_ref_snapshot'] ?? null,
             resolvedSchemas: $data['resolved_schemas'] ?? null,
             configHash: $data['config_hash'] ?? null,
-            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
         );
     }
 
@@ -87,10 +77,9 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
             'id' => $this->id,
             'block_id' => $this->blockId,
             'workflow_id' => $this->workflowId,
-            'organization_id' => $this->organizationId,
-            'environment_id' => $this->environmentId,
             'workflow_version_id' => $this->workflowVersionId,
             'type' => $this->type->value,
+            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'label' => $this->label,
             'position_x' => $this->positionX,
             'position_y' => $this->positionY,
@@ -98,10 +87,8 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
             'height' => $this->height,
             'parent_id' => $this->parentId,
             'config' => $this->config,
-            'field_ref_snapshot' => $this->fieldRefSnapshot,
             'resolved_schemas' => $this->resolvedSchemas,
             'config_hash' => $this->configHash,
-            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];
     }
 }

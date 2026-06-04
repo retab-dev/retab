@@ -82,4 +82,12 @@ namespace Retab
     public class WorkflowsPublishOptions : BaseOptions
     {
     }
+
+    /// <summary>Request options for <see cref="WorkflowsService.CreatePlanAsync"/>: Plan Workflow Spec For Existing Workflow</summary>
+    public class WorkflowsCreatePlanOptions : BaseOptions
+    {
+        /// <summary>Workflow YAML definition</summary>
+        public string YamlDefinition { get; set; } = default!;
+
+    }
 }

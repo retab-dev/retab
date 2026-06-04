@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-04T16:18:35.349Z",
+  "generatedAt": "2026-06-04T17:38:18.543Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -355,13 +355,7 @@
     "lib/retab/workflow_spec.rb",
     "lib/retab/workflow_spec/declarative_apply_response.rb",
     "lib/retab/workflow_spec/declarative_export_response.rb",
-    "lib/retab/workflow_spec/declarative_plan_change.rb",
-    "lib/retab/workflow_spec/declarative_plan_field_change.rb",
-    "lib/retab/workflow_spec/declarative_plan_resource_change.rb",
-    "lib/retab/workflow_spec/declarative_plan_response.rb",
-    "lib/retab/workflow_spec/declarative_plan_summary.rb",
     "lib/retab/workflow_spec/declarative_validation_response.rb",
-    "lib/retab/workflow_spec/declarative_workflow_request.rb",
     "lib/retab/workflow_steps.rb",
     "lib/retab/workflow_steps/awaiting_review_step_lifecycle.rb",
     "lib/retab/workflow_steps/cancelled_step_lifecycle.rb",
@@ -429,10 +423,17 @@
     "lib/retab/workflow_tests/workflow_test_block_target.rb",
     "lib/retab/workflows.rb",
     "lib/retab/workflows/create_workflow_request.rb",
+    "lib/retab/workflows/declarative_plan_change.rb",
+    "lib/retab/workflows/declarative_plan_field_change.rb",
+    "lib/retab/workflows/declarative_plan_resource_change.rb",
+    "lib/retab/workflows/declarative_plan_response.rb",
+    "lib/retab/workflows/declarative_plan_summary.rb",
+    "lib/retab/workflows/declarative_workflow_request.rb",
     "lib/retab/workflows/publish_workflow_request.rb",
     "lib/retab/workflows/update_workflow_request.rb",
     "lib/retab/workflows/workflow.rb",
     "lib/retab/workflows/workflow_block_position.rb",
+    "lib/retab/workflows/workflow_capabilities.rb",
     "lib/retab/workflows/workflow_config_block.rb",
     "lib/retab/workflows/workflow_config_edge.rb",
     "lib/retab/workflows/workflow_graph_version.rb",
@@ -691,6 +692,7 @@
     "rbi/retab/workflow_block_version.rbi",
     "rbi/retab/workflow_block_version_diff.rbi",
     "rbi/retab/workflow_blocks.rbi",
+    "rbi/retab/workflow_capabilities.rbi",
     "rbi/retab/workflow_config_block.rbi",
     "rbi/retab/workflow_config_edge.rbi",
     "rbi/retab/workflow_edge_create_request.rbi",
@@ -1071,6 +1073,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "create_plan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {
