@@ -34,22 +34,20 @@ class WorkflowEdgeDoc(BaseModel):
 
 
 class WorkflowEdgeVersion(BaseModel):
-    """Immutable edge snapshot derived from a workflow version."""
+    """Public edge version resource without tenant fields."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Public content-addressed edge version ID")
     edge_id: str = Field(..., description="Stable logical edge ID")
     workflow_id: str = Field(..., description="Source workflow ID")
-    organization_id: str = Field(..., description="Organization ID for data isolation")
-    environment_id: str = Field(..., description="Customer environment ID for data isolation")
     workflow_version_id: str = Field(..., description="Workflow version this edge version belongs to")
     source: str = Field(..., description="ID of the source block")
     source_handle: str | None = None
     target: str = Field(..., description="ID of the target block")
     target_handle: str | None = None
     animated: bool | None = Field(default=True)
-    created_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 class WorkflowEdgeVersionDiff(BaseModel):

@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Public workflow version resource. */
+/** Public workflow version resource without tenant fields. */
 readonly class WorkflowGraphVersion implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -15,8 +15,6 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         /** Public content-addressed workflow version ID */
         public string $id,
         public string $workflowId,
-        public string $organizationId,
-        public string $environmentId,
         public \DateTimeImmutable $createdAt,
         /** @var array<\Retab\Resource\WorkflowConfigBlock>|null */
         public ?array $blocks = null,
@@ -34,8 +32,6 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         foreach ([
             'id',
             'workflow_id',
-            'organization_id',
-            'environment_id',
             'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -45,8 +41,6 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         return new self(
             id: $data['id'],
             workflowId: $data['workflow_id'],
-            organizationId: $data['organization_id'],
-            environmentId: $data['environment_id'],
             createdAt: new \DateTimeImmutable($data['created_at']),
             blocks: isset($data['blocks']) ? array_map(fn($item) => WorkflowConfigBlock::fromArray($item), $data['blocks']) : null,
             edges: isset($data['edges']) ? array_map(fn($item) => WorkflowConfigEdge::fromArray($item), $data['edges']) : null,
@@ -61,8 +55,6 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         return [
             'id' => $this->id,
             'workflow_id' => $this->workflowId,
-            'organization_id' => $this->organizationId,
-            'environment_id' => $this->environmentId,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'blocks' => $this->blocks !== null ? array_map(fn($item) => $item->toArray(), $this->blocks) : null,
             'edges' => $this->edges !== null ? array_map(fn($item) => $item->toArray(), $this->edges) : null,

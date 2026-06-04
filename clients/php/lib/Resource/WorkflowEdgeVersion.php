@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Immutable edge snapshot derived from a workflow version. */
+/** Public edge version resource without tenant fields. */
 readonly class WorkflowEdgeVersion implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -18,20 +18,16 @@ readonly class WorkflowEdgeVersion implements \JsonSerializable
         public string $edgeId,
         /** Source workflow ID */
         public string $workflowId,
-        /** Organization ID for data isolation */
-        public string $organizationId,
-        /** Customer environment ID for data isolation */
-        public string $environmentId,
         /** Workflow version this edge version belongs to */
         public string $workflowVersionId,
         /** ID of the source block */
         public string $source,
         /** ID of the target block */
         public string $target,
+        public \DateTimeImmutable $createdAt,
         public ?string $sourceHandle = null,
         public ?string $targetHandle = null,
         public ?bool $animated = null,
-        public ?\DateTimeImmutable $createdAt = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -41,11 +37,10 @@ readonly class WorkflowEdgeVersion implements \JsonSerializable
             'id',
             'edge_id',
             'workflow_id',
-            'organization_id',
-            'environment_id',
             'workflow_version_id',
             'source',
             'target',
+            'created_at',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowEdgeVersion::fromArray()");
@@ -55,15 +50,13 @@ readonly class WorkflowEdgeVersion implements \JsonSerializable
             id: $data['id'],
             edgeId: $data['edge_id'],
             workflowId: $data['workflow_id'],
-            organizationId: $data['organization_id'],
-            environmentId: $data['environment_id'],
             workflowVersionId: $data['workflow_version_id'],
             source: $data['source'],
             target: $data['target'],
+            createdAt: new \DateTimeImmutable($data['created_at']),
             sourceHandle: $data['source_handle'] ?? null,
             targetHandle: $data['target_handle'] ?? null,
             animated: $data['animated'] ?? null,
-            createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
         );
     }
 
@@ -74,15 +67,13 @@ readonly class WorkflowEdgeVersion implements \JsonSerializable
             'id' => $this->id,
             'edge_id' => $this->edgeId,
             'workflow_id' => $this->workflowId,
-            'organization_id' => $this->organizationId,
-            'environment_id' => $this->environmentId,
             'workflow_version_id' => $this->workflowVersionId,
             'source' => $this->source,
             'target' => $this->target,
+            'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'source_handle' => $this->sourceHandle,
             'target_handle' => $this->targetHandle,
             'animated' => $this->animated,
-            'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];
     }
 }

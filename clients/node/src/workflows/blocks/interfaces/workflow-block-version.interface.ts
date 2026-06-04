@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { WorkflowBlockVersionType } from './workflow-block-version-type.interface.js';
 import { ZWorkflowBlockVersionType } from './workflow-block-version-type.interface.js';
 
-/** Immutable block snapshot derived from a workflow version. */
+/** Public block version resource without tenant or storage-only fields. */
 export interface WorkflowBlockVersion {
   /** Public content-addressed block version ID */
   id: string;
@@ -12,10 +12,6 @@ export interface WorkflowBlockVersion {
   blockId: string;
   /** Source workflow ID */
   workflowId: string;
-  /** Organization ID for data isolation */
-  organizationId: string;
-  /** Customer environment ID for data isolation */
-  environmentId: string;
   /** Workflow version this block version belongs to */
   workflowVersionId: string;
   type: WorkflowBlockVersionType;
@@ -29,22 +25,19 @@ export interface WorkflowBlockVersion {
   height?: number | null;
   parentId?: string | null;
   config?: Record<string, unknown> | null;
-  fieldRefSnapshot?: Record<string, string> | null;
   resolvedSchemas?: Record<string, unknown> | null;
   /**
    * Stable SHA-256 hash of the executable block config
    * @default ""
    */
   configHash?: string;
-  createdAt?: Date;
+  createdAt: Date;
 }
 
 export interface WorkflowBlockVersionResponse {
   id: string;
   block_id: string;
   workflow_id: string;
-  organization_id: string;
-  environment_id: string;
   workflow_version_id: string;
   type: WorkflowBlockVersionType;
   label?: string;
@@ -54,18 +47,15 @@ export interface WorkflowBlockVersionResponse {
   height?: number | null;
   parent_id?: string | null;
   config?: Record<string, unknown> | null;
-  field_ref_snapshot?: Record<string, string> | null;
   resolved_schemas?: Record<string, unknown> | null;
   config_hash?: string;
-  created_at?: string;
+  created_at: string;
 }
 
 export const ZWorkflowBlockVersion = z.object({
   id: z.string(),
   blockId: z.string(),
   workflowId: z.string(),
-  organizationId: z.string(),
-  environmentId: z.string(),
   workflowVersionId: z.string(),
   type: ZWorkflowBlockVersionType,
   label: z.string().optional(),
@@ -75,10 +65,9 @@ export const ZWorkflowBlockVersion = z.object({
   height: z.number().nullable().optional(),
   parentId: z.string().nullable().optional(),
   config: z.record(z.string(), z.unknown()).nullable().optional(),
-  fieldRefSnapshot: z.record(z.string(), z.string()).nullable().optional(),
   resolvedSchemas: z.record(z.string(), z.unknown()).nullable().optional(),
   configHash: z.string().optional(),
-  createdAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date(),
 }) as z.ZodType<WorkflowBlockVersion>;
 
 export function deserializeWorkflowBlockVersion(
@@ -88,8 +77,6 @@ export function deserializeWorkflowBlockVersion(
     id: wire['id'],
     blockId: wire['block_id'],
     workflowId: wire['workflow_id'],
-    organizationId: wire['organization_id'],
-    environmentId: wire['environment_id'],
     workflowVersionId: wire['workflow_version_id'],
     type: wire['type'],
     label: wire['label'],
@@ -99,11 +86,9 @@ export function deserializeWorkflowBlockVersion(
     height: wire['height'],
     parentId: wire['parent_id'],
     config: wire['config'],
-    fieldRefSnapshot: wire['field_ref_snapshot'],
     resolvedSchemas: wire['resolved_schemas'],
     configHash: wire['config_hash'],
-    createdAt:
-      wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    createdAt: new Date(wire['created_at']),
   };
 }
 
@@ -114,8 +99,6 @@ export function serializeWorkflowBlockVersion(
     id: domain['id'],
     block_id: domain['blockId'],
     workflow_id: domain['workflowId'],
-    organization_id: domain['organizationId'],
-    environment_id: domain['environmentId'],
     workflow_version_id: domain['workflowVersionId'],
     type: domain['type'],
     label: domain['label'],
@@ -125,12 +108,8 @@ export function serializeWorkflowBlockVersion(
     height: domain['height'],
     parent_id: domain['parentId'],
     config: domain['config'],
-    field_ref_snapshot: domain['fieldRefSnapshot'],
     resolved_schemas: domain['resolvedSchemas'],
     config_hash: domain['configHash'],
-    created_at:
-      domain['createdAt'] == null
-        ? (domain['createdAt'] as undefined)
-        : domain['createdAt'].toISOString(),
+    created_at: domain['createdAt'].toISOString(),
   };
 }

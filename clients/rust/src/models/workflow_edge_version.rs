@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Immutable edge snapshot derived from a workflow version.
+/// Public edge version resource without tenant fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowEdgeVersion {
     /// Public content-addressed edge version ID
@@ -14,10 +14,6 @@ pub struct WorkflowEdgeVersion {
     pub edge_id: String,
     /// Source workflow ID
     pub workflow_id: String,
-    /// Organization ID for data isolation
-    pub organization_id: String,
-    /// Customer environment ID for data isolation
-    pub environment_id: String,
     /// Workflow version this edge version belongs to
     pub workflow_version_id: String,
     /// ID of the source block
@@ -31,8 +27,7 @@ pub struct WorkflowEdgeVersion {
     /// Defaults to `true`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub animated: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub created_at: Option<String>,
+    pub created_at: String,
 }
 impl WorkflowEdgeVersion {
     /// Construct a new `WorkflowEdgeVersion` with the required fields set.
@@ -41,25 +36,22 @@ impl WorkflowEdgeVersion {
         id: impl Into<String>,
         edge_id: impl Into<String>,
         workflow_id: impl Into<String>,
-        organization_id: impl Into<String>,
-        environment_id: impl Into<String>,
         workflow_version_id: impl Into<String>,
         source: impl Into<String>,
         target: impl Into<String>,
+        created_at: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
             edge_id: edge_id.into(),
             workflow_id: workflow_id.into(),
-            organization_id: organization_id.into(),
-            environment_id: environment_id.into(),
             workflow_version_id: workflow_version_id.into(),
             source: source.into(),
             source_handle: Default::default(),
             target: target.into(),
             target_handle: Default::default(),
             animated: Default::default(),
-            created_at: Default::default(),
+            created_at: created_at.into(),
         }
     }
 }

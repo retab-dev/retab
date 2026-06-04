@@ -3,8 +3,6 @@
     {
       "id": "01234",
       "workflow_id": "workflow_id_01234",
-      "organization_id": "organization_id_01234",
-      "environment_id": "environment_id_01234",
       "blocks": [
         {
           "id": "01234",

@@ -28,6 +28,9 @@ pub struct Workflow {
     pub published: Option<WorkflowPublished>,
     pub created_at: String,
     pub updated_at: String,
+    /// Server-derived permissions for the current actor.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub capabilities: Option<WorkflowCapabilities>,
 }
 impl Workflow {
     /// Construct a new `Workflow` with the required fields set.
@@ -45,6 +48,7 @@ impl Workflow {
             published: Default::default(),
             created_at: created_at.into(),
             updated_at: updated_at.into(),
+            capabilities: Default::default(),
         }
     }
 }

@@ -24,6 +24,8 @@ readonly class Workflow implements \JsonSerializable
         public ?string $projectId = null,
         /** Published workflow metadata when a published version exists */
         public ?WorkflowPublished $published = null,
+        /** Server-derived permissions for the current actor. */
+        public ?WorkflowCapabilities $capabilities = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -46,6 +48,7 @@ readonly class Workflow implements \JsonSerializable
             description: $data['description'] ?? null,
             projectId: $data['project_id'] ?? null,
             published: isset($data['published']) ? WorkflowPublished::fromArray($data['published']) : null,
+            capabilities: isset($data['capabilities']) ? WorkflowCapabilities::fromArray($data['capabilities']) : null,
         );
     }
 
@@ -60,6 +63,7 @@ readonly class Workflow implements \JsonSerializable
             'description' => $this->description,
             'project_id' => $this->projectId,
             'published' => $this->published?->toArray(),
+            'capabilities' => $this->capabilities?->toArray(),
         ];
     }
 }

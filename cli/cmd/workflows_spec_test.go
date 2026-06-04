@@ -321,13 +321,10 @@ func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	var applyHits atomic.Int32
+	var planHits, applyHits atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
-		}
-		if r.URL.Path != "/v1/workflows/wf_target/spec/apply" {
-			t.Fatalf("path = %s, want /v1/workflows/wf_target/spec/apply", r.URL.Path)
 		}
 		var body struct {
 			YamlDefinition string `json:"yaml_definition"`
@@ -338,15 +335,28 @@ func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
 		if !strings.Contains(body.YamlDefinition, "name: Existing Target") {
 			t.Fatalf("request YAML mismatch:\n%s", body.YamlDefinition)
 		}
-		applyHits.Add(1)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"workflow_id": "wf_target",
-			"action":      "update",
-			"created":     false,
-			"diagnostics": map[string]any{"is_valid": true},
-			"summary":     map[string]any{"add": 0, "change": 1, "destroy": 0},
-		})
+		switch r.URL.Path {
+		case "/v1/workflows/wf_target/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_target",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary":     map[string]any{"add": 0, "change": 1, "destroy": 0},
+			})
+		case "/v1/workflows/wf_target/spec/apply":
+			applyHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_target",
+				"action":      "update",
+				"created":     false,
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary":     map[string]any{"add": 0, "change": 1, "destroy": 0},
+			})
+		default:
+			t.Fatalf("path = %s, want target plan/apply route", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -361,8 +371,121 @@ func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
 			t.Fatalf("apply-to: %v", err)
 		}
 	})
+	if planHits.Load() != 1 {
+		t.Fatalf("expected exactly 1 plan-to call, got %d", planHits.Load())
+	}
 	if applyHits.Load() != 1 {
 		t.Fatalf("expected exactly 1 apply-to call, got %d", applyHits.Load())
+	}
+}
+
+func TestWorkflowsSpecPlanToTargetsExistingWorkflowRoute(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/workflows/wf_target/spec/plan" {
+			t.Fatalf("path = %s, want /v1/workflows/wf_target/spec/plan", r.URL.Path)
+		}
+		var body struct {
+			YamlDefinition string `json:"yaml_definition"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !strings.Contains(body.YamlDefinition, "name: Existing Target") {
+			t.Fatalf("request YAML mismatch:\n%s", body.YamlDefinition)
+		}
+		planHits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_target",
+			"action":      "update",
+			"diagnostics": map[string]any{"is_valid": true},
+			"summary":     map[string]any{"add": 0, "change": 1, "destroy": 0},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  name: Existing Target\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	captureStd(t, func() {
+		if err := workflowsSpecPlanToCmd.RunE(workflowsSpecPlanToCmd, []string{"wf_target", path}); err != nil {
+			t.Fatalf("plan-to: %v", err)
+		}
+	})
+	if planHits.Load() != 1 {
+		t.Fatalf("expected exactly 1 plan-to call, got %d", planHits.Load())
+	}
+}
+
+func TestWorkflowsSpecApplyToWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits, applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/workflows/wf_target/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_target",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 0, "change": 1, "destroy": 1,
+					"replace": 0, "noop": 0, "total": 2,
+					"has_changes": true,
+				},
+				"resource_changes": []map[string]any{
+					{"address": "block.old", "target": "block", "name": "old", "actions": []string{"delete"}},
+				},
+			})
+		case "/v1/workflows/wf_target/spec/apply":
+			applyHits.Add(1)
+			t.Fatalf("apply-to must NOT be called when destroy > 0 and no --yes")
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  name: Existing Target\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsSpecApplyToCmd.Flags().Set("yes", "false"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = workflowsSpecApplyToCmd.RunE(workflowsSpecApplyToCmd, []string{"wf_target", path})
+	})
+	if err == nil {
+		t.Fatal("expected refusal when destroy > 0 and stdin is not a TTY")
+	}
+	for _, want := range []string{"destroy", "--yes", "terminal"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error %q does not mention %q", err.Error(), want)
+		}
+	}
+	if planHits.Load() != 1 {
+		t.Fatalf("expected 1 plan-to call, got %d", planHits.Load())
+	}
+	if applyHits.Load() != 0 {
+		t.Fatalf("apply-to must not run, got %d hits", applyHits.Load())
 	}
 }
 

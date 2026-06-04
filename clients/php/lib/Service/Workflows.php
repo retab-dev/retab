@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\DeclarativePlanResponse;
 use Retab\Resource\Workflow;
 use Retab\Resource\WorkflowGraphVersion;
 use Retab\Resource\WorkflowGraphVersionDiff;
@@ -362,5 +363,34 @@ class Workflows
             options: $options,
         );
         return Workflow::fromArray($response);
+    }
+
+    /**
+     * Plan Workflow Spec For Existing Workflow
+     *
+     * Preview applying a declarative YAML spec to an existing workflow draft.
+     *
+     * The URL workflow id is the plan target. Any workflow id in the YAML is
+     * treated as source context.
+     * @param string $workflowId
+     * @param string $yamlDefinition Workflow YAML definition
+     * @return \Retab\Resource\DeclarativePlanResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createPlan(
+        string $workflowId,
+        string $yamlDefinition,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\DeclarativePlanResponse {
+        $body = [
+            'yaml_definition' => $yamlDefinition,
+        ];
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec/plan',
+            body: $body,
+            options: $options,
+        );
+        return DeclarativePlanResponse::fromArray($response);
     }
 }

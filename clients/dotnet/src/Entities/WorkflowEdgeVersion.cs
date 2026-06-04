@@ -2,7 +2,7 @@ namespace Retab
 {
     using System;
 
-    /// <summary>Immutable edge snapshot derived from a workflow version.</summary>
+    /// <summary>Public edge version resource without tenant fields.</summary>
     public class WorkflowEdgeVersion
     {
 
@@ -15,12 +15,6 @@ namespace Retab
         /// <summary>Source workflow ID</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Organization ID for data isolation</summary>
-        public string OrganizationId { get; set; } = default!;
-
-        /// <summary>Customer environment ID for data isolation</summary>
-        public string EnvironmentId { get; set; } = default!;
-
         /// <summary>Workflow version this edge version belongs to</summary>
         public string WorkflowVersionId { get; set; } = default!;
 
@@ -32,7 +26,7 @@ namespace Retab
         public string Target { get; set; } = default!;
         public string? TargetHandle { get; set; }
         public bool? Animated { get; set; } = true;
-        public DateTimeOffset? CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

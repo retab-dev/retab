@@ -3215,7 +3215,8 @@ class ModelRoundTripTest < Minitest::Test
       "project_id" => nil,
       "published" => nil,
       "created_at" => "stub",
-      "updated_at" => "stub"
+      "updated_at" => "stub",
+      "capabilities" => nil
     }
     model = Retab::Workflow.new(fixture.to_json)
     json = model.to_h
@@ -3282,8 +3283,6 @@ class ModelRoundTripTest < Minitest::Test
       "id" => "stub",
       "block_id" => "stub",
       "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
       "workflow_version_id" => "stub",
       "type" => "stub",
       "label" => "stub",
@@ -3293,7 +3292,6 @@ class ModelRoundTripTest < Minitest::Test
       "height" => nil,
       "parent_id" => nil,
       "config" => nil,
-      "field_ref_snapshot" => nil,
       "resolved_schemas" => nil,
       "config_hash" => "stub",
       "created_at" => "stub"
@@ -3304,9 +3302,8 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["block_id"], json[:block_id])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
     assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
+    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -3323,6 +3320,23 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["from_block_version_id"], json[:from_block_version_id])
     assert_equal(fixture["to_block_version_id"], json[:to_block_version_id])
     assert_equal(fixture["block_id"], json[:block_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_workflow_capabilities_round_trip
+    fixture = {
+      "can_view" => true,
+      "can_edit" => true,
+      "can_run" => true,
+      "can_review" => true,
+      "can_publish" => true,
+      "can_manage_members" => true,
+      "can_manage_settings" => true,
+      "can_delete" => true
+    }
+    model = Retab::WorkflowCapabilities.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -3388,8 +3402,6 @@ class ModelRoundTripTest < Minitest::Test
       "id" => "stub",
       "edge_id" => "stub",
       "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
       "workflow_version_id" => "stub",
       "source" => "stub",
       "source_handle" => nil,
@@ -3404,11 +3416,10 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["edge_id"], json[:edge_id])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
     assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
     assert_equal(fixture["source"], json[:source])
     assert_equal(fixture["target"], json[:target])
+    assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -3562,8 +3573,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "id" => "stub",
       "workflow_id" => "stub",
-      "organization_id" => "stub",
-      "environment_id" => "stub",
       "blocks" => [],
       "edges" => [],
       "block_version_ids" => {},
@@ -3575,8 +3584,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
-    assert_equal(fixture["organization_id"], json[:organization_id])
-    assert_equal(fixture["environment_id"], json[:environment_id])
     assert_equal(fixture["created_at"], json[:created_at])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end

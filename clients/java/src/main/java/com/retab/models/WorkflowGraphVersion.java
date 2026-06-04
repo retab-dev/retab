@@ -13,8 +13,6 @@ import java.util.Map;
 public final class WorkflowGraphVersion {
   private final String id;
   private final String workflowId;
-  private final String organizationId;
-  private final String environmentId;
   private final List<WorkflowConfigBlock> blocks;
   private final List<WorkflowConfigEdge> edges;
   private final Map<String, String> blockVersionIds;
@@ -25,8 +23,6 @@ public final class WorkflowGraphVersion {
   public WorkflowGraphVersion(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "organization_id", required = true) String organizationId,
-      @JsonProperty(value = "environment_id", required = true) String environmentId,
       @JsonProperty(value = "blocks", required = false) List<WorkflowConfigBlock> blocks,
       @JsonProperty(value = "edges", required = false) List<WorkflowConfigEdge> edges,
       @JsonProperty(value = "block_version_ids", required = false)
@@ -36,8 +32,6 @@ public final class WorkflowGraphVersion {
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
     this.id = id;
     this.workflowId = workflowId;
-    this.organizationId = organizationId;
-    this.environmentId = environmentId;
     this.blocks = blocks;
     this.edges = edges;
     this.blockVersionIds = blockVersionIds;
@@ -53,16 +47,6 @@ public final class WorkflowGraphVersion {
   @JsonProperty("workflow_id")
   public String getWorkflowId() {
     return workflowId;
-  }
-
-  @JsonProperty("organization_id")
-  public String getOrganizationId() {
-    return organizationId;
-  }
-
-  @JsonProperty("environment_id")
-  public String getEnvironmentId() {
-    return environmentId;
   }
 
   @JsonProperty("blocks")

@@ -243,3 +243,25 @@ func (s *WorkflowService) Publish(ctx context.Context, workflowID string, params
 	}
 	return &result, nil
 }
+
+// WorkflowsCreatePlanParams contains the parameters for CreatePlan.
+type WorkflowsCreatePlanParams struct {
+	// YamlDefinition is workflow YAML definition
+	YamlDefinition string `json:"yaml_definition" url:"-"`
+}
+
+// CreatePlan plan Workflow Spec For Existing Workflow
+// Preview applying a declarative YAML spec to an existing workflow draft.
+// The URL workflow id is the plan target. Any workflow id in the YAML is
+// treated as source context.
+func (s *WorkflowService) CreatePlan(ctx context.Context, workflowID string, params *WorkflowsCreatePlanParams, opts ...RequestOption) (*DeclarativePlanResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflow_id is required")
+	}
+	var result DeclarativePlanResponse
+	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/spec/plan", url.PathEscape(workflowID)), nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

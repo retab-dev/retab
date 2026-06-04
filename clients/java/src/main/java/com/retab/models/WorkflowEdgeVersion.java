@@ -12,8 +12,6 @@ public final class WorkflowEdgeVersion {
   private final String id;
   private final String edgeId;
   private final String workflowId;
-  private final String organizationId;
-  private final String environmentId;
   private final String workflowVersionId;
   private final String source;
   private final String sourceHandle;
@@ -27,20 +25,16 @@ public final class WorkflowEdgeVersion {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "edge_id", required = true) String edgeId,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "organization_id", required = true) String organizationId,
-      @JsonProperty(value = "environment_id", required = true) String environmentId,
       @JsonProperty(value = "workflow_version_id", required = true) String workflowVersionId,
       @JsonProperty(value = "source", required = true) String source,
       @JsonProperty(value = "source_handle", required = false) String sourceHandle,
       @JsonProperty(value = "target", required = true) String target,
       @JsonProperty(value = "target_handle", required = false) String targetHandle,
       @JsonProperty(value = "animated", required = false) Boolean animated,
-      @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
+      @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
     this.id = id;
     this.edgeId = edgeId;
     this.workflowId = workflowId;
-    this.organizationId = organizationId;
-    this.environmentId = environmentId;
     this.workflowVersionId = workflowVersionId;
     this.source = source;
     this.sourceHandle = sourceHandle;
@@ -63,16 +57,6 @@ public final class WorkflowEdgeVersion {
   @JsonProperty("workflow_id")
   public String getWorkflowId() {
     return workflowId;
-  }
-
-  @JsonProperty("organization_id")
-  public String getOrganizationId() {
-    return organizationId;
-  }
-
-  @JsonProperty("environment_id")
-  public String getEnvironmentId() {
-    return environmentId;
   }
 
   @JsonProperty("workflow_version_id")

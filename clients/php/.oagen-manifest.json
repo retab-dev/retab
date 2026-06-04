@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-04T16:18:32.247Z",
+  "generatedAt": "2026-06-04T17:38:16.138Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -285,6 +285,7 @@
     "lib/Resource/WorkflowBlockType.php",
     "lib/Resource/WorkflowBlockVersion.php",
     "lib/Resource/WorkflowBlockVersionDiff.php",
+    "lib/Resource/WorkflowCapabilities.php",
     "lib/Resource/WorkflowConfigBlock.php",
     "lib/Resource/WorkflowConfigEdge.php",
     "lib/Resource/WorkflowEdgeCreateRequest.php",
@@ -629,6 +630,7 @@
     "tests/Fixtures/workflow_block_position.json",
     "tests/Fixtures/workflow_block_version.json",
     "tests/Fixtures/workflow_block_version_diff.json",
+    "tests/Fixtures/workflow_capabilities.json",
     "tests/Fixtures/workflow_config_block.json",
     "tests/Fixtures/workflow_config_edge.json",
     "tests/Fixtures/workflow_edge_create_request.json",
@@ -993,6 +995,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "createPlan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {

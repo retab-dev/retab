@@ -7,7 +7,16 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows import CreateWorkflowRequest, PublishWorkflowRequest, UpdateWorkflowRequest, Workflow, WorkflowGraphVersion, WorkflowGraphVersionDiff
+from retab.types.workflows import (
+    CreateWorkflowRequest,
+    DeclarativePlanResponse,
+    DeclarativeWorkflowRequest,
+    PublishWorkflowRequest,
+    UpdateWorkflowRequest,
+    Workflow,
+    WorkflowGraphVersion,
+    WorkflowGraphVersionDiff,
+)
 
 from .artifacts import WorkflowArtifacts, AsyncWorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
@@ -148,6 +157,16 @@ class WorkflowsMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/publish", params=params or None, data=data)
 
+    def prepare_create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
+        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/spec/plan", params=params or None, data=data)
+
 
 class Workflows(SyncAPIResource, WorkflowsMixin):
     """Workflows API wrapper."""
@@ -238,6 +257,12 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
+    def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
+        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return DeclarativePlanResponse.model_validate(response)
+
 
 class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     """Async Workflows API wrapper."""
@@ -327,6 +352,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         prepared_request = self.prepare_publish(workflow_id, description=description, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
+
+    async def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
+        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return DeclarativePlanResponse.model_validate(response)
 
 
 from .artifacts import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)

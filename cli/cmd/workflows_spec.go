@@ -33,6 +33,7 @@ metadata. The verbs form a declarative workflow loop:
 
   validate   parse + type-check the spec, no server changes
   plan       preview spec changes without applying
+  plan-to    preview changes against an existing workflow
   apply      create a new workflow from the spec
   apply-to   modify an existing workflow from the spec
   get        dump a live workflow's spec back to YAML
@@ -63,6 +64,7 @@ Spec shape (minimum required keys):
   $EDITOR workflow.yaml
   retab workflows spec validate workflow.yaml
   retab workflows spec plan     workflow.yaml
+  retab workflows spec plan-to  wf_abc123 workflow.yaml
   retab workflows spec apply-to wf_abc123 workflow.yaml
 
   # Create a new workflow from a spec
@@ -161,6 +163,39 @@ Plan is read-only — safe to run on production specs. Pair it with
 	}),
 }
 
+var workflowsSpecPlanToCmd = &cobra.Command{
+	Use:   "plan-to <workflow-id> <path>",
+	Short: "Diff a YAML spec against an existing workflow without applying",
+	Long: `Compute what would change if the spec were applied to an existing
+workflow draft. The target workflow id comes from the URL argument, not from
+` + "`metadata.id`" + ` in the YAML.
+
+Plan is read-only — safe to run before ` + "`apply-to`" + `.`,
+	Example: `  retab workflows spec plan-to wf_abc123 ./workflow.yaml
+  cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .changes`,
+	Args: cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[1])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.CreatePlan(ctx, args[0], &retab.WorkflowsCreatePlanParams{YamlDefinition: yaml})
+		if err != nil {
+			return translateSpecAPIError(err)
+		}
+		if err := failIfSpecValidationInvalid(planResponseAsResource(result)); err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 var workflowsSpecApplyCmd = &cobra.Command{
 	Use:   "apply <path>",
 	Short: "Create a new workflow from a YAML spec",
@@ -232,8 +267,12 @@ var workflowsSpecApplyToCmd = &cobra.Command{
 workflow id comes from the URL argument, not from ` + "`metadata.id`" + ` in the YAML.
 
 Mutating. This updates the workflow in place and may create, update, or delete
-child resources to match the submitted spec.`,
+child resources to match the submitted spec.
+
+Before applying, the command runs ` + "`spec plan-to`" + ` and gates destructive
+changes with the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
 	Example: `  retab workflows spec apply-to wf_abc123 ./workflow.yaml
+  retab workflows spec apply-to wf_abc123 ./workflow.yaml --yes
   cat workflow.yaml | retab workflows spec apply-to wf_abc123 -`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -247,6 +286,17 @@ child resources to match the submitted spec.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		plan, err := client.Workflows.CreatePlan(ctx, args[0], &retab.WorkflowsCreatePlanParams{YamlDefinition: yaml})
+		if err != nil {
+			return translateSpecAPIError(err)
+		}
+		planAsResource := planResponseAsResource(plan)
+		if err := failIfSpecValidationInvalid(planAsResource); err != nil {
+			return err
+		}
+		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
+			return err
+		}
 		result, err := client.Workflows.Spec.ApplyToWorkflow(ctx, args[0], &retab.WorkflowSpecApplyToWorkflowParams{YamlDefinition: yaml})
 		if err != nil {
 			return translateSpecAPIError(err)
@@ -541,10 +591,12 @@ func init() {
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
 	workflowsSpecApplyCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
+	workflowsSpecApplyToCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
 
 	workflowsSpecCmd.AddCommand(
 		workflowsSpecValidateCmd,
 		workflowsSpecPlanCmd,
+		workflowsSpecPlanToCmd,
 		workflowsSpecApplyCmd,
 		workflowsSpecApplyToCmd,
 		workflowsSpecExportCmd,

@@ -3,15 +3,13 @@ namespace Retab
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Public workflow version resource.</summary>
+    /// <summary>Public workflow version resource without tenant fields.</summary>
     public class WorkflowGraphVersion
     {
 
         /// <summary>Public content-addressed workflow version ID</summary>
         public string Id { get; set; } = default!;
         public string WorkflowId { get; set; } = default!;
-        public string OrganizationId { get; set; } = default!;
-        public string EnvironmentId { get; set; } = default!;
         public List<WorkflowConfigBlock>? Blocks { get; set; }
         public List<WorkflowConfigEdge>? Edges { get; set; }
         public Dictionary<string, string>? BlockVersionIds { get; set; }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-04T16:18:36.369Z",
+  "generatedAt": "2026-06-04T17:38:19.634Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -375,6 +375,7 @@
     "src/models/workflow_block_version.rs",
     "src/models/workflow_block_version_diff.rs",
     "src/models/workflow_block_version_list.rs",
+    "src/models/workflow_capabilities.rs",
     "src/models/workflow_config_block.rs",
     "src/models/workflow_config_edge.rs",
     "src/models/workflow_edge_create_request.rs",
@@ -760,6 +761,10 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/{workflow_id}/spec/plan": {
+      "sdkMethod": "create_plan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {

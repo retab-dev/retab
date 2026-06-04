@@ -187,6 +187,23 @@ pub struct PublishParams {
     pub body: Option<PublishWorkflowRequest>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct CreatePlanParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: DeclarativeWorkflowRequest,
+}
+
+impl CreatePlanParams {
+    /// Construct a new `CreatePlanParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
+        Self { body }
+    }
+}
+
 impl<'a> WorkflowsApi<'a> {
     /// Access the `artifacts` sub-resource.
     pub fn artifacts(&self) -> WorkflowArtifactsApi<'a> {
@@ -503,6 +520,36 @@ impl<'a> WorkflowsApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, params.body.as_ref(), options)
+            .await
+    }
+
+    /// Plan Workflow Spec For Existing Workflow
+    ///
+    /// Preview applying a declarative YAML spec to an existing workflow draft.
+    ///
+    /// The URL workflow id is the plan target. Any workflow id in the YAML is
+    /// treated as source context.
+    pub async fn create_plan(
+        &self,
+        workflow_id: &str,
+        params: CreatePlanParams,
+    ) -> Result<DeclarativePlanResponse, Error> {
+        self.create_plan_with_options(workflow_id, params, None)
+            .await
+    }
+
+    /// Variant of [`Self::create_plan`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_plan_with_options(
+        &self,
+        workflow_id: &str,
+        params: CreatePlanParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<DeclarativePlanResponse, Error> {
+        let workflow_id = crate::client::path_segment(workflow_id);
+        let path = format!("/v1/workflows/{workflow_id}/spec/plan");
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 }

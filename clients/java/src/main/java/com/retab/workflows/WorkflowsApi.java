@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.CreateWorkflowRequest;
+import com.retab.models.DeclarativePlanResponse;
+import com.retab.models.DeclarativeWorkflowRequest;
 import com.retab.models.UpdateWorkflowRequest;
 import com.retab.models.Workflow;
 import com.retab.models.WorkflowGraphVersion;
@@ -379,6 +381,37 @@ public final class WorkflowsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Workflow.class);
+  }
+
+  public DeclarativePlanResponse createPlan(String workflowId, DeclarativeWorkflowRequest request)
+      throws IOException, InterruptedException {
+    return createPlan(workflowId, request == null ? null : request.getYamlDefinition());
+  }
+
+  public DeclarativePlanResponse createPlan(String workflowId, String yamlDefinition)
+      throws IOException, InterruptedException {
+    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/plan";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("yaml_definition", yamlDefinition);
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), DeclarativePlanResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

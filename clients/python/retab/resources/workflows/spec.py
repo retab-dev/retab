@@ -5,7 +5,8 @@ from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.workflows.spec import DeclarativeApplyResponse, DeclarativeExportResponse, DeclarativePlanResponse, DeclarativeValidationResponse, DeclarativeWorkflowRequest
+from retab.types.workflows import DeclarativePlanResponse, DeclarativeWorkflowRequest
+from retab.types.workflows.spec import DeclarativeApplyResponse, DeclarativeExportResponse, DeclarativeValidationResponse
 
 
 class WorkflowSpecMixin:

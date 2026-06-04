@@ -5,7 +5,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Immutable block snapshot derived from a workflow version.</summary>
+    /// <summary>Public block version resource without tenant or storage-only fields.</summary>
     public class WorkflowBlockVersion
     {
 
@@ -17,12 +17,6 @@ namespace Retab
 
         /// <summary>Source workflow ID</summary>
         public string WorkflowId { get; set; } = default!;
-
-        /// <summary>Organization ID for data isolation</summary>
-        public string OrganizationId { get; set; } = default!;
-
-        /// <summary>Customer environment ID for data isolation</summary>
-        public string EnvironmentId { get; set; } = default!;
 
         /// <summary>Workflow version this block version belongs to</summary>
         public string WorkflowVersionId { get; set; } = default!;
@@ -36,12 +30,11 @@ namespace Retab
         public double? Height { get; set; }
         public string? ParentId { get; set; }
         public Dictionary<string, object>? Config { get; set; }
-        public Dictionary<string, string>? FieldRefSnapshot { get; set; }
         public Dictionary<string, object>? ResolvedSchemas { get; set; }
 
         /// <summary>Stable SHA-256 hash of the executable block config</summary>
         public string? ConfigHash { get; set; } = "";
-        public DateTimeOffset? CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

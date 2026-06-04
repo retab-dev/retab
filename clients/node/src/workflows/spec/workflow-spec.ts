@@ -2,19 +2,21 @@
 
 import type { Retab } from '../../retab.js';
 import type {
+  DeclarativePlanResponse,
+  DeclarativePlanResponseResponse,
+} from '../../workflows/interfaces/index.js';
+import type {
   DeclarativeApplyResponse,
   DeclarativeApplyResponseResponse,
   DeclarativeExportResponse,
   DeclarativeExportResponseResponse,
-  DeclarativePlanResponse,
-  DeclarativePlanResponseResponse,
   DeclarativeValidationResponse,
   DeclarativeValidationResponseResponse,
 } from '../../workflows/spec/interfaces/index.js';
+import { deserializeDeclarativePlanResponse } from '../../workflows/interfaces/index.js';
 import {
   deserializeDeclarativeApplyResponse,
   deserializeDeclarativeExportResponse,
-  deserializeDeclarativePlanResponse,
   deserializeDeclarativeValidationResponse,
 } from '../../workflows/spec/interfaces/index.js';
 

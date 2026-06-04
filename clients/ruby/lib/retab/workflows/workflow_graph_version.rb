@@ -8,8 +8,6 @@ module Retab
     HASH_ATTRS = {
       id: :id,
       workflow_id: :workflow_id,
-      organization_id: :organization_id,
-      environment_id: :environment_id,
       blocks: :blocks,
       edges: :edges,
       block_version_ids: :block_version_ids,
@@ -20,8 +18,6 @@ module Retab
     attr_accessor(
       :id,
       :workflow_id,
-      :organization_id,
-      :environment_id,
       :blocks,
       :edges,
       :block_version_ids,
@@ -34,8 +30,6 @@ module Retab
       hash = self.class.normalize(json)
       @id = hash[:id]
       @workflow_id = hash[:workflow_id]
-      @organization_id = hash[:organization_id]
-      @environment_id = hash[:environment_id]
       @blocks = (hash[:blocks] || []).map { |item| item ? Retab::WorkflowConfigBlock.new(item) : nil }
       @edges = (hash[:edges] || []).map { |item| item ? Retab::WorkflowConfigEdge.new(item) : nil }
       @block_version_ids = hash[:block_version_ids] || {}
