@@ -24,7 +24,7 @@ namespace Retab
         WorkflowPublish,
         [EnumMember(Value = "workflow:review")]
         WorkflowReview,
-        [EnumMember(Value = "workflow:manage_members")]
-        WorkflowManageMembers,
+        [EnumMember(Value = "workflow:manage")]
+        WorkflowManage,
     }
 }

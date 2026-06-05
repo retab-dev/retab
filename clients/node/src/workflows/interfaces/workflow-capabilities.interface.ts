@@ -9,7 +9,7 @@ export type WorkflowCapabilities =
   | 'workflow:delete'
   | 'workflow:publish'
   | 'workflow:review'
-  | 'workflow:manage_members';
+  | 'workflow:manage';
 
 export const ZWorkflowCapabilities = z.enum([
   'workflow:view',
@@ -18,5 +18,5 @@ export const ZWorkflowCapabilities = z.enum([
   'workflow:delete',
   'workflow:publish',
   'workflow:review',
-  'workflow:manage_members',
+  'workflow:manage',
 ] as const);

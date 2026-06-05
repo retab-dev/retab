@@ -180,7 +180,7 @@ module Retab
         auth: true,
         request_options: request_options
       )
-      JSON.parse(response.body)
+      response.body
     end
 
     # Table.Get Profile

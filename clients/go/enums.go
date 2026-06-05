@@ -447,13 +447,24 @@ const (
 type WorkflowCapabilities string
 
 const (
-	WorkflowCapabilitiesWorkflowView          WorkflowCapabilities = "workflow:view"
-	WorkflowCapabilitiesWorkflowEdit          WorkflowCapabilities = "workflow:edit"
-	WorkflowCapabilitiesWorkflowRun           WorkflowCapabilities = "workflow:run"
-	WorkflowCapabilitiesWorkflowDelete        WorkflowCapabilities = "workflow:delete"
-	WorkflowCapabilitiesWorkflowPublish       WorkflowCapabilities = "workflow:publish"
-	WorkflowCapabilitiesWorkflowReview        WorkflowCapabilities = "workflow:review"
-	WorkflowCapabilitiesWorkflowManageMembers WorkflowCapabilities = "workflow:manage_members"
+	WorkflowCapabilitiesWorkflowView    WorkflowCapabilities = "workflow:view"
+	WorkflowCapabilitiesWorkflowEdit    WorkflowCapabilities = "workflow:edit"
+	WorkflowCapabilitiesWorkflowRun     WorkflowCapabilities = "workflow:run"
+	WorkflowCapabilitiesWorkflowDelete  WorkflowCapabilities = "workflow:delete"
+	WorkflowCapabilitiesWorkflowPublish WorkflowCapabilities = "workflow:publish"
+	WorkflowCapabilitiesWorkflowReview  WorkflowCapabilities = "workflow:review"
+	WorkflowCapabilitiesWorkflowManage  WorkflowCapabilities = "workflow:manage"
+)
+
+// WorkflowAuthzStatus represents workflow authz status values.
+type WorkflowAuthzStatus string
+
+const (
+	WorkflowAuthzStatusProvisioning WorkflowAuthzStatus = "provisioning"
+	WorkflowAuthzStatusReady        WorkflowAuthzStatus = "ready"
+	WorkflowAuthzStatusFailed       WorkflowAuthzStatus = "failed"
+	WorkflowAuthzStatusDeleting     WorkflowAuthzStatus = "deleting"
+	WorkflowAuthzStatusDeleted      WorkflowAuthzStatus = "deleted"
 )
 
 // WorkflowArtifactOperation is an alias for StepArtifactRefOperation.

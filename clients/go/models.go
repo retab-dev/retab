@@ -2078,6 +2078,8 @@ type Workflow struct {
 	UpdatedAt time.Time          `json:"updated_at"`
 	// Capabilities is server-derived permissions for the current actor.
 	Capabilities []WorkflowCapabilities `json:"capabilities,omitempty"`
+	// AuthzStatus is provisioning state of this workflow's WorkOS authorization resource.
+	AuthzStatus *WorkflowAuthzStatus `json:"authz_status,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the

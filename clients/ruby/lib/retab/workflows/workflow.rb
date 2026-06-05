@@ -13,7 +13,8 @@ module Retab
       published: :published,
       created_at: :created_at,
       updated_at: :updated_at,
-      capabilities: :capabilities
+      capabilities: :capabilities,
+      authz_status: :authz_status
     }.freeze
 
     attr_accessor(
@@ -24,7 +25,8 @@ module Retab
       :published,
       :created_at,
       :updated_at,
-      :capabilities
+      :capabilities,
+      :authz_status
     )
 
     def initialize(json)
@@ -38,6 +40,7 @@ module Retab
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]
       @capabilities = (hash[:capabilities] || [])
+      @authz_status = hash[:authz_status]
     end
   end
 end

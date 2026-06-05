@@ -11,7 +11,7 @@ module Retab
       WORKFLOW_DELETE = "workflow:delete"
       WORKFLOW_PUBLISH = "workflow:publish"
       WORKFLOW_REVIEW = "workflow:review"
-      WORKFLOW_MANAGE_MEMBERS = "workflow:manage_members"
+      WORKFLOW_MANAGE = "workflow:manage"
       ALL = [
         WORKFLOW_VIEW,
         WORKFLOW_EDIT,
@@ -19,7 +19,7 @@ module Retab
         WORKFLOW_DELETE,
         WORKFLOW_PUBLISH,
         WORKFLOW_REVIEW,
-        WORKFLOW_MANAGE_MEMBERS
+        WORKFLOW_MANAGE
       ].freeze
     end
   end

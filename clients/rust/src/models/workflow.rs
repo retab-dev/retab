@@ -31,6 +31,9 @@ pub struct Workflow {
     /// Server-derived permissions for the current actor.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub capabilities: Option<Vec<WorkflowCapabilities>>,
+    /// Provisioning state of this workflow's WorkOS authorization resource.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub authz_status: Option<WorkflowAuthzStatus>,
 }
 impl Workflow {
     /// Construct a new `Workflow` with the required fields set.
@@ -49,6 +52,7 @@ impl Workflow {
             created_at: created_at.into(),
             updated_at: updated_at.into(),
             capabilities: Default::default(),
+            authz_status: Default::default(),
         }
     }
 }

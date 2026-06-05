@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.WorkflowAuthzStatus;
 import com.retab.types.WorkflowCapabilities;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -19,6 +20,7 @@ public final class Workflow {
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
   private final List<WorkflowCapabilities> capabilities;
+  private final WorkflowAuthzStatus authzStatus;
 
   @JsonCreator
   public Workflow(
@@ -30,7 +32,8 @@ public final class Workflow {
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt,
       @JsonProperty(value = "capabilities", required = false)
-          List<WorkflowCapabilities> capabilities) {
+          List<WorkflowCapabilities> capabilities,
+      @JsonProperty(value = "authz_status", required = false) WorkflowAuthzStatus authzStatus) {
     this.id = id;
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
@@ -39,6 +42,7 @@ public final class Workflow {
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.capabilities = capabilities;
+    this.authzStatus = authzStatus;
   }
 
   @JsonProperty("id")
@@ -79,5 +83,10 @@ public final class Workflow {
   @JsonProperty("capabilities")
   public List<WorkflowCapabilities> getCapabilities() {
     return capabilities;
+  }
+
+  @JsonProperty("authz_status")
+  public WorkflowAuthzStatus getAuthzStatus() {
+    return authzStatus;
   }
 }

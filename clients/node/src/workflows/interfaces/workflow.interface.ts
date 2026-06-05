@@ -10,6 +10,8 @@ import {
   deserializeWorkflowPublished,
   serializeWorkflowPublished,
 } from './workflow-published.interface.js';
+import type { WorkflowAuthzStatus } from './workflow-authz-status.interface.js';
+import { ZWorkflowAuthzStatus } from './workflow-authz-status.interface.js';
 import type { WorkflowCapabilities } from './workflow-capabilities.interface.js';
 import { ZWorkflowCapabilities } from './workflow-capabilities.interface.js';
 
@@ -35,6 +37,8 @@ export interface Workflow {
   updatedAt: Date;
   /** Server-derived permissions for the current actor. */
   capabilities?: WorkflowCapabilities[] | null;
+  /** Provisioning state of this workflow's WorkOS authorization resource. */
+  authzStatus?: WorkflowAuthzStatus | null;
 }
 
 export interface WorkflowResponse {
@@ -46,6 +50,7 @@ export interface WorkflowResponse {
   created_at: string;
   updated_at: string;
   capabilities?: WorkflowCapabilities[] | null;
+  authz_status?: WorkflowAuthzStatus | null;
 }
 
 export const ZWorkflow = z.object({
@@ -57,6 +62,7 @@ export const ZWorkflow = z.object({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   capabilities: ZWorkflowCapabilities.array().nullable().optional(),
+  authzStatus: ZWorkflowAuthzStatus.nullable().optional(),
 }) as z.ZodType<Workflow>;
 
 export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
@@ -74,6 +80,7 @@ export function deserializeWorkflow(wire: WorkflowResponse): Workflow {
     createdAt: new Date(wire['created_at']),
     updatedAt: new Date(wire['updated_at']),
     capabilities: wire['capabilities'],
+    authzStatus: wire['authz_status'],
   };
 }
 
@@ -92,5 +99,6 @@ export function serializeWorkflow(domain: Workflow): WorkflowResponse {
     created_at: domain['createdAt'].toISOString(),
     updated_at: domain['updatedAt'].toISOString(),
     capabilities: domain['capabilities'],
+    authz_status: domain['authzStatus'],
   };
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-05T15:24:16.415Z",
+  "generatedAt": "2026-06-05T19:12:00.779Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -391,6 +391,7 @@
     "src/main/java/com/retab/types/WhileLoopTerminationTerminationReason.java",
     "src/main/java/com/retab/types/WorkflowArtifactOperation.java",
     "src/main/java/com/retab/types/WorkflowArtifactsOperation.java",
+    "src/main/java/com/retab/types/WorkflowAuthzStatus.java",
     "src/main/java/com/retab/types/WorkflowBlockCreateRequestType.java",
     "src/main/java/com/retab/types/WorkflowBlockType.java",
     "src/main/java/com/retab/types/WorkflowBlockVersionType.java",
