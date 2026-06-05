@@ -55,9 +55,9 @@ class TablesTest < Minitest::Test
 
   def test_download_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/tables/stub/download(\?|\z)})
-      .to_return(body: "{}", status: 200)
+      .to_return(body: "stub", status: 200)
     result = @client.tables.download(table_id: "stub")
-    assert_nil(result)
+    assert_equal("stub", result)
   end
 
   def test_profile_returns_expected_result

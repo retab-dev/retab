@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-05T16:39:57.290Z",
+  "generatedAt": "2026-06-05T19:38:20.682Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -284,6 +284,7 @@
     "src/Enums/TriggerInfoType.cs",
     "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
+    "src/Enums/WorkflowAuthzStatus.cs",
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
     "src/Enums/WorkflowCapabilities.cs",

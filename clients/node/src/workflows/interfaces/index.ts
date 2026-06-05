@@ -15,6 +15,7 @@ export * from './declarative-workflow-request.interface.js';
 export * from './publish-workflow-request.interface.js';
 export * from './update-workflow-request.interface.js';
 export * from './workflow.interface.js';
+export * from './workflow-authz-status.interface.js';
 export * from './workflow-block-position.interface.js';
 export * from './workflow-capabilities.interface.js';
 export * from './workflow-config-block.interface.js';

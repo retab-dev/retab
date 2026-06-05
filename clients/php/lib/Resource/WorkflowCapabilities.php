@@ -14,5 +14,5 @@ enum WorkflowCapabilities: string
     case WorkflowDelete = 'workflow:delete';
     case WorkflowPublish = 'workflow:publish';
     case WorkflowReview = 'workflow:review';
-    case WorkflowManageMembers = 'workflow:manage_members';
+    case WorkflowManage = 'workflow:manage';
 }

@@ -239,6 +239,7 @@ __all__ = [
     "Workflow",
     "WorkflowArtifact",
     "WorkflowArtifactOperation",
+    "WorkflowAuthzStatus",
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",

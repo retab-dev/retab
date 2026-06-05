@@ -6,20 +6,18 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum WorkflowCapabilities {
+public enum WorkflowAuthzStatus {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
-  WORKFLOW_VIEW("workflow:view"),
-  WORKFLOW_EDIT("workflow:edit"),
-  WORKFLOW_RUN("workflow:run"),
-  WORKFLOW_DELETE("workflow:delete"),
-  WORKFLOW_PUBLISH("workflow:publish"),
-  WORKFLOW_REVIEW("workflow:review"),
-  WORKFLOW_MANAGE("workflow:manage");
+  PROVISIONING("provisioning"),
+  READY("ready"),
+  FAILED("failed"),
+  DELETING("deleting"),
+  DELETED("deleted");
 
   private final String value;
 
-  WorkflowCapabilities(String value) {
+  WorkflowAuthzStatus(String value) {
     this.value = value;
   }
 
@@ -29,8 +27,8 @@ public enum WorkflowCapabilities {
   }
 
   @JsonCreator
-  public static WorkflowCapabilities fromValue(String value) {
-    for (WorkflowCapabilities item : values()) {
+  public static WorkflowAuthzStatus fromValue(String value) {
+    for (WorkflowAuthzStatus item : values()) {
       if (item.value.equals(value)) {
         return item;
       }

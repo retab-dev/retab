@@ -53,7 +53,15 @@ class WorkflowCapabilities(str, Enum):
     WORKFLOW_DELETE = "workflow:delete"
     WORKFLOW_PUBLISH = "workflow:publish"
     WORKFLOW_REVIEW = "workflow:review"
-    WORKFLOW_MANAGE_MEMBERS = "workflow:manage_members"
+    WORKFLOW_MANAGE = "workflow:manage"
+
+
+class WorkflowAuthzStatus(str, Enum):
+    PROVISIONING = "provisioning"
+    READY = "ready"
+    FAILED = "failed"
+    DELETING = "deleting"
+    DELETED = "deleted"
 
 
 class WorkflowConfigBlockType(str, Enum):
@@ -196,6 +204,7 @@ class Workflow(BaseModel):
     created_at: datetime.datetime
     updated_at: datetime.datetime
     capabilities: list[WorkflowCapabilities] | None = Field(default=None, description="Server-derived permissions for the current actor.")
+    authz_status: WorkflowAuthzStatus | None = Field(default=None, description="Provisioning state of this workflow's WorkOS authorization resource.")
 
 
 class WorkflowBlockPosition(BaseModel):
@@ -520,6 +529,7 @@ __all__ = [
     "Workflow",
     "WorkflowArtifact",
     "WorkflowArtifactOperation",
+    "WorkflowAuthzStatus",
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",

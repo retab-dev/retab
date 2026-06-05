@@ -3216,7 +3216,8 @@ class ModelRoundTripTest < Minitest::Test
       "published" => nil,
       "created_at" => "stub",
       "updated_at" => "stub",
-      "capabilities" => nil
+      "capabilities" => nil,
+      "authz_status" => nil
     }
     model = Retab::Workflow.new(fixture.to_json)
     json = model.to_h
