@@ -127,18 +127,24 @@ module Retab
       result
     end
 
-    # List Workflow Versions Route
+    # List Workflow Versions
     # @param workflow_id [String] Workflow whose versions to list
+    # @param before [String, nil] Workflow version cursor before
+    # @param after [String, nil] Workflow version cursor after
     # @param limit [Integer, nil] Maximum number of versions to return
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowGraphVersion>]
     def list_versions(
       workflow_id:,
+      before: nil,
+      after: nil,
       limit: 50,
       request_options: {}
     )
       params = {
         "workflow_id" => workflow_id,
+        "before" => before,
+        "after" => after,
         "limit" => limit
       }.compact
       response = @client.request(
@@ -148,14 +154,24 @@ module Retab
         params: params,
         request_options: request_options
       )
+      fetch_next = -> (cursor) {
+        list_versions(
+          workflow_id: workflow_id,
+          before: before,
+          after: cursor,
+          limit: limit,
+          request_options: request_options
+        )
+      }
       Retab::PaginatedList.from_response(
         response,
         model: Retab::WorkflowGraphVersion,
-        filters: {workflow_id: workflow_id, limit: limit}
+        filters: {workflow_id: workflow_id, before: before, limit: limit},
+        fetch_next: fetch_next
       )
     end
 
-    # Diff Workflow Versions Route
+    # Diff Workflow Versions
     # @param workflow_id [String] Workflow whose versions to diff
     # @param from_workflow_version_id [String] Base workflow version ID
     # @param to_workflow_version_id [String] Target workflow version ID
@@ -188,7 +204,7 @@ module Retab
       result
     end
 
-    # Get Workflow Version Route
+    # Get Workflow Version
     # @param workflow_version_id [String]
     # @param workflow_id [String] Workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -217,7 +233,7 @@ module Retab
       result
     end
 
-    # Restore Workflow Version Route
+    # Restore Workflow Version
     # @param workflow_version_id [String]
     # @param workflow_id [String] Workflow to restore into a new draft
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -370,7 +386,7 @@ module Retab
       result
     end
 
-    # Plan Workflow Spec For Existing Workflow
+    # Plan Existing Workflow Spec
     # @param workflow_id [String]
     # @param yaml_definition [String] Workflow YAML definition
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

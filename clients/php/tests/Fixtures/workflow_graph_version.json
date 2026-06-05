@@ -31,11 +31,11 @@
       "animated": true
     }
   ],
-  "block_version_ids": {
-    "key": "test_value"
-  },
-  "edge_version_ids": {
-    "key": "test_value"
-  },
+  "block_version_ids": [
+    "block_version_ids_01234"
+  ],
+  "edge_version_ids": [
+    "edge_version_ids_01234"
+  ],
   "created_at": "2023-01-01T00:00:00.000Z"
 }

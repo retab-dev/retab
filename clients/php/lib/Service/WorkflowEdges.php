@@ -107,6 +107,8 @@ class WorkflowEdges
      * @param string $workflowId
      * @param string|null $edgeId Filter by stable edge ID
      * @param string|null $workflowVersionId Filter by workflow version ID
+     * @param string|null $before Edge version cursor before
+     * @param string|null $after Edge version cursor after
      * @param int|null $limit Maximum number of edge versions to return Defaults to 50.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowEdgeVersion>
      * @throws \Retab\Exception\RetabException
@@ -115,6 +117,8 @@ class WorkflowEdges
         string $workflowId,
         ?string $edgeId = null,
         ?string $workflowVersionId = null,
+        ?string $before = null,
+        ?string $after = null,
         ?int $limit = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
@@ -122,6 +126,8 @@ class WorkflowEdges
             'workflow_id' => $workflowId,
             'edge_id' => $edgeId,
             'workflow_version_id' => $workflowVersionId,
+            'before' => $before,
+            'after' => $after,
             'limit' => $limit,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(

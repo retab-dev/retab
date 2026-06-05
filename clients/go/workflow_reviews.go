@@ -27,13 +27,13 @@ type WorkflowReviewsListParams struct {
 	DecisionStatus *ReviewDecisionStatus `url:"decision_status,omitempty" json:"-"`
 }
 
-// List reviews Route
+// List reviews
 // List reviews — the review queue, oldest first by `created_at`.
 func (s *WorkflowReviewService) List(ctx context.Context, params *WorkflowReviewsListParams, opts ...RequestOption) (*PaginatedList[Review], error) {
 	return doPaginated[Review](ctx, s.client, "GET", "/v1/workflows/reviews", params, nil, opts...)
 }
 
-// Get review Route
+// Get review
 // Read one review's metadata + decision. Versions are fetched separately.
 func (s *WorkflowReviewService) Get(ctx context.Context, reviewID string, opts ...RequestOption) (*Review, error) {
 	if reviewID == "" {
@@ -53,7 +53,7 @@ type WorkflowReviewsApproveParams struct {
 	VersionID string `json:"version_id" url:"-"`
 }
 
-// Approve review Route
+// Approve review
 // Approve one review version and resume the workflow run.
 // The response carries `resume_status` so callers can see whether the run
 // resumed successfully.
@@ -77,7 +77,7 @@ type WorkflowReviewsRejectParams struct {
 	Reason string `json:"reason" url:"-"`
 }
 
-// Reject review Route
+// Reject review
 // Reject one review version and resume the workflow run.
 // A `reason` is required.
 func (s *WorkflowReviewService) Reject(ctx context.Context, reviewID string, params *WorkflowReviewsRejectParams, opts ...RequestOption) (*SubmitDecisionResponse, error) {

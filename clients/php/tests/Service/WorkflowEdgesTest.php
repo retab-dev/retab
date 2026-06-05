@@ -53,7 +53,7 @@ class WorkflowEdgesTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_edge_version');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->edges()->listVersions(workflowId: 'test_value', edgeId: 'test_value', workflowVersionId: 'test_value', limit: 1);
+        $result = $client->workflows()->edges()->listVersions(workflowId: 'test_value', edgeId: 'test_value', workflowVersionId: 'test_value', before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -62,6 +62,8 @@ class WorkflowEdgesTest extends TestCase
         $this->assertSame('test_value', $query['workflow_id']);
         $this->assertSame('test_value', $query['edge_id']);
         $this->assertSame('test_value', $query['workflow_version_id']);
+        $this->assertSame('test_value', $query['before']);
+        $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
     }
 

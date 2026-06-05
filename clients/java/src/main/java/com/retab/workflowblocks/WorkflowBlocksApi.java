@@ -152,13 +152,20 @@ public final class WorkflowBlocksApi {
   }
 
   public List<WorkflowBlockVersion> listVersions(
-      String workflowId, String blockId, String workflowVersionId, Long limit)
+      String workflowId,
+      String blockId,
+      String workflowVersionId,
+      String before,
+      String after,
+      Long limit)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/blocks/versions";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "workflow_version_id", workflowVersionId);
+    appendQueryParam(query, "before", before);
+    appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();

@@ -46,6 +46,19 @@ class DeclarativePlanResponseAction(str, Enum):
     NOOP = "noop"
 
 
+class WorkflowCapabilities(str, Enum):
+    WORKFLOW_WORKFLOWS_READ = "workflow:workflows:read"
+    WORKFLOW_WORKFLOWS_EDIT = "workflow:workflows:edit"
+    WORKFLOW_WORKFLOWS_DELETE = "workflow:workflows:delete"
+    WORKFLOW_WORKFLOWS_PUBLISH = "workflow:workflows:publish"
+    WORKFLOW_MEMBERS_READ = "workflow_members:read"
+    WORKFLOW_MEMBERS_CREATE = "workflow_members:create"
+    WORKFLOW_MEMBERS_UPDATE = "workflow_members:update"
+    WORKFLOW_MEMBERS_DELETE = "workflow_members:delete"
+    WORKFLOW_WORKFLOWS_RUNS_CREATE = "workflow:workflows-runs:create"
+    WORKFLOW_WORKFLOWS_REVIEW_CREATE = "workflow:workflows-review:create"
+
+
 class WorkflowConfigBlockType(str, Enum):
     START_DOCUMENT = "start_document"
     START_JSON = "start_json"
@@ -185,7 +198,7 @@ class Workflow(BaseModel):
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    capabilities: WorkflowCapabilities | None = Field(default=None, description="Server-derived permissions for the current actor.")
+    capabilities: list[WorkflowCapabilities] | None = Field(default=None, description="Server-derived permissions for the current actor.")
 
 
 class WorkflowBlockPosition(BaseModel):
@@ -193,24 +206,6 @@ class WorkflowBlockPosition(BaseModel):
 
     x: float
     y: float
-
-
-class WorkflowCapabilities(BaseModel):
-    """Server-derived permissions for the current actor.
-
-    These fields are response-only. They should not be persisted on
-    ``StoredWorkflow`` documents."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    can_view: bool | None = Field(default=False)
-    can_edit: bool | None = Field(default=False)
-    can_run: bool | None = Field(default=False)
-    can_review: bool | None = Field(default=False)
-    can_publish: bool | None = Field(default=False)
-    can_manage_members: bool | None = Field(default=False)
-    can_manage_settings: bool | None = Field(default=False)
-    can_delete: bool | None = Field(default=False)
 
 
 class WorkflowConfigBlock(BaseModel):
@@ -250,8 +245,8 @@ class WorkflowGraphVersion(BaseModel):
     workflow_id: str
     blocks: list[WorkflowConfigBlock] | None = Field(default=[])
     edges: list[WorkflowConfigEdge] | None = Field(default=[])
-    block_version_ids: dict[str, str] | None = Field(default={})
-    edge_version_ids: dict[str, str] | None = Field(default={})
+    block_version_ids: list[str] | None = Field(default=[])
+    edge_version_ids: list[str] | None = Field(default=[])
     created_at: datetime.datetime
 
 
@@ -588,7 +583,6 @@ PublishWorkflowRequest.model_rebuild()
 UpdateWorkflowRequest.model_rebuild()
 Workflow.model_rebuild()
 WorkflowBlockPosition.model_rebuild()
-WorkflowCapabilities.model_rebuild()
 WorkflowConfigBlock.model_rebuild()
 WorkflowConfigEdge.model_rebuild()
 WorkflowGraphVersion.model_rebuild()

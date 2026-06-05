@@ -29,10 +29,10 @@ export interface WorkflowGraphVersion {
   blocks?: WorkflowConfigBlock[];
   /** @default [] */
   edges?: WorkflowConfigEdge[];
-  /** @default {} */
-  blockVersionIds?: Record<string, string>;
-  /** @default {} */
-  edgeVersionIds?: Record<string, string>;
+  /** @default [] */
+  blockVersionIds?: string[];
+  /** @default [] */
+  edgeVersionIds?: string[];
   createdAt: Date;
 }
 
@@ -41,8 +41,8 @@ export interface WorkflowGraphVersionResponse {
   workflow_id: string;
   blocks?: WorkflowConfigBlockResponse[];
   edges?: WorkflowConfigEdgeResponse[];
-  block_version_ids?: Record<string, string>;
-  edge_version_ids?: Record<string, string>;
+  block_version_ids?: string[];
+  edge_version_ids?: string[];
   created_at: string;
 }
 
@@ -51,8 +51,8 @@ export const ZWorkflowGraphVersion = z.object({
   workflowId: z.string(),
   blocks: ZWorkflowConfigBlock.array().optional(),
   edges: ZWorkflowConfigEdge.array().optional(),
-  blockVersionIds: z.record(z.string(), z.string()).optional(),
-  edgeVersionIds: z.record(z.string(), z.string()).optional(),
+  blockVersionIds: z.string().array().optional(),
+  edgeVersionIds: z.string().array().optional(),
   createdAt: z.coerce.date(),
 }) as z.ZodType<WorkflowGraphVersion>;
 

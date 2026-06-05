@@ -56,7 +56,7 @@ type WorkflowRunsCreateParams struct {
 	Version *string `json:"version,omitempty" url:"-"`
 }
 
-// Create workflow Run Route
+// Create workflow Run
 // Create a fresh workflow run.
 func (s *WorkflowRunService) Create(ctx context.Context, params *WorkflowRunsCreateParams, opts ...RequestOption) (*WorkflowRun, error) {
 	var result WorkflowRun

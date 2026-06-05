@@ -141,19 +141,25 @@ class Workflows
     }
 
     /**
-     * List Workflow Versions Route
+     * List Workflow Versions
      * @param string $workflowId Workflow whose versions to list
+     * @param string|null $before Workflow version cursor before
+     * @param string|null $after Workflow version cursor after
      * @param int|null $limit Maximum number of versions to return Defaults to 50.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowGraphVersion>
      * @throws \Retab\Exception\RetabException
      */
     public function listVersions(
         string $workflowId,
+        ?string $before = null,
+        ?string $after = null,
         ?int $limit = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([
             'workflow_id' => $workflowId,
+            'before' => $before,
+            'after' => $after,
             'limit' => $limit,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
@@ -166,7 +172,7 @@ class Workflows
     }
 
     /**
-     * Diff Workflow Versions Route
+     * Diff Workflow Versions
      * @param string $workflowId Workflow whose versions to diff
      * @param string $fromWorkflowVersionId Base workflow version ID
      * @param string $toWorkflowVersionId Target workflow version ID
@@ -194,7 +200,7 @@ class Workflows
     }
 
     /**
-     * Get Workflow Version Route
+     * Get Workflow Version
      * @param string $workflowVersionId
      * @param string $workflowId Workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.
      * @return \Retab\Resource\WorkflowGraphVersion
@@ -218,7 +224,7 @@ class Workflows
     }
 
     /**
-     * Restore Workflow Version Route
+     * Restore Workflow Version
      * @param string $workflowVersionId
      * @param string $workflowId Workflow to restore into a new draft
      * @return \Retab\Resource\Workflow
@@ -366,7 +372,7 @@ class Workflows
     }
 
     /**
-     * Plan Workflow Spec For Existing Workflow
+     * Plan Existing Workflow Spec
      *
      * Preview applying a declarative YAML spec to an existing workflow draft.
      *

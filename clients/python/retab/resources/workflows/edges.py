@@ -55,13 +55,22 @@ class WorkflowEdgesMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/edges", params=params or None, data=data)
 
     def prepare_list_versions(
-        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> PreparedRequest:
         """List Edge Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "edge_id": edge_id,
             "workflow_version_id": workflow_version_id,
+            "before": before,
+            "after": after,
             "limit": limit,
         }
         if extra_params:
@@ -147,10 +156,19 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         return WorkflowEdgeDoc.model_validate(response)
 
     def list_versions(
-        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> PaginatedList[WorkflowEdgeVersion]:
         """List Edge Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return self.request_page(prepared_request, model=WorkflowEdgeVersion)
 
     def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:
@@ -212,10 +230,19 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         return WorkflowEdgeDoc.model_validate(response)
 
     async def list_versions(
-        self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowEdgeVersion]:
         """List Edge Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return await self.request_page(prepared_request, model=WorkflowEdgeVersion)
 
     async def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:

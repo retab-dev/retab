@@ -114,6 +114,8 @@ module Retab
     # @param workflow_id [String]
     # @param edge_id [String, nil] Filter by stable edge ID
     # @param workflow_version_id [String, nil] Filter by workflow version ID
+    # @param before [String, nil] Edge version cursor before
+    # @param after [String, nil] Edge version cursor after
     # @param limit [Integer, nil] Maximum number of edge versions to return
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowEdgeVersion>]
@@ -121,6 +123,8 @@ module Retab
       workflow_id:,
       edge_id: nil,
       workflow_version_id: nil,
+      before: nil,
+      after: nil,
       limit: 50,
       request_options: {}
     )
@@ -128,6 +132,8 @@ module Retab
         "workflow_id" => workflow_id,
         "edge_id" => edge_id,
         "workflow_version_id" => workflow_version_id,
+        "before" => before,
+        "after" => after,
         "limit" => limit
       }.compact
       response = @client.request(
@@ -137,10 +143,28 @@ module Retab
         params: params,
         request_options: request_options
       )
+      fetch_next = -> (cursor) {
+        list_versions(
+          workflow_id: workflow_id,
+          edge_id: edge_id,
+          workflow_version_id: workflow_version_id,
+          before: before,
+          after: cursor,
+          limit: limit,
+          request_options: request_options
+        )
+      }
       Retab::PaginatedList.from_response(
         response,
         model: Retab::WorkflowEdgeVersion,
-        filters: {workflow_id: workflow_id, edge_id: edge_id, workflow_version_id: workflow_version_id, limit: limit}
+        filters: {
+          workflow_id: workflow_id,
+          edge_id: edge_id,
+          workflow_version_id: workflow_version_id,
+          before: before,
+          limit: limit
+        },
+        fetch_next: fetch_next
       )
     end
 

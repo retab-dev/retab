@@ -88,7 +88,7 @@ class WorkflowRunsMixin:
         version: str = "production",
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Create Workflow Run Route Create a fresh workflow run."""
+        """Create Workflow Run Create a fresh workflow run."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -222,7 +222,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         version: str = "production",
         **extra_params: Any,
     ) -> WorkflowRun:
-        """Create Workflow Run Route Create a fresh workflow run."""
+        """Create Workflow Run Create a fresh workflow run."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
@@ -334,7 +334,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         version: str = "production",
         **extra_params: Any,
     ) -> WorkflowRun:
-        """Create Workflow Run Route Create a fresh workflow run."""
+        """Create Workflow Run Create a fresh workflow run."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)

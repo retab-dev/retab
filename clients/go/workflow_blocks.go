@@ -73,14 +73,12 @@ func (s *WorkflowBlockService) Create(ctx context.Context, params *WorkflowBlock
 
 // WorkflowBlocksListVersionsParams contains the parameters for ListVersions.
 type WorkflowBlocksListVersionsParams struct {
+	PaginationParams
 	WorkflowID string `url:"workflow_id" json:"-"`
 	// BlockID is filter by stable block ID
 	BlockID *string `url:"block_id,omitempty" json:"-"`
 	// WorkflowVersionID is filter by workflow version ID
 	WorkflowVersionID *string `url:"workflow_version_id,omitempty" json:"-"`
-	// Limit is maximum number of block versions to return
-	// Defaults to 50.
-	Limit *int `url:"limit,omitempty" json:"-"`
 }
 
 // ListVersions list Block Versions
@@ -223,7 +221,7 @@ type WorkflowBlocksCreateBlockValidateConfigParams struct {
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 }
 
-// CreateBlockValidateConfig validate Block Config Dry Run
+// CreateBlockValidateConfig validate Block Config
 // Validate an assembled block config without mutating the workflow draft.
 func (s *WorkflowBlockService) CreateBlockValidateConfig(ctx context.Context, blockID string, params *WorkflowBlocksCreateBlockValidateConfigParams, opts ...RequestOption) (*ValidateWorkflowBlockConfigResponse, error) {
 	if blockID == "" {

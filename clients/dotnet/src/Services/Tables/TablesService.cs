@@ -16,7 +16,7 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public TablesService(Retab client) : base(client) { }
 
-        /// <summary>List Tables</summary>
+        /// <summary>Table.List</summary>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowTableListResponse"/> result.</returns>
@@ -31,7 +31,7 @@ namespace Retab
             return this.ListAsync(requestOptions, cancellationToken);
         }
 
-        /// <summary>Create Table</summary>
+        /// <summary>Table.Create</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -47,7 +47,7 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Table</summary>
+        /// <summary>Table.Get</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -63,7 +63,7 @@ namespace Retab
             return this.GetAsync(tableId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Replace Table</summary>
+        /// <summary>Table.Replace</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -80,7 +80,7 @@ namespace Retab
             return this.ReplaceAsync(tableId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Update Table</summary>
+        /// <summary>Table.Update</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -97,7 +97,7 @@ namespace Retab
             return this.UpdateAsync(tableId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Table</summary>
+        /// <summary>Table.Delete</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -112,7 +112,7 @@ namespace Retab
             return this.DeleteAsync(tableId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Download Table Csv</summary>
+        /// <summary>Table.Download</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -127,7 +127,7 @@ namespace Retab
             return this.DownloadAsync(tableId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Profile Table</summary>
+        /// <summary>Table.Get Profile</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -144,7 +144,7 @@ namespace Retab
             return this.ProfileAsync(tableId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Query Table</summary>
+        /// <summary>Table.Query</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -161,7 +161,7 @@ namespace Retab
             return this.QueryAsync(tableId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Table Schema</summary>
+        /// <summary>Table.Get Schema</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -177,7 +177,7 @@ namespace Retab
             return this.SchemaAsync(tableId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Validate Table</summary>
+        /// <summary>Table.Validate</summary>
         /// <param name="tableId">The table id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

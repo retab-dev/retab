@@ -11,7 +11,7 @@ import { deserializeReviewVersion } from '../../../workflows/reviews/versions/in
 export class WorkflowReviewVersions {
   constructor(private readonly client: Retab) {}
 
-  /** List Review Versions Route */
+  /** List Review Versions */
   async list(options: {
     reviewId: string;
     limit?: number;
@@ -33,7 +33,7 @@ export class WorkflowReviewVersions {
     });
   }
 
-  /** Create Review Version Route */
+  /** Create Review Version */
   async create(
     reviewId: string,
     parentId: string,
@@ -55,7 +55,7 @@ export class WorkflowReviewVersions {
     return deserializeReviewVersion(__wire);
   }
 
-  /** Get Review Version Route */
+  /** Get Review Version */
   async get(versionId: string): Promise<ReviewVersion> {
     const __wire = await this.client.request<ReviewVersionResponse>({
       method: 'GET',

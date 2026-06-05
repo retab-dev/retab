@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-04T17:24:23.318Z",
+  "generatedAt": "2026-06-05T14:11:12.913Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -260,7 +260,6 @@
     "src/main/java/com/retab/models/WorkflowBlockPosition.java",
     "src/main/java/com/retab/models/WorkflowBlockVersion.java",
     "src/main/java/com/retab/models/WorkflowBlockVersionDiff.java",
-    "src/main/java/com/retab/models/WorkflowCapabilities.java",
     "src/main/java/com/retab/models/WorkflowConfigBlock.java",
     "src/main/java/com/retab/models/WorkflowConfigEdge.java",
     "src/main/java/com/retab/models/WorkflowEdgeCreateRequest.java",
@@ -395,6 +394,7 @@
     "src/main/java/com/retab/types/WorkflowBlockCreateRequestType.java",
     "src/main/java/com/retab/types/WorkflowBlockType.java",
     "src/main/java/com/retab/types/WorkflowBlockVersionType.java",
+    "src/main/java/com/retab/types/WorkflowCapabilities.java",
     "src/main/java/com/retab/types/WorkflowConfigBlockType.java",
     "src/main/java/com/retab/types/WorkflowExperimentsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowExperimentsStatus.java",

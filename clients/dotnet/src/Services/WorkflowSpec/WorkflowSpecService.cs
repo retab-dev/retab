@@ -101,7 +101,7 @@ namespace Retab
             return this.GetAsync(workflowId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Apply Workflow Spec To Existing Workflow</summary>
+        /// <summary>Apply Existing Workflow Spec</summary>
         /// <remarks>
         /// Apply a declarative YAML spec to an existing workflow draft.
         /// The URL workflow id is the update target. Any workflow id in the YAML is

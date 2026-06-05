@@ -6,54 +6,16 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Server-derived permissions for the current actor.
- *
- * These fields are response-only. They should not be persisted on
- * ``StoredWorkflow`` documents.
- */
-readonly class WorkflowCapabilities implements \JsonSerializable
+enum WorkflowCapabilities: string
 {
-    use JsonSerializableTrait;
-
-    public function __construct(
-        public ?bool $canView = null,
-        public ?bool $canEdit = null,
-        public ?bool $canRun = null,
-        public ?bool $canReview = null,
-        public ?bool $canPublish = null,
-        public ?bool $canManageMembers = null,
-        public ?bool $canManageSettings = null,
-        public ?bool $canDelete = null,
-    ) {}
-
-    /** @param array<string, mixed> $data */
-    public static function fromArray(array $data): self
-    {
-        return new self(
-            canView: $data['can_view'] ?? null,
-            canEdit: $data['can_edit'] ?? null,
-            canRun: $data['can_run'] ?? null,
-            canReview: $data['can_review'] ?? null,
-            canPublish: $data['can_publish'] ?? null,
-            canManageMembers: $data['can_manage_members'] ?? null,
-            canManageSettings: $data['can_manage_settings'] ?? null,
-            canDelete: $data['can_delete'] ?? null,
-        );
-    }
-
-    /** @return array<string, mixed> */
-    public function toArray(): array
-    {
-        return [
-            'can_view' => $this->canView,
-            'can_edit' => $this->canEdit,
-            'can_run' => $this->canRun,
-            'can_review' => $this->canReview,
-            'can_publish' => $this->canPublish,
-            'can_manage_members' => $this->canManageMembers,
-            'can_manage_settings' => $this->canManageSettings,
-            'can_delete' => $this->canDelete,
-        ];
-    }
+    case WorkflowWorkflowsRead = 'workflow:workflows:read';
+    case WorkflowWorkflowsEdit = 'workflow:workflows:edit';
+    case WorkflowWorkflowsDelete = 'workflow:workflows:delete';
+    case WorkflowWorkflowsPublish = 'workflow:workflows:publish';
+    case WorkflowMembersRead = 'workflow_members:read';
+    case WorkflowMembersCreate = 'workflow_members:create';
+    case WorkflowMembersUpdate = 'workflow_members:update';
+    case WorkflowMembersDelete = 'workflow_members:delete';
+    case WorkflowWorkflowsRunsCreate = 'workflow:workflows-runs:create';
+    case WorkflowWorkflowsReviewCreate = 'workflow:workflows-review:create';
 }

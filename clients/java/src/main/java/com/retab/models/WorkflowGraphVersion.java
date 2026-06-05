@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowGraphVersion {
@@ -15,8 +14,8 @@ public final class WorkflowGraphVersion {
   private final String workflowId;
   private final List<WorkflowConfigBlock> blocks;
   private final List<WorkflowConfigEdge> edges;
-  private final Map<String, String> blockVersionIds;
-  private final Map<String, String> edgeVersionIds;
+  private final List<String> blockVersionIds;
+  private final List<String> edgeVersionIds;
   private final OffsetDateTime createdAt;
 
   @JsonCreator
@@ -25,10 +24,8 @@ public final class WorkflowGraphVersion {
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
       @JsonProperty(value = "blocks", required = false) List<WorkflowConfigBlock> blocks,
       @JsonProperty(value = "edges", required = false) List<WorkflowConfigEdge> edges,
-      @JsonProperty(value = "block_version_ids", required = false)
-          Map<String, String> blockVersionIds,
-      @JsonProperty(value = "edge_version_ids", required = false)
-          Map<String, String> edgeVersionIds,
+      @JsonProperty(value = "block_version_ids", required = false) List<String> blockVersionIds,
+      @JsonProperty(value = "edge_version_ids", required = false) List<String> edgeVersionIds,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt) {
     this.id = id;
     this.workflowId = workflowId;
@@ -60,12 +57,12 @@ public final class WorkflowGraphVersion {
   }
 
   @JsonProperty("block_version_ids")
-  public Map<String, String> getBlockVersionIds() {
+  public List<String> getBlockVersionIds() {
     return blockVersionIds;
   }
 
   @JsonProperty("edge_version_ids")
-  public Map<String, String> getEdgeVersionIds() {
+  public List<String> getEdgeVersionIds() {
     return edgeVersionIds;
   }
 

@@ -118,6 +118,8 @@ class WorkflowBlocks
      * @param string $workflowId
      * @param string|null $blockId Filter by stable block ID
      * @param string|null $workflowVersionId Filter by workflow version ID
+     * @param string|null $before Block version cursor before
+     * @param string|null $after Block version cursor after
      * @param int|null $limit Maximum number of block versions to return Defaults to 50.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowBlockVersion>
      * @throws \Retab\Exception\RetabException
@@ -126,6 +128,8 @@ class WorkflowBlocks
         string $workflowId,
         ?string $blockId = null,
         ?string $workflowVersionId = null,
+        ?string $before = null,
+        ?string $after = null,
         ?int $limit = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
@@ -133,6 +137,8 @@ class WorkflowBlocks
             'workflow_id' => $workflowId,
             'block_id' => $blockId,
             'workflow_version_id' => $workflowVersionId,
+            'before' => $before,
+            'after' => $after,
             'limit' => $limit,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
@@ -315,7 +321,7 @@ class WorkflowBlocks
     }
 
     /**
-     * Validate Block Config Dry Run
+     * Validate Block Config
      *
      * Validate an assembled block config without mutating the workflow draft.
      * @param string $blockId

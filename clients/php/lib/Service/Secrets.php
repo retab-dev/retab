@@ -17,7 +17,7 @@ class Secrets
     ) {}
 
     /**
-     * List Secrets
+     * Secret.List
      * @return \Retab\Resource\SecretListResponse
      * @throws \Retab\Exception\RetabException
      */
@@ -33,7 +33,7 @@ class Secrets
     }
 
     /**
-     * Create Secret
+     * Secret.Create
      * @param string $name
      * @param string $value
      * @return \Retab\Resource\SecretResponse
@@ -58,7 +58,7 @@ class Secrets
     }
 
     /**
-     * Get Secret
+     * Secret.Get
      * @param string $name
      * @return \Retab\Resource\SecretResponse
      * @throws \Retab\Exception\RetabException
@@ -76,7 +76,7 @@ class Secrets
     }
 
     /**
-     * Set Secret
+     * Secret.Set
      * @param string $name
      * @param string $value
      * @return \Retab\Resource\SecretResponse
@@ -100,7 +100,7 @@ class Secrets
     }
 
     /**
-     * Delete Secret
+     * Secret.Delete
      * @param string $name
      * @return void
      * @throws \Retab\Exception\RetabException
@@ -117,7 +117,7 @@ class Secrets
     }
 
     /**
-     * Get Secret Value
+     * Secret.Get Value
      * @param string $name
      * @return \Retab\Resource\SecretValueResponse
      * @throws \Retab\Exception\RetabException

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-04T17:38:18.543Z",
+  "generatedAt": "2026-06-05T15:05:16.265Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -234,6 +234,7 @@
     "lib/retab/types/workflow_block_executions_order.rb",
     "lib/retab/types/workflow_block_type.rb",
     "lib/retab/types/workflow_block_version_type.rb",
+    "lib/retab/types/workflow_capabilities.rb",
     "lib/retab/types/workflow_config_block_type.rb",
     "lib/retab/types/workflow_experiments_exclude_status.rb",
     "lib/retab/types/workflow_experiments_order.rb",
@@ -433,7 +434,6 @@
     "lib/retab/workflows/update_workflow_request.rb",
     "lib/retab/workflows/workflow.rb",
     "lib/retab/workflows/workflow_block_position.rb",
-    "lib/retab/workflows/workflow_capabilities.rb",
     "lib/retab/workflows/workflow_config_block.rb",
     "lib/retab/workflows/workflow_config_edge.rb",
     "lib/retab/workflows/workflow_graph_version.rb",
@@ -692,7 +692,6 @@
     "rbi/retab/workflow_block_version.rbi",
     "rbi/retab/workflow_block_version_diff.rbi",
     "rbi/retab/workflow_blocks.rbi",
-    "rbi/retab/workflow_capabilities.rbi",
     "rbi/retab/workflow_config_block.rbi",
     "rbi/retab/workflow_config_edge.rbi",
     "rbi/retab/workflow_edge_create_request.rbi",

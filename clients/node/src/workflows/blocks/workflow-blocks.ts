@@ -210,7 +210,7 @@ export class WorkflowBlocks {
     });
   }
 
-  /** Validate Block Config Dry Run */
+  /** Validate Block Config */
   async create_block_validate_config(
     blockId: string,
     config: Record<string, unknown>,

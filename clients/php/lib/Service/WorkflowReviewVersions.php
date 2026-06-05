@@ -15,7 +15,7 @@ class WorkflowReviewVersions
     ) {}
 
     /**
-     * List Review Versions Route
+     * List Review Versions
      *
      * List versions for one review.
      *
@@ -51,7 +51,7 @@ class WorkflowReviewVersions
     }
 
     /**
-     * Create Review Version Route
+     * Create Review Version
      *
      * Create one immutable, content-addressed review version.
      * @param string $reviewId
@@ -84,7 +84,7 @@ class WorkflowReviewVersions
     }
 
     /**
-     * Get Review Version Route
+     * Get Review Version
      *
      * Read one review version by its content-addressed id.
      * @param string $versionId

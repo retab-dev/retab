@@ -32,8 +32,8 @@ module Retab
       @workflow_id = hash[:workflow_id]
       @blocks = (hash[:blocks] || []).map { |item| item ? Retab::WorkflowConfigBlock.new(item) : nil }
       @edges = (hash[:edges] || []).map { |item| item ? Retab::WorkflowConfigEdge.new(item) : nil }
-      @block_version_ids = hash[:block_version_ids] || {}
-      @edge_version_ids = hash[:edge_version_ids] || {}
+      @block_version_ids = (hash[:block_version_ids] || [])
+      @edge_version_ids = (hash[:edge_version_ids] || [])
       @created_at = hash[:created_at]
     end
   end

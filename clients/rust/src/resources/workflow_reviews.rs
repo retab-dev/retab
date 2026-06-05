@@ -101,7 +101,7 @@ impl<'a> WorkflowReviewsApi<'a> {
         }
     }
 
-    /// List Reviews Route
+    /// List Reviews
     ///
     /// List reviews — the review queue, oldest first by `created_at`.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowReviewList, Error> {
@@ -121,7 +121,7 @@ impl<'a> WorkflowReviewsApi<'a> {
             .await
     }
 
-    /// Get Review Route
+    /// Get Review
     ///
     /// Read one review's metadata + decision. Versions are fetched separately.
     pub async fn get(&self, review_id: &str) -> Result<Review, Error> {
@@ -142,7 +142,7 @@ impl<'a> WorkflowReviewsApi<'a> {
             .await
     }
 
-    /// Approve Review Route
+    /// Approve Review
     ///
     /// Approve one review version and resume the workflow run.
     ///
@@ -171,7 +171,7 @@ impl<'a> WorkflowReviewsApi<'a> {
             .await
     }
 
-    /// Reject Review Route
+    /// Reject Review
     ///
     /// Reject one review version and resume the workflow run.
     ///

@@ -31,7 +31,7 @@ from retab.types.tables import (
 
 class TablesMixin:
     def prepare_list(self, **extra_params: Any) -> PreparedRequest:
-        """List Tables"""
+        """Table.List"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -40,7 +40,7 @@ class TablesMixin:
         return PreparedRequest(method="GET", url="/v1/tables", params=params or None, data=data)
 
     def prepare_create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Create Table"""
+        """Table.Create"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -50,7 +50,7 @@ class TablesMixin:
         return PreparedRequest(method="POST", url="/v1/tables", params=params or None, data=data)
 
     def prepare_get(self, table_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Table"""
+        """Table.Get"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -59,7 +59,7 @@ class TablesMixin:
         return PreparedRequest(method="GET", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
     def prepare_replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Replace Table"""
+        """Table.Replace"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -69,7 +69,7 @@ class TablesMixin:
         return PreparedRequest(method="PUT", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
     def prepare_update_table(self, table_id: str, name: str | None = None, metadata: dict[str, Any] | None = None, **extra_params: Any) -> PreparedRequest:
-        """Update Table"""
+        """Table.Update"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -79,7 +79,7 @@ class TablesMixin:
         return PreparedRequest(method="PATCH", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
     def prepare_delete(self, table_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Table"""
+        """Table.Delete"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -88,7 +88,7 @@ class TablesMixin:
         return PreparedRequest(method="DELETE", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
     def prepare_download(self, table_id: str, **extra_params: Any) -> PreparedRequest:
-        """Download Table Csv"""
+        """Table.Download"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -97,7 +97,7 @@ class TablesMixin:
         return PreparedRequest(method="GET", url=f"/v1/tables/{table_id}/download", params=params or None, data=data)
 
     def prepare_profile(self, table_id: str, select: list[str] | None = None, **extra_params: Any) -> PreparedRequest:
-        """Profile Table"""
+        """Table.Get Profile"""
         params: dict[str, Any] = {
             "select": select,
         }
@@ -129,7 +129,7 @@ class TablesMixin:
         limit: int | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Query Table"""
+        """Table.Query"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -157,7 +157,7 @@ class TablesMixin:
         return PreparedRequest(method="POST", url=f"/v1/tables/{table_id}/query", params=params or None, data=data)
 
     def prepare_schema(self, table_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Table Schema"""
+        """Table.Get Schema"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -173,7 +173,7 @@ class TablesMixin:
         unique: list[list[str]] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Validate Table"""
+        """Table.Validate"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -187,49 +187,49 @@ class Tables(SyncAPIResource, TablesMixin):
     """Tables API wrapper."""
 
     def list(self, **extra_params: Any) -> WorkflowTableListResponse:
-        """List Tables"""
+        """Table.List"""
         prepared_request = self.prepare_list(**extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     def create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Create Table"""
+        """Table.Create"""
         prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     def get(self, table_id: str, **extra_params: Any) -> WorkflowTableResponse:
-        """Get Table"""
+        """Table.Get"""
         prepared_request = self.prepare_get(table_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableResponse.model_validate(response)
 
     def replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Replace Table"""
+        """Table.Replace"""
         prepared_request = self.prepare_replace(table_id, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     def update_table(self, table_id: str, name: str | None = None, metadata: dict[str, Any] | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Update Table"""
+        """Table.Update"""
         prepared_request = self.prepare_update_table(table_id, name=name, metadata=metadata, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     def delete(self, table_id: str, **extra_params: Any) -> None:
-        """Delete Table"""
+        """Table.Delete"""
         prepared_request = self.prepare_delete(table_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
 
     def download(self, table_id: str, **extra_params: Any) -> bytes:
-        """Download Table Csv"""
+        """Table.Download"""
         prepared_request = self.prepare_download(table_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return response
 
     def profile(self, table_id: str, select: list[str] | None = None, **extra_params: Any) -> WorkflowTableProfileResponse:
-        """Profile Table"""
+        """Table.Get Profile"""
         prepared_request = self.prepare_profile(table_id, select=select, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableProfileResponse.model_validate(response)
@@ -256,7 +256,7 @@ class Tables(SyncAPIResource, TablesMixin):
         limit: int | None = None,
         **extra_params: Any,
     ) -> WorkflowTableRowsResponse:
-        """Query Table"""
+        """Table.Query"""
         prepared_request = self.prepare_query(
             table_id,
             filters=filters,
@@ -282,7 +282,7 @@ class Tables(SyncAPIResource, TablesMixin):
         return WorkflowTableRowsResponse.model_validate(response)
 
     def schema(self, table_id: str, **extra_params: Any) -> WorkflowTableSchemaResponse:
-        """Get Table Schema"""
+        """Table.Get Schema"""
         prepared_request = self.prepare_schema(table_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableSchemaResponse.model_validate(response)
@@ -295,7 +295,7 @@ class Tables(SyncAPIResource, TablesMixin):
         unique: list[list[str]] | None = None,
         **extra_params: Any,
     ) -> WorkflowTableValidationResponse:
-        """Validate Table"""
+        """Table.Validate"""
         prepared_request = self.prepare_validate(table_id, required_columns=required_columns, columns=columns, unique=unique, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableValidationResponse.model_validate(response)
@@ -305,49 +305,49 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
     """Async Tables API wrapper."""
 
     async def list(self, **extra_params: Any) -> WorkflowTableListResponse:
-        """List Tables"""
+        """Table.List"""
         prepared_request = self.prepare_list(**extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     async def create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Create Table"""
+        """Table.Create"""
         prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     async def get(self, table_id: str, **extra_params: Any) -> WorkflowTableResponse:
-        """Get Table"""
+        """Table.Get"""
         prepared_request = self.prepare_get(table_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableResponse.model_validate(response)
 
     async def replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Replace Table"""
+        """Table.Replace"""
         prepared_request = self.prepare_replace(table_id, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     async def update_table(self, table_id: str, name: str | None = None, metadata: dict[str, Any] | None = None, **extra_params: Any) -> WorkflowTableListResponse:
-        """Update Table"""
+        """Table.Update"""
         prepared_request = self.prepare_update_table(table_id, name=name, metadata=metadata, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
     async def delete(self, table_id: str, **extra_params: Any) -> None:
-        """Delete Table"""
+        """Table.Delete"""
         prepared_request = self.prepare_delete(table_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
 
     async def download(self, table_id: str, **extra_params: Any) -> bytes:
-        """Download Table Csv"""
+        """Table.Download"""
         prepared_request = self.prepare_download(table_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return response
 
     async def profile(self, table_id: str, select: list[str] | None = None, **extra_params: Any) -> WorkflowTableProfileResponse:
-        """Profile Table"""
+        """Table.Get Profile"""
         prepared_request = self.prepare_profile(table_id, select=select, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableProfileResponse.model_validate(response)
@@ -374,7 +374,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         limit: int | None = None,
         **extra_params: Any,
     ) -> WorkflowTableRowsResponse:
-        """Query Table"""
+        """Table.Query"""
         prepared_request = self.prepare_query(
             table_id,
             filters=filters,
@@ -400,7 +400,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         return WorkflowTableRowsResponse.model_validate(response)
 
     async def schema(self, table_id: str, **extra_params: Any) -> WorkflowTableSchemaResponse:
-        """Get Table Schema"""
+        """Table.Get Schema"""
         prepared_request = self.prepare_schema(table_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableSchemaResponse.model_validate(response)
@@ -413,7 +413,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         unique: list[list[str]] | None = None,
         **extra_params: Any,
     ) -> WorkflowTableValidationResponse:
-        """Validate Table"""
+        """Table.Validate"""
         prepared_request = self.prepare_validate(table_id, required_columns=required_columns, columns=columns, unique=unique, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableValidationResponse.model_validate(response)

@@ -10,7 +10,7 @@ module Retab
       @client = client
     end
 
-    # List Tables
+    # Table.List
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableListResponse]
     def list(request_options: {})
@@ -29,7 +29,7 @@ module Retab
       result
     end
 
-    # Create Table
+    # Table.Create
     # @param name [String]
     # @param file [String]
     # @param column_schema_overrides [String, nil]
@@ -62,7 +62,7 @@ module Retab
       result
     end
 
-    # Get Table
+    # Table.Get
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableResponse]
@@ -85,7 +85,7 @@ module Retab
       result
     end
 
-    # Replace Table
+    # Table.Replace
     # @param table_id [String]
     # @param file [String]
     # @param column_schema_overrides [String, nil]
@@ -117,7 +117,7 @@ module Retab
       result
     end
 
-    # Update Table
+    # Table.Update
     # @param table_id [String]
     # @param name [String, nil]
     # @param metadata [Hash{String => Object}, nil]
@@ -149,7 +149,7 @@ module Retab
       result
     end
 
-    # Delete Table
+    # Table.Delete
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
@@ -166,7 +166,7 @@ module Retab
       nil
     end
 
-    # Download Table Csv
+    # Table.Download
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [String]
@@ -183,7 +183,7 @@ module Retab
       JSON.parse(response.body)
     end
 
-    # Profile Table
+    # Table.Get Profile
     # @param table_id [String]
     # @param select [Array<String>, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -212,7 +212,7 @@ module Retab
       result
     end
 
-    # Query Table
+    # Table.Query
     # @param table_id [String]
     # @param filters [Array<Retab::WorkflowTableFilterRule>, nil]
     # @param search [Retab::WorkflowTableSearchRequest, nil]
@@ -289,7 +289,7 @@ module Retab
       result
     end
 
-    # Get Table Schema
+    # Table.Get Schema
     # @param table_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableSchemaResponse]
@@ -312,7 +312,7 @@ module Retab
       result
     end
 
-    # Validate Table
+    # Table.Validate
     # @param table_id [String]
     # @param required_columns [Array<String>, nil]
     # @param columns [Hash{String => Retab::WorkflowTableValidationColumnRule}, nil]

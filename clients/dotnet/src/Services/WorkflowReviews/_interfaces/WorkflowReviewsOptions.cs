@@ -5,7 +5,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Request options for <see cref="WorkflowReviewsService.ListAsync"/>: List Reviews Route</summary>
+    /// <summary>Request options for <see cref="WorkflowReviewsService.ListAsync"/>: List Reviews</summary>
     public class WorkflowReviewsListOptions : ListOptions
     {
         public string? WorkflowId { get; set; }
@@ -23,7 +23,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowReviewsService.ApproveAsync"/>: Approve Review Route</summary>
+    /// <summary>Request options for <see cref="WorkflowReviewsService.ApproveAsync"/>: Approve Review</summary>
     public class WorkflowReviewsApproveOptions : BaseOptions
     {
         /// <summary>Exact content-addressed key of the version to approve.</summary>
@@ -31,7 +31,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowReviewsService.RejectAsync"/>: Reject Review Route</summary>
+    /// <summary>Request options for <see cref="WorkflowReviewsService.RejectAsync"/>: Reject Review</summary>
     public class WorkflowReviewsRejectOptions : BaseOptions
     {
         /// <summary>Exact content-addressed key of the version to reject.</summary>

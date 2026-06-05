@@ -14,7 +14,7 @@ module Retab
       @versions ||= Retab::WorkflowReviewVersions.new(@client)
     end
 
-    # List Reviews Route
+    # List Reviews
     # @param workflow_id [String, nil]
     # @param run_id [String, nil]
     # @param block_id [String, nil]
@@ -87,7 +87,7 @@ module Retab
       )
     end
 
-    # Get Review Route
+    # Get Review
     # @param review_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Review]
@@ -110,7 +110,7 @@ module Retab
       result
     end
 
-    # Approve Review Route
+    # Approve Review
     # @param review_id [String]
     # @param version_id [String] Exact content-addressed key of the version to approve.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -139,7 +139,7 @@ module Retab
       result
     end
 
-    # Reject Review Route
+    # Reject Review
     # @param review_id [String]
     # @param version_id [String] Exact content-addressed key of the version to reject.
     # @param reason [String] Required, non-empty rejection reason.

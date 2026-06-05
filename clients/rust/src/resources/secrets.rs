@@ -48,7 +48,7 @@ impl UpdateSecretParams {
 }
 
 impl<'a> SecretsApi<'a> {
-    /// List Secrets
+    /// Secret.List
     pub async fn list_secrets(&self) -> Result<SecretListResponse, Error> {
         self.list_secrets_with_options(None).await
     }
@@ -65,7 +65,7 @@ impl<'a> SecretsApi<'a> {
             .await
     }
 
-    /// Create Secret
+    /// Secret.Create
     pub async fn create_secret(&self, params: CreateSecretParams) -> Result<SecretResponse, Error> {
         self.create_secret_with_options(params, None).await
     }
@@ -83,7 +83,7 @@ impl<'a> SecretsApi<'a> {
             .await
     }
 
-    /// Get Secret
+    /// Secret.Get
     pub async fn get_secret(&self, name: &str) -> Result<SecretResponse, Error> {
         self.get_secret_with_options(name, None).await
     }
@@ -102,7 +102,7 @@ impl<'a> SecretsApi<'a> {
             .await
     }
 
-    /// Set Secret
+    /// Secret.Set
     pub async fn update_secret(
         &self,
         name: &str,
@@ -126,7 +126,7 @@ impl<'a> SecretsApi<'a> {
             .await
     }
 
-    /// Delete Secret
+    /// Secret.Delete
     pub async fn delete_secret(&self, name: &str) -> Result<(), Error> {
         self.delete_secret_with_options(name, None).await
     }
@@ -145,7 +145,7 @@ impl<'a> SecretsApi<'a> {
             .await
     }
 
-    /// Get Secret Value
+    /// Secret.Get Value
     pub async fn list_secret_value(&self, name: &str) -> Result<SecretValueResponse, Error> {
         self.list_secret_value_with_options(name, None).await
     }

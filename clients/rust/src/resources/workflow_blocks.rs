@@ -71,6 +71,12 @@ pub struct ListVersionsParams {
     /// Filter by workflow version ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_version_id: Option<String>,
+    /// Block version cursor before
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    /// Block version cursor after
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
     /// Maximum number of block versions to return
     ///
     /// Defaults to `50`.
@@ -86,6 +92,8 @@ impl ListVersionsParams {
             workflow_id: workflow_id.into(),
             block_id: Default::default(),
             workflow_version_id: Default::default(),
+            before: Default::default(),
+            after: Default::default(),
             limit: Some(50),
         }
     }
@@ -385,7 +393,7 @@ impl<'a> WorkflowBlocksApi<'a> {
             .await
     }
 
-    /// Validate Block Config Dry Run
+    /// Validate Block Config
     ///
     /// Validate an assembled block config without mutating the workflow draft.
     pub async fn create_block_validate_config(

@@ -59,14 +59,12 @@ func (s *WorkflowService) Create(ctx context.Context, params *WorkflowsCreatePar
 
 // WorkflowsListVersionsParams contains the parameters for ListVersions.
 type WorkflowsListVersionsParams struct {
+	PaginationParams
 	// WorkflowID is workflow whose versions to list
 	WorkflowID string `url:"workflow_id" json:"-"`
-	// Limit is maximum number of versions to return
-	// Defaults to 50.
-	Limit *int `url:"limit,omitempty" json:"-"`
 }
 
-// ListVersions list Workflow Versions Route
+// ListVersions list Workflow Versions
 func (s *WorkflowService) ListVersions(ctx context.Context, params *WorkflowsListVersionsParams, opts ...RequestOption) (*PaginatedList[WorkflowGraphVersion], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")
@@ -87,7 +85,7 @@ type WorkflowsListDiffParams struct {
 	ToWorkflowVersionID string `url:"to_workflow_version_id" json:"-"`
 }
 
-// ListDiff diff Workflow Versions Route
+// ListDiff diff Workflow Versions
 func (s *WorkflowService) ListDiff(ctx context.Context, params *WorkflowsListDiffParams, opts ...RequestOption) (*WorkflowGraphVersionDiff, error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")
@@ -115,7 +113,7 @@ type WorkflowsGetVersionParams struct {
 	WorkflowID string `url:"workflow_id" json:"-"`
 }
 
-// GetVersion get Workflow Version Route
+// GetVersion get Workflow Version
 func (s *WorkflowService) GetVersion(ctx context.Context, workflowVersionID string, params *WorkflowsGetVersionParams, opts ...RequestOption) (*WorkflowGraphVersion, error) {
 	if workflowVersionID == "" {
 		return nil, fmt.Errorf("retab: workflow_version_id is required")
@@ -140,7 +138,7 @@ type WorkflowsCreateVersionRestoreParams struct {
 	WorkflowID string `url:"workflow_id" json:"-"`
 }
 
-// CreateVersionRestore restore Workflow Version Route
+// CreateVersionRestore restore Workflow Version
 func (s *WorkflowService) CreateVersionRestore(ctx context.Context, workflowVersionID string, params *WorkflowsCreateVersionRestoreParams, opts ...RequestOption) (*Workflow, error) {
 	if workflowVersionID == "" {
 		return nil, fmt.Errorf("retab: workflow_version_id is required")
@@ -250,7 +248,7 @@ type WorkflowsCreatePlanParams struct {
 	YamlDefinition string `json:"yaml_definition" url:"-"`
 }
 
-// CreatePlan plan Workflow Spec For Existing Workflow
+// CreatePlan plan Existing Workflow Spec
 // Preview applying a declarative YAML spec to an existing workflow draft.
 // The URL workflow id is the plan target. Any workflow id in the YAML is
 // treated as source context.

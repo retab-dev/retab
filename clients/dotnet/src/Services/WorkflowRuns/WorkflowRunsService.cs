@@ -46,7 +46,7 @@ namespace Retab
             return base.ListAutoPagingAsync<WorkflowRun>("/v1/workflows/runs", options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Create Workflow Run Route</summary>
+        /// <summary>Create Workflow Run</summary>
         /// <remarks>
         /// Create a fresh workflow run.
         /// </remarks>

@@ -37,7 +37,7 @@ module Retab
       @published = hash[:published] ? Retab::WorkflowPublished.new(hash[:published]) : nil
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]
-      @capabilities = hash[:capabilities] ? Retab::WorkflowCapabilities.new(hash[:capabilities]) : nil
+      @capabilities = (hash[:capabilities] || [])
     end
   end
 end

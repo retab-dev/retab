@@ -155,11 +155,14 @@ public final class WorkflowsApi {
     return client.getObjectMapper().readValue(response.body(), Workflow.class);
   }
 
-  public List<WorkflowGraphVersion> listVersions(String workflowId, Long limit)
+  public List<WorkflowGraphVersion> listVersions(
+      String workflowId, String before, String after, Long limit)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/versions";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "workflow_id", workflowId);
+    appendQueryParam(query, "before", before);
+    appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();

@@ -23,7 +23,7 @@ class WorkflowReviews
     }
 
     /**
-     * List Reviews Route
+     * List Reviews
      *
      * List reviews — the review queue, oldest first by `created_at`.
      * @param string|null $workflowId
@@ -71,7 +71,7 @@ class WorkflowReviews
     }
 
     /**
-     * Get Review Route
+     * Get Review
      *
      * Read one review's metadata + decision. Versions are fetched separately.
      * @param string $reviewId
@@ -91,7 +91,7 @@ class WorkflowReviews
     }
 
     /**
-     * Approve Review Route
+     * Approve Review
      *
      * Approve one review version and resume the workflow run.
      *
@@ -120,7 +120,7 @@ class WorkflowReviews
     }
 
     /**
-     * Reject Review Route
+     * Reject Review
      *
      * Reject one review version and resume the workflow run.
      *

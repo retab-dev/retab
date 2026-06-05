@@ -108,7 +108,7 @@ module Retab
       )
     end
 
-    # Create Workflow Run Route
+    # Create Workflow Run
     # @param workflow_id [String] Workflow id for the fresh run.
     # @param documents [Hash{String => Retab::MimeData, Retab::FileRef, Pathname, IO, String, Hash}, nil] Mapping of start_document block IDs to their input documents.
     # @param json_inputs [Hash{String => Object}, nil] Mapping of start-json block IDs to their input JSON data.

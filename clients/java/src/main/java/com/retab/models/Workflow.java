@@ -5,7 +5,9 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.WorkflowCapabilities;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class Workflow {
@@ -16,7 +18,7 @@ public final class Workflow {
   private final WorkflowPublished published;
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
-  private final WorkflowCapabilities capabilities;
+  private final List<WorkflowCapabilities> capabilities;
 
   @JsonCreator
   public Workflow(
@@ -27,7 +29,8 @@ public final class Workflow {
       @JsonProperty(value = "published", required = false) WorkflowPublished published,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
       @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt,
-      @JsonProperty(value = "capabilities", required = false) WorkflowCapabilities capabilities) {
+      @JsonProperty(value = "capabilities", required = false)
+          List<WorkflowCapabilities> capabilities) {
     this.id = id;
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
@@ -74,7 +77,7 @@ public final class Workflow {
   }
 
   @JsonProperty("capabilities")
-  public WorkflowCapabilities getCapabilities() {
+  public List<WorkflowCapabilities> getCapabilities() {
     return capabilities;
   }
 }

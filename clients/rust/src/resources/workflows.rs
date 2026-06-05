@@ -77,6 +77,12 @@ pub struct ListVersionsParams {
     ///
     /// Required.
     pub workflow_id: String,
+    /// Workflow version cursor before
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    /// Workflow version cursor after
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
     /// Maximum number of versions to return
     ///
     /// Defaults to `50`.
@@ -90,6 +96,8 @@ impl ListVersionsParams {
     pub fn new(workflow_id: impl Into<String>) -> Self {
         Self {
             workflow_id: workflow_id.into(),
+            before: Default::default(),
+            after: Default::default(),
             limit: Some(50),
         }
     }
@@ -310,7 +318,7 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
-    /// List Workflow Versions Route
+    /// List Workflow Versions
     pub async fn list_versions(
         &self,
         params: ListVersionsParams,
@@ -331,7 +339,7 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
-    /// Diff Workflow Versions Route
+    /// Diff Workflow Versions
     pub async fn list_diff(
         &self,
         params: ListDiffParams,
@@ -352,7 +360,7 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
-    /// Get Workflow Version Route
+    /// Get Workflow Version
     pub async fn get_version(
         &self,
         workflow_version_id: &str,
@@ -377,7 +385,7 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
-    /// Restore Workflow Version Route
+    /// Restore Workflow Version
     pub async fn create_version_restore(
         &self,
         workflow_version_id: &str,
@@ -523,7 +531,7 @@ impl<'a> WorkflowsApi<'a> {
             .await
     }
 
-    /// Plan Workflow Spec For Existing Workflow
+    /// Plan Existing Workflow Spec
     ///
     /// Preview applying a declarative YAML spec to an existing workflow draft.
     ///
