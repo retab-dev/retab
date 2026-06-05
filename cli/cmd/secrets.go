@@ -65,7 +65,7 @@ var secretsValueCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Secrets.GetValue(ctx, args[0])
+		result, err := client.Secrets.ListValue(ctx, args[0])
 		if err != nil {
 			return err
 		}

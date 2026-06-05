@@ -11,15 +11,12 @@
   "created_at": "2023-01-01T00:00:00.000Z",
   "updated_at": "2023-01-01T00:00:00.000Z",
   "capabilities": [
-    "workflow:workflows:read",
-    "workflow:workflows:edit",
-    "workflow:workflows:delete",
-    "workflow:workflows:publish",
-    "workflow_members:read",
-    "workflow_members:create",
-    "workflow_members:update",
-    "workflow_members:delete",
-    "workflow:workflows-runs:create",
-    "workflow:workflows-review:create"
+    "workflow:view",
+    "workflow:edit",
+    "workflow:run",
+    "workflow:delete",
+    "workflow:publish",
+    "workflow:review",
+    "workflow:manage_members"
   ]
 }

@@ -12,25 +12,19 @@ namespace Retab
         [EnumMember(Value = "unknown")]
         Unknown,
 
-        [EnumMember(Value = "workflow:workflows:read")]
-        WorkflowWorkflowsRead,
-        [EnumMember(Value = "workflow:workflows:edit")]
-        WorkflowWorkflowsEdit,
-        [EnumMember(Value = "workflow:workflows:delete")]
-        WorkflowWorkflowsDelete,
-        [EnumMember(Value = "workflow:workflows:publish")]
-        WorkflowWorkflowsPublish,
-        [EnumMember(Value = "workflow_members:read")]
-        WorkflowMembersRead,
-        [EnumMember(Value = "workflow_members:create")]
-        WorkflowMembersCreate,
-        [EnumMember(Value = "workflow_members:update")]
-        WorkflowMembersUpdate,
-        [EnumMember(Value = "workflow_members:delete")]
-        WorkflowMembersDelete,
-        [EnumMember(Value = "workflow:workflows-runs:create")]
-        WorkflowWorkflowsRunsCreate,
-        [EnumMember(Value = "workflow:workflows-review:create")]
-        WorkflowWorkflowsReviewCreate,
+        [EnumMember(Value = "workflow:view")]
+        WorkflowView,
+        [EnumMember(Value = "workflow:edit")]
+        WorkflowEdit,
+        [EnumMember(Value = "workflow:run")]
+        WorkflowRun,
+        [EnumMember(Value = "workflow:delete")]
+        WorkflowDelete,
+        [EnumMember(Value = "workflow:publish")]
+        WorkflowPublish,
+        [EnumMember(Value = "workflow:review")]
+        WorkflowReview,
+        [EnumMember(Value = "workflow:manage_members")]
+        WorkflowManageMembers,
     }
 }
