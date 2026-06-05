@@ -7,16 +7,13 @@ use std::str::FromStr;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum WorkflowCapabilities {
-    WorkflowWorkflowsRead,
-    WorkflowWorkflowsEdit,
-    WorkflowWorkflowsDelete,
-    WorkflowWorkflowsPublish,
-    WorkflowMembersRead,
-    WorkflowMembersCreate,
-    WorkflowMembersUpdate,
-    WorkflowMembersDelete,
-    WorkflowWorkflowsRunsCreate,
-    WorkflowWorkflowsReviewCreate,
+    WorkflowView,
+    WorkflowEdit,
+    WorkflowRun,
+    WorkflowDelete,
+    WorkflowPublish,
+    WorkflowReview,
+    WorkflowManageMembers,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -30,16 +27,13 @@ impl WorkflowCapabilities {
     #[allow(deprecated)]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::WorkflowWorkflowsRead => "workflow:workflows:read",
-            Self::WorkflowWorkflowsEdit => "workflow:workflows:edit",
-            Self::WorkflowWorkflowsDelete => "workflow:workflows:delete",
-            Self::WorkflowWorkflowsPublish => "workflow:workflows:publish",
-            Self::WorkflowMembersRead => "workflow_members:read",
-            Self::WorkflowMembersCreate => "workflow_members:create",
-            Self::WorkflowMembersUpdate => "workflow_members:update",
-            Self::WorkflowMembersDelete => "workflow_members:delete",
-            Self::WorkflowWorkflowsRunsCreate => "workflow:workflows-runs:create",
-            Self::WorkflowWorkflowsReviewCreate => "workflow:workflows-review:create",
+            Self::WorkflowView => "workflow:view",
+            Self::WorkflowEdit => "workflow:edit",
+            Self::WorkflowRun => "workflow:run",
+            Self::WorkflowDelete => "workflow:delete",
+            Self::WorkflowPublish => "workflow:publish",
+            Self::WorkflowReview => "workflow:review",
+            Self::WorkflowManageMembers => "workflow:manage_members",
             Self::Unknown(s) => s.as_str(),
         }
     }
@@ -62,16 +56,13 @@ impl FromStr for WorkflowCapabilities {
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "workflow:workflows:read" => Self::WorkflowWorkflowsRead,
-            "workflow:workflows:edit" => Self::WorkflowWorkflowsEdit,
-            "workflow:workflows:delete" => Self::WorkflowWorkflowsDelete,
-            "workflow:workflows:publish" => Self::WorkflowWorkflowsPublish,
-            "workflow_members:read" => Self::WorkflowMembersRead,
-            "workflow_members:create" => Self::WorkflowMembersCreate,
-            "workflow_members:update" => Self::WorkflowMembersUpdate,
-            "workflow_members:delete" => Self::WorkflowMembersDelete,
-            "workflow:workflows-runs:create" => Self::WorkflowWorkflowsRunsCreate,
-            "workflow:workflows-review:create" => Self::WorkflowWorkflowsReviewCreate,
+            "workflow:view" => Self::WorkflowView,
+            "workflow:edit" => Self::WorkflowEdit,
+            "workflow:run" => Self::WorkflowRun,
+            "workflow:delete" => Self::WorkflowDelete,
+            "workflow:publish" => Self::WorkflowPublish,
+            "workflow:review" => Self::WorkflowReview,
+            "workflow:manage_members" => Self::WorkflowManageMembers,
             other => Self::Unknown(other.to_string()),
         })
     }

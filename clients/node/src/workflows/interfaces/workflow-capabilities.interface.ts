@@ -3,26 +3,20 @@
 import { z } from 'zod';
 
 export type WorkflowCapabilities =
-  | 'workflow:workflows:read'
-  | 'workflow:workflows:edit'
-  | 'workflow:workflows:delete'
-  | 'workflow:workflows:publish'
-  | 'workflow_members:read'
-  | 'workflow_members:create'
-  | 'workflow_members:update'
-  | 'workflow_members:delete'
-  | 'workflow:workflows-runs:create'
-  | 'workflow:workflows-review:create';
+  | 'workflow:view'
+  | 'workflow:edit'
+  | 'workflow:run'
+  | 'workflow:delete'
+  | 'workflow:publish'
+  | 'workflow:review'
+  | 'workflow:manage_members';
 
 export const ZWorkflowCapabilities = z.enum([
-  'workflow:workflows:read',
-  'workflow:workflows:edit',
-  'workflow:workflows:delete',
-  'workflow:workflows:publish',
-  'workflow_members:read',
-  'workflow_members:create',
-  'workflow_members:update',
-  'workflow_members:delete',
-  'workflow:workflows-runs:create',
-  'workflow:workflows-review:create',
+  'workflow:view',
+  'workflow:edit',
+  'workflow:run',
+  'workflow:delete',
+  'workflow:publish',
+  'workflow:review',
+  'workflow:manage_members',
 ] as const);

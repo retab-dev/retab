@@ -8,14 +8,11 @@ namespace Retab\Resource;
 
 enum WorkflowCapabilities: string
 {
-    case WorkflowWorkflowsRead = 'workflow:workflows:read';
-    case WorkflowWorkflowsEdit = 'workflow:workflows:edit';
-    case WorkflowWorkflowsDelete = 'workflow:workflows:delete';
-    case WorkflowWorkflowsPublish = 'workflow:workflows:publish';
-    case WorkflowMembersRead = 'workflow_members:read';
-    case WorkflowMembersCreate = 'workflow_members:create';
-    case WorkflowMembersUpdate = 'workflow_members:update';
-    case WorkflowMembersDelete = 'workflow_members:delete';
-    case WorkflowWorkflowsRunsCreate = 'workflow:workflows-runs:create';
-    case WorkflowWorkflowsReviewCreate = 'workflow:workflows-review:create';
+    case WorkflowView = 'workflow:view';
+    case WorkflowEdit = 'workflow:edit';
+    case WorkflowRun = 'workflow:run';
+    case WorkflowDelete = 'workflow:delete';
+    case WorkflowPublish = 'workflow:publish';
+    case WorkflowReview = 'workflow:review';
+    case WorkflowManageMembers = 'workflow:manage_members';
 }

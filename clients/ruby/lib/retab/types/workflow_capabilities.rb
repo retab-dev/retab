@@ -5,27 +5,21 @@
 module Retab
   module Types
     class WorkflowCapabilities
-      WORKFLOW_WORKFLOWS_READ = "workflow:workflows:read"
-      WORKFLOW_WORKFLOWS_EDIT = "workflow:workflows:edit"
-      WORKFLOW_WORKFLOWS_DELETE = "workflow:workflows:delete"
-      WORKFLOW_WORKFLOWS_PUBLISH = "workflow:workflows:publish"
-      WORKFLOW_MEMBERS_READ = "workflow_members:read"
-      WORKFLOW_MEMBERS_CREATE = "workflow_members:create"
-      WORKFLOW_MEMBERS_UPDATE = "workflow_members:update"
-      WORKFLOW_MEMBERS_DELETE = "workflow_members:delete"
-      WORKFLOW_WORKFLOWS_RUNS_CREATE = "workflow:workflows-runs:create"
-      WORKFLOW_WORKFLOWS_REVIEW_CREATE = "workflow:workflows-review:create"
+      WORKFLOW_VIEW = "workflow:view"
+      WORKFLOW_EDIT = "workflow:edit"
+      WORKFLOW_RUN = "workflow:run"
+      WORKFLOW_DELETE = "workflow:delete"
+      WORKFLOW_PUBLISH = "workflow:publish"
+      WORKFLOW_REVIEW = "workflow:review"
+      WORKFLOW_MANAGE_MEMBERS = "workflow:manage_members"
       ALL = [
-        WORKFLOW_WORKFLOWS_READ,
-        WORKFLOW_WORKFLOWS_EDIT,
-        WORKFLOW_WORKFLOWS_DELETE,
-        WORKFLOW_WORKFLOWS_PUBLISH,
-        WORKFLOW_MEMBERS_READ,
-        WORKFLOW_MEMBERS_CREATE,
-        WORKFLOW_MEMBERS_UPDATE,
-        WORKFLOW_MEMBERS_DELETE,
-        WORKFLOW_WORKFLOWS_RUNS_CREATE,
-        WORKFLOW_WORKFLOWS_REVIEW_CREATE
+        WORKFLOW_VIEW,
+        WORKFLOW_EDIT,
+        WORKFLOW_RUN,
+        WORKFLOW_DELETE,
+        WORKFLOW_PUBLISH,
+        WORKFLOW_REVIEW,
+        WORKFLOW_MANAGE_MEMBERS
       ].freeze
     end
   end

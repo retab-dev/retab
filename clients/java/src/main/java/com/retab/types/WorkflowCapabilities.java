@@ -9,16 +9,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum WorkflowCapabilities {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
-  WORKFLOW_WORKFLOWS_READ("workflow:workflows:read"),
-  WORKFLOW_WORKFLOWS_EDIT("workflow:workflows:edit"),
-  WORKFLOW_WORKFLOWS_DELETE("workflow:workflows:delete"),
-  WORKFLOW_WORKFLOWS_PUBLISH("workflow:workflows:publish"),
-  WORKFLOW_MEMBERS_READ("workflow_members:read"),
-  WORKFLOW_MEMBERS_CREATE("workflow_members:create"),
-  WORKFLOW_MEMBERS_UPDATE("workflow_members:update"),
-  WORKFLOW_MEMBERS_DELETE("workflow_members:delete"),
-  WORKFLOW_WORKFLOWS_RUNS_CREATE("workflow:workflows-runs:create"),
-  WORKFLOW_WORKFLOWS_REVIEW_CREATE("workflow:workflows-review:create");
+  WORKFLOW_VIEW("workflow:view"),
+  WORKFLOW_EDIT("workflow:edit"),
+  WORKFLOW_RUN("workflow:run"),
+  WORKFLOW_DELETE("workflow:delete"),
+  WORKFLOW_PUBLISH("workflow:publish"),
+  WORKFLOW_REVIEW("workflow:review"),
+  WORKFLOW_MANAGE_MEMBERS("workflow:manage_members");
 
   private final String value;
 

@@ -447,16 +447,13 @@ const (
 type WorkflowCapabilities string
 
 const (
-	WorkflowCapabilitiesWorkflowWorkflowsRead         WorkflowCapabilities = "workflow:workflows:read"
-	WorkflowCapabilitiesWorkflowWorkflowsEdit         WorkflowCapabilities = "workflow:workflows:edit"
-	WorkflowCapabilitiesWorkflowWorkflowsDelete       WorkflowCapabilities = "workflow:workflows:delete"
-	WorkflowCapabilitiesWorkflowWorkflowsPublish      WorkflowCapabilities = "workflow:workflows:publish"
-	WorkflowCapabilitiesWorkflowMembersRead           WorkflowCapabilities = "workflow_members:read"
-	WorkflowCapabilitiesWorkflowMembersCreate         WorkflowCapabilities = "workflow_members:create"
-	WorkflowCapabilitiesWorkflowMembersUpdate         WorkflowCapabilities = "workflow_members:update"
-	WorkflowCapabilitiesWorkflowMembersDelete         WorkflowCapabilities = "workflow_members:delete"
-	WorkflowCapabilitiesWorkflowWorkflowsRunsCreate   WorkflowCapabilities = "workflow:workflows-runs:create"
-	WorkflowCapabilitiesWorkflowWorkflowsReviewCreate WorkflowCapabilities = "workflow:workflows-review:create"
+	WorkflowCapabilitiesWorkflowView          WorkflowCapabilities = "workflow:view"
+	WorkflowCapabilitiesWorkflowEdit          WorkflowCapabilities = "workflow:edit"
+	WorkflowCapabilitiesWorkflowRun           WorkflowCapabilities = "workflow:run"
+	WorkflowCapabilitiesWorkflowDelete        WorkflowCapabilities = "workflow:delete"
+	WorkflowCapabilitiesWorkflowPublish       WorkflowCapabilities = "workflow:publish"
+	WorkflowCapabilitiesWorkflowReview        WorkflowCapabilities = "workflow:review"
+	WorkflowCapabilitiesWorkflowManageMembers WorkflowCapabilities = "workflow:manage_members"
 )
 
 // WorkflowArtifactOperation is an alias for StepArtifactRefOperation.

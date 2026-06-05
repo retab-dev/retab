@@ -58,7 +58,7 @@ func fillLocalSecretsFromRetab(cmd *cobra.Command, bundleDir string, config map[
 	values := map[string]string{}
 	results := make([]map[string]any, 0, len(secrets))
 	for _, secret := range secrets {
-		response, err := client.Secrets.GetValue(ctx, secret.Name)
+		response, err := client.Secrets.ListValue(ctx, secret.Name)
 		if err != nil {
 			return nil, fmt.Errorf("read secret value %s: %w", secret.Name, err)
 		}
