@@ -33,16 +33,16 @@ module Retab
     sig { params(value: T.nilable(T::Array[Retab::WorkflowConfigEdge])).returns(T.nilable(T::Array[Retab::WorkflowConfigEdge])) }
     def edges=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, String])) }
+    sig { returns(T.nilable(T::Array[String])) }
     def block_version_ids; end
 
-    sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
+    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
     def block_version_ids=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, String])) }
+    sig { returns(T.nilable(T::Array[String])) }
     def edge_version_ids; end
 
-    sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
+    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
     def edge_version_ids=(value); end
 
     sig { returns(String) }

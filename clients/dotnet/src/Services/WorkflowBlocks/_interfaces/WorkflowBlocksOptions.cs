@@ -50,7 +50,7 @@ namespace Retab
     }
 
     /// <summary>Request options for <see cref="WorkflowBlocksService.ListVersionsAsync"/>: List Block Versions</summary>
-    public class WorkflowBlocksListVersionsOptions : BaseOptions
+    public class WorkflowBlocksListVersionsOptions : ListOptions
     {
         public string WorkflowId { get; set; } = default!;
 
@@ -59,9 +59,6 @@ namespace Retab
 
         /// <summary>Filter by workflow version ID</summary>
         public string? WorkflowVersionId { get; set; }
-
-        /// <summary>Maximum number of block versions to return</summary>
-        public long? Limit { get; set; }
 
     }
 
@@ -115,7 +112,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowBlocksService.CreateBlockValidateConfigAsync"/>: Validate Block Config Dry Run</summary>
+    /// <summary>Request options for <see cref="WorkflowBlocksService.CreateBlockValidateConfigAsync"/>: Validate Block Config</summary>
     public class WorkflowBlocksCreateBlockValidateConfigOptions : BaseOptions
     {
         /// <summary>Assembled block config to validate.</summary>

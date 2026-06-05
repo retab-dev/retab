@@ -44,7 +44,7 @@ import {
 export class Tables {
   constructor(private readonly client: Retab) {}
 
-  /** List Tables */
+  /** Table.List */
   async list(): Promise<WorkflowTableListResponse> {
     const __wire = await this.client.request<WorkflowTableListResponseResponse>({
       method: 'GET',
@@ -55,7 +55,7 @@ export class Tables {
     return deserializeWorkflowTableListResponse(__wire);
   }
 
-  /** Create Table */
+  /** Table.Create */
   async create(
     name: string,
     file: string,
@@ -75,7 +75,7 @@ export class Tables {
     return deserializeWorkflowTableListResponse(__wire);
   }
 
-  /** Get Table */
+  /** Table.Get */
   async get(tableId: string): Promise<WorkflowTableResponse> {
     const __wire = await this.client.request<WorkflowTableResponseResponse>({
       method: 'GET',
@@ -86,7 +86,7 @@ export class Tables {
     return deserializeWorkflowTableResponse(__wire);
   }
 
-  /** Replace Table */
+  /** Table.Replace */
   async replace(
     tableId: string,
     file: string,
@@ -105,7 +105,7 @@ export class Tables {
     return deserializeWorkflowTableListResponse(__wire);
   }
 
-  /** Update Table */
+  /** Table.Update */
   async update_table(
     tableId: string,
     name?: string | null,
@@ -124,7 +124,7 @@ export class Tables {
     return deserializeWorkflowTableListResponse(__wire);
   }
 
-  /** Delete Table */
+  /** Table.Delete */
   async delete(tableId: string): Promise<void> {
     await this.client.request<unknown>({
       method: 'DELETE',
@@ -134,7 +134,7 @@ export class Tables {
     });
   }
 
-  /** Download Table Csv */
+  /** Table.Download */
   async download(tableId: string): Promise<Blob> {
     const __wire = await this.client.request<string>({
       method: 'GET',
@@ -145,7 +145,7 @@ export class Tables {
     return __wire as unknown as Blob;
   }
 
-  /** Profile Table */
+  /** Table.Get Profile */
   async profile(
     tableId: string,
     options?: { select?: string[] | undefined }
@@ -159,7 +159,7 @@ export class Tables {
     return deserializeWorkflowTableProfileResponse(__wire);
   }
 
-  /** Query Table */
+  /** Table.Query */
   async query(
     tableId: string,
     filters?: WorkflowTableFilterRule[],
@@ -234,7 +234,7 @@ export class Tables {
     return deserializeWorkflowTableRowsResponse(__wire);
   }
 
-  /** Get Table Schema */
+  /** Table.Get Schema */
   async schema(tableId: string): Promise<WorkflowTableSchemaResponse> {
     const __wire = await this.client.request<WorkflowTableSchemaResponseResponse>({
       method: 'GET',
@@ -245,7 +245,7 @@ export class Tables {
     return deserializeWorkflowTableSchemaResponse(__wire);
   }
 
-  /** Validate Table */
+  /** Table.Validate */
   async validate(
     tableId: string,
     requiredColumns?: string[],

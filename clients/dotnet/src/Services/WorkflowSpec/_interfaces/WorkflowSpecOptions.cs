@@ -29,7 +29,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowSpecService.ApplyToWorkflowAsync"/>: Apply Workflow Spec To Existing Workflow</summary>
+    /// <summary>Request options for <see cref="WorkflowSpecService.ApplyToWorkflowAsync"/>: Apply Existing Workflow Spec</summary>
     public class WorkflowSpecApplyToWorkflowOptions : BaseOptions
     {
         /// <summary>Workflow YAML definition</summary>

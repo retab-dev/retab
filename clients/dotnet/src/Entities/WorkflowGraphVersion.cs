@@ -12,8 +12,8 @@ namespace Retab
         public string WorkflowId { get; set; } = default!;
         public List<WorkflowConfigBlock>? Blocks { get; set; }
         public List<WorkflowConfigEdge>? Edges { get; set; }
-        public Dictionary<string, string>? BlockVersionIds { get; set; }
-        public Dictionary<string, string>? EdgeVersionIds { get; set; }
+        public List<string>? BlockVersionIds { get; set; }
+        public List<string>? EdgeVersionIds { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>

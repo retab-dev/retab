@@ -30,7 +30,7 @@ pub struct Workflow {
     pub updated_at: String,
     /// Server-derived permissions for the current actor.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub capabilities: Option<WorkflowCapabilities>,
+    pub capabilities: Option<Vec<WorkflowCapabilities>>,
 }
 impl Workflow {
     /// Construct a new `Workflow` with the required fields set.

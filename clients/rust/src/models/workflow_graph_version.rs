@@ -17,12 +17,12 @@ pub struct WorkflowGraphVersion {
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub edges: Option<Vec<WorkflowConfigEdge>>,
-    /// Defaults to `{}`.
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub block_version_ids: Option<std::collections::HashMap<String, String>>,
-    /// Defaults to `{}`.
+    pub block_version_ids: Option<Vec<String>>,
+    /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub edge_version_ids: Option<std::collections::HashMap<String, String>>,
+    pub edge_version_ids: Option<Vec<String>>,
     pub created_at: String,
 }
 impl WorkflowGraphVersion {

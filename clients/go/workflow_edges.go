@@ -70,14 +70,12 @@ func (s *WorkflowEdgeService) Create(ctx context.Context, params *WorkflowEdgesC
 
 // WorkflowEdgesListVersionsParams contains the parameters for ListVersions.
 type WorkflowEdgesListVersionsParams struct {
+	PaginationParams
 	WorkflowID string `url:"workflow_id" json:"-"`
 	// EdgeID is filter by stable edge ID
 	EdgeID *string `url:"edge_id,omitempty" json:"-"`
 	// WorkflowVersionID is filter by workflow version ID
 	WorkflowVersionID *string `url:"workflow_version_id,omitempty" json:"-"`
-	// Limit is maximum number of edge versions to return
-	// Defaults to 50.
-	Limit *int `url:"limit,omitempty" json:"-"`
 }
 
 // ListVersions list Edge Versions

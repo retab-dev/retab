@@ -69,7 +69,7 @@ export class WorkflowRuns {
     });
   }
 
-  /** Create Workflow Run Route */
+  /** Create Workflow Run */
   async create(
     workflowId: string,
     documents?: Record<string, DocumentInput>,

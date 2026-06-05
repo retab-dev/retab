@@ -89,7 +89,7 @@ export class Workflows {
     return deserializeWorkflow(__wire);
   }
 
-  /** List Workflow Versions Route */
+  /** List Workflow Versions */
   async list_versions(options: {
     workflowId: string;
     limit?: number;
@@ -111,7 +111,7 @@ export class Workflows {
     });
   }
 
-  /** Diff Workflow Versions Route */
+  /** Diff Workflow Versions */
   async list_diff(options: {
     workflowId: string;
     fromWorkflowVersionId: string;
@@ -130,7 +130,7 @@ export class Workflows {
     return deserializeWorkflowGraphVersionDiff(__wire);
   }
 
-  /** Get Workflow Version Route */
+  /** Get Workflow Version */
   async get_version(
     workflowVersionId: string,
     options: { workflowId: string }
@@ -144,7 +144,7 @@ export class Workflows {
     return deserializeWorkflowGraphVersion(__wire);
   }
 
-  /** Restore Workflow Version Route */
+  /** Restore Workflow Version */
   async create_version_restore(
     workflowVersionId: string,
     options: { workflowId: string }
@@ -223,7 +223,7 @@ export class Workflows {
     return deserializeWorkflow(__wire);
   }
 
-  /** Plan Workflow Spec For Existing Workflow */
+  /** Plan Existing Workflow Spec */
   async create_plan(workflowId: string, yamlDefinition: string): Promise<DeclarativePlanResponse> {
     const body = {
       yaml_definition: yamlDefinition,

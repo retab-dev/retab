@@ -76,7 +76,7 @@ export class WorkflowSpec {
     return deserializeDeclarativeExportResponse(__wire);
   }
 
-  /** Apply Workflow Spec To Existing Workflow */
+  /** Apply Existing Workflow Spec */
   async apply_to_workflow(
     workflowId: string,
     yamlDefinition: string

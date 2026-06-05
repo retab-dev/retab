@@ -93,7 +93,7 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>List Workflow Versions Route</summary>
+        /// <summary>List Workflow Versions</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -109,7 +109,17 @@ namespace Retab
             return this.ListVersionsAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Diff Workflow Versions Route</summary>
+        /// <summary>Auto-paging variant of <see cref="ListVersionsAsync"/>. Yields individual items across all pages.</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An async sequence of <see cref="WorkflowGraphVersion"/> items.</returns>
+        public virtual IAsyncEnumerable<WorkflowGraphVersion> ListVersionsAutoPagingAsync(WorkflowsListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return base.ListAutoPagingAsync<WorkflowGraphVersion>("/v1/workflows/versions", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Diff Workflow Versions</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -125,7 +135,7 @@ namespace Retab
             return this.ListDiffAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Workflow Version Route</summary>
+        /// <summary>Get Workflow Version</summary>
         /// <param name="workflowVersionId">The workflow version id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -142,7 +152,7 @@ namespace Retab
             return this.GetVersionAsync(workflowVersionId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Restore Workflow Version Route</summary>
+        /// <summary>Restore Workflow Version</summary>
         /// <param name="workflowVersionId">The workflow version id.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -261,7 +271,7 @@ namespace Retab
             return this.PublishAsync(workflowId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Plan Workflow Spec For Existing Workflow</summary>
+        /// <summary>Plan Existing Workflow Spec</summary>
         /// <remarks>
         /// Preview applying a declarative YAML spec to an existing workflow draft.
         /// The URL workflow id is the plan target. Any workflow id in the YAML is

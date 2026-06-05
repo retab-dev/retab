@@ -3323,23 +3323,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_workflow_capabilities_round_trip
-    fixture = {
-      "can_view" => true,
-      "can_edit" => true,
-      "can_run" => true,
-      "can_review" => true,
-      "can_publish" => true,
-      "can_manage_members" => true,
-      "can_manage_settings" => true,
-      "can_delete" => true
-    }
-    model = Retab::WorkflowCapabilities.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_workflow_config_block_round_trip
     fixture = {
       "id" => "stub",
@@ -3575,8 +3558,8 @@ class ModelRoundTripTest < Minitest::Test
       "workflow_id" => "stub",
       "blocks" => [],
       "edges" => [],
-      "block_version_ids" => {},
-      "edge_version_ids" => {},
+      "block_version_ids" => [],
+      "edge_version_ids" => [],
       "created_at" => "stub"
     }
     model = Retab::WorkflowGraphVersion.new(fixture.to_json)

@@ -20,7 +20,7 @@ type WorkflowReviewVersionsListParams struct {
 	ReviewID string `url:"review_id" json:"-"`
 }
 
-// List review Versions Route
+// List review Versions
 // List versions for one review.
 // `review_id` is required by design — listing versions across all reviews
 // has no product use and would expose a needlessly wide query surface.
@@ -43,7 +43,7 @@ type WorkflowReviewVersionsCreateParams struct {
 	Note     *string                `json:"note,omitempty" url:"-"`
 }
 
-// Create review Version Route
+// Create review Version
 // Create one immutable, content-addressed review version.
 func (s *WorkflowReviewVersionService) Create(ctx context.Context, params *WorkflowReviewVersionsCreateParams, opts ...RequestOption) (*ReviewVersion, error) {
 	var result ReviewVersion
@@ -54,7 +54,7 @@ func (s *WorkflowReviewVersionService) Create(ctx context.Context, params *Workf
 	return &result, nil
 }
 
-// Get review Version Route
+// Get review Version
 // Read one review version by its content-addressed id.
 func (s *WorkflowReviewVersionService) Get(ctx context.Context, versionID string, opts ...RequestOption) (*ReviewVersion, error) {
 	if versionID == "" {

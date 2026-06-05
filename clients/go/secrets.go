@@ -13,7 +13,7 @@ type SecretService struct {
 	client *Client
 }
 
-// List secrets
+// List secret.List
 func (s *SecretService) List(ctx context.Context, opts ...RequestOption) (*SecretListResponse, error) {
 	var result SecretListResponse
 	_, err := s.client.request(ctx, "GET", "/v1/secrets", nil, nil, &result, opts)
@@ -29,7 +29,7 @@ type SecretsCreateParams struct {
 	Value string `json:"value" url:"-"`
 }
 
-// Create secret
+// Create secret.Create
 func (s *SecretService) Create(ctx context.Context, params *SecretsCreateParams, opts ...RequestOption) (*SecretResponse, error) {
 	var result SecretResponse
 	_, err := s.client.request(ctx, "POST", "/v1/secrets", nil, params, &result, opts)
@@ -39,7 +39,7 @@ func (s *SecretService) Create(ctx context.Context, params *SecretsCreateParams,
 	return &result, nil
 }
 
-// Get secret
+// Get secret.Get
 func (s *SecretService) Get(ctx context.Context, name string, opts ...RequestOption) (*SecretResponse, error) {
 	if name == "" {
 		return nil, fmt.Errorf("retab: name is required")
@@ -57,7 +57,7 @@ type SecretsUpdateParams struct {
 	Value string `json:"value" url:"-"`
 }
 
-// Update set Secret
+// Update secret.Set
 func (s *SecretService) Update(ctx context.Context, name string, params *SecretsUpdateParams, opts ...RequestOption) (*SecretResponse, error) {
 	if name == "" {
 		return nil, fmt.Errorf("retab: name is required")
@@ -70,7 +70,7 @@ func (s *SecretService) Update(ctx context.Context, name string, params *Secrets
 	return &result, nil
 }
 
-// Delete secret
+// Delete secret.Delete
 func (s *SecretService) Delete(ctx context.Context, name string, opts ...RequestOption) error {
 	if name == "" {
 		return fmt.Errorf("retab: name is required")
@@ -79,7 +79,7 @@ func (s *SecretService) Delete(ctx context.Context, name string, opts ...Request
 	return err
 }
 
-// ListValue get Secret Value
+// ListValue secret.Get Value
 func (s *SecretService) ListValue(ctx context.Context, name string, opts ...RequestOption) (*SecretValueResponse, error) {
 	if name == "" {
 		return nil, fmt.Errorf("retab: name is required")

@@ -5,7 +5,7 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>Request options for <see cref="SecretsService.CreateAsync"/>: Create Secret</summary>
+    /// <summary>Request options for <see cref="SecretsService.CreateAsync"/>: Secret.Create</summary>
     public class SecretsCreateOptions : BaseOptions
     {
         public string Name { get; set; } = default!;
@@ -14,7 +14,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="SecretsService.UpdateAsync"/>: Set Secret</summary>
+    /// <summary>Request options for <see cref="SecretsService.UpdateAsync"/>: Secret.Set</summary>
     public class SecretsUpdateOptions : BaseOptions
     {
         public string Value { get; set; } = default!;

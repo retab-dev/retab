@@ -20,9 +20,9 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         public ?array $blocks = null,
         /** @var array<\Retab\Resource\WorkflowConfigEdge>|null */
         public ?array $edges = null,
-        /** @var array<string, string>|null */
+        /** @var array<string>|null */
         public ?array $blockVersionIds = null,
-        /** @var array<string, string>|null */
+        /** @var array<string>|null */
         public ?array $edgeVersionIds = null,
     ) {}
 

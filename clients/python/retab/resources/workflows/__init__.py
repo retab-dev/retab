@@ -63,10 +63,12 @@ class WorkflowsMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows", params=params or None, data=data)
 
-    def prepare_list_versions(self, workflow_id: str, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
-        """List Workflow Versions Route"""
+    def prepare_list_versions(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
+        """List Workflow Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
+            "before": before,
+            "after": after,
             "limit": limit,
         }
         if extra_params:
@@ -76,7 +78,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/versions", params=params or None, data=data)
 
     def prepare_list_diff(self, workflow_id: str, from_workflow_version_id: str, to_workflow_version_id: str, **extra_params: Any) -> PreparedRequest:
-        """Diff Workflow Versions Route"""
+        """Diff Workflow Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "from_workflow_version_id": from_workflow_version_id,
@@ -89,7 +91,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/versions/diff", params=params or None, data=data)
 
     def prepare_get_version(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Workflow Version Route"""
+        """Get Workflow Version"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
         }
@@ -100,7 +102,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/versions/{workflow_version_id}", params=params or None, data=data)
 
     def prepare_create_version_restore(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> PreparedRequest:
-        """Restore Workflow Version Route"""
+        """Restore Workflow Version"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
         }
@@ -158,7 +160,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/publish", params=params or None, data=data)
 
     def prepare_create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
-        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -202,13 +204,15 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
-    def list_versions(self, workflow_id: str, limit: int | None = 50, **extra_params: Any) -> PaginatedList[WorkflowGraphVersion]:
-        """List Workflow Versions Route"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, limit=limit, **extra_params)
+    def list_versions(
+        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> PaginatedList[WorkflowGraphVersion]:
+        """List Workflow Versions"""
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowGraphVersion)
 
     def list_diff(self, workflow_id: str, from_workflow_version_id: str, to_workflow_version_id: str, **extra_params: Any) -> WorkflowGraphVersionDiff:
-        """Diff Workflow Versions Route"""
+        """Diff Workflow Versions"""
         prepared_request = self.prepare_list_diff(
             workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params
         )
@@ -216,13 +220,13 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return WorkflowGraphVersionDiff.model_validate(response)
 
     def get_version(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> WorkflowGraphVersion:
-        """Get Workflow Version Route"""
+        """Get Workflow Version"""
         prepared_request = self.prepare_get_version(workflow_version_id, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowGraphVersion.model_validate(response)
 
     def create_version_restore(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> Workflow:
-        """Restore Workflow Version Route"""
+        """Restore Workflow Version"""
         prepared_request = self.prepare_create_version_restore(workflow_version_id, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
@@ -258,7 +262,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
-        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
         prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
@@ -298,13 +302,15 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
-    async def list_versions(self, workflow_id: str, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[WorkflowGraphVersion]:
-        """List Workflow Versions Route"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, limit=limit, **extra_params)
+    async def list_versions(
+        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> AsyncPaginatedList[WorkflowGraphVersion]:
+        """List Workflow Versions"""
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowGraphVersion)
 
     async def list_diff(self, workflow_id: str, from_workflow_version_id: str, to_workflow_version_id: str, **extra_params: Any) -> WorkflowGraphVersionDiff:
-        """Diff Workflow Versions Route"""
+        """Diff Workflow Versions"""
         prepared_request = self.prepare_list_diff(
             workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params
         )
@@ -312,13 +318,13 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return WorkflowGraphVersionDiff.model_validate(response)
 
     async def get_version(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> WorkflowGraphVersion:
-        """Get Workflow Version Route"""
+        """Get Workflow Version"""
         prepared_request = self.prepare_get_version(workflow_version_id, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowGraphVersion.model_validate(response)
 
     async def create_version_restore(self, workflow_version_id: str, workflow_id: str, **extra_params: Any) -> Workflow:
-        """Restore Workflow Version Route"""
+        """Restore Workflow Version"""
         prepared_request = self.prepare_create_version_restore(workflow_version_id, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
@@ -354,7 +360,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     async def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
-        """Plan Workflow Spec For Existing Workflow Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
+        """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
         prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)

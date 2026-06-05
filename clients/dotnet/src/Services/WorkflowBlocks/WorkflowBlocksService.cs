@@ -88,6 +88,16 @@ namespace Retab
             return this.ListVersionsAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Auto-paging variant of <see cref="ListVersionsAsync"/>. Yields individual items across all pages.</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An async sequence of <see cref="WorkflowBlockVersion"/> items.</returns>
+        public virtual IAsyncEnumerable<WorkflowBlockVersion> ListVersionsAutoPagingAsync(WorkflowBlocksListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return base.ListAutoPagingAsync<WorkflowBlockVersion>("/v1/workflows/blocks/versions", options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Diff Block Versions</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -242,7 +252,7 @@ namespace Retab
             return this.DeleteAsync(blockId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Validate Block Config Dry Run</summary>
+        /// <summary>Validate Block Config</summary>
         /// <remarks>
         /// Validate an assembled block config without mutating the workflow draft.
         /// </remarks>

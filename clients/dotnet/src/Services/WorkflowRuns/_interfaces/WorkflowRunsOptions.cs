@@ -39,7 +39,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowRunsService.CreateAsync"/>: Create Workflow Run Route</summary>
+    /// <summary>Request options for <see cref="WorkflowRunsService.CreateAsync"/>: Create Workflow Run</summary>
     public class WorkflowRunsCreateOptions : BaseOptions
     {
         /// <summary>Workflow id for the fresh run.</summary>

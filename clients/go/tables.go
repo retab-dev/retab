@@ -13,7 +13,7 @@ type TableService struct {
 	client *Client
 }
 
-// List tables
+// List table.List
 func (s *TableService) List(ctx context.Context, opts ...RequestOption) (*WorkflowTableListResponse, error) {
 	var result WorkflowTableListResponse
 	_, err := s.client.request(ctx, "GET", "/v1/tables", nil, nil, &result, opts)
@@ -30,7 +30,7 @@ type TablesCreateParams struct {
 	ColumnSchemaOverrides *string `json:"column_schema_overrides,omitempty" url:"-"`
 }
 
-// Create table
+// Create table.Create
 func (s *TableService) Create(ctx context.Context, params *TablesCreateParams, opts ...RequestOption) (*WorkflowTableListResponse, error) {
 	var result WorkflowTableListResponse
 	_, err := s.client.request(ctx, "POST", "/v1/tables", nil, params, &result, opts)
@@ -40,7 +40,7 @@ func (s *TableService) Create(ctx context.Context, params *TablesCreateParams, o
 	return &result, nil
 }
 
-// Get table
+// Get table.Get
 func (s *TableService) Get(ctx context.Context, tableID string, opts ...RequestOption) (*WorkflowTableResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -59,7 +59,7 @@ type TablesReplaceParams struct {
 	ColumnSchemaOverrides *string `json:"column_schema_overrides,omitempty" url:"-"`
 }
 
-// Replace table
+// Replace table.Replace
 func (s *TableService) Replace(ctx context.Context, tableID string, params *TablesReplaceParams, opts ...RequestOption) (*WorkflowTableListResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -78,7 +78,7 @@ type TablesUpdateParams struct {
 	Metadata *map[string]interface{} `json:"metadata,omitempty" url:"-"`
 }
 
-// Update table
+// Update table.Update
 func (s *TableService) Update(ctx context.Context, tableID string, params *TablesUpdateParams, opts ...RequestOption) (*WorkflowTableListResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -91,7 +91,7 @@ func (s *TableService) Update(ctx context.Context, tableID string, params *Table
 	return &result, nil
 }
 
-// Delete table
+// Delete table.Delete
 func (s *TableService) Delete(ctx context.Context, tableID string, opts ...RequestOption) error {
 	if tableID == "" {
 		return fmt.Errorf("retab: table_id is required")
@@ -100,7 +100,7 @@ func (s *TableService) Delete(ctx context.Context, tableID string, opts ...Reque
 	return err
 }
 
-// Download table Csv
+// Download table.Download
 func (s *TableService) Download(ctx context.Context, tableID string, opts ...RequestOption) error {
 	if tableID == "" {
 		return fmt.Errorf("retab: table_id is required")
@@ -115,7 +115,7 @@ type TablesProfileParams struct {
 	Select []string `url:"select,omitempty" json:"-"`
 }
 
-// Profile table
+// Profile table.Get Profile
 func (s *TableService) Profile(ctx context.Context, tableID string, params *TablesProfileParams, opts ...RequestOption) (*WorkflowTableProfileResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -133,7 +133,7 @@ type TablesQueryParams struct {
 	Body interface{} `json:"-"`
 }
 
-// Query table
+// Query table.Query
 func (s *TableService) Query(ctx context.Context, tableID string, params *TablesQueryParams, opts ...RequestOption) (*WorkflowTableRowsResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -146,7 +146,7 @@ func (s *TableService) Query(ctx context.Context, tableID string, params *Tables
 	return &result, nil
 }
 
-// Schema get Table Schema
+// Schema table.Get Schema
 func (s *TableService) Schema(ctx context.Context, tableID string, opts ...RequestOption) (*WorkflowTableSchemaResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
@@ -166,7 +166,7 @@ type TablesValidateParams struct {
 	Unique          [][]string                                     `json:"unique,omitempty" url:"-"`
 }
 
-// Validate table
+// Validate table.Validate
 func (s *TableService) Validate(ctx context.Context, tableID string, params *TablesValidateParams, opts ...RequestOption) (*WorkflowTableValidationResponse, error) {
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")

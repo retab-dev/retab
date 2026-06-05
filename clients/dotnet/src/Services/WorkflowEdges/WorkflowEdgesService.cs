@@ -86,6 +86,16 @@ namespace Retab
             return this.ListVersionsAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Auto-paging variant of <see cref="ListVersionsAsync"/>. Yields individual items across all pages.</summary>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An async sequence of <see cref="WorkflowEdgeVersion"/> items.</returns>
+        public virtual IAsyncEnumerable<WorkflowEdgeVersion> ListVersionsAutoPagingAsync(WorkflowEdgesListVersionsOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return base.ListAutoPagingAsync<WorkflowEdgeVersion>("/v1/workflows/edges/versions", options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Diff Edge Versions</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

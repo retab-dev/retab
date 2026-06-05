@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-04T17:38:16.138Z",
+  "generatedAt": "2026-06-05T15:05:11.044Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -630,7 +630,6 @@
     "tests/Fixtures/workflow_block_position.json",
     "tests/Fixtures/workflow_block_version.json",
     "tests/Fixtures/workflow_block_version_diff.json",
-    "tests/Fixtures/workflow_capabilities.json",
     "tests/Fixtures/workflow_config_block.json",
     "tests/Fixtures/workflow_config_edge.json",
     "tests/Fixtures/workflow_edge_create_request.json",

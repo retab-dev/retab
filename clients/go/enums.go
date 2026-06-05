@@ -443,6 +443,22 @@ const (
 	WhileLoopTerminationTerminationReasonError                WhileLoopTerminationTerminationReason = "error"
 )
 
+// WorkflowCapabilities represents workflow capabilities values.
+type WorkflowCapabilities string
+
+const (
+	WorkflowCapabilitiesWorkflowWorkflowsRead         WorkflowCapabilities = "workflow:workflows:read"
+	WorkflowCapabilitiesWorkflowWorkflowsEdit         WorkflowCapabilities = "workflow:workflows:edit"
+	WorkflowCapabilitiesWorkflowWorkflowsDelete       WorkflowCapabilities = "workflow:workflows:delete"
+	WorkflowCapabilitiesWorkflowWorkflowsPublish      WorkflowCapabilities = "workflow:workflows:publish"
+	WorkflowCapabilitiesWorkflowMembersRead           WorkflowCapabilities = "workflow_members:read"
+	WorkflowCapabilitiesWorkflowMembersCreate         WorkflowCapabilities = "workflow_members:create"
+	WorkflowCapabilitiesWorkflowMembersUpdate         WorkflowCapabilities = "workflow_members:update"
+	WorkflowCapabilitiesWorkflowMembersDelete         WorkflowCapabilities = "workflow_members:delete"
+	WorkflowCapabilitiesWorkflowWorkflowsRunsCreate   WorkflowCapabilities = "workflow:workflows-runs:create"
+	WorkflowCapabilitiesWorkflowWorkflowsReviewCreate WorkflowCapabilities = "workflow:workflows-review:create"
+)
+
 // WorkflowArtifactOperation is an alias for StepArtifactRefOperation.
 type WorkflowArtifactOperation = StepArtifactRefOperation
 

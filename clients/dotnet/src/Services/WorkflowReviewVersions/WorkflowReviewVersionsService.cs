@@ -16,7 +16,7 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public WorkflowReviewVersionsService(Retab client) : base(client) { }
 
-        /// <summary>List Review Versions Route</summary>
+        /// <summary>List Review Versions</summary>
         /// <remarks>
         /// List versions for one review.
         /// `review_id` is required by design — listing versions across all reviews
@@ -47,7 +47,7 @@ namespace Retab
             return base.ListAutoPagingAsync<ReviewVersion>("/v1/workflows/reviews/versions", options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Create Review Version Route</summary>
+        /// <summary>Create Review Version</summary>
         /// <remarks>
         /// Create one immutable, content-addressed review version.
         /// </remarks>
@@ -66,7 +66,7 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Review Version Route</summary>
+        /// <summary>Get Review Version</summary>
         /// <remarks>
         /// Read one review version by its content-addressed id.
         /// </remarks>

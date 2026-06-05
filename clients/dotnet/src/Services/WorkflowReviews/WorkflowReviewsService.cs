@@ -20,7 +20,7 @@ namespace Retab
         /// <summary>Gets the nested <see cref="WorkflowReviewVersionsService"/> service.</summary>
         public virtual WorkflowReviewVersionsService Versions => new WorkflowReviewVersionsService(this.Client);
 
-        /// <summary>List Reviews Route</summary>
+        /// <summary>List Reviews</summary>
         /// <remarks>
         /// List reviews — the review queue, oldest first by `created_at`.
         /// </remarks>
@@ -49,7 +49,7 @@ namespace Retab
             return base.ListAutoPagingAsync<Review>("/v1/workflows/reviews", options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Review Route</summary>
+        /// <summary>Get Review</summary>
         /// <remarks>
         /// Read one review's metadata + decision. Versions are fetched separately.
         /// </remarks>
@@ -68,7 +68,7 @@ namespace Retab
             return this.GetAsync(reviewId, requestOptions, cancellationToken);
         }
 
-        /// <summary>Approve Review Route</summary>
+        /// <summary>Approve Review</summary>
         /// <remarks>
         /// Approve one review version and resume the workflow run.
         /// The response carries `resume_status` so callers can see whether the run
@@ -90,7 +90,7 @@ namespace Retab
             return this.ApproveAsync(reviewId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Reject Review Route</summary>
+        /// <summary>Reject Review</summary>
         /// <remarks>
         /// Reject one review version and resume the workflow run.
         /// A `reason` is required.

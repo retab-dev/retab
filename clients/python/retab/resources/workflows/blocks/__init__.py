@@ -73,13 +73,22 @@ class WorkflowBlocksMixin:
         return PreparedRequest(method="POST", url="/v1/workflows/blocks", params=params or None, data=data)
 
     def prepare_list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        block_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> PreparedRequest:
         """List Block Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "block_id": block_id,
             "workflow_version_id": workflow_version_id,
+            "before": before,
+            "after": after,
             "limit": limit,
         }
         if extra_params:
@@ -182,7 +191,7 @@ class WorkflowBlocksMixin:
         workflow_id: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
         }
@@ -238,10 +247,19 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         return WorkflowBlock.model_validate(response)
 
     def list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        block_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> PaginatedList[WorkflowBlockVersion]:
         """List Block Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return self.request_page(prepared_request, model=WorkflowBlockVersion)
 
     def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
@@ -313,7 +331,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         workflow_id: str | None = None,
         **extra_params: Any,
     ) -> ValidateWorkflowBlockConfigResponse:
-        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return ValidateWorkflowBlockConfigResponse.model_validate(response)
@@ -363,10 +381,19 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         return WorkflowBlock.model_validate(response)
 
     async def list_versions(
-        self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, limit: int | None = 50, **extra_params: Any
+        self,
+        workflow_id: str,
+        block_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowBlockVersion]:
         """List Block Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return await self.request_page(prepared_request, model=WorkflowBlockVersion)
 
     async def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
@@ -438,7 +465,7 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         workflow_id: str | None = None,
         **extra_params: Any,
     ) -> ValidateWorkflowBlockConfigResponse:
-        """Validate Block Config Dry Run Validate an assembled block config without mutating the workflow draft."""
+        """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ValidateWorkflowBlockConfigResponse.model_validate(response)

@@ -10,7 +10,7 @@ from retab.types.secrets import CreateSecretRequest, SecretListResponse, SecretR
 
 class SecretsMixin:
     def prepare_list_secrets(self, **extra_params: Any) -> PreparedRequest:
-        """List Secrets"""
+        """Secret.List"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -19,7 +19,7 @@ class SecretsMixin:
         return PreparedRequest(method="GET", url="/v1/secrets", params=params or None, data=data)
 
     def prepare_create_secret(self, name: str, value: str, **extra_params: Any) -> PreparedRequest:
-        """Create Secret"""
+        """Secret.Create"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -29,7 +29,7 @@ class SecretsMixin:
         return PreparedRequest(method="POST", url="/v1/secrets", params=params or None, data=data)
 
     def prepare_get_secret(self, name: str, **extra_params: Any) -> PreparedRequest:
-        """Get Secret"""
+        """Secret.Get"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -38,7 +38,7 @@ class SecretsMixin:
         return PreparedRequest(method="GET", url=f"/v1/secrets/{name}", params=params or None, data=data)
 
     def prepare_update_secret(self, name: str, value: str, **extra_params: Any) -> PreparedRequest:
-        """Set Secret"""
+        """Secret.Set"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -48,7 +48,7 @@ class SecretsMixin:
         return PreparedRequest(method="PUT", url=f"/v1/secrets/{name}", params=params or None, data=data)
 
     def prepare_delete_secret(self, name: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Secret"""
+        """Secret.Delete"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -57,7 +57,7 @@ class SecretsMixin:
         return PreparedRequest(method="DELETE", url=f"/v1/secrets/{name}", params=params or None, data=data)
 
     def prepare_list_secret_value(self, name: str, **extra_params: Any) -> PreparedRequest:
-        """Get Secret Value"""
+        """Secret.Get Value"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -70,37 +70,37 @@ class Secrets(SyncAPIResource, SecretsMixin):
     """Secrets API wrapper."""
 
     def list_secrets(self, **extra_params: Any) -> SecretListResponse:
-        """List Secrets"""
+        """Secret.List"""
         prepared_request = self.prepare_list_secrets(**extra_params)
         response = self._client._prepared_request(prepared_request)
         return SecretListResponse.model_validate(response)
 
     def create_secret(self, name: str, value: str, **extra_params: Any) -> SecretResponse:
-        """Create Secret"""
+        """Secret.Create"""
         prepared_request = self.prepare_create_secret(name=name, value=value, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     def get_secret(self, name: str, **extra_params: Any) -> SecretResponse:
-        """Get Secret"""
+        """Secret.Get"""
         prepared_request = self.prepare_get_secret(name, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     def update_secret(self, name: str, value: str, **extra_params: Any) -> SecretResponse:
-        """Set Secret"""
+        """Secret.Set"""
         prepared_request = self.prepare_update_secret(name, value=value, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     def delete_secret(self, name: str, **extra_params: Any) -> None:
-        """Delete Secret"""
+        """Secret.Delete"""
         prepared_request = self.prepare_delete_secret(name, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
 
     def list_secret_value(self, name: str, **extra_params: Any) -> SecretValueResponse:
-        """Get Secret Value"""
+        """Secret.Get Value"""
         prepared_request = self.prepare_list_secret_value(name, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SecretValueResponse.model_validate(response)
@@ -110,37 +110,37 @@ class AsyncSecrets(AsyncAPIResource, SecretsMixin):
     """Async Secrets API wrapper."""
 
     async def list_secrets(self, **extra_params: Any) -> SecretListResponse:
-        """List Secrets"""
+        """Secret.List"""
         prepared_request = self.prepare_list_secrets(**extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretListResponse.model_validate(response)
 
     async def create_secret(self, name: str, value: str, **extra_params: Any) -> SecretResponse:
-        """Create Secret"""
+        """Secret.Create"""
         prepared_request = self.prepare_create_secret(name=name, value=value, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     async def get_secret(self, name: str, **extra_params: Any) -> SecretResponse:
-        """Get Secret"""
+        """Secret.Get"""
         prepared_request = self.prepare_get_secret(name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     async def update_secret(self, name: str, value: str, **extra_params: Any) -> SecretResponse:
-        """Set Secret"""
+        """Secret.Set"""
         prepared_request = self.prepare_update_secret(name, value=value, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretResponse.model_validate(response)
 
     async def delete_secret(self, name: str, **extra_params: Any) -> None:
-        """Delete Secret"""
+        """Secret.Delete"""
         prepared_request = self.prepare_delete_secret(name, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
 
     async def list_secret_value(self, name: str, **extra_params: Any) -> SecretValueResponse:
-        """Get Secret Value"""
+        """Secret.Get Value"""
         prepared_request = self.prepare_list_secret_value(name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretValueResponse.model_validate(response)

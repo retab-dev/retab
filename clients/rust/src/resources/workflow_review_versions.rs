@@ -59,7 +59,7 @@ impl CreateParams {
 }
 
 impl<'a> WorkflowReviewVersionsApi<'a> {
-    /// List Review Versions Route
+    /// List Review Versions
     ///
     /// List versions for one review.
     ///
@@ -82,7 +82,7 @@ impl<'a> WorkflowReviewVersionsApi<'a> {
             .await
     }
 
-    /// Create Review Version Route
+    /// Create Review Version
     ///
     /// Create one immutable, content-addressed review version.
     pub async fn create(&self, params: CreateParams) -> Result<ReviewVersion, Error> {
@@ -102,7 +102,7 @@ impl<'a> WorkflowReviewVersionsApi<'a> {
             .await
     }
 
-    /// Get Review Version Route
+    /// Get Review Version
     ///
     /// Read one review version by its content-addressed id.
     pub async fn get(&self, version_id: &str) -> Result<ReviewVersion, Error> {

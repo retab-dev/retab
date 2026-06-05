@@ -16,7 +16,7 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public SecretsService(Retab client) : base(client) { }
 
-        /// <summary>List Secrets</summary>
+        /// <summary>Secret.List</summary>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="SecretListResponse"/> result.</returns>
@@ -31,7 +31,7 @@ namespace Retab
             return this.ListAsync(requestOptions, cancellationToken);
         }
 
-        /// <summary>Create Secret</summary>
+        /// <summary>Secret.Create</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -47,7 +47,7 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Secret</summary>
+        /// <summary>Secret.Get</summary>
         /// <param name="name">The name.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -63,7 +63,7 @@ namespace Retab
             return this.GetAsync(name, requestOptions, cancellationToken);
         }
 
-        /// <summary>Set Secret</summary>
+        /// <summary>Secret.Set</summary>
         /// <param name="name">The name.</param>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -80,7 +80,7 @@ namespace Retab
             return this.UpdateAsync(name, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Secret</summary>
+        /// <summary>Secret.Delete</summary>
         /// <param name="name">The name.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -95,7 +95,7 @@ namespace Retab
             return this.DeleteAsync(name, requestOptions, cancellationToken);
         }
 
-        /// <summary>Get Secret Value</summary>
+        /// <summary>Secret.Get Value</summary>
         /// <param name="name">The name.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

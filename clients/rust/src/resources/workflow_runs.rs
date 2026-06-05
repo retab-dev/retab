@@ -143,7 +143,7 @@ impl<'a> WorkflowRunsApi<'a> {
             .await
     }
 
-    /// Create Workflow Run Route
+    /// Create Workflow Run
     ///
     /// Create a fresh workflow run.
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowRun, Error> {

@@ -96,7 +96,7 @@ impl ValidateParams {
 }
 
 impl<'a> TablesApi<'a> {
-    /// List Tables
+    /// Table.List
     pub async fn list(&self) -> Result<WorkflowTableListResponse, Error> {
         self.list_with_options(None).await
     }
@@ -113,7 +113,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Create Table
+    /// Table.Create
     pub async fn create(&self, params: CreateParams) -> Result<WorkflowTableListResponse, Error> {
         self.create_with_options(params, None).await
     }
@@ -131,7 +131,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Get Table
+    /// Table.Get
     pub async fn get(&self, table_id: &str) -> Result<WorkflowTableResponse, Error> {
         self.get_with_options(table_id, None).await
     }
@@ -150,7 +150,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Replace Table
+    /// Table.Replace
     pub async fn replace(
         &self,
         table_id: &str,
@@ -174,7 +174,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Update Table
+    /// Table.Update
     pub async fn update_table(
         &self,
         table_id: &str,
@@ -198,7 +198,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Delete Table
+    /// Table.Delete
     pub async fn delete(&self, table_id: &str) -> Result<(), Error> {
         self.delete_with_options(table_id, None).await
     }
@@ -217,7 +217,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Download Table Csv
+    /// Table.Download
     pub async fn download(&self, table_id: &str) -> Result<Vec<u8>, Error> {
         self.download_with_options(table_id, None).await
     }
@@ -236,7 +236,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Profile Table
+    /// Table.Get Profile
     pub async fn profile(
         &self,
         table_id: &str,
@@ -260,7 +260,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Query Table
+    /// Table.Query
     pub async fn query(
         &self,
         table_id: &str,
@@ -284,7 +284,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Get Table Schema
+    /// Table.Get Schema
     pub async fn schema(&self, table_id: &str) -> Result<WorkflowTableSchemaResponse, Error> {
         self.schema_with_options(table_id, None).await
     }
@@ -303,7 +303,7 @@ impl<'a> TablesApi<'a> {
             .await
     }
 
-    /// Validate Table
+    /// Table.Validate
     pub async fn validate(
         &self,
         table_id: &str,

@@ -22,7 +22,7 @@ export class WorkflowReviews {
     this.versions = new WorkflowReviewVersions(client);
   }
 
-  /** List Reviews Route */
+  /** List Reviews */
   async list(options?: {
     workflowId?: string | null | undefined;
     runId?: string | null | undefined;
@@ -54,7 +54,7 @@ export class WorkflowReviews {
     });
   }
 
-  /** Get Review Route */
+  /** Get Review */
   async get(reviewId: string): Promise<Review> {
     const __wire = await this.client.request<ReviewResponse>({
       method: 'GET',
@@ -65,7 +65,7 @@ export class WorkflowReviews {
     return deserializeReview(__wire);
   }
 
-  /** Approve Review Route */
+  /** Approve Review */
   async approve(reviewId: string, versionId: string): Promise<SubmitDecisionResponse> {
     const body = {
       version_id: versionId,
@@ -79,7 +79,7 @@ export class WorkflowReviews {
     return deserializeSubmitDecisionResponse(__wire);
   }
 
-  /** Reject Review Route */
+  /** Reject Review */
   async reject(
     reviewId: string,
     versionId: string,

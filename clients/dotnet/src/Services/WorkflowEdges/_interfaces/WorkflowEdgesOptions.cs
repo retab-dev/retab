@@ -42,7 +42,7 @@ namespace Retab
     }
 
     /// <summary>Request options for <see cref="WorkflowEdgesService.ListVersionsAsync"/>: List Edge Versions</summary>
-    public class WorkflowEdgesListVersionsOptions : BaseOptions
+    public class WorkflowEdgesListVersionsOptions : ListOptions
     {
         public string WorkflowId { get; set; } = default!;
 
@@ -51,9 +51,6 @@ namespace Retab
 
         /// <summary>Filter by workflow version ID</summary>
         public string? WorkflowVersionId { get; set; }
-
-        /// <summary>Maximum number of edge versions to return</summary>
-        public long? Limit { get; set; }
 
     }
 

@@ -50,7 +50,7 @@ class WorkflowSpecMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/{workflow_id}/spec", params=params or None, data=data)
 
     def prepare_apply_to_workflow(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
-        """Apply Workflow Spec To Existing Workflow Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
+        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -88,7 +88,7 @@ class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
         return DeclarativeExportResponse.model_validate(response)
 
     def apply_to_workflow(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec To Existing Workflow Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
+        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
         prepared_request = self.prepare_apply_to_workflow(workflow_id, yaml_definition=yaml_definition, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return DeclarativeApplyResponse.model_validate(response)
@@ -122,7 +122,7 @@ class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
         return DeclarativeExportResponse.model_validate(response)
 
     async def apply_to_workflow(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec To Existing Workflow Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
+        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
         prepared_request = self.prepare_apply_to_workflow(workflow_id, yaml_definition=yaml_definition, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return DeclarativeApplyResponse.model_validate(response)

@@ -10,7 +10,7 @@ module Retab
       @client = client
     end
 
-    # List Review Versions Route
+    # List Review Versions
     # @param review_id [String] Required: the review whose versions to list.
     # @param before [String, nil]
     # @param after [String, nil]
@@ -54,7 +54,7 @@ module Retab
       )
     end
 
-    # Create Review Version Route
+    # Create Review Version
     # @param review_id [String]
     # @param parent_id [String]
     # @param snapshot [Hash{String => Object}] The full reviewed snapshot to store as an immutable version. The object must match the gated block type: extract uses the raw output object; classifier uses {'category': string}; split uses {'documents': [{'name': string, 'pages': positive sorted int[]}]}; for_each uses {'partitions': [{'key': string, 'pages': positive sorted int[]}]}. The server validates the shape and stores the exact submitted object when valid.
@@ -90,7 +90,7 @@ module Retab
       result
     end
 
-    # Get Review Version Route
+    # Get Review Version
     # @param version_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::ReviewVersion]

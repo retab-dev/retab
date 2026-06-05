@@ -122,7 +122,7 @@ class WorkflowSpec
     }
 
     /**
-     * Apply Workflow Spec To Existing Workflow
+     * Apply Existing Workflow Spec
      *
      * Apply a declarative YAML spec to an existing workflow draft.
      *

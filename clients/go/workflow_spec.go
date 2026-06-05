@@ -93,7 +93,7 @@ type WorkflowSpecApplyToWorkflowParams struct {
 	YamlDefinition string `json:"yaml_definition" url:"-"`
 }
 
-// ApplyToWorkflow apply Workflow Spec To Existing Workflow
+// ApplyToWorkflow apply Existing Workflow Spec
 // Apply a declarative YAML spec to an existing workflow draft.
 // The URL workflow id is the update target. Any workflow id in the YAML is
 // treated as source context.

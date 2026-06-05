@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-04T17:38:11.395Z",
+  "generatedAt": "2026-06-05T15:05:04.629Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -208,7 +208,6 @@
     "src/Entities/WorkflowBlockPosition.cs",
     "src/Entities/WorkflowBlockVersion.cs",
     "src/Entities/WorkflowBlockVersionDiff.cs",
-    "src/Entities/WorkflowCapabilities.cs",
     "src/Entities/WorkflowConfigBlock.cs",
     "src/Entities/WorkflowConfigEdge.cs",
     "src/Entities/WorkflowEdgeDoc.cs",
@@ -287,6 +286,7 @@
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
+    "src/Enums/WorkflowCapabilities.cs",
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
     "src/Enums/WorkflowExportPayloadRequestTriggerType.cs",

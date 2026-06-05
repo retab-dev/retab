@@ -127,13 +127,20 @@ public final class WorkflowEdgesApi {
   }
 
   public List<WorkflowEdgeVersion> listVersions(
-      String workflowId, String edgeId, String workflowVersionId, Long limit)
+      String workflowId,
+      String edgeId,
+      String workflowVersionId,
+      String before,
+      String after,
+      Long limit)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/edges/versions";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "edge_id", edgeId);
     appendQueryParam(query, "workflow_version_id", workflowVersionId);
+    appendQueryParam(query, "before", before);
+    appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();

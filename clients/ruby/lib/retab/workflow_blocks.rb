@@ -116,6 +116,8 @@ module Retab
     # @param workflow_id [String]
     # @param block_id [String, nil] Filter by stable block ID
     # @param workflow_version_id [String, nil] Filter by workflow version ID
+    # @param before [String, nil] Block version cursor before
+    # @param after [String, nil] Block version cursor after
     # @param limit [Integer, nil] Maximum number of block versions to return
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowBlockVersion>]
@@ -123,6 +125,8 @@ module Retab
       workflow_id:,
       block_id: nil,
       workflow_version_id: nil,
+      before: nil,
+      after: nil,
       limit: 50,
       request_options: {}
     )
@@ -130,6 +134,8 @@ module Retab
         "workflow_id" => workflow_id,
         "block_id" => block_id,
         "workflow_version_id" => workflow_version_id,
+        "before" => before,
+        "after" => after,
         "limit" => limit
       }.compact
       response = @client.request(
@@ -139,10 +145,28 @@ module Retab
         params: params,
         request_options: request_options
       )
+      fetch_next = -> (cursor) {
+        list_versions(
+          workflow_id: workflow_id,
+          block_id: block_id,
+          workflow_version_id: workflow_version_id,
+          before: before,
+          after: cursor,
+          limit: limit,
+          request_options: request_options
+        )
+      }
       Retab::PaginatedList.from_response(
         response,
         model: Retab::WorkflowBlockVersion,
-        filters: {workflow_id: workflow_id, block_id: block_id, workflow_version_id: workflow_version_id, limit: limit}
+        filters: {
+          workflow_id: workflow_id,
+          block_id: block_id,
+          workflow_version_id: workflow_version_id,
+          before: before,
+          limit: limit
+        },
+        fetch_next: fetch_next
       )
     end
 
@@ -330,7 +354,7 @@ module Retab
       nil
     end
 
-    # Validate Block Config Dry Run
+    # Validate Block Config
     # @param block_id [String]
     # @param config [Hash{String => Object}] Assembled block config to validate.
     # @param config_mode [Retab::Types::ValidateWorkflowBlockConfigRequestConfigMode, nil] How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.

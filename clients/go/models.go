@@ -2077,7 +2077,7 @@ type Workflow struct {
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
 	// Capabilities is server-derived permissions for the current actor.
-	Capabilities *WorkflowCapabilities `json:"capabilities,omitempty"`
+	Capabilities []WorkflowCapabilities `json:"capabilities,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2163,20 +2163,6 @@ type WorkflowBlockVersionDiff struct {
 	ToBlockVersionID   string                      `json:"to_block_version_id"`
 	BlockID            string                      `json:"block_id"`
 	Changes            []*WorkflowVersionFieldDiff `json:"changes,omitempty"`
-}
-
-// WorkflowCapabilities server-derived permissions for the current actor.
-// These fields are response-only. They should not be persisted on
-// “StoredWorkflow“ documents.
-type WorkflowCapabilities struct {
-	CanView           *bool `json:"can_view,omitempty"`
-	CanEdit           *bool `json:"can_edit,omitempty"`
-	CanRun            *bool `json:"can_run,omitempty"`
-	CanReview         *bool `json:"can_review,omitempty"`
-	CanPublish        *bool `json:"can_publish,omitempty"`
-	CanManageMembers  *bool `json:"can_manage_members,omitempty"`
-	CanManageSettings *bool `json:"can_manage_settings,omitempty"`
-	CanDelete         *bool `json:"can_delete,omitempty"`
 }
 
 // WorkflowConfigBlock represents a workflow config block.
@@ -2350,8 +2336,8 @@ type WorkflowGraphVersion struct {
 	WorkflowID      string                 `json:"workflow_id"`
 	Blocks          []*WorkflowConfigBlock `json:"blocks,omitempty"`
 	Edges           []*WorkflowConfigEdge  `json:"edges,omitempty"`
-	BlockVersionIDs map[string]string      `json:"block_version_ids,omitempty"`
-	EdgeVersionIDs  map[string]string      `json:"edge_version_ids,omitempty"`
+	BlockVersionIDs []string               `json:"block_version_ids,omitempty"`
+	EdgeVersionIDs  []string               `json:"edge_version_ids,omitempty"`
 	CreatedAt       time.Time              `json:"created_at"`
 }
 

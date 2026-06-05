@@ -80,7 +80,7 @@ class WorkflowRuns
     }
 
     /**
-     * Create Workflow Run Route
+     * Create Workflow Run
      *
      * Create a fresh workflow run.
      * @param string $workflowId Workflow id for the fresh run.

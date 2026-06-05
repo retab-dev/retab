@@ -26,18 +26,15 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.ListVersionsAsync"/>: List Workflow Versions Route</summary>
-    public class WorkflowsListVersionsOptions : BaseOptions
+    /// <summary>Request options for <see cref="WorkflowsService.ListVersionsAsync"/>: List Workflow Versions</summary>
+    public class WorkflowsListVersionsOptions : ListOptions
     {
         /// <summary>Workflow whose versions to list</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Maximum number of versions to return</summary>
-        public long? Limit { get; set; }
-
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.ListDiffAsync"/>: Diff Workflow Versions Route</summary>
+    /// <summary>Request options for <see cref="WorkflowsService.ListDiffAsync"/>: Diff Workflow Versions</summary>
     public class WorkflowsListDiffOptions : BaseOptions
     {
         /// <summary>Workflow whose versions to diff</summary>
@@ -51,7 +48,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.GetVersionAsync"/>: Get Workflow Version Route</summary>
+    /// <summary>Request options for <see cref="WorkflowsService.GetVersionAsync"/>: Get Workflow Version</summary>
     public class WorkflowsGetVersionOptions : BaseOptions
     {
         /// <summary>Workflow that owns the version. Workflow version ids are content-addressed by executable spec, so workflow_id disambiguates identical specs reused across workflows.</summary>
@@ -59,7 +56,7 @@ namespace Retab
 
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.CreateVersionRestoreAsync"/>: Restore Workflow Version Route</summary>
+    /// <summary>Request options for <see cref="WorkflowsService.CreateVersionRestoreAsync"/>: Restore Workflow Version</summary>
     public class WorkflowsCreateVersionRestoreOptions : BaseOptions
     {
         /// <summary>Workflow to restore into a new draft</summary>
@@ -83,7 +80,7 @@ namespace Retab
     {
     }
 
-    /// <summary>Request options for <see cref="WorkflowsService.CreatePlanAsync"/>: Plan Workflow Spec For Existing Workflow</summary>
+    /// <summary>Request options for <see cref="WorkflowsService.CreatePlanAsync"/>: Plan Existing Workflow Spec</summary>
     public class WorkflowsCreatePlanOptions : BaseOptions
     {
         /// <summary>Workflow YAML definition</summary>

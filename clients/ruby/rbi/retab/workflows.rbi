@@ -61,11 +61,13 @@ module Retab
     sig do
       params(
         workflow_id: String,
+        before: T.nilable(String),
+        after: T.nilable(String),
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowGraphVersion])
     end
-    def list_versions(workflow_id:, limit:, request_options:); end
+    def list_versions(workflow_id:, before:, after:, limit:, request_options:); end
 
     sig do
       params(

@@ -20,7 +20,7 @@ class Tables
     ) {}
 
     /**
-     * List Tables
+     * Table.List
      * @return \Retab\Resource\WorkflowTableListResponse
      * @throws \Retab\Exception\RetabException
      */
@@ -36,7 +36,7 @@ class Tables
     }
 
     /**
-     * Create Table
+     * Table.Create
      * @param string $name
      * @param string $file
      * @param string|null $columnSchemaOverrides
@@ -64,7 +64,7 @@ class Tables
     }
 
     /**
-     * Get Table
+     * Table.Get
      * @param string $tableId
      * @return \Retab\Resource\WorkflowTableResponse
      * @throws \Retab\Exception\RetabException
@@ -82,7 +82,7 @@ class Tables
     }
 
     /**
-     * Replace Table
+     * Table.Replace
      * @param string $tableId
      * @param string $file
      * @param string|null $columnSchemaOverrides
@@ -109,7 +109,7 @@ class Tables
     }
 
     /**
-     * Update Table
+     * Table.Update
      * @param string $tableId
      * @param string|null $name
      * @param array<string, mixed>|null $metadata
@@ -136,7 +136,7 @@ class Tables
     }
 
     /**
-     * Delete Table
+     * Table.Delete
      * @param string $tableId
      * @return void
      * @throws \Retab\Exception\RetabException
@@ -153,7 +153,7 @@ class Tables
     }
 
     /**
-     * Download Table Csv
+     * Table.Download
      * @param string $tableId
      * @return mixed
      * @throws \Retab\Exception\RetabException
@@ -171,7 +171,7 @@ class Tables
     }
 
     /**
-     * Profile Table
+     * Table.Get Profile
      * @param string $tableId
      * @param array<string>|null $select Defaults to [].
      * @return \Retab\Resource\WorkflowTableProfileResponse
@@ -195,7 +195,7 @@ class Tables
     }
 
     /**
-     * Query Table
+     * Table.Query
      * @param string $tableId
      * @param array<\Retab\Resource\WorkflowTableFilterRule>|null $filters
      * @param \Retab\Resource\WorkflowTableSearchRequest|null $search
@@ -267,7 +267,7 @@ class Tables
     }
 
     /**
-     * Get Table Schema
+     * Table.Get Schema
      * @param string $tableId
      * @return \Retab\Resource\WorkflowTableSchemaResponse
      * @throws \Retab\Exception\RetabException
@@ -285,7 +285,7 @@ class Tables
     }
 
     /**
-     * Validate Table
+     * Table.Validate
      * @param string $tableId
      * @param array<string>|null $requiredColumns
      * @param array<string, \Retab\Resource\WorkflowTableValidationColumnRule>|null $columns

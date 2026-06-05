@@ -78,6 +78,12 @@ pub struct ListVersionsParams {
     /// Filter by workflow version ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_version_id: Option<String>,
+    /// Edge version cursor before
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    /// Edge version cursor after
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
     /// Maximum number of edge versions to return
     ///
     /// Defaults to `50`.
@@ -93,6 +99,8 @@ impl ListVersionsParams {
             workflow_id: workflow_id.into(),
             edge_id: Default::default(),
             workflow_version_id: Default::default(),
+            before: Default::default(),
+            after: Default::default(),
             limit: Some(50),
         }
     }

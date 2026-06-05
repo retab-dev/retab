@@ -26,7 +26,7 @@ class WorkflowReviewsMixin:
         limit: int | None = 50,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Reviews Route List reviews — the review queue, oldest first by `created_at`."""
+        """List Reviews List reviews — the review queue, oldest first by `created_at`."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
             "run_id": run_id,
@@ -45,7 +45,7 @@ class WorkflowReviewsMixin:
         return PreparedRequest(method="GET", url="/v1/workflows/reviews", params=params or None, data=data)
 
     def prepare_get(self, review_id: str, **extra_params: Any) -> PreparedRequest:
-        """Get Review Route Read one review's metadata + decision. Versions are fetched separately."""
+        """Get Review Read one review's metadata + decision. Versions are fetched separately."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -54,7 +54,7 @@ class WorkflowReviewsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/reviews/{review_id}", params=params or None, data=data)
 
     def prepare_approve(self, review_id: str, version_id: str, **extra_params: Any) -> PreparedRequest:
-        """Approve Review Route Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
+        """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -64,7 +64,7 @@ class WorkflowReviewsMixin:
         return PreparedRequest(method="POST", url=f"/v1/workflows/reviews/{review_id}/approve", params=params or None, data=data)
 
     def prepare_reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> PreparedRequest:
-        """Reject Review Route Reject one review version and resume the workflow run. A `reason` is required."""
+        """Reject Review Reject one review version and resume the workflow run. A `reason` is required."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -94,7 +94,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         limit: int | None = 50,
         **extra_params: Any,
     ) -> PaginatedList[Review]:
-        """List Reviews Route List reviews — the review queue, oldest first by `created_at`."""
+        """List Reviews List reviews — the review queue, oldest first by `created_at`."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             run_id=run_id,
@@ -110,19 +110,19 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         return self.request_page(prepared_request, model=Review)
 
     def get(self, review_id: str, **extra_params: Any) -> Review:
-        """Get Review Route Read one review's metadata + decision. Versions are fetched separately."""
+        """Get Review Read one review's metadata + decision. Versions are fetched separately."""
         prepared_request = self.prepare_get(review_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
     def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
-        """Approve Review Route Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
+        """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
         prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
     def reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> SubmitDecisionResponse:
-        """Reject Review Route Reject one review version and resume the workflow run. A `reason` is required."""
+        """Reject Review Reject one review version and resume the workflow run. A `reason` is required."""
         prepared_request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
@@ -148,7 +148,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         limit: int | None = 50,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Review]:
-        """List Reviews Route List reviews — the review queue, oldest first by `created_at`."""
+        """List Reviews List reviews — the review queue, oldest first by `created_at`."""
         prepared_request = self.prepare_list(
             workflow_id=workflow_id,
             run_id=run_id,
@@ -164,19 +164,19 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         return await self.request_page(prepared_request, model=Review)
 
     async def get(self, review_id: str, **extra_params: Any) -> Review:
-        """Get Review Route Read one review's metadata + decision. Versions are fetched separately."""
+        """Get Review Read one review's metadata + decision. Versions are fetched separately."""
         prepared_request = self.prepare_get(review_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
     async def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
-        """Approve Review Route Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
+        """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
         prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
     async def reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> SubmitDecisionResponse:
-        """Reject Review Route Reject one review version and resume the workflow run. A `reason` is required."""
+        """Reject Review Reject one review version and resume the workflow run. A `reason` is required."""
         prepared_request = self.prepare_reject(review_id, version_id=version_id, reason=reason, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)

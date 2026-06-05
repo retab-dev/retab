@@ -1,6 +1,7 @@
 namespace Retab
 {
     using System;
+    using System.Collections.Generic;
 
     /// <summary>A workflow and its current configuration.</summary>
     public class Workflow
@@ -24,7 +25,7 @@ namespace Retab
         public DateTimeOffset UpdatedAt { get; set; }
 
         /// <summary>Server-derived permissions for the current actor.</summary>
-        public WorkflowCapabilities? Capabilities { get; set; }
+        public List<WorkflowCapabilities>? Capabilities { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

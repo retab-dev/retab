@@ -114,7 +114,7 @@ module Retab
       result
     end
 
-    # Apply Workflow Spec To Existing Workflow
+    # Apply Existing Workflow Spec
     # @param workflow_id [String]
     # @param yaml_definition [String] Workflow YAML definition
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

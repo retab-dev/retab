@@ -18,7 +18,7 @@ import {
 export class Secrets {
   constructor(private readonly client: Retab) {}
 
-  /** List Secrets */
+  /** Secret.List */
   async list_secrets(): Promise<SecretListResponse> {
     const __wire = await this.client.request<SecretListResponseResponse>({
       method: 'GET',
@@ -29,7 +29,7 @@ export class Secrets {
     return deserializeSecretListResponse(__wire);
   }
 
-  /** Create Secret */
+  /** Secret.Create */
   async create_secret(name: string, value: string): Promise<SecretResponse> {
     const body = {
       name: name,
@@ -44,7 +44,7 @@ export class Secrets {
     return deserializeSecretResponse(__wire);
   }
 
-  /** Get Secret */
+  /** Secret.Get */
   async get_secret(name: string): Promise<SecretResponse> {
     const __wire = await this.client.request<SecretResponseResponse>({
       method: 'GET',
@@ -55,7 +55,7 @@ export class Secrets {
     return deserializeSecretResponse(__wire);
   }
 
-  /** Set Secret */
+  /** Secret.Set */
   async update_secret(name: string, value: string): Promise<SecretResponse> {
     const body = {
       value: value,
@@ -69,7 +69,7 @@ export class Secrets {
     return deserializeSecretResponse(__wire);
   }
 
-  /** Delete Secret */
+  /** Secret.Delete */
   async delete_secret(name: string): Promise<void> {
     await this.client.request<unknown>({
       method: 'DELETE',
@@ -79,7 +79,7 @@ export class Secrets {
     });
   }
 
-  /** Get Secret Value */
+  /** Secret.Get Value */
   async list_secret_value(name: string): Promise<SecretValueResponse> {
     const __wire = await this.client.request<SecretValueResponseResponse>({
       method: 'GET',

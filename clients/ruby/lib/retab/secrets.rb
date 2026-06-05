@@ -10,7 +10,7 @@ module Retab
       @client = client
     end
 
-    # List Secrets
+    # Secret.List
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SecretListResponse]
     def list_secrets(request_options: {})
@@ -29,7 +29,7 @@ module Retab
       result
     end
 
-    # Create Secret
+    # Secret.Create
     # @param name [String]
     # @param value [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -59,7 +59,7 @@ module Retab
       result
     end
 
-    # Get Secret
+    # Secret.Get
     # @param name [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SecretResponse]
@@ -82,7 +82,7 @@ module Retab
       result
     end
 
-    # Set Secret
+    # Secret.Set
     # @param name [String]
     # @param value [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -111,7 +111,7 @@ module Retab
       result
     end
 
-    # Delete Secret
+    # Secret.Delete
     # @param name [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
@@ -128,7 +128,7 @@ module Retab
       nil
     end
 
-    # Get Secret Value
+    # Secret.Get Value
     # @param name [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SecretValueResponse]
