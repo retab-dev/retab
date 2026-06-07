@@ -28,6 +28,12 @@ module Retab
     def filename=(value); end
 
     sig { returns(T.nilable(String)) }
+    def project_id; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def project_id=(value); end
+
+    sig { returns(T.nilable(String)) }
     def source_file_id; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }

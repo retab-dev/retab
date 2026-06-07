@@ -81,6 +81,7 @@ class Workflows
      * @param int|null $limit Items per page Defaults to 10.
      * @param \Retab\Resource\EditsOrder $order Defaults to "desc".
      * @param string|null $sortBy Defaults to "updated_at".
+     * @param string|null $projectId Only return workflows belonging to this project. Use the shared project's id to list the organization's shared workflows.
      * @return \Retab\PaginatedResponse<\Retab\Resource\Workflow>
      * @throws \Retab\Exception\RetabException
      */
@@ -90,6 +91,7 @@ class Workflows
         ?int $limit = null,
         \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Desc,
         ?string $sortBy = null,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([
@@ -98,6 +100,7 @@ class Workflows
             'limit' => $limit,
             'order' => $order->value,
             'sort_by' => $sortBy,
+            'project_id' => $projectId,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',

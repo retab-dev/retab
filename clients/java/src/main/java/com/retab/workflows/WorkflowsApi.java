@@ -80,7 +80,7 @@ public final class WorkflowsApi {
   }
 
   public List<Workflow> list(
-      String before, String after, Long limit, SortOrder order, String sortBy)
+      String before, String after, Long limit, SortOrder order, String sortBy, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows";
     StringBuilder query = new StringBuilder();
@@ -89,6 +89,7 @@ public final class WorkflowsApi {
     appendQueryParam(query, "limit", limit);
     appendQueryParam(query, "order", order);
     appendQueryParam(query, "sort_by", sortBy);
+    appendQueryParam(query, "project_id", projectId);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =

@@ -15,6 +15,8 @@ export interface WorkflowTable {
   id: string;
   name: string;
   filename: string;
+  /** Project that owns this table. Null means the organization's shared workflows project. */
+  projectId?: string | null;
   /** @default "" */
   sourceFileId?: string;
   /** @default "" */
@@ -35,6 +37,7 @@ export interface WorkflowTableWire {
   id: string;
   name: string;
   filename: string;
+  project_id?: string | null;
   source_file_id?: string;
   snapshot_file_id?: string;
   row_count: number;
@@ -50,6 +53,7 @@ export const ZWorkflowTable = z.object({
   id: z.string(),
   name: z.string(),
   filename: z.string(),
+  projectId: z.string().nullable().optional(),
   sourceFileId: z.string().optional(),
   snapshotFileId: z.string().optional(),
   rowCount: z.number().int(),
@@ -66,6 +70,7 @@ export function deserializeWorkflowTable(wire: WorkflowTableWire): WorkflowTable
     id: wire['id'],
     name: wire['name'],
     filename: wire['filename'],
+    projectId: wire['project_id'],
     sourceFileId: wire['source_file_id'],
     snapshotFileId: wire['snapshot_file_id'],
     rowCount: wire['row_count'],
@@ -88,6 +93,7 @@ export function serializeWorkflowTable(domain: WorkflowTable): WorkflowTableWire
     id: domain['id'],
     name: domain['name'],
     filename: domain['filename'],
+    project_id: domain['projectId'],
     source_file_id: domain['sourceFileId'],
     snapshot_file_id: domain['snapshotFileId'],
     row_count: domain['rowCount'],

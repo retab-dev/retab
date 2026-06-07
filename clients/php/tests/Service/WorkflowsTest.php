@@ -17,7 +17,7 @@ class WorkflowsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflows()->list(before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, sortBy: 'test_value', projectId: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -28,6 +28,7 @@ class WorkflowsTest extends TestCase
         $this->assertArrayHasKey('limit', $query);
         $this->assertSame('asc', $query['order']);
         $this->assertSame('test_value', $query['sort_by']);
+        $this->assertSame('test_value', $query['project_id']);
     }
 
     public function testCreate(): void

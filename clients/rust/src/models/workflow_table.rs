@@ -10,6 +10,9 @@ pub struct WorkflowTable {
     pub id: String,
     pub name: String,
     pub filename: String,
+    /// Project that owns this table. Null means the organization's shared workflows project.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub project_id: Option<String>,
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub source_file_id: Option<String>,
@@ -46,6 +49,7 @@ impl WorkflowTable {
             id: id.into(),
             name: name.into(),
             filename: filename.into(),
+            project_id: Default::default(),
             source_file_id: Default::default(),
             snapshot_file_id: Default::default(),
             row_count,

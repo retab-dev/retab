@@ -30,22 +30,26 @@ from retab.types.tables import (
 
 
 class TablesMixin:
-    def prepare_list(self, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(self, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.List"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "project_id": project_id,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="GET", url="/v1/tables", params=params or None, data=data)
 
-    def prepare_create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Create"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateWorkflowTableUploadRequest(name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
+        payload = CreateWorkflowTableUploadRequest(
+            name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides), project_id=cast(Any, project_id)
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/tables", params=params or None, data=data)
 
@@ -186,15 +190,15 @@ class TablesMixin:
 class Tables(SyncAPIResource, TablesMixin):
     """Tables API wrapper."""
 
-    def list(self, **extra_params: Any) -> WorkflowTableListResponse:
+    def list(self, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.List"""
-        prepared_request = self.prepare_list(**extra_params)
+        prepared_request = self.prepare_list(project_id=project_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    def create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    def create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Create"""
-        prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
+        prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, project_id=project_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
@@ -304,15 +308,15 @@ class Tables(SyncAPIResource, TablesMixin):
 class AsyncTables(AsyncAPIResource, TablesMixin):
     """Async Tables API wrapper."""
 
-    async def list(self, **extra_params: Any) -> WorkflowTableListResponse:
+    async def list(self, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.List"""
-        prepared_request = self.prepare_list(**extra_params)
+        prepared_request = self.prepare_list(project_id=project_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    async def create(self, name: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    async def create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Create"""
-        prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
+        prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, project_id=project_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 

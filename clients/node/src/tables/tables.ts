@@ -45,11 +45,13 @@ export class Tables {
   constructor(private readonly client: Retab) {}
 
   /** Table.List */
-  async list(): Promise<WorkflowTableListResponse> {
+  async list(options?: {
+    projectId?: string | null | undefined;
+  }): Promise<WorkflowTableListResponse> {
     const __wire = await this.client.request<WorkflowTableListResponseResponse>({
       method: 'GET',
       path: '/v1/tables',
-      query: undefined,
+      query: { project_id: options?.projectId },
       body: undefined,
     });
     return deserializeWorkflowTableListResponse(__wire);
@@ -59,12 +61,14 @@ export class Tables {
   async create(
     name: string,
     file: string,
-    columnSchemaOverrides?: string | null
+    columnSchemaOverrides?: string | null,
+    projectId?: string | null
   ): Promise<WorkflowTableListResponse> {
     const body = {
       name: name,
       file: file,
       column_schema_overrides: columnSchemaOverrides,
+      project_id: projectId,
     };
     const __wire = await this.client.request<WorkflowTableListResponseResponse>({
       method: 'POST',

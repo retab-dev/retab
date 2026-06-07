@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_files && !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_runs
+
 package cmd
 
 import (

@@ -5,18 +5,21 @@ export interface CreateWorkflowTableUploadRequest {
   name: string;
   file: string;
   columnSchemaOverrides?: string | null;
+  projectId?: string | null;
 }
 
 export interface CreateWorkflowTableUploadRequestResponse {
   name: string;
   file: string;
   column_schema_overrides?: string | null;
+  project_id?: string | null;
 }
 
 export const ZCreateWorkflowTableUploadRequest = z.object({
   name: z.string(),
   file: z.string(),
   columnSchemaOverrides: z.string().nullable().optional(),
+  projectId: z.string().nullable().optional(),
 }) as z.ZodType<CreateWorkflowTableUploadRequest>;
 
 export function deserializeCreateWorkflowTableUploadRequest(
@@ -26,6 +29,7 @@ export function deserializeCreateWorkflowTableUploadRequest(
     name: wire['name'],
     file: wire['file'],
     columnSchemaOverrides: wire['column_schema_overrides'],
+    projectId: wire['project_id'],
   };
 }
 
@@ -36,5 +40,6 @@ export function serializeCreateWorkflowTableUploadRequest(
     name: domain['name'],
     file: domain['file'],
     column_schema_overrides: domain['columnSchemaOverrides'],
+    project_id: domain['projectId'],
   };
 }

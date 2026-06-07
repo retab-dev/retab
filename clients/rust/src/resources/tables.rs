@@ -13,6 +13,13 @@ pub struct TablesApi<'a> {
     pub(crate) client: &'a Retab,
 }
 
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct ListParams {
+    /// Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct CreateParams {
     /// Request body sent with this call.
@@ -97,19 +104,20 @@ impl ValidateParams {
 
 impl<'a> TablesApi<'a> {
     /// Table.List
-    pub async fn list(&self) -> Result<WorkflowTableListResponse, Error> {
-        self.list_with_options(None).await
+    pub async fn list(&self, params: ListParams) -> Result<WorkflowTableListResponse, Error> {
+        self.list_with_options(params, None).await
     }
 
     /// Variant of [`Self::list`] that accepts per-request [`crate::RequestOptions`].
     pub async fn list_with_options(
         &self,
+        params: ListParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<WorkflowTableListResponse, Error> {
         let path = "/v1/tables".to_string();
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 

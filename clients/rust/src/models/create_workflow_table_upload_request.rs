@@ -11,6 +11,8 @@ pub struct CreateWorkflowTableUploadRequest {
     pub file: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub column_schema_overrides: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub project_id: Option<String>,
 }
 impl CreateWorkflowTableUploadRequest {
     /// Construct a new `CreateWorkflowTableUploadRequest` with the required fields set.
@@ -20,6 +22,7 @@ impl CreateWorkflowTableUploadRequest {
             name: name.into(),
             file: file.into(),
             column_schema_overrides: Default::default(),
+            project_id: Default::default(),
         }
     }
 }

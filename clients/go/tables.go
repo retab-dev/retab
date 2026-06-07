@@ -13,10 +13,16 @@ type TableService struct {
 	client *Client
 }
 
+// TablesListParams contains the parameters for List.
+type TablesListParams struct {
+	// ProjectID is only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+	ProjectID *string `url:"project_id,omitempty" json:"-"`
+}
+
 // List table.List
-func (s *TableService) List(ctx context.Context, opts ...RequestOption) (*WorkflowTableListResponse, error) {
+func (s *TableService) List(ctx context.Context, params *TablesListParams, opts ...RequestOption) (*WorkflowTableListResponse, error) {
 	var result WorkflowTableListResponse
-	_, err := s.client.request(ctx, "GET", "/v1/tables", nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", "/v1/tables", params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +34,7 @@ type TablesCreateParams struct {
 	Name                  string  `json:"name" url:"-"`
 	File                  string  `json:"file" url:"-"`
 	ColumnSchemaOverrides *string `json:"column_schema_overrides,omitempty" url:"-"`
+	ProjectID             *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Create table.Create

@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_edits && !retab_oagen_cli_files && !retab_oagen_cli_parses
+
 package cmd
 
 import (

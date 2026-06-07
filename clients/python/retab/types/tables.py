@@ -58,6 +58,7 @@ class CreateWorkflowTableUploadRequest(BaseModel):
     name: str
     file: str
     column_schema_overrides: str | None = None
+    project_id: str | None = None
 
 
 class QueryWorkflowTableRequest(BaseModel):
@@ -102,6 +103,7 @@ class WorkflowTable(BaseModel):
     id: str
     name: str
     filename: str
+    project_id: str | None = Field(default=None, description="Project that owns this table. Null means the organization's shared workflows project.")
     source_file_id: str | None = Field(default="")
     snapshot_file_id: str | None = Field(default="")
     row_count: int

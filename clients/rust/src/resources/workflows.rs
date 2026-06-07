@@ -39,6 +39,9 @@ pub struct ListParams {
     /// Defaults to `updated_at`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
+    /// Only return workflows belonging to this project. Use the shared project's id to list the organization's shared workflows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
 }
 
 impl Default for ListParams {
@@ -50,6 +53,7 @@ impl Default for ListParams {
             limit: Some(10),
             order: Some(WorkflowsOrder::Desc),
             sort_by: Some("updated_at".to_string()),
+            project_id: Default::default(),
         }
     }
 }

@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_edges && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_reviews && !retab_oagen_cli_workflows_tests
+
 package cmd
 
 import (

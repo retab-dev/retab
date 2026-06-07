@@ -27,6 +27,8 @@ type WorkflowsListParams struct {
 	PaginationParams
 	// Defaults to "updated_at".
 	SortBy *string `url:"sort_by,omitempty" json:"-"`
+	// ProjectID is only return workflows belonging to this project. Use the shared project's id to list the organization's shared workflows.
+	ProjectID *string `url:"project_id,omitempty" json:"-"`
 }
 
 // List workflows

@@ -21,15 +21,21 @@ class Tables
 
     /**
      * Table.List
+     * @param string|null $projectId Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
      * @return \Retab\Resource\WorkflowTableListResponse
      * @throws \Retab\Exception\RetabException
      */
     public function list(
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowTableListResponse {
+        $query = array_filter([
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/tables',
+            query: $query,
             options: $options,
         );
         return WorkflowTableListResponse::fromArray($response);
@@ -40,6 +46,7 @@ class Tables
      * @param string $name
      * @param string $file
      * @param string|null $columnSchemaOverrides
+     * @param string|null $projectId
      * @return \Retab\Resource\WorkflowTableListResponse
      * @throws \Retab\Exception\RetabException
      */
@@ -47,12 +54,14 @@ class Tables
         string $name,
         string $file,
         ?string $columnSchemaOverrides = null,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowTableListResponse {
         $body = array_filter([
             'name' => $name,
             'file' => $file,
             'column_schema_overrides' => $columnSchemaOverrides,
+            'project_id' => $projectId,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

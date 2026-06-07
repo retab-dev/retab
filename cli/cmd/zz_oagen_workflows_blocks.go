@@ -39,10 +39,10 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 		req.ParentID = ptr(v)
 	}
 	if v, ok := obj["config"].(map[string]any); ok {
-		req.Config = v
-	}
-	if err := rejectLegacyReviewConfig(req.Config); err != nil {
-		return req, err
+		if err := rejectLegacyReviewConfig(v); err != nil {
+			return req, err
+		}
+		req.Config = &v
 	}
 	if req.Type == "" {
 		return req, fmt.Errorf("block type is required")
@@ -300,7 +300,7 @@ var workflowsBlocksUpdateCmd = &cobra.Command{
 			if err := rejectLegacyReviewConfig(cfg); err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
-			req.Config = cfg
+			req.Config = &cfg
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeReplace)
 		}
 		client, err := newClient(cmd)
@@ -320,7 +320,7 @@ var workflowsBlocksUpdateCmd = &cobra.Command{
 			if len(patch) == 0 {
 				return fmt.Errorf("--merge-config-file %s: patch contains no keys; nothing to merge", mergeConfigPath)
 			}
-			req.Config = patch
+			req.Config = &patch
 			req.ConfigMode = ptr(retab.UpdateWorkflowBlockRequestConfigModeMerge)
 		}
 		req.WorkflowID = workflowID

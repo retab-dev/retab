@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_workflows_artifacts
+
 package cmd
 
 import (

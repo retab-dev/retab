@@ -17,12 +17,14 @@ class TablesTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_table_list_response');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->tables()->list();
+        $result = $client->tables()->list(projectId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowTableListResponse::class, $result);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/tables', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['project_id']);
     }
 
     public function testCreate(): void

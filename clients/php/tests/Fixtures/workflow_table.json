@@ -2,6 +2,7 @@
   "id": "01234",
   "name": "Test",
   "filename": "Test",
+  "project_id": "project_id_01234",
   "source_file_id": "source_file_id_01234",
   "snapshot_file_id": "snapshot_file_id_01234",
   "row_count": 1,
