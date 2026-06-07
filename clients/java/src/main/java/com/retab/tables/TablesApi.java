@@ -35,9 +35,10 @@ public final class TablesApi {
     return client;
   }
 
-  public WorkflowTableListResponse list() throws IOException, InterruptedException {
+  public WorkflowTableListResponse list(String projectId) throws IOException, InterruptedException {
     String path = "/v1/tables";
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "project_id", projectId);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -61,10 +62,12 @@ public final class TablesApi {
     return create(
         request == null ? null : request.getName(),
         request == null ? null : request.getFile(),
-        request == null ? null : request.getColumnSchemaOverrides());
+        request == null ? null : request.getColumnSchemaOverrides(),
+        request == null ? null : request.getProjectId());
   }
 
-  public WorkflowTableListResponse create(String name, String file, String columnSchemaOverrides)
+  public WorkflowTableListResponse create(
+      String name, String file, String columnSchemaOverrides, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/tables";
     StringBuilder query = new StringBuilder();
@@ -74,6 +77,9 @@ public final class TablesApi {
     body.put("file", file);
     if (columnSchemaOverrides != null) {
       body.put("column_schema_overrides", columnSchemaOverrides);
+    }
+    if (projectId != null) {
+      body.put("project_id", projectId);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

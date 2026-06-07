@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_classifications && !retab_oagen_cli_edits && !retab_oagen_cli_extractions && !retab_oagen_cli_files && !retab_oagen_cli_parses && !retab_oagen_cli_partitions && !retab_oagen_cli_splits && !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_runs && !retab_oagen_cli_workflows_tests
+
 package cmd
 
 import (

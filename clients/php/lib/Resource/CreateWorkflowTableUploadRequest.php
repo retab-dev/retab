@@ -14,6 +14,7 @@ readonly class CreateWorkflowTableUploadRequest implements \JsonSerializable
         public string $name,
         public string $file,
         public ?string $columnSchemaOverrides = null,
+        public ?string $projectId = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -31,6 +32,7 @@ readonly class CreateWorkflowTableUploadRequest implements \JsonSerializable
             name: $data['name'],
             file: $data['file'],
             columnSchemaOverrides: $data['column_schema_overrides'] ?? null,
+            projectId: $data['project_id'] ?? null,
         );
     }
 
@@ -41,6 +43,7 @@ readonly class CreateWorkflowTableUploadRequest implements \JsonSerializable
             'name' => $this->name,
             'file' => $this->file,
             'column_schema_overrides' => $this->columnSchemaOverrides,
+            'project_id' => $this->projectId,
         ];
     }
 }

@@ -10,6 +10,9 @@ namespace Retab
     {
         public string? SortBy { get; set; }
 
+        /// <summary>Only return workflows belonging to this project. Use the shared project's id to list the organization's shared workflows.</summary>
+        public string? ProjectId { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowsService.CreateAsync"/>: Create Workflow</summary>

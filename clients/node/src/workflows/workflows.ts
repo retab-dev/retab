@@ -54,6 +54,7 @@ export class Workflows {
   /** List Workflows */
   async list(options?: {
     sortBy?: string | undefined;
+    projectId?: string | null | undefined;
     limit?: number;
     before?: string;
     after?: string;
@@ -64,6 +65,7 @@ export class Workflows {
       path: '/v1/workflows',
       query: {
         sort_by: options?.sortBy,
+        project_id: options?.projectId,
         limit: options?.limit,
         before: options?.before,
         after: options?.after,

@@ -9,6 +9,7 @@ module Retab
       id: :id,
       name: :name,
       filename: :filename,
+      project_id: :project_id,
       source_file_id: :source_file_id,
       snapshot_file_id: :snapshot_file_id,
       row_count: :row_count,
@@ -24,6 +25,7 @@ module Retab
       :id,
       :name,
       :filename,
+      :project_id,
       :source_file_id,
       :snapshot_file_id,
       :row_count,
@@ -41,6 +43,7 @@ module Retab
       @id = hash[:id]
       @name = hash[:name]
       @filename = hash[:filename]
+      @project_id = hash[:project_id]
       @source_file_id = hash[:source_file_id].nil? ? "" : hash[:source_file_id]
       @snapshot_file_id = hash[:snapshot_file_id].nil? ? "" : hash[:snapshot_file_id]
       @row_count = hash[:row_count]

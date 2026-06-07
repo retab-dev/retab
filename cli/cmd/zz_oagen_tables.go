@@ -18,7 +18,7 @@ var tablesCmd = &cobra.Command{
 
 var tablesCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create Table",
+	Short: "Table.Create",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.TablesCreateParams{}
@@ -34,6 +34,9 @@ var tablesCreateCmd = &cobra.Command{
 		params.File = file
 		if v, _ := cmd.Flags().GetString("column-schema-overrides"); v != "" || cmd.Flags().Changed("column-schema-overrides") {
 			params.ColumnSchemaOverrides = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("project-id"); v != "" || cmd.Flags().Changed("project-id") {
+			params.ProjectID = ptr(v)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -51,7 +54,7 @@ var tablesCreateCmd = &cobra.Command{
 
 var tablesDeleteCmd = &cobra.Command{
 	Use:   "delete <table-id>",
-	Short: "Delete Table",
+	Short: "Table.Delete",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := confirmDestructive(cmd, "tables", args[0]); err != nil {
@@ -73,7 +76,7 @@ var tablesDeleteCmd = &cobra.Command{
 
 var tablesDownloadCmd = &cobra.Command{
 	Use:   "download <table-id>",
-	Short: "Download Table Csv",
+	Short: "Table.Download",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -88,7 +91,7 @@ var tablesDownloadCmd = &cobra.Command{
 
 var tablesGetCmd = &cobra.Command{
 	Use:   "get <table-id>",
-	Short: "Get Table",
+	Short: "Table.Get",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -107,7 +110,7 @@ var tablesGetCmd = &cobra.Command{
 
 var tablesListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List Tables",
+	Short: "Table.List",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -116,7 +119,11 @@ var tablesListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Tables.List(ctx)
+		params := retab.TablesListParams{}
+		if v, _ := cmd.Flags().GetString("project-id"); v != "" {
+			params.ProjectID = ptr(v)
+		}
+		result, err := client.Tables.List(ctx, &params)
 		if err != nil {
 			return err
 		}
@@ -126,7 +133,7 @@ var tablesListCmd = &cobra.Command{
 
 var tablesQueryCmd = &cobra.Command{
 	Use:   "query <table-id>",
-	Short: "Query Table",
+	Short: "Table.Query",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		body := map[string]any{}
@@ -169,7 +176,7 @@ var tablesQueryCmd = &cobra.Command{
 
 var tablesReplaceCmd = &cobra.Command{
 	Use:   "replace <table-id>",
-	Short: "Replace Table",
+	Short: "Table.Replace",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.TablesReplaceParams{}
@@ -197,7 +204,7 @@ var tablesReplaceCmd = &cobra.Command{
 
 var tablesUpdateCmd = &cobra.Command{
 	Use:   "update <table-id>",
-	Short: "Update Table",
+	Short: "Table.Update",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.TablesUpdateParams{}
@@ -209,7 +216,7 @@ var tablesUpdateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("--metadata must be a JSON object: %w", err)
 			}
-			params.Metadata = metadata
+			params.Metadata = &metadata
 		}
 		if params.Name == nil && params.Metadata == nil {
 			return fmt.Errorf("provide at least one of --name or --metadata")
@@ -230,7 +237,7 @@ var tablesUpdateCmd = &cobra.Command{
 
 var tablesValidateCmd = &cobra.Command{
 	Use:   "validate <table-id>",
-	Short: "Validate Table",
+	Short: "Table.Validate",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -239,7 +246,25 @@ var tablesValidateCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Tables.Validate(ctx, args[0])
+		params := retab.TablesValidateParams{}
+		if required, _ := cmd.Flags().GetStringArray("required"); len(required) > 0 {
+			params.RequiredColumns = required
+		}
+		if v, _ := cmd.Flags().GetString("unique"); v != "" {
+			var unique [][]string
+			if err := json.Unmarshal([]byte(v), &unique); err != nil {
+				return fmt.Errorf("--unique must be a JSON array of column-name arrays: %w", err)
+			}
+			params.Unique = unique
+		}
+		if v, _ := cmd.Flags().GetString("columns"); v != "" {
+			columns := map[string]*retab.WorkflowTableValidationColumnRule{}
+			if err := json.Unmarshal([]byte(v), &columns); err != nil {
+				return fmt.Errorf("--columns must be a JSON object: %w", err)
+			}
+			params.Columns = &columns
+		}
+		result, err := client.Tables.Validate(ctx, args[0], &params)
 		if err != nil {
 			return err
 		}
@@ -253,7 +278,10 @@ func init() {
 	tablesCreateCmd.Flags().String("file", "", "file value (required)")
 	_ = tablesCreateCmd.MarkFlagRequired("file")
 	tablesCreateCmd.Flags().String("column-schema-overrides", "", "column-schema-overrides value")
+	tablesCreateCmd.Flags().String("project-id", "", "project-id value")
 	tablesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+	addListFlags(tablesListCmd, false)
+	tablesListCmd.Flags().String("project-id", "", "Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.")
 	tablesQueryCmd.Flags().String("filters", "", "JSON array of filter rules")
 	tablesQueryCmd.Flags().String("sort-column", "", "column to sort by")
 	tablesQueryCmd.Flags().Var(newEnumStringFlagValue("--sort-direction", "asc", "desc"), "sort-direction", "sort direction: asc | desc")
@@ -265,6 +293,9 @@ func init() {
 	tablesReplaceCmd.Flags().String("column-schema-overrides", "", "column-schema-overrides value")
 	tablesUpdateCmd.Flags().String("name", "", "table name")
 	tablesUpdateCmd.Flags().String("metadata", "", "JSON metadata object")
+	tablesValidateCmd.Flags().StringArray("required", []string{}, "required column name (repeatable)")
+	tablesValidateCmd.Flags().String("unique", "", "JSON array of unique-key column-name arrays, e.g. [[\"a\",\"b\"]]")
+	tablesValidateCmd.Flags().String("columns", "", "JSON object of per-column validation rules")
 
 	tablesCmd.AddCommand(tablesCreateCmd, tablesDeleteCmd, tablesDownloadCmd, tablesGetCmd, tablesListCmd, tablesQueryCmd, tablesReplaceCmd, tablesUpdateCmd, tablesValidateCmd)
 	rootCmd.AddCommand(tablesCmd)

@@ -15,6 +15,8 @@ readonly class WorkflowTable implements \JsonSerializable
         public string $name,
         public string $filename,
         public int $rowCount,
+        /** Project that owns this table. Null means the organization's shared workflows project. */
+        public ?string $projectId = null,
         public ?string $sourceFileId = null,
         public ?string $snapshotFileId = null,
         /** @var array<\Retab\Resource\WorkflowTableColumn>|null */
@@ -46,6 +48,7 @@ readonly class WorkflowTable implements \JsonSerializable
             name: $data['name'],
             filename: $data['filename'],
             rowCount: $data['row_count'],
+            projectId: $data['project_id'] ?? null,
             sourceFileId: $data['source_file_id'] ?? null,
             snapshotFileId: $data['snapshot_file_id'] ?? null,
             columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
@@ -65,6 +68,7 @@ readonly class WorkflowTable implements \JsonSerializable
             'name' => $this->name,
             'filename' => $this->filename,
             'row_count' => $this->rowCount,
+            'project_id' => $this->projectId,
             'source_file_id' => $this->sourceFileId,
             'snapshot_file_id' => $this->snapshotFileId,
             'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,

@@ -2459,9 +2459,11 @@ type WorkflowRunStep struct {
 
 // WorkflowTable represents a workflow table.
 type WorkflowTable struct {
-	ID               string                   `json:"id"`
-	Name             string                   `json:"name"`
-	Filename         string                   `json:"filename"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Filename string `json:"filename"`
+	// ProjectID is project that owns this table. Null means the organization's shared workflows project.
+	ProjectID        *string                  `json:"project_id,omitempty"`
 	SourceFileID     *string                  `json:"source_file_id,omitempty"`
 	SnapshotFileID   *string                  `json:"snapshot_file_id,omitempty"`
 	RowCount         int                      `json:"row_count"`

@@ -11,20 +11,22 @@ module Retab
 
     sig do
       params(
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowTableListResponse)
     end
-    def list(request_options:); end
+    def list(project_id:, request_options:); end
 
     sig do
       params(
         name: String,
         file: String,
         column_schema_overrides: T.nilable(String),
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowTableListResponse)
     end
-    def create(name:, file:, column_schema_overrides:, request_options:); end
+    def create(name:, file:, column_schema_overrides:, project_id:, request_options:); end
 
     sig do
       params(

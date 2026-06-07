@@ -1,5 +1,6 @@
 {
   "name": "Test",
   "file": "test_file",
-  "column_schema_overrides": "column_schema_overrides_01234"
+  "column_schema_overrides": "column_schema_overrides_01234",
+  "project_id": "project_id_01234"
 }

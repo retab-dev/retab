@@ -5,6 +5,14 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
+    /// <summary>Request options for <see cref="TablesService.ListAsync"/>: Table.List</summary>
+    public class TablesListOptions : BaseOptions
+    {
+        /// <summary>Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.</summary>
+        public string? ProjectId { get; set; }
+
+    }
+
     /// <summary>Request options for <see cref="TablesService.CreateAsync"/>: Table.Create</summary>
     public class TablesCreateOptions : BaseOptions
     {
@@ -13,6 +21,8 @@ namespace Retab
         public string File { get; set; } = default!;
 
         public string? ColumnSchemaOverrides { get; set; }
+
+        public string? ProjectId { get; set; }
 
     }
 

@@ -16,7 +16,7 @@ var secretsCmd = &cobra.Command{
 
 var secretsCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create Secret",
+	Short: "Secret.Create",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.SecretsCreateParams{}
@@ -46,7 +46,7 @@ var secretsCreateCmd = &cobra.Command{
 
 var secretsDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
-	Short: "Delete Secret",
+	Short: "Secret.Delete",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := confirmDestructive(cmd, "secrets", args[0]); err != nil {
@@ -68,7 +68,7 @@ var secretsDeleteCmd = &cobra.Command{
 
 var secretsGetCmd = &cobra.Command{
 	Use:   "get <name>",
-	Short: "Get Secret",
+	Short: "Secret.Get",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -87,7 +87,7 @@ var secretsGetCmd = &cobra.Command{
 
 var secretsListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List Secrets",
+	Short: "Secret.List",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -106,7 +106,7 @@ var secretsListCmd = &cobra.Command{
 
 var secretsUpdateCmd = &cobra.Command{
 	Use:   "update <name>",
-	Short: "Set Secret",
+	Short: "Secret.Set",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.SecretsUpdateParams{}

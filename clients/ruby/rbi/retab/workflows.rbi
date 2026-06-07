@@ -43,10 +43,11 @@ module Retab
         limit: T.nilable(Integer),
         order: T.nilable(String),
         sort_by: T.nilable(String),
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Workflow])
     end
-    def list(before:, after:, limit:, order:, sort_by:, request_options:); end
+    def list(before:, after:, limit:, order:, sort_by:, project_id:, request_options:); end
 
     sig do
       params(

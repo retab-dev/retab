@@ -11,16 +11,19 @@ public final class CreateWorkflowTableUploadRequest {
   private final String name;
   private final String file;
   private final String columnSchemaOverrides;
+  private final String projectId;
 
   @JsonCreator
   public CreateWorkflowTableUploadRequest(
       @JsonProperty(value = "name", required = true) String name,
       @JsonProperty(value = "file", required = true) String file,
       @JsonProperty(value = "column_schema_overrides", required = false)
-          String columnSchemaOverrides) {
+          String columnSchemaOverrides,
+      @JsonProperty(value = "project_id", required = false) String projectId) {
     this.name = name;
     this.file = file;
     this.columnSchemaOverrides = columnSchemaOverrides;
+    this.projectId = projectId;
   }
 
   @JsonProperty("name")
@@ -36,5 +39,10 @@ public final class CreateWorkflowTableUploadRequest {
   @JsonProperty("column_schema_overrides")
   public String getColumnSchemaOverrides() {
     return columnSchemaOverrides;
+  }
+
+  @JsonProperty("project_id")
+  public String getProjectId() {
+    return projectId;
   }
 }

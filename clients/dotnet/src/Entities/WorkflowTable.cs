@@ -9,6 +9,9 @@ namespace Retab
         public string Id { get; set; } = default!;
         public string Name { get; set; } = default!;
         public string Filename { get; set; } = default!;
+
+        /// <summary>Project that owns this table. Null means the organization's shared workflows project.</summary>
+        public string? ProjectId { get; set; }
         public string? SourceFileId { get; set; } = "";
         public string? SnapshotFileId { get; set; } = "";
         public long RowCount { get; set; }

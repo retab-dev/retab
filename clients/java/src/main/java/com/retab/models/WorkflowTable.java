@@ -14,6 +14,7 @@ public final class WorkflowTable {
   private final String id;
   private final String name;
   private final String filename;
+  private final String projectId;
   private final String sourceFileId;
   private final String snapshotFileId;
   private final Long rowCount;
@@ -29,6 +30,7 @@ public final class WorkflowTable {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "name", required = true) String name,
       @JsonProperty(value = "filename", required = true) String filename,
+      @JsonProperty(value = "project_id", required = false) String projectId,
       @JsonProperty(value = "source_file_id", required = false) String sourceFileId,
       @JsonProperty(value = "snapshot_file_id", required = false) String snapshotFileId,
       @JsonProperty(value = "row_count", required = true) Long rowCount,
@@ -41,6 +43,7 @@ public final class WorkflowTable {
     this.id = id;
     this.name = name;
     this.filename = filename;
+    this.projectId = projectId;
     this.sourceFileId = sourceFileId != null ? sourceFileId : "";
     this.snapshotFileId = snapshotFileId != null ? snapshotFileId : "";
     this.rowCount = rowCount;
@@ -65,6 +68,11 @@ public final class WorkflowTable {
   @JsonProperty("filename")
   public String getFilename() {
     return filename;
+  }
+
+  @JsonProperty("project_id")
+  public String getProjectId() {
+    return projectId;
   }
 
   @JsonProperty("source_file_id")

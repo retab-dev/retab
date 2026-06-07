@@ -117,6 +117,7 @@ Use ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 		limit, _ := cmd.Flags().GetInt("limit")
 		order, _ := cmd.Flags().GetString("order")
 		sortBy, _ := cmd.Flags().GetString("sort-by")
+		projectID, _ := cmd.Flags().GetString("project-id")
 
 		params := &retab.WorkflowsListParams{}
 		if before != "" {
@@ -133,6 +134,9 @@ Use ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 		}
 		if sortBy != "" {
 			params.SortBy = ptr(sortBy)
+		}
+		if projectID != "" {
+			params.ProjectID = ptr(projectID)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -409,6 +413,7 @@ func init() {
 	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")
+	workflowsListCmd.Flags().String("project-id", "", "only return workflows belonging to this project")
 
 	workflowsCreateCmd.Flags().String("name", "", "workflow name")
 	workflowsCreateCmd.Flags().String("description", "", "workflow description")

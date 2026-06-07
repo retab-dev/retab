@@ -112,7 +112,11 @@ var tablesListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Tables.List(ctx)
+		params := &retab.TablesListParams{}
+		if projectID, _ := cmd.Flags().GetString("project-id"); projectID != "" {
+			params.ProjectID = ptr(projectID)
+		}
+		result, err := client.Tables.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -1191,6 +1195,7 @@ func init() {
 	tablesReplaceCmd.Flags().String("file", "", "CSV file path (required)")
 	_ = tablesReplaceCmd.MarkFlagRequired("file")
 	tablesReplaceCmd.Flags().String("column-schema-overrides", "", "JSON column schema overrides")
+	tablesListCmd.Flags().String("project-id", "", "only return tables belonging to this project")
 
 	tablesCmd.AddCommand(tablesCreateCmd, tablesDeleteCmd, tablesDownloadCmd, tablesGetCmd, tablesListCmd, tablesProfileCmd, tablesQueryCmd, tablesReplaceCmd, tablesSchemaCmd, tablesValidateCmd)
 	rootCmd.AddCommand(tablesCmd)

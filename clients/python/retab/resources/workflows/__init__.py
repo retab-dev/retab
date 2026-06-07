@@ -37,6 +37,7 @@ class WorkflowsMixin:
         limit: int | None = 10,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Workflows List workflows with pagination and optional filtering."""
@@ -46,6 +47,7 @@ class WorkflowsMixin:
             "limit": limit,
             "order": order,
             "sort_by": sort_by,
+            "project_id": project_id,
         }
         if extra_params:
             params.update(extra_params)
@@ -192,10 +194,11 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         limit: int | None = 10,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return self.request_page(prepared_request, model=Workflow)
 
     def create(self, name: str = "Untitled Workflow", description: str = "", project_id: str | None = None, **extra_params: Any) -> Workflow:
@@ -290,10 +293,11 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         limit: int | None = 10,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return await self.request_page(prepared_request, model=Workflow)
 
     async def create(self, name: str = "Untitled Workflow", description: str = "", project_id: str | None = None, **extra_params: Any) -> Workflow:

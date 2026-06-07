@@ -969,7 +969,8 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "name" => "stub",
       "file" => "stub",
-      "column_schema_overrides" => nil
+      "column_schema_overrides" => nil,
+      "project_id" => nil
     }
     model = Retab::CreateWorkflowTableUploadRequest.new(fixture.to_json)
     json = model.to_h
@@ -3715,6 +3716,7 @@ class ModelRoundTripTest < Minitest::Test
       "id" => "stub",
       "name" => "stub",
       "filename" => "stub",
+      "project_id" => nil,
       "source_file_id" => "stub",
       "snapshot_file_id" => "stub",
       "row_count" => 1,

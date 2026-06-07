@@ -11,13 +11,21 @@ module Retab
     end
 
     # Table.List
+    # @param project_id [String, nil] Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableListResponse]
-    def list(request_options: {})
+    def list(
+      project_id: nil,
+      request_options: {}
+    )
+      params = {
+        "project_id" => project_id
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/tables",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::WorkflowTableListResponse.new(response.body)
@@ -33,18 +41,21 @@ module Retab
     # @param name [String]
     # @param file [String]
     # @param column_schema_overrides [String, nil]
+    # @param project_id [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableListResponse]
     def create(
       name:,
       file:,
       column_schema_overrides: nil,
+      project_id: nil,
       request_options: {}
     )
       body = {
         "name" => name,
         "file" => file,
-        "column_schema_overrides" => column_schema_overrides
+        "column_schema_overrides" => column_schema_overrides,
+        "project_id" => project_id
       }.compact
       response = @client.request(
         method: :post,

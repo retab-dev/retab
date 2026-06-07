@@ -1,3 +1,5 @@
+//go:build !retab_oagen_cli_classifications && !retab_oagen_cli_edits && !retab_oagen_cli_partitions && !retab_oagen_cli_splits
+
 package cmd
 
 import (

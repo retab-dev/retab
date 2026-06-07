@@ -17,18 +17,19 @@ namespace Retab
         public TablesService(Retab client) : base(client) { }
 
         /// <summary>Table.List</summary>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowTableListResponse"/> result.</returns>
-        public virtual async Task<WorkflowTableListResponse> ListAsync(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowTableListResponse> ListAsync(TablesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<WorkflowTableListResponse>("/v1/tables", null, requestOptions, cancellationToken);
+            return await this.GetAsync<WorkflowTableListResponse>("/v1/tables", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<WorkflowTableListResponse> List(RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowTableListResponse> List(TablesListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.ListAsync(requestOptions, cancellationToken);
+            return this.ListAsync(options, requestOptions, cancellationToken);
         }
 
         /// <summary>Table.Create</summary>

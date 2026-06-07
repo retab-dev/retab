@@ -52,6 +52,7 @@ module Retab
     # @param limit [Integer, nil] Items per page
     # @param order [Retab::Types::WorkflowsOrder, nil]
     # @param sort_by [String, nil]
+    # @param project_id [String, nil] Only return workflows belonging to this project. Use the shared project's id to list the organization's shared workflows.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::Workflow>]
     def list(
@@ -60,6 +61,7 @@ module Retab
       limit: 10,
       order: "desc",
       sort_by: "updated_at",
+      project_id: nil,
       request_options: {}
     )
       params = {
@@ -67,7 +69,8 @@ module Retab
         "after" => after,
         "limit" => limit,
         "order" => order,
-        "sort_by" => sort_by
+        "sort_by" => sort_by,
+        "project_id" => project_id
       }.compact
       response = @client.request(
         method: :get,
@@ -83,13 +86,14 @@ module Retab
           limit: limit,
           order: order,
           sort_by: sort_by,
+          project_id: project_id,
           request_options: request_options
         )
       }
       Retab::PaginatedList.from_response(
         response,
         model: Retab::Workflow,
-        filters: {before: before, limit: limit, order: order, sort_by: sort_by},
+        filters: {before: before, limit: limit, order: order, sort_by: sort_by, project_id: project_id},
         fetch_next: fetch_next
       )
     end

@@ -8,13 +8,15 @@ module Retab
     HASH_ATTRS = {
       name: :name,
       file: :file,
-      column_schema_overrides: :column_schema_overrides
+      column_schema_overrides: :column_schema_overrides,
+      project_id: :project_id
     }.freeze
 
     attr_accessor(
       :name,
       :file,
-      :column_schema_overrides
+      :column_schema_overrides,
+      :project_id
     )
 
     def initialize(json)
@@ -23,6 +25,7 @@ module Retab
       @name = hash[:name]
       @file = hash[:file]
       @column_schema_overrides = hash[:column_schema_overrides]
+      @project_id = hash[:project_id]
     end
   end
 end
