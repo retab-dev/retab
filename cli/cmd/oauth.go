@@ -469,28 +469,53 @@ func htmlEscape(s string) string {
 	return r.Replace(s)
 }
 
+// retabLogoSVG is the Retab mark inlined from
+// open-source/sdk/assets/visuals/retab-icon.svg. Inlined (not linked) so the
+// page renders with no network round-trip on the localhost callback, and it
+// uses currentColor so the surrounding CSS controls the tint.
+const retabLogoSVG = `<svg class="logo" viewBox="0 0 210 216" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Retab"><rect y="108" width="58" height="54" fill="currentColor"/><rect width="58" height="54" fill="currentColor"/><rect x="58" y="54" width="152" height="54" fill="currentColor"/><rect x="58" y="162" width="152" height="54" fill="currentColor"/></svg>`
+
 const successHTML = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Retab CLI — Logged in</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retab CLI — Logged in</title>
 <style>
-body { font: 16px/1.5 -apple-system, system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #222; }
-h1 { color: #D02572; margin-bottom: 0.5rem; }
-.box { max-width: 28rem; margin: 0 auto; padding: 1.5rem; border: 1px solid #eee; border-radius: 8px; }
-.tick { font-size: 2.5rem; }
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; margin: 0; min-height: 100vh; position: relative; color: #1a1a1a; background: #fff; }
+.box { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 30rem; padding: 0 2rem; text-align: center; }
+.logo { width: 54px; height: auto; color: #111; margin-bottom: 1.5rem; }
+h1 { color: #111; font-size: 1.6rem; font-weight: 600; line-height: 1.2; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+p { color: #555; margin: 0; }
+@media (prefers-color-scheme: dark) {
+  body { color: #ededed; background: #0c0c0c; }
+  .logo { color: #fff; }
+  h1 { color: #fff; }
+  p { color: #9a9a9a; }
+}
 </style></head>
-<body><div class="box"><div class="tick">✓</div>
+<body><div class="box">` + retabLogoSVG + `
 <h1>You're logged in</h1>
 <p>You can close this tab and return to the terminal.</p>
 </div></body></html>`
 
 const failureHTMLTemplate = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Retab CLI — Login failed</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retab CLI — Login failed</title>
 <style>
-body { font: 16px/1.5 -apple-system, system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #222; }
-h1 { color: #c0392b; margin-bottom: 0.5rem; }
-.box { max-width: 28rem; margin: 0 auto; padding: 1.5rem; border: 1px solid #f3d4d4; border-radius: 8px; background: #fdf7f7; }
-.detail { color: #666; font-size: 0.9rem; margin-top: 0.75rem; }
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; margin: 0; min-height: 100vh; position: relative; color: #1a1a1a; background: #fff; }
+.box { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 30rem; padding: 0 2rem; text-align: center; }
+.logo { width: 54px; height: auto; color: #111; margin-bottom: 1.5rem; }
+h1 { color: #c0392b; font-size: 1.6rem; font-weight: 600; line-height: 1.2; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+p { color: #555; margin: 0; }
+.detail { color: #888; font-size: 0.9rem; margin-top: 0.75rem; }
+@media (prefers-color-scheme: dark) {
+  body { color: #ededed; background: #0c0c0c; }
+  .logo { color: #fff; }
+  p { color: #9a9a9a; }
+  .detail { color: #777; }
+}
 </style></head>
-<body><div class="box">
+<body><div class="box">` + retabLogoSVG + `
 <h1>Login failed</h1>
 <p>Return to your terminal — it will show the error.</p>
 <p class="detail">{{DETAIL}}</p>
