@@ -24,6 +24,7 @@ package cmd
 // single change makes the diff unreviewable.
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -106,9 +107,65 @@ func RenderList(w io.Writer, format OutputFormat, data any, columns []TableColum
 		return renderJSON(w, data)
 	case OutputTable:
 		return renderTable(w, data, columns)
+	case OutputCSV:
+		return renderCSV(w, data, columns)
 	default:
 		return fmt.Errorf("unknown output format: %q", format)
 	}
+}
+
+// renderCSV writes the `data` slice of v as RFC 4180 CSV using the same
+// column specs as renderTable. The header row mirrors the table headers
+// so `--output csv` and `--output table` expose the same fields. An empty
+// or missing data slice still emits the header row (so downstream parsers
+// see a stable schema) plus the same stderr "(no rows)" hint as the table
+// renderer.
+func renderCSV(w io.Writer, v any, columns []TableColumn) error {
+	rows, err := extractDataSlice(v)
+	if err != nil {
+		return err
+	}
+	return writeCSV(w, rows, columns)
+}
+
+// renderAutoCSV is the CSV counterpart to renderAutoTable: it takes an
+// already-extracted slice of rows rather than a {data:[...]} envelope, so
+// callers that pre-build their row slice (files, secrets) can emit CSV
+// with the same column specs they use for the table.
+func renderAutoCSV(w io.Writer, rows []any, columns []TableColumn) error {
+	return writeCSV(w, rows, columns)
+}
+
+// writeCSV is the shared CSV core used by renderCSV / renderAutoCSV /
+// printResultCSV. It writes the header then one record per row, reusing
+// each column's Extract func so a cell renders identically to its table
+// form (minus tabwriter padding). encoding/csv handles quoting/escaping.
+func writeCSV(w io.Writer, rows []any, columns []TableColumn) error {
+	cw := csv.NewWriter(w)
+	header := make([]string, len(columns))
+	for i, col := range columns {
+		header[i] = col.Header
+	}
+	if err := cw.Write(header); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		record := make([]string, len(columns))
+		for i, col := range columns {
+			record[i] = col.Extract(row)
+		}
+		if err := cw.Write(record); err != nil {
+			return err
+		}
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		return err
+	}
+	if len(rows) == 0 {
+		emitEmptyRowsHint()
+	}
+	return nil
 }
 
 // renderJSON encodes v to w with the same settings as printJSON. Kept as a
@@ -436,7 +493,35 @@ func printResult(cmd *cobra.Command, v any) error {
 	if raw == string(OutputTable) {
 		return printResultTable(v)
 	}
+	if raw == string(OutputCSV) {
+		return printResultCSV(v)
+	}
 	return printJSON(v)
+}
+
+// printResultCSV is the CSV counterpart to printResultTable: it renders v
+// as CSV using the generic auto-column selection, falling back to JSON
+// (with the same stderr note) for shapes that aren't tabulable. Keeping
+// the auto-column logic identical means `--output csv` and
+// `--output table` agree on which columns a given list exposes.
+func printResultCSV(v any) error {
+	rows, err := extractTabulableRows(v)
+	if err != nil {
+		return err
+	}
+	if rows == nil {
+		fmt.Fprintln(os.Stderr, "note: --output csv not applicable, falling back to json")
+		return printJSON(v)
+	}
+	columns := pickAutoColumns(rows)
+	if len(columns) == 0 && len(rows) == 0 {
+		return renderAutoCSV(os.Stdout, rows, defaultEmptyAutoColumns)
+	}
+	if len(columns) == 0 {
+		fmt.Fprintln(os.Stderr, "note: --output csv not applicable, falling back to json")
+		return printJSON(v)
+	}
+	return renderAutoCSV(os.Stdout, rows, columns)
 }
 
 // extractTabulableRows tries to coerce v into a slice of row values

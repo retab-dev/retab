@@ -206,7 +206,7 @@ func printEnvironmentList(cmd *cobra.Command, result *cliPaginatedList[cliEnviro
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
+	if format == OutputTable || format == OutputCSV {
 		cfg, _ := loadConfig()
 		return RenderList(os.Stdout, format, map[string]any{"data": result.Data}, environmentTableColumns(selectedEnvironmentID(cmd, cfg)))
 	}
@@ -281,7 +281,7 @@ func printSelectedEnvironment(cmd *cobra.Command, environment *cliEnvironment, s
 		IsDefault: isDefault,
 		Source:    source,
 	}
-	if format == OutputTable {
+	if format == OutputTable || format == OutputCSV {
 		return RenderList(
 			cmd.OutOrStdout(),
 			format,

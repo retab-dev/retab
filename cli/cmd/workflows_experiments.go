@@ -310,8 +310,11 @@ workflow id is required: experiments have no org-wide listing.`,
 // the SDK names the field on the wire.
 func printWorkflowExperimentsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowExperiment]) error {
 	if cmd != nil {
-		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
-			return RenderList(os.Stdout, OutputTable, result, workflowExperimentColumns)
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, workflowExperimentColumns)
+			}
 		}
 	}
 	return printJSON(result)

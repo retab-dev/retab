@@ -24,6 +24,12 @@ func runRootForTest(t *testing.T, args ...string) error {
 		rootCmd.SetArgs(nil)
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
+		// Parsed persistent flags (e.g. `--output csv`) stick on the shared
+		// rootCmd after Execute; reset the ones tests commonly pass so a
+		// value doesn't leak into a later test that reads the global flag.
+		for _, name := range []string{"output", "api-key", "base-url", "environment-id"} {
+			_ = rootCmd.PersistentFlags().Set(name, "")
+		}
 	})
 	return Execute()
 }

@@ -21,7 +21,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"functions": true, "generate": true, "get": true, "grep": true, "hydrate": true, "inspect": true,
 		"list": true, "login": true, "logout": true, "metrics": true,
-		"parse": true, "parses": true, "partitions": true, "plan": true, "plan-to": true, "profile": true, "publish": true, "pull-config": true,
+		"parse": true, "parses": true, "partitions": true, "plan": true, "plan-to": true, "profile": true, "projects": true, "publish": true, "pull-config": true,
 		"push-config": true, "query": true, "reject": true, "remove": true, "render": true, "replace": true, "restart": true, "results": true, "retry": true, "retrieve": true,
 		"reviews": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
@@ -117,7 +117,7 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
+		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list"},
 		"classifications":               {"create", "get", "list", "cancel", "delete", "wait"},
@@ -128,6 +128,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"files blueprints":              {"create", "get", "cancel", "wait"},
 		"parses":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
+		"projects":                      {"list", "get"},
 		"schemas":                       {"generate"},
 		"secrets":                       {"delete", "get", "list", "set", "value"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},

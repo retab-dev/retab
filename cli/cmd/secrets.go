@@ -167,6 +167,9 @@ func printSecretsListResult(cmd *cobra.Command, result *retab.SecretListResponse
 			rows = append(rows, secret)
 		}
 	}
+	if format == OutputCSV {
+		return renderAutoCSV(os.Stdout, rows, secretListColumns)
+	}
 	return renderAutoTable(os.Stdout, rows, secretListColumns)
 }
 

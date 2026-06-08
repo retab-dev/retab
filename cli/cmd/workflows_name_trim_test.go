@@ -86,7 +86,11 @@ func TestWorkflowsCreateTrimsNameInRequestBody(t *testing.T) {
 	cmd := &cobra.Command{Use: "create", RunE: workflowsCreateCmd.RunE}
 	cmd.Flags().String("name", "", "")
 	cmd.Flags().String("description", "", "")
+	cmd.Flags().String("project-id", "", "")
 	if err := cmd.Flags().Set("name", "  padded  "); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("project-id", "proj_test"); err != nil {
 		t.Fatal(err)
 	}
 

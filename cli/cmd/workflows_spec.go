@@ -152,7 +152,11 @@ Plan is read-only — safe to run on production specs. Pair it with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml})
+		params := &retab.WorkflowSpecPlanParams{YamlDefinition: yaml}
+		if projectID, _ := cmd.Flags().GetString("project-id"); projectID != "" {
+			params.ProjectID = ptr(projectID)
+		}
+		result, err := client.Workflows.Spec.Plan(ctx, params)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -218,14 +222,18 @@ confirm:
                 the guard remains for backward-compatible plan responses.
 
 Plans with no deletions apply immediately, no extra prompt.`,
-	Example: `  retab workflows spec apply ./workflow.yaml
-  retab workflows spec apply ./workflow.yaml --yes        # skip prompt in CI
-  cat workflow.yaml | retab workflows spec apply -`,
+	Example: `  retab workflows spec apply ./workflow.yaml --project-id proj_abc123
+  retab workflows spec apply ./workflow.yaml --project-id proj_abc123 --yes   # skip prompt in CI
+  cat workflow.yaml | retab workflows spec apply - --project-id proj_abc123`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[0])
 		if err != nil {
 			return err
+		}
+		projectID, _ := cmd.Flags().GetString("project-id")
+		if projectID == "" {
+			return fmt.Errorf("--project-id is required: a workflow created from a spec must belong to a project")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -237,8 +245,9 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		// `spec apply` returns the same `summary` / `resource_changes`
 		// shape, but only AFTER applying — by then the destroy already
 		// happened. The only safe place to inspect it is from a prior
-		// plan call.
-		plan, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml})
+		// plan call. The plan for a create-new spec is scoped to the same
+		// project the apply will target.
+		plan, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -249,7 +258,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -591,6 +600,8 @@ func init() {
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
 	workflowsSpecApplyCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
+	workflowsSpecApplyCmd.Flags().String("project-id", "", "project that will own the workflow created from this spec (required)")
+	workflowsSpecPlanCmd.Flags().String("project-id", "", "project to scope a create-new plan to (matches the --project-id used by apply)")
 	workflowsSpecApplyToCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
 
 	workflowsSpecCmd.AddCommand(

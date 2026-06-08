@@ -18,6 +18,18 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 )
 
+// withSpecApplyProjectID sets the now-required --project-id flag on the
+// shared spec-apply command for the duration of a test, then resets it so
+// the package-global flag value doesn't leak into other tests. `spec apply`
+// always creates a new workflow, which the server scopes to a project.
+func withSpecApplyProjectID(t *testing.T) {
+	t.Helper()
+	if err := workflowsSpecApplyCmd.Flags().Set("project-id", "proj_test"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecApplyCmd.Flags().Set("project-id", "") })
+}
+
 // readSpecYAML is the only piece of logic in workflows_spec.go that isn't
 // already exercised by TestCommandTreeShape (which walks every registered
 // command and checks RunE / sibling-name uniqueness for the 4 new leaves).
@@ -304,6 +316,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	withSpecApplyProjectID(t)
 	var err error
 	_, stderr := captureStd(t, func() {
 		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
@@ -585,6 +598,7 @@ spec:
 		t.Fatal(err)
 	}
 
+	withSpecApplyProjectID(t)
 	stdout, _ := captureStd(t, func() {
 		if err := workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path}); err != nil {
 			t.Fatalf("spec apply: %v", err)
@@ -895,6 +909,7 @@ func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = workflowsSpecApplyCmd.Flags().Set("yes", "false") })
+	withSpecApplyProjectID(t)
 
 	captureStd(t, func() {
 		if err := workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path}); err != nil {
@@ -957,6 +972,7 @@ func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T
 		t.Fatal(err)
 	}
 
+	withSpecApplyProjectID(t)
 	var err error
 	_, _ = captureStd(t, func() {
 		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
@@ -1036,6 +1052,7 @@ func TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	withSpecApplyProjectID(t)
 	var err error
 	_, _ = captureStd(t, func() {
 		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
