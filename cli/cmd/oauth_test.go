@@ -426,3 +426,54 @@ func TestHtmlEscape(t *testing.T) {
 		}
 	}
 }
+
+// TestRenderHTMLEmbedsRetabLogo guards the post-redirect pages the user sees
+// after OAuth. Both the success and failure pages must inline the Retab mark
+// (no network round-trip on the localhost callback) and carry their headline
+// copy. This is a regression guard against the logo silently dropping back to
+// the old plain-tick page.
+func TestRenderHTMLEmbedsRetabLogo(t *testing.T) {
+	// The inlined mark is the 4-rect Retab icon using currentColor so CSS
+	// can tint it. If the asset shape changes, update retabLogoSVG.
+	const logoMarker = `aria-label="Retab"`
+
+	t.Run("success", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		renderHTML(rec, true, "")
+		body := rec.Body.String()
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status: got %d, want 200", rec.Code)
+		}
+		if !strings.Contains(body, logoMarker) {
+			t.Errorf("success page is missing the inlined Retab logo:\n%s", body)
+		}
+		if !strings.Contains(body, "currentColor") {
+			t.Errorf("logo should use currentColor so CSS controls the tint:\n%s", body)
+		}
+		if !strings.Contains(body, "You're logged in") {
+			t.Errorf("success page missing headline:\n%s", body)
+		}
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		renderHTML(rec, false, "boom <script>")
+		body := rec.Body.String()
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status: got %d, want 400", rec.Code)
+		}
+		if !strings.Contains(body, logoMarker) {
+			t.Errorf("failure page is missing the inlined Retab logo:\n%s", body)
+		}
+		if !strings.Contains(body, "Login failed") {
+			t.Errorf("failure page missing headline:\n%s", body)
+		}
+		// The detail comes from query params and must stay escaped.
+		if strings.Contains(body, "<script>") {
+			t.Errorf("failure detail was not HTML-escaped:\n%s", body)
+		}
+		if !strings.Contains(body, "&lt;script&gt;") {
+			t.Errorf("failure detail should be escaped to &lt;script&gt;:\n%s", body)
+		}
+	})
+}
