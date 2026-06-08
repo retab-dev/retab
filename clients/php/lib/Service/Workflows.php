@@ -119,14 +119,14 @@ class Workflows
      * The workflow starts unpublished with a default "Document" input block.
      * @param string|null $name The name of the workflow
      * @param string|null $description Description of the workflow
-     * @param string|null $projectId Project that should own this workflow. Omit to use the organization's shared workflows project.
+     * @param string $projectId Project that should own this workflow.
      * @return \Retab\Resource\Workflow
      * @throws \Retab\Exception\RetabException
      */
     public function create(
+        string $projectId,
         ?string $name = null,
         ?string $description = null,
-        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Workflow {
         $body = array_filter([
@@ -383,17 +383,20 @@ class Workflows
      * treated as source context.
      * @param string $workflowId
      * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
      * @return \Retab\Resource\DeclarativePlanResponse
      * @throws \Retab\Exception\RetabException
      */
     public function createPlan(
         string $workflowId,
         string $yamlDefinition,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\DeclarativePlanResponse {
-        $body = [
+        $body = array_filter([
             'yaml_definition' => $yamlDefinition,
-        ];
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec/plan',

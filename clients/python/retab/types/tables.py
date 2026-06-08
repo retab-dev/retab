@@ -103,7 +103,7 @@ class WorkflowTable(BaseModel):
     id: str
     name: str
     filename: str
-    project_id: str | None = Field(default=None, description="Project that owns this table. Null means the organization's shared workflows project.")
+    project_id: str | None = Field(default=None, description="Project that owns this table. Null only on legacy rows that predate the project backfill.")
     source_file_id: str | None = Field(default="")
     snapshot_file_id: str | None = Field(default="")
     row_count: int

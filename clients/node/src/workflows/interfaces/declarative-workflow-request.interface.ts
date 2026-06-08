@@ -5,14 +5,18 @@ import { z } from 'zod';
 export interface DeclarativeWorkflowRequest {
   /** Workflow YAML definition */
   yamlDefinition: string;
+  /** Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow. */
+  projectId?: string | null;
 }
 
 export interface DeclarativeWorkflowRequestResponse {
   yaml_definition: string;
+  project_id?: string | null;
 }
 
 export const ZDeclarativeWorkflowRequest = z.object({
   yamlDefinition: z.string(),
+  projectId: z.string().nullable().optional(),
 }) as z.ZodType<DeclarativeWorkflowRequest>;
 
 export function deserializeDeclarativeWorkflowRequest(
@@ -20,6 +24,7 @@ export function deserializeDeclarativeWorkflowRequest(
 ): DeclarativeWorkflowRequest {
   return {
     yamlDefinition: wire['yaml_definition'],
+    projectId: wire['project_id'],
   };
 }
 
@@ -28,5 +33,6 @@ export function serializeDeclarativeWorkflowRequest(
 ): DeclarativeWorkflowRequestResponse {
   return {
     yaml_definition: domain['yamlDefinition'],
+    project_id: domain['projectId'],
   };
 }

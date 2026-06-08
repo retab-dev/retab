@@ -11,7 +11,7 @@ module Retab
     end
 
     # Table.List
-    # @param project_id [String, nil] Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+    # @param project_id [String, nil] Only return tables belonging to this project.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableListResponse]
     def list(

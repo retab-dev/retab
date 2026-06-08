@@ -21,7 +21,7 @@ class Tables
 
     /**
      * Table.List
-     * @param string|null $projectId Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+     * @param string|null $projectId Only return tables belonging to this project.
      * @return \Retab\Resource\WorkflowTableListResponse
      * @throws \Retab\Exception\RetabException
      */

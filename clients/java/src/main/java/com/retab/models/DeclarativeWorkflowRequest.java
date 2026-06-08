@@ -9,15 +9,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class DeclarativeWorkflowRequest {
   private final String yamlDefinition;
+  private final String projectId;
 
   @JsonCreator
   public DeclarativeWorkflowRequest(
-      @JsonProperty(value = "yaml_definition", required = true) String yamlDefinition) {
+      @JsonProperty(value = "yaml_definition", required = true) String yamlDefinition,
+      @JsonProperty(value = "project_id", required = false) String projectId) {
     this.yamlDefinition = yamlDefinition;
+    this.projectId = projectId;
   }
 
   @JsonProperty("yaml_definition")
   public String getYamlDefinition() {
     return yamlDefinition;
+  }
+
+  @JsonProperty("project_id")
+  public String getProjectId() {
+    return projectId;
   }
 }

@@ -63,6 +63,11 @@ func classifyCommands() {
 	}
 	for _, c := range highRiskCommands() {
 		markSafety(c, classHighRisk)
+		// --confirm only does anything on high-risk commands, so register
+		// it locally here rather than as a global persistent flag. This is
+		// the single place it gets wired onto the command tree, alongside
+		// the safety class itself.
+		addConfirmFlag(c)
 	}
 	// Everything else keeps the normalWrite default from safetyClassOf.
 }

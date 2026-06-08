@@ -76,7 +76,7 @@ export class Workflows {
   }
 
   /** Create Workflow */
-  async create(name?: string, description?: string, projectId?: string | null): Promise<Workflow> {
+  async create(projectId: string, name?: string, description?: string): Promise<Workflow> {
     const body = {
       name: name,
       description: description,
@@ -226,9 +226,14 @@ export class Workflows {
   }
 
   /** Plan Existing Workflow Spec */
-  async create_plan(workflowId: string, yamlDefinition: string): Promise<DeclarativePlanResponse> {
+  async create_plan(
+    workflowId: string,
+    yamlDefinition: string,
+    projectId?: string | null
+  ): Promise<DeclarativePlanResponse> {
     const body = {
       yaml_definition: yamlDefinition,
+      project_id: projectId,
     };
     const __wire = await this.client.request<DeclarativePlanResponseResponse>({
       method: 'POST',

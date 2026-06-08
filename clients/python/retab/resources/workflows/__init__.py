@@ -55,7 +55,7 @@ class WorkflowsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows", params=params or None, data=data)
 
-    def prepare_create(self, name: str = "Untitled Workflow", description: str = "", project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(self, project_id: str, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> PreparedRequest:
         """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         params: dict[str, Any] = {}
         if extra_params:
@@ -161,13 +161,13 @@ class WorkflowsMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/publish", params=params or None, data=data)
 
-    def prepare_create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_create_plan(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition))
+        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition), project_id=cast(Any, project_id))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/spec/plan", params=params or None, data=data)
 
@@ -201,7 +201,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return self.request_page(prepared_request, model=Workflow)
 
-    def create(self, name: str = "Untitled Workflow", description: str = "", project_id: str | None = None, **extra_params: Any) -> Workflow:
+    def create(self, project_id: str, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
         """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         prepared_request = self.prepare_create(name=name, description=description, project_id=project_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -264,9 +264,9 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
-    def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
+    def create_plan(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativePlanResponse:
         """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
-        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
+        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, project_id=project_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 
@@ -300,7 +300,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return await self.request_page(prepared_request, model=Workflow)
 
-    async def create(self, name: str = "Untitled Workflow", description: str = "", project_id: str | None = None, **extra_params: Any) -> Workflow:
+    async def create(self, project_id: str, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> Workflow:
         """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
         prepared_request = self.prepare_create(name=name, description=description, project_id=project_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -363,9 +363,9 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
-    async def create_plan(self, workflow_id: str, yaml_definition: str, **extra_params: Any) -> DeclarativePlanResponse:
+    async def create_plan(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativePlanResponse:
         """Plan Existing Workflow Spec Preview applying a declarative YAML spec to an existing workflow draft. The URL workflow id is the plan target. Any workflow id in the YAML is treated as source context."""
-        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, **extra_params)
+        prepared_request = self.prepare_create_plan(workflow_id, yaml_definition=yaml_definition, project_id=project_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 

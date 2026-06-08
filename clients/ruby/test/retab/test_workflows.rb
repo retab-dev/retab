@@ -21,7 +21,7 @@ class WorkflowsTest < Minitest::Test
   def test_create_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)})
       .to_return(body: "{}", status: 200)
-    result = @client.workflows.create
+    result = @client.workflows.create(project_id: "stub")
     refute_nil(result)
   end
 
@@ -124,7 +124,7 @@ class WorkflowsTest < Minitest::Test
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}},
-    {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}},
+    {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}, args: {project_id: "stub"}},
     {
       name: :list_versions,
       verb: :get,

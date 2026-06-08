@@ -17,6 +17,8 @@ type WorkflowSpecService struct {
 type WorkflowSpecApplyParams struct {
 	// YamlDefinition is workflow YAML definition
 	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Apply workflow Spec
@@ -37,6 +39,8 @@ func (s *WorkflowSpecService) Apply(ctx context.Context, params *WorkflowSpecApp
 type WorkflowSpecPlanParams struct {
 	// YamlDefinition is workflow YAML definition
 	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Plan workflow Spec
@@ -57,6 +61,8 @@ func (s *WorkflowSpecService) Plan(ctx context.Context, params *WorkflowSpecPlan
 type WorkflowSpecValidateParams struct {
 	// YamlDefinition is workflow YAML definition
 	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Validate workflow Spec
@@ -91,6 +97,8 @@ func (s *WorkflowSpecService) Get(ctx context.Context, workflowID string, opts .
 type WorkflowSpecApplyToWorkflowParams struct {
 	// YamlDefinition is workflow YAML definition
 	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // ApplyToWorkflow apply Existing Workflow Spec

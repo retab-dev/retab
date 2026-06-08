@@ -101,13 +101,13 @@ module Retab
     # Create Workflow
     # @param name [String, nil] The name of the workflow
     # @param description [String, nil] Description of the workflow
-    # @param project_id [String, nil] Project that should own this workflow. Omit to use the organization's shared workflows project.
+    # @param project_id [String] Project that should own this workflow.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Workflow]
     def create(
+      project_id:,
       name: nil,
       description: nil,
-      project_id: nil,
       request_options: {}
     )
       body = {
@@ -393,16 +393,19 @@ module Retab
     # Plan Existing Workflow Spec
     # @param workflow_id [String]
     # @param yaml_definition [String] Workflow YAML definition
+    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::DeclarativePlanResponse]
     def create_plan(
       workflow_id:,
       yaml_definition:,
+      project_id: nil,
       request_options: {}
     )
       body = {
-        "yaml_definition" => yaml_definition
-      }
+        "yaml_definition" => yaml_definition,
+        "project_id" => project_id
+      }.compact
       response = @client.request(
         method: :post,
         path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/plan",

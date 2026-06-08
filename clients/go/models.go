@@ -2070,7 +2070,7 @@ type Workflow struct {
 	Name string `json:"name,omitempty"`
 	// Description is description of the workflow
 	Description *string `json:"description,omitempty"`
-	// ProjectID is project that owns this workflow. Null means the organization's shared workflows project.
+	// ProjectID is project that owns this workflow. Null only on legacy rows that predate the project backfill.
 	ProjectID *string `json:"project_id,omitempty"`
 	// Published is published workflow metadata when a published version exists
 	Published *WorkflowPublished `json:"published,omitempty"`
@@ -2462,7 +2462,7 @@ type WorkflowTable struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Filename string `json:"filename"`
-	// ProjectID is project that owns this table. Null means the organization's shared workflows project.
+	// ProjectID is project that owns this table. Null only on legacy rows that predate the project backfill.
 	ProjectID        *string                  `json:"project_id,omitempty"`
 	SourceFileID     *string                  `json:"source_file_id,omitempty"`
 	SnapshotFileID   *string                  `json:"snapshot_file_id,omitempty"`

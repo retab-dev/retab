@@ -26,16 +26,19 @@ class WorkflowSpec
      * workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
      * existing workflow draft.
      * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
      * @return \Retab\Resource\DeclarativeApplyResponse
      * @throws \Retab\Exception\RetabException
      */
     public function apply(
         string $yamlDefinition,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\DeclarativeApplyResponse {
-        $body = [
+        $body = array_filter([
             'yaml_definition' => $yamlDefinition,
-        ];
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/spec/apply',
@@ -54,16 +57,19 @@ class WorkflowSpec
      * changes without applying them. A spec that already matches the draft
      * plans as a no-op.
      * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
      * @return \Retab\Resource\DeclarativePlanResponse
      * @throws \Retab\Exception\RetabException
      */
     public function plan(
         string $yamlDefinition,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\DeclarativePlanResponse {
-        $body = [
+        $body = array_filter([
             'yaml_definition' => $yamlDefinition,
-        ];
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/spec/plan',
@@ -82,16 +88,19 @@ class WorkflowSpec
      * Warnings do not make a spec invalid: a warning-only spec responds with
      * 200, `is_valid=True`, and the warnings in `diagnostics`.
      * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
      * @return \Retab\Resource\DeclarativeValidationResponse
      * @throws \Retab\Exception\RetabException
      */
     public function validate(
         string $yamlDefinition,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\DeclarativeValidationResponse {
-        $body = [
+        $body = array_filter([
             'yaml_definition' => $yamlDefinition,
-        ];
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/spec/validate',
@@ -130,17 +139,20 @@ class WorkflowSpec
      * treated as source context.
      * @param string $workflowId
      * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
      * @return \Retab\Resource\DeclarativeApplyResponse
      * @throws \Retab\Exception\RetabException
      */
     public function applyToWorkflow(
         string $workflowId,
         string $yamlDefinition,
+        ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\DeclarativeApplyResponse {
-        $body = [
+        $body = array_filter([
             'yaml_definition' => $yamlDefinition,
-        ];
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec/apply',

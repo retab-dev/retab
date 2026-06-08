@@ -15,7 +15,7 @@ type TableService struct {
 
 // TablesListParams contains the parameters for List.
 type TablesListParams struct {
-	// ProjectID is only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+	// ProjectID is only return tables belonging to this project.
 	ProjectID *string `url:"project_id,omitempty" json:"-"`
 }
 

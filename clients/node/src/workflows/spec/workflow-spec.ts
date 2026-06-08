@@ -24,9 +24,13 @@ export class WorkflowSpec {
   constructor(private readonly client: Retab) {}
 
   /** Apply Workflow Spec */
-  async apply(yamlDefinition: string): Promise<DeclarativeApplyResponse> {
+  async apply(
+    yamlDefinition: string,
+    projectId?: string | null
+  ): Promise<DeclarativeApplyResponse> {
     const body = {
       yaml_definition: yamlDefinition,
+      project_id: projectId,
     };
     const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
       method: 'POST',
@@ -38,9 +42,10 @@ export class WorkflowSpec {
   }
 
   /** Plan Workflow Spec */
-  async plan(yamlDefinition: string): Promise<DeclarativePlanResponse> {
+  async plan(yamlDefinition: string, projectId?: string | null): Promise<DeclarativePlanResponse> {
     const body = {
       yaml_definition: yamlDefinition,
+      project_id: projectId,
     };
     const __wire = await this.client.request<DeclarativePlanResponseResponse>({
       method: 'POST',
@@ -52,9 +57,13 @@ export class WorkflowSpec {
   }
 
   /** Validate Workflow Spec */
-  async validate(yamlDefinition: string): Promise<DeclarativeValidationResponse> {
+  async validate(
+    yamlDefinition: string,
+    projectId?: string | null
+  ): Promise<DeclarativeValidationResponse> {
     const body = {
       yaml_definition: yamlDefinition,
+      project_id: projectId,
     };
     const __wire = await this.client.request<DeclarativeValidationResponseResponse>({
       method: 'POST',
@@ -79,10 +88,12 @@ export class WorkflowSpec {
   /** Apply Existing Workflow Spec */
   async apply_to_workflow(
     workflowId: string,
-    yamlDefinition: string
+    yamlDefinition: string,
+    projectId?: string | null
   ): Promise<DeclarativeApplyResponse> {
     const body = {
       yaml_definition: yamlDefinition,
+      project_id: projectId,
     };
     const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
       method: 'POST',

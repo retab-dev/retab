@@ -15,7 +15,7 @@ export interface WorkflowTable {
   id: string;
   name: string;
   filename: string;
-  /** Project that owns this table. Null means the organization's shared workflows project. */
+  /** Project that owns this table. Null only on legacy rows that predate the project backfill. */
   projectId?: string | null;
   /** @default "" */
   sourceFileId?: string;

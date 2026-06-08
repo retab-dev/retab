@@ -10,7 +10,7 @@ pub struct WorkflowTable {
     pub id: String,
     pub name: String,
     pub filename: String,
-    /// Project that owns this table. Null means the organization's shared workflows project.
+    /// Project that owns this table. Null only on legacy rows that predate the project backfill.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub project_id: Option<String>,
     /// Defaults to ``.

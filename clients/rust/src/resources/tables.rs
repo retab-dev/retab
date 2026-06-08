@@ -15,7 +15,7 @@ pub struct TablesApi<'a> {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ListParams {
-    /// Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.
+    /// Only return tables belonging to this project.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
 }

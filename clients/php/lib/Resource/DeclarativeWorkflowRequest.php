@@ -14,6 +14,8 @@ readonly class DeclarativeWorkflowRequest implements \JsonSerializable
     public function __construct(
         /** Workflow YAML definition */
         public string $yamlDefinition,
+        /** Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow. */
+        public ?string $projectId = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -28,6 +30,7 @@ readonly class DeclarativeWorkflowRequest implements \JsonSerializable
         }
         return new self(
             yamlDefinition: $data['yaml_definition'],
+            projectId: $data['project_id'] ?? null,
         );
     }
 
@@ -36,6 +39,7 @@ readonly class DeclarativeWorkflowRequest implements \JsonSerializable
     {
         return [
             'yaml_definition' => $this->yamlDefinition,
+            'project_id' => $this->projectId,
         ];
     }
 }

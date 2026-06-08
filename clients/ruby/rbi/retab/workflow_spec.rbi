@@ -12,26 +12,29 @@ module Retab
     sig do
       params(
         yaml_definition: String,
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::DeclarativeApplyResponse)
     end
-    def apply(yaml_definition:, request_options:); end
+    def apply(yaml_definition:, project_id:, request_options:); end
 
     sig do
       params(
         yaml_definition: String,
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::DeclarativePlanResponse)
     end
-    def plan(yaml_definition:, request_options:); end
+    def plan(yaml_definition:, project_id:, request_options:); end
 
     sig do
       params(
         yaml_definition: String,
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::DeclarativeValidationResponse)
     end
-    def validate(yaml_definition:, request_options:); end
+    def validate(yaml_definition:, project_id:, request_options:); end
 
     sig do
       params(
@@ -45,10 +48,11 @@ module Retab
       params(
         workflow_id: String,
         yaml_definition: String,
+        project_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::DeclarativeApplyResponse)
     end
-    def apply_to_workflow(workflow_id:, yaml_definition:, request_options:); end
+    def apply_to_workflow(workflow_id:, yaml_definition:, project_id:, request_options:); end
 
   end
 end

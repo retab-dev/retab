@@ -113,6 +113,9 @@ override and takes precedence over anything written to disk.`,
 		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, cfg.EnvironmentID)
 		if environment != nil {
 			cfg.EnvironmentID = environment.ID
+			// Persist the type so the offline production-confirmation gate
+			// can tell whether this OAuth session targets production.
+			cfg.EnvironmentType = string(environment.Type)
 		}
 		if err := saveConfig(cfg); err != nil {
 			return err

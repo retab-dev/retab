@@ -285,7 +285,6 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		{"--environment-id", "ID", "Retab environment id for OAuth dashboard context", "RETAB_ENVIRONMENT_ID"},
 		{"--live", "", "use the stored production environment profile", ""},
 		{"--env", "SLUG", "use the stored environment profile with this slug", ""},
-		{"--confirm", "", "pre-approve a production-mutating command", ""},
 		{"--debug", "", "verbose debug output", ""},
 		{"--output", "FORMAT", "output format: json | table | csv (default: auto)", ""},
 		{"--output-table", "", "shortcut for --output table", ""},

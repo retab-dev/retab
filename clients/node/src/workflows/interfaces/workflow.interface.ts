@@ -29,7 +29,7 @@ export interface Workflow {
    * @default ""
    */
   description?: string;
-  /** Project that owns this workflow. Null means the organization's shared workflows project. */
+  /** Project that owns this workflow. Null only on legacy rows that predate the project backfill. */
   projectId?: string | null;
   /** Published workflow metadata when a published version exists */
   published?: WorkflowPublished | null;

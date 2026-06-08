@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 pub struct DeclarativeWorkflowRequest {
     /// Workflow YAML definition
     pub yaml_definition: String,
+    /// Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub project_id: Option<String>,
 }
 impl DeclarativeWorkflowRequest {
     /// Construct a new `DeclarativeWorkflowRequest` with the required fields set.
@@ -17,6 +20,7 @@ impl DeclarativeWorkflowRequest {
     pub fn new(yaml_definition: impl Into<String>) -> Self {
         Self {
             yaml_definition: yaml_definition.into(),
+            project_id: Default::default(),
         }
     }
 }
