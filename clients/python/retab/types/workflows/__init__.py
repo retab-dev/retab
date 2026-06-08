@@ -95,7 +95,7 @@ class CreateWorkflowRequest(BaseModel):
 
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
-    project_id: str | None = Field(default=None, description="Project that should own this workflow. Omit to use the organization's shared workflows project.")
+    project_id: str = Field(..., description="Project that should own this workflow.")
 
 
 class DeclarativePlanChange(BaseModel):
@@ -172,6 +172,9 @@ class DeclarativeWorkflowRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     yaml_definition: str = Field(..., description="Workflow YAML definition")
+    project_id: str | None = Field(
+        default=None, description="Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow."
+    )
 
 
 class PublishWorkflowRequest(BaseModel):
@@ -199,7 +202,7 @@ class Workflow(BaseModel):
     id: str = Field(..., description="Unique ID for this workflow")
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
-    project_id: str | None = Field(default=None, description="Project that owns this workflow. Null means the organization's shared workflows project.")
+    project_id: str | None = Field(default=None, description="Project that owns this workflow. Null only on legacy rows that predate the project backfill.")
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
     created_at: datetime.datetime
     updated_at: datetime.datetime

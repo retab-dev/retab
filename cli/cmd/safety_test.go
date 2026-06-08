@@ -22,11 +22,15 @@ func newSafetyTestCmd(t *testing.T, cls safetyClass, apiKey string) *cobra.Comma
 	root.PersistentFlags().Bool("debug", false, "")
 	root.PersistentFlags().Bool("live", false, "")
 	root.PersistentFlags().String("env", "", "")
-	root.PersistentFlags().Bool("confirm", false, "")
 
 	child := &cobra.Command{Use: "publish", RunE: func(*cobra.Command, []string) error { return nil }}
 	root.AddCommand(child)
 	markSafety(child, cls)
+	// Mirror production: --confirm is a local flag on high-risk commands
+	// (see addConfirmFlag), not a global persistent flag.
+	if cls == classHighRisk {
+		addConfirmFlag(child)
+	}
 
 	if apiKey != "" {
 		if err := root.PersistentFlags().Set("api-key", apiKey); err != nil {
@@ -58,7 +62,7 @@ func setConfirm(t *testing.T, cmd *cobra.Command, v bool) {
 	if v {
 		val = "true"
 	}
-	if err := cmd.Root().PersistentFlags().Set("confirm", val); err != nil {
+	if err := cmd.Flags().Set(confirmFlagName, val); err != nil {
 		t.Fatalf("set --confirm: %v", err)
 	}
 }
@@ -87,6 +91,73 @@ func TestProductionGate_HighRisk_NonInteractive_WithConfirm_Allowed(t *testing.T
 	}
 	if dec.prompted {
 		t.Fatal("--confirm must skip the prompt entirely")
+	}
+}
+
+// --- OAuth sessions are gated by the selected environment's type --------
+
+// An OAuth session (no environment-scoped API key) whose selected
+// environment is production must gate high-risk commands. This is the
+// reported regression: the OAuth branch left ExpectedEnvironment empty, so
+// the gate short-circuited and production mutations ran unconfirmed.
+func TestProductionGate_HighRisk_OAuthProductionEnv_NonInteractive_NoConfirm_Errors(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth:           &oauthTokens{AccessToken: "oauth-access-token"},
+		EnvironmentID:   "env_prod123",
+		EnvironmentType: "production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newSafetyTestCmd(t, classHighRisk, "")
+	err := productionGate(cmd, &fakeDecider{interactive: false})
+	if err == nil {
+		t.Fatal("OAuth session in a production environment must gate high-risk commands in non-interactive mode without --confirm")
+	}
+	if !strings.Contains(err.Error(), "production write requires --confirm in non-interactive mode") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+}
+
+// An OAuth config written before environment-type persistence (no
+// EnvironmentType) fails safe to production so the gate still engages,
+// mirroring how legacy keys are treated as production-scoped.
+func TestProductionGate_HighRisk_OAuthUnknownEnv_FailsSafeToGated(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth:         &oauthTokens{AccessToken: "oauth-access-token"},
+		EnvironmentID: "env_legacy123",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newSafetyTestCmd(t, classHighRisk, "")
+	err := productionGate(cmd, &fakeDecider{interactive: false})
+	if err == nil {
+		t.Fatal("OAuth session with an unknown environment type must fail safe to gated")
+	}
+	if !strings.Contains(err.Error(), "production write requires --confirm in non-interactive mode") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+}
+
+// An OAuth session in an explicitly non-production environment is never
+// gated — it must not spuriously prompt staging/test users.
+func TestProductionGate_HighRisk_OAuthNonProductionEnv_NeverGated(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth:           &oauthTokens{AccessToken: "oauth-access-token"},
+		EnvironmentID:   "env_staging123",
+		EnvironmentType: "non_production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newSafetyTestCmd(t, classHighRisk, "")
+	dec := &fakeDecider{interactive: false}
+	if err := productionGate(cmd, dec); err != nil {
+		t.Fatalf("OAuth session in a non-production environment must never be gated, got: %v", err)
+	}
+	if dec.prompted {
+		t.Fatal("non-production OAuth session must never prompt")
 	}
 }
 
@@ -187,7 +258,6 @@ func TestProductionGate_Unclassified_Production_NeverGated(t *testing.T) {
 	root.PersistentFlags().Bool("debug", false, "")
 	root.PersistentFlags().Bool("live", false, "")
 	root.PersistentFlags().String("env", "", "")
-	root.PersistentFlags().Bool("confirm", false, "")
 	child := &cobra.Command{Use: "mystery", RunE: func(*cobra.Command, []string) error { return nil }}
 	root.AddCommand(child)
 	if err := root.PersistentFlags().Set("api-key", "rt_live_secret"); err != nil {

@@ -943,11 +943,12 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "name" => "stub",
       "description" => "stub",
-      "project_id" => nil
+      "project_id" => "stub"
     }
     model = Retab::CreateWorkflowRequest.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
+    assert_equal(fixture["project_id"], json[:project_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1170,7 +1171,8 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_declarative_workflow_request_round_trip
     fixture = {
-      "yaml_definition" => "stub"
+      "yaml_definition" => "stub",
+      "project_id" => nil
     }
     model = Retab::DeclarativeWorkflowRequest.new(fixture.to_json)
     json = model.to_h

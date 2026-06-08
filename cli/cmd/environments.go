@@ -115,6 +115,9 @@ var envSwitchCmd = &cobra.Command{
 		}
 		cfg, _ := loadConfig()
 		cfg.EnvironmentID = environment.ID
+		// Persist the type so the offline production-confirmation gate can
+		// tell whether this OAuth session targets production.
+		cfg.EnvironmentType = string(environment.Type)
 		if err := saveConfig(cfg); err != nil {
 			return err
 		}

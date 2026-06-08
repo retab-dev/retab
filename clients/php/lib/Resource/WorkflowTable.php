@@ -15,7 +15,7 @@ readonly class WorkflowTable implements \JsonSerializable
         public string $name,
         public string $filename,
         public int $rowCount,
-        /** Project that owns this table. Null means the organization's shared workflows project. */
+        /** Project that owns this table. Null only on legacy rows that predate the project backfill. */
         public ?string $projectId = null,
         public ?string $sourceFileId = null,
         public ?string $snapshotFileId = null,

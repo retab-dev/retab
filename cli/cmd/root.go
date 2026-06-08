@@ -130,7 +130,11 @@ func init() {
 	rootCmd.PersistentFlags().String("environment-id", "", "Retab environment id for OAuth dashboard context (env: RETAB_ENVIRONMENT_ID)")
 	rootCmd.PersistentFlags().Bool("live", false, "use the stored production environment profile (alias for --env production)")
 	rootCmd.PersistentFlags().String("env", "", "use the stored environment profile with this slug")
-	rootCmd.PersistentFlags().Bool("confirm", false, "pre-approve a production-mutating command (skips the confirmation prompt)")
+	// `--confirm` is intentionally NOT a persistent flag: it only has an
+	// effect on high-risk commands (see highRiskCommands in
+	// zz_safety_classification.go), so it is registered locally on just
+	// those commands via addConfirmFlag. Registering it globally would
+	// advertise it on every command's help where it does nothing.
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
 	rootCmd.PersistentFlags().Var(rootOutputFlag, "output", "output format: json | table | csv (default: auto-detect)")
 	rootCmd.PersistentFlags().Var(&outputTableFlagValue{output: rootOutputFlag}, "output-table", "shortcut for --output table")

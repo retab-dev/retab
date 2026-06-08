@@ -30,16 +30,21 @@ public final class WorkflowSpecApi {
 
   public DeclarativeApplyResponse apply(DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return apply(request == null ? null : request.getYamlDefinition());
+    return apply(
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId());
   }
 
-  public DeclarativeApplyResponse apply(String yamlDefinition)
+  public DeclarativeApplyResponse apply(String yamlDefinition, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/spec/apply";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -61,16 +66,21 @@ public final class WorkflowSpecApi {
 
   public DeclarativePlanResponse plan(DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return plan(request == null ? null : request.getYamlDefinition());
+    return plan(
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId());
   }
 
-  public DeclarativePlanResponse plan(String yamlDefinition)
+  public DeclarativePlanResponse plan(String yamlDefinition, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/spec/plan";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -92,16 +102,21 @@ public final class WorkflowSpecApi {
 
   public DeclarativeValidationResponse validate(DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return validate(request == null ? null : request.getYamlDefinition());
+    return validate(
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId());
   }
 
-  public DeclarativeValidationResponse validate(String yamlDefinition)
+  public DeclarativeValidationResponse validate(String yamlDefinition, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/spec/validate";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -145,16 +160,23 @@ public final class WorkflowSpecApi {
   public DeclarativeApplyResponse applyToWorkflow(
       String workflowId, DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return applyToWorkflow(workflowId, request == null ? null : request.getYamlDefinition());
+    return applyToWorkflow(
+        workflowId,
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId());
   }
 
-  public DeclarativeApplyResponse applyToWorkflow(String workflowId, String yamlDefinition)
+  public DeclarativeApplyResponse applyToWorkflow(
+      String workflowId, String yamlDefinition, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/apply";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =

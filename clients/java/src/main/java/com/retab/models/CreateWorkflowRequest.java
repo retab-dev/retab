@@ -16,7 +16,7 @@ public final class CreateWorkflowRequest {
   public CreateWorkflowRequest(
       @JsonProperty(value = "name", required = false) String name,
       @JsonProperty(value = "description", required = false) String description,
-      @JsonProperty(value = "project_id", required = false) String projectId) {
+      @JsonProperty(value = "project_id", required = true) String projectId) {
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
     this.projectId = projectId;

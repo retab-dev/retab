@@ -39,6 +39,15 @@ type retabConfig struct {
 	// and local development workflows.
 	EnvironmentID string `json:"environment_id,omitempty"`
 
+	// EnvironmentType records the type ("production" | "non_production") of
+	// the selected OAuth environment, captured at selection time (env
+	// switch / claim / auth login). It lets the local production-confirmation
+	// gate decide offline whether an OAuth session targets production —
+	// OAuth sessions carry no environment-scoped API key prefix to infer it
+	// from. Empty on legacy/pre-rollout configs; the gate fails safe to
+	// production in that case.
+	EnvironmentType string `json:"environment_type,omitempty"`
+
 	// OAuth holds tokens issued by WorkOS via `retab auth login`. Optional.
 	OAuth *oauthTokens `json:"oauth,omitempty"`
 

@@ -20,7 +20,7 @@ readonly class Workflow implements \JsonSerializable
         public ?string $name = null,
         /** Description of the workflow */
         public ?string $description = null,
-        /** Project that owns this workflow. Null means the organization's shared workflows project. */
+        /** Project that owns this workflow. Null only on legacy rows that predate the project backfill. */
         public ?string $projectId = null,
         /** Published workflow metadata when a published version exists */
         public ?WorkflowPublished $published = null,

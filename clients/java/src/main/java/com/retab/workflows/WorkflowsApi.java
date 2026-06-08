@@ -134,9 +134,7 @@ public final class WorkflowsApi {
     if (description != null) {
       body.put("description", description);
     }
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
+    body.put("project_id", projectId);
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -389,16 +387,23 @@ public final class WorkflowsApi {
 
   public DeclarativePlanResponse createPlan(String workflowId, DeclarativeWorkflowRequest request)
       throws IOException, InterruptedException {
-    return createPlan(workflowId, request == null ? null : request.getYamlDefinition());
+    return createPlan(
+        workflowId,
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId());
   }
 
-  public DeclarativePlanResponse createPlan(String workflowId, String yamlDefinition)
+  public DeclarativePlanResponse createPlan(
+      String workflowId, String yamlDefinition, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/plan";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =

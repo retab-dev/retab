@@ -38,6 +38,23 @@ const (
 // object itself and survives the command-tree walk in init().
 const safetyAnnotationKey = "retab.safetyClass"
 
+// confirmFlagName is the name of the per-command production pre-approval
+// flag. It is registered locally on high-risk commands (addConfirmFlag),
+// never globally, so it only appears in help where it actually does
+// something.
+const confirmFlagName = "confirm"
+
+// addConfirmFlag registers the local --confirm flag on a high-risk command
+// so it shows up in that command's own help and can pre-approve a
+// production mutation in CI. It is idempotent: a command that already
+// declares the flag is left untouched.
+func addConfirmFlag(cmd *cobra.Command) {
+	if cmd.Flags().Lookup(confirmFlagName) != nil {
+		return
+	}
+	cmd.Flags().Bool(confirmFlagName, false, "pre-approve this production-mutating command (skips the confirmation prompt)")
+}
+
 // markSafety records cls on cmd's Annotations map. Commands call this from
 // their package init() (see the per-resource classification at the bottom
 // of each resource file's init, wired through classifyCommands below).
@@ -128,7 +145,7 @@ func productionGate(cmd *cobra.Command, decider confirmDecider) error {
 		return nil
 	}
 
-	confirmed, _ := cmd.Root().PersistentFlags().GetBool("confirm")
+	confirmed, _ := cmd.Flags().GetBool(confirmFlagName)
 	if confirmed {
 		return nil
 	}

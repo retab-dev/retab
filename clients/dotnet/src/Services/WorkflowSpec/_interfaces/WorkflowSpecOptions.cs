@@ -11,6 +11,9 @@ namespace Retab
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
 
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowSpecService.PlanAsync"/>: Plan Workflow Spec</summary>
@@ -18,6 +21,9 @@ namespace Retab
     {
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
+
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
 
     }
 
@@ -27,6 +33,9 @@ namespace Retab
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
 
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowSpecService.ApplyToWorkflowAsync"/>: Apply Existing Workflow Spec</summary>
@@ -34,6 +43,9 @@ namespace Retab
     {
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
+
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
 
     }
 }

@@ -120,6 +120,29 @@ func environmentFromKeyPrefix(key string) string {
 	}
 }
 
+// oauthExpectedEnvironment maps an OAuth session's persisted environment
+// type onto the production-confirmation gate's environment slug. OAuth
+// sessions carry no environment-scoped API key prefix, so the gate relies
+// on the type captured at selection time (env switch / claim / auth login,
+// stored in cfg.EnvironmentType).
+//
+//   - production      -> slugProduction (high-risk commands are gated)
+//   - non_production  -> ""             (never gated)
+//   - empty / unknown -> slugProduction (fail SAFE)
+//
+// The empty case covers configs written before environment-type
+// persistence (legacy/pre-rollout) and any session that never resolved an
+// environment. It fails safe to production — the same conservative stance
+// as legacy API keys — so a credential whose environment cannot be locally
+// proven non-production is gated rather than silently allowed. The server
+// remains authoritative; this only drives the local confirmation prompt.
+func oauthExpectedEnvironment(cfg retabConfig) string {
+	if cliEnvironmentType(strings.TrimSpace(cfg.EnvironmentType)) == cliEnvironmentTypeNonProduction {
+		return ""
+	}
+	return slugProduction
+}
+
 // resolveBaseURL applies the deployment-selection precedence shared by
 // every command: --base-url flag > RETAB_BASE_URL env > profile base_url >
 // stored base_url. An empty result means "use the SDK default".
@@ -246,9 +269,10 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 	// --- 6. stored OAuth session -------------------------------------------
 	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
 		return resolvedCredential{
-			Source:  sourceOAuth,
-			OAuth:   cfg.OAuth,
-			BaseURL: resolveBaseURL(cmd, cfg, nil),
+			Source:              sourceOAuth,
+			OAuth:               cfg.OAuth,
+			BaseURL:             resolveBaseURL(cmd, cfg, nil),
+			ExpectedEnvironment: oauthExpectedEnvironment(cfg),
 		}, nil
 	}
 

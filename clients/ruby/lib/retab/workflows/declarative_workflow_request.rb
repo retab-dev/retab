@@ -6,15 +6,20 @@ module Retab
   class DeclarativeWorkflowRequest < Retab::Types::BaseModel
 
     HASH_ATTRS = {
-      yaml_definition: :yaml_definition
+      yaml_definition: :yaml_definition,
+      project_id: :project_id
     }.freeze
 
-    attr_accessor :yaml_definition
+    attr_accessor(
+      :yaml_definition,
+      :project_id
+    )
 
     def initialize(json)
       super()
       hash = self.class.normalize(json)
       @yaml_definition = hash[:yaml_definition]
+      @project_id = hash[:project_id]
     end
   end
 end

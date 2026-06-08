@@ -20,7 +20,7 @@ pub struct Workflow {
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
-    /// Project that owns this workflow. Null means the organization's shared workflows project.
+    /// Project that owns this workflow. Null only on legacy rows that predate the project backfill.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub project_id: Option<String>,
     /// Published workflow metadata when a published version exists

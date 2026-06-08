@@ -6,7 +6,7 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWorkflowRequest {
     /// The name of the workflow
     ///
@@ -18,7 +18,17 @@ pub struct CreateWorkflowRequest {
     /// Defaults to ``.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
-    /// Project that should own this workflow. Omit to use the organization's shared workflows project.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub project_id: Option<String>,
+    /// Project that should own this workflow.
+    pub project_id: String,
+}
+impl CreateWorkflowRequest {
+    /// Construct a new `CreateWorkflowRequest` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(project_id: impl Into<String>) -> Self {
+        Self {
+            name: Default::default(),
+            description: Default::default(),
+            project_id: project_id.into(),
+        }
+    }
 }

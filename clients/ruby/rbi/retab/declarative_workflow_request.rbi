@@ -15,6 +15,12 @@ module Retab
     sig { params(value: String).returns(String) }
     def yaml_definition=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def project_id; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def project_id=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

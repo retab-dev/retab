@@ -43,8 +43,8 @@ type WorkflowsCreateParams struct {
 	Name *string `json:"name,omitempty" url:"-"`
 	// Description is description of the workflow
 	Description *string `json:"description,omitempty" url:"-"`
-	// ProjectID is project that should own this workflow. Omit to use the organization's shared workflows project.
-	ProjectID *string `json:"project_id,omitempty" url:"-"`
+	// ProjectID is project that should own this workflow.
+	ProjectID string `json:"project_id" url:"-"`
 }
 
 // Create workflow
@@ -248,6 +248,8 @@ func (s *WorkflowService) Publish(ctx context.Context, workflowID string, params
 type WorkflowsCreatePlanParams struct {
 	// YamlDefinition is workflow YAML definition
 	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
 }
 
 // CreatePlan plan Existing Workflow Spec

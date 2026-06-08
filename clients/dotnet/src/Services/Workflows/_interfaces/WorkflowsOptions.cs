@@ -24,8 +24,8 @@ namespace Retab
         /// <summary>Description of the workflow</summary>
         public string? Description { get; set; }
 
-        /// <summary>Project that should own this workflow. Omit to use the organization's shared workflows project.</summary>
-        public string? ProjectId { get; set; }
+        /// <summary>Project that should own this workflow.</summary>
+        public string ProjectId { get; set; } = default!;
 
     }
 
@@ -88,6 +88,9 @@ namespace Retab
     {
         /// <summary>Workflow YAML definition</summary>
         public string YamlDefinition { get; set; } = default!;
+
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
 
     }
 }

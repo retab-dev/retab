@@ -296,6 +296,68 @@ func TestResolveCredential_OAuth(t *testing.T) {
 	}
 }
 
+// 6b. OAuth session whose selected environment is production resolves to
+// the production gate slug so high-risk commands are confirmed.
+func TestResolveCredential_OAuth_ProductionEnvironment(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth:           &oauthTokens{AccessToken: "oauth-access-token"},
+		EnvironmentType: "production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newTestRootCmd()
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cred.Source != sourceOAuth {
+		t.Errorf("source = %q, want %q", cred.Source, sourceOAuth)
+	}
+	if cred.ExpectedEnvironment != slugProduction {
+		t.Errorf("OAuth production session must resolve to %q, got %q", slugProduction, cred.ExpectedEnvironment)
+	}
+}
+
+// 6c. OAuth session in an explicitly non-production environment resolves to
+// "" so the gate never engages.
+func TestResolveCredential_OAuth_NonProductionEnvironment(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth:           &oauthTokens{AccessToken: "oauth-access-token"},
+		EnvironmentType: "non_production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newTestRootCmd()
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cred.ExpectedEnvironment != "" {
+		t.Errorf("OAuth non-production session must resolve to \"\", got %q", cred.ExpectedEnvironment)
+	}
+}
+
+// 6d. OAuth config written before environment-type persistence fails safe
+// to production so the gate still engages.
+func TestResolveCredential_OAuth_UnknownEnvironment_FailsSafeToProduction(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		OAuth: &oauthTokens{AccessToken: "oauth-access-token"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newTestRootCmd()
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cred.ExpectedEnvironment != slugProduction {
+		t.Errorf("OAuth session without a persisted environment type must fail safe to %q, got %q", slugProduction, cred.ExpectedEnvironment)
+	}
+}
+
 // 7. legacy stored api_key, treated as production-scoped.
 func TestResolveCredential_LegacyKey(t *testing.T) {
 	isolateHome(t)

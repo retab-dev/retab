@@ -195,12 +195,13 @@ var workflowsCreateCmd = &cobra.Command{
 start_document block; add processing blocks (` + "`workflows blocks create`" + `) and
 wire them with edges (` + "`workflows edges create`" + `) to make the workflow
 functional.`,
-	Example: `  # Create a draft workflow
+	Example: `  # Create a draft workflow (a workflow must belong to a project)
   retab workflows create --name "Invoice extraction" \
+    --project-id proj_abc123 \
     --description "Parse vendor invoices into structured JSON"
 
   # Capture the returned id for piping into subsequent calls
-  WF=$(retab workflows create --name "Quick demo" | jq -r '.id')`,
+  WF=$(retab workflows create --name "Quick demo" --project-id proj_abc123 | jq -r '.id')`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -217,7 +218,11 @@ functional.`,
 			name = trimmed
 		}
 		description, _ := cmd.Flags().GetString("description")
-		params := retab.WorkflowsCreateParams{}
+		projectID, _ := cmd.Flags().GetString("project-id")
+		if projectID == "" {
+			return fmt.Errorf("--project-id is required: a workflow must belong to a project")
+		}
+		params := retab.WorkflowsCreateParams{ProjectID: projectID}
 		if name != "" || cmd.Flags().Changed("name") {
 			params.Name = ptr(name)
 		}
@@ -417,6 +422,8 @@ func init() {
 
 	workflowsCreateCmd.Flags().String("name", "", "workflow name")
 	workflowsCreateCmd.Flags().String("description", "", "workflow description")
+	workflowsCreateCmd.Flags().String("project-id", "", "project that should own the workflow (required)")
+	_ = workflowsCreateCmd.MarkFlagRequired("project-id")
 
 	workflowsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsUpdateCmd.Flags().String("description", "", "new description")
