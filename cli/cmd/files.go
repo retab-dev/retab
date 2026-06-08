@@ -121,7 +121,7 @@ func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.
 			raw = f.Value.String()
 		}
 	}
-	if raw != string(OutputTable) {
+	if raw != string(OutputTable) && raw != string(OutputCSV) {
 		return printJSON(result)
 	}
 	timestampHeader := "CREATED_AT"
@@ -130,11 +130,16 @@ func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.
 		timestampHeader = "UPDATED_AT"
 		timestampField = "updated_at"
 	}
-	return renderAutoTable(os.Stdout, resourcesToRows(result.Data), []TableColumn{
+	columns := []TableColumn{
 		{Header: "ID", Extract: func(row any) string { return resourceCell(row, "id") }},
 		{Header: "NAME", Extract: func(row any) string { return resourceCell(row, "filename") }},
 		{Header: timestampHeader, Extract: func(row any) string { return normalizeTimestampCell(resourceCell(row, timestampField)) }},
-	})
+	}
+	rows := resourcesToRows(result.Data)
+	if raw == string(OutputCSV) {
+		return renderAutoCSV(os.Stdout, rows, columns)
+	}
+	return renderAutoTable(os.Stdout, rows, columns)
 }
 
 func resourcesToRows[T any](resources []T) []any {

@@ -42,6 +42,7 @@ func readOnlyCommands() []*cobra.Command {
 	return []*cobra.Command{
 		authStatusCmd, envListCmd,
 		workflowsListCmd, workflowsGetCmd,
+		projectsListCmd, projectsGetCmd,
 	}
 }
 

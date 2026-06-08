@@ -124,6 +124,75 @@ func TestRenderListTableTypedStruct(t *testing.T) {
 	}
 }
 
+// TestRenderListCSVTypedStruct pins that RenderList(OutputCSV, …) emits
+// RFC 4180 CSV using the same columns as the table renderer. Before this,
+// `--output csv` silently fell back to JSON on some list commands and
+// errored ("unknown output format") on others.
+func TestRenderListCSVTypedStruct(t *testing.T) {
+	list := fileList{
+		Data: []fileItem{
+			{ID: "f_1", Filename: "alpha.pdf"},
+			{ID: "f_22", Filename: "beta.pdf"},
+		},
+	}
+	cols := []TableColumn{
+		{Header: "ID", Extract: func(r any) string { return r.(fileItem).ID }},
+		{Header: "FILENAME", Extract: func(r any) string { return r.(fileItem).Filename }},
+	}
+
+	var buf bytes.Buffer
+	if err := RenderList(&buf, OutputCSV, list, cols); err != nil {
+		t.Fatalf("RenderList csv failed: %v", err)
+	}
+
+	want := "ID,FILENAME\nf_1,alpha.pdf\nf_22,beta.pdf\n"
+	if buf.String() != want {
+		t.Fatalf("csv output mismatch:\n got: %q\nwant: %q", buf.String(), want)
+	}
+}
+
+// TestRenderListCSVQuotesSpecialValues pins that encoding/csv quoting is
+// applied — a cell containing a comma or quote must not corrupt columns.
+func TestRenderListCSVQuotesSpecialValues(t *testing.T) {
+	list := fileList{Data: []fileItem{{ID: "f_1", Filename: "a,b \"c\".pdf"}}}
+	cols := []TableColumn{
+		{Header: "ID", Extract: func(r any) string { return r.(fileItem).ID }},
+		{Header: "FILENAME", Extract: func(r any) string { return r.(fileItem).Filename }},
+	}
+
+	var buf bytes.Buffer
+	if err := RenderList(&buf, OutputCSV, list, cols); err != nil {
+		t.Fatalf("RenderList csv failed: %v", err)
+	}
+
+	want := "ID,FILENAME\nf_1,\"a,b \"\"c\"\".pdf\"\n"
+	if buf.String() != want {
+		t.Fatalf("csv quoting mismatch:\n got: %q\nwant: %q", buf.String(), want)
+	}
+}
+
+// TestPrintResultCSVAutoColumns pins the generic auto-column CSV path used
+// by commands that route through printResult (e.g. `workflows list`).
+func TestPrintResultCSVAutoColumns(t *testing.T) {
+	list := map[string]any{
+		"data": []any{
+			map[string]any{"id": "wrk_1", "name": "Alpha"},
+			map[string]any{"id": "wrk_2", "name": "Beta"},
+		},
+	}
+	stdout, _ := captureStd(t, func() {
+		if err := printResultCSV(list); err != nil {
+			t.Fatalf("printResultCSV failed: %v", err)
+		}
+	})
+	if !strings.HasPrefix(stdout, "ID,NAME\n") {
+		t.Fatalf("expected CSV header ID,NAME, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "wrk_1,Alpha\n") || !strings.Contains(stdout, "wrk_2,Beta\n") {
+		t.Fatalf("expected CSV rows for both workflows, got:\n%s", stdout)
+	}
+}
+
 // TestRenderListTableMapFallback exercises the JSON-round-trip path used
 // when the input isn't a struct with a Data field — e.g. payloads coming
 // back from readJSON. The Extract func sees the row as map[string]any.

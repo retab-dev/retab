@@ -393,8 +393,8 @@ func printReviewQueueResult(cmd *cobra.Command, result *retab.PaginatedList[reta
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
-		if err := RenderList(os.Stdout, OutputTable, result, reviewQueueColumns); err != nil {
+	if format == OutputTable || format == OutputCSV {
+		if err := RenderList(os.Stdout, format, result, reviewQueueColumns); err != nil {
 			return err
 		}
 		// Cursor-aware footer: the table goes to stdout so it stays
@@ -414,8 +414,8 @@ func printReviewOverlayResult(cmd *cobra.Command, result *retab.Review) error {
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
-		return RenderList(os.Stdout, OutputTable, struct {
+	if format == OutputTable || format == OutputCSV {
+		return RenderList(os.Stdout, format, struct {
 			Data []*retab.Review `json:"data"`
 		}{Data: []*retab.Review{result}}, reviewOverlayColumns)
 	}
@@ -427,8 +427,8 @@ func printReviewVersionsResult(cmd *cobra.Command, result *retab.PaginatedList[r
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
-		return RenderList(os.Stdout, OutputTable, result, reviewVersionColumns)
+	if format == OutputTable || format == OutputCSV {
+		return RenderList(os.Stdout, format, result, reviewVersionColumns)
 	}
 	return printJSON(result)
 }
@@ -438,8 +438,8 @@ func printReviewVersionResult(cmd *cobra.Command, result *retab.ReviewVersion) e
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
-		return RenderList(os.Stdout, OutputTable, struct {
+	if format == OutputTable || format == OutputCSV {
+		return RenderList(os.Stdout, format, struct {
 			Data []*retab.ReviewVersion `json:"data"`
 		}{Data: []*retab.ReviewVersion{result}}, reviewVersionColumns)
 	}
@@ -496,7 +496,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 			fmt.Fprintf(os.Stderr, "note: resume_error: %s\n", *result.ResumeError)
 		}
 	}
-	if format == OutputTable {
+	if format == OutputTable || format == OutputCSV {
 		row := map[string]any{
 			"submission_status": result.SubmissionStatus,
 			"id":                result.Review.ID,
@@ -512,7 +512,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 			row["verdict"] = result.Review.Decision.Verdict
 			row["version_id"] = result.Review.Decision.VersionID
 		}
-		if err := RenderList(os.Stdout, OutputTable, struct {
+		if err := RenderList(os.Stdout, format, struct {
 			Data []map[string]any `json:"data"`
 		}{Data: []map[string]any{row}}, reviewDecisionColumns); err != nil {
 			return err
@@ -542,7 +542,7 @@ func printReviewSchemaResult(cmd *cobra.Command, result reviewSnapshotSchema) er
 	if err != nil {
 		return err
 	}
-	if format == OutputTable {
+	if format == OutputTable || format == OutputCSV {
 		rows := []map[string]any{
 			{
 				"block_type":   result.BlockType,
@@ -552,7 +552,7 @@ func printReviewSchemaResult(cmd *cobra.Command, result reviewSnapshotSchema) er
 				"create_usage": result.CreateUsage,
 			},
 		}
-		return RenderList(os.Stdout, OutputTable, struct {
+		return RenderList(os.Stdout, format, struct {
 			Data []map[string]any `json:"data"`
 		}{Data: rows}, reviewSchemaColumns)
 	}

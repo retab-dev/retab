@@ -254,8 +254,11 @@ Paginate by passing the cursor from a previous response's
 
 func printWorkflowEdgesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowEdgeDoc]) error {
 	if cmd != nil {
-		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
-			return RenderList(os.Stdout, OutputTable, result, workflowEdgeColumns)
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, workflowEdgeColumns)
+			}
 		}
 	}
 	return printJSON(result)

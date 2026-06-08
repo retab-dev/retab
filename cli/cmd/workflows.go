@@ -153,8 +153,13 @@ Use ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 }
 
 func printWorkflowList(cmd *cobra.Command, result any) error {
-	if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
-		return printResultTable(result)
+	if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+		switch f.Value.String() {
+		case string(OutputTable):
+			return printResultTable(result)
+		case string(OutputCSV):
+			return printResultCSV(result)
+		}
 	}
 	return printJSON(result)
 }
