@@ -76,6 +76,58 @@ impl CreateParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct ApplyParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: DeclarativeWorkflowRequest,
+    /// Optional `workflow_id` selector. When `Some`, the call targets
+    /// `/v1/workflows/{workflow_id}/spec/apply`; when `None`, the base `/v1/workflows/spec/apply` route.
+    ///
+    /// URL-only — never serialized into the request body.
+    #[serde(skip)]
+    pub workflow_id: Option<String>,
+}
+
+impl ApplyParams {
+    /// Construct a new `ApplyParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
+        Self {
+            body,
+            workflow_id: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PlanParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: DeclarativeWorkflowRequest,
+    /// Optional `workflow_id` selector. When `Some`, the call targets
+    /// `/v1/workflows/{workflow_id}/spec/plan`; when `None`, the base `/v1/workflows/spec/plan` route.
+    ///
+    /// URL-only — never serialized into the request body.
+    #[serde(skip)]
+    pub workflow_id: Option<String>,
+}
+
+impl PlanParams {
+    /// Construct a new `PlanParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
+        Self {
+            body,
+            workflow_id: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct ListVersionsParams {
     /// Workflow whose versions to list
     ///
@@ -199,23 +251,6 @@ pub struct PublishParams {
     pub body: Option<PublishWorkflowRequest>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct CreatePlanParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: DeclarativeWorkflowRequest,
-}
-
-impl CreatePlanParams {
-    /// Construct a new `CreatePlanParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
-        Self { body }
-    }
-}
-
 impl<'a> WorkflowsApi<'a> {
     /// Access the `artifacts` sub-resource.
     pub fn artifacts(&self) -> WorkflowArtifactsApi<'a> {
@@ -316,6 +351,64 @@ impl<'a> WorkflowsApi<'a> {
         options: Option<&crate::RequestOptions>,
     ) -> Result<Workflow, Error> {
         let path = "/v1/workflows".to_string();
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// Apply Workflow Spec
+    ///
+    /// Create a new workflow from a declarative YAML spec.
+    ///
+    /// The workflow id in the YAML is treated as source context, not as the target
+    /// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+    /// existing workflow draft.
+    pub async fn apply(&self, params: ApplyParams) -> Result<DeclarativeApplyResponse, Error> {
+        self.apply_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::apply`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn apply_with_options(
+        &self,
+        params: ApplyParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<DeclarativeApplyResponse, Error> {
+        let path = if let Some(workflow_id) = params.workflow_id.as_ref() {
+            let workflow_id = crate::client::path_segment(workflow_id);
+            format!("/v1/workflows/{workflow_id}/spec/apply")
+        } else {
+            "/v1/workflows/spec/apply".to_string()
+        };
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// Plan Workflow Spec
+    ///
+    /// Preview the changes a declarative YAML spec would make to the draft workflow.
+    ///
+    /// Compares the spec against the current draft and returns the resulting
+    /// changes without applying them. A spec that already matches the draft
+    /// plans as a no-op.
+    pub async fn plan(&self, params: PlanParams) -> Result<DeclarativePlanResponse, Error> {
+        self.plan_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::plan`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn plan_with_options(
+        &self,
+        params: PlanParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<DeclarativePlanResponse, Error> {
+        let path = if let Some(workflow_id) = params.workflow_id.as_ref() {
+            let workflow_id = crate::client::path_segment(workflow_id);
+            format!("/v1/workflows/{workflow_id}/spec/plan")
+        } else {
+            "/v1/workflows/spec/plan".to_string()
+        };
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
@@ -532,36 +625,6 @@ impl<'a> WorkflowsApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, params.body.as_ref(), options)
-            .await
-    }
-
-    /// Plan Existing Workflow Spec
-    ///
-    /// Preview applying a declarative YAML spec to an existing workflow draft.
-    ///
-    /// The URL workflow id is the plan target. Any workflow id in the YAML is
-    /// treated as source context.
-    pub async fn create_plan(
-        &self,
-        workflow_id: &str,
-        params: CreatePlanParams,
-    ) -> Result<DeclarativePlanResponse, Error> {
-        self.create_plan_with_options(workflow_id, params, None)
-            .await
-    }
-
-    /// Variant of [`Self::create_plan`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn create_plan_with_options(
-        &self,
-        workflow_id: &str,
-        params: CreatePlanParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativePlanResponse, Error> {
-        let workflow_id = crate::client::path_segment(workflow_id);
-        let path = format!("/v1/workflows/{workflow_id}/spec/plan");
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 }

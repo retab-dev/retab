@@ -5,31 +5,11 @@ from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.workflows import DeclarativePlanResponse, DeclarativeWorkflowRequest
-from retab.types.workflows.spec import DeclarativeApplyResponse, DeclarativeExportResponse, DeclarativeValidationResponse
+from retab.types.workflows import DeclarativeWorkflowRequest
+from retab.types.workflows.spec import DeclarativeExportResponse, DeclarativeValidationResponse
 
 
 class WorkflowSpecMixin:
-    def prepare_apply(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Apply Workflow Spec Create a new workflow from a declarative YAML spec. The workflow id in the YAML is treated as source context, not as the target workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an existing workflow draft."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition), project_id=cast(Any, project_id))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/workflows/spec/apply", params=params or None, data=data)
-
-    def prepare_plan(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Plan Workflow Spec Preview the changes a declarative YAML spec would make to the draft workflow. Compares the spec against the current draft and returns the resulting changes without applying them. A spec that already matches the draft plans as a no-op."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition), project_id=cast(Any, project_id))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/workflows/spec/plan", params=params or None, data=data)
-
     def prepare_validate(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Validate Workflow Spec Validate declarative YAML without changing the workflow. Any error-level diagnostic responds with 400 and the structured issues. Warnings do not make a spec invalid: a warning-only spec responds with 200, `is_valid=True`, and the warnings in `diagnostics`."""
         params: dict[str, Any] = {}
@@ -49,31 +29,9 @@ class WorkflowSpecMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/workflows/{workflow_id}/spec", params=params or None, data=data)
 
-    def prepare_apply_to_workflow(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
-        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        payload = DeclarativeWorkflowRequest(yaml_definition=cast(Any, yaml_definition), project_id=cast(Any, project_id))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/spec/apply", params=params or None, data=data)
-
 
 class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
     """WorkflowSpec API wrapper."""
-
-    def apply(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec Create a new workflow from a declarative YAML spec. The workflow id in the YAML is treated as source context, not as the target workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an existing workflow draft."""
-        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
-
-    def plan(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativePlanResponse:
-        """Plan Workflow Spec Preview the changes a declarative YAML spec would make to the draft workflow. Compares the spec against the current draft and returns the resulting changes without applying them. A spec that already matches the draft plans as a no-op."""
-        prepared_request = self.prepare_plan(yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return DeclarativePlanResponse.model_validate(response)
 
     def validate(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeValidationResponse:
         """Validate Workflow Spec Validate declarative YAML without changing the workflow. Any error-level diagnostic responds with 400 and the structured issues. Warnings do not make a spec invalid: a warning-only spec responds with 200, `is_valid=True`, and the warnings in `diagnostics`."""
@@ -87,27 +45,9 @@ class WorkflowSpec(SyncAPIResource, WorkflowSpecMixin):
         response = self._client._prepared_request(prepared_request)
         return DeclarativeExportResponse.model_validate(response)
 
-    def apply_to_workflow(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
-        prepared_request = self.prepare_apply_to_workflow(workflow_id, yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
-
 
 class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
     """Async WorkflowSpec API wrapper."""
-
-    async def apply(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Workflow Spec Create a new workflow from a declarative YAML spec. The workflow id in the YAML is treated as source context, not as the target workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an existing workflow draft."""
-        prepared_request = self.prepare_apply(yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
-
-    async def plan(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativePlanResponse:
-        """Plan Workflow Spec Preview the changes a declarative YAML spec would make to the draft workflow. Compares the spec against the current draft and returns the resulting changes without applying them. A spec that already matches the draft plans as a no-op."""
-        prepared_request = self.prepare_plan(yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return DeclarativePlanResponse.model_validate(response)
 
     async def validate(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeValidationResponse:
         """Validate Workflow Spec Validate declarative YAML without changing the workflow. Any error-level diagnostic responds with 400 and the structured issues. Warnings do not make a spec invalid: a warning-only spec responds with 200, `is_valid=True`, and the warnings in `diagnostics`."""
@@ -120,12 +60,6 @@ class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
         prepared_request = self.prepare_get(workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return DeclarativeExportResponse.model_validate(response)
-
-    async def apply_to_workflow(self, workflow_id: str, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> DeclarativeApplyResponse:
-        """Apply Existing Workflow Spec Apply a declarative YAML spec to an existing workflow draft. The URL workflow id is the update target. Any workflow id in the YAML is treated as source context."""
-        prepared_request = self.prepare_apply_to_workflow(workflow_id, yaml_definition=yaml_definition, project_id=project_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
-        return DeclarativeApplyResponse.model_validate(response)
 
 
 __all__ = ["WorkflowSpec", "AsyncWorkflowSpec", "WorkflowSpecMixin"]

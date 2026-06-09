@@ -477,7 +477,7 @@ def test_workflow_spec_plan_uses_spec_plan_route() -> None:
         "rendered_plan": "Plan: 0 to add, 1 to change, 0 to destroy.",
     }
 
-    response = WorkflowSpec(client=client).plan(INVOICE_WORKFLOW_YAML)
+    response = Workflows(client=client).plan(INVOICE_WORKFLOW_YAML)
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -492,6 +492,31 @@ def test_workflow_spec_plan_uses_spec_plan_route() -> None:
     assert field_changes[0].path_display == "config.model"
     assert response.rendered_plan is not None
     assert "1 to change" in response.rendered_plan
+
+
+def test_workflow_plan_with_workflow_id_uses_existing_workflow_route() -> None:
+    """Passing workflow_id folds plan onto the existing-workflow route."""
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "action": "update",
+        "block_count": 2,
+        "edge_count": 1,
+        "diagnostics": {"issues": []},
+        "format_version": "workflows-plan/v1",
+        "summary": {"add": 0, "change": 1, "destroy": 0, "replace": 0, "noop": 0, "total": 1, "has_changes": True},
+        "resource_changes": [],
+        "rendered_plan": "1 to change.",
+    }
+
+    response = Workflows(client=client).plan(INVOICE_WORKFLOW_YAML, workflow_id="wf_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/v1/workflows/wf_1/spec/plan"
+    assert request.data == {"yaml_definition": INVOICE_WORKFLOW_YAML}
+    assert isinstance(response, DeclarativePlanResponse)
+    assert response.workflow_id == "wf_1"
 
 
 def test_workflow_spec_apply_uses_spec_apply_route() -> None:
@@ -509,7 +534,7 @@ def test_workflow_spec_apply_uses_spec_apply_route() -> None:
         "rendered_plan": "No changes. Infrastructure is up-to-date.",
     }
 
-    response = WorkflowSpec(client=client).apply(INVOICE_WORKFLOW_YAML)
+    response = Workflows(client=client).apply(INVOICE_WORKFLOW_YAML)
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -522,7 +547,7 @@ def test_workflow_spec_apply_uses_spec_apply_route() -> None:
     assert response.resource_changes == []
 
 
-def test_workflow_spec_apply_to_workflow_uses_nested_apply_route() -> None:
+def test_workflow_apply_with_workflow_id_uses_nested_apply_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -537,10 +562,7 @@ def test_workflow_spec_apply_to_workflow_uses_nested_apply_route() -> None:
         "rendered_plan": "1 to change.",
     }
 
-    response = WorkflowSpec(client=client).apply_to_workflow(
-        "wf_1",
-        INVOICE_WORKFLOW_YAML,
-    )
+    response = Workflows(client=client).apply(INVOICE_WORKFLOW_YAML, workflow_id="wf_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -589,7 +611,7 @@ async def test_async_workflow_spec_validate_uses_spec_validate_route() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_workflow_spec_apply_to_workflow_uses_nested_apply_route() -> None:
+async def test_async_workflow_apply_with_workflow_id_uses_nested_apply_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(
         return_value={
@@ -606,10 +628,7 @@ async def test_async_workflow_spec_apply_to_workflow_uses_nested_apply_route() -
         }
     )
 
-    response = await AsyncWorkflowSpec(client=client).apply_to_workflow(
-        "wf_1",
-        INVOICE_WORKFLOW_YAML,
-    )
+    response = await AsyncWorkflows(client=client).apply(INVOICE_WORKFLOW_YAML, workflow_id="wf_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"

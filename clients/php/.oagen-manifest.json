@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-08T17:02:44.431Z",
+  "generatedAt": "2026-06-09T20:20:37.661Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -961,6 +961,14 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "listVersions",
       "service": "workflows"
@@ -1188,14 +1196,6 @@
     "POST /v1/workflows/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
       "service": "workflows.runs"
-    },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "apply",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "plan",
-      "service": "workflows.spec"
     },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "validate",

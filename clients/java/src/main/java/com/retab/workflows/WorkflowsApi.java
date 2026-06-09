@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.CreateWorkflowRequest;
+import com.retab.models.DeclarativeApplyResponse;
 import com.retab.models.DeclarativePlanResponse;
 import com.retab.models.DeclarativeWorkflowRequest;
 import com.retab.models.UpdateWorkflowRequest;
@@ -152,6 +153,86 @@ public final class WorkflowsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Workflow.class);
+  }
+
+  public DeclarativeApplyResponse apply(DeclarativeWorkflowRequest request, String workflowId)
+      throws IOException, InterruptedException {
+    return apply(
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId(),
+        workflowId);
+  }
+
+  public DeclarativeApplyResponse apply(String yamlDefinition, String projectId, String workflowId)
+      throws IOException, InterruptedException {
+    String path =
+        workflowId != null && !workflowId.isEmpty()
+            ? "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/apply"
+            : "/v1/workflows/spec/apply";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
+  }
+
+  public DeclarativePlanResponse plan(DeclarativeWorkflowRequest request, String workflowId)
+      throws IOException, InterruptedException {
+    return plan(
+        request == null ? null : request.getYamlDefinition(),
+        request == null ? null : request.getProjectId(),
+        workflowId);
+  }
+
+  public DeclarativePlanResponse plan(String yamlDefinition, String projectId, String workflowId)
+      throws IOException, InterruptedException {
+    String path =
+        workflowId != null && !workflowId.isEmpty()
+            ? "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/plan"
+            : "/v1/workflows/spec/plan";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("yaml_definition", yamlDefinition);
+    if (projectId != null) {
+      body.put("project_id", projectId);
+    }
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Api-Key", client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), DeclarativePlanResponse.class);
   }
 
   public List<WorkflowGraphVersion> listVersions(
@@ -383,44 +464,6 @@ public final class WorkflowsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Workflow.class);
-  }
-
-  public DeclarativePlanResponse createPlan(String workflowId, DeclarativeWorkflowRequest request)
-      throws IOException, InterruptedException {
-    return createPlan(
-        workflowId,
-        request == null ? null : request.getYamlDefinition(),
-        request == null ? null : request.getProjectId());
-  }
-
-  public DeclarativePlanResponse createPlan(
-      String workflowId, String yamlDefinition, String projectId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/plan";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("yaml_definition", yamlDefinition);
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), DeclarativePlanResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

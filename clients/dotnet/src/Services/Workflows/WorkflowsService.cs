@@ -93,6 +93,52 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Apply Workflow Spec</summary>
+        /// <remarks>
+        /// Create a new workflow from a declarative YAML spec.
+        /// The workflow id in the YAML is treated as source context, not as the target
+        /// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+        /// existing workflow draft.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativeApplyResponse"/> result.</returns>
+        public virtual async Task<DeclarativeApplyResponse> ApplyAsync(WorkflowsApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            string __path = string.IsNullOrEmpty(options.WorkflowId) ? "/v1/workflows/spec/apply" : $"/v1/workflows/{Uri.EscapeDataString(options.WorkflowId)}/spec/apply";
+            return await this.PostAsync<DeclarativeApplyResponse>(__path, options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="ApplyAsync"/>.</summary>
+        public virtual Task<DeclarativeApplyResponse> Apply(WorkflowsApplyOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.ApplyAsync(options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Plan Workflow Spec</summary>
+        /// <remarks>
+        /// Preview the changes a declarative YAML spec would make to the draft workflow.
+        /// Compares the spec against the current draft and returns the resulting
+        /// changes without applying them. A spec that already matches the draft
+        /// plans as a no-op.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="DeclarativePlanResponse"/> result.</returns>
+        public virtual async Task<DeclarativePlanResponse> PlanAsync(WorkflowsPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            string __path = string.IsNullOrEmpty(options.WorkflowId) ? "/v1/workflows/spec/plan" : $"/v1/workflows/{Uri.EscapeDataString(options.WorkflowId)}/spec/plan";
+            return await this.PostAsync<DeclarativePlanResponse>(__path, options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="PlanAsync"/>.</summary>
+        public virtual Task<DeclarativePlanResponse> Plan(WorkflowsPlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.PlanAsync(options, requestOptions, cancellationToken);
+        }
+
         /// <summary>List Workflow Versions</summary>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
@@ -269,28 +315,6 @@ namespace Retab
         public virtual Task<Workflow> Publish(string workflowId, WorkflowsPublishOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.PublishAsync(workflowId, options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Plan Existing Workflow Spec</summary>
-        /// <remarks>
-        /// Preview applying a declarative YAML spec to an existing workflow draft.
-        /// The URL workflow id is the plan target. Any workflow id in the YAML is
-        /// treated as source context.
-        /// </remarks>
-        /// <param name="workflowId">The workflow id.</param>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="DeclarativePlanResponse"/> result.</returns>
-        public virtual async Task<DeclarativePlanResponse> CreatePlanAsync(string workflowId, WorkflowsCreatePlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.PostAsync<DeclarativePlanResponse>($"/v1/workflows/{Uri.EscapeDataString(workflowId)}/spec/plan", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="CreatePlanAsync"/>.</summary>
-        public virtual Task<DeclarativePlanResponse> CreatePlan(string workflowId, WorkflowsCreatePlanOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.CreatePlanAsync(workflowId, options, requestOptions, cancellationToken);
         }
     }
 }

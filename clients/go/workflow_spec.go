@@ -13,50 +13,6 @@ type WorkflowSpecService struct {
 	client *Client
 }
 
-// WorkflowSpecApplyParams contains the parameters for Apply.
-type WorkflowSpecApplyParams struct {
-	// YamlDefinition is workflow YAML definition
-	YamlDefinition string `json:"yaml_definition" url:"-"`
-	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-	ProjectID *string `json:"project_id,omitempty" url:"-"`
-}
-
-// Apply workflow Spec
-// Create a new workflow from a declarative YAML spec.
-// The workflow id in the YAML is treated as source context, not as the target
-// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
-// existing workflow draft.
-func (s *WorkflowSpecService) Apply(ctx context.Context, params *WorkflowSpecApplyParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
-	var result DeclarativeApplyResponse
-	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/apply", nil, params, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// WorkflowSpecPlanParams contains the parameters for Plan.
-type WorkflowSpecPlanParams struct {
-	// YamlDefinition is workflow YAML definition
-	YamlDefinition string `json:"yaml_definition" url:"-"`
-	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-	ProjectID *string `json:"project_id,omitempty" url:"-"`
-}
-
-// Plan workflow Spec
-// Preview the changes a declarative YAML spec would make to the draft workflow.
-// Compares the spec against the current draft and returns the resulting
-// changes without applying them. A spec that already matches the draft
-// plans as a no-op.
-func (s *WorkflowSpecService) Plan(ctx context.Context, params *WorkflowSpecPlanParams, opts ...RequestOption) (*DeclarativePlanResponse, error) {
-	var result DeclarativePlanResponse
-	_, err := s.client.request(ctx, "POST", "/v1/workflows/spec/plan", nil, params, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 // WorkflowSpecValidateParams contains the parameters for Validate.
 type WorkflowSpecValidateParams struct {
 	// YamlDefinition is workflow YAML definition
@@ -87,30 +43,6 @@ func (s *WorkflowSpecService) Get(ctx context.Context, workflowID string, opts .
 	}
 	var result DeclarativeExportResponse
 	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/%s/spec", url.PathEscape(workflowID)), nil, nil, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// WorkflowSpecApplyToWorkflowParams contains the parameters for ApplyToWorkflow.
-type WorkflowSpecApplyToWorkflowParams struct {
-	// YamlDefinition is workflow YAML definition
-	YamlDefinition string `json:"yaml_definition" url:"-"`
-	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-	ProjectID *string `json:"project_id,omitempty" url:"-"`
-}
-
-// ApplyToWorkflow apply Existing Workflow Spec
-// Apply a declarative YAML spec to an existing workflow draft.
-// The URL workflow id is the update target. Any workflow id in the YAML is
-// treated as source context.
-func (s *WorkflowSpecService) ApplyToWorkflow(ctx context.Context, workflowID string, params *WorkflowSpecApplyToWorkflowParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflow_id is required")
-	}
-	var result DeclarativeApplyResponse
-	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/spec/apply", url.PathEscape(workflowID)), nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

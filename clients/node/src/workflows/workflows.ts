@@ -3,6 +3,8 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import type {
+  DeclarativeApplyResponse,
+  DeclarativeApplyResponseResponse,
   DeclarativePlanResponse,
   DeclarativePlanResponseResponse,
   Workflow,
@@ -13,6 +15,7 @@ import type {
   WorkflowResponse,
 } from '../workflows/interfaces/index.js';
 import {
+  deserializeDeclarativeApplyResponse,
   deserializeDeclarativePlanResponse,
   deserializeWorkflow,
   deserializeWorkflowGraphVersion,
@@ -89,6 +92,52 @@ export class Workflows {
       body: body,
     });
     return deserializeWorkflow(__wire);
+  }
+
+  /** Apply Workflow Spec */
+  async apply(
+    yamlDefinition: string,
+    projectId?: string | null,
+    workflowId?: string
+  ): Promise<DeclarativeApplyResponse> {
+    const body = {
+      yaml_definition: yamlDefinition,
+      project_id: projectId,
+    };
+    const path =
+      workflowId !== undefined
+        ? `/v1/workflows/${workflowId}/spec/apply`
+        : '/v1/workflows/spec/apply';
+    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
+      method: 'POST',
+      path: path,
+      query: undefined,
+      body: body,
+    });
+    return deserializeDeclarativeApplyResponse(__wire);
+  }
+
+  /** Plan Workflow Spec */
+  async plan(
+    yamlDefinition: string,
+    projectId?: string | null,
+    workflowId?: string
+  ): Promise<DeclarativePlanResponse> {
+    const body = {
+      yaml_definition: yamlDefinition,
+      project_id: projectId,
+    };
+    const path =
+      workflowId !== undefined
+        ? `/v1/workflows/${workflowId}/spec/plan`
+        : '/v1/workflows/spec/plan';
+    const __wire = await this.client.request<DeclarativePlanResponseResponse>({
+      method: 'POST',
+      path: path,
+      query: undefined,
+      body: body,
+    });
+    return deserializeDeclarativePlanResponse(__wire);
   }
 
   /** List Workflow Versions */
@@ -223,24 +272,5 @@ export class Workflows {
       body: body,
     });
     return deserializeWorkflow(__wire);
-  }
-
-  /** Plan Existing Workflow Spec */
-  async create_plan(
-    workflowId: string,
-    yamlDefinition: string,
-    projectId?: string | null
-  ): Promise<DeclarativePlanResponse> {
-    const body = {
-      yaml_definition: yamlDefinition,
-      project_id: projectId,
-    };
-    const __wire = await this.client.request<DeclarativePlanResponseResponse>({
-      method: 'POST',
-      path: `/v1/workflows/${workflowId}/spec/plan`,
-      query: undefined,
-      body: body,
-    });
-    return deserializeDeclarativePlanResponse(__wire);
   }
 }

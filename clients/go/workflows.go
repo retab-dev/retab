@@ -59,6 +59,64 @@ func (s *WorkflowService) Create(ctx context.Context, params *WorkflowsCreatePar
 	return &result, nil
 }
 
+// WorkflowsApplyParams contains the parameters for Apply.
+type WorkflowsApplyParams struct {
+	// YamlDefinition is workflow YAML definition
+	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
+	// WorkflowID optionally targets an existing workflow id by
+	// switching the request to the variant route. When nil the base route is used.
+	WorkflowID *string `json:"-" url:"-"`
+}
+
+// Apply workflow Spec
+// Create a new workflow from a declarative YAML spec.
+// The workflow id in the YAML is treated as source context, not as the target
+// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+// existing workflow draft.
+func (s *WorkflowService) Apply(ctx context.Context, params *WorkflowsApplyParams, opts ...RequestOption) (*DeclarativeApplyResponse, error) {
+	routePath := "/v1/workflows/spec/apply"
+	if params != nil && params.WorkflowID != nil && *params.WorkflowID != "" {
+		routePath = fmt.Sprintf("/v1/workflows/%s/spec/apply", url.PathEscape(*params.WorkflowID))
+	}
+	var result DeclarativeApplyResponse
+	_, err := s.client.request(ctx, "POST", routePath, nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// WorkflowsPlanParams contains the parameters for Plan.
+type WorkflowsPlanParams struct {
+	// YamlDefinition is workflow YAML definition
+	YamlDefinition string `json:"yaml_definition" url:"-"`
+	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+	ProjectID *string `json:"project_id,omitempty" url:"-"`
+	// WorkflowID optionally targets an existing workflow id by
+	// switching the request to the variant route. When nil the base route is used.
+	WorkflowID *string `json:"-" url:"-"`
+}
+
+// Plan workflow Spec
+// Preview the changes a declarative YAML spec would make to the draft workflow.
+// Compares the spec against the current draft and returns the resulting
+// changes without applying them. A spec that already matches the draft
+// plans as a no-op.
+func (s *WorkflowService) Plan(ctx context.Context, params *WorkflowsPlanParams, opts ...RequestOption) (*DeclarativePlanResponse, error) {
+	routePath := "/v1/workflows/spec/plan"
+	if params != nil && params.WorkflowID != nil && *params.WorkflowID != "" {
+		routePath = fmt.Sprintf("/v1/workflows/%s/spec/plan", url.PathEscape(*params.WorkflowID))
+	}
+	var result DeclarativePlanResponse
+	_, err := s.client.request(ctx, "POST", routePath, nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // WorkflowsListVersionsParams contains the parameters for ListVersions.
 type WorkflowsListVersionsParams struct {
 	PaginationParams
@@ -238,30 +296,6 @@ func (s *WorkflowService) Publish(ctx context.Context, workflowID string, params
 	}
 	var result Workflow
 	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/publish", url.PathEscape(workflowID)), nil, params.Body, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// WorkflowsCreatePlanParams contains the parameters for CreatePlan.
-type WorkflowsCreatePlanParams struct {
-	// YamlDefinition is workflow YAML definition
-	YamlDefinition string `json:"yaml_definition" url:"-"`
-	// ProjectID is project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-	ProjectID *string `json:"project_id,omitempty" url:"-"`
-}
-
-// CreatePlan plan Existing Workflow Spec
-// Preview applying a declarative YAML spec to an existing workflow draft.
-// The URL workflow id is the plan target. Any workflow id in the YAML is
-// treated as source context.
-func (s *WorkflowService) CreatePlan(ctx context.Context, workflowID string, params *WorkflowsCreatePlanParams, opts ...RequestOption) (*DeclarativePlanResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflow_id is required")
-	}
-	var result DeclarativePlanResponse
-	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/workflows/%s/spec/plan", url.PathEscape(workflowID)), nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

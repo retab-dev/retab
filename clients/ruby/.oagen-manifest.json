@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-08T17:02:46.161Z",
+  "generatedAt": "2026-06-09T21:35:05.088Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -355,7 +355,6 @@
     "lib/retab/workflow_runs/workflow_export_payload_response.rb",
     "lib/retab/workflow_runs/workflow_run.rb",
     "lib/retab/workflow_spec.rb",
-    "lib/retab/workflow_spec/declarative_apply_response.rb",
     "lib/retab/workflow_spec/declarative_export_response.rb",
     "lib/retab/workflow_spec/declarative_validation_response.rb",
     "lib/retab/workflow_steps.rb",
@@ -425,6 +424,7 @@
     "lib/retab/workflow_tests/workflow_test_block_target.rb",
     "lib/retab/workflows.rb",
     "lib/retab/workflows/create_workflow_request.rb",
+    "lib/retab/workflows/declarative_apply_response.rb",
     "lib/retab/workflows/declarative_plan_change.rb",
     "lib/retab/workflows/declarative_plan_field_change.rb",
     "lib/retab/workflows/declarative_plan_resource_change.rb",
@@ -1039,6 +1039,14 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "list_versions",
       "service": "workflows"
@@ -1073,10 +1081,6 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/plan": {
-      "sdkMethod": "create_plan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {
@@ -1267,24 +1271,12 @@
       "sdkMethod": "cancel",
       "service": "workflows.runs"
     },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "apply",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "plan",
-      "service": "workflows.spec"
-    },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "validate",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "get",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/apply": {
-      "sdkMethod": "apply_to_workflow",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

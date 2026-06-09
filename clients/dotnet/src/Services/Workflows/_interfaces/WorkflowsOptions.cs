@@ -29,6 +29,38 @@ namespace Retab
 
     }
 
+    /// <summary>Request options for <see cref="WorkflowsService.ApplyAsync"/>: Apply Workflow Spec</summary>
+    public class WorkflowsApplyOptions : BaseOptions
+    {
+        /// <summary>Workflow YAML definition</summary>
+        public string YamlDefinition { get; set; } = default!;
+
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
+
+        /// <summary>Optional workflow id; when set, the request targets the existing-resource route instead of the id-less route.</summary>
+        [JsonIgnore]
+        [STJS.JsonIgnore]
+        public string? WorkflowId { get; set; } = null;
+
+    }
+
+    /// <summary>Request options for <see cref="WorkflowsService.PlanAsync"/>: Plan Workflow Spec</summary>
+    public class WorkflowsPlanOptions : BaseOptions
+    {
+        /// <summary>Workflow YAML definition</summary>
+        public string YamlDefinition { get; set; } = default!;
+
+        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
+        public string? ProjectId { get; set; }
+
+        /// <summary>Optional workflow id; when set, the request targets the existing-resource route instead of the id-less route.</summary>
+        [JsonIgnore]
+        [STJS.JsonIgnore]
+        public string? WorkflowId { get; set; } = null;
+
+    }
+
     /// <summary>Request options for <see cref="WorkflowsService.ListVersionsAsync"/>: List Workflow Versions</summary>
     public class WorkflowsListVersionsOptions : ListOptions
     {
@@ -81,16 +113,5 @@ namespace Retab
     /// <summary>Request options for <see cref="WorkflowsService.PublishAsync"/>: Publish Workflow</summary>
     public class WorkflowsPublishOptions : BaseOptions
     {
-    }
-
-    /// <summary>Request options for <see cref="WorkflowsService.CreatePlanAsync"/>: Plan Existing Workflow Spec</summary>
-    public class WorkflowsCreatePlanOptions : BaseOptions
-    {
-        /// <summary>Workflow YAML definition</summary>
-        public string YamlDefinition { get; set; } = default!;
-
-        /// <summary>Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.</summary>
-        public string? ProjectId { get; set; }
-
     }
 }

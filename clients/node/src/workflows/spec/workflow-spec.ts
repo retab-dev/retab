@@ -2,59 +2,18 @@
 
 import type { Retab } from '../../retab.js';
 import type {
-  DeclarativePlanResponse,
-  DeclarativePlanResponseResponse,
-} from '../../workflows/interfaces/index.js';
-import type {
-  DeclarativeApplyResponse,
-  DeclarativeApplyResponseResponse,
   DeclarativeExportResponse,
   DeclarativeExportResponseResponse,
   DeclarativeValidationResponse,
   DeclarativeValidationResponseResponse,
 } from '../../workflows/spec/interfaces/index.js';
-import { deserializeDeclarativePlanResponse } from '../../workflows/interfaces/index.js';
 import {
-  deserializeDeclarativeApplyResponse,
   deserializeDeclarativeExportResponse,
   deserializeDeclarativeValidationResponse,
 } from '../../workflows/spec/interfaces/index.js';
 
 export class WorkflowSpec {
   constructor(private readonly client: Retab) {}
-
-  /** Apply Workflow Spec */
-  async apply(
-    yamlDefinition: string,
-    projectId?: string | null
-  ): Promise<DeclarativeApplyResponse> {
-    const body = {
-      yaml_definition: yamlDefinition,
-      project_id: projectId,
-    };
-    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
-      method: 'POST',
-      path: '/v1/workflows/spec/apply',
-      query: undefined,
-      body: body,
-    });
-    return deserializeDeclarativeApplyResponse(__wire);
-  }
-
-  /** Plan Workflow Spec */
-  async plan(yamlDefinition: string, projectId?: string | null): Promise<DeclarativePlanResponse> {
-    const body = {
-      yaml_definition: yamlDefinition,
-      project_id: projectId,
-    };
-    const __wire = await this.client.request<DeclarativePlanResponseResponse>({
-      method: 'POST',
-      path: '/v1/workflows/spec/plan',
-      query: undefined,
-      body: body,
-    });
-    return deserializeDeclarativePlanResponse(__wire);
-  }
 
   /** Validate Workflow Spec */
   async validate(
@@ -83,24 +42,5 @@ export class WorkflowSpec {
       body: undefined,
     });
     return deserializeDeclarativeExportResponse(__wire);
-  }
-
-  /** Apply Existing Workflow Spec */
-  async apply_to_workflow(
-    workflowId: string,
-    yamlDefinition: string,
-    projectId?: string | null
-  ): Promise<DeclarativeApplyResponse> {
-    const body = {
-      yaml_definition: yamlDefinition,
-      project_id: projectId,
-    };
-    const __wire = await this.client.request<DeclarativeApplyResponseResponse>({
-      method: 'POST',
-      path: `/v1/workflows/${workflowId}/spec/apply`,
-      query: undefined,
-      body: body,
-    });
-    return deserializeDeclarativeApplyResponse(__wire);
   }
 }

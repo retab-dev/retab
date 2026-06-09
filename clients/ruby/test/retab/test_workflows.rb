@@ -25,6 +25,20 @@ class WorkflowsTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_apply_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.apply(yaml_definition: "stub")
+    refute_nil(result)
+  end
+
+  def test_plan_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/spec/plan(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.workflows.plan(yaml_definition: "stub")
+    refute_nil(result)
+  end
+
   def test_list_versions_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/workflows/versions(\?|\z)})
       .to_return(body: "{\"data\": [], \"list_metadata\": {}}", status: 200)
@@ -125,6 +139,18 @@ class WorkflowsTest < Minitest::Test
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}},
     {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/workflows(\?|\z)}, args: {project_id: "stub"}},
+    {
+      name: :apply,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/apply(\?|\z)},
+      args: {yaml_definition: "stub"}
+    },
+    {
+      name: :plan,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/workflows/spec/plan(\?|\z)},
+      args: {yaml_definition: "stub"}
+    },
     {
       name: :list_versions,
       verb: :get,

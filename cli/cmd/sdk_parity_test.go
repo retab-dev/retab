@@ -64,10 +64,12 @@ var sdkOperationCommandAliases = map[string]string{
 	// of the local bundle validator rather than the generated block-validate-config
 	// name.
 	"workflows.blocks.CreateBlockValidateConfig": "workflows blocks validate-config",
-	// The API method name includes the target object for clarity; the CLI keeps
-	// the shorter verb under the spec namespace.
-	"workflows.spec.ApplyToWorkflow": "workflows spec apply-to",
-	"workflows.CreatePlan":           "workflows spec plan-to",
+	// `plan`/`apply` are single SDK methods on the Workflows service that take an
+	// optional workflow_id (route-merge: id-less vs existing-workflow route). The
+	// CLI keeps them under the `spec` namespace; the `-to` variants pass the id
+	// and are declared CLI-only below.
+	"workflows.Plan":  "workflows spec plan",
+	"workflows.Apply": "workflows spec apply",
 }
 
 var workflowCLIOnlyCommands = map[string]string{
@@ -81,6 +83,8 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows blocks api-calls run":     "local api_call dry-run renderer and opt-in executor",
 	"workflows blocks functions hydrate": "local function runtime scaffolding for pulled function bundles",
 	"workflows blocks functions run":     "local function runner for hydrated function bundles",
+	"workflows spec plan-to":            "workflows.Plan with an explicit workflow_id (existing-workflow plan route)",
+	"workflows spec apply-to":           "workflows.Apply with an explicit workflow_id (existing-workflow apply route)",
 	"workflows reviews schema":           "local schema helper composed from reviews get",
 	"workflows runs restart":             "local restart alias composed from runs create",
 	"workflows experiments runs wait":    "local poll loop composed from experiments runs get",

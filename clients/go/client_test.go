@@ -349,10 +349,10 @@ func TestWorkflowSpecRoutesMatchPythonAndNode(t *testing.T) {
 	if _, err := client.Workflows.Spec.Validate(context.Background(), &WorkflowSpecValidateParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Spec.Plan(context.Background(), &WorkflowSpecPlanParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
+	if _, err := client.Workflows.Plan(context.Background(), &WorkflowsPlanParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Spec.Apply(context.Background(), &WorkflowSpecApplyParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
+	if _, err := client.Workflows.Apply(context.Background(), &WorkflowsApplyParams{YamlDefinition: invoiceWorkflowYAML}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := client.Workflows.Spec.Get(context.Background(), "wf_123"); err != nil {
