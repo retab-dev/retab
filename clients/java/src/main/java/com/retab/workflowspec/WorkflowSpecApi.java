@@ -3,9 +3,7 @@
 package com.retab.workflowspec;
 
 import com.retab.RetabClient;
-import com.retab.models.DeclarativeApplyResponse;
 import com.retab.models.DeclarativeExportResponse;
-import com.retab.models.DeclarativePlanResponse;
 import com.retab.models.DeclarativeValidationResponse;
 import com.retab.models.DeclarativeWorkflowRequest;
 import java.io.IOException;
@@ -26,78 +24,6 @@ public final class WorkflowSpecApi {
 
   public RetabClient getClient() {
     return client;
-  }
-
-  public DeclarativeApplyResponse apply(DeclarativeWorkflowRequest request)
-      throws IOException, InterruptedException {
-    return apply(
-        request == null ? null : request.getYamlDefinition(),
-        request == null ? null : request.getProjectId());
-  }
-
-  public DeclarativeApplyResponse apply(String yamlDefinition, String projectId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/spec/apply";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("yaml_definition", yamlDefinition);
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
-  }
-
-  public DeclarativePlanResponse plan(DeclarativeWorkflowRequest request)
-      throws IOException, InterruptedException {
-    return plan(
-        request == null ? null : request.getYamlDefinition(),
-        request == null ? null : request.getProjectId());
-  }
-
-  public DeclarativePlanResponse plan(String yamlDefinition, String projectId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/spec/plan";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("yaml_definition", yamlDefinition);
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), DeclarativePlanResponse.class);
   }
 
   public DeclarativeValidationResponse validate(DeclarativeWorkflowRequest request)
@@ -155,45 +81,6 @@ public final class WorkflowSpecApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), DeclarativeExportResponse.class);
-  }
-
-  public DeclarativeApplyResponse applyToWorkflow(
-      String workflowId, DeclarativeWorkflowRequest request)
-      throws IOException, InterruptedException {
-    return applyToWorkflow(
-        workflowId,
-        request == null ? null : request.getYamlDefinition(),
-        request == null ? null : request.getProjectId());
-  }
-
-  public DeclarativeApplyResponse applyToWorkflow(
-      String workflowId, String yamlDefinition, String projectId)
-      throws IOException, InterruptedException {
-    String path = "/v1/workflows/" + encodePathSegment(workflowId) + "/spec/apply";
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("yaml_definition", yamlDefinition);
-    if (projectId != null) {
-      body.put("project_id", projectId);
-    }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
-    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), DeclarativeApplyResponse.class);
   }
 
   private static String encodePathSegment(Object value) {

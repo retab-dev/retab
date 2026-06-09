@@ -14,40 +14,6 @@ pub struct WorkflowSpecApi<'a> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ApplyParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: DeclarativeWorkflowRequest,
-}
-
-impl ApplyParams {
-    /// Construct a new `ApplyParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
-        Self { body }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct PlanParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: DeclarativeWorkflowRequest,
-}
-
-impl PlanParams {
-    /// Construct a new `PlanParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
-        Self { body }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
 pub struct ValidateParams {
     /// Request body sent with this call.
     ///
@@ -64,72 +30,7 @@ impl ValidateParams {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct ApplyToWorkflowParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: DeclarativeWorkflowRequest,
-}
-
-impl ApplyToWorkflowParams {
-    /// Construct a new `ApplyToWorkflowParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: DeclarativeWorkflowRequest) -> Self {
-        Self { body }
-    }
-}
-
 impl<'a> WorkflowSpecApi<'a> {
-    /// Apply Workflow Spec
-    ///
-    /// Create a new workflow from a declarative YAML spec.
-    ///
-    /// The workflow id in the YAML is treated as source context, not as the target
-    /// workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
-    /// existing workflow draft.
-    pub async fn apply(&self, params: ApplyParams) -> Result<DeclarativeApplyResponse, Error> {
-        self.apply_with_options(params, None).await
-    }
-
-    /// Variant of [`Self::apply`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn apply_with_options(
-        &self,
-        params: ApplyParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativeApplyResponse, Error> {
-        let path = "/v1/workflows/spec/apply".to_string();
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
-            .await
-    }
-
-    /// Plan Workflow Spec
-    ///
-    /// Preview the changes a declarative YAML spec would make to the draft workflow.
-    ///
-    /// Compares the spec against the current draft and returns the resulting
-    /// changes without applying them. A spec that already matches the draft
-    /// plans as a no-op.
-    pub async fn plan(&self, params: PlanParams) -> Result<DeclarativePlanResponse, Error> {
-        self.plan_with_options(params, None).await
-    }
-
-    /// Variant of [`Self::plan`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn plan_with_options(
-        &self,
-        params: PlanParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativePlanResponse, Error> {
-        let path = "/v1/workflows/spec/plan".to_string();
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
-            .await
-    }
-
     /// Validate Workflow Spec
     ///
     /// Validate declarative YAML without changing the workflow.
@@ -175,36 +76,6 @@ impl<'a> WorkflowSpecApi<'a> {
         let method = http::Method::GET;
         self.client
             .request_with_query_opts(method, &path, &(), options)
-            .await
-    }
-
-    /// Apply Existing Workflow Spec
-    ///
-    /// Apply a declarative YAML spec to an existing workflow draft.
-    ///
-    /// The URL workflow id is the update target. Any workflow id in the YAML is
-    /// treated as source context.
-    pub async fn apply_to_workflow(
-        &self,
-        workflow_id: &str,
-        params: ApplyToWorkflowParams,
-    ) -> Result<DeclarativeApplyResponse, Error> {
-        self.apply_to_workflow_with_options(workflow_id, params, None)
-            .await
-    }
-
-    /// Variant of [`Self::apply_to_workflow`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn apply_to_workflow_with_options(
-        &self,
-        workflow_id: &str,
-        params: ApplyToWorkflowParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<DeclarativeApplyResponse, Error> {
-        let workflow_id = crate::client::path_segment(workflow_id);
-        let path = format!("/v1/workflows/{workflow_id}/spec/apply");
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 }

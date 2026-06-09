@@ -131,6 +131,70 @@ module Retab
       result
     end
 
+    # Apply Workflow Spec
+    # @param yaml_definition [String] Workflow YAML definition
+    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::DeclarativeApplyResponse]
+    def apply(
+      yaml_definition:,
+      project_id: nil,
+      workflow_id: nil,
+      request_options: {}
+    )
+      path = workflow_id.nil? ? "/v1/workflows/spec/apply" : "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/apply"
+      body = {
+        "yaml_definition" => yaml_definition,
+        "project_id" => project_id
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: path,
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::DeclarativeApplyResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Plan Workflow Spec
+    # @param yaml_definition [String] Workflow YAML definition
+    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::DeclarativePlanResponse]
+    def plan(
+      yaml_definition:,
+      project_id: nil,
+      workflow_id: nil,
+      request_options: {}
+    )
+      path = workflow_id.nil? ? "/v1/workflows/spec/plan" : "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/plan"
+      body = {
+        "yaml_definition" => yaml_definition,
+        "project_id" => project_id
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: path,
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::DeclarativePlanResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # List Workflow Versions
     # @param workflow_id [String] Workflow whose versions to list
     # @param before [String, nil] Workflow version cursor before
@@ -382,38 +446,6 @@ module Retab
         request_options: request_options
       )
       result = Retab::Workflow.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Plan Existing Workflow Spec
-    # @param workflow_id [String]
-    # @param yaml_definition [String] Workflow YAML definition
-    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativePlanResponse]
-    def create_plan(
-      workflow_id:,
-      yaml_definition:,
-      project_id: nil,
-      request_options: {}
-    )
-      body = {
-        "yaml_definition" => yaml_definition,
-        "project_id" => project_id
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/plan",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::DeclarativePlanResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,

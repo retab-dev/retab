@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-08T17:02:38.125Z",
+  "generatedAt": "2026-06-09T21:35:04.270Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -299,6 +299,14 @@
       "sdkMethod": "Create",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "Apply",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "Plan",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "ListVersions",
       "service": "workflows"
@@ -333,10 +341,6 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "Publish",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/plan": {
-      "sdkMethod": "CreatePlan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {
@@ -527,24 +531,12 @@
       "sdkMethod": "Cancel",
       "service": "workflows.runs"
     },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "Apply",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "Plan",
-      "service": "workflows.spec"
-    },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "Validate",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "Get",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/apply": {
-      "sdkMethod": "ApplyToWorkflow",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

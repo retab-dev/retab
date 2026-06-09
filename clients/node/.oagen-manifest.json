@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-08T17:02:39.313Z",
+  "generatedAt": "2026-06-09T20:19:32.800Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -292,6 +292,8 @@
     "src/workflows/experiments/runs/interfaces/running-workflow-experiment-run.interface.ts",
     "src/workflows/experiments/workflow-experiments.ts",
     "src/workflows/interfaces/create-workflow-request.interface.ts",
+    "src/workflows/interfaces/declarative-apply-response-action.interface.ts",
+    "src/workflows/interfaces/declarative-apply-response.interface.ts",
     "src/workflows/interfaces/declarative-plan-change.interface.ts",
     "src/workflows/interfaces/declarative-plan-field-change-action.interface.ts",
     "src/workflows/interfaces/declarative-plan-field-change.interface.ts",
@@ -372,8 +374,6 @@
     "src/workflows/runs/interfaces/workflow-export-payload-response.interface.ts",
     "src/workflows/runs/interfaces/workflow-run.interface.ts",
     "src/workflows/runs/workflow-runs.ts",
-    "src/workflows/spec/interfaces/declarative-apply-response-action.interface.ts",
-    "src/workflows/spec/interfaces/declarative-apply-response.interface.ts",
     "src/workflows/spec/interfaces/declarative-export-response.interface.ts",
     "src/workflows/spec/interfaces/declarative-validation-response.interface.ts",
     "src/workflows/spec/interfaces/index.ts",

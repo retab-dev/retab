@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\DeclarativeApplyResponse;
 use Retab\Resource\DeclarativePlanResponse;
 use Retab\Resource\Workflow;
 use Retab\Resource\WorkflowGraphVersion;
@@ -141,6 +142,78 @@ class Workflows
             options: $options,
         );
         return Workflow::fromArray($response);
+    }
+
+    /**
+     * Apply Workflow Spec
+     *
+     * Create a new workflow from a declarative YAML spec.
+     *
+     * The workflow id in the YAML is treated as source context, not as the target
+     * workflow id. Use `POST /v1/workflows/{workflow_id}/spec/apply` to modify an
+     * existing workflow draft.
+     * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+     * @param string|null $workflowId When set, targets the existing-resource route.
+     * @return \Retab\Resource\DeclarativeApplyResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function apply(
+        string $yamlDefinition,
+        ?string $projectId = null,
+        ?string $workflowId = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\DeclarativeApplyResponse {
+        $path = $workflowId !== null && $workflowId !== ''
+            ? 'v1/workflows/' . rawurlencode($workflowId) . '/spec/apply'
+            : 'v1/workflows/spec/apply';
+        $body = array_filter([
+            'yaml_definition' => $yamlDefinition,
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'POST',
+            path: $path,
+            body: $body,
+            options: $options,
+        );
+        return DeclarativeApplyResponse::fromArray($response);
+    }
+
+    /**
+     * Plan Workflow Spec
+     *
+     * Preview the changes a declarative YAML spec would make to the draft workflow.
+     *
+     * Compares the spec against the current draft and returns the resulting
+     * changes without applying them. A spec that already matches the draft
+     * plans as a no-op.
+     * @param string $yamlDefinition Workflow YAML definition
+     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
+     * @param string|null $workflowId When set, targets the existing-resource route.
+     * @return \Retab\Resource\DeclarativePlanResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function plan(
+        string $yamlDefinition,
+        ?string $projectId = null,
+        ?string $workflowId = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\DeclarativePlanResponse {
+        $path = $workflowId !== null && $workflowId !== ''
+            ? 'v1/workflows/' . rawurlencode($workflowId) . '/spec/plan'
+            : 'v1/workflows/spec/plan';
+        $body = array_filter([
+            'yaml_definition' => $yamlDefinition,
+            'project_id' => $projectId,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'POST',
+            path: $path,
+            body: $body,
+            options: $options,
+        );
+        return DeclarativePlanResponse::fromArray($response);
     }
 
     /**
@@ -372,37 +445,5 @@ class Workflows
             options: $options,
         );
         return Workflow::fromArray($response);
-    }
-
-    /**
-     * Plan Existing Workflow Spec
-     *
-     * Preview applying a declarative YAML spec to an existing workflow draft.
-     *
-     * The URL workflow id is the plan target. Any workflow id in the YAML is
-     * treated as source context.
-     * @param string $workflowId
-     * @param string $yamlDefinition Workflow YAML definition
-     * @param string|null $projectId Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-     * @return \Retab\Resource\DeclarativePlanResponse
-     * @throws \Retab\Exception\RetabException
-     */
-    public function createPlan(
-        string $workflowId,
-        string $yamlDefinition,
-        ?string $projectId = null,
-        ?\Retab\RequestOptions $options = null,
-    ): \Retab\Resource\DeclarativePlanResponse {
-        $body = array_filter([
-            'yaml_definition' => $yamlDefinition,
-            'project_id' => $projectId,
-        ], fn($v) => $v !== null);
-        $response = $this->client->request(
-            method: 'POST',
-            path: 'v1/workflows/' . rawurlencode($workflowId) . '/spec/plan',
-            body: $body,
-            options: $options,
-        );
-        return DeclarativePlanResponse::fromArray($response);
     }
 }

@@ -8,6 +8,9 @@ from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 
 
+DeclarativeApplyResponseAction: TypeAlias = Literal["create", "update", "noop"]
+
+
 DeclarativePlanFieldChangeAction: TypeAlias = Literal["create", "update", "delete"]
 
 
@@ -38,12 +41,6 @@ class DeclarativePlanResourceChangeType(str, Enum):
     WHILE_LOOP_SENTINEL_END = "while_loop_sentinel_end"
     FOR_EACH_SENTINEL_START = "for_each_sentinel_start"
     FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
-
-
-class DeclarativePlanResponseAction(str, Enum):
-    CREATE = "create"
-    UPDATE = "update"
-    NOOP = "noop"
 
 
 class WorkflowCapabilities(str, Enum):
@@ -88,6 +85,9 @@ class WorkflowConfigBlockType(str, Enum):
 DeclarativePlanResourceChangeActions = DeclarativePlanFieldChangeAction
 
 
+DeclarativePlanResponseAction = DeclarativeApplyResponseAction
+
+
 class CreateWorkflowRequest(BaseModel):
     """Body for creating a workflow. Supply a `name` and optional `description`; the workflow starts empty."""
 
@@ -96,6 +96,23 @@ class CreateWorkflowRequest(BaseModel):
     name: str | None = Field(default="Untitled Workflow", description="The name of the workflow")
     description: str | None = Field(default="", description="Description of the workflow")
     project_id: str = Field(..., description="Project that should own this workflow.")
+
+
+class DeclarativeApplyResponse(BaseModel):
+    """The outcome of applying a workflow YAML definition: whether the workflow was `created`, the changes made, and a `rendered_plan`."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    workflow_id: str
+    action: DeclarativeApplyResponseAction
+    created: bool
+    block_count: int
+    edge_count: int
+    diagnostics: dict[str, Any]
+    format_version: str | None = Field(default="workflows-plan/v1")
+    summary: DeclarativePlanSummary | None = Field(default={"add": 0, "change": 0, "destroy": 0, "replace": 0, "noop": 0, "total": 0, "has_changes": False}, validate_default=True)
+    resource_changes: list[DeclarativePlanResourceChange] | None = Field(default=[])
+    rendered_plan: str | None = Field(default="No changes. Workflow spec is up to date.")
 
 
 class DeclarativePlanChange(BaseModel):
@@ -144,7 +161,7 @@ class DeclarativePlanResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
-    action: DeclarativePlanResponseAction
+    action: DeclarativeApplyResponseAction
     block_count: int
     edge_count: int
     diagnostics: dict[str, Any]
@@ -583,6 +600,7 @@ __all__ = [
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 CreateWorkflowRequest.model_rebuild()
+DeclarativeApplyResponse.model_rebuild()
 DeclarativePlanChange.model_rebuild()
 DeclarativePlanFieldChange.model_rebuild()
 DeclarativePlanResourceChange.model_rebuild()

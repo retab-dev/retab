@@ -46,6 +46,36 @@ class WorkflowsTest extends TestCase
         $this->assertSame('test_value', $body['project_id']);
     }
 
+    public function testApply(): void
+    {
+        $fixture = $this->loadFixture('declarative_apply_response');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->apply(yamlDefinition: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\DeclarativeApplyResponse::class, $result);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/spec/apply', $request->getUri()->getPath());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('test_value', $body['yaml_definition']);
+    }
+
+    public function testPlan(): void
+    {
+        $fixture = $this->loadFixture('declarative_plan_response');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->workflows()->plan(yamlDefinition: 'test_value');
+        $this->assertInstanceOf(\Retab\Resource\DeclarativePlanResponse::class, $result);
+        $this->assertSame($fixture['workflow_id'], $result->workflowId);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/workflows/spec/plan', $request->getUri()->getPath());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('test_value', $body['yaml_definition']);
+    }
+
     public function testListVersions(): void
     {
         $fixture = $this->loadFixture('list_workflow_graph_version');

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-08T17:02:47.153Z",
+  "generatedAt": "2026-06-09T20:20:35.326Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -728,6 +728,14 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "list_versions",
       "service": "workflows"
@@ -955,14 +963,6 @@
     "POST /v1/workflows/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
       "service": "workflows.runs"
-    },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "apply",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "plan",
-      "service": "workflows.spec"
     },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "validate",

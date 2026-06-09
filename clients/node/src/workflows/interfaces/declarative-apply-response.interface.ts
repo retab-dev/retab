@@ -4,21 +4,21 @@ import { z } from 'zod';
 import type {
   DeclarativePlanResourceChange,
   DeclarativePlanResourceChangeResponse,
-} from '../../../workflows/interfaces/declarative-plan-resource-change.interface.js';
+} from './declarative-plan-resource-change.interface.js';
 import {
   ZDeclarativePlanResourceChange,
   deserializeDeclarativePlanResourceChange,
   serializeDeclarativePlanResourceChange,
-} from '../../../workflows/interfaces/declarative-plan-resource-change.interface.js';
+} from './declarative-plan-resource-change.interface.js';
 import type {
   DeclarativePlanSummary,
   DeclarativePlanSummaryResponse,
-} from '../../../workflows/interfaces/declarative-plan-summary.interface.js';
+} from './declarative-plan-summary.interface.js';
 import {
   ZDeclarativePlanSummary,
   deserializeDeclarativePlanSummary,
   serializeDeclarativePlanSummary,
-} from '../../../workflows/interfaces/declarative-plan-summary.interface.js';
+} from './declarative-plan-summary.interface.js';
 import type { DeclarativeApplyResponseAction } from './declarative-apply-response-action.interface.js';
 import { ZDeclarativeApplyResponseAction } from './declarative-apply-response-action.interface.js';
 

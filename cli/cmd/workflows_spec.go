@@ -168,11 +168,11 @@ Plan is read-only — safe to run on production specs. Pair it with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := &retab.WorkflowSpecPlanParams{YamlDefinition: yaml}
+		params := &retab.WorkflowsPlanParams{YamlDefinition: yaml}
 		if projectID, _ := cmd.Flags().GetString("project-id"); projectID != "" {
 			params.ProjectID = ptr(projectID)
 		}
-		result, err := client.Workflows.Spec.Plan(ctx, params)
+		result, err := client.Workflows.Plan(ctx, params)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -205,7 +205,7 @@ Plan is read-only — safe to run before ` + "`apply-to`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.CreatePlan(ctx, args[0], &retab.WorkflowsCreatePlanParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Plan(ctx, &retab.WorkflowsPlanParams{YamlDefinition: yaml, WorkflowID: ptr(args[0])})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -263,7 +263,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		// happened. The only safe place to inspect it is from a prior
 		// plan call. The plan for a create-new spec is scoped to the same
 		// project the apply will target.
-		plan, err := client.Workflows.Spec.Plan(ctx, &retab.WorkflowSpecPlanParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
+		plan, err := client.Workflows.Plan(ctx, &retab.WorkflowsPlanParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -274,7 +274,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Spec.Apply(ctx, &retab.WorkflowSpecApplyParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
+		result, err := client.Workflows.Apply(ctx, &retab.WorkflowsApplyParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -311,7 +311,7 @@ changes with the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		plan, err := client.Workflows.CreatePlan(ctx, args[0], &retab.WorkflowsCreatePlanParams{YamlDefinition: yaml})
+		plan, err := client.Workflows.Plan(ctx, &retab.WorkflowsPlanParams{YamlDefinition: yaml, WorkflowID: ptr(args[0])})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -322,7 +322,7 @@ changes with the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
 		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Spec.ApplyToWorkflow(ctx, args[0], &retab.WorkflowSpecApplyToWorkflowParams{YamlDefinition: yaml})
+		result, err := client.Workflows.Apply(ctx, &retab.WorkflowsApplyParams{YamlDefinition: yaml, WorkflowID: ptr(args[0])})
 		if err != nil {
 			return translateSpecAPIError(err)
 		}

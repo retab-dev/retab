@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-08T17:02:43.157Z",
+  "generatedAt": "2026-06-09T20:20:36.456Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -616,6 +616,14 @@
       "sdkMethod": "CreateAsync",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "ApplyAsync",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "PlanAsync",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "ListVersionsAsync",
       "service": "workflows"
@@ -843,14 +851,6 @@
     "POST /v1/workflows/runs/{run_id}/cancel": {
       "sdkMethod": "CancelAsync",
       "service": "workflows.runs"
-    },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "ApplyAsync",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "PlanAsync",
-      "service": "workflows.spec"
     },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "ValidateAsync",

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-08T15:59:16.631Z",
+  "generatedAt": "2026-06-09T21:35:06.354Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -687,6 +687,14 @@
       "sdkMethod": "create",
       "service": "workflows"
     },
+    "POST /v1/workflows/spec/apply": {
+      "sdkMethod": "apply",
+      "service": "workflows"
+    },
+    "POST /v1/workflows/spec/plan": {
+      "sdkMethod": "plan",
+      "service": "workflows"
+    },
     "GET /v1/workflows/versions": {
       "sdkMethod": "listVersions",
       "service": "workflows"
@@ -721,10 +729,6 @@
     },
     "POST /v1/workflows/{workflow_id}/publish": {
       "sdkMethod": "publish",
-      "service": "workflows"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/plan": {
-      "sdkMethod": "createPlan",
       "service": "workflows"
     },
     "GET /v1/workflows/artifacts": {
@@ -915,24 +919,12 @@
       "sdkMethod": "cancel",
       "service": "workflows.runs"
     },
-    "POST /v1/workflows/spec/apply": {
-      "sdkMethod": "apply",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/spec/plan": {
-      "sdkMethod": "plan",
-      "service": "workflows.spec"
-    },
     "POST /v1/workflows/spec/validate": {
       "sdkMethod": "validate",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/{workflow_id}/spec": {
       "sdkMethod": "get",
-      "service": "workflows.spec"
-    },
-    "POST /v1/workflows/{workflow_id}/spec/apply": {
-      "sdkMethod": "applyToWorkflow",
       "service": "workflows.spec"
     },
     "GET /v1/workflows/steps": {

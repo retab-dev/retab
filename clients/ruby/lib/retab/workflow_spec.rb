@@ -10,66 +10,6 @@ module Retab
       @client = client
     end
 
-    # Apply Workflow Spec
-    # @param yaml_definition [String] Workflow YAML definition
-    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativeApplyResponse]
-    def apply(
-      yaml_definition:,
-      project_id: nil,
-      request_options: {}
-    )
-      body = {
-        "yaml_definition" => yaml_definition,
-        "project_id" => project_id
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/workflows/spec/apply",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::DeclarativeApplyResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Plan Workflow Spec
-    # @param yaml_definition [String] Workflow YAML definition
-    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativePlanResponse]
-    def plan(
-      yaml_definition:,
-      project_id: nil,
-      request_options: {}
-    )
-      body = {
-        "yaml_definition" => yaml_definition,
-        "project_id" => project_id
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/workflows/spec/plan",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::DeclarativePlanResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
     # Validate Workflow Spec
     # @param yaml_definition [String] Workflow YAML definition
     # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
@@ -115,38 +55,6 @@ module Retab
         request_options: request_options
       )
       result = Retab::DeclarativeExportResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Apply Existing Workflow Spec
-    # @param workflow_id [String]
-    # @param yaml_definition [String] Workflow YAML definition
-    # @param project_id [String, nil] Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::DeclarativeApplyResponse]
-    def apply_to_workflow(
-      workflow_id:,
-      yaml_definition:,
-      project_id: nil,
-      request_options: {}
-    )
-      body = {
-        "yaml_definition" => yaml_definition,
-        "project_id" => project_id
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/workflows/#{Retab::Util.encode_path(workflow_id)}/spec/apply",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::DeclarativeApplyResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,
