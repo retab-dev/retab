@@ -603,7 +603,12 @@ var workflowsRunsGetCmd = &cobra.Command{
 	Short: "Get a workflow run",
 	Long: `Fetch a run's metadata: status, trigger type, timestamps,
 duration, cost, error info. For per-block detail and outputs use
-` + "`workflows steps list`" + `.`,
+` + "`workflows steps list`" + `.
+
+Run ids are globally unique, so read and poll commands take only the
+` + "`<run-id>`" + ` — the workflow id is never in the path. Only ` + "`runs create`" + `,
+which addresses a parent collection, takes a workflow id. The same holds for
+` + "`workflows steps list <run-id>`" + ` and the tests/experiments run getters.`,
 	Example: `  # Inspect a run
   retab workflows runs get run_xyz789
 

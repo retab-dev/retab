@@ -471,6 +471,8 @@ func TestShapeUploadResponse(t *testing.T) {
 	cases := []struct {
 		name        string
 		input       retab.MIMEData
+		uploadPath  string
+		detected    string
 		wantID      string
 		wantErr     bool
 		wantErrSubs string
@@ -481,7 +483,9 @@ func TestShapeUploadResponse(t *testing.T) {
 				Filename: "invoice.pdf",
 				URL:      "https://storage.retab.com/org_01J/file_abc123.pdf",
 			},
-			wantID: "file_abc123",
+			uploadPath: "./invoice.pdf",
+			detected:   "application/pdf",
+			wantID:     "file_abc123",
 		},
 		{
 			name: "SDK ID() fails, fallback URL parse succeeds",
@@ -489,7 +493,9 @@ func TestShapeUploadResponse(t *testing.T) {
 				Filename: "report.txt",
 				URL:      "https://cdn.example.com/path/file_xyz.txt",
 			},
-			wantID: "file_xyz",
+			uploadPath: "./report.txt",
+			detected:   "text/plain; charset=utf-8",
+			wantID:     "file_xyz",
 		},
 		{
 			name: "neither route yields an id — hard error",
@@ -497,6 +503,8 @@ func TestShapeUploadResponse(t *testing.T) {
 				Filename: "weird.bin",
 				URL:      "https://cdn.example.com/no_extension",
 			},
+			uploadPath:  "./weird.bin",
+			detected:    "application/octet-stream",
 			wantErr:     true,
 			wantErrSubs: "missing a file id",
 		},
@@ -506,13 +514,15 @@ func TestShapeUploadResponse(t *testing.T) {
 				Filename: "nothing.bin",
 				URL:      "",
 			},
+			uploadPath:  "./nothing.bin",
+			detected:    "application/octet-stream",
 			wantErr:     true,
 			wantErrSubs: "missing a file id",
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			out, err := shapeUploadResponse(&tc.input)
+			out, err := shapeUploadResponse(&tc.input, tc.uploadPath, tc.detected)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("want error, got out=%+v", out)
@@ -539,6 +549,17 @@ func TestShapeUploadResponse(t *testing.T) {
 			if out.pairs[2].Key != "url" || out.pairs[2].Value != tc.input.URL {
 				t.Errorf("third pair = %+v, want {url, %q}", out.pairs[2], tc.input.URL)
 			}
+			// A normal upload must always carry a non-empty mime_type as the
+			// last pair, even when the server response left MIMEType empty.
+			if len(out.pairs) != 4 {
+				t.Fatalf("expected 4 pairs incl. mime_type, got %d: %+v", len(out.pairs), out.pairs)
+			}
+			if out.pairs[3].Key != "mime_type" {
+				t.Errorf("fourth pair key = %q, want mime_type", out.pairs[3].Key)
+			}
+			if mt, _ := out.pairs[3].Value.(string); mt == "" {
+				t.Errorf("mime_type must not be empty, got %+v", out.pairs[3])
+			}
 		})
 	}
 }
@@ -555,7 +576,7 @@ func TestShapeUploadResponse_PassesThroughMIMEType(t *testing.T) {
 		Filename: "invoice.pdf",
 		URL:      "https://storage.retab.com/org_01J/file_with_mime.pdf",
 		MIMEType: "application/pdf",
-	})
+	}, "./invoice.pdf", "application/pdf")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -581,7 +602,7 @@ func TestUploadResponseMarshalJSON(t *testing.T) {
 		Filename: "invoice.pdf",
 		URL:      "https://storage.retab.com/org_01J/file_render_test.pdf",
 		MIMEType: "application/pdf",
-	})
+	}, "./invoice.pdf", "application/pdf")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -633,7 +654,7 @@ func TestUploadResponseMarshalJSON_FallbackEndToEnd(t *testing.T) {
 		Filename: "report.txt",
 		URL:      "https://cdn.example.com/v1/files/file_e2e_fallback.txt",
 	}
-	out, err := shapeUploadResponse(fakeSDKResponse)
+	out, err := shapeUploadResponse(fakeSDKResponse, "./report.txt", "text/plain; charset=utf-8")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

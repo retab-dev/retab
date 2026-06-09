@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -74,11 +75,11 @@ store and a hint for content-type inference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := uploadFile(ctx, client, uploadPath)
+		result, detectedContentType, err := uploadFile(ctx, client, uploadPath)
 		if err != nil {
 			return err
 		}
-		out, err := shapeUploadResponse(result)
+		out, err := shapeUploadResponse(result, uploadPath, detectedContentType)
 		if err != nil {
 			return err
 		}
@@ -86,10 +87,16 @@ store and a hint for content-type inference.`,
 	}),
 }
 
-func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*retab.MIMEData, error) {
+// uploadFile runs the two-phase upload and also returns the content type it
+// detected from the file bytes (http.DetectContentType). That detected type
+// is the last-resort hint shapeUploadResponse uses for `mime_type` when the
+// server response carries an empty MIMEType and extension inference fails —
+// so the caller never has to re-read the bytes to recover what we already
+// sniffed here.
+func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*retab.MIMEData, string, error) {
 	data, err := os.ReadFile(uploadPath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	filename := filepath.Base(uploadPath)
 	contentType := http.DetectContentType(data)
@@ -102,7 +109,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 		Sha256:      &sha256Hash,
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	method := prepared.UploadMethod
 	if method == "" {
@@ -110,7 +117,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	}
 	req, err := http.NewRequestWithContext(ctx, method, prepared.UploadURL, bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	for key, value := range prepared.UploadHeaders {
 		req.Header.Set(key, value)
@@ -118,14 +125,18 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	req.Header.Set("Content-Type", contentType)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return nil, fmt.Errorf("direct upload failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return nil, "", fmt.Errorf("direct upload failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
-	return client.Files.CompleteUpload(ctx, prepared.FileID, &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
+	result, err := client.Files.CompleteUpload(ctx, prepared.FileID, &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
+	if err != nil {
+		return nil, "", err
+	}
+	return result, contentType, nil
 }
 
 // stageStdinUpload drains stdin into a temp file named per --filename so the
@@ -180,7 +191,17 @@ func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
 // the JSON encoder doesn't reshuffle keys. We use slice-pair encoding
 // (see uploadResponse.MarshalJSON) because encoding/json sorts map keys
 // alphabetically; without this `filename` would jump ahead of `id`.
-func shapeUploadResponse(result *retab.MIMEData) (uploadResponse, error) {
+// mime_type resolution — the server's CompleteUpload response frequently
+// comes back with an EMPTY MIMEType, but the CLI already knows the file's
+// type locally, so we never leave the field blank for a normal upload.
+// Preference order (see resolveUploadMIMEType):
+//  1. server result.MIMEType, when non-empty;
+//  2. extension-based mime.TypeByExtension(uploadPath) — the same
+//     extension→mime mapping the server itself applies at run time, so a
+//     .pdf reads as application/pdf and a .jpg as image/jpeg;
+//  3. the http.DetectContentType value uploadFile already computed from the
+//     bytes, as a last resort for extension-less paths.
+func shapeUploadResponse(result *retab.MIMEData, uploadPath, detectedContentType string) (uploadResponse, error) {
 	id := result.ID()
 	if id == "" {
 		id = fileIDFromURL(result.URL)
@@ -198,10 +219,33 @@ func shapeUploadResponse(result *retab.MIMEData) (uploadResponse, error) {
 			{"url", result.URL},
 		},
 	}
-	if result.MIMEType != "" {
-		out.pairs = append(out.pairs, uploadResponseField{"mime_type", result.MIMEType})
+	if mimeType := resolveUploadMIMEType(result.MIMEType, uploadPath, detectedContentType); mimeType != "" {
+		out.pairs = append(out.pairs, uploadResponseField{"mime_type", mimeType})
 	}
 	return out, nil
+}
+
+// resolveUploadMIMEType picks the mime_type displayed by `files upload`,
+// never returning empty for a normal upload. It prefers the server-resolved
+// type, then the extension-based type (matching the server's run-time
+// resolution), then the content-sniffed type uploadFile detected from the
+// bytes. mime.TypeByExtension can append parameters (e.g. "; charset=utf-8");
+// we strip those so the field is a bare media type like "application/pdf".
+func resolveUploadMIMEType(serverMIMEType, uploadPath, detectedContentType string) string {
+	if serverMIMEType != "" {
+		return serverMIMEType
+	}
+	if ext := filepath.Ext(uploadPath); ext != "" {
+		if byExt := mime.TypeByExtension(ext); byExt != "" {
+			if i := strings.IndexByte(byExt, ';'); i >= 0 {
+				byExt = strings.TrimSpace(byExt[:i])
+			}
+			if byExt != "" {
+				return byExt
+			}
+		}
+	}
+	return detectedContentType
 }
 
 // uploadResponse is an ordered-key JSON object so that `id` is the first

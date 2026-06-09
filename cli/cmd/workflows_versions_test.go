@@ -37,6 +37,7 @@ func TestWorkflowsVersionCommandsUseGeneratedRoutes(t *testing.T) {
 	if err := workflowsVersionsCmd.RunE(workflowsVersionsCmd, []string{"wf_123"}); err != nil {
 		t.Fatalf("versions: %v", err)
 	}
+	// diff via the flag form.
 	if err := workflowsDiffCmd.Flags().Set("from-version-id", "wfv_0"); err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +49,13 @@ func TestWorkflowsVersionCommandsUseGeneratedRoutes(t *testing.T) {
 		_ = workflowsDiffCmd.Flags().Set("to-version-id", "")
 	})
 	if err := workflowsDiffCmd.RunE(workflowsDiffCmd, []string{"wf_123"}); err != nil {
-		t.Fatalf("diff: %v", err)
+		t.Fatalf("diff (flags): %v", err)
+	}
+	// diff via the positional form (flags reset to empty first).
+	_ = workflowsDiffCmd.Flags().Set("from-version-id", "")
+	_ = workflowsDiffCmd.Flags().Set("to-version-id", "")
+	if err := workflowsDiffCmd.RunE(workflowsDiffCmd, []string{"wf_123", "wfv_0", "wfv_1"}); err != nil {
+		t.Fatalf("diff (positional): %v", err)
 	}
 	if err := workflowsVersionCmd.RunE(workflowsVersionCmd, []string{"wf_123", "wfv_1"}); err != nil {
 		t.Fatalf("version: %v", err)
@@ -57,8 +64,17 @@ func TestWorkflowsVersionCommandsUseGeneratedRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = workflowsVersionRestoreCmd.Flags().Set("yes", "false") })
+	// version-restore via the positional form.
 	if err := workflowsVersionRestoreCmd.RunE(workflowsVersionRestoreCmd, []string{"wf_123", "wfv_1"}); err != nil {
-		t.Fatalf("version-restore: %v", err)
+		t.Fatalf("version-restore (positional): %v", err)
+	}
+	// version-restore via the --version-id flag form.
+	if err := workflowsVersionRestoreCmd.Flags().Set("version-id", "wfv_1"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsVersionRestoreCmd.Flags().Set("version-id", "") })
+	if err := workflowsVersionRestoreCmd.RunE(workflowsVersionRestoreCmd, []string{"wf_123"}); err != nil {
+		t.Fatalf("version-restore (flag): %v", err)
 	}
 
 	got := strings.Join(seen, "\n")
@@ -72,6 +88,185 @@ func TestWorkflowsVersionCommandsUseGeneratedRoutes(t *testing.T) {
 			t.Fatalf("missing request %q in:\n%s", want, got)
 		}
 	}
+}
+
+func TestResolveDiffVersions(t *testing.T) {
+	t.Run("positional supplies both", func(t *testing.T) {
+		from, to, err := resolveDiffVersions([]string{"wf_1", "wfv_a", "wfv_b"}, "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if from != "wfv_a" || to != "wfv_b" {
+			t.Fatalf("got (%q,%q)", from, to)
+		}
+	})
+
+	t.Run("flags supply both", func(t *testing.T) {
+		from, to, err := resolveDiffVersions([]string{"wf_1"}, "wfv_a", "wfv_b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if from != "wfv_a" || to != "wfv_b" {
+			t.Fatalf("got (%q,%q)", from, to)
+		}
+	})
+
+	t.Run("positional and flag resolve identically", func(t *testing.T) {
+		fromPos, toPos, err := resolveDiffVersions([]string{"wf_1", "wfv_a", "wfv_b"}, "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		fromFlag, toFlag, err := resolveDiffVersions([]string{"wf_1"}, "wfv_a", "wfv_b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fromPos != fromFlag || toPos != toFlag {
+			t.Fatalf("positional (%q,%q) != flag (%q,%q)", fromPos, toPos, fromFlag, toFlag)
+		}
+	})
+
+	t.Run("matching positional and flag allowed", func(t *testing.T) {
+		from, to, err := resolveDiffVersions([]string{"wf_1", "wfv_a", "wfv_b"}, "wfv_a", "wfv_b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if from != "wfv_a" || to != "wfv_b" {
+			t.Fatalf("got (%q,%q)", from, to)
+		}
+	})
+
+	t.Run("conflicting from errors", func(t *testing.T) {
+		_, _, err := resolveDiffVersions([]string{"wf_1", "wfv_a", "wfv_b"}, "wfv_x", "")
+		if err == nil {
+			t.Fatal("expected conflict error")
+		}
+		if !strings.Contains(err.Error(), "--from-version-id") || !strings.Contains(err.Error(), "differ") {
+			t.Fatalf("error should name flag and conflict: %v", err)
+		}
+	})
+
+	t.Run("conflicting to errors", func(t *testing.T) {
+		_, _, err := resolveDiffVersions([]string{"wf_1", "wfv_a", "wfv_b"}, "", "wfv_y")
+		if err == nil {
+			t.Fatal("expected conflict error")
+		}
+		if !strings.Contains(err.Error(), "--to-version-id") {
+			t.Fatalf("error should name --to-version-id: %v", err)
+		}
+	})
+
+	t.Run("missing from mentions both forms", func(t *testing.T) {
+		_, _, err := resolveDiffVersions([]string{"wf_1"}, "", "wfv_b")
+		if err == nil {
+			t.Fatal("expected missing-from error")
+		}
+		if !strings.Contains(err.Error(), "positionally") || !strings.Contains(err.Error(), "--from-version-id") {
+			t.Fatalf("error should mention both forms: %v", err)
+		}
+	})
+
+	t.Run("missing to mentions both forms", func(t *testing.T) {
+		_, _, err := resolveDiffVersions([]string{"wf_1"}, "wfv_a", "")
+		if err == nil {
+			t.Fatal("expected missing-to error")
+		}
+		if !strings.Contains(err.Error(), "positionally") || !strings.Contains(err.Error(), "--to-version-id") {
+			t.Fatalf("error should mention both forms: %v", err)
+		}
+	})
+}
+
+func TestWorkflowsDiffArgs(t *testing.T) {
+	t.Run("one positional ok", func(t *testing.T) {
+		if err := workflowsDiffCmd.Args(workflowsDiffCmd, []string{"wf_1"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("three positionals ok", func(t *testing.T) {
+		if err := workflowsDiffCmd.Args(workflowsDiffCmd, []string{"wf_1", "wfv_a", "wfv_b"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("two positionals rejected", func(t *testing.T) {
+		err := workflowsDiffCmd.Args(workflowsDiffCmd, []string{"wf_1", "wfv_a"})
+		if err == nil {
+			t.Fatal("expected error for exactly two positionals")
+		}
+		if !strings.Contains(err.Error(), "both") {
+			t.Fatalf("error should explain both ids are needed: %v", err)
+		}
+	})
+	t.Run("four positionals rejected", func(t *testing.T) {
+		if err := workflowsDiffCmd.Args(workflowsDiffCmd, []string{"wf_1", "a", "b", "c"}); err == nil {
+			t.Fatal("expected error for four positionals")
+		}
+	})
+}
+
+func TestResolveRestoreVersionID(t *testing.T) {
+	t.Run("positional", func(t *testing.T) {
+		got, err := resolveRestoreVersionID([]string{"wf_1", "wfv_a"}, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != "wfv_a" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("flag", func(t *testing.T) {
+		got, err := resolveRestoreVersionID([]string{"wf_1"}, "wfv_a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != "wfv_a" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("positional and flag resolve identically", func(t *testing.T) {
+		pos, err := resolveRestoreVersionID([]string{"wf_1", "wfv_a"}, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		flag, err := resolveRestoreVersionID([]string{"wf_1"}, "wfv_a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pos != flag {
+			t.Fatalf("positional %q != flag %q", pos, flag)
+		}
+	})
+
+	t.Run("matching positional and flag allowed", func(t *testing.T) {
+		got, err := resolveRestoreVersionID([]string{"wf_1", "wfv_a"}, "wfv_a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != "wfv_a" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("conflict errors", func(t *testing.T) {
+		_, err := resolveRestoreVersionID([]string{"wf_1", "wfv_a"}, "wfv_b")
+		if err == nil {
+			t.Fatal("expected conflict error")
+		}
+		if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "differ") {
+			t.Fatalf("error should name flag and conflict: %v", err)
+		}
+	})
+
+	t.Run("missing mentions both forms", func(t *testing.T) {
+		_, err := resolveRestoreVersionID([]string{"wf_1"}, "")
+		if err == nil {
+			t.Fatal("expected missing error")
+		}
+		if !strings.Contains(err.Error(), "positionally") || !strings.Contains(err.Error(), "--version-id") {
+			t.Fatalf("error should mention both forms: %v", err)
+		}
+	})
 }
 
 func TestWorkflowsBlockAndEdgeVersionCommandsUseGeneratedRoutes(t *testing.T) {

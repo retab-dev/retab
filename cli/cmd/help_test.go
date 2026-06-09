@@ -499,14 +499,27 @@ func TestRenderRootHelp_HidesHelpAndCompletion(t *testing.T) {
 // in root.go, they must update help.go too — and vice versa. This test
 // fails loudly when the two drift.
 func TestHelpFlagsMatchRegisteredPersistentFlags(t *testing.T) {
+	// `registered` is every persistent root flag; `visible` excludes ones
+	// marked hidden. Hidden persistent flags (e.g. `--confirm`, which is a
+	// blanket parse-everywhere flag whose visible copy is registered locally
+	// on high-risk commands) are intentionally absent from the root help, so
+	// only `visible` flags are required to appear there. The converse check
+	// below still uses the full `registered` set: a help line must map to some
+	// real flag, hidden or not.
 	registered := map[string]bool{}
-	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) { registered[f.Name] = true })
+	visible := map[string]bool{}
+	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		registered[f.Name] = true
+		if !f.Hidden {
+			visible[f.Name] = true
+		}
+	})
 
-	// Render help and check every registered persistent flag appears.
+	// Render help and check every visible registered persistent flag appears.
 	var buf bytes.Buffer
 	renderRootHelp(&buf, rootCmd)
 	out := buf.String()
-	for name := range registered {
+	for name := range visible {
 		if !strings.Contains(out, "--"+name) {
 			t.Errorf("persistent flag --%s is registered but missing from help output:\n%s", name, out)
 		}

@@ -743,35 +743,47 @@ positional, filters are flags — same convention as the rest of the
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		flagWorkflowID, _ := cmd.Flags().GetString("workflow-id")
 		flagExperimentID, _ := cmd.Flags().GetString("experiment-id")
-		positionalWorkflowID := ""
-		positionalExperimentID := ""
-		if len(args) >= 1 {
-			positionalWorkflowID = args[0]
-		}
-		if len(args) >= 2 {
-			positionalExperimentID = args[1]
+		resolvedWorkflowID := flagWorkflowID
+		resolvedExperimentID := flagExperimentID
+		if len(args) == 1 {
+			switch {
+			case strings.HasPrefix(args[0], "exp_"):
+				if resolvedExperimentID != "" && resolvedExperimentID != args[0] {
+					return fmt.Errorf(
+						"experiment id specified twice (positional %q, --experiment-id %q)",
+						args[0], resolvedExperimentID,
+					)
+				}
+				resolvedExperimentID = args[0]
+			default:
+				if resolvedWorkflowID != "" && resolvedWorkflowID != args[0] {
+					return fmt.Errorf(
+						"workflow id specified twice (positional %q, --workflow-id %q)",
+						args[0], resolvedWorkflowID,
+					)
+				}
+				resolvedWorkflowID = args[0]
+			}
 		}
 		// Reject conflict: positional + flag form disagreeing is a
 		// silent-misroute hazard (see the F-bug fix for the block create
 		// route's body/path workflow_id mismatch — same shape).
-		if positionalWorkflowID != "" && flagWorkflowID != "" && positionalWorkflowID != flagWorkflowID {
-			return fmt.Errorf(
-				"workflow id specified twice (positional %q, --workflow-id %q)",
-				positionalWorkflowID, flagWorkflowID,
-			)
-		}
-		if positionalExperimentID != "" && flagExperimentID != "" && positionalExperimentID != flagExperimentID {
-			return fmt.Errorf(
-				"experiment id specified twice (positional %q, --experiment-id %q)",
-				positionalExperimentID, flagExperimentID,
-			)
-		}
-		resolvedWorkflowID := flagWorkflowID
-		if positionalWorkflowID != "" {
+		if len(args) >= 2 {
+			positionalWorkflowID := args[0]
+			if positionalWorkflowID != "" && flagWorkflowID != "" && positionalWorkflowID != flagWorkflowID {
+				return fmt.Errorf(
+					"workflow id specified twice (positional %q, --workflow-id %q)",
+					positionalWorkflowID, flagWorkflowID,
+				)
+			}
+			positionalExperimentID := args[1]
+			if positionalExperimentID != "" && flagExperimentID != "" && positionalExperimentID != flagExperimentID {
+				return fmt.Errorf(
+					"experiment id specified twice (positional %q, --experiment-id %q)",
+					positionalExperimentID, flagExperimentID,
+				)
+			}
 			resolvedWorkflowID = positionalWorkflowID
-		}
-		resolvedExperimentID := flagExperimentID
-		if positionalExperimentID != "" {
 			resolvedExperimentID = positionalExperimentID
 		}
 		if err := validateBeforeAfterMutex(cmd); err != nil {

@@ -527,8 +527,8 @@ result records.`,
   # Fetch child result rows for a workflow-test run
   retab workflows tests results list wftestrun_mno345
 
-  # Recent runs for one test
-  retab workflows tests runs list --workflow-id wf_abc123 --test-id wfnodetest_jkl012`,
+  # Recent runs for one workflow (narrow to a test with --test-id)
+  retab workflows tests runs list wf_abc123 --test-id wfnodetest_jkl012`,
 }
 
 var workflowsTestsRunsCreateCmd = &cobra.Command{
@@ -598,13 +598,22 @@ results with ` + "`workflows tests results list`" + `.`,
 }
 
 var workflowsTestsRunsListCmd = &cobra.Command{
-	Use:   "list [flags]",
+	Use:   "list [workflow-id]",
 	Short: "List workflow-test runs",
 	Long: `List workflow-test runs. Filter by workflow, test, target block,
-status, trigger, date, or cursor.`,
-	Example: `  # Recent runs for one test
-  retab workflows tests runs list --workflow-id wf_abc123 --test-id wfnodetest_jkl012 --limit 50`,
-	Args: cobra.NoArgs,
+status, trigger, date, or cursor.
+
+Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
+the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
+is accepted when they agree; an error is raised only when they disagree. The
+workflow id is optional here: with neither form, runs are listed
+workspace-wide.`,
+	Example: `  # Recent runs for one workflow (positional)
+  retab workflows tests runs list wf_abc123 --limit 50
+
+  # Narrow to a single test (flag form still accepted)
+  retab workflows tests runs list wf_abc123 --test-id wfnodetest_jkl012 --limit 50`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateWorkflowTestsRunsListFilters(cmd); err != nil {
 			return err
@@ -612,13 +621,19 @@ status, trigger, date, or cursor.`,
 		if err := validateBeforeAfterMutex(cmd); err != nil {
 			return err
 		}
+		// Workflow id positionally OR via --workflow-id (co-equal forms);
+		// optional here — test runs have a workspace-wide listing.
+		workflowID, err := resolveWorkflowScope(cmd, args, false)
+		if err != nil {
+			return err
+		}
 		params := &retab.WorkflowTestRunsListParams{
 			PaginationParams: retab.PaginationParams{
 				Limit: ptr(getIntFlagOrDefault(cmd, "limit", 20)),
 			},
 		}
-		if v, _ := cmd.Flags().GetString("workflow-id"); v != "" {
-			params.WorkflowID = ptr(v)
+		if workflowID != "" {
+			params.WorkflowID = ptr(workflowID)
 		}
 		if v, _ := cmd.Flags().GetString("test-id"); v != "" {
 			params.TestID = ptr(v)
@@ -811,7 +826,7 @@ func init() {
 	workflowsTestsUpdateCmd.Flags().String("source-file", "", "JSON file with new source (or - for stdin)")
 
 	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
-	workflowsTestsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
+	workflowsTestsRunsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsTestsRunsListCmd.Flags().String("test-id", "", "filter by test id")
 	workflowsTestsRunsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")

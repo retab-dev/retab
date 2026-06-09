@@ -197,3 +197,77 @@ func TestWorkflowsBlocksListRequiresWorkflow(t *testing.T) {
 		t.Fatalf("expected required-workflow error, got nil")
 	}
 }
+
+// TestWorkflowsTestsRunsListAcceptsPositional pins the last command that was
+// missing from the harmonization: `tests runs list` is workspace-wide
+// (optional scope, like `runs list` / `reviews list`) and must accept the
+// workflow id positionally, not flag-only. Before the fix it was
+// `Use: "list [flags]"` with `cobra.NoArgs`, so a positional was rejected
+// outright.
+func TestWorkflowsTestsRunsListAcceptsPositional(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	var gotWorkflowID string
+	server := scopeListServer(t, &gotWorkflowID)
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	// Positional must be allowed by the Args validator (not NoArgs anymore).
+	if err := workflowsTestsRunsListCmd.Args(workflowsTestsRunsListCmd, []string{"wf_abc"}); err != nil {
+		t.Fatalf("tests runs list should accept one positional arg: %v", err)
+	}
+	_, stderr := captureStd(t, func() {
+		if err := workflowsTestsRunsListCmd.RunE(workflowsTestsRunsListCmd, []string{"wf_abc"}); err != nil {
+			t.Fatalf("tests runs list (positional): %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if gotWorkflowID != "wf_abc" {
+		t.Fatalf("workflow_id query = %q, want wf_abc", gotWorkflowID)
+	}
+}
+
+// TestWorkflowScopedListCommandsAcceptPositional is the drift guard. The
+// "identity/parent is positional, filters are flags" convention drifted once
+// (tests runs list shipped flag-only). This table walks every workflow-scoped
+// `list` command and asserts, structurally, that each one:
+//
+//   - advertises a `workflow-id` positional in its Use string, and
+//   - registers the `--workflow-id` back-compat flag, and
+//   - actually accepts one positional through its Args validator
+//     (i.e. is not cobra.NoArgs).
+//
+// A new workflow list command that forgets the positional form fails here
+// instead of silently re-introducing the inconsistency.
+func TestWorkflowScopedListCommandsAcceptPositional(t *testing.T) {
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "runs list", cmd: workflowsRunsListCmd},
+		{name: "reviews list", cmd: workflowsReviewsListCmd},
+		{name: "blocks list", cmd: workflowsBlocksListCmd},
+		{name: "edges list", cmd: workflowsEdgesListCmd},
+		{name: "tests list", cmd: workflowsTestsListCmd},
+		{name: "tests runs list", cmd: workflowsTestsRunsListCmd},
+		{name: "experiments list", cmd: workflowsExperimentsListCmd},
+		{name: "experiments runs list", cmd: workflowsExperimentsRunsListCmd},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if !strings.Contains(tc.cmd.Use, "workflow-id") {
+				t.Fatalf("%s: Use %q must advertise a workflow-id positional", tc.name, tc.cmd.Use)
+			}
+			if tc.cmd.Flags().Lookup("workflow-id") == nil {
+				t.Fatalf("%s: must register the --workflow-id back-compat flag", tc.name)
+			}
+			if tc.cmd.Args == nil {
+				t.Fatalf("%s: Args is nil (arbitrary) — declare an explicit MaximumNArgs", tc.name)
+			}
+			if err := tc.cmd.Args(tc.cmd, []string{"wf_positional"}); err != nil {
+				t.Fatalf("%s: must accept one positional workflow id, got: %v", tc.name, err)
+			}
+		})
+	}
+}
