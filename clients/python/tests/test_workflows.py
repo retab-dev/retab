@@ -217,8 +217,8 @@ def test_workflow_version_methods_use_version_routes() -> None:
         "environment_id": "env_1",
         "blocks": [],
         "edges": [],
-        "block_version_ids": {},
-        "edge_version_ids": {},
+        "block_version_ids": [],
+        "edge_version_ids": [],
         "created_at": "2026-01-01T00:00:00Z",
     }
 
@@ -745,12 +745,12 @@ def test_workflows_create_route() -> None:
         "updated_at": "2026-03-12T10:00:00Z",
     }
 
-    wf = Workflows(client=client).create(name="My Workflow", description="A test")
+    wf = Workflows(client=client).create(project_id="proj_test", name="My Workflow", description="A test")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/v1/workflows"
-    assert request.data == {"name": "My Workflow", "description": "A test"}
+    assert request.data == {"project_id": "proj_test", "name": "My Workflow", "description": "A test"}
     assert wf.id == "wf_new"
 
 
