@@ -56,7 +56,7 @@ func isStartDocumentBlock(block retab.WorkflowBlock) bool {
 
 var workflowsCmd = &cobra.Command{
 	Use:     "workflows",
-	Aliases: []string{"workflow", "experiments"},
+	Aliases: []string{"workflow"},
 	Short:   "Manage workflows",
 	Long: `Build and run multi-step document-processing pipelines.
 
