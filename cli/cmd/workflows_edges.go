@@ -6,8 +6,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -62,6 +64,118 @@ func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgesCreateParams {
 	}
 	ensureWorkflowEdgeID(&req)
 	return req
+}
+
+// readEdgeFileObject reads a single edge object from a JSON file (or stdin
+// when path is "-"). The shape matches one entry of a declarative spec's
+// `spec.edges` list, so the same fragment is portable between `spec` files and
+// `edges create --edge-file`.
+func readEdgeFileObject(path string) (map[string]any, error) {
+	var raw []byte
+	var err error
+	if path == "-" {
+		raw, err = io.ReadAll(os.Stdin)
+	} else {
+		raw, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("empty edge file")
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return nil, fmt.Errorf("invalid edge file JSON: %w", err)
+	}
+	return obj, nil
+}
+
+// parseSpecEdgeObject normalizes one declarative-spec edge object into
+// edge-create params. It mirrors the backend's edge normalizer: it accepts the
+// canonical nested source/target form, the legacy from/to form, and the flat
+// source_block/source_handle/target_block/target_handle form (the same keys as
+// the `edges create` flags), so a single fragment works in a spec file and via
+// `--edge-file`.
+func parseSpecEdgeObject(obj map[string]any) (retab.WorkflowEdgesCreateParams, error) {
+	req := retab.WorkflowEdgesCreateParams{}
+	if v, ok := obj["id"].(string); ok && v != "" {
+		req.ID = ptr(v)
+	}
+
+	sourceBlock, sourceHandle, err := extractSpecEdgeEndpoint(
+		obj, "source", "from", "source_block", "source_handle",
+	)
+	if err != nil {
+		return req, err
+	}
+	targetBlock, targetHandle, err := extractSpecEdgeEndpoint(
+		obj, "target", "to", "target_block", "target_handle",
+	)
+	if err != nil {
+		return req, err
+	}
+
+	req.SourceBlock = sourceBlock
+	req.TargetBlock = targetBlock
+	if sourceHandle != "" {
+		req.SourceHandle = ptr(sourceHandle)
+	}
+	if targetHandle != "" {
+		req.TargetHandle = ptr(targetHandle)
+	}
+	return req, nil
+}
+
+// extractSpecEdgeEndpoint pulls one endpoint (source or target) out of an edge
+// object, accepting the nested canonical/legacy form or the flat form, with
+// targeted errors when the spellings conflict or none is present.
+func extractSpecEdgeEndpoint(
+	obj map[string]any, canonical, legacy, flatBlock, flatHandle string,
+) (string, string, error) {
+	var nested map[string]any
+	present := []string{}
+	for _, key := range []string{canonical, legacy} {
+		raw, ok := obj[key]
+		if !ok {
+			continue
+		}
+		present = append(present, key)
+		nestedMap, ok := raw.(map[string]any)
+		if !ok {
+			return "", "", fmt.Errorf("edge %s endpoint must be a {block, handle} object", canonical)
+		}
+		nested = nestedMap
+	}
+	if len(present) > 1 {
+		return "", "", fmt.Errorf(
+			"edge %s endpoint given twice as %q and %q; use one", canonical, present[0], present[1],
+		)
+	}
+
+	flatBlockVal, hasFlatBlock := obj[flatBlock].(string)
+	flatHandleVal, hasFlatHandle := obj[flatHandle].(string)
+	if (hasFlatBlock || hasFlatHandle) && nested != nil {
+		return "", "", fmt.Errorf("edge %s endpoint given both nested and flat; use one form", canonical)
+	}
+
+	if nested != nil {
+		block, _ := nested["block"].(string)
+		handle, _ := nested["handle"].(string)
+		if strings.TrimSpace(block) == "" {
+			return "", "", fmt.Errorf("edge %s endpoint is missing block", canonical)
+		}
+		return block, handle, nil
+	}
+	if hasFlatBlock || hasFlatHandle {
+		if strings.TrimSpace(flatBlockVal) == "" {
+			return "", "", fmt.Errorf("edge %s endpoint is missing %s", canonical, flatBlock)
+		}
+		return flatBlockVal, flatHandleVal, nil
+	}
+	return "", "", fmt.Errorf(
+		"edge is missing the %s endpoint; write `%s: {block: <id>, handle: <handle>}`", canonical, canonical,
+	)
 }
 
 func validateWorkflowEdgeCreate(req retab.WorkflowEdgesCreateParams) error {
@@ -341,7 +455,12 @@ you may pass the friendly input name from the block config, such as
   # Connect a conditional branch whose handle_key is "needs-review"
   retab workflows edges create wf_abc123 \
     --source-block block_cond_1 --source-handle output-json-needs-review \
-    --target-block block_extract_2`,
+    --target-block block_extract_2
+
+  # Create from a spec-shaped edge fragment (same shape as one spec.edges entry)
+  echo '{"source":{"block":"start","handle":"output-file-0"},
+         "target":{"block":"block_extract_1","handle":"document"}}' \
+    | retab workflows edges create wf_abc123 --edge-file -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -351,8 +470,28 @@ you may pass the friendly input name from the block config, such as
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.WorkflowEdgesCreateParams{WorkflowID: args[0]}
-		req.SourceBlock, _ = cmd.Flags().GetString("source-block")
-		req.TargetBlock, _ = cmd.Flags().GetString("target-block")
+		if edgeFile, _ := cmd.Flags().GetString("edge-file"); edgeFile != "" {
+			obj, err := readEdgeFileObject(edgeFile)
+			if err != nil {
+				return err
+			}
+			parsed, err := parseSpecEdgeObject(obj)
+			if err != nil {
+				return err
+			}
+			req.SourceBlock = parsed.SourceBlock
+			req.TargetBlock = parsed.TargetBlock
+			req.SourceHandle = parsed.SourceHandle
+			req.TargetHandle = parsed.TargetHandle
+			req.ID = parsed.ID
+		}
+		// Explicit flags override individual fields from --edge-file.
+		if v, _ := cmd.Flags().GetString("source-block"); v != "" {
+			req.SourceBlock = v
+		}
+		if v, _ := cmd.Flags().GetString("target-block"); v != "" {
+			req.TargetBlock = v
+		}
 		if sourceHandle, _ := cmd.Flags().GetString("source-handle"); sourceHandle != "" {
 			req.SourceHandle = ptr(sourceHandle)
 		}
@@ -466,12 +605,14 @@ func init() {
 	workflowsEdgesListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	workflowsEdgesCreateCmd.Flags().String("id", "", "edge id (optional)")
-	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required) (use start for the single start_document block)")
-	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required) (use start for the single start_document block)")
+	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required unless --edge-file supplies it) (use start for the single start_document block)")
+	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required unless --edge-file supplies it) (use start for the single start_document block)")
 	workflowsEdgesCreateCmd.Flags().String("source-handle", "", "source handle")
-	workflowsEdgesCreateCmd.Flags().String("target-handle", "", "target handle")
-	_ = workflowsEdgesCreateCmd.MarkFlagRequired("source-block")
-	_ = workflowsEdgesCreateCmd.MarkFlagRequired("target-block")
+	workflowsEdgesCreateCmd.Flags().String("target-handle", "", "target handle (friendly input names like document resolve to their exact id)")
+	workflowsEdgesCreateCmd.Flags().String("edge-file", "", "JSON file with one spec-shaped edge {source:{block,handle},target:{block,handle}} (or - for stdin); legacy from/to and flat source_block/... are also accepted; flags override individual fields")
+	// `source-block`/`target-block` are required, but `--edge-file` can supply
+	// them, so the requirement is enforced in `validateWorkflowEdgeCreate`
+	// (after the file is parsed) rather than by cobra at parse time.
 
 	workflowsEdgesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 

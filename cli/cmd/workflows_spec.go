@@ -53,7 +53,23 @@ Spec shape (minimum required keys):
         type: start_document
         label: Start
         position: {x: 0, y: 0}
-    edges: []
+      extract:
+        type: extract
+        position: {x: 420, y: 0}
+    edges:
+      - source: {block: start,   handle: output-file-0}
+        target: {block: extract, handle: document}
+
+Edges connect two endpoints. The canonical form nests ` + "`source`" + ` and
+` + "`target`" + `, each with a ` + "`block`" + ` and a ` + "`handle`" + `.
+For compatibility the parser also accepts the legacy ` + "`from`" + `/` + "`to`" + `
+nesting and the flat ` + "`source_block`" + `/` + "`source_handle`" + `/
+` + "`target_block`" + `/` + "`target_handle`" + ` spelling (the same keys
+as the ` + "`workflows edges create`" + ` flags). A friendly target handle
+such as ` + "`document`" + ` resolves to its exact id (` + "`input-file-document`" + `)
+on apply, exactly as ` + "`workflows edges create`" + ` does. ` + "`spec get`" + `
+always emits the canonical ` + "`source`" + `/` + "`target`" + ` form with
+exact handle ids.
 
 ` + "`apiVersion`" + ` is required and currently pinned at
 ` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.

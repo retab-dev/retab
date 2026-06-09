@@ -55,8 +55,9 @@ func isStartDocumentBlock(block retab.WorkflowBlock) bool {
 }
 
 var workflowsCmd = &cobra.Command{
-	Use:   "workflows",
-	Short: "Manage workflows",
+	Use:     "workflows",
+	Aliases: []string{"workflow", "experiments"},
+	Short:   "Manage workflows",
 	Long: `Build and run multi-step document-processing pipelines.
 
 A workflow is a DAG of blocks (` + "`extract`" + `, ` + "`split`" + `,
@@ -66,6 +67,16 @@ or JSON inputs flow through the graph; each block contributes to the final
 output. Add ` + "`config.review`" + ` to reviewable blocks when a run should
 pause for review. Workflows are versioned — drafts are mutable, published
 versions are immutable.
+
+Production safety — building a draft is unguarded by design. Editing a
+draft (` + "`create`" + `, ` + "`blocks create`" + `/` + "`update`" + `, ` + "`edges create`" + `/` + "`delete`" + `,
+` + "`spec apply`" + `) is reversible scratch work and never prompts, even
+against production. The confirmation gate (pass ` + "`--confirm`" + `, or type
+"production" at the prompt) fires only at the commit boundaries that have a
+runtime or irreversible effect: ` + "`publish`" + ` (releases an immutable
+version), ` + "`runs create`" + ` (executes against live inputs), and the
+` + "`delete`" + ` commands. So you can wire and reconfigure a draft freely, and
+only the act of publishing, running, or deleting asks you to confirm.
 
 Review is configured on the block (` + "`config.review`" + `), not as a
 standalone block. A reviewed run pauses with status
