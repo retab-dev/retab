@@ -75,9 +75,10 @@ var envListCmd = &cobra.Command{
 }
 
 var envAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Create an environment",
-	Args:  cobra.NoArgs,
+	Use:     "add",
+	Aliases: []string{"create"},
+	Short:   "Create an environment",
+	Args:    cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		name, err := requireNonBlankFlag(cmd, "name")
 		if err != nil {
@@ -162,10 +163,9 @@ var envClaimCmd = &cobra.Command{
 }
 
 var envGetCmd = &cobra.Command{
-	Use:    "get <environment-id>",
-	Short:  "Get an environment",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "get <environment-id>",
+	Short: "Get an environment",
+	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		result, err := getCLIEnvironment(cmd, args[0])
 		if err != nil {
@@ -423,16 +423,6 @@ func init() {
 	envAddCmd.Flags().String("name", "", "environment name")
 	envAddCmd.Flags().String("type", "non_production", "environment type: production | non_production")
 
-	envCreateAliasCmd := &cobra.Command{
-		Use:    "create",
-		Short:  envAddCmd.Short,
-		Hidden: true,
-		Args:   envAddCmd.Args,
-		RunE:   envAddCmd.RunE,
-	}
-	envCreateAliasCmd.Flags().String("name", "", "environment name")
-	envCreateAliasCmd.Flags().String("type", "non_production", "environment type: production | non_production")
-
-	envCmd.AddCommand(envListCmd, envAddCmd, envSwitchCmd, envWhichCmd, envClaimCmd, envGetCmd, envCreateAliasCmd)
+	envCmd.AddCommand(envListCmd, envAddCmd, envSwitchCmd, envWhichCmd, envClaimCmd, envGetCmd)
 	rootCmd.AddCommand(envCmd)
 }

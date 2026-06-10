@@ -29,9 +29,9 @@ var workflowsAPICallsCmd = &cobra.Command{
 
 Start by pulling an api_call block:
 
-  retab workflows blocks pull-config <workflow-id> <block-id> --out tmp/api
+  retab workflows blocks config pull <workflow-id> <block-id> --out tmp/api
 
-Bundles pulled with pull-config are hydrated automatically. Re-run hydrate when
+Bundles pulled with config pull are hydrated automatically. Re-run hydrate when
 you need to repair or regenerate local support files:
 
   retab workflows blocks api-calls hydrate tmp/api

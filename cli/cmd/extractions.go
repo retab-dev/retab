@@ -363,6 +363,10 @@ func init() {
 	extractionsWaitCmd := primitiveWaitCommand(extractionWaitSpec)
 	addPrimitiveWaitTuningFlags(extractionsWaitCmd, false)
 
-	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsCancelCmd, extractionsDeleteCmd, extractionsWaitCmd)
+	// Lead with the canonical lifecycle order shared by every primitive
+	// (create, get, list, cancel, delete, wait) so `--help` reads the same
+	// across extractions/parses/splits/…; the extraction-only verbs slot in
+	// next to their kin — stream beside create, sources beside get.
+	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsListCmd, extractionsCancelCmd, extractionsDeleteCmd, extractionsWaitCmd)
 	rootCmd.AddCommand(extractionsCmd)
 }

@@ -63,21 +63,36 @@ var sdkOperationCommandAliases = map[string]string{
 	// Server-side block config dry-run validation is exposed as the remote mode
 	// of the local bundle validator rather than the generated block-validate-config
 	// name.
-	"workflows.blocks.CreateBlockValidateConfig": "workflows blocks validate-config",
+	"workflows.blocks.CreateBlockValidateConfig": "workflows blocks config validate",
 	// `plan`/`apply` are single SDK methods on the Workflows service that take an
 	// optional workflow_id (route-merge: id-less vs existing-workflow route). The
 	// CLI keeps them under the `spec` namespace; the `-to` variants pass the id
 	// and are declared CLI-only below.
 	"workflows.Plan":  "workflows spec plan",
 	"workflows.Apply": "workflows spec apply",
+	// Versioning is exposed as a `versions` subgroup on each versioned resource
+	// (workflows, blocks, edges) rather than as flat verbs, so the SDK's
+	// List/Get/Diff/Restore version methods map onto the grouped leaves.
+	"workflows.ListVersions":                "workflows versions list",
+	"workflows.GetVersion":                  "workflows versions get",
+	"workflows.ListDiff":                    "workflows versions diff",
+	"workflows.CreateVersionRestore":        "workflows versions restore",
+	"workflows.blocks.ListVersions":         "workflows blocks versions list",
+	"workflows.blocks.GetVersion":           "workflows blocks versions get",
+	"workflows.blocks.ListDiff":             "workflows blocks versions diff",
+	"workflows.blocks.CreateVersionRestore": "workflows blocks versions restore",
+	"workflows.edges.ListVersions":          "workflows edges versions list",
+	"workflows.edges.GetVersion":            "workflows edges versions get",
+	"workflows.edges.ListDiff":              "workflows edges versions diff",
+	"workflows.edges.CreateVersionRestore":  "workflows edges versions restore",
 }
 
 var workflowCLIOnlyCommands = map[string]string{
-	"workflows blocks pull-config":       "local block-config bundle export composed from workflows blocks get",
-	"workflows blocks push-config":       "local block-config bundle import composed from workflows blocks get/update",
-	"workflows blocks diff-config":       "local block-config bundle diff composed from workflows blocks get",
-	"workflows blocks validate-config":   "local block-config bundle validation with backend dry-run",
-	"workflows blocks doctor-config":     "local block-config bundle diagnostics",
+	"workflows blocks config pull":       "local block-config bundle export composed from workflows blocks get",
+	"workflows blocks config push":       "local block-config bundle import composed from workflows blocks get/update",
+	"workflows blocks config diff":       "local block-config bundle diff composed from workflows blocks get",
+	"workflows blocks config validate":   "local block-config bundle validation with backend dry-run",
+	"workflows blocks config doctor":     "local block-config bundle diagnostics",
 	"workflows blocks api-calls hydrate": "local api_call runtime scaffolding for pulled api_call bundles",
 	"workflows blocks api-calls render":  "local api_call request rendering for pulled api_call bundles",
 	"workflows blocks api-calls run":     "local api_call dry-run renderer and opt-in executor",
