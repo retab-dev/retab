@@ -53,7 +53,7 @@ remain scoped by the server-side key record.`,
   # Create a non-production environment
   retab env add --name Staging --type non_production
 
-  # Select by environment id, name, or slug (name/slug are case-insensitive)
+  # Select by environment id or name (the name match is case-insensitive)
   retab env switch Staging
   retab env switch staging
 
@@ -103,7 +103,7 @@ var envAddCmd = &cobra.Command{
 }
 
 var envSwitchCmd = &cobra.Command{
-	Use:   "switch <environment-id-name-or-slug>",
+	Use:   "switch <environment-id-or-name>",
 	Short: "Select the environment used by CLI requests",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -144,7 +144,7 @@ var envWhichCmd = &cobra.Command{
 		cfg, _ := loadConfig()
 		environmentID, source := selectedEnvironmentIDWithSource(cmd, cfg)
 		if environmentID == "" {
-			return fmt.Errorf("no environment selected. Run `retab env switch <environment-id-name-or-slug>`")
+			return fmt.Errorf("no environment selected. Run `retab env switch <environment-id-or-name>`")
 		}
 
 		environment, err := getCLIEnvironment(cmd, environmentID)
@@ -156,7 +156,7 @@ var envWhichCmd = &cobra.Command{
 }
 
 var envClaimCmd = &cobra.Command{
-	Use:   "claim <environment-id-name-or-slug>",
+	Use:   "claim <environment-id-or-name>",
 	Short: "Claim an environment for this local CLI config",
 	Args:  envSwitchCmd.Args,
 	RunE:  envSwitchCmd.RunE,
@@ -342,14 +342,14 @@ func selectedEnvironmentStructCell(selection selectedEnvironment, field string) 
 	}
 }
 
-// resolveEnvironmentSelection maps user input (an environment id, name, or
-// slug) to a single environment. All three are unique keys, so any of them is
-// accepted, and name/slug matching is case-insensitive ("staging" selects
-// "Staging"). Precedence, highest first:
+// resolveEnvironmentSelection maps user input (an environment id or name) to a
+// single environment. Both are unique keys, so either is accepted, and name
+// matching is case-insensitive ("staging" selects "Staging"). Precedence,
+// highest first:
 //
 //  1. exact id match
 //  2. exact (case-sensitive) name match
-//  3. case-insensitive name/slug match
+//  3. case-insensitive name match
 //
 // Each tier is resolved against the whole list before falling through to the
 // next, so an exact id always wins over a name collision and an exact-case
@@ -360,7 +360,7 @@ func selectedEnvironmentStructCell(selection selectedEnvironment, field string) 
 func resolveEnvironmentSelection(raw string, list *cliPaginatedList[cliEnvironment]) (*cliEnvironment, error) {
 	needle := strings.TrimSpace(raw)
 	if needle == "" {
-		return nil, fmt.Errorf("environment id, name, or slug is required")
+		return nil, fmt.Errorf("environment id or name is required")
 	}
 
 	var exactNameMatches, foldNameMatches []*cliEnvironment
@@ -383,7 +383,7 @@ func resolveEnvironmentSelection(raw string, list *cliPaginatedList[cliEnvironme
 	if match, err := pickSingleEnvironment(needle, exactNameMatches); match != nil || err != nil {
 		return match, err
 	}
-	// 3. Case-insensitive name/slug ("staging" -> "Staging").
+	// 3. Case-insensitive name ("staging" -> "Staging").
 	if match, err := pickSingleEnvironment(needle, foldNameMatches); match != nil || err != nil {
 		return match, err
 	}
