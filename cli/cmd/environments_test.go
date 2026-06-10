@@ -44,6 +44,69 @@ func TestResolveEnvironmentSelectionRejectsAmbiguousName(t *testing.T) {
 	}
 }
 
+func TestResolveEnvironmentSelectionMatchesNameCaseInsensitively(t *testing.T) {
+	list := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_1", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+		{ID: "env_2", Name: "Production", Type: cliEnvironmentTypeProduction},
+	}}
+
+	// Case-insensitivity is generic across every environment name, not just
+	// "staging" — any casing (and surrounding whitespace) resolves.
+	cases := map[string]string{
+		"staging":      "env_1",
+		"STAGING":      "env_1",
+		"  Staging  ":  "env_1",
+		"production":   "env_2",
+		"Production":   "env_2",
+		"PRODUCTION":   "env_2",
+		"  PrOdUcTiOn": "env_2",
+	}
+	for needle, wantID := range cases {
+		got, err := resolveEnvironmentSelection(needle, list)
+		if err != nil {
+			t.Fatalf("resolveEnvironmentSelection(%q): %v", needle, err)
+		}
+		if got.ID != wantID {
+			t.Fatalf("resolveEnvironmentSelection(%q) = %q, want %q", needle, got.ID, wantID)
+		}
+	}
+}
+
+func TestResolveEnvironmentSelectionPrefersExactCaseName(t *testing.T) {
+	// A distinct exact-case name must win over an unrelated fold collision so
+	// adding a case variant never makes a previously-unambiguous name ambiguous.
+	list := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_exact", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+		{ID: "env_fold", Name: "STAGING", Type: cliEnvironmentTypeNonProduction},
+	}}
+
+	got, err := resolveEnvironmentSelection("Staging", list)
+	if err != nil {
+		t.Fatalf("resolveEnvironmentSelection: %v", err)
+	}
+	if got.ID != "env_exact" {
+		t.Fatalf("selected id = %q, want exact-case match env_exact", got.ID)
+	}
+}
+
+func TestResolveEnvironmentSelectionFailsLoudlyWhenNotFound(t *testing.T) {
+	list := &cliPaginatedList[cliEnvironment]{Data: []cliEnvironment{
+		{ID: "env_1", Name: "Staging", Type: cliEnvironmentTypeNonProduction},
+	}}
+
+	_, err := resolveEnvironmentSelection("does-not-exist", list)
+	if err == nil {
+		t.Fatal("expected not-found error, got nil (silent fallback)")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("error = %q, want not found", err.Error())
+	}
+	// The error must be actionable: list what is available.
+	if !strings.Contains(err.Error(), "env_1") || !strings.Contains(err.Error(), "Staging") {
+		t.Fatalf("error = %q, want it to list available environments", err.Error())
+	}
+}
+
 func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
