@@ -33,7 +33,12 @@ func TestParseDocumentArgs_DocumentFlagOnly_NoWarning(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateReadsDocumentBeforeCredentials(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	// Isolate %USERPROFILE% too (Windows) so a sibling test's leaked config
+	// (selected production environment) can't trigger the --confirm guard
+	// before local document validation runs.
+	t.Setenv("USERPROFILE", home)
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -113,8 +114,10 @@ func TestBuildAuthorizeURL_AlwaysRequestsOfflineAccess(t *testing.T) {
 // (since the rename is atomic, the file is either the prior contents or
 // the new contents, never half-formed bytes).
 func TestSaveConfig_IsAtomic(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("HOME", tmp)
+	// isolateHome sets HOME *and* USERPROFILE; on Windows saveConfig resolves
+	// the config dir via %USERPROFILE%, so HOME alone would write outside tmp
+	// and the post-save readdir below would miss the file entirely.
+	tmp := isolateHome(t)
 	// pre-populate with a known-good baseline
 	first := retabConfig{APIKey: "sk_first"}
 	if err := saveConfig(first); err != nil {
@@ -162,8 +165,9 @@ func TestSaveConfig_IsAtomic(t *testing.T) {
 // rename. A common atomic-rename bug is creating the temp file with
 // default 0644 and inheriting that into the destination.
 func TestSaveConfig_Preserves0600(t *testing.T) {
-	tmp := t.TempDir()
-	t.Setenv("HOME", tmp)
+	// isolateHome sets HOME and USERPROFILE so the config lands in tmp on
+	// Windows too (saveConfig resolves via %USERPROFILE% there).
+	tmp := isolateHome(t)
 	if err := saveConfig(retabConfig{APIKey: "k"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
@@ -172,7 +176,8 @@ func TestSaveConfig_Preserves0600(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stat: %v", err)
 	}
-	if got := st.Mode().Perm(); got != 0o600 {
+	// NTFS doesn't carry POSIX mode bits, so the 0600 contract is POSIX-only.
+	if got := st.Mode().Perm(); runtime.GOOS != "windows" && got != 0o600 {
 		t.Errorf("config perm = %v, want 0600", got)
 	}
 }
