@@ -292,8 +292,8 @@ class Retab(BaseRetab):
                 headers = request_kwargs["headers"].copy()
                 headers.pop("Content-Type", None)
                 request_kwargs["headers"] = headers
-            elif data:
-                # For JSON requests
+            elif data is not None:
+                # For JSON requests (empty {} / [] are valid bodies)
                 request_kwargs["json"] = data
 
             try:
@@ -369,8 +369,8 @@ class Retab(BaseRetab):
                 headers = stream_kwargs["headers"].copy()
                 headers.pop("Content-Type", None)
                 stream_kwargs["headers"] = headers
-            elif data:
-                # For JSON requests
+            elif data is not None:
+                # For JSON requests (empty {} / [] are valid bodies)
                 stream_kwargs["json"] = data
 
             try:
@@ -559,8 +559,8 @@ class AsyncRetab(BaseRetab):
                 headers = request_kwargs["headers"].copy()
                 headers.pop("Content-Type", None)
                 request_kwargs["headers"] = headers
-            elif data:
-                # For JSON requests
+            elif data is not None:
+                # For JSON requests (empty {} / [] are valid bodies)
                 request_kwargs["json"] = data
 
             try:
@@ -635,8 +635,8 @@ class AsyncRetab(BaseRetab):
                 headers = stream_kwargs["headers"].copy()
                 headers.pop("Content-Type", None)
                 stream_kwargs["headers"] = headers
-            elif data:
-                # For JSON requests
+            elif data is not None:
+                # For JSON requests (empty {} / [] are valid bodies)
                 stream_kwargs["json"] = data
 
             try:

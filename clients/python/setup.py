@@ -2,9 +2,14 @@ from pathlib import Path
 
 from setuptools import find_packages, setup  # type: ignore
 
+# Resolve data files relative to this file, not the caller's cwd: `pip install
+# .` (or an sdist build) can run from a different directory, where a bare
+# Path("requirements.txt") raises FileNotFoundError.
+HERE = Path(__file__).parent.resolve()
+
 
 def load_requirements() -> list[str]:
-    requirements_path = Path("requirements.txt")
+    requirements_path = HERE / "requirements.txt"
     requirements: list[str] = []
     for raw_line in requirements_path.read_text().splitlines():
         line = raw_line.strip()
@@ -22,7 +27,7 @@ setup(
     author="Retab",
     author_email="contact@retab.com",
     description="Retab official python library",
-    long_description=Path("README.md").read_text(),
+    long_description=(HERE / "README.md").read_text(),
     long_description_content_type="text/markdown",
     url="https://github.com/retab-dev/retab",
     project_urls={"Team website": "https://retab.com"},
