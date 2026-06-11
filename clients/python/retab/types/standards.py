@@ -63,13 +63,3 @@ class ExportResponse(TypedDict):
 
     success: bool
     path: str
-
-
-class CountResponse(RetabBaseModel):
-    """Response from a resource `GET /count` route: the number of matching records.
-
-    A shared named component so every count route exposes a typed `count` field
-    (not a loose `dict`), keeping the OpenAPI->TypeScript bridge typed.
-    """
-
-    count: int
