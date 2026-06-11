@@ -55,7 +55,7 @@ pip install retab
 
 Node:
 ```bash
-npm install retab
+npm install @retab/node
 ```
 
 Go:
@@ -77,15 +77,14 @@ response = client.schemas.generate(
 
 Extract Data:
 ```python
-from pathlib import Path
+import json
 from retab import Retab
 
-from retab import Retab
 client = Retab()
 
 response = client.extractions.create(
-    json_schema = "Invoice_schema.json",
-    document = "Invoice.pdf",
+    json_schema=json.load(open("Invoice_schema.json")),  # json_schema must be a dict
+    document="Invoice.pdf",
     model="retab-small",
 )
 
@@ -104,19 +103,9 @@ The project workflow for schema optimization:
 3. Compare accuracy improvements → iterate until satisfied
 4. Deploy optimized schema to production
 
-```python
-from retab import Retab
-
-client = Retab()
-
-# Submit a single document
-completion = client.projects.extract(
-    project_id="eval_***",
-    document="path/to/document.pdf"
-)
-
-print(completion)
-```
+Projects are configured on the [Platform](https://www.retab.com/). From the SDK,
+you drive evaluation runs and schema iteration through the `workflows` API and its
+experiments (consensus likelihood) tooling — see the docs for the current surface.
 
 Projects give you an easy-to-use automation engine that's easy to integrate in your codebase and workflows.
 
