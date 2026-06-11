@@ -123,7 +123,10 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 		req.Header.Set(key, value)
 	}
 	req.Header.Set("Content-Type", contentType)
-	resp, err := http.DefaultClient.Do(req)
+	// Use the bounded transfer client, not http.DefaultClient: the latter has
+	// no timeout, so a wedged storage endpoint would hang an upload forever in
+	// an unattended script (only Ctrl-C via ctx would break it).
+	resp, err := fileDownloadClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

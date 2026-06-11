@@ -865,7 +865,18 @@ func doCLIBodyRequest(
 //     avoid loops if something deeper is wrong.
 func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (string, error) {
 	tok := *initial
+	// The SDK calls this provider once per outbound request and fires
+	// requests concurrently (parallel uploads, batched runs). On the
+	// pure-OAuth path it is used as the bearer provider directly (no
+	// dashboardContextTokenProvider mutex in front of it), so without this
+	// lock concurrent goroutines would race on `tok` and interleave
+	// loadConfig/saveConfig writes. Serializing also collapses a thundering
+	// herd of refreshes into one: the first goroutine refreshes, the rest
+	// take the fast path on the now-valid token.
+	var mu sync.Mutex
 	return func(ctx context.Context) (string, error) {
+		mu.Lock()
+		defer mu.Unlock()
 		if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
 			return tok.AccessToken, nil
 		}
@@ -1703,6 +1714,13 @@ var sensitiveHeaders = map[string]bool{
 	"authorization": true,
 }
 
+// maxDebugDumpBody bounds how many bytes of a request/response body --debug
+// copies into the dump string. The wire body is never affected — only the
+// human-readable dump is capped — so dumping an extraction request that
+// carries a large inline base64 document no longer doubles its size in
+// memory just to print it.
+const maxDebugDumpBody = 256 << 10 // 256 KiB
+
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var requestBody []byte
 	if req.Body != nil {
@@ -1731,8 +1749,12 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		dumpReq.ContentLength = int64(len(requestBody))
 	}
-	if dump, err := httputil.DumpRequestOut(dumpReq, true); err == nil {
+	includeReqBody := len(requestBody) <= maxDebugDumpBody
+	if dump, err := httputil.DumpRequestOut(dumpReq, includeReqBody); err == nil {
 		fmt.Fprintf(os.Stderr, "\n--- HTTP request ---\n%s\n", dump)
+		if !includeReqBody {
+			fmt.Fprintf(os.Stderr, "<request body omitted from --debug: %d bytes>\n", len(requestBody))
+		}
 	}
 	resp, err := t.wrapped.RoundTrip(req)
 	if err != nil {
@@ -1746,11 +1768,15 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	_ = resp.Body.Close()
 	resp.Body = io.NopCloser(bytes.NewReader(body))
+	includeRespBody := len(body) <= maxDebugDumpBody
 	dumpResp := *resp
 	dumpResp.Body = io.NopCloser(bytes.NewReader(body))
 	dumpResp.ContentLength = int64(len(body))
-	if dump, err := httputil.DumpResponse(&dumpResp, true); err == nil {
+	if dump, err := httputil.DumpResponse(&dumpResp, includeRespBody); err == nil {
 		fmt.Fprintf(os.Stderr, "--- HTTP response ---\n%s\n", dump)
+		if !includeRespBody {
+			fmt.Fprintf(os.Stderr, "<response body omitted from --debug: %d bytes>\n", len(body))
+		}
 	}
 	return resp, nil
 }
