@@ -216,6 +216,17 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         file_bytes = document.read()
         filename = getattr(document, "name", "uploaded_file")
         filename = Path(filename).name
+        if not Path(filename).suffix:
+            # A bare stream (e.g. io.BytesIO) carries no usable extension; sniff
+            # the bytes the same way the `bytes` branch does so validation does
+            # not reject a valid document just because the stream had no name.
+            try:
+                sniffed = puremagic.from_string(file_bytes)
+                if sniffed.lower() in [".jpg", ".jpeg", ".jfif"]:
+                    sniffed = ".jpeg"
+            except Exception:
+                sniffed = ".txt"
+            filename = filename + sniffed
     elif hasattr(document, "unicode_string") and callable(getattr(document, "unicode_string")):
         with httpx.Client() as client:
             url: str = document.unicode_string()  # type: ignore
@@ -230,8 +241,10 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
             file_bytes = response.content  # Fix: Use response.content instead of document
             filename = "uploaded_file" + extension
     else:
-        # `document` is a path or a string; cast it to Path
-        assert isinstance(document, (Path, str))
+        # `document` is a path or a string; cast it to Path. Use an explicit
+        # raise (not assert) so validation survives `python -O`.
+        if not isinstance(document, (Path, str)):
+            raise TypeError(f"Unsupported document type: {type(document).__name__}")
         pathdoc = Path(document)
         with open(pathdoc, "rb") as f:
             file_bytes = f.read()
@@ -239,9 +252,6 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
     # Base64-encode
     encoded_content = base64.b64encode(file_bytes).decode("utf-8")
-    # Compute SHA-256 hash over the *base64-encoded* content
-    hash_obj = hashlib.sha256(encoded_content.encode("utf-8"))
-    hash_obj.hexdigest()
 
     # Guess MIME type based on file extension
     guessed_type, _ = mimetypes.guess_type(filename)
@@ -267,4 +277,6 @@ def prepare_mime_document_list(documents: Sequence[Path | str | bytes | MIMEData
 
 
 def assert_valid_file_type(file_extension: str) -> None:
-    assert "." + file_extension in get_args(SUPPORTED_TYPES), f"Invalid file type: {file_extension}. Must be one of: {get_args(SUPPORTED_TYPES)}"
+    # Explicit raise (not assert) so the check is not stripped under `python -O`.
+    if "." + file_extension not in get_args(SUPPORTED_TYPES):
+        raise ValueError(f"Invalid file type: {file_extension}. Must be one of: {get_args(SUPPORTED_TYPES)}")
