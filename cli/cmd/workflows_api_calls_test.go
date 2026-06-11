@@ -282,10 +282,18 @@ func TestAPICallLocalRunCanEmitAbsolutePaths(t *testing.T) {
 		_ = flags.Set("absolute-paths", "false")
 	})
 	stdout := runAPICallCommandForTest(t, dir, sample, false)
-	if !strings.Contains(stdout, filepath.Join(dir, "rendered", "samples", "order.request.json")) {
-		t.Fatalf("stdout should include absolute request path, got:\n%s", stdout)
+	wantRequestPath := filepath.Join(dir, "rendered", "samples", "order.request.json")
+	// stdout is a JSON summary object; on Windows its backslash separators are
+	// JSON-escaped (\\), so a raw substring match on the path fails. Assert
+	// against the decoded "request" field instead.
+	var summary map[string]any
+	if err := json.Unmarshal([]byte(strings.TrimSpace(stdout)), &summary); err != nil {
+		t.Fatalf("stdout is not the expected JSON summary: %v\ngot:\n%s", err, stdout)
 	}
-	request := readJSONMapFromPath(t, filepath.Join(dir, "rendered", "samples", "order.request.json"))
+	if summary["request"] != wantRequestPath {
+		t.Fatalf("summary request = %v, want %v\nfull stdout:\n%s", summary["request"], wantRequestPath, stdout)
+	}
+	request := readJSONMapFromPath(t, wantRequestPath)
 	if request["input"] != sample {
 		t.Fatalf("request artifact should use absolute input path: %+v", request)
 	}

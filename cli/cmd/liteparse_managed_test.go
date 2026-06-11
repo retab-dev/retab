@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -91,10 +92,14 @@ func TestStageBundleTarGzExtractsAllMembers(t *testing.T) {
 	if got, _ := os.ReadFile(filepath.Join(dest, "eng.traineddata")); string(got) != "OCRDATA" {
 		t.Errorf("tessdata contents = %q", got)
 	}
-	// lit binary is executable...
+	// lit binary is executable... (Windows/NTFS doesn't represent the +x bit;
+	// lit runs by path there, so only assert the executable mode on POSIX.)
 	litPath := filepath.Join(dest, "lit")
-	if info, err := os.Stat(litPath); err != nil || info.Mode().Perm()&0o100 == 0 {
-		t.Errorf("lit not executable: mode=%v err=%v", info.Mode(), err)
+	info, err := os.Stat(litPath)
+	if err != nil {
+		t.Errorf("lit not staged: %v", err)
+	} else if runtime.GOOS != "windows" && info.Mode().Perm()&0o100 == 0 {
+		t.Errorf("lit not executable: mode=%v", info.Mode())
 	}
 	// ...and decoys/nested paths are NOT written.
 	if fileExists(filepath.Join(dest, "LICENSE")) || fileExists(filepath.Join(dest, "BUNDLE.txt")) {
@@ -150,8 +155,12 @@ func TestEnsureBundleFromDownloadVerifiesChecksum(t *testing.T) {
 
 	// Force a known cache dir via the env override path is not enough (it
 	// targets UserCacheDir); call the function directly with a temp HOME.
+	// On Windows UserCacheDir reads %LocalAppData% (not XDG_CACHE_HOME/HOME),
+	// so isolate that too or a leftover bundle satisfies the lookup and the
+	// fetch never runs.
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
+	t.Setenv("LocalAppData", t.TempDir())
 
 	dir, err := ensureBundleFromDownload("lit-v9.9.9", b, "https://example.test/dl", fetch)
 	if err != nil {
@@ -178,6 +187,7 @@ func TestEnsureBundleFromDownloadChecksumMismatch(t *testing.T) {
 	fetch := func(string) ([]byte, error) { return data, nil }
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
+	t.Setenv("LocalAppData", t.TempDir())
 
 	_, err := ensureBundleFromDownload("lit-v9.9.9", b, "https://example.test/dl", fetch)
 	if err == nil || !contains(err.Error(), "checksum mismatch") {
