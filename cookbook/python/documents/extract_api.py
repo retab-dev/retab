@@ -2,12 +2,12 @@
 ## Quick example: Extract structured data using `client.extractions.create()`.
 # ---------------------------------------------
 
+import json
 import os
 
 from dotenv import load_dotenv
 
 from retab import Retab
-from retab.types.extractions import ExtractionRequest
 
 # Load environment variables
 load_dotenv()
@@ -18,15 +18,15 @@ assert retab_api_key, "Missing RETAB_API_KEY"
 # Retab Setup
 client = Retab(api_key=retab_api_key)
 
-# Document Extraction via Retab API
+# Document Extraction via Retab API.
+# create() takes keyword args directly (no ExtractionRequest wrapper); the
+# document may be a path/bytes/URL, but json_schema must be a dict.
 response = client.extractions.create(
-    ExtractionRequest(
-        document="../../assets/docs/invoice.jpeg",
-        model="gpt-5.4",
-        json_schema="../../assets/code/invoice_schema.json",
-        image_resolution_dpi=192,
-        n_consensus=1,
-    )
+    document="../../../assets/docs/invoice.jpeg",
+    json_schema=json.load(open("../../../assets/code/invoice_schema.json")),
+    model="retab-small",
+    image_resolution_dpi=192,
+    n_consensus=1,
 )
 
 # Output
