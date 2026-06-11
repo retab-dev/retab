@@ -88,6 +88,15 @@ func ParseAPIError(resp *http.Response, body []byte) *APIError {
 		if details, ok := detail["details"].(map[string]any); ok {
 			apiErr.Details = details
 		}
+	case []any:
+		// FastAPI's native validation shape is {"detail": [ {loc, msg, type}, ... ]}.
+		// Stringify it so the user sees the actual validation errors instead of
+		// the generic status fallback.
+		if len(detail) > 0 {
+			if encoded, err := json.Marshal(detail); err == nil {
+				apiErr.Message = string(encoded)
+			}
+		}
 	}
 
 	if parsed.Detail == nil {
