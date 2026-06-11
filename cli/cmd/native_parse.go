@@ -341,6 +341,11 @@ func parseXLSXFile(path string) (*ParseResult, error) {
 	return result, nil
 }
 
+// maxExcelColumns is Excel's hard column limit (XFD). Cell refs beyond it are
+// rejected so a crafted/garbage .xlsx (e.g. a ref like "ZZZZZZZ1") cannot drive
+// an unbounded per-row slice allocation.
+const maxExcelColumns = 16384
+
 func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) {
 	var sx xlsxSheetXML
 	if err := unmarshalZip(f, &sx); err != nil {
@@ -356,7 +361,7 @@ func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) 
 			if m := cellRefPattern.FindStringSubmatch(c.R); m != nil {
 				col = colIndex(m[1])
 			}
-			if col == 0 {
+			if col == 0 || col > maxExcelColumns {
 				continue
 			}
 			value := c.V

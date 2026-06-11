@@ -885,8 +885,11 @@ func cleanWorkflowTableCell(value string, options tableQueryRenderOptions) strin
 	if maxCellWidth < 4 {
 		maxCellWidth = 4
 	}
-	if len(cleaned) > maxCellWidth {
-		return cleaned[:maxCellWidth-3] + "..."
+	// Truncate by runes, not bytes: a multibyte (accented / CJK) cell would
+	// otherwise be cut mid-rune and emit invalid UTF-8.
+	runes := []rune(cleaned)
+	if len(runes) > maxCellWidth {
+		return string(runes[:maxCellWidth-3]) + "..."
 	}
 	return cleaned
 }
