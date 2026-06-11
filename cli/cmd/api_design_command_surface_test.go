@@ -133,7 +133,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"files blueprints":              {"create", "get", "cancel", "wait"},
 		"parses":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
-		"projects":                      {"list", "get"},
+		"projects":                      {"list", "get", "create"},
 		"schemas":                       {"generate"},
 		"secrets":                       {"delete", "get", "list", "set", "value"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},

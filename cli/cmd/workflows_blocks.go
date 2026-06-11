@@ -222,8 +222,79 @@ what to pass.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		// Surface the block's connectable handle ids. Previously the only
+		// way to learn an edge's handle names was to inspect an existing
+		// workflow's edges; now `blocks get` is self-describing.
+		merged, err := primitiveMap(result)
+		if err != nil {
+			return err
+		}
+		if handles := deriveBlockHandles(merged); handles != nil {
+			merged["handles"] = handles
+		}
+		return printResult(cmd, merged)
 	}),
+}
+
+// deriveBlockHandles computes the connectable handle ids for a block from
+// its type and config. Input handles are fully determined by config.inputs
+// (`input-<type>-<name>`). Output handles are emitted only for block types
+// whose single output handle is deterministic; routing blocks (classifier,
+// split, conditional, for_each) name their outputs per-route as
+// `output-file-<handle_key>` / `output-json-<branch>` — see
+// `workflows edges create --help` — and are intentionally not guessed here.
+func deriveBlockHandles(block map[string]any) map[string]any {
+	blockType, _ := block["type"].(string)
+	config, _ := block["config"].(map[string]any)
+	inputs := blockInputHandles(config)
+	outputs := blockOutputHandles(blockType)
+	if len(inputs) == 0 && len(outputs) == 0 {
+		return nil
+	}
+	handles := map[string]any{}
+	if len(inputs) > 0 {
+		handles["input"] = inputs
+	}
+	if len(outputs) > 0 {
+		handles["output"] = outputs
+	}
+	return handles
+}
+
+func blockInputHandles(config map[string]any) []string {
+	if config == nil {
+		return nil
+	}
+	var out []string
+	appendInput := func(m map[string]any) {
+		name, _ := m["name"].(string)
+		t, _ := m["type"].(string)
+		if name != "" && t != "" {
+			out = append(out, "input-"+t+"-"+name)
+		}
+	}
+	if rawInputs, ok := config["inputs"].([]any); ok {
+		for _, ri := range rawInputs {
+			if m, ok := ri.(map[string]any); ok {
+				appendInput(m)
+			}
+		}
+	}
+	if m, ok := config["input"].(map[string]any); ok {
+		appendInput(m)
+	}
+	return out
+}
+
+func blockOutputHandles(blockType string) []string {
+	switch blockType {
+	case "start_document", "edit":
+		return []string{"output-file-0"}
+	case "start_json", "extract", "merge_dicts", "function", "api_call":
+		return []string{"output-json-0"}
+	default:
+		return nil
+	}
 }
 
 // workflowBlockLookupWorkflowID returns the optional “workflow_id“ query
