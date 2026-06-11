@@ -266,7 +266,12 @@ func validateFunctionRunOutDir(raw string) error {
 	if raw == "" {
 		return fmt.Errorf("--out is required")
 	}
-	if filepath.IsAbs(raw) {
+	// filepath.IsAbs misses POSIX-rooted paths like "/tmp/out" on Windows
+	// (it wants a drive letter there), which would let a rooted path escape
+	// the bundle. Reject a leading "/" explicitly: on Unix every such path is
+	// already IsAbs (so this is a no-op there), and on Windows it closes the
+	// gap.
+	if filepath.IsAbs(raw) || strings.HasPrefix(raw, "/") {
 		return fmt.Errorf("--out must be a relative path inside the function bundle")
 	}
 	cleaned := filepath.Clean(raw)
