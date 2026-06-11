@@ -8,9 +8,11 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -395,8 +397,68 @@ removed in a future release.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return maybeWaitForWorkflowRun(cmd, result)
 	}),
+}
+
+var workflowRunWaitTerminalStatuses = map[string]bool{
+	"completed":       true,
+	"error":           true,
+	"cancelled":       true,
+	"awaiting_review": true,
+}
+
+// maybeWaitForWorkflowRun prints the create response immediately unless
+// --wait was passed; with --wait it polls the run until it reaches a
+// terminal lifecycle status (completed / error / cancelled) or pauses for
+// human review (awaiting_review), then prints the final run. This mirrors
+// the --wait contract already on `extractions create` and
+// `experiments runs create`, closing the gap where `workflows runs create`
+// forced callers to hand-roll a poll loop around `runs get`.
+func maybeWaitForWorkflowRun(cmd *cobra.Command, result any) error {
+	if wait, _ := cmd.Flags().GetBool("wait"); !wait {
+		return printResult(cmd, result)
+	}
+	resource, err := primitiveMap(result)
+	if err != nil {
+		return err
+	}
+	id, _ := resource["id"].(string)
+	if id == "" {
+		return fmt.Errorf("workflow run create response did not include an id")
+	}
+	pollInterval, timeout := primitiveWaitDurations(cmd)
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	ctx, cancelTimeout := context.WithTimeout(ctx, timeout)
+	defer cancelTimeout()
+	last := resource
+	for {
+		if status := primitiveStatus(last); workflowRunWaitTerminalStatuses[status] {
+			if err := printResult(cmd, last); err != nil {
+				return err
+			}
+			if status == "error" {
+				return fmt.Errorf("workflow run %s ended with status error", id)
+			}
+			return nil
+		}
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			_ = printResult(cmd, last)
+			return fmt.Errorf("timed out waiting for workflow run %s: %w", id, ctx.Err())
+		case <-timer.C:
+		}
+		current, err := cliJSONRequest(cmd, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(id), nil, nil)
+		if err != nil {
+			return err
+		}
+		if last, err = primitiveMap(current); err != nil {
+			return err
+		}
+	}
 }
 
 type workflowRunCreateParams struct {
@@ -602,8 +664,10 @@ var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
 	Long: `Fetch a run's metadata: status, trigger type, timestamps,
-duration, cost, error info. For per-block detail and outputs use
-` + "`workflows steps list`" + `.
+duration, cost, error info. The run payload does not include per-block
+steps by default; pass ` + "`--steps`" + ` to fetch and embed them under
+` + "`steps`" + `, or use ` + "`workflows steps list`" + ` for the full
+per-block detail and outputs.
 
 Run ids are globally unique, so read and poll commands take only the
 ` + "`<run-id>`" + ` — the workflow id is never in the path. Only ` + "`runs create`" + `,
@@ -627,6 +691,22 @@ which addresses a parent collection, takes a workflow id. The same holds for
 		result, err := client.Workflows.Runs.Get(ctx, args[0])
 		if err != nil {
 			return err
+		}
+		// The run GET endpoint returns lifecycle/timing/inputs but NOT the
+		// per-block steps. With --steps, fetch them and embed under "steps"
+		// so callers get the run + its execution records in one command
+		// instead of a second `workflows steps list` round trip.
+		if includeSteps, _ := cmd.Flags().GetBool("steps"); includeSteps {
+			steps, err := client.Workflows.Steps.List(ctx, &retab.WorkflowStepsListParams{RunID: ptr(args[0])})
+			if err != nil {
+				return err
+			}
+			merged, err := primitiveMap(result)
+			if err != nil {
+				return err
+			}
+			merged["steps"] = steps.Data
+			return printResult(cmd, merged)
 		}
 		return printResult(cmd, result)
 	}),
@@ -1081,6 +1161,13 @@ func init() {
 	workflowsRunsCreateCmd.Flags().StringArray("document-url", nil, "document url as block-id=url (repeatable)")
 	workflowsRunsCreateCmd.Flags().StringArray("document-id", nil, "previously-uploaded file as block-id=file-id (repeatable)")
 	workflowsRunsCreateCmd.Flags().String("json-inputs-file", "", "JSON inputs object (or - for stdin)")
+	// --wait blocks until the run settles (completed/error/cancelled) or
+	// pauses for review (awaiting_review); --poll-interval-ms / --timeout-seconds
+	// tune the poll loop, matching `extractions create` and `experiments runs create`.
+	workflowsRunsCreateCmd.Flags().Bool("wait", false, "block until the run reaches a terminal status (completed/error/cancelled/awaiting_review), then print the final run")
+	addPrimitiveWaitTuningFlags(workflowsRunsCreateCmd, true)
+
+	workflowsRunsGetCmd.Flags().Bool("steps", false, "also fetch the run's per-block step records and embed them under \"steps\"")
 
 	workflowsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsRunsListCmd.Flags().String("status", "", "filter by status")

@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -86,6 +88,40 @@ Use ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 	}),
 }
 
+var projectsCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create a project",
+	Long: `Create a project in the active environment, then use its id with
+` + "`workflows create --project-id`" + `. Previously the CLI could only
+list and get projects, so ` + "`workflows create`" + ` (which requires a
+project) could not be satisfied end-to-end without the dashboard.
+
+Projects are environment-scoped: the project is created in the environment
+selected with ` + "`retab env switch`" + ` (or ` + "`--environment-id`" + `).`,
+	Example: `  # Create a project and capture its id
+  PROJ=$(retab projects create --name "Invoices" | jq -r '.id')
+  retab workflows create --name "Vendor invoices" --project-id "$PROJ"`,
+	Args: cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		name, _ := cmd.Flags().GetString("name")
+		if strings.TrimSpace(name) == "" {
+			return fmt.Errorf("--name is required")
+		}
+		body := map[string]any{"name": name}
+		if description, _ := cmd.Flags().GetString("description"); description != "" {
+			body["description"] = description
+		}
+		if slug, _ := cmd.Flags().GetString("slug"); slug != "" {
+			body["slug"] = slug
+		}
+		var result cliProject
+		if err := cliJSONRequestInto(cmd, http.MethodPost, "/v1/projects", nil, body, &result); err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 var projectsGetCmd = &cobra.Command{
 	Use:   "get <project-id>",
 	Short: "Get a project",
@@ -131,6 +167,11 @@ func init() {
 	projectsListCmd.Flags().Int("limit", 0, "maximum number of projects to return")
 	projectsListCmd.Flags().Bool("include-archived", false, "include archived projects in the list")
 
-	projectsCmd.AddCommand(projectsListCmd, projectsGetCmd)
+	projectsCreateCmd.Flags().String("name", "", "project name (required)")
+	projectsCreateCmd.Flags().String("description", "", "project description")
+	projectsCreateCmd.Flags().String("slug", "", "project slug (server generates one from the name if omitted)")
+	_ = projectsCreateCmd.MarkFlagRequired("name")
+
+	projectsCmd.AddCommand(projectsListCmd, projectsGetCmd, projectsCreateCmd)
 	rootCmd.AddCommand(projectsCmd)
 }
