@@ -1292,3 +1292,40 @@ func TestAPIErrorFlatValidationEnvelope(t *testing.T) {
 		t.Fatalf("message = %q, want the validation detail from the flat envelope", apiErr.Message)
 	}
 }
+
+// FastAPI's *native* validation shape is {"detail": [ {loc, msg, type}, ... ]}
+// (not wrapped by main_server). Before the []any case in parseAPIError this
+// degraded to the generic "Request failed (422)" because the switch only
+// handled string/map details; now the array is surfaced as the message.
+func TestAPIErrorFastAPIDetailArray(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"detail": []any{
+				map[string]any{"type": "missing", "loc": []any{"body", "document"}, "msg": "Field required"},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if !strings.Contains(apiErr.Message, "Field required") {
+		t.Fatalf("message = %q, want the FastAPI validation detail surfaced", apiErr.Message)
+	}
+	if strings.Contains(apiErr.Message, "Request failed") {
+		t.Fatalf("message degraded to generic fallback: %q", apiErr.Message)
+	}
+}
