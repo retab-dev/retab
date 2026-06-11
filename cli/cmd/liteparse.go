@@ -412,5 +412,9 @@ func writeParseCache(key string, result *ParseResult) {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return
 	}
-	_ = os.Rename(tmp, filepath.Join(dir, key+".json"))
+	if err := os.Rename(tmp, filepath.Join(dir, key+".json")); err != nil {
+		// Don't leave the temp file orphaned if the atomic swap fails (e.g. a
+		// concurrent reader holds the destination open on Windows).
+		_ = os.Remove(tmp)
+	}
 }
