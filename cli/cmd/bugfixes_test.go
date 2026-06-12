@@ -1,11 +1,58 @@
 package cmd
 
 import (
+	"image"
+	"image/color"
 	"strings"
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
 )
+
+// flattenImageToRGB must composite transparency over white, not black.
+func TestFlattenImageToRGBCompositesOverWhite(t *testing.T) {
+	img := image.NewNRGBA(image.Rect(0, 0, 3, 1))
+	img.Set(0, 0, color.NRGBA{R: 255, G: 0, B: 0, A: 255}) // opaque red
+	img.Set(1, 0, color.NRGBA{R: 0, G: 0, B: 0, A: 0})     // fully transparent
+	img.Set(2, 0, color.NRGBA{R: 0, G: 0, B: 255, A: 128}) // semi-transparent blue
+	rgb := flattenImageToRGB(img)
+	if len(rgb) != 9 {
+		t.Fatalf("expected 9 bytes, got %d", len(rgb))
+	}
+	// Opaque red unchanged.
+	if rgb[0] != 255 || rgb[1] != 0 || rgb[2] != 0 {
+		t.Errorf("opaque red = %v, want [255 0 0]", rgb[0:3])
+	}
+	// Fully transparent -> white, NOT black.
+	if rgb[3] != 255 || rgb[4] != 255 || rgb[5] != 255 {
+		t.Errorf("transparent pixel = %v, want white [255 255 255]", rgb[3:6])
+	}
+	// Semi-transparent (50%) blue over white = (0,0,255)*0.5 + white*0.5 ≈
+	// (127,127,255). R/G lifted toward white, B stays 255.
+	if rgb[6] < 120 || rgb[6] > 135 || rgb[7] < 120 || rgb[7] > 135 || rgb[8] != 255 {
+		t.Errorf("semi-transparent blue = %v, want ~[127 127 255] composited over white", rgb[6:9])
+	}
+}
+
+// coerceTableScalarValue must preserve large integers (no float64 rounding).
+func TestCoerceTableScalarValuePreservesLargeInt(t *testing.T) {
+	got := coerceTableScalarValue("12345678901234567890")
+	num, ok := got.(interface{ String() string }) // json.Number implements Stringer
+	if !ok {
+		t.Fatalf("expected json.Number, got %T (%v)", got, got)
+	}
+	if num.String() != "12345678901234567890" {
+		t.Errorf("large int mangled: got %q", num.String())
+	}
+	// Trailing junk stays a string (matches json.Unmarshal whole-input rule).
+	if got := coerceTableScalarValue("12 34"); got != "12 34" {
+		t.Errorf("coerceTableScalarValue(\"12 34\") = %v, want unchanged string", got)
+	}
+	// Booleans/null still coerce.
+	if got := coerceTableScalarValue("true"); got != true {
+		t.Errorf("true coercion failed: %v", got)
+	}
+}
 
 // mimeDataFromDocument must preserve inline content/mime-type for a local-file
 // descriptor; copying only filename/url sent an empty document over the wire.

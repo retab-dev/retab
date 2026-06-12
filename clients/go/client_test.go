@@ -1209,6 +1209,21 @@ func TestAPIError(t *testing.T) {
 	}
 }
 
+// TestAPIErrorEmptyDetailFallsBackToSiblings pins that an empty-string
+// `detail` no longer wipes the message: parsing must fall back to the
+// top-level message/code rather than surfacing a blank error.
+func TestAPIErrorEmptyDetailFallsBackToSiblings(t *testing.T) {
+	req, _ := http.NewRequest("GET", "https://x.test/v1/foo", nil)
+	resp := &http.Response{StatusCode: 400, Header: http.Header{}, Request: req}
+	apiErr := ParseAPIError(resp, []byte(`{"detail":"","message":"real message","code":"ERR_X"}`))
+	if apiErr.Message != "real message" {
+		t.Errorf("Message = %q, want 'real message' (fell back to sibling)", apiErr.Message)
+	}
+	if apiErr.Code != "ERR_X" {
+		t.Errorf("Code = %q, want ERR_X", apiErr.Code)
+	}
+}
+
 // TestAPIErrorUnwrappedEnvelope pins that APIError parsing also handles the
 // error envelope when it arrives at the top level instead of under a
 // `detail` key. Some endpoints (e.g. POST /v1/jobs validation failures)
