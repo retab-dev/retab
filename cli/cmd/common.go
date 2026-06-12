@@ -195,41 +195,60 @@ func (e renderedError) Unwrap() error {
 	return e.err
 }
 
-func newClient(cmd *cobra.Command) (*retab.Client, error) {
-	// Resolution order (first match wins):
-	//   1. `--api-key` flag        -> Api-Key header
-	//   2. `RETAB_API_KEY` env     -> Api-Key header
-	//   3. Stored OAuth tokens     -> Bearer header, with transparent refresh
-	//   4. Stored legacy api_key   -> Api-Key header
-	//   5. nothing                 -> error
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
+// resolveCLIRequest unifies credential and base-URL resolution for newClient
+// and the raw cliJSON/Raw/Multipart helpers, so every request path honors the
+// same precedence as the production safety gate (resolveCredential) —
+// crucially including the --env / --live / default_environment profile steps,
+// which the per-call resolution used to skip. Routing both through one resolver
+// guarantees the gate guards the same credential the request actually uses.
+//
+// cfg is returned for the OAuth dashboard-context provider. The returned
+// baseURL is "" when the SDK/default should apply; callers that need a concrete
+// URL apply defaultAPIBaseURL themselves.
+func resolveCLIRequest(cmd *cobra.Command) (resolvedCredential, string, retabConfig, error) {
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		return resolvedCredential{}, "", retabConfig{}, err
 	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_API_BASE_URL")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
-	}
-	// Validate only user-supplied values (flag/env). An empty string here
-	// means the default ("https://api.retab.com") will be used by the
-	// SDK or the config-file fallback below — both are trusted. The
-	// "/v1" API version prefix now lives in individual request paths
-	// rather than the base URL.
-	if err := validateBaseURL(baseURL); err != nil {
-		return nil, err
-	}
-
 	cfg, _ := loadConfig()
+
+	// Base-URL override precedence: --base-url flag > RETAB_API_BASE_URL >
+	// RETAB_BASE_URL. When none is set, fall back to the profile/config base
+	// URL that resolveCredential already resolved. Only the user-supplied
+	// flag/env value is validated; the config/profile value is trusted. The
+	// "/v1" API version prefix now lives in individual request paths.
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+	override := flagBaseURL
+	if override == "" {
+		override = os.Getenv("RETAB_API_BASE_URL")
+	}
+	if override == "" {
+		override = os.Getenv("RETAB_BASE_URL")
+	}
+	if err := validateBaseURL(override); err != nil {
+		return resolvedCredential{}, "", retabConfig{}, err
+	}
+	baseURL := override
 	if baseURL == "" {
-		baseURL = cfg.BaseURL
+		baseURL = cred.BaseURL
 	}
 	baseURL = stripLegacyV1Suffix(baseURL)
+	return cred, baseURL, cfg, nil
+}
+
+func newClient(cmd *cobra.Command) (*retab.Client, error) {
+	// Resolution order (first match wins), shared with the safety gate via
+	// resolveCLIRequest -> resolveCredential:
+	//   1. `--api-key` flag                       -> Api-Key header
+	//   2. `RETAB_API_KEY` env                    -> Api-Key header
+	//   3. `--env` / `--live` / default profile   -> Api-Key header
+	//   4. Stored OAuth tokens                     -> Bearer, transparent refresh
+	//   5. Stored legacy api_key                   -> Api-Key header
+	//   6. nothing                                 -> error
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
+	if err != nil {
+		return nil, err
+	}
 
 	var opts []retab.Option
 	if baseURL != "" {
@@ -250,25 +269,20 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
 	}
 
-	// Flag/env API key wins outright — the documented CI escape hatch.
-	if apiKey != "" {
-		return retab.NewClient(apiKey, opts...)
+	// API-key credential (flag, env, --env/--live/default profile, or legacy).
+	if cred.APIKey != "" {
+		return retab.NewClient(cred.APIKey, opts...)
 	}
 
 	// OAuth path. WithBearerTokenProvider is invoked on every request, so
 	// a command that straddles token expiry still gets a fresh token
 	// without rebuilding the Client.
-	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-		rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
+	if cred.OAuth != nil && cred.OAuth.AccessToken != "" {
+		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
 		opts = append(opts, retab.WithBearerTokenProvider(
 			makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, authHTTPClient),
 		))
 		return retab.NewClient("", opts...)
-	}
-
-	// Legacy `api_key` field from ~/.retab/config.json.
-	if cfg.APIKey != "" {
-		return retab.NewClient(cfg.APIKey, opts...)
 	}
 
 	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
@@ -470,35 +484,13 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 }
 
 func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, query url.Values, body any, result any) error {
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_API_BASE_URL")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
-	}
-	// Mirror newClient: reject malformed flag/env base URLs before any
-	// HTTP attempt. Empty string flows through to the config file or the
-	// default, both of which are trusted.
-	if err := validateBaseURL(baseURL); err != nil {
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
+	if err != nil {
 		return err
-	}
-
-	cfg, _ := loadConfig()
-	if baseURL == "" {
-		baseURL = cfg.BaseURL
 	}
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-	baseURL = stripLegacyV1Suffix(baseURL)
 
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
@@ -511,18 +503,15 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
+	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" {
-		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
-			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
-			if err != nil {
-				return err
-			}
-			bearerToken = token
-		} else if cfg.APIKey != "" {
-			apiKey = cfg.APIKey
+	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
+		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
+		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+		if err != nil {
+			return err
 		}
+		bearerToken = token
 	}
 	if apiKey == "" && bearerToken == "" {
 		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
@@ -539,32 +528,13 @@ func cliRawRequestBytes(
 	body any,
 	accept string,
 ) ([]byte, error) {
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_API_BASE_URL")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
-	}
-	if err := validateBaseURL(baseURL); err != nil {
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
+	if err != nil {
 		return nil, err
-	}
-
-	cfg, _ := loadConfig()
-	if baseURL == "" {
-		baseURL = cfg.BaseURL
 	}
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-	baseURL = stripLegacyV1Suffix(baseURL)
 
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
@@ -577,18 +547,15 @@ func cliRawRequestBytes(
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
+	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" {
-		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
-			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
-			if err != nil {
-				return nil, err
-			}
-			bearerToken = token
-		} else if cfg.APIKey != "" {
-			apiKey = cfg.APIKey
+	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
+		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
+		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+		if err != nil {
+			return nil, err
 		}
+		bearerToken = token
 	}
 	if apiKey == "" && bearerToken == "" {
 		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
@@ -607,32 +574,13 @@ func cliMultipartRequestInto(
 	filePath string,
 	result any,
 ) error {
-	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
-
-	apiKey := flagKey
-	baseURL := flagBaseURL
-	if apiKey == "" {
-		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_API_BASE_URL")
-	}
-	if baseURL == "" {
-		baseURL = os.Getenv("RETAB_BASE_URL")
-	}
-	if err := validateBaseURL(baseURL); err != nil {
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
+	if err != nil {
 		return err
-	}
-
-	cfg, _ := loadConfig()
-	if baseURL == "" {
-		baseURL = cfg.BaseURL
 	}
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-	baseURL = stripLegacyV1Suffix(baseURL)
 
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
@@ -645,18 +593,15 @@ func cliMultipartRequestInto(
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
+	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" {
-		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
-			rawOAuthProvider := makeOAuthTokenProvider(cfg.OAuth)
-			token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
-			if err != nil {
-				return err
-			}
-			bearerToken = token
-		} else if cfg.APIKey != "" {
-			apiKey = cfg.APIKey
+	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
+		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
+		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+		if err != nil {
+			return err
 		}
+		bearerToken = token
 	}
 	if apiKey == "" && bearerToken == "" {
 		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
@@ -880,53 +825,75 @@ func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (str
 		if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
 			return tok.AccessToken, nil
 		}
-		refreshed, err := refreshAccessToken(ctx, &tok)
-		if err != nil {
-			// Concurrent-refresh race: someone else may have rotated
-			// the refresh_token out from under us. Re-read disk and try
-			// once with whatever's there.
-			if isInvalidGrantError(err) {
-				if disk, ldErr := loadConfig(); ldErr == nil && disk.OAuth != nil &&
-					disk.OAuth.RefreshToken != "" && disk.OAuth.RefreshToken != tok.RefreshToken {
-					tok = *disk.OAuth
-					// Disk's access_token may already be valid — use it
-					// directly if so, otherwise refresh with the new RT.
-					if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
-						return tok.AccessToken, nil
+		// Serialize the whole refresh+persist across processes. The in-process
+		// mutex above only protects this process; a cross-process lock stops
+		// two concurrent `retab` invocations from both refreshing and
+		// clobbering each other's rotated refresh_token.
+		var accessToken string
+		var refreshErr error
+		_ = withConfigLock(func() error {
+			// Re-read under the lock: a process we waited behind may have
+			// already minted a fresh, still-valid token. Adopt it and skip our
+			// own refresh entirely — this is what prevents the clobber.
+			if disk, ldErr := loadConfig(); ldErr == nil && disk.OAuth != nil &&
+				disk.OAuth.AccessToken != "" &&
+				time.Now().Before(disk.OAuth.ExpiresAt.Add(-refreshLeeway)) {
+				tok = *disk.OAuth
+				accessToken = tok.AccessToken
+				return nil
+			}
+			refreshed, err := refreshAccessToken(ctx, &tok)
+			if err != nil {
+				// The refresh_token may have just been rotated out from under
+				// us. Re-read disk and try once with whatever is there.
+				if isInvalidGrantError(err) {
+					if disk, ldErr := loadConfig(); ldErr == nil && disk.OAuth != nil &&
+						disk.OAuth.RefreshToken != "" && disk.OAuth.RefreshToken != tok.RefreshToken {
+						tok = *disk.OAuth
+						if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
+							accessToken = tok.AccessToken
+							return nil
+						}
+						refreshed, err = refreshAccessToken(ctx, &tok)
 					}
-					refreshed, err = refreshAccessToken(ctx, &tok)
+				}
+				if err != nil {
+					refreshErr = err
+					return nil
 				}
 			}
-			if err != nil {
-				return "", err
+			tok = *refreshed
+			accessToken = tok.AccessToken
+			// Re-read the rest of the config so we only swap the OAuth block and
+			// preserve Environments/BaseURL/legacy key. If the read fails, do
+			// NOT persist: writing a zero-value config would wipe those fields.
+			// The in-memory tok still serves this request.
+			cfg, ldErr := loadConfig()
+			if ldErr != nil {
+				fmt.Fprintf(os.Stderr,
+					"warning: refreshed OAuth token but could not re-read %s to persist it: %v\n"+
+						"  current command will succeed; next CLI invocation may require re-login.\n",
+					configPathOrEmpty(), ldErr)
+				return nil
 			}
+			cfg.OAuth = &tok
+			if err := saveConfig(cfg); err != nil {
+				// The in-memory tok works for this request, but if we lose
+				// the rotated refresh_token before saving, the next process
+				// is forced to re-login. Surface loudly — silent failure
+				// here is exactly the "long-lived token mysteriously expires"
+				// bug we want to avoid.
+				fmt.Fprintf(os.Stderr,
+					"warning: refreshed OAuth token but failed to persist to %s: %v\n"+
+						"  current command will succeed; next CLI invocation may require re-login.\n",
+					configPathOrEmpty(), err)
+			}
+			return nil
+		})
+		if refreshErr != nil {
+			return "", refreshErr
 		}
-		tok = *refreshed
-		// Re-read the rest of the config so we only swap the OAuth block and
-		// preserve Environments/BaseURL/legacy key. If the read fails, do NOT
-		// persist: writing a zero-value config would wipe those other fields.
-		// The in-memory tok still serves this request.
-		cfg, ldErr := loadConfig()
-		if ldErr != nil {
-			fmt.Fprintf(os.Stderr,
-				"warning: refreshed OAuth token but could not re-read %s to persist it: %v\n"+
-					"  current command will succeed; next CLI invocation may require re-login.\n",
-				configPathOrEmpty(), ldErr)
-			return tok.AccessToken, nil
-		}
-		cfg.OAuth = &tok
-		if err := saveConfig(cfg); err != nil {
-			// The in-memory tok works for this request, but if we lose
-			// the rotated refresh_token before saving, the next process
-			// is forced to re-login. Surface loudly — silent failure
-			// here is exactly the "long-lived token mysteriously expires"
-			// bug we want to avoid.
-			fmt.Fprintf(os.Stderr,
-				"warning: refreshed OAuth token but failed to persist to %s: %v\n"+
-					"  current command will succeed; next CLI invocation may require re-login.\n",
-				configPathOrEmpty(), err)
-		}
-		return tok.AccessToken, nil
+		return accessToken, nil
 	}
 }
 
