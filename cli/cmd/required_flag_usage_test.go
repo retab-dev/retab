@@ -40,32 +40,33 @@ func TestRequiredFlagsAdvertiseRequiredInUsage(t *testing.T) {
 	walk(rootCmd)
 }
 
-// Some flags are required but enforced inside RunE rather than via
-// MarkFlagRequired (e.g. when several flags are jointly required, or
-// when "-" stdin handling rules out cobra's required-flag machinery).
-// TestRequiredFlagsAdvertiseRequiredInUsage cannot see those, so pin
-// the ones we know about explicitly: their help text must still tell
-// the user they are required, exactly like the MarkFlagRequired'd ones.
-func TestRunEEnforcedRequiredFlagsAdvertiseRequiredInUsage(t *testing.T) {
+// `workflows tests create` accepts each of target/source/assertion as EITHER
+// a JSON file OR an inline flag form, so none of the file flags is
+// unconditionally required. The convention here is the inverse of
+// TestRequiredFlagsAdvertiseRequiredInUsage: the file flags must NOT claim
+// "(required)" (that would mislead users away from the inline form), and each
+// must point at its inline alternative so `--help` documents both paths.
+func TestWorkflowsTestsCreateFileFlagsAdvertiseInlineAlternative(t *testing.T) {
 	cases := []struct {
-		cmd   *cobra.Command
-		flags []string
+		flag        string
+		alternative string
 	}{
-		// workflows tests create rejects a missing target/source/
-		// assertion file in RunE with "... are required".
-		{workflowsTestsCreateCmd, []string{"target-file", "source-file", "assertion-file"}},
+		{"target-file", "--block-id"},
+		{"source-file", "--run-id"},
+		{"assertion-file", "--equals"},
 	}
 	for _, tc := range cases {
-		for _, name := range tc.flags {
-			f := tc.cmd.Flags().Lookup(name)
-			if f == nil {
-				t.Errorf("command %q has no flag --%s", tc.cmd.CommandPath(), name)
-				continue
-			}
-			if !strings.Contains(f.Usage, "(required)") {
-				t.Errorf("command %q flag --%s is required (enforced in RunE) but its help text %q does not contain \"(required)\"",
-					tc.cmd.CommandPath(), name, f.Usage)
-			}
+		f := workflowsTestsCreateCmd.Flags().Lookup(tc.flag)
+		if f == nil {
+			t.Errorf("workflows tests create has no flag --%s", tc.flag)
+			continue
+		}
+		if strings.Contains(f.Usage, "(required)") {
+			t.Errorf("flag --%s is no longer unconditionally required (an inline form exists) but its help text %q still says \"(required)\"",
+				tc.flag, f.Usage)
+		}
+		if !strings.Contains(f.Usage, tc.alternative) {
+			t.Errorf("flag --%s help %q should point at its inline alternative %q", tc.flag, f.Usage, tc.alternative)
 		}
 	}
 }

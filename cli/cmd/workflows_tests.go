@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -118,6 +119,98 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 		return nil, fmt.Errorf("--%s: %w", flag, err)
 	}
 	return obj, nil
+}
+
+// resolveTestComponent picks a single test component (target / source /
+// assertion) from EITHER its `--<flag>-file` JSON file OR the inline flag
+// form, enforcing that the two forms are not mixed for the same component.
+// Returns nil when neither form was supplied so the caller can report which
+// piece is missing.
+func resolveTestComponent(cmd *cobra.Command, fileFlag, inlineFlagDesc string, inline map[string]any, inlineSet bool) (map[string]any, error) {
+	fromFile, err := resolveJSONMap(cmd, fileFlag)
+	if err != nil {
+		return nil, err
+	}
+	if fromFile != nil && inlineSet {
+		return nil, fmt.Errorf("--%s and %s are mutually exclusive", fileFlag, inlineFlagDesc)
+	}
+	if inlineSet {
+		return inline, nil
+	}
+	return fromFile, nil
+}
+
+// inlineTestTarget builds the target descriptor from --block-id. Returns
+// (nil, false) when --block-id was not supplied.
+func inlineTestTarget(cmd *cobra.Command) (map[string]any, bool) {
+	blockID, _ := cmd.Flags().GetString("block-id")
+	if strings.TrimSpace(blockID) == "" {
+		return nil, false
+	}
+	return map[string]any{"type": "block", "block_id": blockID}, true
+}
+
+// inlineTestSource builds a run_step source from --run-id (and optional
+// --step-id). Returns (nil, false) when --run-id was not supplied.
+func inlineTestSource(cmd *cobra.Command) (map[string]any, bool) {
+	runID, _ := cmd.Flags().GetString("run-id")
+	if strings.TrimSpace(runID) == "" {
+		return nil, false
+	}
+	source := map[string]any{"type": "run_step", "run_id": runID}
+	if stepID, _ := cmd.Flags().GetString("step-id"); strings.TrimSpace(stepID) != "" {
+		source["step_id"] = stepID
+	}
+	return source, true
+}
+
+// inlineTestAssertion builds an `equals` assertion from --output-handle-id /
+// --path / --equals. It is considered "set" when any of those flags is
+// provided; --equals is then mandatory (the assertion needs an expected
+// value), and --output-handle-id defaults to the conventional single-JSON
+// output handle. The expected value is parsed as a JSON literal when possible
+// (so `--equals 300000` is the number 300000, `--equals true` the boolean)
+// and falls back to the raw string otherwise.
+func inlineTestAssertion(cmd *cobra.Command) (map[string]any, bool, error) {
+	handleSet := cmd.Flags().Changed("output-handle-id")
+	pathSet := cmd.Flags().Changed("path")
+	equalsSet := cmd.Flags().Changed("equals")
+	if !handleSet && !pathSet && !equalsSet {
+		return nil, false, nil
+	}
+	if !equalsSet {
+		return nil, true, fmt.Errorf("inline assertion requires --equals (the expected value)")
+	}
+	handle, _ := cmd.Flags().GetString("output-handle-id")
+	if strings.TrimSpace(handle) == "" {
+		handle = "output-json-0"
+	}
+	target := map[string]any{"output_handle_id": handle}
+	if pathSet {
+		path, _ := cmd.Flags().GetString("path")
+		target["path"] = path
+	}
+	raw, _ := cmd.Flags().GetString("equals")
+	return map[string]any{
+		"target":    target,
+		"condition": map[string]any{"kind": "equals", "expected": parseInlineExpected(raw)},
+	}, true, nil
+}
+
+// parseInlineExpected interprets the --equals value as a JSON literal
+// (number, boolean, null, quoted string, array, object) when it parses, and
+// otherwise treats it as a bare string. This keeps the common
+// `--equals 300000` numeric while still allowing `--equals "in review"`.
+func parseInlineExpected(raw string) any {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return raw
+	}
+	var parsed any
+	if err := json.Unmarshal([]byte(trimmed), &parsed); err == nil {
+		return parsed
+	}
+	return raw
 }
 
 // validateWorkflowTestName trims surrounding whitespace and rejects names
@@ -240,13 +333,35 @@ You'll typically capture the three files from a successful past run:
   ` + "`--assertion-file`" + `  — the output handle/path and condition
   (e.g. ` + `{"target":{"output_handle_id":"output-json-0","path":"total"},"condition":{"kind":"equals","expected":120}}` + `).
 
+For the common "assert block X's field Y equals Z from run R" case you
+can skip the three files and pass the pieces inline instead:
+
+  ` + "`--block-id`" + `          — target block (same as ` + "`--target-file`" + `).
+  ` + "`--run-id`" + ` / ` + "`--step-id`" + ` — a ` + "`run_step`" + ` source (` + "`--step-id`" + ` optional).
+  ` + "`--path`" + ` / ` + "`--equals`" + `    — the field path and expected value for an
+  ` + "`equals`" + ` assertion. ` + "`--equals`" + ` is parsed as a JSON literal when it
+  can be (so ` + "`--equals 300000`" + ` is numeric), else as a string.
+  ` + "`--output-handle-id`" + `   — defaults to ` + "`output-json-0`" + `; override for blocks
+  with a differently-named output handle.
+
+The file and inline forms are alternatives — passing both for the same
+component (e.g. ` + "`--target-file`" + ` and ` + "`--block-id`" + `) is an error.
+
 After creation, run with ` + "`workflows tests runs create`" + `.`,
 	Example: `  # Create a test from JSON files
   retab workflows tests create wf_abc123 \
     --name "Invoice 17 baseline" \
     --target-file ./target.json \
     --source-file ./source.json \
-    --assertion-file ./assertion.json`,
+    --assertion-file ./assertion.json
+
+  # Same test, inline — no JSON files needed
+  retab workflows tests create wf_abc123 \
+    --name "Invoice 17 baseline" \
+    --block-id extract_1 \
+    --run-id run_xxx \
+    --path net_amount_payable_usd \
+    --equals 300000`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, err := resolveWorkflowIDArg(cmd, args)
@@ -261,20 +376,30 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 			return err
 		}
 		req.Name = &trimmedName
-		target, err := resolveJSONMap(cmd, "target-file")
+		// Each component may be supplied as a JSON file OR via the inline
+		// flag form — but not both for the same component.
+		inlineTarget, inlineTargetSet := inlineTestTarget(cmd)
+		inlineSource, inlineSourceSet := inlineTestSource(cmd)
+		inlineAssertion, inlineAssertionSet, err := inlineTestAssertion(cmd)
 		if err != nil {
 			return err
 		}
-		source, err := resolveJSONMap(cmd, "source-file")
+		target, err := resolveTestComponent(cmd, "target-file", "--block-id", inlineTarget, inlineTargetSet)
 		if err != nil {
 			return err
 		}
-		assertion, err := resolveJSONMap(cmd, "assertion-file")
+		source, err := resolveTestComponent(cmd, "source-file", "--run-id/--step-id", inlineSource, inlineSourceSet)
+		if err != nil {
+			return err
+		}
+		assertion, err := resolveTestComponent(cmd, "assertion-file", "--output-handle-id/--path/--equals", inlineAssertion, inlineAssertionSet)
 		if err != nil {
 			return err
 		}
 		if target == nil || source == nil || assertion == nil {
-			return fmt.Errorf("--target-file, --source-file, and --assertion-file are required")
+			return fmt.Errorf("each of target, source, and assertion is required — supply it as a file " +
+				"(--target-file / --source-file / --assertion-file) or inline " +
+				"(--block-id; --run-id [--step-id]; --path --equals)")
 		}
 		if err := validateWorkflowTestTarget(target); err != nil {
 			return fmt.Errorf("--target-file: %w", err)
@@ -542,8 +667,13 @@ To run a single test pass ` + "`--test-id`" + `; to run every saved test
 for one block pass ` + "`--target-file`" + ` with a JSON target such as
 ` + `{"type":"block","block_id":"extract_1"}` + `.
 
-Poll progress with ` + "`workflows tests runs get`" + ` and fetch per-test
-results with ` + "`workflows tests results list`" + `.`,
+Pass ` + "`--wait`" + ` to block until the run reaches a terminal status
+(` + "`completed`" + `/` + "`error`" + `/` + "`cancelled`" + `) and print the
+final run — saving you from scripting a poll loop around
+` + "`runs get`" + `. With ` + "`--wait`" + ` the command exits non-zero if the
+run ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses.
+Without it, poll progress with ` + "`workflows tests runs get`" + ` and fetch
+per-test results with ` + "`workflows tests results list`" + `.`,
 	Example: `  # Run every test in the workflow
   retab workflows tests runs create wf_abc123
 
@@ -553,7 +683,14 @@ results with ` + "`workflows tests results list`" + `.`,
 
   # Run every test for one block
   retab workflows tests runs create wf_abc123 \
-    --target-file ./target.json`,
+    --target-file ./target.json
+
+  # Create and block until the suite finishes (2s polls, 10m timeout)
+  retab workflows tests runs create wf_abc123 --wait
+
+  # Tune the polling cadence and ceiling
+  retab workflows tests runs create wf_abc123 \
+    --wait --poll-interval-ms 1000 --timeout-seconds 1800`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := &retab.WorkflowTestRunsCreateParams{
@@ -593,8 +730,104 @@ results with ` + "`workflows tests results list`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		if wait, _ := cmd.Flags().GetBool("wait"); !wait {
+			return printResult(cmd, result)
+		}
+		// --wait: poll the freshly-created run until it settles, matching the
+		// contract already on `experiments runs create --wait`. Removes the
+		// hand-rolled `until` loop around `runs get` that the help previously
+		// pointed callers to.
+		pollInterval, timeout := experimentWaitDurations(cmd)
+		final, waitErr := waitForWorkflowTestRun(ctx, client, result.ID, pollInterval, timeout)
+		if final != nil {
+			if err := printResult(cmd, final); err != nil {
+				return err
+			}
+		}
+		if waitErr != nil {
+			return waitErr
+		}
+		return workflowTestRunTerminalError(final)
 	}),
+}
+
+// workflowTestRunStatus reads the lifecycle discriminator off a workflow-test
+// run. The lifecycle is a discriminated-union envelope, so the status string
+// comes from its `Status()` getter rather than a plain field.
+func workflowTestRunStatus(run *retab.WorkflowTestRun) string {
+	if run == nil {
+		return ""
+	}
+	return run.Lifecycle.Status()
+}
+
+// isTerminalWorkflowTestRun reports whether the run has settled. A
+// workflow-test run can't pause for review, so the terminal set is just
+// completed / error / cancelled (pending/queued/running are still in flight).
+func isTerminalWorkflowTestRun(run *retab.WorkflowTestRun) bool {
+	switch workflowTestRunStatus(run) {
+	case "completed", "error", "cancelled":
+		return true
+	default:
+		return false
+	}
+}
+
+// workflowTestRunTerminalError maps a settled-but-unsuccessful run to a
+// non-zero exit. completed (or an unknown/empty status) is success;
+// error/cancelled is failure.
+func workflowTestRunTerminalError(run *retab.WorkflowTestRun) error {
+	if run == nil {
+		return nil
+	}
+	switch status := workflowTestRunStatus(run); status {
+	case "", "completed":
+		return nil
+	case "error", "cancelled":
+		if run.ID == "" {
+			return fmt.Errorf("workflow-test run ended with status %s", status)
+		}
+		return fmt.Errorf("workflow-test run %s ended with status %s", run.ID, status)
+	default:
+		return nil
+	}
+}
+
+// waitForWorkflowTestRun polls Runs.Get until the run reaches a terminal
+// status or the timeout elapses. On timeout it returns the last-observed
+// (non-final) run alongside the error so callers can still surface partial
+// state — mirroring waitForExperimentRun.
+func waitForWorkflowTestRun(
+	ctx context.Context,
+	client *retab.Client,
+	runID string,
+	pollInterval time.Duration,
+	timeout time.Duration,
+) (*retab.WorkflowTestRun, error) {
+	if pollInterval <= 0 {
+		pollInterval = 2 * time.Second
+	}
+	if timeout <= 0 {
+		timeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	for {
+		run, err := client.Workflows.Tests.Runs.Get(ctx, runID)
+		if err != nil {
+			return nil, err
+		}
+		if isTerminalWorkflowTestRun(run) {
+			return run, nil
+		}
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return run, fmt.Errorf("timed out waiting for workflow-test run %s: %w", runID, ctx.Err())
+		case <-timer.C:
+		}
+	}
 }
 
 var workflowsTestsRunsListCmd = &cobra.Command{
@@ -810,9 +1043,17 @@ var workflowsTestsResultsGetCmd = &cobra.Command{
 func init() {
 	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
-	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin) (required)")
-	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin) (required). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{...}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). See 'tests create --help' for the full schema.")
-	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin) (required)")
+	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin). Alternative to --block-id.")
+	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{...}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). Alternative to --run-id. See 'tests create --help' for the full schema.")
+	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin). Alternative to --path/--equals.")
+	// Inline alternative to the three JSON files for the common
+	// "assert block X's field Y equals Z from run R" case.
+	workflowsTestsCreateCmd.Flags().String("block-id", "", "target block id (inline alternative to --target-file)")
+	workflowsTestsCreateCmd.Flags().String("run-id", "", "source run id for a run_step source (inline alternative to --source-file)")
+	workflowsTestsCreateCmd.Flags().String("step-id", "", "source step id within --run-id (optional; pairs with --run-id)")
+	workflowsTestsCreateCmd.Flags().String("output-handle-id", "", "assertion output handle id (inline; defaults to output-json-0)")
+	workflowsTestsCreateCmd.Flags().String("path", "", "assertion field path inside the output handle (inline; pairs with --equals)")
+	workflowsTestsCreateCmd.Flags().String("equals", "", "expected value for an inline equals assertion (JSON literal or string; alternative to --assertion-file)")
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
@@ -840,6 +1081,12 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
+	// --wait blocks until the run settles (completed/error/cancelled);
+	// --poll-interval-ms / --timeout-seconds tune the poll loop, matching
+	// `experiments runs create --wait`.
+	workflowsTestsRunsCreateCmd.Flags().Bool("wait", false, "block until the run reaches a terminal status (completed/error/cancelled), then print the final run")
+	workflowsTestsRunsCreateCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds while --wait is set")
+	workflowsTestsRunsCreateCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait while --wait is set")
 	workflowsTestsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
 	workflowsTestsResultsCmd.AddCommand(workflowsTestsResultsListCmd, workflowsTestsResultsGetCmd)

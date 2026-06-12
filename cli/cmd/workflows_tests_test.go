@@ -1643,6 +1643,260 @@ func TestWorkflowsTestsUpdatePreservesRunStepAndExpectedFields(t *testing.T) {
 	}
 }
 
+// resetTestsCreateInlineFlags clears the inline create flags (value AND the
+// Changed bit) so a mutating subtest doesn't leak state into its neighbours —
+// the inline assertion builder keys off Changed, so a stale Changed=true would
+// trip the next test.
+func resetTestsCreateInlineFlags(t *testing.T) {
+	t.Helper()
+	for _, name := range []string{
+		"name", "target-file", "source-file", "assertion-file",
+		"block-id", "run-id", "step-id", "output-handle-id", "path", "equals",
+	} {
+		_ = workflowsTestsCreateCmd.Flags().Set(name, "")
+		if f := workflowsTestsCreateCmd.Flags().Lookup(name); f != nil {
+			f.Changed = false
+		}
+	}
+}
+
+// TestWorkflowsTestsCreateInlineBuildsThreeComponents pins the inline form:
+// `--block-id / --run-id [--step-id] / --path --equals` must assemble the same
+// target / source / assertion request body the three JSON files would, without
+// any file on disk. `--equals 300000` must serialize as the number 300000 and
+// --output-handle-id must default to output-json-0.
+func TestWorkflowsTestsCreateInlineBuildsThreeComponents(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"wfnodetest_inline"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"name":     "Invoice 17 baseline",
+		"block-id": "extract_1",
+		"run-id":   "run_xxx",
+		"path":     "net_amount_payable_usd",
+		"equals":   "300000",
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { resetTestsCreateInlineFlags(t) })
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	})
+	if err != nil {
+		t.Fatalf("tests create (inline): %v", err)
+	}
+
+	target, ok := gotBody["target"].(map[string]any)
+	if !ok || target["type"] != "block" || target["block_id"] != "extract_1" {
+		t.Fatalf("target = %#v, want {type:block, block_id:extract_1}", gotBody["target"])
+	}
+	source, ok := gotBody["source"].(map[string]any)
+	if !ok || source["type"] != "run_step" || source["run_id"] != "run_xxx" {
+		t.Fatalf("source = %#v, want {type:run_step, run_id:run_xxx}", gotBody["source"])
+	}
+	if _, present := source["step_id"]; present {
+		t.Fatalf("source.step_id should be absent when --step-id is unset, got %#v", source["step_id"])
+	}
+	assertion, ok := gotBody["assertion"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion missing: %#v", gotBody["assertion"])
+	}
+	at, ok := assertion["target"].(map[string]any)
+	if !ok || at["output_handle_id"] != "output-json-0" || at["path"] != "net_amount_payable_usd" {
+		t.Fatalf("assertion.target = %#v, want {output_handle_id:output-json-0, path:net_amount_payable_usd}", assertion["target"])
+	}
+	condition, ok := assertion["condition"].(map[string]any)
+	if !ok || condition["kind"] != "equals" {
+		t.Fatalf("assertion.condition = %#v, want kind=equals", assertion["condition"])
+	}
+	if condition["expected"] != float64(300000) {
+		t.Fatalf("assertion.condition.expected = %#v (%T), want numeric 300000", condition["expected"], condition["expected"])
+	}
+}
+
+// TestWorkflowsTestsCreateInlineAndFileAreMutuallyExclusive pins that mixing a
+// file form and the inline form for the SAME component fails locally, before
+// any network call.
+func TestWorkflowsTestsCreateInlineAndFileAreMutuallyExclusive(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	targetPath := filepath.Join(t.TempDir(), "target.json")
+	if err := os.WriteFile(targetPath, []byte(`{"type":"block","block_id":"extract_1"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	for flag, value := range map[string]string{
+		"name":        "baseline",
+		"target-file": targetPath,
+		"block-id":    "extract_1",
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { resetTestsCreateInlineFlags(t) })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected mutual-exclusion error for --target-file and --block-id")
+	}
+	if !strings.Contains(stderr, "--target-file") || !strings.Contains(stderr, "--block-id") || !strings.Contains(stderr, "mutually exclusive") {
+		t.Fatalf("stderr %q should name both forms and say mutually exclusive", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+// TestWorkflowsTestsCreateInlineAssertionRequiresEquals pins that an inline
+// assertion triggered by --path (or --output-handle-id) but missing --equals
+// fails locally with a message pointing at --equals.
+func TestWorkflowsTestsCreateInlineAssertionRequiresEquals(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"name":     "baseline",
+		"block-id": "extract_1",
+		"run-id":   "run_xxx",
+		"path":     "net_amount_payable_usd",
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { resetTestsCreateInlineFlags(t) })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected error when inline assertion omits --equals")
+	}
+	if !strings.Contains(stderr, "--equals") {
+		t.Fatalf("stderr %q should point at --equals", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+// resetTestsRunsCreateWaitFlags restores the --wait/--poll/--timeout flags on
+// the singleton runs-create command back to defaults.
+func resetTestsRunsCreateWaitFlags(t *testing.T) {
+	t.Helper()
+	_ = workflowsTestsRunsCreateCmd.Flags().Set("wait", "false")
+	_ = workflowsTestsRunsCreateCmd.Flags().Set("poll-interval-ms", "2000")
+	_ = workflowsTestsRunsCreateCmd.Flags().Set("timeout-seconds", "600")
+}
+
+// TestWorkflowsTestsRunsCreateWaitPollsUntilTerminal pins the new `--wait`
+// behavior on test runs: after POSTing the run the CLI polls
+// GET .../tests/runs/<id> until the lifecycle reaches a terminal status and
+// prints the FINAL run record, not the freshly-queued one. Mirrors the
+// equivalent contract on `experiments runs create --wait`.
+func TestWorkflowsTestsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posts, gets atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/tests/runs":
+			posts.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":        "wftestrun_wait",
+				"lifecycle": map[string]any{"status": "pending"},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/tests/runs/wftestrun_wait":
+			status := "running"
+			if gets.Add(1) >= 2 {
+				status = "completed"
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":          "wftestrun_wait",
+				"total_tests": 3,
+				"lifecycle":   map[string]any{"status": status},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsTestsRunsCreateCmd.Flags().Set("wait", "true"); err != nil {
+		t.Fatalf("set --wait: %v", err)
+	}
+	if err := workflowsTestsRunsCreateCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() { resetTestsRunsCreateWaitFlags(t) })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsTestsRunsCreateCmd.RunE(workflowsTestsRunsCreateCmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("tests runs create --wait: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if got := posts.Load(); got != 1 {
+		t.Fatalf("expected exactly 1 POST, got %d", got)
+	}
+	if got := gets.Load(); got < 2 {
+		t.Fatalf("expected the CLI to poll at least twice before terminal, got %d GET(s)", got)
+	}
+	if !strings.Contains(stdout, `"status": "completed"`) {
+		t.Fatalf("expected final completed run on stdout, got:\n%s", stdout)
+	}
+	// The printed record must be the polled terminal one (carries total_tests),
+	// not the freshly-queued POST response.
+	if !strings.Contains(stdout, `"total_tests": 3`) {
+		t.Fatalf("expected the final polled run on stdout, got:\n%s", stdout)
+	}
+}
+
 // nonEmptyLines splits s on "\n" and returns the non-empty entries. We use
 // this to assert exact line counts on warning output without being tripped
 // up by the trailing newline from fmt.Fprintln.
