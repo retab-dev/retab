@@ -463,3 +463,33 @@ func readJSONMapFromPath(t *testing.T, path string) map[string]any {
 	}
 	return out
 }
+
+// TestCompileLocalAPICallRequestClampsNonPositiveTimeout pins that a
+// non-positive timeout_seconds (explicit 0, negative, or missing) falls back
+// to 180s. A 0 would make http.Client.Timeout==0 (no timeout); combined with
+// the run's default --timeout 0 (disabled), --execute could hang forever.
+func TestCompileLocalAPICallRequestClampsNonPositiveTimeout(t *testing.T) {
+	cases := []struct {
+		name    string
+		timeout any
+		set     bool
+		want    int
+	}{
+		{name: "missing", set: false, want: 180},
+		{name: "zero", timeout: float64(0), set: true, want: 180},
+		{name: "negative", timeout: float64(-5), set: true, want: 180},
+		{name: "explicit", timeout: float64(30), set: true, want: 30},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			config := map[string]any{"method": "GET", "url": "https://example.com"}
+			if tc.set {
+				config["timeout_seconds"] = tc.timeout
+			}
+			req := compileLocalAPICallRequest(config, nil, nil)
+			if req.TimeoutSeconds != tc.want {
+				t.Fatalf("TimeoutSeconds = %d, want %d", req.TimeoutSeconds, tc.want)
+			}
+		})
+	}
+}

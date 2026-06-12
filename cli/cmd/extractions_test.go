@@ -28,6 +28,61 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	return cmd
 }
 
+// TestNewExtractionRequestGatesBoundedIntParams pins that unset
+// --n-consensus / --image-resolution-dpi are OMITTED from the request, not
+// sent as 0. A non-nil *int(0) survives omitempty, and 0 is below the flags'
+// own ranges (1-16, 96-300), so an unconditional ptr() wired an invalid value
+// on the default invocation.
+func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
+	t.Run("omitted when unset", func(t *testing.T) {
+		cmd := newExtractionRequestTestCmd(t)
+		for n, v := range map[string]string{
+			"url":         "https://example.com/x.pdf",
+			"model":       "gpt-4o",
+			"json-schema": `{"type":"object"}`,
+		} {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		params, err := newExtractionRequest(cmd)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.NConsensus != nil {
+			t.Fatalf("NConsensus must be nil when --n-consensus unset, got %d", *params.NConsensus)
+		}
+		if params.ImageResolutionDpi != nil {
+			t.Fatalf("ImageResolutionDpi must be nil when unset, got %d", *params.ImageResolutionDpi)
+		}
+	})
+
+	t.Run("sent when set", func(t *testing.T) {
+		cmd := newExtractionRequestTestCmd(t)
+		for n, v := range map[string]string{
+			"url":                  "https://example.com/x.pdf",
+			"model":                "gpt-4o",
+			"json-schema":          `{"type":"object"}`,
+			"n-consensus":          "3",
+			"image-resolution-dpi": "150",
+		} {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		params, err := newExtractionRequest(cmd)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.NConsensus == nil || *params.NConsensus != 3 {
+			t.Fatalf("NConsensus = %v, want 3", params.NConsensus)
+		}
+		if params.ImageResolutionDpi == nil || *params.ImageResolutionDpi != 150 {
+			t.Fatalf("ImageResolutionDpi = %v, want 150", params.ImageResolutionDpi)
+		}
+	})
+}
+
 func TestNewExtractionRequestValidatesMetadataBeforeResolvingFileID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

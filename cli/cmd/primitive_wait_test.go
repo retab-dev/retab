@@ -87,6 +87,52 @@ func TestPrimitiveWaitCommandPrintsFinalRecordAndErrorsOnTerminalFailure(t *test
 	}
 }
 
+// TestPrimitiveWaitErrorsOnFailedStatus pins the real terminal-failure
+// status: primitives expose a ClassificationStatus whose failure value is
+// "failed" (the API never emits "error"). Before the fix, isTerminalPrimitive
+// Status didn't recognize "failed", so the poll loop spun until the timeout
+// and then exited 0 on a failed job. The CLI must instead terminate on the
+// first poll and exit non-zero.
+func TestPrimitiveWaitErrorsOnFailedStatus(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/extractions/extr_failed" {
+			t.Fatalf("%s %s", r.Method, r.URL.Path)
+		}
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"id":"extr_failed","status":"failed"}`)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := primitiveWaitCommand(extractionWaitSpec)
+	addPrimitiveWaitTuningFlags(cmd, false)
+	if err := cmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatal(err)
+	}
+	var err error
+	stdout, stderr := captureStd(t, func() {
+		err = cmd.RunE(cmd, []string{"extr_failed"})
+	})
+	if err == nil {
+		t.Fatal("expected terminal error for failed status")
+	}
+	if !strings.Contains(stderr, "extraction extr_failed ended with status failed") {
+		t.Fatalf("stderr = %q, want it to name the failed status", stderr)
+	}
+	if !strings.Contains(stdout, `"status": "failed"`) {
+		t.Fatalf("stdout should include the final failed record, got:\n%s", stdout)
+	}
+	// Must terminate on the first poll, not loop until timeout.
+	if got := hits.Load(); got != 1 {
+		t.Fatalf("GET count = %d, want 1 (failed must be terminal immediately)", got)
+	}
+}
+
 func TestParsesCreateWaitPollsFreshResource(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

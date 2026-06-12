@@ -74,15 +74,20 @@ extraction.`,
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		allowOverlap, _ := cmd.Flags().GetBool("allow-overlap")
-		result, err := client.Partitions.Create(ctx, &retab.PartitionsCreateParams{
+		params := &retab.PartitionsCreateParams{
 			Document:     doc,
 			Key:          key,
 			Instructions: instructions,
 			Model:        ptr(model),
-			NConsensus:   ptr(nConsensus),
 			BustCache:    ptr(bustCache),
 			AllowOverlap: ptr(allowOverlap),
-		})
+		}
+		// Unset --n-consensus reads as 0, and *int(0) survives omitempty;
+		// only wire it when explicitly set (the flag range is 1-8).
+		if cmd.Flags().Changed("n-consensus") {
+			params.NConsensus = ptr(nConsensus)
+		}
+		result, err := client.Partitions.Create(ctx, params)
 		if err != nil {
 			return err
 		}

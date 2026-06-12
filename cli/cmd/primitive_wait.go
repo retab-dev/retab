@@ -208,7 +208,11 @@ func primitiveStatus(resource map[string]any) string {
 
 func isTerminalPrimitiveStatus(status string) bool {
 	switch status {
-	case "completed", "error", "cancelled":
+	// "failed" is the real terminal-failure value: primitives expose a
+	// ClassificationStatus (pending/queued/in_progress/completed/failed/
+	// cancelled). "error" is kept as a defensive alias for resources that
+	// surface a lifecycle-style status instead.
+	case "completed", "error", "failed", "cancelled":
 		return true
 	default:
 		return false
@@ -223,7 +227,7 @@ func primitiveTerminalError(spec primitiveWaitSpec, resource map[string]any) err
 	switch status {
 	case "", "completed":
 		return nil
-	case "error", "cancelled":
+	case "error", "failed", "cancelled":
 		id, _ := resource["id"].(string)
 		if id == "" {
 			return fmt.Errorf("%s ended with status %s", spec.singular, status)
