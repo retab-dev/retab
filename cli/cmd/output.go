@@ -415,6 +415,21 @@ const autoTableTruncate = 40
 // still bounding pathological cells.
 const autoTableInteriorTruncate = 80
 
+// truncateCellRunes caps s to limit RUNES (not bytes) and appends an
+// ellipsis. Byte slicing (s[:limit]) would cut a multi-byte UTF-8 sequence
+// (accents, CJK) mid-rune and emit invalid UTF-8; counting runes keeps the
+// output valid. Mirrors truncateReviewCell / the rune-based table cleaner.
+func truncateCellRunes(s string, limit int) string {
+	if limit <= 0 {
+		return s
+	}
+	runes := []rune(s)
+	if len(runes) <= limit {
+		return s
+	}
+	return string(runes[:limit]) + "…"
+}
+
 // printResultTable renders v as a fixed-width text table to stdout when
 // the shape is tabulable, falling back to printJSON otherwise.
 //
@@ -686,13 +701,11 @@ func pickAutoColumns(rows []any) []TableColumn {
 						if isTimestamp {
 							s = normalizeTimestampCell(s)
 						}
-						if isTrailing && len(s) > autoTableTruncate {
-							return s[:autoTableTruncate] + "…"
+						limit := autoTableInteriorTruncate
+						if isTrailing {
+							limit = autoTableTruncate
 						}
-						if !isTrailing && len(s) > autoTableInteriorTruncate {
-							return s[:autoTableInteriorTruncate] + "…"
-						}
-						return s
+						return truncateCellRunes(s, limit)
 					}
 				}
 				return ""

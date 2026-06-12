@@ -8,10 +8,34 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// TestTruncateCellRunesKeepsValidUTF8 pins the rune-based truncation: byte
+// slicing a multi-byte string mid-rune produced invalid UTF-8 in table/CSV
+// output. The cut must land on a rune boundary.
+func TestTruncateCellRunesKeepsValidUTF8(t *testing.T) {
+	s := strings.Repeat("é", 60) // 60 runes, 120 bytes
+	got := truncateCellRunes(s, 40)
+	if !utf8.ValidString(got) {
+		t.Fatalf("truncated output is not valid UTF-8: %q", got)
+	}
+	if n := utf8.RuneCountInString(got); n != 41 { // 40 runes + ellipsis
+		t.Fatalf("rune count = %d, want 41 (40 + ellipsis)", n)
+	}
+	if !strings.HasSuffix(got, "…") {
+		t.Fatalf("want ellipsis suffix, got %q", got)
+	}
+	if truncateCellRunes("abc", 40) != "abc" {
+		t.Fatal("short string should pass through unchanged")
+	}
+	if truncateCellRunes("anything", 0) != "anything" {
+		t.Fatal("non-positive limit should pass through unchanged")
+	}
+}
 
 // fileItem is a tiny test fixture mirroring the SDK's list-response shape
 // — `Data []T` plus a few sibling fields — so the reflect path in

@@ -66,17 +66,28 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if !ok {
 		return retab.ExtractionsCreateParams{}, fmt.Errorf("json schema must be a JSON object")
 	}
-	return retab.ExtractionsCreateParams{
+	params := retab.ExtractionsCreateParams{
 		Document:           doc,
 		JSONSchema:         jsonSchema,
 		Model:              ptr(model),
-		ImageResolutionDpi: ptr(imageDPI),
-		NConsensus:         ptr(nConsensus),
 		Instructions:       ptr(instructions),
 		Metadata:           &metadata,
 		AdditionalMessages: messages,
 		BustCache:          ptr(bustCache),
-	}, nil
+	}
+	// Only send the bounded int params when the user actually set them.
+	// Their flag value is "0" when unset, and a non-nil *int(0) is NOT
+	// dropped by omitempty — so an unconditional ptr() would wire
+	// image_resolution_dpi:0 / n_consensus:0, values the flags' own ranges
+	// (96-300, 1-16) reject. (parses.go gates --image-resolution-dpi the
+	// same way.)
+	if cmd.Flags().Changed("image-resolution-dpi") {
+		params.ImageResolutionDpi = ptr(imageDPI)
+	}
+	if cmd.Flags().Changed("n-consensus") {
+		params.NConsensus = ptr(nConsensus)
+	}
+	return params, nil
 }
 
 var extractionsCreateCmd = &cobra.Command{

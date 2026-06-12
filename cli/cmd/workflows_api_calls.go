@@ -544,11 +544,19 @@ func compileLocalAPICallRequest(config map[string]any, env map[string]string, pa
 		}
 	}
 	headers := prepareLocalAPICallHeaders(interpolateLocalAPICallMap(stringMapFromAny(config["headers"]), env), hasJSONBody)
+	// A non-positive timeout_seconds (explicit 0, or a negative/garbage
+	// value) would make http.Client.Timeout == 0, i.e. NO timeout — and the
+	// run's --timeout context defaults to 0 (disabled) too, so a hung
+	// endpoint would block --execute forever. Fall back to the default.
+	timeoutSeconds := intFromAny(config["timeout_seconds"], 180)
+	if timeoutSeconds <= 0 {
+		timeoutSeconds = 180
+	}
 	return localAPICallRequest{
 		Method:         method,
 		URL:            interpolateLocalAPICallString(apiCallStringFromAny(config["url"]), env),
 		Headers:        headers,
-		TimeoutSeconds: intFromAny(config["timeout_seconds"], 180),
+		TimeoutSeconds: timeoutSeconds,
 		Body:           body,
 	}
 }

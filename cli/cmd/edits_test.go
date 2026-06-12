@@ -265,3 +265,53 @@ func TestEditTemplatesUpdateReadsFormFieldsBeforeCredentials(t *testing.T) {
 		t.Fatalf("error %q checked credentials before reading --form-fields-file", err.Error())
 	}
 }
+
+// TestEditsCreateOmitsEmptyOptionalFields pins that unset optional fields are
+// omitted from the request, not sent as empty strings. A non-nil *string("")
+// survives omitempty, so template_id:"" on a document-only edit could trip the
+// server's document-XOR-template rule, and model/color:"" could blank out
+// server defaults.
+func TestEditsCreateOmitsEmptyOptionalFields(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/edits" {
+			t.Fatalf("%s %s", r.Method, r.URL.Path)
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"edit_1","status":"completed"}`)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for n, v := range map[string]string{
+		"url":          "https://example.com/contract.pdf",
+		"instructions": "redact names",
+	} {
+		if err := editsCreateCmd.Flags().Set(n, v); err != nil {
+			t.Fatalf("set --%s: %v", n, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, n := range []string{"url", "instructions", "template-id", "model", "color"} {
+			_ = editsCreateCmd.Flags().Set(n, "")
+			if f := editsCreateCmd.Flags().Lookup(n); f != nil {
+				f.Changed = false
+			}
+		}
+	})
+
+	if _, err := captureStdAndRun(t, func() error {
+		return editsCreateCmd.RunE(editsCreateCmd, nil)
+	}); err != nil {
+		t.Fatalf("edits create: %v", err)
+	}
+	for _, key := range []string{"template_id", "model", "config"} {
+		if _, present := body[key]; present {
+			t.Fatalf("%s must be omitted when its flag is unset, got %#v", key, body[key])
+		}
+	}
+}
