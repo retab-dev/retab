@@ -52,6 +52,29 @@ func imageToSinglePagePDF(imgPath string, renderDPI int) ([]byte, error) {
 	return encodeImagePDF(img, renderDPI)
 }
 
+// flattenImageToRGB returns img as packed 8-bit DeviceRGB samples (top row
+// first, PDF sample order), compositing any transparency over a white
+// background. RGBA() returns alpha-PREMULTIPLIED 16-bit channels, so
+// out = premult + (0xffff-a) leaves opaque pixels unchanged while flattening
+// transparent/semi-transparent pixels to white instead of black — important
+// because this PDF feeds OCR. The premultiplied invariant (channel <= a)
+// guarantees out stays within 0xffff.
+func flattenImageToRGB(img image.Image) []byte {
+	bnd := img.Bounds()
+	rgb := make([]byte, 0, bnd.Dx()*bnd.Dy()*3)
+	for y := bnd.Min.Y; y < bnd.Max.Y; y++ {
+		for x := bnd.Min.X; x < bnd.Max.X; x++ {
+			r, g, b, a := img.At(x, y).RGBA()
+			inv := 0xffff - a
+			r += inv
+			g += inv
+			b += inv
+			rgb = append(rgb, byte(r>>8), byte(g>>8), byte(b>>8))
+		}
+	}
+	return rgb
+}
+
 // encodeImagePDF builds a single-page PDF that draws img full-bleed. The image
 // is embedded as an 8-bit DeviceRGB XObject with FlateDecode, which any decoded
 // image format can produce uniformly.
@@ -63,13 +86,7 @@ func encodeImagePDF(img image.Image, renderDPI int) ([]byte, error) {
 	}
 
 	// Flatten to RGB (8 bits/component), top row first — PDF image sample order.
-	rgb := make([]byte, 0, w*h*3)
-	for y := bnd.Min.Y; y < bnd.Max.Y; y++ {
-		for x := bnd.Min.X; x < bnd.Max.X; x++ {
-			r, g, b, _ := img.At(x, y).RGBA() // 16-bit per channel
-			rgb = append(rgb, byte(r>>8), byte(g>>8), byte(b>>8))
-		}
-	}
+	rgb := flattenImageToRGB(img)
 
 	var zbuf bytes.Buffer
 	zw := zlib.NewWriter(&zbuf)
