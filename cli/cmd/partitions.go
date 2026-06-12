@@ -82,6 +82,7 @@ extraction.`,
 			NConsensus:   ptr(nConsensus),
 			BustCache:    ptr(bustCache),
 			AllowOverlap: ptr(allowOverlap),
+			Background:   primitiveBackgroundParam(cmd),
 		})
 		if err != nil {
 			return err
@@ -214,6 +215,7 @@ func init() {
 	partitionsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	partitionsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	partitionsCreateCmd.Flags().Bool("allow-overlap", true, "allow partition chunks to share pages")
+	addPrimitiveBackgroundFlag(partitionsCreateCmd)
 	addPrimitiveCreateWaitFlags(partitionsCreateCmd)
 	_ = partitionsCreateCmd.MarkFlagRequired("key")
 	_ = partitionsCreateCmd.MarkFlagRequired("instructions")

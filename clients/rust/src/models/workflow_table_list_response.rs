@@ -5,9 +5,14 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowTableListResponse {
-    /// Defaults to `[]`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub tables: Option<Vec<WorkflowTable>>,
+    pub tables: Vec<WorkflowTable>,
+}
+impl WorkflowTableListResponse {
+    /// Construct a new `WorkflowTableListResponse` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(tables: Vec<WorkflowTable>) -> Self {
+        Self { tables }
+    }
 }

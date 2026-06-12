@@ -83,6 +83,7 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 			Model:        ptr(model),
 			Config:       &retab.EditConfig{Color: ptr(color)},
 			BustCache:    ptr(bustCache),
+			Background:   primitiveBackgroundParam(cmd),
 		}
 		result, err := client.Edits.Create(ctx, &req)
 		if err != nil {
@@ -519,6 +520,7 @@ func init() {
 	editsCreateCmd.Flags().String("model", "", "model identifier")
 	editsCreateCmd.Flags().String("color", "", "edit color")
 	editsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
+	addPrimitiveBackgroundFlag(editsCreateCmd)
 	addPrimitiveCreateWaitFlags(editsCreateCmd)
 	_ = editsCreateCmd.MarkFlagRequired("instructions")
 

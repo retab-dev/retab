@@ -720,12 +720,18 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		defer cancel()
 		size, _ := cmd.Flags().GetInt64("size-bytes")
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
+		params := &retab.FilesCreateUploadParams{
 			Filename:    filename,
 			ContentType: &contentType,
 			SizeBytes:   int(size),
-			Sha256:      &sha256Hash,
-		})
+		}
+		// Only send sha256 when actually provided. An empty *string still
+		// marshals "sha256":"", which fails the server's hex-digest pattern
+		// and makes this documented-optional flag effectively required.
+		if sha256Hash != "" {
+			params.Sha256 = &sha256Hash
+		}
+		result, err := client.Files.CreateUpload(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -781,7 +787,14 @@ against the digest you computed locally.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CompleteUpload(ctx, args[0], &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
+		// Only send sha256 when provided. An empty *string marshals
+		// "sha256":"", which the server would compare against the stored
+		// object's real digest (a spurious mismatch) and persist over it.
+		completeParams := &retab.FilesCompleteUploadParams{}
+		if sha256Hash != "" {
+			completeParams.Sha256 = &sha256Hash
+		}
+		result, err := client.Files.CompleteUpload(ctx, args[0], completeParams)
 		if err != nil {
 			return err
 		}

@@ -33,6 +33,24 @@ func addPrimitiveCreateWaitFlags(cmd *cobra.Command) {
 	addPrimitiveWaitTuningFlags(cmd, true)
 }
 
+// addPrimitiveBackgroundFlag registers the --background async-create switch on a
+// primitive create command. It is kept separate from addPrimitiveCreateWaitFlags
+// because `files blueprints create` registers its own --background (with a
+// different default), so folding it into the shared helper would double-register
+// the flag and panic at startup. Default false preserves the synchronous create
+// behavior; combine with --wait to block until the queued primitive completes.
+func addPrimitiveBackgroundFlag(cmd *cobra.Command) {
+	cmd.Flags().Bool("background", false, "run asynchronously: return immediately with status \"queued\" and an empty output, then poll GET until the status is terminal (combine with --wait to block until completion)")
+}
+
+// primitiveBackgroundParam reads the --background flag as a request-body pointer.
+// It is always non-nil (false = synchronous) so the server receives an explicit
+// background value.
+func primitiveBackgroundParam(cmd *cobra.Command) *bool {
+	background, _ := cmd.Flags().GetBool("background")
+	return ptr(background)
+}
+
 func addPrimitiveWaitTuningFlags(cmd *cobra.Command, isCreate bool) {
 	pollDescription := "poll cadence in milliseconds"
 	timeoutDescription := "max seconds to wait before giving up"

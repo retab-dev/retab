@@ -84,6 +84,7 @@ where the default is too coarse.`,
 			Model:        ptr(model),
 			Instructions: ptr(instructions),
 			BustCache:    ptr(bustCache),
+			Background:   primitiveBackgroundParam(cmd),
 		}
 		if tableFormat != "" {
 			tpf := retab.ParseRequestTableParsingFormat(tableFormat)
@@ -221,6 +222,7 @@ func init() {
 	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
+	addPrimitiveBackgroundFlag(parsesCreateCmd)
 	addPrimitiveCreateWaitFlags(parsesCreateCmd)
 	_ = parsesCreateCmd.MarkFlagRequired("model")
 

@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -123,6 +125,76 @@ func TestWriteAuthStatusHuman_Has3LineBlock(t *testing.T) {
 	// Status line should report "valid" when the probe succeeded.
 	if !strings.Contains(out, "valid") {
 		t.Errorf("human output should report 'valid' when out[\"valid\"]==true:\n%s", out)
+	}
+}
+
+// A genuine credential rejection (out["valid"]==false with no "unreachable"
+// marker) must still read as "invalid" on the Status line.
+func TestWriteAuthStatusHuman_InvalidCredential(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	payload["valid"] = false
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Status:") || !strings.Contains(out, "invalid") {
+		t.Fatalf("rejected credential should report 'invalid':\n%s", out)
+	}
+	if strings.Contains(out, "could not verify") {
+		t.Fatalf("rejected credential must not claim 'could not verify':\n%s", out)
+	}
+}
+
+// When the probe could not reach a verdict (server unreachable / dropped
+// connection / non-auth error), the Status line must say "could not verify"
+// rather than "invalid" — the credential was never actually rejected. This
+// guards the regression where a momentary server blip mid-probe made a
+// perfectly valid session render as `Status: invalid`.
+func TestWriteAuthStatusHuman_UnreachableNotInvalid(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	payload["valid"] = false
+	payload["unreachable"] = true
+	if err := writeAuthStatusHuman(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusHuman: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "could not verify") {
+		t.Fatalf("unreachable probe should report 'could not verify':\n%s", out)
+	}
+	// "could not verify ..." legitimately ends with "may still be valid"; the
+	// failure we guard against is the bare standalone "invalid" verdict.
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "Status:") && strings.Contains(line, "invalid") {
+			t.Fatalf("unreachable probe must not render the 'invalid' verdict:\n%s", line)
+		}
+	}
+}
+
+// authStatusProbeUnreachable is the classifier behind the above: only a
+// 401/403 (the server actually rejecting the credential) is a real "invalid"
+// verdict; every other failure means we never got a verdict.
+func TestAuthStatusProbeUnreachable(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil", nil, false},
+		{"401 unauthorized", &retab.APIError{StatusCode: http.StatusUnauthorized}, false},
+		{"403 forbidden", &retab.APIError{StatusCode: http.StatusForbidden}, false},
+		{"500 server error", &retab.APIError{StatusCode: http.StatusInternalServerError}, true},
+		{"503 unavailable", &retab.APIError{StatusCode: http.StatusServiceUnavailable}, true},
+		{"404 not found", &retab.APIError{StatusCode: http.StatusNotFound}, true},
+		{"transport drop (no APIError)", errors.New(`Get "http://x/v1/auth/status": EOF`), true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := authStatusProbeUnreachable(tc.err); got != tc.want {
+				t.Fatalf("authStatusProbeUnreachable(%v) = %v, want %v", tc.err, got, tc.want)
+			}
+		})
 	}
 }
 

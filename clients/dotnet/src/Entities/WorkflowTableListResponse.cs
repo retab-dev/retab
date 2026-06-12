@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a workflow table list response.</summary>
     public class WorkflowTableListResponse
     {
-        public List<WorkflowTable>? Tables { get; set; }
+        public List<WorkflowTable> Tables { get; set; } = default!;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

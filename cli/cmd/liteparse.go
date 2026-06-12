@@ -192,10 +192,10 @@ type liteParseJSON struct {
 			Y          float64  `json:"y"`
 			Width      float64  `json:"width"`
 			Height     float64  `json:"height"`
-			FontName   string   `json:"font_name"`
-			FontSize   float64  `json:"font_size"`
+			FontName   string   `json:"fontName"`
+			FontSize   float64  `json:"fontSize"`
 			Confidence *float64 `json:"confidence"`
-		} `json:"text_items"`
+		} `json:"textItems"`
 	} `json:"pages"`
 }
 

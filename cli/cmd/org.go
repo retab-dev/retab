@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -35,6 +34,43 @@ type cliOrganization struct {
 
 type cliOrganizationsResponse struct {
 	Data []cliOrganization `json:"data"`
+}
+
+// orgListRow is one rendered row of `retab org list`. The `current` flag
+// replaces the "(current)" table marker for json/csv consumers.
+type orgListRow struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Current bool   `json:"current"`
+}
+
+func orgRowCell(row any, key string) string {
+	o, ok := row.(orgListRow)
+	if !ok {
+		return ""
+	}
+	switch key {
+	case "id":
+		return o.ID
+	case "name":
+		if o.Name == "" {
+			return "-"
+		}
+		return o.Name
+	case "current":
+		if o.Current {
+			return "(current)"
+		}
+		return ""
+	default:
+		return ""
+	}
+}
+
+var orgListColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return orgRowCell(row, "id") }},
+	{Header: "NAME", Extract: func(row any) string { return orgRowCell(row, "name") }},
+	{Header: "CURRENT", Extract: func(row any) string { return orgRowCell(row, "current") }},
 }
 
 // cliSwitchOrganizationResponse mirrors POST /v1/auth/cli/switch-organization —
@@ -175,21 +211,30 @@ The organization the active session is currently scoped to is marked
 		var current cliAuthOrganization
 		_ = cliJSONRequestInto(cmd, http.MethodGet, "/v1/auth/organization", nil, nil, &current)
 
-		tw := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		for _, o := range orgs {
-			marker := ""
-			if current.ID != "" && o.ID == current.ID {
-				marker = "(current)"
-			}
-			name := o.Name
-			if name == "" {
-				name = "-"
-			}
-			if _, err := fmt.Fprintf(tw, "%s\t%s\t%s\n", o.ID, name, marker); err != nil {
-				return err
-			}
+		// Mirror every other list command: honor --output (and the
+		// auto→JSON-when-piped convention used by `env list` / `projects
+		// list`). A bare TTY invocation still renders the human table.
+		format, err := ResolveOutputFormat(cmd, os.Stdout)
+		if err != nil {
+			return err
 		}
-		return tw.Flush()
+
+		rows := make([]any, 0, len(orgs))
+		for _, o := range orgs {
+			rows = append(rows, orgListRow{
+				ID:      o.ID,
+				Name:    o.Name,
+				Current: current.ID != "" && o.ID == current.ID,
+			})
+		}
+
+		if format == OutputJSON {
+			return printJSON(map[string]any{"data": rows})
+		}
+		if format == OutputCSV {
+			return renderAutoCSV(os.Stdout, rows, orgListColumns)
+		}
+		return renderAutoTable(os.Stdout, rows, orgListColumns)
 	}),
 }
 

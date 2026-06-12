@@ -129,6 +129,7 @@ when the type is obvious from the cover.`,
 			BustCache:    ptr(bustCache),
 			FirstNPages:  ptr(firstN),
 			Instructions: ptr(instructions),
+			Background:   primitiveBackgroundParam(cmd),
 		})
 		if err != nil {
 			return err
@@ -268,6 +269,7 @@ func init() {
 	classificationsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	classificationsCreateCmd.Flags().StringArray("category", nil, "category as name=description (repeatable)")
 	classificationsCreateCmd.Flags().String("categories-file", "", "JSON array of {name, description} (or - for stdin)")
+	addPrimitiveBackgroundFlag(classificationsCreateCmd)
 	addPrimitiveCreateWaitFlags(classificationsCreateCmd)
 	_ = classificationsCreateCmd.MarkFlagRequired("model")
 

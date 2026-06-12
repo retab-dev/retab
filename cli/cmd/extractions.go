@@ -76,6 +76,7 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		Metadata:           &metadata,
 		AdditionalMessages: messages,
 		BustCache:          ptr(bustCache),
+		Background:         primitiveBackgroundParam(cmd),
 	}, nil
 }
 
@@ -352,6 +353,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 
 func init() {
 	addExtractionBodyFlags(extractionsCreateCmd)
+	addPrimitiveBackgroundFlag(extractionsCreateCmd)
 	addPrimitiveCreateWaitFlags(extractionsCreateCmd)
 	addExtractionBodyFlags(extractionsStreamCmd)
 

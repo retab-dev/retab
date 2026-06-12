@@ -113,7 +113,7 @@ func readSpecYAML(path string) (string, error) {
 
 var workflowsSpecValidateCmd = &cobra.Command{
 	Use:   "validate <path>",
-	Short: "Parse + type-check a YAML spec without touching the server",
+	Short: "Validate a YAML spec server-side without creating or modifying a workflow",
 	Long: `Send the YAML to the server's spec validator. No workflow is
 created or modified — the server only returns whether the spec parses
 and whether its referenced blocks / schemas / model ids exist.
