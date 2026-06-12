@@ -12,8 +12,8 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
 
     public function __construct(
         public string $tableId,
-        /** @var array<\Retab\Resource\WorkflowTableColumn>|null */
-        public ?array $columns = null,
+        /** @var array<\Retab\Resource\WorkflowTableColumn> */
+        public array $columns,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -21,6 +21,7 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
     {
         foreach ([
             'table_id',
+            'columns',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowTableSchemaResponse::fromArray()");
@@ -28,7 +29,7 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
         }
         return new self(
             tableId: $data['table_id'],
-            columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
+            columns: array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']),
         );
     }
 
@@ -37,7 +38,7 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
     {
         return [
             'table_id' => $this->tableId,
-            'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,
+            'columns' => array_map(fn($item) => $item->toArray(), $this->columns),
         ];
     }
 }

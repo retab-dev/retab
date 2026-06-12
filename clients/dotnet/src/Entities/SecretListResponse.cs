@@ -5,7 +5,7 @@ namespace Retab
     /// <summary>Represents a secret list response.</summary>
     public class SecretListResponse
     {
-        public List<Secret>? Secrets { get; set; }
+        public List<Secret> Secrets { get; set; } = default!;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

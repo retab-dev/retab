@@ -15,7 +15,7 @@ public final class WorkflowTableSchemaResponse {
   @JsonCreator
   public WorkflowTableSchemaResponse(
       @JsonProperty(value = "table_id", required = true) String tableId,
-      @JsonProperty(value = "columns", required = false) List<WorkflowTableColumn> columns) {
+      @JsonProperty(value = "columns", required = true) List<WorkflowTableColumn> columns) {
     this.tableId = tableId;
     this.columns = columns;
   }

@@ -287,6 +287,7 @@ func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) 
 	files := map[string]string{
 		"input.py":          generateFunctionInputModule(),
 		"output.py":         generateFunctionOutputModule(config),
+		"models.py":         generateFunctionModelsModule(config),
 		"run.py":            generatedFunctionRunPy,
 		".retab/runtime.py": generatedFunctionRuntimePy,
 	}
@@ -296,7 +297,7 @@ func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) 
 		}
 	}
 	if force {
-		for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs"} {
+		for _, rel := range []string{"input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs"} {
 			if err := os.Remove(filepath.Join(dir, rel)); err != nil && !os.IsNotExist(err) {
 				return err
 			}
@@ -531,7 +532,10 @@ func stringFromAny(value any) string {
 	return str
 }
 
-func generateFunctionOutputModule(config map[string]any) string {
+// functionOutputClassNames returns the sorted model class names that
+// generateFunctionOutputModule emits into output.py: always "Output", plus a
+// class per output-schema $defs/definitions entry.
+func functionOutputClassNames(config map[string]any) []string {
 	classNames := map[string]bool{"Output": true}
 	if schema, ok := config["output_schema"].(map[string]any); ok {
 		for _, defsKey := range []string{"$defs", "definitions"} {
@@ -549,11 +553,36 @@ func generateFunctionOutputModule(config map[string]any) string {
 		names = append(names, name)
 	}
 	sort.Strings(names)
+	return names
+}
+
+func generateFunctionOutputModule(config map[string]any) string {
 	var b strings.Builder
 	b.WriteString("from __future__ import annotations\n\nfrom input import _RetabModel\n")
-	for _, name := range names {
+	for _, name := range functionOutputClassNames(config) {
 		fmt.Fprintf(&b, "\nclass %s(_RetabModel):\n    pass\n", name)
 	}
+	return b.String()
+}
+
+// generateFunctionModelsModule generates the models.py compatibility module that
+// mirrors the server sandbox (workspace_builder.build_python_models_module): it
+// re-exports Input from input.py and the output classes from output.py so that
+// server-canonical function code (`from models import Input, Output`) runs
+// unchanged under `functions run`. Without it the local runtime fails with
+// "ModuleNotFoundError: No module named 'models'".
+func generateFunctionModelsModule(config map[string]any) string {
+	outputNames := functionOutputClassNames(config)
+	allNames := append([]string{"Input"}, outputNames...)
+	quoted := make([]string, len(allNames))
+	for i, name := range allNames {
+		quoted[i] = fmt.Sprintf("%q", name)
+	}
+	var b strings.Builder
+	b.WriteString("from __future__ import annotations\n\n")
+	b.WriteString("from input import Input\n")
+	fmt.Fprintf(&b, "from output import %s\n", strings.Join(outputNames, ", "))
+	fmt.Fprintf(&b, "\n__all__ = [%s]\n", strings.Join(quoted, ", "))
 	return b.String()
 }
 

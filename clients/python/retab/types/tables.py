@@ -166,7 +166,7 @@ class WorkflowTableFilterRule(BaseModel):
 class WorkflowTableListResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    tables: list[WorkflowTable] | None = Field(default=[])
+    tables: list[WorkflowTable]
 
 
 class WorkflowTableProfileColumn(BaseModel):
@@ -232,7 +232,7 @@ class WorkflowTableSchemaResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     table_id: str
-    columns: list[WorkflowTableColumn] | None = Field(default=[])
+    columns: list[WorkflowTableColumn]
 
 
 class WorkflowTableSearchRequest(BaseModel):

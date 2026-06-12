@@ -15,10 +15,10 @@ module Retab
     sig { params(value: String).returns(String) }
     def table_id=(value); end
 
-    sig { returns(T.nilable(T::Array[Retab::WorkflowTableColumn])) }
+    sig { returns(T::Array[Retab::WorkflowTableColumn]) }
     def columns; end
 
-    sig { params(value: T.nilable(T::Array[Retab::WorkflowTableColumn])).returns(T.nilable(T::Array[Retab::WorkflowTableColumn])) }
+    sig { params(value: T::Array[Retab::WorkflowTableColumn]).returns(T::Array[Retab::WorkflowTableColumn]) }
     def columns=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }

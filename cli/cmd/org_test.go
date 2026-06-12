@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -159,6 +161,133 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 	if cfg.EnvironmentType != "production" {
 		t.Fatalf("EnvironmentType = %q, want production", cfg.EnvironmentType)
 	}
+}
+
+// TestOrgListHonorsOutputFormat pins the regression that `org list` routes
+// through --output like every other list command: JSON carries the
+// current-org marker as a `current` flag, and the table/csv renderers expose
+// the same data. Before the fix, org list always hand-rolled a tabwriter and
+// silently ignored --output (so `--output json` still printed a table).
+func TestOrgListHonorsOutputFormat(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/cli/organizations":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cliOrganizationsResponse{
+				Data: []cliOrganization{
+					{ID: "org_acme", Name: "Acme Inc"},
+					{ID: "org_beta", Name: "Beta"},
+				},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/organization":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cliAuthOrganization{ID: "org_beta", Name: "Beta"})
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	// OAuth login with NO selected environment, so cliJSONRequestInto uses the
+	// raw token directly (no dashboard-context exchange hop to mock).
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		OAuth: &oauthTokens{
+			AccessToken:   "at_live",
+			RefreshToken:  "rt_live",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			AuthKitDomain: "auth.example.com",
+			ClientID:      "client_cli",
+		},
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	run := func(t *testing.T, output string) string {
+		t.Helper()
+		cmd := &cobra.Command{}
+		cmd.PersistentFlags().String("api-key", "", "")
+		cmd.PersistentFlags().String("base-url", "", "")
+		cmd.PersistentFlags().Bool("debug", false, "")
+		cmd.PersistentFlags().String("output", output, "")
+
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("os.Pipe: %v", err)
+		}
+		orig := os.Stdout
+		os.Stdout = w
+		t.Cleanup(func() { os.Stdout = orig })
+
+		out := make(chan string, 1)
+		go func() {
+			b, _ := io.ReadAll(r)
+			out <- string(b)
+		}()
+
+		if err := orgListCmd.RunE(cmd, nil); err != nil {
+			_ = w.Close()
+			os.Stdout = orig
+			t.Fatalf("org list (--output %s): %v", output, err)
+		}
+		_ = w.Close()
+		os.Stdout = orig
+		return <-out
+	}
+
+	t.Run("json", func(t *testing.T) {
+		got := run(t, "json")
+		var parsed struct {
+			Data []orgListRow `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(got), &parsed); err != nil {
+			t.Fatalf("output is not JSON: %v\n%s", err, got)
+		}
+		if len(parsed.Data) != 2 {
+			t.Fatalf("want 2 orgs, got %d: %s", len(parsed.Data), got)
+		}
+		var current []string
+		for _, o := range parsed.Data {
+			if o.Current {
+				current = append(current, o.ID)
+			}
+		}
+		if len(current) != 1 || current[0] != "org_beta" {
+			t.Fatalf("want only org_beta current, got %v\n%s", current, got)
+		}
+	})
+
+	t.Run("table", func(t *testing.T) {
+		got := run(t, "table")
+		if !strings.Contains(got, "ID") || !strings.Contains(got, "CURRENT") {
+			t.Fatalf("table missing header: %s", got)
+		}
+		// The current org gets the "(current)" marker; the other does not.
+		for _, line := range strings.Split(got, "\n") {
+			if strings.HasPrefix(line, "org_beta") && !strings.Contains(line, "(current)") {
+				t.Fatalf("org_beta row missing (current) marker: %q", line)
+			}
+			if strings.HasPrefix(line, "org_acme") && strings.Contains(line, "(current)") {
+				t.Fatalf("org_acme row wrongly marked current: %q", line)
+			}
+		}
+	})
+
+	t.Run("csv", func(t *testing.T) {
+		got := run(t, "csv")
+		if !strings.HasPrefix(got, "ID,NAME,CURRENT") {
+			t.Fatalf("csv header wrong: %s", got)
+		}
+		if !strings.Contains(got, "org_beta,Beta,(current)") {
+			t.Fatalf("csv missing current marker row: %s", got)
+		}
+	})
 }
 
 func TestOrgSwitchRequiresOAuth(t *testing.T) {

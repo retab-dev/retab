@@ -13,18 +13,17 @@ import {
 
 export interface WorkflowTableSchemaResponse {
   tableId: string;
-  /** @default [] */
-  columns?: WorkflowTableColumn[];
+  columns: WorkflowTableColumn[];
 }
 
 export interface WorkflowTableSchemaResponseResponse {
   table_id: string;
-  columns?: WorkflowTableColumnResponse[];
+  columns: WorkflowTableColumnResponse[];
 }
 
 export const ZWorkflowTableSchemaResponse = z.object({
   tableId: z.string(),
-  columns: ZWorkflowTableColumn.array().optional(),
+  columns: ZWorkflowTableColumn.array(),
 }) as z.ZodType<WorkflowTableSchemaResponse>;
 
 export function deserializeWorkflowTableSchemaResponse(
@@ -32,10 +31,7 @@ export function deserializeWorkflowTableSchemaResponse(
 ): WorkflowTableSchemaResponse {
   return {
     tableId: wire['table_id'],
-    columns:
-      wire['columns'] == null
-        ? (wire['columns'] as undefined)
-        : wire['columns'].map((__i) => deserializeWorkflowTableColumn(__i)),
+    columns: wire['columns'].map((__i) => deserializeWorkflowTableColumn(__i)),
   };
 }
 
@@ -44,9 +40,6 @@ export function serializeWorkflowTableSchemaResponse(
 ): WorkflowTableSchemaResponseResponse {
   return {
     table_id: domain['tableId'],
-    columns:
-      domain['columns'] == null
-        ? (domain['columns'] as undefined)
-        : domain['columns'].map((__i) => serializeWorkflowTableColumn(__i)),
+    columns: domain['columns'].map((__i) => serializeWorkflowTableColumn(__i)),
   };
 }
