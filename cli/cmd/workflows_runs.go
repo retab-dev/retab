@@ -271,6 +271,14 @@ removed in a future release.`,
 			}
 			req.Documents = docs
 		}
+		// Block ids already claimed by --documents-file. The per-flag conflict
+		// checks below also test against these so a --document / --document-id
+		// / --document-url for the same block errors out instead of silently
+		// overwriting the documents-file entry.
+		docsFileKeys := map[string]bool{}
+		for key := range req.Documents {
+			docsFileKeys[key] = true
+		}
 		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")
 		if jsonInputsFile != "" {
 			inputs, err := readJSONMap(jsonInputsFile)
@@ -304,6 +312,9 @@ removed in a future release.`,
 			if _, conflict := fileEntries[key]; conflict {
 				return fmt.Errorf("block %q has both --document and --document-id; pass exactly one source per block", key)
 			}
+			if docsFileKeys[key] {
+				return fmt.Errorf("block %q has both --documents-file and --document-id; pass exactly one source per block", key)
+			}
 			docIDs[key] = strings.TrimSpace(fileID)
 		}
 		// Reject overlap between --document/--document-id and --document-url
@@ -332,12 +343,21 @@ removed in a future release.`,
 					key,
 				)
 			}
+			if docsFileKeys[key] {
+				return fmt.Errorf(
+					"block %q has both --documents-file and --document-url; pass exactly one source per block",
+					key,
+				)
+			}
 		}
 		if len(fileEntries) > 0 || len(urlFlags) > 0 {
 			if req.Documents == nil {
 				req.Documents = map[string]any{}
 			}
 			for key, path := range fileEntries {
+				if docsFileKeys[key] {
+					return fmt.Errorf("block %q has both --documents-file and --document; pass exactly one source per block", key)
+				}
 				mime, err := inferFileMIMEData(path)
 				if err != nil {
 					return fmt.Errorf("--document %s=%s: %w", key, path, err)

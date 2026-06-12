@@ -1644,12 +1644,15 @@ func resolveOptionalDocument(cmd *cobra.Command) (any, error) {
 func mimeDataFromDocument(doc any) (retab.MIMEData, error) {
 	switch value := doc.(type) {
 	case retab.MIMEData:
-		return retab.MIMEData{Filename: value.Filename, URL: value.URL}, nil
+		// Return as-is: a content-only descriptor (Content + MIMEType, no
+		// URL) is a valid inline document. Copying only Filename/URL drops
+		// the inline content and serializes an empty document over the wire.
+		return value, nil
 	case *retab.MIMEData:
 		if value == nil {
 			return retab.MIMEData{}, fmt.Errorf("document is required")
 		}
-		return retab.MIMEData{Filename: value.Filename, URL: value.URL}, nil
+		return *value, nil
 	}
 	body, err := json.Marshal(doc)
 	if err != nil {
