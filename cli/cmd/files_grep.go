@@ -311,7 +311,10 @@ func boundingBoxForMatch(page ParsedPage, match string) *Bbox {
 			if joined.Len() > 0 {
 				joined.WriteByte(' ')
 			}
-			joined.WriteString(strings.ToLower(strings.TrimSpace(it.Text)))
+			// Collapse internal whitespace the same way `needle` is normalized
+			// (strings.Fields), otherwise an item containing multiple spaces,
+			// tabs, or newlines would never substring-match the needle.
+			joined.WriteString(strings.ToLower(strings.Join(strings.Fields(it.Text), " ")))
 			if it.X < minX {
 				minX = it.X
 			}

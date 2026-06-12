@@ -135,6 +135,58 @@ func TestWorkflowSyntheticLevelsTerminatesOnCycle(t *testing.T) {
 	}
 }
 
+// stringifyCell must not overflow int64 on large integral floats.
+func TestStringifyCellLargeFloat(t *testing.T) {
+	// 1e19 is integral but > math.MaxInt64 (~9.22e18); must not wrap negative.
+	if got := stringifyCell(float64(1e19)); got != "10000000000000000000" {
+		t.Errorf("stringifyCell(1e19) = %q, want 10000000000000000000", got)
+	}
+	// In-range integral floats still render as plain integers.
+	if got := stringifyCell(float64(42)); got != "42" {
+		t.Errorf("stringifyCell(42) = %q, want 42", got)
+	}
+	// Non-integral keeps decimals.
+	if got := stringifyCell(float64(3.5)); got != "3.5" {
+		t.Errorf("stringifyCell(3.5) = %q, want 3.5", got)
+	}
+}
+
+// sanitizeCSVCell must neutralize formula triggers but preserve numbers.
+func TestSanitizeCSVCell(t *testing.T) {
+	neutralized := map[string]string{
+		"=cmd|'/c calc'!A1": "'=cmd|'/c calc'!A1",
+		"@SUM(A1)":          "'@SUM(A1)",
+		"+cmd":              "'+cmd",
+		"-1+1":              "'-1+1",
+		"\tinjected":        "'\tinjected",
+	}
+	for in, want := range neutralized {
+		if got := sanitizeCSVCell(in); got != want {
+			t.Errorf("sanitizeCSVCell(%q) = %q, want %q", in, got, want)
+		}
+	}
+	// Legitimate values (including negative numbers) pass through untouched.
+	for _, in := range []string{"", "report.pdf", "-42", "-3.14", "+7", "1e9", "hello"} {
+		if got := sanitizeCSVCell(in); got != in {
+			t.Errorf("sanitizeCSVCell(%q) = %q, want unchanged", in, got)
+		}
+	}
+}
+
+// boundingBoxForMatch must match across items with internal whitespace.
+func TestBoundingBoxForMatchWhitespace(t *testing.T) {
+	page := ParsedPage{
+		Page: 1, Width: 100, Height: 100,
+		Items: []ParsedItem{
+			{Text: "Invoice   Total", X: 10, Y: 10, Width: 30, Height: 5}, // internal double space
+			{Text: "Due", X: 42, Y: 10, Width: 10, Height: 5},
+		},
+	}
+	if box := boundingBoxForMatch(page, "invoice total"); box == nil {
+		t.Fatal("expected a bbox for a needle spanning whitespace-normalized item text")
+	}
+}
+
 // Sanity: redactKey still shows first/last 4 for long tokens.
 func TestRedactKeyLongToken(t *testing.T) {
 	long := "abcd" + strings.Repeat("x", 1000) + "wxyz"
