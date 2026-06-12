@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -293,7 +294,7 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 	}
 	defer cleanup()
 
-	before, _ := imagesIn(opt.OutDir)
+	before := imageModTimes(opt.OutDir)
 	args := []string{"screenshot", input, "--output-dir", opt.OutDir, "--quiet"}
 	if opt.TargetPages != "" {
 		args = append(args, "--target-pages", opt.TargetPages)
@@ -315,23 +316,45 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 	if err != nil {
 		return nil, err
 	}
-	// New files are the ones this run produced.
-	seen := map[string]bool{}
-	for _, p := range before {
-		seen[p] = true
-	}
+	// Files this run produced are the ones that are new OR whose modtime
+	// advanced (a re-render overwrites same-named page-N.png in place, so a
+	// presence-only diff would wrongly drop them).
+	afterTimes := imageModTimes(opt.OutDir)
 	var pages []ScreenshotPage
-	for _, p := range after {
-		if seen[p] {
+	for i, p := range after {
+		prev, existed := before[p]
+		if existed && afterTimes[p] == prev {
 			continue
 		}
-		pages = append(pages, ScreenshotPage{Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
+		// `lit` names each file page-<N>.<ext> where N is the document page
+		// number. Use that rather than a sequential index so a render of e.g.
+		// pages 3-5 reports 3,4,5 (and not 1,2,3).
+		page := pageNumberFromScreenshotFilename(p)
+		if page == 0 {
+			page = i + 1
+		}
+		pages = append(pages, ScreenshotPage{Page: page, Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
 	}
-	sort.Slice(pages, func(i, j int) bool { return pages[i].Path < pages[j].Path })
-	for i := range pages {
-		pages[i].Page = i + 1
-	}
+	// Sort by page number; a lexical path sort would order page-10 before
+	// page-2.
+	sort.Slice(pages, func(i, j int) bool { return pages[i].Page < pages[j].Page })
 	return pages, nil
+}
+
+// pageNumberFromScreenshotFilename extracts N from a `page-<N>.<ext>` file
+// name produced by `lit screenshot`. Returns 0 when the name does not match.
+func pageNumberFromScreenshotFilename(path string) int {
+	base := filepath.Base(path)
+	base = strings.TrimSuffix(base, filepath.Ext(base))
+	const prefix = "page-"
+	if !strings.HasPrefix(base, prefix) {
+		return 0
+	}
+	n, err := strconv.Atoi(base[len(prefix):])
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
 }
 
 func imagesIn(dir string) ([]string, error) {
@@ -351,6 +374,25 @@ func imagesIn(dir string) ([]string, error) {
 	}
 	sort.Strings(out)
 	return out, nil
+}
+
+// imageModTimes maps each image file in dir to its modtime (UnixNano). Used to
+// tell which screenshots a render run actually produced, including in-place
+// overwrites of pre-existing page-N.png files.
+func imageModTimes(dir string) map[string]int64 {
+	out := map[string]int64{}
+	paths, err := imagesIn(dir)
+	if err != nil {
+		return out
+	}
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil {
+			continue
+		}
+		out[p] = info.ModTime().UnixNano()
+	}
+	return out
 }
 
 func (c *litCLI) Version(ctx context.Context) (string, error) {

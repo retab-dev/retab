@@ -416,15 +416,24 @@ func workflowASCIISyntheticLevels(blocks []retab.WorkflowBlock, edges []retab.Wo
 
 	levels := map[string]int{}
 	queue := append([]string(nil), roots...)
+	// The longest acyclic path visits each block at most once, so any level
+	// >= len(blocks) means we are following a cycle. Re-enqueue a target only
+	// when its level genuinely increased AND stays within that bound; this
+	// both guarantees termination and stops a cyclic edge set (A->B->A) from
+	// re-pushing targets forever as the level keeps climbing.
+	maxLevel := len(blocks)
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 		for _, target := range outgoing[current] {
 			nextLevel := levels[current] + 1
+			if nextLevel >= maxLevel {
+				continue
+			}
 			if levels[target] < nextLevel {
 				levels[target] = nextLevel
+				queue = append(queue, target)
 			}
-			queue = append(queue, target)
 		}
 	}
 	return levels

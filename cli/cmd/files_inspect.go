@@ -357,8 +357,10 @@ func pageListToSpec(pages []int) string {
 }
 
 func fileBase(path string) string {
+	// Treat both separators so Windows paths (C:\dir\file.pdf) and URL/POSIX
+	// paths yield the base name rather than leaking the full path.
 	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' {
+		if path[i] == '/' || path[i] == '\\' {
 			return path[i+1:]
 		}
 	}
