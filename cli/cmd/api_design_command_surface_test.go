@@ -154,12 +154,12 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"workflows experiments results": {"list", "get"},
 		"workflows reviews":             {"list", "get", "schema", "approve", "reject", "versions"},
 		"workflows reviews versions":    {"list", "get", "create"},
-		"workflows runs":                {"create", "get", "list", "delete", "cancel", "restart", "export"},
+		"workflows runs":                {"create", "get", "list", "delete", "cancel", "restart", "export", "wait"},
 		"workflows blocks executions":   {"create", "list"},
 		"workflows spec":                {"validate", "plan", "apply", "get"},
 		"workflows steps":               {"list", "get"},
 		"workflows tests":               {"create", "get", "list", "update", "delete", "runs", "results"},
-		"workflows tests runs":          {"create", "list", "get", "cancel"},
+		"workflows tests runs":          {"create", "list", "get", "cancel", "wait"},
 		"workflows tests results":       {"list", "get"},
 	}
 

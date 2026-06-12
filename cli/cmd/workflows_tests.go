@@ -830,6 +830,50 @@ func waitForWorkflowTestRun(
 	}
 }
 
+// workflowsTestsRunsWaitCmd is the standalone poller for an already-created
+// workflow-test run, mirroring `experiments runs wait` so the
+// `create --wait` / standalone-`wait` pair is consistent across the run
+// families.
+var workflowsTestsRunsWaitCmd = &cobra.Command{
+	Use:   "wait <run-id>",
+	Short: "Poll until a workflow-test run reaches a terminal status",
+	Long: `Block until a workflow-test run hits a terminal status
+(` + "`completed`" + `, ` + "`error`" + `, or ` + "`cancelled`" + `),
+polling on a configurable interval. Defaults: 2-second polls, 10-minute
+timeout.
+
+Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
+handles the interval and timeout, and exits non-zero if the run ends in
+` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses. Pair with
+` + "`runs create --wait`" + ` to create and block in a single step.`,
+	Example: `  # Wait with defaults (2s polls, 600s timeout)
+  retab workflows tests runs wait wftestrun_mno345
+
+  # Faster polls, longer ceiling
+  retab workflows tests runs wait wftestrun_mno345 \
+    --poll-interval-ms 1000 --timeout-seconds 1800`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		pollInterval, timeout := experimentWaitDurations(cmd)
+		final, waitErr := waitForWorkflowTestRun(ctx, client, args[0], pollInterval, timeout)
+		if final != nil {
+			if err := printResult(cmd, final); err != nil {
+				return err
+			}
+		}
+		if waitErr != nil {
+			return waitErr
+		}
+		return workflowTestRunTerminalError(final)
+	}),
+}
+
 var workflowsTestsRunsListCmd = &cobra.Command{
 	Use:   "list [workflow-id]",
 	Short: "List workflow-test runs",
@@ -1087,10 +1131,13 @@ func init() {
 	workflowsTestsRunsCreateCmd.Flags().Bool("wait", false, "block until the run reaches a terminal status (completed/error/cancelled), then print the final run")
 	workflowsTestsRunsCreateCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds while --wait is set")
 	workflowsTestsRunsCreateCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait while --wait is set")
+	// Standalone poller for an already-running test run; tuning flags match
+	// the create knobs and the experiment/primitive wait commands.
+	addPrimitiveWaitTuningFlags(workflowsTestsRunsWaitCmd, false)
 	workflowsTestsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
 	workflowsTestsResultsCmd.AddCommand(workflowsTestsResultsListCmd, workflowsTestsResultsGetCmd)
-	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsCancelCmd)
+	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsCancelCmd, workflowsTestsRunsWaitCmd)
 	workflowsTestsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsRunsCmd, workflowsTestsResultsCmd)

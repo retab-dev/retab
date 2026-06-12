@@ -427,12 +427,23 @@ func maybeWaitForWorkflowRun(cmd *cobra.Command, result any) error {
 	if id == "" {
 		return fmt.Errorf("workflow run create response did not include an id")
 	}
+	return waitForWorkflowRunByID(cmd, id, resource)
+}
+
+// waitForWorkflowRunByID polls GET /v1/workflows/runs/<id> until the run
+// reaches a terminal lifecycle status (completed/error/cancelled) or pauses
+// for human review (awaiting_review), then prints the final record. `initial`
+// is the most recently-seen run state — the create response for
+// `runs create --wait`, or the first GET for the standalone `runs wait`
+// command — so an already-terminal run short-circuits without an extra fetch.
+// Shared by both entry points so the two stay in lockstep.
+func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]any) error {
 	pollInterval, timeout := primitiveWaitDurations(cmd)
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 	ctx, cancelTimeout := context.WithTimeout(ctx, timeout)
 	defer cancelTimeout()
-	last := resource
+	last := initial
 	for {
 		if status := primitiveStatus(last); workflowRunWaitTerminalStatuses[status] {
 			if err := printResult(cmd, last); err != nil {
@@ -459,6 +470,43 @@ func maybeWaitForWorkflowRun(cmd *cobra.Command, result any) error {
 			return err
 		}
 	}
+}
+
+// workflowsRunsWaitCmd is the standalone poller for an already-created run,
+// mirroring `experiments runs wait` and the primitive `wait` commands so the
+// `create --wait` / standalone-`wait` pair is consistent across every
+// pollable resource.
+var workflowsRunsWaitCmd = &cobra.Command{
+	Use:   "wait <run-id>",
+	Short: "Poll until a workflow run reaches a terminal status",
+	Long: `Block until a workflow run settles (` + "`completed`" + `/` + "`error`" + `/
+` + "`cancelled`" + `) or pauses for human review (` + "`awaiting_review`" + `),
+polling on a configurable interval. Defaults: 2-second polls, 10-minute
+timeout.
+
+Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
+handles the interval and timeout, prints the final run, and exits non-zero
+if the run ends in ` + "`error`" + ` or the timeout elapses. Pair with
+` + "`runs create --wait`" + ` to create and block in a single step.`,
+	Example: `  # Wait with defaults (2s polls, 600s timeout)
+  retab workflows runs wait run_abc123
+
+  # Faster polls, longer ceiling
+  retab workflows runs wait run_abc123 \
+    --poll-interval-ms 1000 --timeout-seconds 1800`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		id := args[0]
+		current, err := cliJSONRequest(cmd, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(id), nil, nil)
+		if err != nil {
+			return err
+		}
+		initial, err := primitiveMap(current)
+		if err != nil {
+			return err
+		}
+		return waitForWorkflowRunByID(cmd, id, initial)
+	}),
 }
 
 type workflowRunCreateParams struct {
@@ -1213,6 +1261,10 @@ func init() {
 	_ = workflowsRunsExportCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
-	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsExportCmd)
+	// Standalone poller for an already-running run; tuning flags match the
+	// `runs create --wait` knobs and the primitive/experiment wait commands.
+	addPrimitiveWaitTuningFlags(workflowsRunsWaitCmd, false)
+
+	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsExportCmd, workflowsRunsWaitCmd)
 	workflowsCmd.AddCommand(workflowsRunsCmd)
 }

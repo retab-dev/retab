@@ -98,11 +98,13 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows blocks api-calls run":     "local api_call dry-run renderer and opt-in executor",
 	"workflows blocks functions hydrate": "local function runtime scaffolding for pulled function bundles",
 	"workflows blocks functions run":     "local function runner for hydrated function bundles",
-	"workflows spec plan-to":            "workflows.Plan with an explicit workflow_id (existing-workflow plan route)",
-	"workflows spec apply-to":           "workflows.Apply with an explicit workflow_id (existing-workflow apply route)",
+	"workflows spec plan-to":             "workflows.Plan with an explicit workflow_id (existing-workflow plan route)",
+	"workflows spec apply-to":            "workflows.Apply with an explicit workflow_id (existing-workflow apply route)",
 	"workflows reviews schema":           "local schema helper composed from reviews get",
 	"workflows runs restart":             "local restart alias composed from runs create",
 	"workflows experiments runs wait":    "local poll loop composed from experiments runs get",
+	"workflows runs wait":                "local poll loop composed from runs get",
+	"workflows tests runs wait":          "local poll loop composed from tests runs get",
 	"workflows view":                     "terminal graph renderer composed from workflow graph reads",
 }
 
