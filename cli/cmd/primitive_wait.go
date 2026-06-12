@@ -158,23 +158,32 @@ func waitForPrimitive(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	var last map[string]any
+	var lastErr error
 	for {
+		// A poll error is treated as transient (the server may be redeploying /
+		// briefly unreachable, or a background primitive's host instance is
+		// restarting) and retried until the primitive reaches a terminal status or
+		// the overall timeout elapses — rather than aborting the wait on the first
+		// blip. A genuinely persistent error surfaces when the timeout fires.
 		result, err := cliJSONRequest(cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil)
 		if err != nil {
-			return nil, err
-		}
-		current, err := primitiveMap(result)
-		if err != nil {
-			return nil, err
-		}
-		last = current
-		if isTerminalPrimitiveStatus(primitiveStatus(current)) {
-			return current, nil
+			lastErr = err
+		} else if current, perr := primitiveMap(result); perr != nil {
+			lastErr = perr
+		} else {
+			last = current
+			lastErr = nil
+			if isTerminalPrimitiveStatus(primitiveStatus(current)) {
+				return current, nil
+			}
 		}
 		timer := time.NewTimer(pollInterval)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
+			if lastErr != nil {
+				return last, fmt.Errorf("gave up waiting for %s %s after repeated poll errors: %w", spec.singular, id, lastErr)
+			}
 			return last, fmt.Errorf("timed out waiting for %s %s: %w", spec.singular, id, ctx.Err())
 		case <-timer.C:
 		}
