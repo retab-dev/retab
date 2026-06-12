@@ -2288,3 +2288,43 @@ func TestWorkflowsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
 		t.Fatalf("expected the failed run record on stdout, got:\n%s", stdout)
 	}
 }
+
+// TestWorkflowsRunsWaitCancelledStatusExitsNonZero pins that a cancelled run
+// exits non-zero, matching experiments/tests/primitives (workflow runs used to
+// treat cancelled as success — the one --wait inconsistency across families).
+func TestWorkflowsRunsWaitCancelledStatusExitsNonZero(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "run_cancelled",
+			"lifecycle": map[string]any{"status": "cancelled"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "2000")
+		_ = workflowsRunsWaitCmd.Flags().Set("timeout-seconds", "600")
+	})
+
+	var runErr error
+	stdout, _ := captureStd(t, func() {
+		runErr = workflowsRunsWaitCmd.RunE(workflowsRunsWaitCmd, []string{"run_cancelled"})
+	})
+	if runErr == nil {
+		t.Fatal("expected non-nil error for a cancelled run (must match other run families)")
+	}
+	if !strings.Contains(runErr.Error(), "run_cancelled") || !strings.Contains(runErr.Error(), "cancelled") {
+		t.Fatalf("error %q should name the run and the cancelled status", runErr.Error())
+	}
+	if !strings.Contains(stdout, `"status": "cancelled"`) {
+		t.Fatalf("expected the cancelled run record on stdout, got:\n%s", stdout)
+	}
+}

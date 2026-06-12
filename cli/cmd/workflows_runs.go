@@ -449,8 +449,12 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 			if err := printResult(cmd, last); err != nil {
 				return err
 			}
-			if status == "error" {
-				return fmt.Errorf("workflow run %s ended with status error", id)
+			// error/cancelled are failures (non-zero exit), matching the
+			// contract on every other run family (experiments, tests) and the
+			// primitives. completed and awaiting_review — a pause for human
+			// review, not a failure — exit 0.
+			if status == "error" || status == "cancelled" {
+				return fmt.Errorf("workflow run %s ended with status %s", id, status)
 			}
 			return nil
 		}
