@@ -902,7 +902,18 @@ func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (str
 			}
 		}
 		tok = *refreshed
-		cfg, _ := loadConfig()
+		// Re-read the rest of the config so we only swap the OAuth block and
+		// preserve Environments/BaseURL/legacy key. If the read fails, do NOT
+		// persist: writing a zero-value config would wipe those other fields.
+		// The in-memory tok still serves this request.
+		cfg, ldErr := loadConfig()
+		if ldErr != nil {
+			fmt.Fprintf(os.Stderr,
+				"warning: refreshed OAuth token but could not re-read %s to persist it: %v\n"+
+					"  current command will succeed; next CLI invocation may require re-login.\n",
+				configPathOrEmpty(), ldErr)
+			return tok.AccessToken, nil
+		}
 		cfg.OAuth = &tok
 		if err := saveConfig(cfg); err != nil {
 			// The in-memory tok works for this request, but if we lose
