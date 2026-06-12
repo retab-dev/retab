@@ -210,6 +210,15 @@ func saveConfig(cfg retabConfig) error {
 		cleanupTmp()
 		return err
 	}
+	// Restrict the file to the current user before publishing it. On POSIX the
+	// earlier Chmod(0600) already does this; on Windows Chmod cannot, so
+	// secureConfigFile applies an explicit owner-only ACL. Applying it to the
+	// temp file means the rename publishes an already-locked-down file.
+	// Best-effort: a failure must not block persisting the (security-critical)
+	// rotated refresh_token, so warn and continue rather than abort the save.
+	if err := secureConfigFile(tmpPath); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not restrict permissions on %s: %v\n", path, err)
+	}
 	if err := os.Rename(tmpPath, path); err != nil {
 		cleanupTmp()
 		return err
