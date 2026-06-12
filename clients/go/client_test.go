@@ -1209,6 +1209,31 @@ func TestAPIError(t *testing.T) {
 	}
 }
 
+// TestMergeBodyPropagatesErrors pins that merging request-option fields into a
+// body that isn't a JSON object surfaces an error instead of silently dropping
+// the caller's body.
+func TestMergeBodyPropagatesErrors(t *testing.T) {
+	// A slice body can't absorb object option fields -> must error.
+	if _, err := mergeBody([]string{"a", "b"}, RequestOptions{Body: map[string]any{"x": 1}}); err == nil {
+		t.Error("expected error merging options into a non-object body")
+	}
+	// A struct body merges correctly.
+	merged, err := mergeBody(struct {
+		Name string `json:"name"`
+	}{Name: "n"}, RequestOptions{Body: map[string]any{"x": 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, ok := merged.(map[string]any)
+	if !ok || m["name"] != "n" || m["x"] != 1 {
+		t.Fatalf("unexpected merge result: %#v", merged)
+	}
+	// No options -> body returned untouched (no error).
+	if got, err := mergeBody("raw", RequestOptions{}); err != nil || got != "raw" {
+		t.Fatalf("passthrough failed: got %v err %v", got, err)
+	}
+}
+
 // TestAPIErrorEmptyDetailFallsBackToSiblings pins that an empty-string
 // `detail` no longer wipes the message: parsing must fall back to the
 // top-level message/code rather than surfacing a blank error.

@@ -98,7 +98,7 @@ type FilesCreateUploadParams struct {
 	// ContentType is mime type the client will upload
 	ContentType *string `json:"content_type,omitempty" url:"-"`
 	// SizeBytes is expected upload size in bytes
-	SizeBytes int `json:"size_bytes" url:"-"`
+	SizeBytes int64 `json:"size_bytes" url:"-"`
 	// Sha256 is optional SHA-256 checksum
 	Sha256 *string `json:"sha256,omitempty" url:"-"`
 }
