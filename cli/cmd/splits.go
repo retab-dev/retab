@@ -120,6 +120,7 @@ returned subdocument references can be fed back into per-section
 			Model:        ptr(model),
 			BustCache:    ptr(bustCache),
 			Instructions: ptr(instructions),
+			Background:   primitiveBackgroundParam(cmd),
 		}
 		// Unset --n-consensus reads as 0, and *int(0) survives omitempty;
 		// only wire it when explicitly set (the flag range is 1-8).
@@ -263,6 +264,7 @@ func init() {
 	splitsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	splitsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	splitsCreateCmd.Flags().String("instructions", "", "extra instructions")
+	addPrimitiveBackgroundFlag(splitsCreateCmd)
 	addPrimitiveCreateWaitFlags(splitsCreateCmd)
 	_ = splitsCreateCmd.MarkFlagRequired("model")
 	_ = splitsCreateCmd.MarkFlagRequired("subdocuments-file")

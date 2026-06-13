@@ -25,7 +25,7 @@ class Secret(BaseModel):
 class SecretListResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    secrets: list[Secret] | None = Field(default=[])
+    secrets: list[Secret]
 
 
 class SecretResponse(BaseModel):

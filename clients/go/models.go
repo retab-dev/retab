@@ -1816,7 +1816,7 @@ type Secret struct {
 
 // SecretListResponse represents a secret list response.
 type SecretListResponse struct {
-	Secrets []*Secret `json:"secrets,omitempty"`
+	Secrets []*Secret `json:"secrets"`
 }
 
 // SecretResponse represents a secret response.
@@ -2520,7 +2520,7 @@ type WorkflowTableFilterRule struct {
 
 // WorkflowTableListResponse represents a workflow table list response.
 type WorkflowTableListResponse struct {
-	Tables []*WorkflowTable `json:"tables,omitempty"`
+	Tables []*WorkflowTable `json:"tables"`
 }
 
 // WorkflowTableProfileColumn represents a workflow table profile column.
@@ -2579,7 +2579,7 @@ type WorkflowTableSampleRequest struct {
 // WorkflowTableSchemaResponse represents a workflow table schema response.
 type WorkflowTableSchemaResponse struct {
 	TableID string                 `json:"table_id"`
-	Columns []*WorkflowTableColumn `json:"columns,omitempty"`
+	Columns []*WorkflowTableColumn `json:"columns"`
 }
 
 // WorkflowTableSearchRequest represents a workflow table search request.

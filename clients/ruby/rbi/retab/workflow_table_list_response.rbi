@@ -9,10 +9,10 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(T.nilable(T::Array[Retab::WorkflowTable])) }
+    sig { returns(T::Array[Retab::WorkflowTable]) }
     def tables; end
 
-    sig { params(value: T.nilable(T::Array[Retab::WorkflowTable])).returns(T.nilable(T::Array[Retab::WorkflowTable])) }
+    sig { params(value: T::Array[Retab::WorkflowTable]).returns(T::Array[Retab::WorkflowTable]) }
     def tables=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }
