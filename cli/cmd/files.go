@@ -605,6 +605,9 @@ truncates an existing file or leaves a half-written one behind.`,
 				dest = args[0]
 			}
 		}
+		if !toStdout {
+			dest = resolveDirDest(dest, link.Filename, args[0])
+		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, link.DownloadURL, nil)
 		if err != nil {
 			return err
@@ -624,6 +627,24 @@ truncates an existing file or leaves a half-written one behind.`,
 		}
 		return streamDownloadToFile(dest, resp.Body)
 	}),
+}
+
+// resolveDirDest handles the case where dest points at an existing directory:
+// the file is written inside it under the server filename (falling back to the
+// file id when the server stored no name), curl -O style. Without this, the
+// atomic temp-then-rename in streamDownloadToFile renames a temp file over a
+// directory and fails with a confusing "file exists". A non-directory dest
+// (including a not-yet-existing path) is returned unchanged.
+func resolveDirDest(dest, serverName, fileID string) string {
+	info, err := os.Stat(dest)
+	if err != nil || !info.IsDir() {
+		return dest
+	}
+	name := serverName
+	if name == "" {
+		name = fileID
+	}
+	return filepath.Join(dest, name)
 }
 
 // streamDownloadToFile writes src to dest atomically: bytes go to a temp

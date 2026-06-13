@@ -83,6 +83,28 @@ func TestStreamDownloadToFileFailureKeepsExistingFile(t *testing.T) {
 	}
 }
 
+// TestResolveDirDestWritesIntoDirectory pins that downloading to an existing
+// directory writes the server filename inside it (curl -O style) instead of
+// failing the atomic rename against the directory. Falls back to the file id
+// when the server stored no filename, and leaves a non-directory dest unchanged.
+func TestResolveDirDestWritesIntoDirectory(t *testing.T) {
+	dir := t.TempDir()
+	if got, want := resolveDirDest(dir, "invoice.pdf", "file_abc"), filepath.Join(dir, "invoice.pdf"); got != want {
+		t.Fatalf("resolveDirDest(dir, name) = %q, want %q", got, want)
+	}
+	if got, want := resolveDirDest(dir, "", "file_abc"), filepath.Join(dir, "file_abc"); got != want {
+		t.Fatalf("resolveDirDest(dir, no-name) = %q, want %q", got, want)
+	}
+	f := filepath.Join(dir, "out.pdf")
+	if got := resolveDirDest(f, "invoice.pdf", "file_abc"); got != f {
+		t.Fatalf("resolveDirDest(file) = %q, want unchanged %q", got, f)
+	}
+	missing := filepath.Join(dir, "does-not-exist.pdf")
+	if got := resolveDirDest(missing, "invoice.pdf", "file_abc"); got != missing {
+		t.Fatalf("resolveDirDest(missing) = %q, want unchanged %q", got, missing)
+	}
+}
+
 // TestResolveDownloadDest pins the destination-resolution rules for
 // `retab files download`: positional vs. -o flag, "-" → stdout, and the
 // mutex error when both forms are passed.

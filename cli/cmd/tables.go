@@ -37,7 +37,11 @@ var tablesCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fields := map[string]string{"name": name}
+		projectID, err := requireNonBlankFlag(cmd, "project-id")
+		if err != nil {
+			return err
+		}
+		fields := map[string]string{"name": name, "project_id": projectID}
 		if v, _ := cmd.Flags().GetString("column-schema-overrides"); v != "" || cmd.Flags().Changed("column-schema-overrides") {
 			fields["column_schema_overrides"] = v
 		}
@@ -1168,6 +1172,8 @@ func init() {
 	_ = tablesCreateCmd.MarkFlagRequired("name")
 	tablesCreateCmd.Flags().String("file", "", "CSV file path (required)")
 	_ = tablesCreateCmd.MarkFlagRequired("file")
+	tablesCreateCmd.Flags().String("project-id", "", "project that will own the table (required)")
+	_ = tablesCreateCmd.MarkFlagRequired("project-id")
 	tablesCreateCmd.Flags().String("column-schema-overrides", "", "JSON column schema overrides")
 	tablesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	tablesQueryCmd.Flags().String("filters", "", "JSON array of filter rules")

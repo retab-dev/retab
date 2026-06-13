@@ -106,7 +106,7 @@ func TestTablesCommandsHonorOutputTable(t *testing.T) {
 	}{
 		{
 			name: "create",
-			args: []string{"tables", "create", "--name", "bank_holidays", "--file", csvPath, "--output", "table"},
+			args: []string{"tables", "create", "--name", "bank_holidays", "--file", csvPath, "--project-id", "proj_bank", "--output", "table"},
 			want: []string{"id", "name", "filename", "rows", "columns", "tbl_bank", "bank_holidays"},
 		},
 		{
