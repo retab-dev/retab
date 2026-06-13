@@ -426,6 +426,62 @@ func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
 	}
 }
 
+// TestFilesListForwardsFilterFlags pins that --filename, --from-date, and
+// --to-date are actually mapped into the request query string. They are declared
+// as flags and the SDK FilesListParams carries Filename/FromDate/ToDate, but the
+// list RunE previously only mapped --mime-type and --sort-by, silently dropping
+// these three so the server returned an unfiltered list.
+func TestFilesListForwardsFilterFlags(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotFilename, gotFrom, gotTo string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/files" {
+			t.Fatalf("path = %s, want /v1/files", r.URL.Path)
+		}
+		gotFilename = r.URL.Query().Get("filename")
+		gotFrom = r.URL.Query().Get("from_date")
+		gotTo = r.URL.Query().Get("to_date")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data":          []map[string]any{},
+			"list_metadata": map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	filesListCmd.SetContext(context.Background())
+	t.Cleanup(func() { filesListCmd.SetContext(context.Background()) })
+	for flag, val := range map[string]string{
+		"filename":  "invoice_1.pdf",
+		"from-date": "2026-01-01T00:00:00Z",
+		"to-date":   "2026-12-31T00:00:00Z",
+	} {
+		if err := filesListCmd.Flags().Set(flag, val); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		f := flag
+		t.Cleanup(func() { _ = filesListCmd.Flags().Set(f, "") })
+	}
+
+	var err error
+	_, _ = captureStd(t, func() { err = filesListCmd.RunE(filesListCmd, nil) })
+	if err != nil {
+		t.Fatalf("files list: %v", err)
+	}
+	if gotFilename != "invoice_1.pdf" {
+		t.Errorf("filename query = %q, want invoice_1.pdf", gotFilename)
+	}
+	if gotFrom != "2026-01-01T00:00:00Z" {
+		t.Errorf("from_date query = %q, want 2026-01-01T00:00:00Z", gotFrom)
+	}
+	if gotTo != "2026-12-31T00:00:00Z" {
+		t.Errorf("to_date query = %q, want 2026-12-31T00:00:00Z", gotTo)
+	}
+}
+
 func TestFilesUploadSHA256FlagsRejectInvalidValuesLocally(t *testing.T) {
 	cases := []struct {
 		name string
