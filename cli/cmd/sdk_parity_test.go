@@ -106,6 +106,10 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows runs wait":                "local poll loop composed from runs get",
 	"workflows tests runs wait":          "local poll loop composed from tests runs get",
 	"workflows view":                     "terminal graph renderer composed from workflow graph reads",
+	"workflows access list":              "internal /v1/workflow-memberships read (dashboard-only, not in public SDK)",
+	"workflows access get":               "internal /v1/workflow-memberships read (dashboard-only, not in public SDK)",
+	"workflows access update":            "internal /v1/workflow-memberships role change (dashboard-only, not in public SDK)",
+	"workflows access revoke":            "internal /v1/workflow-memberships deactivate (dashboard-only, not in public SDK)",
 }
 
 func TestCLIExposesGoSDKOperationSurface(t *testing.T) {
