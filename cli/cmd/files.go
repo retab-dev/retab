@@ -173,15 +173,16 @@ var filesGetCmd = &cobra.Command{
 	Short: "Get a file by id",
 	Long: `Fetch the metadata record for a single file as JSON.
 
-Returns the file's filename, MIME type, size, sha256, created_at, and any
-other workspace-level fields — but NOT the file bytes. Use
+Returns the file's id, filename, mime_type, and page_count (when the
+document type is paginated) — but NOT the file bytes, and not internal
+storage fields like size_bytes or sha256. Use
 ` + "`retab files download`" + ` to retrieve the content, or
 ` + "`retab files download-link`" + ` to get a signed URL.`,
 	Example: `  # Inspect a known file
   retab files get file_abc123
 
   # Project just the fields you need
-  retab files get file_abc123 | jq '{id, filename, size_bytes}'`,
+  retab files get file_abc123 | jq '{id, filename, page_count}'`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
