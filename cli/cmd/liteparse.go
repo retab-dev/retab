@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -293,7 +295,6 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 	}
 	defer cleanup()
 
-	before, _ := imagesIn(opt.OutDir)
 	args := []string{"screenshot", input, "--output-dir", opt.OutDir, "--quiet"}
 	if opt.TargetPages != "" {
 		args = append(args, "--target-pages", opt.TargetPages)
@@ -311,26 +312,59 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 		}
 		return nil, fmt.Errorf("liteparse screenshot failed: %s", msg)
 	}
-	after, err := imagesIn(opt.OutDir)
+	return collectRenderedPages(opt.OutDir, opt.TargetPages)
+}
+
+// pageImageNameRe matches the page number liteparse encodes in a rendered image
+// filename, e.g. "page_2.png" → 2.
+var pageImageNameRe = regexp.MustCompile(`(?i)page[_-]?(\d+)\.[a-z0-9]+$`)
+
+// pageNumberFromImagePath parses the real 1-based page number from a rendered
+// image filename. Reporting this number — rather than the image's ordinal
+// position among the output files — is what lets `files inspect --render 2-3`
+// correctly label page_2.png as page 2 instead of "page 1".
+func pageNumberFromImagePath(path string) (int, bool) {
+	m := pageImageNameRe.FindStringSubmatch(filepath.Base(path))
+	if m == nil {
+		return 0, false
+	}
+	n, err := strconv.Atoi(m[1])
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
+}
+
+// collectRenderedPages reads the images liteparse wrote into outDir and returns
+// one ScreenshotPage per page, each labeled with the real page number parsed
+// from its filename. When targetSpec names specific pages, images for other
+// pages already present in outDir (e.g. left by an earlier render into the same
+// directory) are excluded — but a requested page whose PNG already existed is
+// still reported, so re-rendering into a populated directory is idempotent
+// rather than returning an empty/null page list.
+func collectRenderedPages(outDir, targetSpec string) ([]ScreenshotPage, error) {
+	images, err := imagesIn(outDir)
 	if err != nil {
 		return nil, err
 	}
-	// New files are the ones this run produced.
-	seen := map[string]bool{}
-	for _, p := range before {
-		seen[p] = true
+	requested := map[int]bool{}
+	if nums, err := parsePageList(targetSpec); err == nil {
+		for _, n := range nums {
+			requested[n] = true
+		}
 	}
 	var pages []ScreenshotPage
-	for _, p := range after {
-		if seen[p] {
+	for _, p := range images {
+		page, ok := pageNumberFromImagePath(p)
+		if !ok {
 			continue
 		}
-		pages = append(pages, ScreenshotPage{Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
+		if len(requested) > 0 && !requested[page] {
+			continue
+		}
+		pages = append(pages, ScreenshotPage{Page: page, Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
 	}
-	sort.Slice(pages, func(i, j int) bool { return pages[i].Path < pages[j].Path })
-	for i := range pages {
-		pages[i].Page = i + 1
-	}
+	sort.Slice(pages, func(i, j int) bool { return pages[i].Page < pages[j].Page })
 	return pages, nil
 }
 
