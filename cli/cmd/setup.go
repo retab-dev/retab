@@ -21,6 +21,8 @@ var embeddedRetabSkill embed.FS
 const (
 	retabMCPServerName       = "retab"
 	retabMCPURL              = "https://mcp.retab.com/mcp"
+	retabDocsMCPServerName   = "retab-docs"
+	retabDocsMCPURL          = "https://docs.retab.com/mcp"
 	retabInstallRegistryV1   = 1
 	retabInstallerName       = "retab-cli"
 	retabSkillInstallName    = "retab"
@@ -494,21 +496,34 @@ func setupMCPForAgent(agent setupAgent, scope installScope, cwd string, apiKey s
 	if err != nil {
 		return "", err
 	}
-	config := mcpServerConfig{Type: "streamable-http", URL: retabMCPURL}
+	retabConfig := mcpServerConfig{Type: "streamable-http", URL: retabMCPURL}
 	if apiKey != "" {
-		config.Headers = map[string]string{"Api-Key": apiKey}
+		retabConfig.Headers = map[string]string{"Api-Key": apiKey}
 	}
+	if err := writeMCPServer(agent, path, retabMCPServerName, retabConfig); err != nil {
+		return "", err
+	}
+	// The Retab docs MCP is the public Mintlify docs server; it carries no
+	// API key because the documentation is unauthenticated.
+	docsConfig := mcpServerConfig{Type: "streamable-http", URL: retabDocsMCPURL}
+	if err := writeMCPServer(agent, path, retabDocsMCPServerName, docsConfig); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func writeMCPServer(agent setupAgent, path string, serverName string, config mcpServerConfig) error {
 	var value any = config
 	if agent.TransformMCP != nil {
 		value = agent.TransformMCP(config)
 	}
 	switch agent.MCPFormat {
 	case mcpConfigJSON:
-		return path, upsertJSONMCPConfig(path, agent.MCPKey, retabMCPServerName, value)
+		return upsertJSONMCPConfig(path, agent.MCPKey, serverName, value)
 	case mcpConfigTOML:
-		return path, upsertTomlMCPConfig(path, retabMCPServerName, config)
+		return upsertTomlMCPConfig(path, serverName, config)
 	default:
-		return "", fmt.Errorf("unsupported MCP config format %q", agent.MCPFormat)
+		return fmt.Errorf("unsupported MCP config format %q", agent.MCPFormat)
 	}
 }
 

@@ -1130,3 +1130,13 @@ func TestWorkflowsSpecExport_FormatFlag(t *testing.T) {
 		t.Fatalf("workflows spec export should resolve to the get command")
 	}
 }
+
+// TestWorkflowsSpecValidateShortIsNotMisleadinglyOffline guards a doc bug: the
+// validate command POSTs to /v1/workflows/spec/validate (see the tests above)
+// and its Long says "Send the YAML to the server's spec validator", so the
+// one-line Short must not advertise it as a local/offline check.
+func TestWorkflowsSpecValidateShortIsNotMisleadinglyOffline(t *testing.T) {
+	if strings.Contains(workflowsSpecValidateCmd.Short, "without touching the server") {
+		t.Fatalf("spec validate Short falsely claims offline operation: %q", workflowsSpecValidateCmd.Short)
+	}
+}

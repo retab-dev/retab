@@ -11,15 +11,22 @@ readonly class WorkflowTableListResponse implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        /** @var array<\Retab\Resource\WorkflowTable>|null */
-        public ?array $tables = null,
+        /** @var array<\Retab\Resource\WorkflowTable> */
+        public array $tables,
     ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
+        foreach ([
+            'tables',
+        ] as $__required) {
+            if (!array_key_exists($__required, $data)) {
+                throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowTableListResponse::fromArray()");
+            }
+        }
         return new self(
-            tables: isset($data['tables']) ? array_map(fn($item) => WorkflowTable::fromArray($item), $data['tables']) : null,
+            tables: array_map(fn($item) => WorkflowTable::fromArray($item), $data['tables']),
         );
     }
 
@@ -27,7 +34,7 @@ readonly class WorkflowTableListResponse implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'tables' => $this->tables !== null ? array_map(fn($item) => $item->toArray(), $this->tables) : null,
+            'tables' => array_map(fn($item) => $item->toArray(), $this->tables),
         ];
     }
 }

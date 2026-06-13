@@ -197,12 +197,14 @@ func TestWorkflowsBlocksPullConfigAutoHydratesFunctionRuntime(t *testing.T) {
 			t.Fatalf("expected %s to be written: %v", rel, err)
 		}
 	}
-	for _, rel := range []string{"input.py", "output.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local"} {
+	// models.py is the compat module that lets server-canonical
+	// `from models import Input, Output` code run locally; it must be written.
+	for _, rel := range []string{"input.py", "output.py", "models.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Fatalf("expected runtime support file %s to exist: %v", rel, err)
 		}
 	}
-	for _, rel := range []string{"models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"} {
+	for _, rel := range []string{"input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); !os.IsNotExist(err) {
 			t.Fatalf("obsolete support file %s should not exist, stat err=%v", rel, err)
 		}

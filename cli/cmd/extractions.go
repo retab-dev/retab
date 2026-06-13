@@ -74,6 +74,7 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		Metadata:           &metadata,
 		AdditionalMessages: messages,
 		BustCache:          ptr(bustCache),
+		Background:         primitiveBackgroundParam(cmd),
 	}
 	// Only send the bounded int params when the user actually set them.
 	// Their flag value is "0" when unset, and a non-nil *int(0) is NOT
@@ -363,6 +364,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 
 func init() {
 	addExtractionBodyFlags(extractionsCreateCmd)
+	addPrimitiveBackgroundFlag(extractionsCreateCmd)
 	addPrimitiveCreateWaitFlags(extractionsCreateCmd)
 	addExtractionBodyFlags(extractionsStreamCmd)
 

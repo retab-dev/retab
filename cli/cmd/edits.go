@@ -80,6 +80,7 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 			Instructions: instructions,
 			Document:     doc,
 			BustCache:    ptr(bustCache),
+			Background:   primitiveBackgroundParam(cmd),
 		}
 		// These are optional and default to "". A non-nil *string("")
 		// survives omitempty, so wiring them unconditionally would send
@@ -530,6 +531,7 @@ func init() {
 	editsCreateCmd.Flags().String("model", "", "model identifier")
 	editsCreateCmd.Flags().String("color", "", "edit color")
 	editsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
+	addPrimitiveBackgroundFlag(editsCreateCmd)
 	addPrimitiveCreateWaitFlags(editsCreateCmd)
 	_ = editsCreateCmd.MarkFlagRequired("instructions")
 

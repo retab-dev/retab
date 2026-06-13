@@ -33,6 +33,24 @@ func addPrimitiveCreateWaitFlags(cmd *cobra.Command) {
 	addPrimitiveWaitTuningFlags(cmd, true)
 }
 
+// addPrimitiveBackgroundFlag registers the --background async-create switch on a
+// primitive create command. It is kept separate from addPrimitiveCreateWaitFlags
+// because `files blueprints create` registers its own --background (with a
+// different default), so folding it into the shared helper would double-register
+// the flag and panic at startup. Default false preserves the synchronous create
+// behavior; combine with --wait to block until the queued primitive completes.
+func addPrimitiveBackgroundFlag(cmd *cobra.Command) {
+	cmd.Flags().Bool("background", false, "run asynchronously: return immediately with status \"queued\" and an empty output, then poll GET until the status is terminal (combine with --wait to block until completion)")
+}
+
+// primitiveBackgroundParam reads the --background flag as a request-body pointer.
+// It is always non-nil (false = synchronous) so the server receives an explicit
+// background value.
+func primitiveBackgroundParam(cmd *cobra.Command) *bool {
+	background, _ := cmd.Flags().GetBool("background")
+	return ptr(background)
+}
+
 func addPrimitiveWaitTuningFlags(cmd *cobra.Command, isCreate bool) {
 	pollDescription := "poll cadence in milliseconds"
 	timeoutDescription := "max seconds to wait before giving up"
@@ -140,23 +158,32 @@ func waitForPrimitive(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	var last map[string]any
+	var lastErr error
 	for {
+		// A poll error is treated as transient (the server may be redeploying /
+		// briefly unreachable, or a background primitive's host instance is
+		// restarting) and retried until the primitive reaches a terminal status or
+		// the overall timeout elapses — rather than aborting the wait on the first
+		// blip. A genuinely persistent error surfaces when the timeout fires.
 		result, err := cliJSONRequest(cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil)
 		if err != nil {
-			return nil, err
-		}
-		current, err := primitiveMap(result)
-		if err != nil {
-			return nil, err
-		}
-		last = current
-		if isTerminalPrimitiveStatus(primitiveStatus(current)) {
-			return current, nil
+			lastErr = err
+		} else if current, perr := primitiveMap(result); perr != nil {
+			lastErr = perr
+		} else {
+			last = current
+			lastErr = nil
+			if isTerminalPrimitiveStatus(primitiveStatus(current)) {
+				return current, nil
+			}
 		}
 		timer := time.NewTimer(pollInterval)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
+			if lastErr != nil {
+				return last, fmt.Errorf("gave up waiting for %s %s after repeated poll errors: %w", spec.singular, id, lastErr)
+			}
 			return last, fmt.Errorf("timed out waiting for %s %s: %w", spec.singular, id, ctx.Err())
 		case <-timer.C:
 		}

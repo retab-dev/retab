@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -354,6 +356,14 @@ compact human block for interactive terminals).`,
 		if err := probeAuthStatus(cmd); err != nil {
 			out["valid"] = false
 			out["error"] = err.Error()
+			if authStatusProbeUnreachable(err) {
+				// The probe never got a credential-validity verdict (the
+				// server was unreachable, dropped the connection, or
+				// answered with a non-auth error). Mark it so the human
+				// view says "could not verify" instead of alarming the user
+				// with "invalid" when their credential may well be fine.
+				out["unreachable"] = true
+			}
 		} else {
 			out["valid"] = true
 		}
@@ -444,6 +454,29 @@ func getSelectedEnvironmentForAuthStatus(
 
 func probeAuthStatus(cmd *cobra.Command) error {
 	return cliJSONRequestInto(cmd, http.MethodGet, "/v1/auth/status", nil, nil, nil)
+}
+
+// authStatusProbeUnreachable reports whether a failed auth-status probe should
+// be treated as "could not verify" rather than "credential is invalid".
+//
+// Only a 401/403 from the server is a real statement about the credential —
+// the server looked at it and rejected it. Anything else (a transport-level
+// failure like a dropped connection or timeout, or a 5xx / other status)
+// means the probe never obtained a credential verdict, so calling the
+// credential "invalid" would be misleading. This matters in practice because
+// a momentary server blip (e.g. a dev server restarting mid-probe) otherwise
+// renders as `Status: invalid`, which reads as an auth problem the user does
+// not actually have.
+func authStatusProbeUnreachable(err error) bool {
+	if err == nil {
+		return false
+	}
+	var apiErr *retab.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode != http.StatusUnauthorized && apiErr.StatusCode != http.StatusForbidden
+	}
+	// No APIError → transport-level failure that never reached the auth check.
+	return true
 }
 
 // cliAuthOrganization mirrors the /v1/auth/organization response: the org id
@@ -619,6 +652,13 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	if v, ok := out["valid"]; ok {
 		if b, _ := v.(bool); b {
 			status = "valid"
+		} else if unreachable, _ := out["unreachable"].(bool); unreachable {
+			// The credential was never actually rejected — the probe just
+			// could not reach a verdict (server unreachable, dropped
+			// connection, or a non-auth error). Say so plainly instead of
+			// "invalid", which falsely implies a credential problem. The
+			// underlying error detail still lives in the JSON `error` field.
+			status = "could not verify (server unreachable — credential may still be valid)"
 		} else {
 			// Just "invalid" — full error detail (often multi-line, with
 			// URL/code/body) stays in the JSON's `error` field. Splatting

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -193,10 +194,10 @@ type liteParseJSON struct {
 			Y          float64  `json:"y"`
 			Width      float64  `json:"width"`
 			Height     float64  `json:"height"`
-			FontName   string   `json:"font_name"`
-			FontSize   float64  `json:"font_size"`
+			FontName   string   `json:"fontName"`
+			FontSize   float64  `json:"fontSize"`
 			Confidence *float64 `json:"confidence"`
-		} `json:"text_items"`
+		} `json:"textItems"`
 	} `json:"pages"`
 }
 
@@ -294,7 +295,6 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 	}
 	defer cleanup()
 
-	before := imageModTimes(opt.OutDir)
 	args := []string{"screenshot", input, "--output-dir", opt.OutDir, "--quiet"}
 	if opt.TargetPages != "" {
 		args = append(args, "--target-pages", opt.TargetPages)
@@ -312,31 +312,58 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 		}
 		return nil, fmt.Errorf("liteparse screenshot failed: %s", msg)
 	}
-	after, err := imagesIn(opt.OutDir)
+	return collectRenderedPages(opt.OutDir, opt.TargetPages)
+}
+
+// pageImageNameRe matches the page number liteparse encodes in a rendered image
+// filename, e.g. "page_2.png" → 2.
+var pageImageNameRe = regexp.MustCompile(`(?i)page[_-]?(\d+)\.[a-z0-9]+$`)
+
+// pageNumberFromImagePath parses the real 1-based page number from a rendered
+// image filename. Reporting this number — rather than the image's ordinal
+// position among the output files — is what lets `files inspect --render 2-3`
+// correctly label page_2.png as page 2 instead of "page 1".
+func pageNumberFromImagePath(path string) (int, bool) {
+	m := pageImageNameRe.FindStringSubmatch(portableBase(path))
+	if m == nil {
+		return 0, false
+	}
+	n, err := strconv.Atoi(m[1])
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
+}
+
+// collectRenderedPages reads the images liteparse wrote into outDir and returns
+// one ScreenshotPage per page, each labeled with the real page number parsed
+// from its filename. When targetSpec names specific pages, images for other
+// pages already present in outDir (e.g. left by an earlier render into the same
+// directory) are excluded — but a requested page whose PNG already existed is
+// still reported, so re-rendering into a populated directory is idempotent
+// rather than returning an empty/null page list.
+func collectRenderedPages(outDir, targetSpec string) ([]ScreenshotPage, error) {
+	images, err := imagesIn(outDir)
 	if err != nil {
 		return nil, err
 	}
-	// Files this run produced are the ones that are new OR whose modtime
-	// advanced (a re-render overwrites same-named page-N.png in place, so a
-	// presence-only diff would wrongly drop them).
-	afterTimes := imageModTimes(opt.OutDir)
+	requested := map[int]bool{}
+	if nums, err := parsePageList(targetSpec); err == nil {
+		for _, n := range nums {
+			requested[n] = true
+		}
+	}
 	var pages []ScreenshotPage
-	for i, p := range after {
-		prev, existed := before[p]
-		if existed && afterTimes[p] == prev {
+	for _, p := range images {
+		page, ok := pageNumberFromImagePath(p)
+		if !ok {
 			continue
 		}
-		// `lit` names each file page-<N>.<ext> where N is the document page
-		// number. Use that rather than a sequential index so a render of e.g.
-		// pages 3-5 reports 3,4,5 (and not 1,2,3).
-		page := pageNumberFromScreenshotFilename(p)
-		if page == 0 {
-			page = i + 1
+		if len(requested) > 0 && !requested[page] {
+			continue
 		}
 		pages = append(pages, ScreenshotPage{Page: page, Path: p, MIMEType: mimeForExt(filepath.Ext(p))})
 	}
-	// Sort by page number; a lexical path sort would order page-10 before
-	// page-2.
 	sort.Slice(pages, func(i, j int) bool { return pages[i].Page < pages[j].Page })
 	return pages, nil
 }
@@ -344,7 +371,7 @@ func (c *litCLI) Screenshot(ctx context.Context, path string, opt ScreenshotOpti
 // pageNumberFromScreenshotFilename extracts N from a `page-<N>.<ext>` file
 // name produced by `lit screenshot`. Returns 0 when the name does not match.
 func pageNumberFromScreenshotFilename(path string) int {
-	base := filepath.Base(path)
+	base := portableBase(path)
 	base = strings.TrimSuffix(base, filepath.Ext(base))
 	const prefix = "page-"
 	if !strings.HasPrefix(base, prefix) {
@@ -355,6 +382,13 @@ func pageNumberFromScreenshotFilename(path string) int {
 		return 0
 	}
 	return n
+}
+
+func portableBase(path string) string {
+	if i := strings.LastIndexAny(path, `/\`); i >= 0 {
+		return path[i+1:]
+	}
+	return path
 }
 
 func imagesIn(dir string) ([]string, error) {

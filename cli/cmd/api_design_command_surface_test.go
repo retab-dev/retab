@@ -20,7 +20,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"diff": true, "doctor": true, "download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"functions": true, "generate": true, "get": true, "grep": true, "hydrate": true, "inspect": true,
-		"list": true, "login": true, "logout": true, "metrics": true,
+		"list": true, "login": true, "logout": true, "metrics": true, "org": true,
 		"parse": true, "parses": true, "partitions": true, "plan": true, "plan-to": true, "profile": true, "projects": true, "publish": true, "pull": true,
 		"push": true, "query": true, "reject": true, "remove": true, "render": true, "replace": true, "restart": true, "restore": true, "results": true, "retry": true, "retrieve": true,
 		"reviews": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
@@ -122,9 +122,10 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "classifications", "edits", "extractions", "files", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
+		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list", "get"},
+		"org":                           {"list", "switch"},
 		"classifications":               {"create", "get", "list", "cancel", "delete", "wait"},
 		"edits":                         {"create", "get", "list", "cancel", "delete", "wait", "templates"},
 		"edits templates":               {"create", "get", "list", "update", "delete"},

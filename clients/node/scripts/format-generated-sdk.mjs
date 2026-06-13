@@ -16,7 +16,7 @@
 //   RETAB_PRETTIERRC     - $(execpath) of this package's .prettierrc.
 // Relative execpath values are resolved against JS_BINARY__EXECROOT, which
 // aspect_rules_js sets to the absolute execroot even when chdir is in effect.
-import { chmodSync, cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import prettier from 'prettier';
 
@@ -36,6 +36,7 @@ const outDir = resolve(process.env.RETAB_FORMATTED_SDK_DIR ?? 'generated-node-fo
 const prettierrcPath = fromExecroot(process.env.RETAB_PRETTIERRC);
 
 // Mirror the raw tree (src/ + .oagen-manifest.json) into the declared output.
+rmSync(outDir, { recursive: true, force: true });
 cpSync(rawDir, outDir, { recursive: true });
 
 const prettierConfig = JSON.parse(readFileSync(prettierrcPath, 'utf8'));

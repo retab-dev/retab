@@ -103,6 +103,15 @@ need.`,
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
 			params.SortBy = ptr(v)
 		}
+		if v, _ := cmd.Flags().GetString("filename"); v != "" {
+			params.Filename = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
+			params.FromDate = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
+			params.ToDate = ptr(v)
+		}
 		result, err := client.Files.List(ctx, &params)
 		if err != nil {
 			return err
@@ -164,15 +173,16 @@ var filesGetCmd = &cobra.Command{
 	Short: "Get a file by id",
 	Long: `Fetch the metadata record for a single file as JSON.
 
-Returns the file's filename, MIME type, size, sha256, created_at, and any
-other workspace-level fields — but NOT the file bytes. Use
+Returns the file's id, filename, mime_type, and page_count (when the
+document type is paginated) — but NOT the file bytes, and not internal
+storage fields like size_bytes or sha256. Use
 ` + "`retab files download`" + ` to retrieve the content, or
 ` + "`retab files download-link`" + ` to get a signed URL.`,
 	Example: `  # Inspect a known file
   retab files get file_abc123
 
   # Project just the fields you need
-  retab files get file_abc123 | jq '{id, filename, size_bytes}'`,
+  retab files get file_abc123 | jq '{id, filename, page_count}'`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -723,12 +733,18 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		defer cancel()
 		size, _ := cmd.Flags().GetInt64("size-bytes")
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
+		params := &retab.FilesCreateUploadParams{
 			Filename:    filename,
 			ContentType: &contentType,
 			SizeBytes:   size,
-			Sha256:      &sha256Hash,
-		})
+		}
+		// Only send sha256 when actually provided. An empty *string still
+		// marshals "sha256":"", which fails the server's hex-digest pattern
+		// and makes this documented-optional flag effectively required.
+		if sha256Hash != "" {
+			params.Sha256 = &sha256Hash
+		}
+		result, err := client.Files.CreateUpload(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -784,7 +800,14 @@ against the digest you computed locally.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		result, err := client.Files.CompleteUpload(ctx, args[0], &retab.FilesCompleteUploadParams{Sha256: &sha256Hash})
+		// Only send sha256 when provided. An empty *string marshals
+		// "sha256":"", which the server would compare against the stored
+		// object's real digest (a spurious mismatch) and persist over it.
+		completeParams := &retab.FilesCompleteUploadParams{}
+		if sha256Hash != "" {
+			completeParams.Sha256 = &sha256Hash
+		}
+		result, err := client.Files.CompleteUpload(ctx, args[0], completeParams)
 		if err != nil {
 			return err
 		}

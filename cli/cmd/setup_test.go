@@ -39,6 +39,8 @@ func TestRunSetupInstallsSkillMCPAndRegistry(t *testing.T) {
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `[mcp_servers.retab]`)
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `type = "streamable-http"`)
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `Api-Key = "rtb_test"`)
+	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `[mcp_servers.retab-docs]`)
+	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), retabDocsMCPURL)
 
 	var claude map[string]any
 	readJSONFile(t, filepath.Join(home, ".claude.json"), &claude)
@@ -46,6 +48,13 @@ func TestRunSetupInstallsSkillMCPAndRegistry(t *testing.T) {
 	retabServer := servers["retab"].(map[string]any)
 	if retabServer["url"] != retabMCPURL {
 		t.Fatalf("claude retab url = %v, want %s", retabServer["url"], retabMCPURL)
+	}
+	docsServer := servers["retab-docs"].(map[string]any)
+	if docsServer["url"] != retabDocsMCPURL {
+		t.Fatalf("claude retab-docs url = %v, want %s", docsServer["url"], retabDocsMCPURL)
+	}
+	if _, hasHeaders := docsServer["headers"]; hasHeaders {
+		t.Fatalf("claude retab-docs should carry no headers, got %v", docsServer["headers"])
 	}
 
 	var registry installRegistry

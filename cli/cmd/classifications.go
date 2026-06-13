@@ -127,6 +127,7 @@ when the type is obvious from the cover.`,
 			Model:        ptr(model),
 			BustCache:    ptr(bustCache),
 			Instructions: ptr(instructions),
+			Background:   primitiveBackgroundParam(cmd),
 		}
 		// Gate the bounded int params on Changed(): unset they read as 0,
 		// and *int(0) survives omitempty, so an unconditional ptr() would
@@ -276,6 +277,7 @@ func init() {
 	classificationsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	classificationsCreateCmd.Flags().StringArray("category", nil, "category as name=description (repeatable)")
 	classificationsCreateCmd.Flags().String("categories-file", "", "JSON array of {name, description} (or - for stdin)")
+	addPrimitiveBackgroundFlag(classificationsCreateCmd)
 	addPrimitiveCreateWaitFlags(classificationsCreateCmd)
 	_ = classificationsCreateCmd.MarkFlagRequired("model")
 

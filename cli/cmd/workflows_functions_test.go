@@ -127,6 +127,50 @@ func TestHydrateFunctionBundleWritesTinyRunPyAndRuntimeSupport(t *testing.T) {
 	}
 }
 
+// TestHydratePythonFunctionBundleWritesModelsCompatModule reproduces the
+// `functions run` failure "ModuleNotFoundError: No module named 'models'".
+// Server-run function code uses the canonical `from models import Input, Output`
+// (the sandbox writes a models.py compat module), but the local hydrator only
+// wrote input.py/output.py, so a pulled block could not run locally. The
+// hydrator must emit a models.py re-exporting Input + the output classes.
+func TestHydratePythonFunctionBundleWritesModelsCompatModule(t *testing.T) {
+	dir := t.TempDir()
+	config := map[string]any{
+		"entrypoint": "transform",
+		"output_schema": map[string]any{
+			"type":       "object",
+			"properties": map[string]any{"doubled": map[string]any{"type": "integer"}},
+		},
+	}
+	if err := hydrateFunctionBundle(dir, config, nil, false); err != nil {
+		t.Fatalf("hydrate: %v", err)
+	}
+	body, err := os.ReadFile(filepath.Join(dir, "models.py"))
+	if err != nil {
+		t.Fatalf("models.py not written by hydrator (functions run would fail with ModuleNotFoundError: 'models'): %v", err)
+	}
+	if !strings.Contains(string(body), "from input import Input") {
+		t.Fatalf("models.py must re-export Input from input.py, got:\n%s", body)
+	}
+	if !strings.Contains(string(body), "from output import") || !strings.Contains(string(body), "Output") {
+		t.Fatalf("models.py must re-export Output from output.py, got:\n%s", body)
+	}
+}
+
+// TestHydratePythonFunctionBundleForcePreservesModelsModule ensures --force
+// (re-hydrate) keeps the freshly written models.py rather than deleting it as a
+// stale artifact.
+func TestHydratePythonFunctionBundleForcePreservesModelsModule(t *testing.T) {
+	dir := t.TempDir()
+	config := map[string]any{"entrypoint": "transform"}
+	if err := hydrateFunctionBundle(dir, config, nil, true); err != nil {
+		t.Fatalf("hydrate --force: %v", err)
+	}
+	if _, err := os.ReadFile(filepath.Join(dir, "models.py")); err != nil {
+		t.Fatalf("models.py must survive a --force re-hydrate: %v", err)
+	}
+}
+
 func TestRunFunctionPythonChildForwardsArgsAndDetachesStdin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell fixture is unix-specific")

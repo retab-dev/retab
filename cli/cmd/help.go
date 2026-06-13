@@ -72,7 +72,7 @@ var commandGroups = []commandGroup{
 		// Org / environment-scoped backend resources (both are real API
 		// routes — projects own workflows, secrets are environment-scoped).
 		title:    "Organization",
-		commands: []string{"projects", "secrets"},
+		commands: []string{"org", "projects", "secrets"},
 	},
 	{
 		title:    "Account",
