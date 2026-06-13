@@ -103,6 +103,15 @@ need.`,
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
 			params.SortBy = ptr(v)
 		}
+		if v, _ := cmd.Flags().GetString("filename"); v != "" {
+			params.Filename = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
+			params.FromDate = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
+			params.ToDate = ptr(v)
+		}
 		result, err := client.Files.List(ctx, &params)
 		if err != nil {
 			return err
