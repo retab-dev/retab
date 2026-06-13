@@ -143,7 +143,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"tables":                        {"create", "delete", "download", "get", "list", "profile", "query", "replace", "schema", "validate"},
 		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "versions", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec", "access"},
-		"workflows access":              {"list", "get", "update", "revoke"},
+		"workflows access":              {"list", "grant", "get", "update", "revoke"},
 		"workflows artifacts":           {"get", "list"},
 		"workflows blocks":              {"list", "get", "create", "update", "delete", "versions", "executions", "config", "api-calls", "functions"},
 		"workflows blocks config":       {"pull", "push", "diff", "validate", "doctor"},
