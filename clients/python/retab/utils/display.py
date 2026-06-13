@@ -244,7 +244,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
                     for item in content:
                         if item.get("type") == "image_url" and "image_url" in item:
                             image_url = item["image_url"]["url"]
-                            detail = item["image_url"]["detail"]
+                            detail = item["image_url"].get("detail", "high")  # detail is optional in the OpenAI image format
                             tokens = count_image_tokens(image_url, detail)
                             if role in ["developer", "system", "user"]:
                                 input_image_tokens_example += tokens

@@ -75,22 +75,42 @@ func ParseAPIError(resp *http.Response, body []byte) *APIError {
 		return apiErr
 	}
 
+	// detailProvidedMessage tracks whether `detail` actually yielded a human
+	// message. When it didn't (detail absent, an empty string, or an
+	// unhandled type like a number), we fall back to the top-level
+	// message/code/details siblings instead of leaving the generic
+	// "Request failed (N)" fallback — or, worse, an empty message.
+	detailProvidedMessage := false
 	switch detail := parsed.Detail.(type) {
 	case string:
-		apiErr.Message = detail
+		if detail != "" {
+			apiErr.Message = detail
+			detailProvidedMessage = true
+		}
 	case map[string]any:
 		if code, ok := detail["code"].(string); ok {
 			apiErr.Code = code
 		}
-		if message, ok := detail["message"].(string); ok {
+		if message, ok := detail["message"].(string); ok && message != "" {
 			apiErr.Message = message
+			detailProvidedMessage = true
 		}
 		if details, ok := detail["details"].(map[string]any); ok {
 			apiErr.Details = details
 		}
+	case []any:
+		// FastAPI's native validation shape is {"detail": [ {loc, msg, type}, ... ]}.
+		// Stringify it so the user sees the actual validation errors instead of
+		// the generic status fallback.
+		if len(detail) > 0 {
+			if encoded, err := json.Marshal(detail); err == nil {
+				apiErr.Message = string(encoded)
+				detailProvidedMessage = true
+			}
+		}
 	}
 
-	if parsed.Detail == nil {
+	if !detailProvidedMessage {
 		if parsed.Message != "" {
 			apiErr.Message = parsed.Message
 		}

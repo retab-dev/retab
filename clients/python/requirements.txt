@@ -1,6 +1,8 @@
 # Core HTTP / models
 httpx
-pydantic
+# v2 floor: the SDK uses pydantic v2 APIs (model_validate, model_dump(by_alias=...),
+# ConfigDict). With pydantic v1 the package installs cleanly then crashes at import.
+pydantic>=2
 requests
 backoff
 jiter

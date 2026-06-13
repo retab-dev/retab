@@ -152,7 +152,7 @@ func writeCSV(w io.Writer, rows []any, columns []TableColumn) error {
 	for _, row := range rows {
 		record := make([]string, len(columns))
 		for i, col := range columns {
-			record[i] = col.Extract(row)
+			record[i] = sanitizeCSVCell(col.Extract(row))
 		}
 		if err := cw.Write(record); err != nil {
 			return err
@@ -166,6 +166,26 @@ func writeCSV(w io.Writer, rows []any, columns []TableColumn) error {
 		emitEmptyRowsHint()
 	}
 	return nil
+}
+
+// sanitizeCSVCell neutralizes spreadsheet formula injection: a cell whose
+// first character is a formula trigger (= @ + - tab CR) is executed by Excel/
+// Sheets when the CSV is opened. Prefixing such a cell with a single quote
+// renders it as inert text. A leading + or - is left alone when the cell is a
+// legitimate number, so numeric columns (including negatives) are preserved.
+func sanitizeCSVCell(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '@', '\t', '\r':
+		return "'" + s
+	case '+', '-':
+		if _, err := strconv.ParseFloat(s, 64); err != nil {
+			return "'" + s
+		}
+	}
+	return s
 }
 
 // renderJSON encodes v to w with the same settings as printJSON. Kept as a
@@ -414,6 +434,21 @@ const autoTableTruncate = 40
 // stays "trailing column truncates first" for typical content while
 // still bounding pathological cells.
 const autoTableInteriorTruncate = 80
+
+// truncateCellRunes caps s to limit RUNES (not bytes) and appends an
+// ellipsis. Byte slicing (s[:limit]) would cut a multi-byte UTF-8 sequence
+// (accents, CJK) mid-rune and emit invalid UTF-8; counting runes keeps the
+// output valid. Mirrors truncateReviewCell / the rune-based table cleaner.
+func truncateCellRunes(s string, limit int) string {
+	if limit <= 0 {
+		return s
+	}
+	runes := []rune(s)
+	if len(runes) <= limit {
+		return s
+	}
+	return string(runes[:limit]) + "…"
+}
 
 // printResultTable renders v as a fixed-width text table to stdout when
 // the shape is tabulable, falling back to printJSON otherwise.
@@ -686,13 +721,11 @@ func pickAutoColumns(rows []any) []TableColumn {
 						if isTimestamp {
 							s = normalizeTimestampCell(s)
 						}
-						if isTrailing && len(s) > autoTableTruncate {
-							return s[:autoTableTruncate] + "…"
+						limit := autoTableInteriorTruncate
+						if isTrailing {
+							limit = autoTableTruncate
 						}
-						if !isTrailing && len(s) > autoTableInteriorTruncate {
-							return s[:autoTableInteriorTruncate] + "…"
-						}
-						return s
+						return truncateCellRunes(s, limit)
 					}
 				}
 				return ""
@@ -938,12 +971,16 @@ func stringifyCell(v any) string {
 		}
 		return t.UTC().Format(time.RFC3339)
 	case float32:
-		if math.Trunc(float64(t)) == float64(t) {
-			return strconv.FormatInt(int64(t), 10)
+		f := float64(t)
+		// Only render as an integer when the value is integral AND inside
+		// int64 range; converting an out-of-range float to int64 overflows to
+		// a garbage value. Fall back to full-precision float formatting.
+		if math.Trunc(f) == f && f >= math.MinInt64 && f < math.MaxInt64 {
+			return strconv.FormatInt(int64(f), 10)
 		}
-		return strconv.FormatFloat(float64(t), 'f', -1, 32)
+		return strconv.FormatFloat(f, 'f', -1, 32)
 	case float64:
-		if math.Trunc(t) == t {
+		if math.Trunc(t) == t && t >= math.MinInt64 && t < math.MaxInt64 {
 			return strconv.FormatInt(int64(t), 10)
 		}
 		return strconv.FormatFloat(t, 'f', -1, 64)

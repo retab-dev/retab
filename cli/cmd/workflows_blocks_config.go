@@ -67,8 +67,21 @@ type blockConfigBundleFileJSON struct {
 	Format string `json:"format"`
 }
 
+var workflowsBlocksConfigCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Edit workflow block config as local bundles",
+	Long: `Pull a workflow block's config into editable local files, push edits back,
+and diff/validate/doctor the local bundle.
+
+Config is treated as a field on the workflow block, not a separate API
+resource: ` + "`pull`" + ` composes from ` + "`workflows blocks get`" + ` and ` + "`push`" + `
+from ` + "`workflows blocks get`/`update`" + `. The bundle records the remote
+config hash so a later ` + "`push`" + ` can detect dashboard edits made after the
+pull.`,
+}
+
 var workflowsBlocksPullConfigCmd = &cobra.Command{
-	Use:   "pull-config [<workflow-id>] <block-id>",
+	Use:   "pull [<workflow-id>] <block-id>",
 	Short: "Pull a block config into an editable local bundle",
 	Long: `Pull a workflow block's config into local editable files.
 
@@ -81,10 +94,10 @@ Large fields are split into separate files for block types where that makes the
 bundle easier to edit. Push reassembles those files and updates the block with
 config_mode=replace.`,
 	Example: `  # Pull by org-unique block id
-  retab workflows blocks pull-config block_def456 --out tmp/block_def456
+  retab workflows blocks config pull block_def456 --out tmp/block_def456
 
   # Legacy duplicate block-id disambiguation
-  retab workflows blocks pull-config wf_abc123 block_def456 --out tmp/block_def456`,
+  retab workflows blocks config pull wf_abc123 block_def456 --out tmp/block_def456`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
@@ -177,7 +190,7 @@ func fetchFunctionSourceSchema(cmd *cobra.Command, block retab.WorkflowBlock) (m
 }
 
 var workflowsBlocksValidateConfigCmd = &cobra.Command{
-	Use:   "validate-config [<workflow-id>] <block-id>",
+	Use:   "validate [<workflow-id>] <block-id>",
 	Short: "Validate a local block config bundle",
 	Long: `Validate a local workflow block config bundle without mutating remote state.
 
@@ -190,11 +203,11 @@ push-config. It does not create workflow runs and does not publish.
 Pass --offline for local-only validation when you do not want a network call.
 Offline validation is useful but is not authoritative for backend block
 semantics.`,
-	Example: `  retab workflows blocks validate-config block_def456 --dir tmp/block_def456
+	Example: `  retab workflows blocks config validate block_def456 --dir tmp/block_def456
 
-  retab workflows blocks validate-config wf_abc123 block_def456 --dir tmp/block_def456
+  retab workflows blocks config validate wf_abc123 block_def456 --dir tmp/block_def456
 
-  retab workflows blocks validate-config block_def456 --dir tmp/block_def456 --offline`,
+  retab workflows blocks config validate block_def456 --dir tmp/block_def456 --offline`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
@@ -261,7 +274,7 @@ semantics.`,
 }
 
 var workflowsBlocksPushConfigCmd = &cobra.Command{
-	Use:   "push-config [<workflow-id>] <block-id>",
+	Use:   "push [<workflow-id>] <block-id>",
 	Short: "Push a local block config bundle back to Retab",
 	Long: `Push a local workflow block config bundle back to the remote draft.
 
@@ -272,9 +285,9 @@ pull time, unless --force is passed.
 
 This mutates only the workflow draft. It does not publish and does not create
 workflow runs.`,
-	Example: `  retab workflows blocks push-config block_def456 --dir tmp/block_def456
+	Example: `  retab workflows blocks config push block_def456 --dir tmp/block_def456
 
-  retab workflows blocks push-config wf_abc123 block_def456 --dir tmp/block_def456`,
+  retab workflows blocks config push wf_abc123 block_def456 --dir tmp/block_def456`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
@@ -346,13 +359,13 @@ workflow runs.`,
 }
 
 var workflowsBlocksDiffConfigCmd = &cobra.Command{
-	Use:   "diff-config [<workflow-id>] <block-id>",
+	Use:   "diff [<workflow-id>] <block-id>",
 	Short: "Diff a local block config bundle against the current remote block",
 	Long: `Diff a local workflow block config bundle against the current remote block.
 
 The command reassembles local config, fetches the current remote block, and
 prints a structural JSON-path summary. It does not mutate remote state.`,
-	Example: `  retab workflows blocks diff-config block_def456 --dir tmp/block_def456`,
+	Example: `  retab workflows blocks config diff block_def456 --dir tmp/block_def456`,
 	Args:    cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, blockID, err := resolveBlockPositionalWorkflowID(cmd, args)
@@ -405,7 +418,7 @@ prints a structural JSON-path summary. It does not mutate remote state.`,
 }
 
 var workflowsBlocksDoctorConfigCmd = &cobra.Command{
-	Use:   "doctor-config <bundle-dir>",
+	Use:   "doctor <bundle-dir>",
 	Short: "Diagnose a local block config bundle",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -423,7 +436,7 @@ func diagnoseBlockConfigBundle(dir string) map[string]any {
 			"kind":  "invalid_or_missing_manifest",
 			"path":  "manifest.json",
 			"error": err.Error(),
-			"fix":   "retab workflows blocks pull-config <workflow-id> <block-id> --out " + dir,
+			"fix":   "retab workflows blocks config pull <workflow-id> <block-id> --out " + dir,
 		})
 		return map[string]any{
 			"ok":       false,
@@ -436,13 +449,13 @@ func diagnoseBlockConfigBundle(dir string) map[string]any {
 		problems = append(problems, map[string]any{
 			"kind":  "invalid_bundle_files",
 			"error": err.Error(),
-			"fix":   "retab workflows blocks pull-config " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
+			"fix":   "retab workflows blocks config pull " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
 		})
 	} else if err := validateBlockConfigBundle(manifest, config); err != nil {
 		problems = append(problems, map[string]any{
 			"kind":  "invalid_bundle",
 			"error": err.Error(),
-			"fix":   "retab workflows blocks pull-config " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
+			"fix":   "retab workflows blocks config pull " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
 		})
 	}
 	for role, rel := range manifest.Files {
@@ -462,7 +475,7 @@ func diagnoseBlockConfigBundle(dir string) map[string]any {
 				"role":  role,
 				"path":  rel,
 				"error": statErr.Error(),
-				"fix":   "retab workflows blocks pull-config " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
+				"fix":   "retab workflows blocks config pull " + manifest.WorkflowID + " " + manifest.BlockID + " --out " + dir + " --force",
 			})
 		}
 	}
@@ -1335,11 +1348,12 @@ func init() {
 	workflowsBlocksValidateConfigCmd.Flags().String("dir", "", "directory containing the editable bundle")
 	workflowsBlocksValidateConfigCmd.Flags().Bool("offline", false, "validate only local bundle structure without contacting the backend")
 
-	workflowsBlocksCmd.AddCommand(
+	workflowsBlocksConfigCmd.AddCommand(
 		workflowsBlocksPullConfigCmd,
 		workflowsBlocksPushConfigCmd,
 		workflowsBlocksDiffConfigCmd,
 		workflowsBlocksValidateConfigCmd,
 		workflowsBlocksDoctorConfigCmd,
 	)
+	workflowsBlocksCmd.AddCommand(workflowsBlocksConfigCmd)
 }

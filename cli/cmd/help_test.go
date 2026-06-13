@@ -20,7 +20,8 @@ import (
 //      in a named group or in the "Other" fallback. If a command is
 //      added later and forgotten in `commandGroups`, it must still show
 //      up (so users can discover it).
-//   3. Group ordering — Documents → Extraction → Workflows → Account.
+//   3. Group ordering — Primitives → Resources → Workflows →
+//      Organization → Account → Setup (source order in commandGroups).
 //   4. Version formatting — `(dev)`, `(v0.1.0)`, `(snapshot-abc)`.
 //   5. Dispatch — only the root command uses the fancy renderer;
 //      subcommand help (`retab files --help`) falls through to cobra's
@@ -158,6 +159,29 @@ func TestRenderRootHelp_EmptyGroupIsSkipped(t *testing.T) {
 		}
 		if strings.Contains(out, g.title+":") {
 			t.Errorf("group %q should be skipped when none of its commands are registered:\n%s", g.title, out)
+		}
+	}
+}
+
+// Every visible top-level command must be explicitly categorized in
+// commandGroups so the front-page help reflects each command's role
+// (backend resource vs. local tooling) instead of dumping it into the
+// anonymous "Other" fallback. The "Other" bucket still exists as a safety
+// net for a command someone forgets — this test is what makes "forgets"
+// loud: add the new top-level command to a group in help.go and this passes.
+func TestEveryTopLevelCommandIsCategorized(t *testing.T) {
+	categorized := map[string]bool{}
+	for _, g := range commandGroups {
+		for _, n := range g.commands {
+			categorized[n] = true
+		}
+	}
+	for _, c := range rootCmd.Commands() {
+		if c.Hidden || c.Name() == "help" || c.Name() == "completion" {
+			continue
+		}
+		if !categorized[c.Name()] {
+			t.Errorf("top-level command %q is not categorized in commandGroups — it would fall into the anonymous \"Other\" bucket; slot it into a group in help.go", c.Name())
 		}
 	}
 }

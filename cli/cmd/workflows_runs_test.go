@@ -33,7 +33,12 @@ func TestParseDocumentArgs_DocumentFlagOnly_NoWarning(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateReadsDocumentBeforeCredentials(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	// Isolate %USERPROFILE% too (Windows) so a sibling test's leaked config
+	// (selected production environment) can't trigger the --confirm guard
+	// before local document validation runs.
+	t.Setenv("USERPROFILE", home)
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 
@@ -2192,5 +2197,134 @@ func TestWorkflowsRunsListRejectsPositionalAndFlagWhenTheyDisagree(t *testing.T)
 	}
 	if !strings.Contains(err.Error(), "workflow id specified twice") {
 		t.Fatalf("error %q should explain the disagreement", err.Error())
+	}
+}
+
+// TestWorkflowsRunsWaitStandalone pins the standalone `runs wait <run-id>`:
+// it GETs the run, polls until terminal, and prints the final record. Mirrors
+// `experiments runs wait`, closing the gap where workflow runs had
+// `create --wait` but no standalone poller.
+func TestWorkflowsRunsWaitStandalone(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gets atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/runs/run_wait" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		status := "running"
+		if gets.Add(1) >= 2 {
+			status = "completed"
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "run_wait",
+			"lifecycle": map[string]any{"status": status},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "2000")
+		_ = workflowsRunsWaitCmd.Flags().Set("timeout-seconds", "600")
+	})
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsRunsWaitCmd.RunE(workflowsRunsWaitCmd, []string{"run_wait"}); err != nil {
+			t.Fatalf("runs wait: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if got := gets.Load(); got < 2 {
+		t.Fatalf("expected at least 2 polls, got %d", got)
+	}
+	if !strings.Contains(stdout, `"status": "completed"`) {
+		t.Fatalf("expected final completed run on stdout, got:\n%s", stdout)
+	}
+}
+
+// TestWorkflowsRunsWaitErrorStatusExitsNonZero pins that a run settling in
+// error surfaces a non-nil error while still printing the record.
+func TestWorkflowsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "run_bad",
+			"lifecycle": map[string]any{"status": "error"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "2000")
+		_ = workflowsRunsWaitCmd.Flags().Set("timeout-seconds", "600")
+	})
+
+	var runErr error
+	stdout, _ := captureStd(t, func() {
+		runErr = workflowsRunsWaitCmd.RunE(workflowsRunsWaitCmd, []string{"run_bad"})
+	})
+	if runErr == nil {
+		t.Fatal("expected non-nil error for a run that ended in error status")
+	}
+	if !strings.Contains(runErr.Error(), "run_bad") || !strings.Contains(runErr.Error(), "error") {
+		t.Fatalf("error %q should name the run and its terminal status", runErr.Error())
+	}
+	if !strings.Contains(stdout, `"status": "error"`) {
+		t.Fatalf("expected the failed run record on stdout, got:\n%s", stdout)
+	}
+}
+
+// TestWorkflowsRunsWaitCancelledStatusExitsNonZero pins that a cancelled run
+// exits non-zero, matching experiments/tests/primitives (workflow runs used to
+// treat cancelled as success — the one --wait inconsistency across families).
+func TestWorkflowsRunsWaitCancelledStatusExitsNonZero(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "run_cancelled",
+			"lifecycle": map[string]any{"status": "cancelled"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatalf("set --poll-interval-ms: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsWaitCmd.Flags().Set("poll-interval-ms", "2000")
+		_ = workflowsRunsWaitCmd.Flags().Set("timeout-seconds", "600")
+	})
+
+	var runErr error
+	stdout, _ := captureStd(t, func() {
+		runErr = workflowsRunsWaitCmd.RunE(workflowsRunsWaitCmd, []string{"run_cancelled"})
+	})
+	if runErr == nil {
+		t.Fatal("expected non-nil error for a cancelled run (must match other run families)")
+	}
+	if !strings.Contains(runErr.Error(), "run_cancelled") || !strings.Contains(runErr.Error(), "cancelled") {
+		t.Fatalf("error %q should name the run and the cancelled status", runErr.Error())
+	}
+	if !strings.Contains(stdout, `"status": "cancelled"`) {
+		t.Fatalf("expected the cancelled run record on stdout, got:\n%s", stdout)
 	}
 }

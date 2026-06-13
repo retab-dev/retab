@@ -58,16 +58,32 @@ var commandGroups = []commandGroup{
 		commands: []string{"parses", "extractions", "edits", "splits", "partitions", "classifications"},
 	},
 	{
-		title:    "Utils",
-		commands: []string{"files", "schemas"},
+		// Standalone backend resources you store and reuse. `files` is a
+		// first-class resource (FileService), not a utility — it leads here;
+		// `schemas` is the generator helper; `tables` is the CSV data resource.
+		title:    "Resources",
+		commands: []string{"files", "schemas", "tables"},
 	},
 	{
 		title:    "Workflows",
 		commands: []string{"workflows"},
 	},
 	{
+		// Org / environment-scoped backend resources (both are real API
+		// routes — projects own workflows, secrets are environment-scoped).
+		title:    "Organization",
+		commands: []string{"org", "projects", "secrets"},
+	},
+	{
 		title:    "Account",
 		commands: []string{"auth", "env", "version"},
+	},
+	{
+		// Local agent tooling — these install/refresh on-device config and
+		// make no backend API calls. Grouped explicitly so they don't read
+		// as backend resources in the anonymous "Other" bucket.
+		title:    "Setup",
+		commands: []string{"setup", "sync"},
 	},
 }
 

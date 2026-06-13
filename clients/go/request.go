@@ -102,9 +102,9 @@ func mergeQuery(query url.Values, options RequestOptions) url.Values {
 	return merged
 }
 
-func mergeBody(body any, options RequestOptions) any {
+func mergeBody(body any, options RequestOptions) (any, error) {
 	if len(options.Body) == 0 {
-		return body
+		return body, nil
 	}
 	merged := map[string]any{}
 	switch typed := body.(type) {
@@ -118,15 +118,22 @@ func mergeBody(body any, options RequestOptions) any {
 			merged[key] = value
 		}
 	default:
+		// Project an arbitrary struct body into a map so option fields can be
+		// merged in. A marshal failure, or a body that isn't a JSON object,
+		// must surface — silently dropping it would send a request missing the
+		// caller's body.
 		bodyBytes, err := json.Marshal(typed)
-		if err == nil {
-			_ = json.Unmarshal(bodyBytes, &merged)
+		if err != nil {
+			return nil, fmt.Errorf("retab: encode request body: %w", err)
+		}
+		if err := json.Unmarshal(bodyBytes, &merged); err != nil {
+			return nil, fmt.Errorf("retab: request body must be a JSON object to merge request options: %w", err)
 		}
 	}
 	for key, value := range options.Body {
 		merged[key] = value
 	}
-	return merged
+	return merged, nil
 }
 
 func (c *Client) newRequest(ctx context.Context, method string, path string, queryArg any, body any, opts []RequestOption) (*http.Request, error) {
@@ -136,7 +143,10 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, que
 	}
 	options := collectRequestOptions(opts)
 	q = mergeQuery(q, options)
-	body = mergeBody(body, options)
+	body, err = mergeBody(body, options)
+	if err != nil {
+		return nil, err
+	}
 	if body == nil && method != http.MethodGet {
 		body = map[string]any{}
 	}

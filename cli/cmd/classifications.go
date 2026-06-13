@@ -121,16 +121,24 @@ when the type is obvious from the cover.`,
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		firstN, _ := cmd.Flags().GetInt("first-n-pages")
 		instructions, _ := cmd.Flags().GetString("instructions")
-		result, err := client.Classifications.Create(ctx, &retab.ClassificationsCreateParams{
+		params := &retab.ClassificationsCreateParams{
 			Document:     doc,
 			Categories:   categories,
 			Model:        ptr(model),
-			NConsensus:   ptr(nConsensus),
 			BustCache:    ptr(bustCache),
-			FirstNPages:  ptr(firstN),
 			Instructions: ptr(instructions),
 			Background:   primitiveBackgroundParam(cmd),
-		})
+		}
+		// Gate the bounded int params on Changed(): unset they read as 0,
+		// and *int(0) survives omitempty, so an unconditional ptr() would
+		// wire n_consensus:0 / first_n_pages:0 — values the flags reject.
+		if cmd.Flags().Changed("n-consensus") {
+			params.NConsensus = ptr(nConsensus)
+		}
+		if cmd.Flags().Changed("first-n-pages") {
+			params.FirstNPages = ptr(firstN)
+		}
+		result, err := client.Classifications.Create(ctx, params)
 		if err != nil {
 			return err
 		}

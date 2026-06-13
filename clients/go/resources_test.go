@@ -9,6 +9,36 @@ import (
 	"testing"
 )
 
+// TestMIMEDataMarshalIncludesContent pins the content-only document contract:
+// InferMIMEData accepts a {content, mime_type} descriptor with no url, so
+// MarshalJSON must serialize those fields. A regression here silently sends an
+// empty document ({"filename":"","url":""}) over the wire. The url-only case
+// must stay clean (no empty content/mime_type keys) thanks to omitempty.
+func TestMIMEDataMarshalIncludesContent(t *testing.T) {
+	contentOnly, err := json.Marshal(MIMEData{Filename: "invoice.pdf", Content: "BASE64DATA", MIMEType: "application/pdf"})
+	if err != nil {
+		t.Fatalf("marshal content-only: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(contentOnly, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if got["content"] != "BASE64DATA" {
+		t.Errorf("content dropped from marshaled MIMEData: %s", contentOnly)
+	}
+	if got["mime_type"] != "application/pdf" {
+		t.Errorf("mime_type dropped from marshaled MIMEData: %s", contentOnly)
+	}
+
+	urlOnly, err := json.Marshal(MIMEData{Filename: "doc.pdf", URL: "https://example.com/doc.pdf"})
+	if err != nil {
+		t.Fatalf("marshal url-only: %v", err)
+	}
+	if strings.Contains(string(urlOnly), "content") || strings.Contains(string(urlOnly), "mime_type") {
+		t.Errorf("url-only MIMEData leaked empty content/mime_type keys: %s", urlOnly)
+	}
+}
+
 type capturedRequest struct {
 	Method string
 	Path   string

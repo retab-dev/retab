@@ -25,9 +25,9 @@ var workflowsFunctionsCmd = &cobra.Command{
 
 Start by pulling a function block with:
 
-  retab workflows blocks pull-config <workflow-id> <block-id> --out tmp/fn
+  retab workflows blocks config pull <workflow-id> <block-id> --out tmp/fn
 
-Function bundles pulled with pull-config are hydrated automatically. Re-run
+Function bundles pulled with config pull are hydrated automatically. Re-run
 hydrate when you need to repair or regenerate local support files:
 
   retab workflows blocks functions hydrate tmp/fn
@@ -266,7 +266,12 @@ func validateFunctionRunOutDir(raw string) error {
 	if raw == "" {
 		return fmt.Errorf("--out is required")
 	}
-	if filepath.IsAbs(raw) {
+	// filepath.IsAbs misses POSIX-rooted paths like "/tmp/out" on Windows
+	// (it wants a drive letter there), which would let a rooted path escape
+	// the bundle. Reject a leading "/" explicitly: on Unix every such path is
+	// already IsAbs (so this is a no-op there), and on Windows it closes the
+	// gap.
+	if filepath.IsAbs(raw) || strings.HasPrefix(raw, "/") {
 		return fmt.Errorf("--out must be a relative path inside the function bundle")
 	}
 	cleaned := filepath.Clean(raw)

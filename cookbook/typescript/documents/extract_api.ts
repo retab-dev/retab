@@ -21,13 +21,16 @@ async function main() {
   // Retab Setup
   const client = new Retab({ apiKey: retabApiKey });
 
-  // Document Extraction via Retab API
-  const response = await client.extractions.create({
-    document: '../../assets/docs/invoice.jpeg',
-    model: 'retab-small',
-    json_schema: JSON.parse(fs.readFileSync('../../assets/code/invoice_schema.json', 'utf-8')),
-    n_consensus: 1,
-  });
+  // Document Extraction via Retab API.
+  // create() takes positional args: (document, jsonSchema, model?, imageResolutionDpi?, instructions?, nConsensus?)
+  const response = await client.extractions.create(
+    '../../../assets/docs/invoice.jpeg',
+    JSON.parse(fs.readFileSync('../../../assets/code/invoice_schema.json', 'utf-8')),
+    'retab-small',
+    undefined, // imageResolutionDpi
+    undefined, // instructions
+    1, // nConsensus
+  );
 
   // Output
   console.log('\n✅ Extracted Result:');

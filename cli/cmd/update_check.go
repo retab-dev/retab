@@ -311,10 +311,21 @@ func notifierEnabled(args []string, env func(string) string, currentVersion stri
 // shell-completion output (which must stay machine-clean).
 func notifierSkippableCommand(args []string) bool {
 	for _, a := range args {
-		switch a {
-		case updateDaemonCommand, "update", "completion", "version", "--version", "-v":
+		// `retab --version` / `retab -v` before any subcommand is a version
+		// query. Other flags are skipped — only the first positional token is
+		// the actual subcommand, so a value like `files get version` must not
+		// match.
+		if a == "--version" || a == "-v" {
 			return true
 		}
+		if strings.HasPrefix(a, "-") {
+			continue
+		}
+		switch a {
+		case updateDaemonCommand, "update", "completion", "version":
+			return true
+		}
+		return false
 	}
 	return false
 }

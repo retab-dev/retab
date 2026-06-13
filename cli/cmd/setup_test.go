@@ -11,6 +11,9 @@ import (
 func TestRunSetupInstallsSkillMCPAndRegistry(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	// configDir/UserHomeDir read %USERPROFILE% on Windows; isolate it too so
+	// the bundle + registry land in this temp home, not the shared profile.
+	t.Setenv("USERPROFILE", home)
 	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 
@@ -84,6 +87,9 @@ func TestRunSetupLocalSkipsWindsurfByDefault(t *testing.T) {
 func TestRunSyncRefreshesUniversalSkillAndMCP(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	// Isolate %USERPROFILE% too (Windows) so runSync reads only this test's
+	// install registry, not a sibling test's leaked installs.
+	t.Setenv("USERPROFILE", home)
 	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
 
 	_, err := runSetup(setupOptions{

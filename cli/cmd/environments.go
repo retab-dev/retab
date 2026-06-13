@@ -53,8 +53,9 @@ remain scoped by the server-side key record.`,
   # Create a non-production environment
   retab env add --name Staging --type non_production
 
-  # Select by environment id or exact name
+  # Select by environment id or name (the name match is case-insensitive)
   retab env switch Staging
+  retab env switch staging
 
   # WorkOS-style synonym for selecting a local environment
   retab env claim env_staging`,
@@ -74,9 +75,10 @@ var envListCmd = &cobra.Command{
 }
 
 var envAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Create an environment",
-	Args:  cobra.NoArgs,
+	Use:     "add",
+	Aliases: []string{"create"},
+	Short:   "Create an environment",
+	Args:    cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		name, err := requireNonBlankFlag(cmd, "name")
 		if err != nil {
@@ -161,10 +163,9 @@ var envClaimCmd = &cobra.Command{
 }
 
 var envGetCmd = &cobra.Command{
-	Use:    "get <environment-id>",
-	Short:  "Get an environment",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "get <environment-id>",
+	Short: "Get an environment",
+	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		result, err := getCLIEnvironment(cmd, args[0])
 		if err != nil {
@@ -341,44 +342,87 @@ func selectedEnvironmentStructCell(selection selectedEnvironment, field string) 
 	}
 }
 
+// resolveEnvironmentSelection maps user input (an environment id or name) to a
+// single environment. Both are unique keys, so either is accepted, and name
+// matching is case-insensitive ("staging" selects "Staging"). Precedence,
+// highest first:
+//
+//  1. exact id match
+//  2. exact (case-sensitive) name match
+//  3. case-insensitive name match
+//
+// Each tier is resolved against the whole list before falling through to the
+// next, so an exact id always wins over a name collision and an exact-case
+// name always wins over a fold collision. Ambiguity within a tier, or no match
+// at all, fails loudly — the CLI never silently falls back to the active
+// environment, which was the original source of "the set flipped on its own"
+// confusion.
 func resolveEnvironmentSelection(raw string, list *cliPaginatedList[cliEnvironment]) (*cliEnvironment, error) {
 	needle := strings.TrimSpace(raw)
 	if needle == "" {
 		return nil, fmt.Errorf("environment id or name is required")
 	}
-	var nameMatches []*cliEnvironment
+
+	var exactNameMatches, foldNameMatches []*cliEnvironment
 	for i := range list.Data {
 		environment := &list.Data[i]
+		// 1. Exact id wins outright — ids are opaque durable keys.
 		if environment.ID == needle {
 			return environment, nil
 		}
-		if environment.Name == needle {
-			nameMatches = append(nameMatches, environment)
+		switch {
+		case environment.Name == needle:
+			exactNameMatches = append(exactNameMatches, environment)
+		case strings.EqualFold(environment.Name, needle):
+			foldNameMatches = append(foldNameMatches, environment)
 		}
 	}
-	if len(nameMatches) == 1 {
-		return nameMatches[0], nil
+
+	// 2. Prefer an exact-case name before considering case-folded matches, so
+	//    a distinct exact name never loses to an unrelated fold collision.
+	if match, err := pickSingleEnvironment(needle, exactNameMatches); match != nil || err != nil {
+		return match, err
 	}
-	if len(nameMatches) > 1 {
-		return nil, fmt.Errorf("environment name %q is ambiguous; use an environment id", needle)
+	// 3. Case-insensitive name ("staging" -> "Staging").
+	if match, err := pickSingleEnvironment(needle, foldNameMatches); match != nil || err != nil {
+		return match, err
 	}
-	return nil, fmt.Errorf("environment %q not found", needle)
+
+	return nil, fmt.Errorf("environment %q not found.%s\nRun `retab env list` to see available environments", needle, availableEnvironmentsHint(list))
+}
+
+// pickSingleEnvironment returns the lone match, a loud ambiguity error when a
+// name resolves to more than one environment, or (nil, nil) when the tier is
+// empty so the caller can fall through to the next tier.
+func pickSingleEnvironment(needle string, matches []*cliEnvironment) (*cliEnvironment, error) {
+	switch len(matches) {
+	case 0:
+		return nil, nil
+	case 1:
+		return matches[0], nil
+	default:
+		return nil, fmt.Errorf("environment name %q is ambiguous (%d matches); select it by id instead", needle, len(matches))
+	}
+}
+
+// availableEnvironmentsHint renders a short "id (name)" list for not-found
+// errors so the failure is actionable rather than a dead end.
+func availableEnvironmentsHint(list *cliPaginatedList[cliEnvironment]) string {
+	if list == nil || len(list.Data) == 0 {
+		return ""
+	}
+	entries := make([]string, 0, len(list.Data))
+	for i := range list.Data {
+		environment := &list.Data[i]
+		entries = append(entries, fmt.Sprintf("%s (%s)", environment.ID, environment.Name))
+	}
+	return " Available: " + strings.Join(entries, ", ")
 }
 
 func init() {
 	envAddCmd.Flags().String("name", "", "environment name")
 	envAddCmd.Flags().String("type", "non_production", "environment type: production | non_production")
 
-	envCreateAliasCmd := &cobra.Command{
-		Use:    "create",
-		Short:  envAddCmd.Short,
-		Hidden: true,
-		Args:   envAddCmd.Args,
-		RunE:   envAddCmd.RunE,
-	}
-	envCreateAliasCmd.Flags().String("name", "", "environment name")
-	envCreateAliasCmd.Flags().String("type", "non_production", "environment type: production | non_production")
-
-	envCmd.AddCommand(envListCmd, envAddCmd, envSwitchCmd, envWhichCmd, envClaimCmd, envGetCmd, envCreateAliasCmd)
+	envCmd.AddCommand(envListCmd, envAddCmd, envSwitchCmd, envWhichCmd, envClaimCmd, envGetCmd)
 	rootCmd.AddCommand(envCmd)
 }

@@ -18,11 +18,13 @@ async function main() {
 
   // Retab Setup
   const client = new Retab({ apiKey: retabApiKey });
-  const result = await client.parses.create({
-    document: '../../assets/docs/booking_confirmation.jpg',
-    model: 'retab-small',
-    image_resolution_dpi: 192,
-  });
+  // create() takes positional args: (document, model?, tableParsingFormat?, imageResolutionDpi?)
+  const result = await client.parses.create(
+    '../../../assets/docs/booking_confirmation.jpg',
+    'retab-small',
+    undefined, // tableParsingFormat
+    192, // imageResolutionDpi
+  );
 
   console.log(result.output.pages);
 

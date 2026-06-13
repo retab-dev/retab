@@ -1209,6 +1209,46 @@ func TestAPIError(t *testing.T) {
 	}
 }
 
+// TestMergeBodyPropagatesErrors pins that merging request-option fields into a
+// body that isn't a JSON object surfaces an error instead of silently dropping
+// the caller's body.
+func TestMergeBodyPropagatesErrors(t *testing.T) {
+	// A slice body can't absorb object option fields -> must error.
+	if _, err := mergeBody([]string{"a", "b"}, RequestOptions{Body: map[string]any{"x": 1}}); err == nil {
+		t.Error("expected error merging options into a non-object body")
+	}
+	// A struct body merges correctly.
+	merged, err := mergeBody(struct {
+		Name string `json:"name"`
+	}{Name: "n"}, RequestOptions{Body: map[string]any{"x": 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, ok := merged.(map[string]any)
+	if !ok || m["name"] != "n" || m["x"] != 1 {
+		t.Fatalf("unexpected merge result: %#v", merged)
+	}
+	// No options -> body returned untouched (no error).
+	if got, err := mergeBody("raw", RequestOptions{}); err != nil || got != "raw" {
+		t.Fatalf("passthrough failed: got %v err %v", got, err)
+	}
+}
+
+// TestAPIErrorEmptyDetailFallsBackToSiblings pins that an empty-string
+// `detail` no longer wipes the message: parsing must fall back to the
+// top-level message/code rather than surfacing a blank error.
+func TestAPIErrorEmptyDetailFallsBackToSiblings(t *testing.T) {
+	req, _ := http.NewRequest("GET", "https://x.test/v1/foo", nil)
+	resp := &http.Response{StatusCode: 400, Header: http.Header{}, Request: req}
+	apiErr := ParseAPIError(resp, []byte(`{"detail":"","message":"real message","code":"ERR_X"}`))
+	if apiErr.Message != "real message" {
+		t.Errorf("Message = %q, want 'real message' (fell back to sibling)", apiErr.Message)
+	}
+	if apiErr.Code != "ERR_X" {
+		t.Errorf("Code = %q, want ERR_X", apiErr.Code)
+	}
+}
+
 // TestAPIErrorUnwrappedEnvelope pins that APIError parsing also handles the
 // error envelope when it arrives at the top level instead of under a
 // `detail` key. Some endpoints (e.g. POST /v1/jobs validation failures)
@@ -1290,5 +1330,42 @@ func TestAPIErrorFlatValidationEnvelope(t *testing.T) {
 	}
 	if apiErr.Message != validationMessage {
 		t.Fatalf("message = %q, want the validation detail from the flat envelope", apiErr.Message)
+	}
+}
+
+// FastAPI's *native* validation shape is {"detail": [ {loc, msg, type}, ... ]}
+// (not wrapped by main_server). Before the []any case in parseAPIError this
+// degraded to the generic "Request failed (422)" because the switch only
+// handled string/map details; now the array is surfaced as the message.
+func TestAPIErrorFastAPIDetailArray(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"detail": []any{
+				map[string]any{"type": "missing", "loc": []any{"body", "document"}, "msg": "Field required"},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if !strings.Contains(apiErr.Message, "Field required") {
+		t.Fatalf("message = %q, want the FastAPI validation detail surfaced", apiErr.Message)
+	}
+	if strings.Contains(apiErr.Message, "Request failed") {
+		t.Fatalf("message degraded to generic fallback: %q", apiErr.Message)
 	}
 }
