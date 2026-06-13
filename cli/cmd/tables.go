@@ -885,8 +885,11 @@ func cleanWorkflowTableCell(value string, options tableQueryRenderOptions) strin
 	if maxCellWidth < 4 {
 		maxCellWidth = 4
 	}
-	if len(cleaned) > maxCellWidth {
-		return cleaned[:maxCellWidth-3] + "..."
+	// Truncate by runes, not bytes: a multibyte (accented / CJK) cell would
+	// otherwise be cut mid-rune and emit invalid UTF-8.
+	runes := []rune(cleaned)
+	if len(runes) > maxCellWidth {
+		return string(runes[:maxCellWidth-3]) + "..."
 	}
 	return cleaned
 }
@@ -1034,8 +1037,15 @@ func coerceTableScalarValue(raw string) any {
 	case "null":
 		return nil
 	}
+	// Decode with UseNumber so large integers (IDs, account numbers beyond
+	// 2^53) keep full precision instead of being mangled by float64. A bare
+	// json.Unmarshal would silently round them, sending a different value than
+	// the user typed. dec.More() rejects trailing junk so "12 34" stays a
+	// string, matching json.Unmarshal's whole-input semantics.
+	dec := json.NewDecoder(strings.NewReader(trimmed))
+	dec.UseNumber()
 	var decoded any
-	if err := json.Unmarshal([]byte(trimmed), &decoded); err == nil {
+	if err := dec.Decode(&decoded); err == nil && !dec.More() {
 		return decoded
 	}
 	return trimmed

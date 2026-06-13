@@ -273,7 +273,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
 		Filename:    filename,
 		ContentType: &contentType,
-		SizeBytes:   len(data),
+		SizeBytes:   int64(len(data)),
 		Sha256:      &sha256Hash,
 	})
 	if err != nil {
@@ -291,7 +291,10 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 		req.Header.Set(key, value)
 	}
 	req.Header.Set("Content-Type", contentType)
-	resp, err := http.DefaultClient.Do(req)
+	// Use the bounded transfer client, not http.DefaultClient: the latter has
+	// no timeout, so a wedged storage endpoint would hang an upload forever in
+	// an unattended script (only Ctrl-C via ctx would break it).
+	resp, err := fileDownloadClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}
@@ -733,7 +736,7 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		params := &retab.FilesCreateUploadParams{
 			Filename:    filename,
 			ContentType: &contentType,
-			SizeBytes:   int(size),
+			SizeBytes:   size,
 		}
 		// Only send sha256 when actually provided. An empty *string still
 		// marshals "sha256":"", which fails the server's hex-digest pattern

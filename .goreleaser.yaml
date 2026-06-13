@@ -26,7 +26,7 @@ project_name: retab
 
 before:
   hooks:
-    # `go -C cli` requires Go 1.20+; CI pins via cli/go.mod (go 1.26.1).
+    # `go -C cli` requires Go 1.20+; CI pins via cli/go.mod (go 1.25.0).
     - go -C cli mod tidy
     # Stage the 6 prebuilt lit bundles into cli/cmd/assets/ so the
     # `-tags retab_embed_lit` build below can go:embed them into the fat

@@ -47,6 +47,24 @@ For deterministic regression testing of a single pinned assertion, see
 func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCaptureRequest, []*retab.ExplicitExperimentDocumentRequest, error) {
 	var captures []*retab.ExperimentDocumentCaptureRequest
 	var explicit []*retab.ExplicitExperimentDocumentRequest
+	// --capture is the inline shortcut for the common case: a production run id
+	// with an optional ":step_id" suffix, repeatable. It builds the same
+	// capture entries as --captures-file so the two forms can coexist.
+	if specs, _ := cmd.Flags().GetStringArray("capture"); len(specs) > 0 {
+		for i, raw := range specs {
+			runID, stepID, hasStep := strings.Cut(strings.TrimSpace(raw), ":")
+			cap := &retab.ExperimentDocumentCaptureRequest{RunID: strings.TrimSpace(runID)}
+			if cap.RunID == "" {
+				return nil, nil, fmt.Errorf("--capture[%d]: run id is required (run-id or run-id:step-id)", i)
+			}
+			if hasStep {
+				if stepID = strings.TrimSpace(stepID); stepID != "" {
+					cap.StepID = &stepID
+				}
+			}
+			captures = append(captures, cap)
+		}
+	}
 	if path, _ := cmd.Flags().GetString("captures-file"); path != "" {
 		arr, err := readJSONArray(path)
 		if err != nil {
@@ -214,40 +232,55 @@ After creation, create a run with
 		if err != nil {
 			return err
 		}
-		blockID, err := requireNonBlankFlag(cmd, "block-id")
-		if err != nil {
-			return err
-		}
-		// --captures-file and --documents-file are described in the help
-		// text as alternatives ("Provide the input documents in one of two
-		// ways"). Reject the combination client-side before any file I/O
-		// or network call so users don't silently get only one of the two
-		// sources used.
-		if err := validateMutuallyExclusiveChangedFlags(cmd, "captures-file", "documents-file"); err != nil {
-			return err
-		}
 		req := retab.WorkflowExperimentsCreateParams{}
 		req.WorkflowID = workflowID
-		req.BlockID = &blockID
-		rawName, _ := cmd.Flags().GetString("name")
-		trimmedName, err := validateExperimentName(rawName)
-		if err != nil {
-			return err
-		}
-		req.Name = &trimmedName
-		if cmd.Flags().Changed("n-consensus") {
-			v, _ := cmd.Flags().GetInt("n-consensus")
-			n := retab.CreateExperimentRequestNConsensus(v)
-			req.NConsensus = &n
-		}
-		captures, explicit, err := parseExperimentDocs(cmd)
-		if err != nil {
-			return err
-		}
-		req.DocumentCaptures = captures
-		req.Documents = explicit
-		if len(captures) == 0 && len(explicit) == 0 {
-			return fmt.Errorf("at least one document or document capture is required (--captures-file or --documents-file)")
+
+		fromRaw, _ := cmd.Flags().GetString("from-experiment")
+		if sourceID := strings.TrimSpace(fromRaw); sourceID != "" {
+			// The server duplicates the source experiment wholesale (block,
+			// name + "(Copy)", consensus, documents) and rejects any other
+			// field. Reject the conflicting flags here with a clear message
+			// instead of forwarding a request the server is bound to 400.
+			for _, f := range []string{"block-id", "name", "n-consensus", "capture", "captures-file", "documents-file"} {
+				if cmd.Flags().Changed(f) {
+					return fmt.Errorf("--from-experiment clones an existing experiment and can't be combined with --%s", f)
+				}
+			}
+			req.SourceExperimentID = &sourceID
+		} else {
+			blockID, err := requireNonBlankFlag(cmd, "block-id")
+			if err != nil {
+				return fmt.Errorf("--block-id is required (or pass --from-experiment to clone an existing experiment)")
+			}
+			req.BlockID = &blockID
+			rawName, _ := cmd.Flags().GetString("name")
+			trimmedName, err := validateExperimentName(rawName)
+			if err != nil {
+				return err
+			}
+			req.Name = &trimmedName
+			// --captures-file and --documents-file are described in the help
+			// text as alternatives ("Provide the input documents in one of two
+			// ways"). Reject the combination client-side before any file I/O
+			// or network call so users don't silently get only one of the two
+			// sources used.
+			if err := validateMutuallyExclusiveChangedFlags(cmd, "captures-file", "documents-file"); err != nil {
+				return err
+			}
+			if cmd.Flags().Changed("n-consensus") {
+				v, _ := cmd.Flags().GetInt("n-consensus")
+				n := retab.CreateExperimentRequestNConsensus(v)
+				req.NConsensus = &n
+			}
+			captures, explicit, err := parseExperimentDocs(cmd)
+			if err != nil {
+				return err
+			}
+			req.DocumentCaptures = captures
+			req.Documents = explicit
+			if len(captures) == 0 && len(explicit) == 0 {
+				return fmt.Errorf("at least one document is required: pass --capture <run-id[:step-id]>, --captures-file, or --documents-file (or --from-experiment to clone)")
+			}
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -259,7 +292,31 @@ After creation, create a run with
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		// Without --run, creating the experiment definition is the whole job.
+		if run, _ := cmd.Flags().GetBool("run"); !run {
+			return printResult(cmd, result)
+		}
+		// --run: immediately launch a run against the new experiment, reusing
+		// the same wait / terminal-status machinery as `runs create --wait` so
+		// "create it and run it" is a single command.
+		runResult, err := client.Workflows.Experiments.Runs.Create(ctx, &retab.ExperimentRunsCreateParams{ExperimentID: result.ID})
+		if err != nil {
+			return err
+		}
+		if wait, _ := cmd.Flags().GetBool("wait"); !wait {
+			return printResult(cmd, runResult)
+		}
+		pollInterval, timeout := experimentWaitDurations(cmd)
+		final, waitErr := waitForExperimentRun(ctx, client, runResult.ID, pollInterval, timeout)
+		if final != nil {
+			if err := printResult(cmd, final); err != nil {
+				return err
+			}
+		}
+		if waitErr != nil {
+			return waitErr
+		}
+		return experimentRunTerminalError(final)
 	}),
 }
 
@@ -410,8 +467,8 @@ The experiment id is the only required positional. A leading
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
 		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("n-consensus") &&
-			!cmd.Flags().Changed("captures-file") && !cmd.Flags().Changed("documents-file") {
-			return fmt.Errorf("nothing to update: pass at least one of --name, --n-consensus, --captures-file, or --documents-file")
+			!cmd.Flags().Changed("capture") && !cmd.Flags().Changed("captures-file") && !cmd.Flags().Changed("documents-file") {
+			return fmt.Errorf("nothing to update: pass at least one of --name, --n-consensus, --capture, --captures-file, or --documents-file")
 		}
 		req := retab.WorkflowExperimentsUpdateParams{}
 		if cmd.Flags().Changed("name") {
@@ -1014,20 +1071,25 @@ Compare against a prior run with ` + "`--prior-run-id`" + `.`,
 
 func init() {
 	addExperimentDocFlags := func(c *cobra.Command) {
+		c.Flags().StringArray("capture", nil, "capture a document from a production run: run-id[:step-id] (repeatable; inline alternative to --captures-file)")
 		c.Flags().String("captures-file", "", "JSON array of {run_id, step_id} captures (or - for stdin)")
 		c.Flags().String("documents-file", "", "JSON array of {handle_inputs, provenance} (or - for stdin)")
 	}
 
 	workflowsExperimentsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
-	workflowsExperimentsCreateCmd.Flags().String("block-id", "", "block id (required)")
-	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required)")
+	workflowsExperimentsCreateCmd.Flags().String("block-id", "", "block id (required unless --from-experiment)")
+	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required unless --from-experiment)")
+	workflowsExperimentsCreateCmd.Flags().String("from-experiment", "", "clone an existing experiment by id (block, name+\"(Copy)\", consensus, and documents are inherited; takes no other flags)")
 	workflowsExperimentsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
+	workflowsExperimentsCreateCmd.Flags().Bool("run", false, "create a run immediately after the experiment is created")
+	workflowsExperimentsCreateCmd.Flags().Bool("wait", false, "with --run, block until the run reaches a terminal status, then print the final run")
 	addExperimentDocFlags(workflowsExperimentsCreateCmd)
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsExperimentsCreateCmd.Flags().MarkHidden("workflow-id")
-	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("block-id")
-	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
+	// block-id and name are required for a fresh experiment but inherited when
+	// cloning via --from-experiment, so they're enforced in RunE rather than
+	// with cobra's unconditional MarkFlagRequired.
 
 	workflowsExperimentsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 

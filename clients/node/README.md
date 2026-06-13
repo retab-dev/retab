@@ -11,7 +11,7 @@ npm install @retab/node
 ## Local Development
 
 ```bash
-cd open-source/sdk/clients/node
+cd clients/node
 bun install
 bun run build
 bun test tests/

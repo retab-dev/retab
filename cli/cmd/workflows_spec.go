@@ -148,19 +148,30 @@ of main.`,
 
 var workflowsSpecPlanCmd = &cobra.Command{
 	Use:   "plan <path>",
-	Short: "Diff a YAML spec against the live workflow without applying",
+	Short: "Diff a YAML spec against a workflow without applying",
 	Long: `Compute what would change if the spec were applied: which
 blocks would be created, updated, deleted; which edges would be re-wired.
+
+By default this is a create-new plan (optionally scoped with
+` + "`--project-id`" + `). Pass ` + "`--to <workflow-id>`" + ` to diff against an
+existing workflow draft instead; ` + "`--to`" + ` and ` + "`--project-id`" + ` are
+mutually exclusive.
 
 Plan is read-only — safe to run on production specs. Pair it with
 ` + "`apply`" + ` for a declarative workflow review-then-apply loop.`,
 	Example: `  retab workflows spec plan ./workflow.yaml
+  retab workflows spec plan ./workflow.yaml --to wf_abc123   # diff against an existing workflow
   cat workflow.yaml | retab workflows spec plan - | jq .changes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[0])
 		if err != nil {
 			return err
+		}
+		to, _ := cmd.Flags().GetString("to")
+		projectID, _ := cmd.Flags().GetString("project-id")
+		if to != "" && projectID != "" {
+			return fmt.Errorf("--to and --project-id are mutually exclusive: --to diffs against an existing workflow, --project-id scopes a create-new plan")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -169,7 +180,10 @@ Plan is read-only — safe to run on production specs. Pair it with
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := &retab.WorkflowsPlanParams{YamlDefinition: yaml}
-		if projectID, _ := cmd.Flags().GetString("project-id"); projectID != "" {
+		switch {
+		case to != "":
+			params.WorkflowID = ptr(to)
+		case projectID != "":
 			params.ProjectID = ptr(projectID)
 		}
 		result, err := client.Workflows.Plan(ctx, params)
@@ -184,13 +198,16 @@ Plan is read-only — safe to run on production specs. Pair it with
 }
 
 var workflowsSpecPlanToCmd = &cobra.Command{
-	Use:   "plan-to <workflow-id> <path>",
-	Short: "Diff a YAML spec against an existing workflow without applying",
-	Long: `Compute what would change if the spec were applied to an existing
-workflow draft. The target workflow id comes from the URL argument, not from
+	Use:    "plan-to <workflow-id> <path>",
+	Short:  "Deprecated: use `spec plan --to <workflow-id>`",
+	Hidden: true,
+	Long: `Deprecated alias for ` + "`spec plan --to <workflow-id> <path>`" + `.
+
+Compute what would change if the spec were applied to an existing workflow
+draft. The target workflow id comes from the URL argument, not from
 ` + "`metadata.id`" + ` in the YAML.
 
-Plan is read-only — safe to run before ` + "`apply-to`" + `.`,
+Plan is read-only — safe to run before ` + "`apply --to`" + `.`,
 	Example: `  retab workflows spec plan-to wf_abc123 ./workflow.yaml
   cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .changes`,
 	Args: cobra.ExactArgs(2),
@@ -218,10 +235,15 @@ Plan is read-only — safe to run before ` + "`apply-to`" + `.`,
 
 var workflowsSpecApplyCmd = &cobra.Command{
 	Use:   "apply <path>",
-	Short: "Create a new workflow from a YAML spec",
-	Long: `Apply the YAML spec as a new workflow. The server creates a new
-workflow resource and new child resources; metadata.id in the YAML is source
-context, not the target workflow id.
+	Short: "Apply a YAML spec, creating a new workflow (or updating one with --to)",
+	Long: `Apply the YAML spec. By default the server creates a new workflow
+resource and new child resources; metadata.id in the YAML is source context,
+not the target workflow id.
+
+Pass ` + "`--to <workflow-id>`" + ` to apply the spec to an existing workflow
+draft in place instead of creating a new one. ` + "`--to`" + ` and
+` + "`--project-id`" + ` are mutually exclusive: exactly one is required —
+` + "`--project-id`" + ` to create, ` + "`--to`" + ` to update.
 
 Legacy specs that explicitly include ` + "`metadata.id`" + ` are accepted for
 backward compatibility, but the id is ignored when applying.
@@ -240,6 +262,7 @@ confirm:
 Plans with no deletions apply immediately, no extra prompt.`,
 	Example: `  retab workflows spec apply ./workflow.yaml --project-id proj_abc123
   retab workflows spec apply ./workflow.yaml --project-id proj_abc123 --yes   # skip prompt in CI
+  retab workflows spec apply ./workflow.yaml --to wf_abc123                   # update an existing workflow
   cat workflow.yaml | retab workflows spec apply - --project-id proj_abc123`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -247,9 +270,28 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err != nil {
 			return err
 		}
+		to, _ := cmd.Flags().GetString("to")
 		projectID, _ := cmd.Flags().GetString("project-id")
-		if projectID == "" {
-			return fmt.Errorf("--project-id is required: a workflow created from a spec must belong to a project")
+		if to != "" && projectID != "" {
+			return fmt.Errorf("--to and --project-id are mutually exclusive: --to updates an existing workflow, --project-id creates a new one")
+		}
+		if to == "" && projectID == "" {
+			return fmt.Errorf("--project-id is required to create a new workflow from a spec (or pass --to <workflow-id> to update an existing one)")
+		}
+		// Plan first so we can gate destructive applies. The server's
+		// `spec apply` returns the same `summary` / `resource_changes`
+		// shape, but only AFTER applying — by then the destroy already
+		// happened. The only safe place to inspect it is from a prior
+		// plan call. The plan is scoped the same way the apply will be:
+		// against the existing workflow (--to) or the target project.
+		planParams := &retab.WorkflowsPlanParams{YamlDefinition: yaml}
+		applyParams := &retab.WorkflowsApplyParams{YamlDefinition: yaml}
+		if to != "" {
+			planParams.WorkflowID = ptr(to)
+			applyParams.WorkflowID = ptr(to)
+		} else {
+			planParams.ProjectID = ptr(projectID)
+			applyParams.ProjectID = ptr(projectID)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -257,13 +299,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		// Plan first so we can gate destructive applies. The server's
-		// `spec apply` returns the same `summary` / `resource_changes`
-		// shape, but only AFTER applying — by then the destroy already
-		// happened. The only safe place to inspect it is from a prior
-		// plan call. The plan for a create-new spec is scoped to the same
-		// project the apply will target.
-		plan, err := client.Workflows.Plan(ctx, &retab.WorkflowsPlanParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
+		plan, err := client.Workflows.Plan(ctx, planParams)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -274,7 +310,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := confirmDestructiveApply(cmd, planAsResource); err != nil {
 			return err
 		}
-		result, err := client.Workflows.Apply(ctx, &retab.WorkflowsApplyParams{YamlDefinition: yaml, ProjectID: ptr(projectID)})
+		result, err := client.Workflows.Apply(ctx, applyParams)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -286,16 +322,19 @@ Plans with no deletions apply immediately, no extra prompt.`,
 }
 
 var workflowsSpecApplyToCmd = &cobra.Command{
-	Use:   "apply-to <workflow-id> <path>",
-	Short: "Modify an existing workflow from a YAML spec",
-	Long: `Apply the YAML spec to an existing workflow draft. The target
-workflow id comes from the URL argument, not from ` + "`metadata.id`" + ` in the YAML.
+	Use:    "apply-to <workflow-id> <path>",
+	Short:  "Deprecated: use `spec apply --to <workflow-id>`",
+	Hidden: true,
+	Long: `Deprecated alias for ` + "`spec apply --to <workflow-id> <path>`" + `.
+
+Apply the YAML spec to an existing workflow draft. The target workflow id
+comes from the URL argument, not from ` + "`metadata.id`" + ` in the YAML.
 
 Mutating. This updates the workflow in place and may create, update, or delete
 child resources to match the submitted spec.
 
-Before applying, the command runs ` + "`spec plan-to`" + ` and gates destructive
-changes with the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
+Before applying, the command runs a plan and gates destructive changes with
+the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
 	Example: `  retab workflows spec apply-to wf_abc123 ./workflow.yaml
   retab workflows spec apply-to wf_abc123 ./workflow.yaml --yes
   cat workflow.yaml | retab workflows spec apply-to wf_abc123 -`,
@@ -616,8 +655,10 @@ func init() {
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
 	workflowsSpecApplyCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
-	workflowsSpecApplyCmd.Flags().String("project-id", "", "project that will own the workflow created from this spec (required)")
+	workflowsSpecApplyCmd.Flags().String("project-id", "", "project that will own the new workflow (required unless --to is given)")
+	workflowsSpecApplyCmd.Flags().String("to", "", "apply to an existing workflow draft instead of creating a new one (mutually exclusive with --project-id)")
 	workflowsSpecPlanCmd.Flags().String("project-id", "", "project to scope a create-new plan to (matches the --project-id used by apply)")
+	workflowsSpecPlanCmd.Flags().String("to", "", "diff against an existing workflow draft instead of a create-new plan (mutually exclusive with --project-id)")
 	workflowsSpecApplyToCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
 
 	workflowsSpecCmd.AddCommand(

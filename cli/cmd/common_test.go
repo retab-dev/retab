@@ -435,7 +435,12 @@ func TestFilenameFromURL(t *testing.T) {
 func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
-	t.Setenv("HOME", t.TempDir()) // ensure no ~/.retab/config.json bleeds through
+	home := t.TempDir() // ensure no ~/.retab/config.json bleeds through
+	t.Setenv("HOME", home)
+	// configDir resolves via os.UserHomeDir(), which is %USERPROFILE% on
+	// Windows — isolate it too or a sibling test's leaked config.json (api_key
+	// + base_url) bleeds through and the call reaches the network.
+	t.Setenv("USERPROFILE", home)
 
 	cmd := &cobra.Command{}
 	cmd.PersistentFlags().String("api-key", "", "")

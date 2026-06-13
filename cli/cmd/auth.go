@@ -864,12 +864,22 @@ func redactKey(key string) string {
 	if len(key) <= 8 {
 		return strings.Repeat("*", len(key))
 	}
+	// Reveal at most a quarter of the key on each side (capped at 4), so a
+	// short credential never has more than half its characters exposed. Long
+	// tokens still show the usual first-4/last-4 with a fixed-width mask.
+	reveal := len(key) / 4
+	if reveal > 4 {
+		reveal = 4
+	}
 	const redactMaskWidth = 8
-	mask := len(key) - 8
+	mask := len(key) - 2*reveal
 	if mask > redactMaskWidth {
 		mask = redactMaskWidth
 	}
-	return key[:4] + strings.Repeat("*", mask) + key[len(key)-4:]
+	if mask < 1 {
+		mask = 1
+	}
+	return key[:reveal] + strings.Repeat("*", mask) + key[len(key)-reveal:]
 }
 
 func promptSecret(prompt string) (string, error) {

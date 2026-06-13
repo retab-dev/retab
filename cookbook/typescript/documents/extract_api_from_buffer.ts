@@ -35,13 +35,16 @@ async function main() {
   // Retab Setup
   const client = new Retab({ apiKey: retabApiKey });
 
-  // Document Extraction via Retab API using buffer
-  const response = await client.extractions.create({
-    document: imageBuffer,
-    model: 'retab-small',
-    json_schema: JSON.parse(jsonSchema),
-    n_consensus: 1,
-  });
+  // Document Extraction via Retab API using buffer.
+  // create() takes positional args: (document, jsonSchema, model?, imageResolutionDpi?, instructions?, nConsensus?)
+  const response = await client.extractions.create(
+    imageBuffer,
+    JSON.parse(jsonSchema),
+    'retab-small',
+    undefined, // imageResolutionDpi
+    undefined, // instructions
+    1, // nConsensus
+  );
 
   // Output
   console.log('\n✅ Extracted Result:');

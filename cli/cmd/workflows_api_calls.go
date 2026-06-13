@@ -29,9 +29,9 @@ var workflowsAPICallsCmd = &cobra.Command{
 
 Start by pulling an api_call block:
 
-  retab workflows blocks pull-config <workflow-id> <block-id> --out tmp/api
+  retab workflows blocks config pull <workflow-id> <block-id> --out tmp/api
 
-Bundles pulled with pull-config are hydrated automatically. Re-run hydrate when
+Bundles pulled with config pull are hydrated automatically. Re-run hydrate when
 you need to repair or regenerate local support files:
 
   retab workflows blocks api-calls hydrate tmp/api
@@ -544,11 +544,19 @@ func compileLocalAPICallRequest(config map[string]any, env map[string]string, pa
 		}
 	}
 	headers := prepareLocalAPICallHeaders(interpolateLocalAPICallMap(stringMapFromAny(config["headers"]), env), hasJSONBody)
+	// A non-positive timeout_seconds (explicit 0, or a negative/garbage
+	// value) would make http.Client.Timeout == 0, i.e. NO timeout — and the
+	// run's --timeout context defaults to 0 (disabled) too, so a hung
+	// endpoint would block --execute forever. Fall back to the default.
+	timeoutSeconds := intFromAny(config["timeout_seconds"], 180)
+	if timeoutSeconds <= 0 {
+		timeoutSeconds = 180
+	}
 	return localAPICallRequest{
 		Method:         method,
 		URL:            interpolateLocalAPICallString(apiCallStringFromAny(config["url"]), env),
 		Headers:        headers,
-		TimeoutSeconds: intFromAny(config["timeout_seconds"], 180),
+		TimeoutSeconds: timeoutSeconds,
 		Body:           body,
 	}
 }

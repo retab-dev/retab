@@ -34,11 +34,18 @@ type MIMEData struct {
 type MIMEDataInput = MIMEData
 
 func (m MIMEData) MarshalJSON() ([]byte, error) {
+	// Content/MIMEType must be emitted too: InferMIMEData accepts a
+	// content-only descriptor ({content, mime_type} with no url), which is a
+	// valid inline document input server-side. Dropping them here serialized
+	// such documents as {"filename":"","url":""} — an empty document silently
+	// sent over the wire. omitempty keeps url-only inputs unchanged.
 	type publicMIMEData struct {
 		Filename string `json:"filename,omitempty"`
 		URL      string `json:"url,omitempty"`
+		Content  string `json:"content,omitempty"`
+		MIMEType string `json:"mime_type,omitempty"`
 	}
-	return json.Marshal(publicMIMEData{Filename: m.Filename, URL: m.URL})
+	return json.Marshal(publicMIMEData{Filename: m.Filename, URL: m.URL, Content: m.Content, MIMEType: m.MIMEType})
 }
 
 // FileRef references a document stored by Retab.

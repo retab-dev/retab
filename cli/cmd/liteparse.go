@@ -324,7 +324,7 @@ var pageImageNameRe = regexp.MustCompile(`(?i)page[_-]?(\d+)\.[a-z0-9]+$`)
 // position among the output files — is what lets `files inspect --render 2-3`
 // correctly label page_2.png as page 2 instead of "page 1".
 func pageNumberFromImagePath(path string) (int, bool) {
-	m := pageImageNameRe.FindStringSubmatch(filepath.Base(path))
+	m := pageImageNameRe.FindStringSubmatch(portableBase(path))
 	if m == nil {
 		return 0, false
 	}
@@ -368,6 +368,29 @@ func collectRenderedPages(outDir, targetSpec string) ([]ScreenshotPage, error) {
 	return pages, nil
 }
 
+// pageNumberFromScreenshotFilename extracts N from a `page-<N>.<ext>` file
+// name produced by `lit screenshot`. Returns 0 when the name does not match.
+func pageNumberFromScreenshotFilename(path string) int {
+	base := portableBase(path)
+	base = strings.TrimSuffix(base, filepath.Ext(base))
+	const prefix = "page-"
+	if !strings.HasPrefix(base, prefix) {
+		return 0
+	}
+	n, err := strconv.Atoi(base[len(prefix):])
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
+func portableBase(path string) string {
+	if i := strings.LastIndexAny(path, `/\`); i >= 0 {
+		return path[i+1:]
+	}
+	return path
+}
+
 func imagesIn(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -385,6 +408,25 @@ func imagesIn(dir string) ([]string, error) {
 	}
 	sort.Strings(out)
 	return out, nil
+}
+
+// imageModTimes maps each image file in dir to its modtime (UnixNano). Used to
+// tell which screenshots a render run actually produced, including in-place
+// overwrites of pre-existing page-N.png files.
+func imageModTimes(dir string) map[string]int64 {
+	out := map[string]int64{}
+	paths, err := imagesIn(dir)
+	if err != nil {
+		return out
+	}
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil {
+			continue
+		}
+		out[p] = info.ModTime().UnixNano()
+	}
+	return out
 }
 
 func (c *litCLI) Version(ctx context.Context) (string, error) {
@@ -446,5 +488,9 @@ func writeParseCache(key string, result *ParseResult) {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return
 	}
-	_ = os.Rename(tmp, filepath.Join(dir, key+".json"))
+	if err := os.Rename(tmp, filepath.Join(dir, key+".json")); err != nil {
+		// Don't leave the temp file orphaned if the atomic swap fails (e.g. a
+		// concurrent reader holds the destination open on Windows).
+		_ = os.Remove(tmp)
+	}
 }

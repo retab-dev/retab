@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -145,6 +146,12 @@ func TestSaveConfig_PreservesAllFields(t *testing.T) {
 
 // The config file is written at mode 0600 and its parent dir at 0700.
 func TestSaveConfig_FilePermissions(t *testing.T) {
+	// POSIX permission bits aren't represented on Windows/NTFS (Go reports
+	// 0666/0777 there regardless of the requested mode), so this contract is
+	// only meaningful on POSIX platforms.
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX file modes are not represented on Windows/NTFS")
+	}
 	isolateHome(t)
 	if err := saveConfig(retabConfig{APIKey: "rt_test_abc"}); err != nil {
 		t.Fatal(err)

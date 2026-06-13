@@ -79,11 +79,22 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		req := retab.EditsCreateParams{
 			Instructions: instructions,
 			Document:     doc,
-			TemplateID:   ptr(templateID),
-			Model:        ptr(model),
-			Config:       &retab.EditConfig{Color: ptr(color)},
 			BustCache:    ptr(bustCache),
 			Background:   primitiveBackgroundParam(cmd),
+		}
+		// These are optional and default to "". A non-nil *string("")
+		// survives omitempty, so wiring them unconditionally would send
+		// template_id:"" (which can trip the server's document-XOR-template
+		// rule on a document-only edit) and blank out model/color defaults.
+		// Only set each when the user provided it.
+		if templateID != "" {
+			req.TemplateID = ptr(templateID)
+		}
+		if model != "" {
+			req.Model = ptr(model)
+		}
+		if color != "" {
+			req.Config = &retab.EditConfig{Color: ptr(color)}
 		}
 		result, err := client.Edits.Create(ctx, &req)
 		if err != nil {

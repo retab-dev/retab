@@ -114,15 +114,20 @@ returned subdocument references can be fed back into per-section
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		instructions, _ := cmd.Flags().GetString("instructions")
-		result, err := client.Splits.Create(ctx, &retab.SplitsCreateParams{
+		params := &retab.SplitsCreateParams{
 			Document:     doc,
 			Subdocuments: subs,
 			Model:        ptr(model),
-			NConsensus:   ptr(nConsensus),
 			BustCache:    ptr(bustCache),
 			Instructions: ptr(instructions),
 			Background:   primitiveBackgroundParam(cmd),
-		})
+		}
+		// Unset --n-consensus reads as 0, and *int(0) survives omitempty;
+		// only wire it when explicitly set (the flag range is 1-8).
+		if cmd.Flags().Changed("n-consensus") {
+			params.NConsensus = ptr(nConsensus)
+		}
+		result, err := client.Splits.Create(ctx, params)
 		if err != nil {
 			return err
 		}

@@ -55,8 +55,8 @@ build.`,
 		switch raw {
 		case string(OutputJSON):
 			return printJSON(info)
-		case string(OutputTable):
-			return RenderList(cmd.OutOrStdout(), OutputTable, map[string]any{
+		case string(OutputTable), string(OutputCSV):
+			return RenderList(cmd.OutOrStdout(), OutputFormat(raw), map[string]any{
 				"data": []map[string]string{
 					{
 						"version": info.Version,
