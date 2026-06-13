@@ -1100,8 +1100,8 @@ func addListFlags(cmd *cobra.Command, baseOnly bool) {
 	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
 		cmd.Flags().String("filename", "", "filter by filename")
-		cmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this RFC3339 date")
-		cmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this RFC3339 date")
+		cmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this date (YYYY-MM-DD or RFC3339)")
+		cmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this date (YYYY-MM-DD or RFC3339)")
 	}
 }
 
@@ -1244,6 +1244,13 @@ func (v *nonNegativeFloatFlagValue) Set(raw string) error {
 	return nil
 }
 
+// rfc3339FlagValue accepts either a date-only (YYYY-MM-DD) bound or a full
+// RFC3339 timestamp for --from-date/--to-date filters. The file-shaped list
+// backends (files/parses/classifications/...) parse the bound with parseISO
+// (StartOfDayUTC/EndOfDayUTC), which pins a bare date to the start/end of the
+// UTC day, so the natural `--from-date 2026-06-13` is valid at the API. Earlier
+// this flag demanded full RFC3339 and rejected the bare date even though the
+// server accepts it; the lenient set of layouts mirrors the backend's parseISO.
 type rfc3339FlagValue struct{ value string }
 
 func (v *rfc3339FlagValue) String() string { return v.value }
@@ -1252,8 +1259,15 @@ func (v *rfc3339FlagValue) Type() string { return "string" }
 
 func (v *rfc3339FlagValue) Set(raw string) error {
 	if raw != "" {
-		if _, err := time.Parse(time.RFC3339, raw); err != nil {
-			return fmt.Errorf("must be RFC3339 timestamp: %w", err)
+		parsed := false
+		for _, layout := range []string{"2006-01-02", time.RFC3339, "2006-01-02T15:04:05"} {
+			if _, err := time.Parse(layout, raw); err == nil {
+				parsed = true
+				break
+			}
+		}
+		if !parsed {
+			return fmt.Errorf("must be a YYYY-MM-DD date or RFC3339 timestamp")
 		}
 	}
 	v.value = raw

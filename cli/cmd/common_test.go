@@ -708,6 +708,21 @@ func TestAddListFlagsRejectsInvalidDate(t *testing.T) {
 	}
 }
 
+// TestAddListFlagsAcceptsBareDate guards a staging-dogfood bug: the file-shaped
+// list filters (files/parses/classifications/...) rejected the natural
+// `--from-date 2026-06-13`, demanding a full RFC3339 timestamp — even though
+// the backend's StartOfDayUTC/EndOfDayUTC (parseISO) accepts a bare YYYY-MM-DD
+// and pins it to the start/end of the UTC day. Both forms must parse.
+func TestAddListFlagsAcceptsBareDate(t *testing.T) {
+	for _, val := range []string{"2026-06-13", "2026-06-13T00:00:00Z"} {
+		cmd := &cobra.Command{}
+		addListFlags(cmd, false)
+		if err := cmd.ParseFlags([]string{"--from-date", val, "--to-date", val}); err != nil {
+			t.Fatalf("--from-date/--to-date %q should be accepted, got: %v", val, err)
+		}
+	}
+}
+
 func TestAddListFlagsRejectsNegativeLimit(t *testing.T) {
 	cmd := &cobra.Command{}
 	addListFlags(cmd, false)
