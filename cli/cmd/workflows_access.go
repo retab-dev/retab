@@ -8,11 +8,9 @@ package cmd
 // The membership row type, columns, and list printer are shared with
 // `retab projects access` (projects_access.go).
 //
-// NOTE: there is no `grant` (create) here. The backend does not yet expose a
-// create route for workflow memberships (it needs a user→organization-membership
-// lookup seam that is unported), so grants can be listed, re-roled, and revoked
-// but not created via the API. Grant a teammate access at the project level
-// (`retab projects access grant`) — that cascades to the project's workflows.
+// A direct workflow grant is additive on top of whatever the parent project
+// already grants — use it to give someone access to one workflow without
+// granting the whole project.
 
 import (
 	"fmt"
@@ -37,10 +35,11 @@ Roles: workflow-owner, workflow-editor, workflow-operator, workflow-viewer.
 Grants are scoped to the active organization + environment and require a
 dashboard (OAuth) session.
 
-There is no ` + "`grant`" + ` here: the API does not expose creating a direct
-workflow grant. Grant access at the project level
-(` + "`retab projects access grant`" + `), which cascades to its workflows.`,
+A direct grant is additive on top of the parent project's access; for broad
+access prefer granting at the project level (` + "`retab projects access grant`" + `),
+which cascades to the project's workflows.`,
 	Example: `  retab workflows access list --workflow-id wf_01HX...
+  retab workflows access grant --workflow-id wf_01HX... --email alice@acme.com --role workflow-operator
   retab workflows access update wmem_... --role workflow-viewer
   retab workflows access revoke wmem_...`,
 }
@@ -71,6 +70,66 @@ with --include-inactive.`,
 			return err
 		}
 		return printMembershipList(cmd, &result)
+	}),
+}
+
+var workflowsAccessGrantCmd = &cobra.Command{
+	Use:   "grant",
+	Short: "Grant a user a direct role on a workflow",
+	Long: `Grant a subject a direct role on a workflow (additive on top of the
+parent project's access).
+
+Identify the person with --email (resolved against ` + "`retab members list`" + `)
+or, for a service account / explicit id, --subject-id with --subject-type.
+Roles: workflow-owner, workflow-editor, workflow-operator, workflow-viewer.`,
+	Example: `  retab workflows access grant --workflow-id wf_01HX... --email alice@acme.com --role workflow-operator
+  retab workflows access grant --workflow-id wf_01HX... --subject-id user_01HX... --role workflow-viewer`,
+	Args: cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, _ := cmd.Flags().GetString("workflow-id")
+		subjectID, _ := cmd.Flags().GetString("subject-id")
+		email, _ := cmd.Flags().GetString("email")
+		role, _ := cmd.Flags().GetString("role")
+		subjectType, _ := cmd.Flags().GetString("subject-type")
+		if strings.TrimSpace(workflowID) == "" {
+			return fmt.Errorf("--workflow-id is required")
+		}
+		if strings.TrimSpace(role) == "" {
+			return fmt.Errorf("--role is required")
+		}
+		if err := validateRoleIn(role, workflowMembershipRoles); err != nil {
+			return err
+		}
+		if err := validateSubjectType(subjectType); err != nil {
+			return err
+		}
+		if strings.TrimSpace(email) != "" {
+			if strings.TrimSpace(subjectID) != "" {
+				return fmt.Errorf("--email and --subject-id are mutually exclusive")
+			}
+			if subjectType != "user" {
+				return fmt.Errorf("--email resolves a user; use --subject-id with --subject-type %s", subjectType)
+			}
+			member, err := resolveMemberByEmail(cmd, email)
+			if err != nil {
+				return err
+			}
+			subjectID = member.ID
+		}
+		if strings.TrimSpace(subjectID) == "" {
+			return fmt.Errorf("one of --email or --subject-id is required")
+		}
+		body := map[string]any{
+			"workflow_id":  workflowID,
+			"subject_type": subjectType,
+			"subject_id":   subjectID,
+			"role":         role,
+		}
+		var result cliMembership
+		if err := cliJSONRequestInto(cmd, http.MethodPost, workflowMembershipsBasePath, nil, body, &result); err != nil {
+			return err
+		}
+		return printResult(cmd, result)
 	}),
 }
 
@@ -145,6 +204,14 @@ func init() {
 	workflowsAccessListCmd.Flags().String("workflow-id", "", "workflow whose grants to list (required)")
 	_ = workflowsAccessListCmd.MarkFlagRequired("workflow-id")
 
+	workflowsAccessGrantCmd.Flags().String("workflow-id", "", "workflow to grant access to (required)")
+	workflowsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via `retab members list`; alternative to --subject-id)")
+	workflowsAccessGrantCmd.Flags().String("subject-id", "", "explicit subject id, e.g. a user id (alternative to --email)")
+	workflowsAccessGrantCmd.Flags().String("subject-type", "user", "subject type: user, application, or organization_membership")
+	workflowsAccessGrantCmd.Flags().String("role", "", "role to grant: workflow-owner, workflow-editor, workflow-operator, or workflow-viewer (required)")
+	_ = workflowsAccessGrantCmd.MarkFlagRequired("workflow-id")
+	_ = workflowsAccessGrantCmd.MarkFlagRequired("role")
+
 	workflowsAccessGetCmd.Flags().Bool("include-inactive", false, "allow resolving a revoked (inactive) grant")
 
 	workflowsAccessUpdateCmd.Flags().String("role", "", "new role: workflow-owner, workflow-editor, workflow-operator, or workflow-viewer (required)")
@@ -154,6 +221,7 @@ func init() {
 
 	workflowsAccessCmd.AddCommand(
 		workflowsAccessListCmd,
+		workflowsAccessGrantCmd,
 		workflowsAccessGetCmd,
 		workflowsAccessUpdateCmd,
 		workflowsAccessRevokeCmd,

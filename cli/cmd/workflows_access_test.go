@@ -47,6 +47,57 @@ func TestWorkflowsAccessListHitsMembershipsEndpoint(t *testing.T) {
 	}
 }
 
+// TestWorkflowsAccessGrantResolvesEmail pins that grant resolves --email to a user
+// id via the member list and POSTs workflow_id + subject_id + role.
+func TestWorkflowsAccessGrantResolvesEmail(t *testing.T) {
+	resetEnvironmentCommandPersistentFlags(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var membersListed bool
+	var seenPostBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/internal/workos/organizations/members" && r.Method == http.MethodGet:
+			membersListed = true
+			_, _ = w.Write([]byte(`[{"id":"user_alice","email":"alice@acme.com","role":"member"}]`))
+		case r.URL.Path == "/v1/workflow-memberships" && r.Method == http.MethodPost:
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &seenPostBody)
+			_, _ = w.Write([]byte(`{"id":"wmem_1","workflow_id":"wf_1","subject_type":"organization_membership","subject_id":"om_alice","role":"workflow-operator","is_active":true}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, val := range map[string]string{"workflow-id": "wf_1", "email": "alice@acme.com", "role": "workflow-operator"} {
+		if err := workflowsAccessGrantCmd.Flags().Set(flag, val); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() {
+		_ = workflowsAccessGrantCmd.Flags().Set("workflow-id", "")
+		_ = workflowsAccessGrantCmd.Flags().Set("email", "")
+		_ = workflowsAccessGrantCmd.Flags().Set("role", "")
+	})
+
+	if _, err := captureStdAndRun(t, func() error {
+		return workflowsAccessGrantCmd.RunE(workflowsAccessGrantCmd, nil)
+	}); err != nil {
+		t.Fatalf("workflows access grant --email: %v", err)
+	}
+	if !membersListed {
+		t.Fatalf("expected member list lookup for email resolution")
+	}
+	if seenPostBody["workflow_id"] != "wf_1" || seenPostBody["subject_id"] != "user_alice" ||
+		seenPostBody["subject_type"] != "user" || seenPostBody["role"] != "workflow-operator" {
+		t.Fatalf("unexpected body: %v", seenPostBody)
+	}
+}
+
 // TestWorkflowsAccessUpdatePatchesRole pins method, path, body.
 func TestWorkflowsAccessUpdatePatchesRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
