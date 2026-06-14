@@ -222,9 +222,12 @@ store and a hint for content-type inference.`,
   retab files upload ./invoice.pdf | jq -r .id | xargs -I{} \
     retab extractions create --file-id {} \
       --json-schema-file ./schema.json --model gpt-4o`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		uploadPath := args[0]
+		uploadPath, err := localFilePath(cmd, args)
+		if err != nil {
+			return err
+		}
 		if uploadPath == "-" {
 			stdinPath, cleanup, err := stageStdinUpload(cmd)
 			if err != nil {
