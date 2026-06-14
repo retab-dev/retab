@@ -3,11 +3,13 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -206,15 +208,19 @@ to the review and it does not change the stored review object.`,
 var workflowsReviewsApproveCmd = &cobra.Command{
 	Use:   "approve <review-id>",
 	Short: "Approve a reviewed block output",
-	Long: `Approve one exact output version so the run resumes. To approve a
-correction, first create it with ` + "`reviews versions create`" + `, then approve the
-returned content-addressed version id.
+	Long: `Approve one output version so the run resumes. By default this
+approves the review's LATEST version, so ` + "`reviews approve <review-id>`" + ` is
+enough for the common case. To pin a specific version (e.g. a correction you
+created with ` + "`reviews versions create`" + `), pass ` + "`--version-id`" + `.
 Any version returned by ` + "`reviews versions list`" + ` is a valid approval target.`,
-	Example: `  retab workflows reviews approve rev_123 --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
-	Args:    cobra.ExactArgs(1),
+	Example: `  # Approve the latest version
+  retab workflows reviews approve rev_123
+
+  # Approve a specific version
+  retab workflows reviews approve rev_123 --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		versionID, err := requireReviewVersionIDFlag(cmd, "version-id")
-		if err != nil {
+		if err := validateReviewVersionIDFlagIfSet(cmd); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -223,6 +229,10 @@ Any version returned by ` + "`reviews versions list`" + ` is a valid approval ta
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		versionID, err := resolveReviewDecisionVersionID(ctx, client, cmd, args[0])
+		if err != nil {
+			return err
+		}
 		req := retab.WorkflowReviewsApproveParams{VersionID: versionID}
 		result, err := client.Workflows.Reviews.Approve(ctx, args[0], &req)
 		if err != nil {
@@ -237,17 +247,18 @@ var workflowsReviewsRejectCmd = &cobra.Command{
 	Short: "Reject a reviewed block output",
 	Long: `Reject the reviewed output. The runtime records the review as
 rejected and downstream blocks do not continue. A ` + "`--reason`" + ` is required so the review decision is
-auditable.`,
-	Example: `  retab workflows reviews reject rev_123 \
-    --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --reason "wrong document type — packing slip, not invoice"`,
+auditable. By default the review's LATEST version is rejected; pass
+` + "`--version-id`" + ` to pin a specific one.`,
+	Example: `  retab workflows reviews reject rev_123 --reason "wrong document type — packing slip, not invoice"
+  retab workflows reviews reject rev_123 \
+    --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --reason "wrong document type"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		reason, err := requireNonBlankFlag(cmd, "reason")
 		if err != nil {
 			return err
 		}
-		versionID, err := requireReviewVersionIDFlag(cmd, "version-id")
-		if err != nil {
+		if err := validateReviewVersionIDFlagIfSet(cmd); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -256,6 +267,10 @@ auditable.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		versionID, err := resolveReviewDecisionVersionID(ctx, client, cmd, args[0])
+		if err != nil {
+			return err
+		}
 		req := retab.WorkflowReviewsRejectParams{VersionID: versionID, Reason: reason}
 		result, err := client.Workflows.Reviews.Reject(ctx, args[0], &req)
 		if err != nil {
@@ -803,6 +818,45 @@ func requireReviewVersionIDFlag(cmd *cobra.Command, name string) (string, error)
 	return value, nil
 }
 
+// validateReviewVersionIDFlagIfSet rejects a malformed --version-id up-front
+// (before any credential/client work) so a bad id fails fast, while leaving the
+// flag optional. A blank flag is fine — the decision then defaults to the latest
+// version.
+func validateReviewVersionIDFlagIfSet(cmd *cobra.Command) error {
+	v, _ := cmd.Flags().GetString("version-id")
+	if strings.TrimSpace(v) != "" && !reviewVersionIDPattern.MatchString(v) {
+		return fmt.Errorf("--version-id must be a rvr_<26-char base32> version id")
+	}
+	return nil
+}
+
+// resolveReviewDecisionVersionID returns the version id an approve/reject acts
+// on. An explicit --version-id (rvr_…) wins — pass it to pin a specific version.
+// Otherwise it defaults to the review's LATEST version (most recently created),
+// so the common case (approve the version you just reviewed) needs no extra
+// lookup. Previously --version-id was required, which forced a `reviews versions
+// list` round-trip just to discover an id `reviews get` never surfaces. The flag
+// format is assumed pre-validated by validateReviewVersionIDFlagIfSet.
+func resolveReviewDecisionVersionID(ctx context.Context, client *retab.Client, cmd *cobra.Command, reviewID string) (string, error) {
+	if v, _ := cmd.Flags().GetString("version-id"); strings.TrimSpace(v) != "" {
+		return v, nil
+	}
+	versions, err := client.Workflows.Reviews.Versions.List(ctx, &retab.WorkflowReviewVersionsListParams{ReviewID: reviewID})
+	if err != nil {
+		return "", err
+	}
+	if len(versions.Data) == 0 {
+		return "", fmt.Errorf("review %s has no versions to act on", reviewID)
+	}
+	latest := versions.Data[0]
+	for _, v := range versions.Data[1:] {
+		if v.CreatedAt.After(latest.CreatedAt) {
+			latest = v
+		}
+	}
+	return latest.ID, nil
+}
+
 func init() {
 	workflowsReviewsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsReviewsListCmd.Flags().String("run-id", "", "filter by workflow run id")
@@ -818,12 +872,10 @@ func init() {
 	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
 	// handwritten message; see workflowsListCmd for the rationale).
 
-	workflowsReviewsApproveCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to approve (required)")
-	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")
+	workflowsReviewsApproveCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to approve (defaults to the review's latest version)")
 
-	workflowsReviewsRejectCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to reject (required)")
+	workflowsReviewsRejectCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to reject (defaults to the review's latest version)")
 	workflowsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
-	_ = workflowsReviewsRejectCmd.MarkFlagRequired("version-id")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
 	workflowsReviewsVersionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
