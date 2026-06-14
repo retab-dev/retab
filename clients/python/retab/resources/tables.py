@@ -41,17 +41,23 @@ class TablesMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/tables", params=params or None, data=data)
 
-    def prepare_create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(self, name: str, file: bytes, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Create"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateWorkflowTableUploadRequest(
-            name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides), project_id=cast(Any, project_id)
-        )
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="POST", url="/v1/tables", params=params or None, data=data)
+        form_data: dict[str, Any] = {}
+        files: dict[str, Any] = {}
+        if name is not None:
+            form_data["name"] = name
+        if file is not None:
+            files["file"] = ("file", file, "application/octet-stream")
+        if column_schema_overrides is not None:
+            form_data["column_schema_overrides"] = column_schema_overrides
+        if project_id is not None:
+            form_data["project_id"] = project_id
+        return PreparedRequest(method="POST", url="/v1/tables", params=params or None, form_data=form_data or None, files=files or None)
 
     def prepare_get(self, table_id: str, **extra_params: Any) -> PreparedRequest:
         """Table.Get"""
@@ -62,15 +68,19 @@ class TablesMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/tables/{table_id}", params=params or None, data=data)
 
-    def prepare_replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_replace(self, table_id: str, file: bytes, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Replace"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = ReplaceWorkflowTableUploadRequest(file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides))
-        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
-        return PreparedRequest(method="PUT", url=f"/v1/tables/{table_id}", params=params or None, data=data)
+        form_data: dict[str, Any] = {}
+        files: dict[str, Any] = {}
+        if file is not None:
+            files["file"] = ("file", file, "application/octet-stream")
+        if column_schema_overrides is not None:
+            form_data["column_schema_overrides"] = column_schema_overrides
+        return PreparedRequest(method="PUT", url=f"/v1/tables/{table_id}", params=params or None, form_data=form_data or None, files=files or None)
 
     def prepare_update_table(self, table_id: str, name: str | None = None, metadata: dict[str, Any] | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Update"""
@@ -196,7 +206,7 @@ class Tables(SyncAPIResource, TablesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    def create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    def create(self, name: str, file: bytes, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Create"""
         prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, project_id=project_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -208,7 +218,7 @@ class Tables(SyncAPIResource, TablesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableResponse.model_validate(response)
 
-    def replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    def replace(self, table_id: str, file: bytes, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Replace"""
         prepared_request = self.prepare_replace(table_id, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -314,7 +324,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableListResponse.model_validate(response)
 
-    async def create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    async def create(self, name: str, file: bytes, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Create"""
         prepared_request = self.prepare_create(name=name, file=file, column_schema_overrides=column_schema_overrides, project_id=project_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -326,7 +336,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableResponse.model_validate(response)
 
-    async def replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
+    async def replace(self, table_id: str, file: bytes, column_schema_overrides: str | None = None, **extra_params: Any) -> WorkflowTableListResponse:
         """Table.Replace"""
         prepared_request = self.prepare_replace(table_id, file=file, column_schema_overrides=column_schema_overrides, **extra_params)
         response = await self._client._prepared_request(prepared_request)

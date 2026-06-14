@@ -61,7 +61,7 @@ class CreateUploadResponse(BaseModel):
     upload_url: str = Field(..., alias="uploadUrl", description="Short-lived signed upload URL")
     upload_method: str | None = Field(default="PUT", alias="uploadMethod", description="HTTP method for upload")
     upload_headers: dict[str, str] | None = Field(default={}, alias="uploadHeaders", description="Headers required by the signed upload URL")
-    mime_data: MIMEData = Field(..., alias="mimeData", description="Durable Retab MIMEData reference")
+    mime_data: MIMEData | None = Field(default=None, alias="mimeData", description="Durable Retab MIMEData reference")
     expires_at: datetime.datetime = Field(..., alias="expiresAt", description="Upload URL expiration")
 
 

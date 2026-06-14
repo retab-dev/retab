@@ -76,8 +76,14 @@ export class RetabBase {
       Accept: 'application/json',
       ...opts.headers,
     };
-    let bodyInit: string | undefined;
-    if (opts.body !== undefined) {
+    let bodyInit: string | FormData | undefined;
+    if (opts.body instanceof FormData) {
+      // multipart/form-data (e.g. table create/replace). Pass the FormData
+      // straight to fetch WITHOUT JSON-stringifying and WITHOUT setting
+      // Content-Type — fetch must set the `multipart/form-data; boundary=...`
+      // header itself, or the server can't parse the parts.
+      bodyInit = opts.body;
+    } else if (opts.body !== undefined) {
       headers['Content-Type'] = 'application/json';
       bodyInit = JSON.stringify(opts.body);
     }

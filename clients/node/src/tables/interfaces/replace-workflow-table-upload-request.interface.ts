@@ -2,17 +2,17 @@
 
 import { z } from 'zod';
 export interface ReplaceWorkflowTableUploadRequest {
-  file: string;
+  file: Blob;
   columnSchemaOverrides?: string | null;
 }
 
 export interface ReplaceWorkflowTableUploadRequestResponse {
-  file: string;
+  file: Blob;
   column_schema_overrides?: string | null;
 }
 
 export const ZReplaceWorkflowTableUploadRequest = z.object({
-  file: z.string(),
+  file: z.instanceof(Blob),
   columnSchemaOverrides: z.string().nullable().optional(),
 }) as z.ZodType<ReplaceWorkflowTableUploadRequest>;
 

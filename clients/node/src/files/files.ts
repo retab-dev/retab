@@ -115,7 +115,7 @@ export class Files {
       filename: filename,
       content_type: contentType,
       size_bytes: sizeBytes,
-      sha_256: sha256,
+      sha256: sha256,
     };
     const __wire = await this.client.request<CreateUploadResponseResponse>({
       method: 'POST',
@@ -129,7 +129,7 @@ export class Files {
   /** Complete Upload File */
   async complete_upload(fileId: string, sha256?: string | null): Promise<MIMEData> {
     const body = {
-      sha_256: sha256,
+      sha256: sha256,
     };
     const __wire = await this.client.request<MIMEDataResponse>({
       method: 'POST',

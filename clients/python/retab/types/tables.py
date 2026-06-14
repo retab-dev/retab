@@ -56,7 +56,7 @@ class CreateWorkflowTableUploadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     name: str
-    file: str
+    file: bytes
     column_schema_overrides: str | None = None
     project_id: str | None = None
 
@@ -86,7 +86,7 @@ class QueryWorkflowTableRequest(BaseModel):
 class ReplaceWorkflowTableUploadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    file: str
+    file: bytes
     column_schema_overrides: str | None = None
 
 

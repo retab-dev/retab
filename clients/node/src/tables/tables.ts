@@ -60,16 +60,16 @@ export class Tables {
   /** Table.Create */
   async create(
     name: string,
-    file: string,
+    file: Blob | Uint8Array | ArrayBuffer,
     columnSchemaOverrides?: string | null,
     projectId?: string | null
   ): Promise<WorkflowTableListResponse> {
-    const body = {
-      name: name,
-      file: file,
-      column_schema_overrides: columnSchemaOverrides,
-      project_id: projectId,
-    };
+    const body = new FormData();
+    body.append('name', String(name));
+    body.append('file', file instanceof Blob ? file : new Blob([file]), 'file');
+    if (columnSchemaOverrides !== undefined && columnSchemaOverrides !== null)
+      body.append('column_schema_overrides', String(columnSchemaOverrides));
+    if (projectId !== undefined && projectId !== null) body.append('project_id', String(projectId));
     const __wire = await this.client.request<WorkflowTableListResponseResponse>({
       method: 'POST',
       path: '/v1/tables',
@@ -93,13 +93,13 @@ export class Tables {
   /** Table.Replace */
   async replace(
     tableId: string,
-    file: string,
+    file: Blob | Uint8Array | ArrayBuffer,
     columnSchemaOverrides?: string | null
   ): Promise<WorkflowTableListResponse> {
-    const body = {
-      file: file,
-      column_schema_overrides: columnSchemaOverrides,
-    };
+    const body = new FormData();
+    body.append('file', file instanceof Blob ? file : new Blob([file]), 'file');
+    if (columnSchemaOverrides !== undefined && columnSchemaOverrides !== null)
+      body.append('column_schema_overrides', String(columnSchemaOverrides));
     const __wire = await this.client.request<WorkflowTableListResponseResponse>({
       method: 'PUT',
       path: `/v1/tables/${tableId}`,
@@ -140,7 +140,7 @@ export class Tables {
 
   /** Table.Download */
   async download(tableId: string): Promise<Blob> {
-    const __wire = await this.client.request<string>({
+    const __wire = await this.client.request<Blob>({
       method: 'GET',
       path: `/v1/tables/${tableId}/download`,
       query: undefined,

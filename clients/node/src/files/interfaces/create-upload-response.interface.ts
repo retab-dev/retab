@@ -28,18 +28,18 @@ export interface CreateUploadResponse {
    */
   uploadHeaders?: Record<string, string>;
   /** Durable Retab MIMEData reference */
-  mimeData: MIMEData;
+  mimeData?: MIMEData | null;
   /** Upload URL expiration */
   expiresAt: Date;
 }
 
 export interface CreateUploadResponseResponse {
-  file_id: string;
-  upload_url: string;
-  upload_method?: string;
-  upload_headers?: Record<string, string>;
-  mime_data: MIMEDataResponse;
-  expires_at: string;
+  fileId: string;
+  uploadUrl: string;
+  uploadMethod?: string;
+  uploadHeaders?: Record<string, string>;
+  mimeData?: MIMEDataResponse | null;
+  expiresAt: string;
 }
 
 export const ZCreateUploadResponse = z.object({
@@ -47,7 +47,7 @@ export const ZCreateUploadResponse = z.object({
   uploadUrl: z.string(),
   uploadMethod: z.string().optional(),
   uploadHeaders: z.record(z.string(), z.string()).optional(),
-  mimeData: ZMIMEData,
+  mimeData: ZMIMEData.nullable().optional(),
   expiresAt: z.coerce.date(),
 }) as z.ZodType<CreateUploadResponse>;
 
@@ -55,12 +55,17 @@ export function deserializeCreateUploadResponse(
   wire: CreateUploadResponseResponse
 ): CreateUploadResponse {
   return {
-    fileId: wire['file_id'],
-    uploadUrl: wire['upload_url'],
-    uploadMethod: wire['upload_method'],
-    uploadHeaders: wire['upload_headers'],
-    mimeData: deserializeMIMEData(wire['mime_data']),
-    expiresAt: new Date(wire['expires_at']),
+    fileId: wire['fileId'],
+    uploadUrl: wire['uploadUrl'],
+    uploadMethod: wire['uploadMethod'],
+    uploadHeaders: wire['uploadHeaders'],
+    mimeData:
+      wire['mimeData'] == null
+        ? (wire['mimeData'] as undefined)
+        : wire['mimeData'] == null
+          ? wire['mimeData']
+          : deserializeMIMEData(wire['mimeData']),
+    expiresAt: new Date(wire['expiresAt']),
   };
 }
 
@@ -68,11 +73,16 @@ export function serializeCreateUploadResponse(
   domain: CreateUploadResponse
 ): CreateUploadResponseResponse {
   return {
-    file_id: domain['fileId'],
-    upload_url: domain['uploadUrl'],
-    upload_method: domain['uploadMethod'],
-    upload_headers: domain['uploadHeaders'],
-    mime_data: serializeMIMEData(domain['mimeData']),
-    expires_at: domain['expiresAt'].toISOString(),
+    fileId: domain['fileId'],
+    uploadUrl: domain['uploadUrl'],
+    uploadMethod: domain['uploadMethod'],
+    uploadHeaders: domain['uploadHeaders'],
+    mimeData:
+      domain['mimeData'] == null
+        ? (domain['mimeData'] as undefined)
+        : domain['mimeData'] == null
+          ? domain['mimeData']
+          : serializeMIMEData(domain['mimeData']),
+    expiresAt: domain['expiresAt'].toISOString(),
   };
 }

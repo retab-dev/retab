@@ -3,21 +3,21 @@
 import { z } from 'zod';
 export interface CreateWorkflowTableUploadRequest {
   name: string;
-  file: string;
+  file: Blob;
   columnSchemaOverrides?: string | null;
   projectId?: string | null;
 }
 
 export interface CreateWorkflowTableUploadRequestResponse {
   name: string;
-  file: string;
+  file: Blob;
   column_schema_overrides?: string | null;
   project_id?: string | null;
 }
 
 export const ZCreateWorkflowTableUploadRequest = z.object({
   name: z.string(),
-  file: z.string(),
+  file: z.instanceof(Blob),
   columnSchemaOverrides: z.string().nullable().optional(),
   projectId: z.string().nullable().optional(),
 }) as z.ZodType<CreateWorkflowTableUploadRequest>;

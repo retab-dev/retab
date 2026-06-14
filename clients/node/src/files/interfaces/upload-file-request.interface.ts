@@ -17,7 +17,7 @@ export interface UploadFileRequestResponse {
   filename: string;
   content_type?: string | null;
   size_bytes: number;
-  sha_256?: string | null;
+  sha256?: string | null;
 }
 
 export const ZUploadFileRequest = z.object({
@@ -32,7 +32,7 @@ export function deserializeUploadFileRequest(wire: UploadFileRequestResponse): U
     filename: wire['filename'],
     contentType: wire['content_type'],
     sizeBytes: wire['size_bytes'],
-    sha256: wire['sha_256'],
+    sha256: wire['sha256'],
   };
 }
 
@@ -41,6 +41,6 @@ export function serializeUploadFileRequest(domain: UploadFileRequest): UploadFil
     filename: domain['filename'],
     content_type: domain['contentType'],
     size_bytes: domain['sizeBytes'],
-    sha_256: domain['sha256'],
+    sha256: domain['sha256'],
   };
 }

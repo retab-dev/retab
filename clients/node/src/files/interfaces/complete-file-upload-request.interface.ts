@@ -8,7 +8,7 @@ export interface CompleteFileUploadRequest {
 }
 
 export interface CompleteFileUploadRequestResponse {
-  sha_256?: string | null;
+  sha256?: string | null;
 }
 
 export const ZCompleteFileUploadRequest = z.object({
@@ -19,7 +19,7 @@ export function deserializeCompleteFileUploadRequest(
   wire: CompleteFileUploadRequestResponse
 ): CompleteFileUploadRequest {
   return {
-    sha256: wire['sha_256'],
+    sha256: wire['sha256'],
   };
 }
 
@@ -27,6 +27,6 @@ export function serializeCompleteFileUploadRequest(
   domain: CompleteFileUploadRequest
 ): CompleteFileUploadRequestResponse {
   return {
-    sha_256: domain['sha256'],
+    sha256: domain['sha256'],
   };
 }
