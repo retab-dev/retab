@@ -188,3 +188,43 @@ def company_json_schema() -> dict[str, Any]:
         )
 
     return Company.model_json_schema()
+
+
+# Make the tests dir importable so the shared helper module (factories.py)
+# resolves regardless of pytest's import mode.
+if TEST_DIR not in sys.path:
+    sys.path.insert(0, TEST_DIR)
+
+import factories  # noqa: E402  (after sys.path setup, like the retab import above)
+from retab.types.files import File  # noqa: E402
+from retab.types.workflows import Workflow  # noqa: E402
+
+
+@pytest.fixture
+def project_id(sync_client: Retab) -> str:
+    """An existing project id to attach creditless resources to.
+
+    The SDK has no projects resource, so we reuse an existing project (every
+    workflow carries its owner). Skips cleanly if the org has none.
+    """
+    pid = factories.discover_project_id(sync_client)
+    if not pid:
+        pytest.skip("no existing project on staging to attach resources to")
+    return pid
+
+
+@pytest.fixture
+def uploaded_file(sync_client: Retab) -> File:
+    """A tiny file uploaded to storage (creditless).
+
+    No teardown: the Python SDK exposes no ``files.delete``. Content is a few
+    dozen bytes and clearly tagged as test data.
+    """
+    return factories.upload_file(sync_client)
+
+
+@pytest.fixture
+def temp_workflow(sync_client: Retab, project_id: str) -> Generator[Workflow, None, None]:
+    """A freshly-created workflow definition, deleted after the test."""
+    with factories.temporary_workflow(sync_client, project_id) as workflow:
+        yield workflow
