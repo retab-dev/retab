@@ -278,7 +278,17 @@ func runTableDownload(cmd *cobra.Command, tableID string) error {
 	if err != nil {
 		return err
 	}
-	if tableSelected(cmd) {
+	// -o/--out writes the raw CSV to a file (parity with `files download`); `-o -`
+	// is an explicit stdout. Without -o, fall back to the existing behavior:
+	// table-render when --output table is selected, else raw bytes to stdout.
+	outPath, _ := cmd.Flags().GetString("out")
+	if outPath != "" && outPath != "-" {
+		if err := os.WriteFile(outPath, body, 0o600); err != nil {
+			return fmt.Errorf("write table CSV to %s: %w", outPath, err)
+		}
+		return nil
+	}
+	if outPath == "" && tableSelected(cmd) {
 		return renderDownloadedCSVTable(body)
 	}
 	_, err = os.Stdout.Write(body)
@@ -1255,6 +1265,7 @@ func init() {
 	tablesQueryCmd.Flags().Var(&nonNegativeIntFlagValue{}, "offset", "zero-based row offset")
 	tablesQueryCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max rows to return")
 	tablesQueryCmd.Flags().String("viewer-mode", "", "viewer mode; use windowed for large tables")
+	tablesDownloadCmd.Flags().StringP("out", "o", "", "write the CSV to this path, - for stdout (default: stdout)")
 	tablesProfileCmd.Flags().String("select", "", "comma-separated columns to profile")
 	tablesValidateCmd.Flags().String("body", "", "raw JSON validation request")
 	tablesValidateCmd.Flags().String("required", "", "comma-separated required columns")
