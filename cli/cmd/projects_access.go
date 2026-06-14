@@ -103,13 +103,19 @@ func membershipCell(row any, key string) string {
 	}
 }
 
+// membershipColumns leads with the human-readable columns and puts ID LAST.
+// A facade membership id is a ~200-char base64 blob (it encodes
+// resource+subject+role), so an ID-first table — the usual CLI convention —
+// pushes the scannable columns off-screen. The id is still needed for
+// update/revoke, so it stays in the table (and is column-1 in JSON), just at the
+// end where it doesn't wreck readability.
 var membershipColumns = []TableColumn{
-	{Header: "ID", Extract: func(row any) string { return membershipCell(row, "id") }},
 	{Header: "RESOURCE", Extract: func(row any) string { return membershipCell(row, "resource") }},
 	{Header: "SUBJECT", Extract: func(row any) string { return membershipCell(row, "subject") }},
 	{Header: "ROLE", Extract: func(row any) string { return membershipCell(row, "role") }},
 	{Header: "ACTIVE", Extract: func(row any) string { return membershipCell(row, "active") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return membershipCell(row, "created_at") }},
+	{Header: "ID", Extract: func(row any) string { return membershipCell(row, "id") }},
 }
 
 // printMembershipList renders a paginated membership envelope, shared by the
