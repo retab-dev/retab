@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 )
@@ -31,6 +32,56 @@ type versionInfo struct {
 	Built   string `json:"built"`
 }
 
+// buildInfoSource is swapped in tests; in production it reads the module
+// build metadata Go embeds into every binary (module version + VCS stamps).
+var buildInfoSource = debug.ReadBuildInfo
+
+// resolveVersionInfo returns the build identity to display.
+//
+// When the binary is built by GoReleaser the linker stamps `version`,
+// `commit`, and `date` via `-ldflags -X` and those win unconditionally.
+// But a binary produced by a plain `go build`/`go install` carries no
+// such stamps, so the package-level defaults ("dev"/"none"/"unknown")
+// would otherwise make `retab version` unattributable. For that path we
+// fall back to `runtime/debug.ReadBuildInfo()`, which exposes the module
+// version (e.g. `v0.1.0` for a tagged `go install …@v0.1.0`, or
+// `(devel)`) plus the `vcs.revision` / `vcs.time` settings the Go
+// toolchain records from the source repository.
+func resolveVersionInfo() versionInfo {
+	info := versionInfo{Version: version, Commit: commit, Built: date}
+
+	bi, ok := buildInfoSource()
+	if !ok {
+		return info
+	}
+
+	if info.Version == "dev" || info.Version == "" {
+		if v := bi.Main.Version; v != "" && v != "(devel)" {
+			info.Version = v
+		}
+	}
+
+	if info.Commit == "none" || info.Commit == "" {
+		for _, setting := range bi.Settings {
+			if setting.Key == "vcs.revision" && setting.Value != "" {
+				info.Commit = setting.Value
+				break
+			}
+		}
+	}
+
+	if info.Built == "unknown" || info.Built == "" {
+		for _, setting := range bi.Settings {
+			if setting.Key == "vcs.time" && setting.Value != "" {
+				info.Built = setting.Value
+				break
+			}
+		}
+	}
+
+	return info
+}
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the CLI version, commit, and build date",
@@ -43,11 +94,7 @@ build.`,
 	Example: `  retab version
   # retab 0.1.0 (commit a1b2c3d, built 2026-05-14T15:03:21Z)`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		info := versionInfo{
-			Version: version,
-			Commit:  commit,
-			Built:   date,
-		}
+		info := resolveVersionInfo()
 		var raw string
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
 			raw = f.Value.String()
@@ -71,7 +118,7 @@ build.`,
 			})
 		}
 		_, err := fmt.Fprintf(cmd.OutOrStdout(), "retab %s (commit %s, built %s)\n",
-			version, commit, date)
+			info.Version, info.Commit, info.Built)
 		return err
 	},
 }

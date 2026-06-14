@@ -239,8 +239,10 @@ func init() {
 	// `version` lives in version.go and is overwritten at link time by
 	// GoReleaser's ldflags. Surfacing it on rootCmd makes both
 	// `retab --version` and the polished help header pick up the same
-	// string — no risk of drift between them.
-	rootCmd.Version = version
+	// string — no risk of drift between them. resolveVersionInfo() also
+	// applies the runtime/debug.ReadBuildInfo() fallback so a plain
+	// `go install`-built binary reports its module version instead of "dev".
+	rootCmd.Version = resolveVersionInfo().Version
 
 	rootCmd.PersistentFlags().String("api-key", "", "Retab API key (env: RETAB_API_KEY)")
 	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_API_BASE_URL)")
