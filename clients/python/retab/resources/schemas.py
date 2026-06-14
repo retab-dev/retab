@@ -26,18 +26,30 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class SchemasMixin:
-
-    def prepare_generate(self, documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl], model: str = "retab-small", instructions: str | None = None, image_resolution_dpi: int = 192, background: bool = False, **extra_params: Any) -> PreparedRequest:
+    def prepare_generate(
+        self,
+        documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
+        model: str = "retab-small",
+        instructions: str | None = None,
+        image_resolution_dpi: int = 192,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         documents_payload: Any = documents
         if documents_payload is not None:
             documents_payload = [_coerce_mime_document_input(__x) for __x in documents_payload]
-        payload = GenerateSchemaRequest(documents=cast(Any, documents_payload), model=cast(Any, model), instructions=cast(Any, instructions), image_resolution_dpi=cast(Any, image_resolution_dpi), background=cast(Any, background))
+        payload = GenerateSchemaRequest(
+            documents=cast(Any, documents_payload),
+            model=cast(Any, model),
+            instructions=cast(Any, instructions),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
+            background=cast(Any, background),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/schemas/generate", params=params or None, data=data)
 
@@ -45,9 +57,19 @@ class SchemasMixin:
 class Schemas(SyncAPIResource, SchemasMixin):
     """Schemas API wrapper."""
 
-    def generate(self, documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl], model: str = "retab-small", instructions: str | None = None, image_resolution_dpi: int = 192, background: bool = False, **extra_params: Any) -> SchemaGeneration:
+    def generate(
+        self,
+        documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
+        model: str = "retab-small",
+        instructions: str | None = None,
+        image_resolution_dpi: int = 192,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
-        prepared_request = self.prepare_generate(documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params)
+        prepared_request = self.prepare_generate(
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
 
@@ -55,10 +77,21 @@ class Schemas(SyncAPIResource, SchemasMixin):
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     """Async Schemas API wrapper."""
 
-    async def generate(self, documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl], model: str = "retab-small", instructions: str | None = None, image_resolution_dpi: int = 192, background: bool = False, **extra_params: Any) -> SchemaGeneration:
+    async def generate(
+        self,
+        documents: list[Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl],
+        model: str = "retab-small",
+        instructions: str | None = None,
+        image_resolution_dpi: int = 192,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
-        prepared_request = self.prepare_generate(documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params)
+        prepared_request = self.prepare_generate(
+            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
+
 
 __all__ = ["Schemas", "AsyncSchemas", "SchemasMixin"]

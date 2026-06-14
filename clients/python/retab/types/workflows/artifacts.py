@@ -18,7 +18,19 @@ from retab.types.splits import SplitConsensus, SplitResult, Subdocument
 ConditionEvaluationDetailsLogicalOperator: TypeAlias = Literal["and", "or"]
 
 
-WorkflowArtifactOperation: TypeAlias = Literal["extraction", "split", "classification", "parse", "edit", "partition", "conditional_evaluation", "review_trigger_evaluation", "while_loop_termination", "api_call_invocation", "function_invocation"]
+WorkflowArtifactOperation: TypeAlias = Literal[
+    "extraction",
+    "split",
+    "classification",
+    "parse",
+    "edit",
+    "partition",
+    "conditional_evaluation",
+    "review_trigger_evaluation",
+    "while_loop_termination",
+    "api_call_invocation",
+    "function_invocation",
+]
 
 
 class EditWorkflowArtifactStatus(str, Enum):
@@ -88,8 +100,8 @@ class ApiCallAttempt(BaseModel):
 class ApiCallInvocation(BaseModel):
     """Record of an API-call block's outbound HTTP request during a run.
 
-Lists each request `attempts` made (including retries) and any `error`
-if the call ultimately failed."""
+    Lists each request `attempts` made (including retries) and any `error`
+    if the call ultimately failed."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -113,9 +125,17 @@ class ClassificationWorkflowArtifact(BaseModel):
     categories: list[Category] = Field(..., description="Categories the document was classified against")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
-    output: ClassificationDecision | None = Field(default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    output: ClassificationDecision | None = Field(
+        default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status."
+    )
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
@@ -125,8 +145,8 @@ class ClassificationWorkflowArtifact(BaseModel):
 class ConditionEvaluationDetails(BaseModel):
     """Detailed evaluation information for frontend display.
 
-The frontend reads evaluation data from this nested 'details' object
-for compatibility with the ConditionalEvaluationsTable component."""
+    The frontend reads evaluation data from this nested 'details' object
+    for compatibility with the ConditionalEvaluationsTable component."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -143,8 +163,8 @@ for compatibility with the ConditionalEvaluationsTable component."""
 class ConditionEvaluationPerItem(BaseModel):
     """Per-item evaluation result for wildcard array conditions.
 
-When a condition path contains .*, each array element is evaluated
-individually with implicit AND logic (all must match)."""
+    When a condition path contains .*, each array element is evaluated
+    individually with implicit AND logic (all must match)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -157,11 +177,11 @@ individually with implicit AND logic (all must match)."""
 class ConditionEvaluationResult(BaseModel):
     """Complete evaluation result for a termination condition.
 
-This model represents the full evaluation data sent to the frontend
-for displaying in the Exit Trigger Evaluation dialog.
+    This model represents the full evaluation data sent to the frontend
+    for displaying in the Exit Trigger Evaluation dialog.
 
-The frontend expects data at both top-level and nested in 'details'
-for compatibility with the ConditionalEvaluationsTable component."""
+    The frontend expects data at both top-level and nested in 'details'
+    for compatibility with the ConditionalEvaluationsTable component."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -181,7 +201,7 @@ for compatibility with the ConditionalEvaluationsTable component."""
 class ConditionEvaluationSubCondition(BaseModel):
     """Evaluation result for a sub-condition in a compound condition.
 
-Used when multiple conditions are combined with AND/OR operators."""
+    Used when multiple conditions are combined with AND/OR operators."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -197,9 +217,9 @@ Used when multiple conditions are combined with AND/OR operators."""
 class ConditionalEvaluation(BaseModel):
     """Record of how a conditional block routed during a workflow run.
 
-Captures each condition that was evaluated (`evaluations`), which output
-branches were chosen (`selected_handles`), and the branch and condition
-IDs that matched (`matched_branch_id`, `matched_condition_ids`)."""
+    Captures each condition that was evaluated (`evaluations`), which output
+    branches were chosen (`selected_handles`), and the branch and condition
+    IDs that matched (`matched_branch_id`, `matched_condition_ids`)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -225,9 +245,17 @@ class EditWorkflowArtifact(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the edit request.")
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
-    output: EditResult | None = Field(default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    output: EditResult | None = Field(
+        default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status."
+    )
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
@@ -237,7 +265,7 @@ class EditWorkflowArtifact(BaseModel):
 class ErrorDetails(BaseModel):
     """Detailed error information for debugging.
 
-Captures stack traces and context about where and why an error occurred."""
+    Captures stack traces and context about where and why an error occurred."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -262,8 +290,14 @@ class ExtractionWorkflowArtifact(BaseModel):
     image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
@@ -274,8 +308,8 @@ class ExtractionWorkflowArtifact(BaseModel):
 class FunctionInvocation(BaseModel):
     """Record of a function block's execution during a workflow run.
 
-Captures the `inputs` passed to the function, the `output` it returned,
-how long it ran (`duration_ms`), and any `error` if execution failed."""
+    Captures the `inputs` passed to the function, the `output` it returned,
+    how long it ran (`duration_ms`), and any `error` if execution failed."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -302,8 +336,14 @@ class ParseWorkflowArtifact(BaseModel):
     image_resolution_dpi: int = Field(..., description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
     operation: Literal["parse"] = Field(default="parse", description="The operation that produced this artifact")
@@ -322,8 +362,14 @@ class PartitionWorkflowArtifact(BaseModel):
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool | None = Field(default=True, description="Whether pages were allowed to appear in more than one partition chunk")
     output: list[PartitionChunk] | None = Field(default=[], description="The list of partition chunks with their assigned pages. Empty [] until status == 'completed'.")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: PartitionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote partition runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
     created_at: datetime.datetime | None = Field(default=None, description="Timestamp when this artifact was created.")
@@ -333,11 +379,11 @@ class PartitionWorkflowArtifact(BaseModel):
 class ReviewEvaluation(BaseModel):
     """Record of a review-gate evaluation during a workflow run.
 
-Captures the conditions evaluated against the block's output
-(`evaluations`), whether the gate required human review
-(`requires_human_review`), and, once a reviewer acts, the verdict
-(`review_decision`), any notes, whether a revision was requested, and the
-reviewer and timestamp."""
+    Captures the conditions evaluated against the block's output
+    (`evaluations`), whether the gate required human review
+    (`requires_human_review`), and, once a reviewer acts, the verdict
+    (`review_decision`), any notes, whether a revision was requested, and the
+    reviewer and timestamp."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -370,8 +416,14 @@ class SplitWorkflowArtifact(BaseModel):
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the split request.")
     output: list[SplitResult] | None = Field(default=[], description="The list of document splits with their assigned pages. Empty [] until status == 'completed'.")
-    status: EditWorkflowArtifactStatus | None = Field(default=cast(EditWorkflowArtifactStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: EditWorkflowArtifactStatus | None = Field(
+        default=cast(EditWorkflowArtifactStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: SplitConsensus | None = Field(default=None, description="Consensus metadata for multi-vote split runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the split operation")
     created_at: datetime.datetime = Field(..., description="Timestamp when this artifact was created.")
@@ -381,9 +433,9 @@ class SplitWorkflowArtifact(BaseModel):
 class WhileLoopTermination(BaseModel):
     """Record of why a while-loop block stopped iterating during a run.
 
-Reports the `termination_reason` (`max_iterations_reached`,
-`condition_matched`, or `error`) and the termination conditions that were
-evaluated on the final iteration (`evaluations`)."""
+    Reports the `termination_reason` (`max_iterations_reached`,
+    `condition_matched`, or `error`) and the termination conditions that were
+    evaluated on the final iteration (`evaluations`)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

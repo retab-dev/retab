@@ -28,8 +28,22 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class ExtractionsMixin:
-
-    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, filename_regex: str | None = None, filename_contains: str | None = None, document_type: list[str] | None = None, status: ExtractionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, metadata: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        filename_regex: str | None = None,
+        filename_contains: str | None = None,
+        document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        metadata: str | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Extractions List and paginate extractions with optional filtering. Returns a paginated list of extraction documents matching the filter criteria. The `metadata` parameter accepts a JSON string of key-value pairs to filter by."""
         params: dict[str, Any] = {
             "before": before,
@@ -51,17 +65,44 @@ class ExtractionsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/extractions", params=params or None, data=data)
 
-    def prepare_create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, json_schema: dict[str, Any], model: str = "retab-small", image_resolution_dpi: int = 192, instructions: str | None = None, n_consensus: int = 1, metadata: dict[str, str] | None = None, additional_messages: list[dict[str, Any]] | None = None, bust_cache: bool = False, stream: bool = False, background: bool = False, chunking_keys: dict[str, str] | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
             document_payload = _coerce_mime_document_input(document_payload)
-        payload = ExtractionRequest(document=cast(Any, document_payload), json_schema=cast(Any, json_schema), model=cast(Any, model), image_resolution_dpi=cast(Any, image_resolution_dpi), instructions=cast(Any, instructions), n_consensus=cast(Any, n_consensus), metadata=cast(Any, metadata), additional_messages=cast(Any, additional_messages), bust_cache=cast(Any, bust_cache), stream=cast(Any, stream), background=cast(Any, background), chunking_keys=cast(Any, chunking_keys))
+        payload = ExtractionRequest(
+            document=cast(Any, document_payload),
+            json_schema=cast(Any, json_schema),
+            model=cast(Any, model),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
+            instructions=cast(Any, instructions),
+            n_consensus=cast(Any, n_consensus),
+            metadata=cast(Any, metadata),
+            additional_messages=cast(Any, additional_messages),
+            bust_cache=cast(Any, bust_cache),
+            stream=cast(Any, stream),
+            background=cast(Any, background),
+            chunking_keys=cast(Any, chunking_keys),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
 
@@ -78,8 +119,7 @@ class ExtractionsMixin:
 
     def prepare_delete(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Extraction Delete an extraction"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -88,8 +128,7 @@ class ExtractionsMixin:
 
     def prepare_create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Extraction"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -98,8 +137,7 @@ class ExtractionsMixin:
 
     def prepare_sources(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -110,14 +148,72 @@ class ExtractionsMixin:
 class Extractions(SyncAPIResource, ExtractionsMixin):
     """Extractions API wrapper."""
 
-    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, filename_regex: str | None = None, filename_contains: str | None = None, document_type: list[str] | None = None, status: ExtractionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, metadata: str | None = None, **extra_params: Any) -> PaginatedList[Extraction]:
+    def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        filename_regex: str | None = None,
+        filename_contains: str | None = None,
+        document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        metadata: str | None = None,
+        **extra_params: Any,
+    ) -> PaginatedList[Extraction]:
         """List Extractions List and paginate extractions with optional filtering. Returns a paginated list of extraction documents matching the filter criteria. The `metadata` parameter accepts a JSON string of key-value pairs to filter by."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, filename_regex=filename_regex, filename_contains=filename_contains, document_type=document_type, status=status, from_date=from_date, to_date=to_date, metadata=metadata, **extra_params)
+        prepared_request = self.prepare_list(
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            filename=filename,
+            filename_regex=filename_regex,
+            filename_contains=filename_contains,
+            document_type=document_type,
+            status=status,
+            from_date=from_date,
+            to_date=to_date,
+            metadata=metadata,
+            **extra_params,
+        )
         return self.request_page(prepared_request, model=Extraction)
 
-    def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, json_schema: dict[str, Any], model: str = "retab-small", image_resolution_dpi: int = 192, instructions: str | None = None, n_consensus: int = 1, metadata: dict[str, str] | None = None, additional_messages: list[dict[str, Any]] | None = None, bust_cache: bool = False, stream: bool = False, background: bool = False, chunking_keys: dict[str, str] | None = None, **extra_params: Any) -> Extraction:
+    def create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
-        prepared_request = self.prepare_create(document=document, json_schema=json_schema, model=model, image_resolution_dpi=image_resolution_dpi, instructions=instructions, n_consensus=n_consensus, metadata=metadata, additional_messages=additional_messages, bust_cache=bust_cache, stream=stream, background=background, chunking_keys=chunking_keys, **extra_params)
+        prepared_request = self.prepare_create(
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+            stream=stream,
+            background=background,
+            chunking_keys=chunking_keys,
+            **extra_params,
+        )
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
@@ -149,14 +245,72 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
 class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     """Async Extractions API wrapper."""
 
-    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, filename_regex: str | None = None, filename_contains: str | None = None, document_type: list[str] | None = None, status: ExtractionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, metadata: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Extraction]:
+    async def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        filename_regex: str | None = None,
+        filename_contains: str | None = None,
+        document_type: list[str] | None = None,
+        status: ExtractionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        metadata: str | None = None,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[Extraction]:
         """List Extractions List and paginate extractions with optional filtering. Returns a paginated list of extraction documents matching the filter criteria. The `metadata` parameter accepts a JSON string of key-value pairs to filter by."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, filename_regex=filename_regex, filename_contains=filename_contains, document_type=document_type, status=status, from_date=from_date, to_date=to_date, metadata=metadata, **extra_params)
+        prepared_request = self.prepare_list(
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            filename=filename,
+            filename_regex=filename_regex,
+            filename_contains=filename_contains,
+            document_type=document_type,
+            status=status,
+            from_date=from_date,
+            to_date=to_date,
+            metadata=metadata,
+            **extra_params,
+        )
         return await self.request_page(prepared_request, model=Extraction)
 
-    async def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, json_schema: dict[str, Any], model: str = "retab-small", image_resolution_dpi: int = 192, instructions: str | None = None, n_consensus: int = 1, metadata: dict[str, str] | None = None, additional_messages: list[dict[str, Any]] | None = None, bust_cache: bool = False, stream: bool = False, background: bool = False, chunking_keys: dict[str, str] | None = None, **extra_params: Any) -> Extraction:
+    async def create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
-        prepared_request = self.prepare_create(document=document, json_schema=json_schema, model=model, image_resolution_dpi=image_resolution_dpi, instructions=instructions, n_consensus=n_consensus, metadata=metadata, additional_messages=additional_messages, bust_cache=bust_cache, stream=stream, background=background, chunking_keys=chunking_keys, **extra_params)
+        prepared_request = self.prepare_create(
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+            stream=stream,
+            background=background,
+            chunking_keys=chunking_keys,
+            **extra_params,
+        )
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
@@ -183,5 +337,6 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         prepared_request = self.prepare_sources(extraction_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SourcesResponse.model_validate(response)
+
 
 __all__ = ["Extractions", "AsyncExtractions", "ExtractionsMixin"]

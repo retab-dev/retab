@@ -6,12 +6,28 @@ from pydantic import TypeAdapter
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.workflows.experiments.metrics import ExperimentByDocumentMetricsResponse, ExperimentByTargetMetricsResponse, ExperimentMetricsMissingError, ExperimentMetricsStaleError, ExperimentRunMetricsView, ExperimentSummaryMetricsResponse, ExperimentVotesMetricsResponse
+from retab.types.workflows.experiments.metrics import (
+    ExperimentByDocumentMetricsResponse,
+    ExperimentByTargetMetricsResponse,
+    ExperimentMetricsMissingError,
+    ExperimentMetricsStaleError,
+    ExperimentRunMetricsView,
+    ExperimentSummaryMetricsResponse,
+    ExperimentVotesMetricsResponse,
+)
 
 
 class ExperimentRunMetricsMixin:
-
-    def prepare_get(self, run_id: str, view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"), document_id: str | None = None, target_path: str | None = None, include_prior: bool | None = True, prior_run_id: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(
+        self,
+        run_id: str,
+        view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"),
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool | None = True,
+        prior_run_id: str | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
         params: dict[str, Any] = {
             "run_id": run_id,
@@ -31,20 +47,71 @@ class ExperimentRunMetricsMixin:
 class ExperimentRunMetrics(SyncAPIResource, ExperimentRunMetricsMixin):
     """ExperimentRunMetrics API wrapper."""
 
-    def get(self, run_id: str, view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"), document_id: str | None = None, target_path: str | None = None, include_prior: bool | None = True, prior_run_id: str | None = None, **extra_params: Any) -> ExperimentSummaryMetricsResponse | ExperimentByDocumentMetricsResponse | ExperimentByTargetMetricsResponse | ExperimentVotesMetricsResponse | ExperimentMetricsStaleError | ExperimentMetricsMissingError:
+    def get(
+        self,
+        run_id: str,
+        view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"),
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool | None = True,
+        prior_run_id: str | None = None,
+        **extra_params: Any,
+    ) -> (
+        ExperimentSummaryMetricsResponse
+        | ExperimentByDocumentMetricsResponse
+        | ExperimentByTargetMetricsResponse
+        | ExperimentVotesMetricsResponse
+        | ExperimentMetricsStaleError
+        | ExperimentMetricsMissingError
+    ):
         """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
-        prepared_request = self.prepare_get(run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params)
+        prepared_request = self.prepare_get(
+            run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
-        return TypeAdapter(ExperimentSummaryMetricsResponse | ExperimentByDocumentMetricsResponse | ExperimentByTargetMetricsResponse | ExperimentVotesMetricsResponse | ExperimentMetricsStaleError | ExperimentMetricsMissingError).validate_python(response)
+        return TypeAdapter(
+            ExperimentSummaryMetricsResponse
+            | ExperimentByDocumentMetricsResponse
+            | ExperimentByTargetMetricsResponse
+            | ExperimentVotesMetricsResponse
+            | ExperimentMetricsStaleError
+            | ExperimentMetricsMissingError
+        ).validate_python(response)
 
 
 class AsyncExperimentRunMetrics(AsyncAPIResource, ExperimentRunMetricsMixin):
     """Async ExperimentRunMetrics API wrapper."""
 
-    async def get(self, run_id: str, view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"), document_id: str | None = None, target_path: str | None = None, include_prior: bool | None = True, prior_run_id: str | None = None, **extra_params: Any) -> ExperimentSummaryMetricsResponse | ExperimentByDocumentMetricsResponse | ExperimentByTargetMetricsResponse | ExperimentVotesMetricsResponse | ExperimentMetricsStaleError | ExperimentMetricsMissingError:
+    async def get(
+        self,
+        run_id: str,
+        view: ExperimentRunMetricsView | None = cast(ExperimentRunMetricsView, "summary"),
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool | None = True,
+        prior_run_id: str | None = None,
+        **extra_params: Any,
+    ) -> (
+        ExperimentSummaryMetricsResponse
+        | ExperimentByDocumentMetricsResponse
+        | ExperimentByTargetMetricsResponse
+        | ExperimentVotesMetricsResponse
+        | ExperimentMetricsStaleError
+        | ExperimentMetricsMissingError
+    ):
         """Get Experiment Metrics For Run Get metrics for an experiment run. Requires the `run_id` query parameter. Use `view` to choose the breakdown (`summary`, `by_document`, `by_target`, or `votes`), and narrow with `document_id` or `target_path`. By default each score-bearing row also carries a `prior_score` from the previous completed run; pass `include_prior=false` to omit it or `prior_run_id` to…"""
-        prepared_request = self.prepare_get(run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params)
+        prepared_request = self.prepare_get(
+            run_id=run_id, view=view, document_id=document_id, target_path=target_path, include_prior=include_prior, prior_run_id=prior_run_id, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
-        return TypeAdapter(ExperimentSummaryMetricsResponse | ExperimentByDocumentMetricsResponse | ExperimentByTargetMetricsResponse | ExperimentVotesMetricsResponse | ExperimentMetricsStaleError | ExperimentMetricsMissingError).validate_python(response)
+        return TypeAdapter(
+            ExperimentSummaryMetricsResponse
+            | ExperimentByDocumentMetricsResponse
+            | ExperimentByTargetMetricsResponse
+            | ExperimentVotesMetricsResponse
+            | ExperimentMetricsStaleError
+            | ExperimentMetricsMissingError
+        ).validate_python(response)
+
 
 __all__ = ["ExperimentRunMetrics", "AsyncExperimentRunMetrics", "ExperimentRunMetricsMixin"]

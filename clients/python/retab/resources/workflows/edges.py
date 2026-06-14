@@ -10,8 +10,16 @@ from retab.types.workflows.edges import WorkflowEdgeCreateRequest, WorkflowEdgeD
 
 
 class WorkflowEdgesMixin:
-
-    def prepare_list(self, workflow_id: str, source_block: str | None = None, target_block: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        workflow_id: str,
+        source_block: str | None = None,
+        target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 100,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -27,18 +35,35 @@ class WorkflowEdgesMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/edges", params=params or None, data=data)
 
-    def prepare_create(self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(
+        self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any
+    ) -> PreparedRequest:
         """Create Edge Create a new edge connecting two blocks. Validates that: - Both source and target blocks exist in the workflow - The connection is semantically valid (type compatibility, container rules, etc.)"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = WorkflowEdgeCreateRequest(workflow_id=cast(Any, workflow_id), id=cast(Any, id), source_block=cast(Any, source_block), target_block=cast(Any, target_block), source_handle=cast(Any, source_handle), target_handle=cast(Any, target_handle))
+        payload = WorkflowEdgeCreateRequest(
+            workflow_id=cast(Any, workflow_id),
+            id=cast(Any, id),
+            source_block=cast(Any, source_block),
+            target_block=cast(Any, target_block),
+            source_handle=cast(Any, source_handle),
+            target_handle=cast(Any, target_handle),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/edges", params=params or None, data=data)
 
-    def prepare_list_versions(self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
+    def prepare_list_versions(
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Edge Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -68,8 +93,7 @@ class WorkflowEdgesMixin:
 
     def prepare_get_version(self, edge_version_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Edge Version"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -78,8 +102,7 @@ class WorkflowEdgesMixin:
 
     def prepare_create_version_restore(self, edge_version_id: str, **extra_params: Any) -> PreparedRequest:
         """Restore Edge Version"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -88,8 +111,7 @@ class WorkflowEdgesMixin:
 
     def prepare_get(self, edge_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Edge Get a single edge by ID."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -98,8 +120,7 @@ class WorkflowEdgesMixin:
 
     def prepare_delete(self, edge_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Edge Delete an edge from a workflow."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -110,20 +131,44 @@ class WorkflowEdgesMixin:
 class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
     """WorkflowEdges API wrapper."""
 
-    def list(self, workflow_id: str, source_block: str | None = None, target_block: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PaginatedList[WorkflowEdgeDoc]:
+    def list(
+        self,
+        workflow_id: str,
+        source_block: str | None = None,
+        target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 100,
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowEdgeDoc]:
         """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, source_block=source_block, target_block=target_block, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowEdgeDoc)
 
-    def create(self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any) -> WorkflowEdgeDoc:
+    def create(
+        self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any
+    ) -> WorkflowEdgeDoc:
         """Create Edge Create a new edge connecting two blocks. Validates that: - Both source and target blocks exist in the workflow - The connection is semantically valid (type compatibility, container rules, etc.)"""
-        prepared_request = self.prepare_create(workflow_id=workflow_id, id=id, source_block=source_block, target_block=target_block, source_handle=source_handle, target_handle=target_handle, **extra_params)
+        prepared_request = self.prepare_create(
+            workflow_id=workflow_id, id=id, source_block=source_block, target_block=target_block, source_handle=source_handle, target_handle=target_handle, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    def list_versions(self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PaginatedList[WorkflowEdgeVersion]:
+    def list_versions(
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowEdgeVersion]:
         """List Edge Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return self.request_page(prepared_request, model=WorkflowEdgeVersion)
 
     def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:
@@ -160,20 +205,44 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
 class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
     """Async WorkflowEdges API wrapper."""
 
-    async def list(self, workflow_id: str, source_block: str | None = None, target_block: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> AsyncPaginatedList[WorkflowEdgeDoc]:
+    async def list(
+        self,
+        workflow_id: str,
+        source_block: str | None = None,
+        target_block: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 100,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[WorkflowEdgeDoc]:
         """List Edges List edges for a workflow with keyset cursor pagination. Optionally filter by source or target block ID. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` for the next page, `before` for the previous page — mutually exclusive."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, source_block=source_block, target_block=target_block, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowEdgeDoc)
 
-    async def create(self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any) -> WorkflowEdgeDoc:
+    async def create(
+        self, workflow_id: str, source_block: str, target_block: str, id: str | None = None, source_handle: str | None = None, target_handle: str | None = None, **extra_params: Any
+    ) -> WorkflowEdgeDoc:
         """Create Edge Create a new edge connecting two blocks. Validates that: - Both source and target blocks exist in the workflow - The connection is semantically valid (type compatibility, container rules, etc.)"""
-        prepared_request = self.prepare_create(workflow_id=workflow_id, id=id, source_block=source_block, target_block=target_block, source_handle=source_handle, target_handle=target_handle, **extra_params)
+        prepared_request = self.prepare_create(
+            workflow_id=workflow_id, id=id, source_block=source_block, target_block=target_block, source_handle=source_handle, target_handle=target_handle, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    async def list_versions(self, workflow_id: str, edge_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[WorkflowEdgeVersion]:
+    async def list_versions(
+        self,
+        workflow_id: str,
+        edge_id: str | None = None,
+        workflow_version_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[WorkflowEdgeVersion]:
         """List Edge Versions"""
-        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params)
+        prepared_request = self.prepare_list_versions(
+            workflow_id=workflow_id, edge_id=edge_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
+        )
         return await self.request_page(prepared_request, model=WorkflowEdgeVersion)
 
     async def list_diff(self, from_edge_version_id: str, to_edge_version_id: str, **extra_params: Any) -> WorkflowEdgeVersionDiff:
@@ -205,5 +274,6 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         prepared_request = self.prepare_delete(edge_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
+
 
 __all__ = ["WorkflowEdges", "AsyncWorkflowEdges", "WorkflowEdgesMixin"]

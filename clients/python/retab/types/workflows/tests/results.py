@@ -25,13 +25,13 @@ class AssertionFailure(BaseModel):
 class AssertionResult(BaseModel):
     """Result of evaluating ONE assertion against a block's output.
 
-`outcome` is a verdict only — pass / fail / blocked. An execution
-error (the assertion couldn't be evaluated because of a type error,
-invalid regex, schema validation crash, block execution crash, etc.) is
-expressed by `outcome="blocked"` with a populated `failure` whose
-`code` identifies the specific failure mode (`execution_error`,
-`type_error`, `invalid_regex`, `schema_invalid`,
-`block_execution_failed`, ...)."""
+    `outcome` is a verdict only — pass / fail / blocked. An execution
+    error (the assertion couldn't be evaluated because of a type error,
+    invalid regex, schema validation crash, block execution crash, etc.) is
+    expressed by `outcome="blocked"` with a populated `failure` whose
+    `code` identifies the specific failure mode (`execution_error`,
+    `type_error`, `invalid_regex`, `schema_invalid`,
+    `block_execution_failed`, ...)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -67,9 +67,9 @@ class CompletedWorkflowTestRun(BaseModel):
 class ErrorWorkflowTestRun(BaseModel):
     """The test run failed. The error message lives on this variant.
 
-Carries the same structured `details` envelope as workflow runs so
-consumers can branch on `error_code` / `stage` rather than parsing
-a free-text message."""
+    Carries the same structured `details` envelope as workflow runs so
+    consumers can branch on `error_code` / `stage` rather than parsing
+    a free-text message."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -120,9 +120,14 @@ class WorkflowTestResult(BaseModel):
     id: str
     run_id: str | None = None
     test_id: str
-    lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun | None = Field(default=None, discriminator="status")
+    lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun | None = Field(
+        default=None, discriminator="status"
+    )
     timing: WorkflowTestRunTiming | None = None
-    verdict: AssertionOutcome | None = Field(default=None, description="Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.")
+    verdict: AssertionOutcome | None = Field(
+        default=None,
+        description="Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.",
+    )
     workflow_id: str
     target: WorkflowTestBlockTarget
     execution_fingerprint: str | None = None

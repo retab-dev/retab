@@ -68,15 +68,15 @@ class ArtifactFreshness(BaseModel):
 class CreateExperimentRequest(BaseModel):
     """Create an experiment, in one of two modes.
 
-- **Create from scratch** — provide `block_id`, `name`, optional
-  `document_captures`/`documents`/`n_consensus`. Leave
-  `source_experiment_id` unset.
-- **Duplicate an existing experiment** — provide only
-  `source_experiment_id`. The source's block, name (with a `(Copy)`
-  suffix), `n_consensus`, and documents are copied. All other fields
-  must be omitted.
+    - **Create from scratch** — provide `block_id`, `name`, optional
+      `document_captures`/`documents`/`n_consensus`. Leave
+      `source_experiment_id` unset.
+    - **Duplicate an existing experiment** — provide only
+      `source_experiment_id`. The source's block, name (with a `(Copy)`
+      suffix), `n_consensus`, and documents are copied. All other fields
+      must be omitted.
 
-Combining `source_experiment_id` with any other field is rejected."""
+    Combining `source_experiment_id` with any other field is rejected."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -177,6 +177,7 @@ class WorkflowExperiment(BaseModel):
     schema_drift_detail: str | None = None
     drift: ArtifactDrift | None = None
 
+
 from .metrics import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 from .metrics import _MetricsStaleErrorLastRun  # noqa: E402,F401  (underscore-prefixed names skipped by import *)
 
@@ -184,7 +185,70 @@ from .results import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 from .runs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["ArtifactDrift", "ArtifactDriftStatus", "ArtifactFreshness", "ArtifactFreshnessReasons", "ArtifactFreshnessStatus", "CancelWorkflowExperimentRunResponse", "CancelledWorkflowExperimentResult", "CancelledWorkflowExperimentRun", "CompletedWorkflowExperimentResult", "CompletedWorkflowExperimentRun", "CreateExperimentRequest", "CreateExperimentRequestNConsensus", "CreateExperimentRunRequest", "ErrorWorkflowExperimentResult", "ErrorWorkflowExperimentRun", "ExperimentBlockType", "ExperimentByDocumentMetricsResponse", "ExperimentByDocumentTargetMetric", "ExperimentByTargetDocumentMetric", "ExperimentByTargetMetricsResponse", "ExperimentConfusionFlowMetric", "ExperimentConfusionSummaryAggregate", "ExperimentDocumentCaptureRequest", "ExperimentDocumentConfusionMetric", "ExperimentDocumentProvenance", "ExperimentExtractSummaryAggregate", "ExperimentMetricDocumentRef", "ExperimentMetricsMissingError", "ExperimentMetricsStaleError", "ExperimentPublicStatus", "ExperimentResult", "ExperimentResultBlockType", "ExperimentResultTiming", "ExperimentRun", "ExperimentRunBlockType", "ExperimentRunMetricsView", "ExperimentRunNConsensus", "ExperimentRunTiming", "ExperimentRunTrigger", "ExperimentSchemaDriftStatus", "ExperimentSummaryMetricDocument", "ExperimentSummaryMetricsResponse", "ExperimentSummaryMetricsResponseBlockType", "ExperimentTargetConfusionMetric", "ExperimentVoteRow", "ExperimentVotesMetricDocument", "ExperimentVotesMetricsResponse", "ExplicitExperimentDocumentRequest", "FileHandleInput", "JsonHandleInput", "MaterializedDocument", "NConsensusValue", "PendingWorkflowExperimentResult", "PendingWorkflowExperimentRun", "QueuedWorkflowExperimentResult", "QueuedWorkflowExperimentRun", "RunningWorkflowExperimentResult", "RunningWorkflowExperimentRun", "UpdateExperimentRequest", "UpdateExperimentRequestNConsensus", "WorkflowExperiment", "_MetricsStaleErrorLastRun"]
+__all__ = [
+    "ArtifactDrift",
+    "ArtifactDriftStatus",
+    "ArtifactFreshness",
+    "ArtifactFreshnessReasons",
+    "ArtifactFreshnessStatus",
+    "CancelWorkflowExperimentRunResponse",
+    "CancelledWorkflowExperimentResult",
+    "CancelledWorkflowExperimentRun",
+    "CompletedWorkflowExperimentResult",
+    "CompletedWorkflowExperimentRun",
+    "CreateExperimentRequest",
+    "CreateExperimentRequestNConsensus",
+    "CreateExperimentRunRequest",
+    "ErrorWorkflowExperimentResult",
+    "ErrorWorkflowExperimentRun",
+    "ExperimentBlockType",
+    "ExperimentByDocumentMetricsResponse",
+    "ExperimentByDocumentTargetMetric",
+    "ExperimentByTargetDocumentMetric",
+    "ExperimentByTargetMetricsResponse",
+    "ExperimentConfusionFlowMetric",
+    "ExperimentConfusionSummaryAggregate",
+    "ExperimentDocumentCaptureRequest",
+    "ExperimentDocumentConfusionMetric",
+    "ExperimentDocumentProvenance",
+    "ExperimentExtractSummaryAggregate",
+    "ExperimentMetricDocumentRef",
+    "ExperimentMetricsMissingError",
+    "ExperimentMetricsStaleError",
+    "ExperimentPublicStatus",
+    "ExperimentResult",
+    "ExperimentResultBlockType",
+    "ExperimentResultTiming",
+    "ExperimentRun",
+    "ExperimentRunBlockType",
+    "ExperimentRunMetricsView",
+    "ExperimentRunNConsensus",
+    "ExperimentRunTiming",
+    "ExperimentRunTrigger",
+    "ExperimentSchemaDriftStatus",
+    "ExperimentSummaryMetricDocument",
+    "ExperimentSummaryMetricsResponse",
+    "ExperimentSummaryMetricsResponseBlockType",
+    "ExperimentTargetConfusionMetric",
+    "ExperimentVoteRow",
+    "ExperimentVotesMetricDocument",
+    "ExperimentVotesMetricsResponse",
+    "ExplicitExperimentDocumentRequest",
+    "FileHandleInput",
+    "JsonHandleInput",
+    "MaterializedDocument",
+    "NConsensusValue",
+    "PendingWorkflowExperimentResult",
+    "PendingWorkflowExperimentRun",
+    "QueuedWorkflowExperimentResult",
+    "QueuedWorkflowExperimentRun",
+    "RunningWorkflowExperimentResult",
+    "RunningWorkflowExperimentRun",
+    "UpdateExperimentRequest",
+    "UpdateExperimentRequestNConsensus",
+    "WorkflowExperiment",
+    "_MetricsStaleErrorLastRun",
+]
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

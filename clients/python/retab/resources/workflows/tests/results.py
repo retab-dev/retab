@@ -10,8 +10,15 @@ from retab.types.workflows.tests.results import WorkflowTestResult
 
 
 class WorkflowTestRunResultsMixin:
-
-    def prepare_list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        run_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         params: dict[str, Any] = {
             "run_id": run_id,
@@ -28,8 +35,7 @@ class WorkflowTestRunResultsMixin:
 
     def prepare_get(self, result_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Test Execution Result Retrieve a single workflow test result. Identified by `result_id`. Returns the result for one test within a run, including its `verdict` (`passed`, `failed`, or `blocked`), lifecycle, timing, and any error. Returns 404 if no result with that ID exists."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -40,7 +46,15 @@ class WorkflowTestRunResultsMixin:
 class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
     """WorkflowTestRunResults API wrapper."""
 
-    def list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[WorkflowTestResult]:
+    def list(
+        self,
+        run_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowTestResult]:
         """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowTestResult)
@@ -55,7 +69,15 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
 class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin):
     """Async WorkflowTestRunResults API wrapper."""
 
-    async def list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[WorkflowTestResult]:
+    async def list(
+        self,
+        run_id: str,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[WorkflowTestResult]:
         """List Test Execution Results List workflow test results for a single run, page by page. Results are returned in run-time order."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowTestResult)
@@ -65,5 +87,6 @@ class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin)
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestResult.model_validate(response)
+
 
 __all__ = ["WorkflowTestRunResults", "AsyncWorkflowTestRunResults", "WorkflowTestRunResultsMixin"]

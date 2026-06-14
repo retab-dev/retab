@@ -10,11 +10,9 @@ from retab.types.workflows.spec import DeclarativeExportResponse, DeclarativeVal
 
 
 class WorkflowSpecMixin:
-
     def prepare_validate(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Validate Workflow Spec Validate declarative YAML without changing the workflow. Any error-level diagnostic responds with 400 and the structured issues. Warnings do not make a spec invalid: a warning-only spec responds with 200, `is_valid=True`, and the warnings in `diagnostics`."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -24,8 +22,7 @@ class WorkflowSpecMixin:
 
     def prepare_get(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
         """Export Workflow Spec Export draft workflow state as canonical declarative YAML."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -63,5 +60,6 @@ class AsyncWorkflowSpec(AsyncAPIResource, WorkflowSpecMixin):
         prepared_request = self.prepare_get(workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return DeclarativeExportResponse.model_validate(response)
+
 
 __all__ = ["WorkflowSpec", "AsyncWorkflowSpec", "WorkflowSpecMixin"]

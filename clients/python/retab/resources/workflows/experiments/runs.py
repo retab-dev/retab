@@ -11,8 +11,23 @@ from retab.types.workflows.experiments.runs import CancelWorkflowExperimentRunRe
 
 
 class ExperimentRunsMixin:
-
-    def prepare_list(self, workflow_id: str | None = None, experiment_id: str | None = None, block_id: str | None = None, status: WorkflowExperimentsStatus | None = None, exclude_status: WorkflowExperimentsExcludeStatus | None = None, trigger_type: str | None = None, from_date: str | None = None, to_date: str | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        status: WorkflowExperimentsStatus | None = None,
+        exclude_status: WorkflowExperimentsExcludeStatus | None = None,
+        trigger_type: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -37,8 +52,7 @@ class ExperimentRunsMixin:
 
     def prepare_create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Create Experiment Run Flat Create an experiment run. The `experiment_id` and an optional `workflow_id` are supplied in the body. When `workflow_id` is omitted, the experiment's workflow is used; when supplied, it must match that workflow or the request is rejected with 404."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -48,8 +62,7 @@ class ExperimentRunsMixin:
 
     def prepare_get(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Experiment Run Retrieve a single experiment run. Identified by `run_id`. Returns the run with its lifecycle status, timing, score, and document progress counts. Returns 404 if no run with that ID exists."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -58,8 +71,7 @@ class ExperimentRunsMixin:
 
     def prepare_cancel(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -70,9 +82,40 @@ class ExperimentRunsMixin:
 class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
     """ExperimentRuns API wrapper."""
 
-    def list(self, workflow_id: str | None = None, experiment_id: str | None = None, block_id: str | None = None, status: WorkflowExperimentsStatus | None = None, exclude_status: WorkflowExperimentsExcludeStatus | None = None, trigger_type: str | None = None, from_date: str | None = None, to_date: str | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[ExperimentRun]:
+    def list(
+        self,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        status: WorkflowExperimentsStatus | None = None,
+        exclude_status: WorkflowExperimentsExcludeStatus | None = None,
+        trigger_type: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PaginatedList[ExperimentRun]:
         """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, experiment_id=experiment_id, block_id=block_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, sort_by=sort_by, before=before, after=after, limit=limit, order=order, **extra_params)
+        prepared_request = self.prepare_list(
+            workflow_id=workflow_id,
+            experiment_id=experiment_id,
+            block_id=block_id,
+            status=status,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            **extra_params,
+        )
         return self.request_page(prepared_request, model=ExperimentRun)
 
     def create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> ExperimentRun:
@@ -97,9 +140,40 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
     """Async ExperimentRuns API wrapper."""
 
-    async def list(self, workflow_id: str | None = None, experiment_id: str | None = None, block_id: str | None = None, status: WorkflowExperimentsStatus | None = None, exclude_status: WorkflowExperimentsExcludeStatus | None = None, trigger_type: str | None = None, from_date: str | None = None, to_date: str | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[ExperimentRun]:
+    async def list(
+        self,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        status: WorkflowExperimentsStatus | None = None,
+        exclude_status: WorkflowExperimentsExcludeStatus | None = None,
+        trigger_type: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[ExperimentRun]:
         """List Experiment Runs List experiment runs. Optionally filter by `workflow_id`, `experiment_id`, `block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, experiment_id=experiment_id, block_id=block_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, sort_by=sort_by, before=before, after=after, limit=limit, order=order, **extra_params)
+        prepared_request = self.prepare_list(
+            workflow_id=workflow_id,
+            experiment_id=experiment_id,
+            block_id=block_id,
+            status=status,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            **extra_params,
+        )
         return await self.request_page(prepared_request, model=ExperimentRun)
 
     async def create(self, experiment_id: str, workflow_id: str | None = None, **extra_params: Any) -> ExperimentRun:
@@ -119,5 +193,6 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return CancelWorkflowExperimentRunResponse.model_validate(response)
+
 
 __all__ = ["ExperimentRuns", "AsyncExperimentRuns", "ExperimentRunsMixin"]

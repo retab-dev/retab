@@ -11,8 +11,23 @@ from retab.types.workflows.tests.runs import CreateWorkflowTestRunRequest, Workf
 
 
 class WorkflowTestRunsMixin:
-
-    def prepare_list(self, workflow_id: str | None = None, test_id: str | None = None, target_block_id: str | None = None, status: str | None = None, exclude_status: str | None = None, trigger_type: str | None = None, from_date: datetime.datetime | None = None, to_date: datetime.datetime | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        from_date: datetime.datetime | None = None,
+        to_date: datetime.datetime | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -35,10 +50,11 @@ class WorkflowTestRunsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/tests/runs", params=params or None, data=data)
 
-    def prepare_create(self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
+    ) -> PreparedRequest:
         """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -48,8 +64,7 @@ class WorkflowTestRunsMixin:
 
     def prepare_get(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Test Execution Run Retrieve a single workflow test run. Identified by `run_id`. Returns the run with its lifecycle status, timing, and pass/fail counts. Returns 404 if no run with that ID exists."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -58,8 +73,7 @@ class WorkflowTestRunsMixin:
 
     def prepare_cancel(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Test Execution Run Cancel a workflow test run. Identified by `run_id`. Stops the run and returns it with its updated cancelled lifecycle. Returns 404 if the run does not exist or is not in a cancellable state."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -70,12 +84,45 @@ class WorkflowTestRunsMixin:
 class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
     """WorkflowTestRuns API wrapper."""
 
-    def list(self, workflow_id: str | None = None, test_id: str | None = None, target_block_id: str | None = None, status: str | None = None, exclude_status: str | None = None, trigger_type: str | None = None, from_date: datetime.datetime | None = None, to_date: datetime.datetime | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[WorkflowTestRun]:
+    def list(
+        self,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        from_date: datetime.datetime | None = None,
+        to_date: datetime.datetime | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowTestRun]:
         """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, test_id=test_id, target_block_id=target_block_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, sort_by=sort_by, before=before, after=after, limit=limit, order=order, **extra_params)
+        prepared_request = self.prepare_list(
+            workflow_id=workflow_id,
+            test_id=test_id,
+            target_block_id=target_block_id,
+            status=status,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            **extra_params,
+        )
         return self.request_page(prepared_request, model=WorkflowTestRun)
 
-    def create(self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any) -> WorkflowTestRun:
+    def create(
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
+    ) -> WorkflowTestRun:
         """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -97,12 +144,45 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
 class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
     """Async WorkflowTestRuns API wrapper."""
 
-    async def list(self, workflow_id: str | None = None, test_id: str | None = None, target_block_id: str | None = None, status: str | None = None, exclude_status: str | None = None, trigger_type: str | None = None, from_date: datetime.datetime | None = None, to_date: datetime.datetime | None = None, sort_by: str | None = cast(str, "created_at"), before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[WorkflowTestRun]:
+    async def list(
+        self,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        from_date: datetime.datetime | None = None,
+        to_date: datetime.datetime | None = None,
+        sort_by: str | None = cast(str, "created_at"),
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[WorkflowTestRun]:
         """List Test Execution Runs List workflow test runs. Optionally filter by `workflow_id`, `test_id`, `target_block_id`, `status`/`exclude_status`, `trigger_type`, and a `from_date`/`to_date` window. Returns a cursor-paginated list ordered by `sort_by` (default newest first)."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, test_id=test_id, target_block_id=target_block_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, sort_by=sort_by, before=before, after=after, limit=limit, order=order, **extra_params)
+        prepared_request = self.prepare_list(
+            workflow_id=workflow_id,
+            test_id=test_id,
+            target_block_id=target_block_id,
+            status=status,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            **extra_params,
+        )
         return await self.request_page(prepared_request, model=WorkflowTestRun)
 
-    async def create(self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any) -> WorkflowTestRun:
+    async def create(
+        self, workflow_id: str, scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = None, **extra_params: Any
+    ) -> WorkflowTestRun:
         """Create Test Run Create a workflow-scoped test run. `workflow_id` is the execution context. Optional `scope` narrows the run to one saved test or one block; omitted scope runs all workflow tests."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, scope=scope, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -119,5 +199,6 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTestRun.model_validate(response)
+
 
 __all__ = ["WorkflowTestRuns", "AsyncWorkflowTestRuns", "WorkflowTestRunsMixin"]
