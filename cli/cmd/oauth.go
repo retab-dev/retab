@@ -1,48 +1,43 @@
 package cmd
 
-// OAuth 2.0 Authorization Code + PKCE flow with loopback redirect.
+// WorkOS User Management device authorization flow.
 //
-// Used by `retab auth login` to obtain a WorkOS-issued access token without
-// requiring the user to paste anything. Reference: RFC 8252 §4 "Authorization
-// Flow for Native Apps" and RFC 7636 "PKCE".
+// Used by `retab auth login` to obtain a WorkOS-issued session token without a
+// browser redirect/loopback. Reference: RFC 8628 "OAuth 2.0 Device
+// Authorization Grant" and WorkOS User Management device-auth endpoints.
+//
+// Why device auth (hard cutover from the old loopback + PKCE flow):
+//   - Device-flow tokens ARE User Management session tokens. The backend's
+//     confidential `/v1/auth/cli/switch-organization` endpoint can exchange the
+//     resulting refresh_token (+ organization_id) for a token scoped to a
+//     different org, so `retab org switch` is browserless again. The old public
+//     OAuth-app tokens could not be exchanged for a different org at all.
+//   - No loopback HTTP server, no pre-registered redirect ports, no PKCE
+//     challenge round-trip. The CLI prints a short user_code and a URL; the
+//     user approves in any browser (works headless / over SSH).
 //
 // Architecture:
 //   1. CLI hits GET /v1/auth/cli/config on the Retab API to discover the
-//      WorkOS authkit_domain + the CLI's client_id. No secret involved.
-//   2. CLI generates a fresh PKCE code_verifier (43+ chars high-entropy
-//      random) and its S256-derived code_challenge.
-//   3. CLI binds a TCP listener on 127.0.0.1, taking the first free port
-//      from a fixed set (cliRedirectPorts) — WorkOS matches redirect_uri
-//      against an exact pre-registered list — and constructs
-//      https://{authkit_domain}/oauth2/authorize?... with
-//      redirect_uri=http://127.0.0.1:<port>/callback.
-//   4. CLI opens the user's default browser to that URL. User logs in
-//      through WorkOS AuthKit (which transparently dispatches to SSO,
-//      Google, email/password, magic link, etc.).
-//   5. WorkOS redirects back to the loopback with ?code=...&state=... .
-//      The callback handler verifies state, captures code, returns a
-//      friendly success page, and signals the main goroutine.
-//   6. CLI POSTs code + code_verifier to https://{authkit_domain}/oauth2/token
-//      and persists the resulting access_token + refresh_token + expiry.
+//      WorkOS User Management client_id and workos_api_base_url. No secret.
+//   2. CLI POSTs client_id to {base}/user_management/authorize/device and gets
+//      back a device_code + user_code + verification URLs + poll interval.
+//   3. CLI prints the user_code, opens verification_uri_complete in a browser
+//      (best-effort), and also prints the URL for manual / headless use.
+//   4. CLI polls {base}/user_management/authenticate with
+//      grant_type=urn:ietf:params:oauth:grant-type:device_code until the user
+//      approves (or the code expires). On success it gets access_token,
+//      refresh_token, expires_in, organization_id.
+//   5. CLI persists the tokens (see oauthTokens in config.go).
 //
-// Why the WorkOS endpoint instead of a Retab proxy:
-//   - One fewer endpoint to operate.
-//   - The backend's identity resolver already accepts WorkOS JWTs natively
-//     (see services/internal/workos/functions.py::resolve_identity).
-//
-// If we ever want to wrap tokens in longer-lived Retab session JWTs we can
-// introduce a `/v1/auth/cli/token` proxy and switch this code over without
-// breaking the config schema — `AuthKitDomain` is recorded in oauthTokens
-// so existing installs keep refreshing against WorkOS.
+// Keep-alive: refresh runs against the SAME User Management authenticate
+// endpoint with grant_type=refresh_token + client_id (no client_secret, no
+// organization_id). Public User Management clients refresh without a secret.
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -56,9 +51,18 @@ import (
 // so tests can override it via a stub server.
 const cliConfigPath = "/v1/auth/cli/config"
 
-// loginTimeout caps how long we wait for the user to complete the browser
-// flow. Five minutes is generous for SSO with MFA but bounded enough that
-// a forgotten terminal doesn't hold a listener forever.
+// defaultWorkosAPIBaseURL is used when discovery does not pin a
+// workos_api_base_url. The WorkOS User Management endpoints all live under it.
+const defaultWorkosAPIBaseURL = "https://api.workos.com"
+
+// deviceCodeGrantType is the RFC 8628 grant type for polling the token
+// endpoint with a device_code.
+const deviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code"
+
+// loginTimeout caps how long we wait for the user to approve the device code
+// in the browser. The device endpoint also returns its own `expires_in`; we
+// stop at whichever fires first. Five minutes is generous for SSO with MFA but
+// bounded enough that a forgotten terminal doesn't poll forever.
 const loginTimeout = 5 * time.Minute
 
 // refreshLeeway is how far before `expires_at` we proactively refresh. The
@@ -66,48 +70,45 @@ const loginTimeout = 5 * time.Minute
 // headroom is in-flight latency between refresh and use.
 const refreshLeeway = 30 * time.Second
 
-// cliRedirectPorts is the fixed set of loopback ports the CLI tries for
-// the OAuth callback. WorkOS validates redirect_uri against an exact
-// pre-registered list, and its OAuth-application editor rejects the
-// RFC 8252 port wildcard, so the CLI cannot use a kernel-picked port.
-// Every port here MUST be registered on the WorkOS CLI application as
-// `http://127.0.0.1:<port>/callback`. The CLI binds the first free one;
-// the rest are fallbacks for when an earlier login left a listener around
-// or another process holds the port.
-var cliRedirectPorts = []int{42817, 42818, 42819, 42820, 42821, 42822, 42823}
+// defaultDevicePollInterval is the fallback poll cadence when the device
+// authorization response omits `interval`.
+const defaultDevicePollInterval = 5 * time.Second
 
-// bindLoopbackListener binds 127.0.0.1 on the first available port from
-// cliRedirectPorts and returns the listener plus the chosen port. It
-// errors only when every registered port is occupied.
-func bindLoopbackListener() (net.Listener, int, error) {
-	for _, port := range cliRedirectPorts {
-		listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-		if err == nil {
-			return listener, port, nil
-		}
-	}
-	return nil, 0, fmt.Errorf(
-		"all loopback callback ports are in use (%v); close any other `retab auth login` still running and retry",
-		cliRedirectPorts,
-	)
-}
-
-// cliOAuthDiscovery is the shape returned by GET /v1/auth/cli/config.
+// cliOAuthDiscovery is the shape returned by GET /v1/auth/cli/config. The
+// device flow only needs ClientID + WorkosAPIBaseURL; AuthKitDomain/Scopes are
+// accepted (and ignored) so the discovery payload stays forward-compatible.
 type cliOAuthDiscovery struct {
-	AuthKitDomain string   `json:"authkit_domain"`
-	ClientID      string   `json:"client_id"`
-	Scopes        []string `json:"scopes"`
+	ClientID         string   `json:"client_id"`
+	WorkosAPIBaseURL string   `json:"workos_api_base_url"`
+	AuthKitDomain    string   `json:"authkit_domain,omitempty"`
+	Scopes           []string `json:"scopes,omitempty"`
 }
 
-// tokenResponse mirrors the WorkOS /oauth2/token response.
-type tokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"` // seconds
-	Scope        string `json:"scope,omitempty"`
+// deviceAuthorizationResponse mirrors the WorkOS
+// /user_management/authorize/device response (RFC 8628 §3.2).
+type deviceAuthorizationResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"` // seconds
+	Interval                int    `json:"interval"`   // seconds
 
-	// Error fields, present on 400/401.
+	// Error fields, present on a non-200.
+	Error            string `json:"error,omitempty"`
+	ErrorDescription string `json:"error_description,omitempty"`
+}
+
+// tokenResponse mirrors the WorkOS /user_management/authenticate response for
+// both the device-code poll and the refresh_token grant.
+type tokenResponse struct {
+	AccessToken    string `json:"access_token"`
+	RefreshToken   string `json:"refresh_token,omitempty"`
+	TokenType      string `json:"token_type"`
+	ExpiresIn      int    `json:"expires_in"` // seconds
+	OrganizationID string `json:"organization_id,omitempty"`
+
+	// Error fields, present on 400/401 (and on device-poll pending states).
 	Error            string `json:"error,omitempty"`
 	ErrorDescription string `json:"error_description,omitempty"`
 }
@@ -146,250 +147,202 @@ func fetchOAuthDiscovery(ctx context.Context, baseURL string) (*cliOAuthDiscover
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return nil, fmt.Errorf("decode discovery: %w", err)
 	}
-	if out.AuthKitDomain == "" || out.ClientID == "" {
-		return nil, fmt.Errorf("discovery response missing authkit_domain or client_id")
+	if out.ClientID == "" {
+		return nil, fmt.Errorf("discovery response missing client_id")
+	}
+	if out.WorkosAPIBaseURL == "" {
+		out.WorkosAPIBaseURL = defaultWorkosAPIBaseURL
 	}
 	return &out, nil
 }
 
-// generatePKCE produces a (verifier, challenge) pair per RFC 7636. The
-// verifier is 32 raw random bytes encoded with base64url (43 chars). The
-// challenge is the base64url-encoded SHA-256 of the verifier.
-func generatePKCE() (verifier, challenge string, err error) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
-		return "", "", fmt.Errorf("read random: %w", err)
-	}
-	verifier = base64.RawURLEncoding.EncodeToString(raw)
-	sum := sha256.Sum256([]byte(verifier))
-	challenge = base64.RawURLEncoding.EncodeToString(sum[:])
-	return verifier, challenge, nil
-}
+// runLoginFlow drives the full device authorization flow end-to-end and
+// returns persisted tokens. The browser is opened with `opener`; tests pass a
+// stub that does nothing (the device flow needs no loopback — the test server
+// approves the code on its own once the poll arrives).
+func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url string) error) (*oauthTokens, error) {
+	base := workosBaseURL(disc.WorkosAPIBaseURL)
 
-// generateState returns a 32-byte base64url-encoded random string for CSRF
-// protection on the authorize -> callback round trip.
-func generateState() (string, error) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(raw), nil
-}
-
-// callbackResult is the outcome of the loopback redirect: either a code
-// (success) or an OAuth error (user denied, WorkOS misconfig, etc.).
-type callbackResult struct {
-	code  string
-	state string
-	err   error
-}
-
-// runLoginFlow drives the full PKCE flow end-to-end and returns persisted
-// tokens. The browser is opened with `opener`; tests pass a stub that hits
-// the callback URL itself instead of shelling out.
-//
-// organizationID is empty for a normal login (WorkOS resolves the user's
-// default/last-selected org). For `retab org switch` it is the target org id:
-// passed to the authorize URL with provider=authkit, it makes AuthKit
-// auto-select that organization so the resulting token is scoped to it. This
-// is the only org-switch path available to a public OAuth client — its refresh
-// token cannot be exchanged for a different org at WorkOS user_management.
-func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url string) error, organizationID string) (*oauthTokens, error) {
-	verifier, challenge, err := generatePKCE()
-	if err != nil {
-		return nil, err
-	}
-	state, err := generateState()
+	device, err := requestDeviceAuthorization(ctx, base, disc.ClientID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Bind 127.0.0.1 on one of the pre-registered callback ports. RFC 8252
-	// §7.3 blesses loopback for native apps, but WorkOS matches redirect_uri
-	// against an exact pre-registered list — its OAuth-application editor
-	// rejects the port wildcard — so we cannot let the kernel pick a port.
-	listener, port, err := bindLoopbackListener()
-	if err != nil {
-		return nil, err
+	// Tell the user what to do. The user_code is the load-bearing artifact —
+	// print it prominently. verification_uri_complete embeds the code so the
+	// browser pre-fills it; print the bare verification_uri + code too so a
+	// headless / SSH user can approve from another machine.
+	verifyURL := device.VerificationURIComplete
+	if verifyURL == "" {
+		verifyURL = device.VerificationURI
 	}
-	redirectURI := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
-
-	resultCh := make(chan callbackResult, 1)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		gotState := q.Get("state")
-		if errCode := q.Get("error"); errCode != "" {
-			errDesc := q.Get("error_description")
-			renderHTML(w, false, errDesc)
-			select {
-			case resultCh <- callbackResult{err: fmt.Errorf("WorkOS returned %s: %s", errCode, errDesc)}:
-			default:
-			}
-			return
+	fmt.Fprintf(os.Stderr, "\nTo log in, visit:\n\n  %s\n\nand enter the code:\n\n  %s\n\n", verifyURL, device.UserCode)
+	if opener != nil && verifyURL != "" {
+		if err := opener(verifyURL); err == nil {
+			fmt.Fprintln(os.Stderr, "Opened your browser to complete login. Waiting for approval...")
+		} else {
+			fmt.Fprintln(os.Stderr, "Open the URL above to complete login. Waiting for approval...")
 		}
-		if gotState != state {
-			renderHTML(w, false, "Login flow could not be verified. Please try again.")
-			select {
-			case resultCh <- callbackResult{err: fmt.Errorf("state mismatch: expected %q, got %q (possible CSRF)", state, gotState)}:
-			default:
-			}
-			return
-		}
-		code := q.Get("code")
-		if code == "" {
-			renderHTML(w, false, "Missing authorization code.")
-			select {
-			case resultCh <- callbackResult{err: fmt.Errorf("callback missing 'code' query parameter")}:
-			default:
-			}
-			return
-		}
-		renderHTML(w, true, "")
-		select {
-		case resultCh <- callbackResult{code: code, state: gotState}:
-		default:
-		}
-	})
-
-	// Catch-all so users who hit the loopback root get a friendly page
-	// instead of 404.
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/callback?error=manual_visit&error_description=Open+the+URL+from+your+terminal+to+complete+login.", http.StatusFound)
-	})
-
-	srv := &http.Server{Handler: mux}
-	go func() { _ = srv.Serve(listener) }()
-	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		_ = srv.Shutdown(shutdownCtx)
-	}()
-
-	authorizeURL := buildAuthorizeURL(disc, redirectURI, challenge, state, organizationID)
-	if err := opener(authorizeURL); err != nil {
-		// Don't fail — print the URL so the user can open it manually.
-		fmt.Fprintf(os.Stderr, "Could not open browser automatically.\nVisit this URL to log in:\n\n  %s\n\n", authorizeURL)
 	} else {
-		fmt.Fprintf(os.Stderr, "Opened browser to complete login.\nIf nothing happened, visit:\n\n  %s\n\n", authorizeURL)
+		fmt.Fprintln(os.Stderr, "Waiting for approval...")
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, loginTimeout)
+	return pollDeviceToken(ctx, base, disc, device)
+}
+
+// requestDeviceAuthorization starts the device flow (RFC 8628 §3.1).
+func requestDeviceAuthorization(ctx context.Context, base, clientID string) (*deviceAuthorizationResponse, error) {
+	form := url.Values{}
+	form.Set("client_id", clientID)
+
+	endpoint := base + "/user_management/authorize/device"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("build device authorization request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := tokenHTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("POST %s: %w", endpoint, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var dr deviceAuthorizationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&dr); err != nil {
+		return nil, fmt.Errorf("decode device authorization response (status %d): %w", resp.StatusCode, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		if dr.Error != "" {
+			return nil, fmt.Errorf("device authorization %s: %s", dr.Error, dr.ErrorDescription)
+		}
+		return nil, fmt.Errorf("device authorization endpoint returned %d", resp.StatusCode)
+	}
+	if dr.DeviceCode == "" || dr.UserCode == "" {
+		return nil, fmt.Errorf("device authorization response missing device_code/user_code")
+	}
+	return &dr, nil
+}
+
+// pollDeviceToken polls the authenticate endpoint until the user approves the
+// device code, the code expires, or the login times out.
+func pollDeviceToken(ctx context.Context, base string, disc *cliOAuthDiscovery, device *deviceAuthorizationResponse) (*oauthTokens, error) {
+	interval := time.Duration(device.Interval) * time.Second
+	if interval <= 0 {
+		interval = defaultDevicePollInterval
+	}
+
+	// Bound by whichever fires first: the device code's own expiry or our
+	// login timeout.
+	deadline := time.Now().Add(loginTimeout)
+	if device.ExpiresIn > 0 {
+		if codeDeadline := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second); codeDeadline.Before(deadline) {
+			deadline = codeDeadline
+		}
+	}
+	timeoutCtx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 
-	var res callbackResult
-	select {
-	case res = <-resultCh:
-	case <-timeoutCtx.Done():
-		return nil, fmt.Errorf("login timed out after %s — re-run `retab auth login`", loginTimeout)
-	}
-	if res.err != nil {
-		return nil, res.err
-	}
-
-	tokens, err := exchangeAuthorizationCode(timeoutCtx, disc, res.code, verifier, redirectURI)
-	if err != nil {
-		return nil, err
-	}
-	return tokens, nil
-}
-
-// buildAuthorizeURL constructs the WorkOS authorize URL. Pure function so
-// it's trivially testable.
-//
-// When organizationID is non-empty, it is set alongside provider=authkit:
-// per WorkOS, "if organization_id is passed when provider is also set to
-// authkit, then the organization will be automatically selected during the
-// authentication flow." That is how `retab org switch` lands the new session in
-// a specific org instead of WorkOS silently reusing the last-selected one.
-func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, state, organizationID string) string {
-	q := url.Values{}
-	q.Set("response_type", "code")
-	q.Set("client_id", disc.ClientID)
-	q.Set("redirect_uri", redirectURI)
-	q.Set("code_challenge", codeChallenge)
-	q.Set("code_challenge_method", "S256")
-	q.Set("state", state)
-	if strings.TrimSpace(organizationID) != "" {
-		q.Set("organization_id", organizationID)
-		// provider=authkit is REQUIRED for organization_id to auto-select the
-		// org (rather than merely route SSO); without it AuthKit ignores the
-		// hint and the switch silently lands back in the default org.
-		q.Set("provider", "authkit")
-		// prompt=login forces a fresh authentication. WorkOS only honors
-		// organization_id "during the authentication flow"; with an active
-		// AuthKit session cookie it otherwise silently REUSES the existing
-		// session (and its org), so the switch lands back in the current org.
-		// Forcing re-auth is what makes the org actually change — verified
-		// live: without it the new token came back scoped to the old org.
-		q.Set("prompt", "login")
-	}
-	scopes := disc.Scopes
-	if len(scopes) == 0 {
-		scopes = []string{"openid", "profile", "email", "offline_access"}
-	}
-	// Belt-and-suspenders: `offline_access` MUST be in the scope list or
-	// WorkOS won't issue a refresh_token, and the CLI silently degrades to
-	// ~10 min sessions. If the deployment's discovery response forgets to
-	// include it, we add it here. Idempotent in the common case.
-	scopes = ensureOfflineAccess(scopes)
-	q.Set("scope", strings.Join(scopes, " "))
-	return fmt.Sprintf("https://%s/oauth2/authorize?%s", disc.AuthKitDomain, q.Encode())
-}
-
-// ensureOfflineAccess appends `offline_access` to scopes if absent. The
-// scope is what tells WorkOS to mint a refresh_token alongside the access
-// token; without it the CLI cannot keep the session alive past ~10 min.
-func ensureOfflineAccess(scopes []string) []string {
-	for _, s := range scopes {
-		if s == "offline_access" {
-			return scopes
-		}
-	}
-	return append(scopes, "offline_access")
-}
-
-// exchangeAuthorizationCode redeems the auth code for tokens. The body is
-// form-urlencoded per RFC 6749 §4.1.3.
-func exchangeAuthorizationCode(ctx context.Context, disc *cliOAuthDiscovery, code, verifier, redirectURI string) (*oauthTokens, error) {
 	form := url.Values{}
-	form.Set("grant_type", "authorization_code")
-	form.Set("code", code)
+	form.Set("grant_type", deviceCodeGrantType)
+	form.Set("device_code", device.DeviceCode)
 	form.Set("client_id", disc.ClientID)
-	form.Set("code_verifier", verifier)
-	form.Set("redirect_uri", redirectURI)
 
-	tokenURL := fmt.Sprintf("https://%s/oauth2/token", disc.AuthKitDomain)
-	return postTokenEndpoint(ctx, tokenURL, form, disc)
+	endpoint := base + "/user_management/authenticate"
+	for {
+		select {
+		case <-timeoutCtx.Done():
+			return nil, fmt.Errorf("login timed out waiting for approval — re-run `retab auth login`")
+		case <-time.After(interval):
+		}
+
+		tokens, retryable, slowDown, err := postDeviceAuthenticate(timeoutCtx, endpoint, form, disc)
+		if retryable {
+			if slowDown {
+				// RFC 8628 §3.5: on slow_down, increase the interval by 5s.
+				interval += 5 * time.Second
+			}
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return tokens, nil
+	}
 }
 
-// refreshAccessToken trades a refresh_token for a new access_token. On
-// success the returned struct carries the same AuthKitDomain/ClientID so
-// the caller can save it back to disk without re-doing discovery.
+// postDeviceAuthenticate performs one device-code poll. It returns:
+//   - tokens (non-nil) on success;
+//   - retryable=true when the server says authorization_pending / slow_down
+//     (keep polling), with slowDown set for the latter;
+//   - a hard error otherwise (access_denied, expired_token, transport, ...).
+func postDeviceAuthenticate(ctx context.Context, endpoint string, form url.Values, disc *cliOAuthDiscovery) (tokens *oauthTokens, retryable, slowDown bool, err error) {
+	tr, status, perr := postForm(ctx, endpoint, form)
+	if perr != nil {
+		return nil, false, false, perr
+	}
+	if status == http.StatusOK && tr.Error == "" {
+		toks, terr := tokensFromResponse(tr, disc)
+		return toks, false, false, terr
+	}
+	switch tr.Error {
+	case "authorization_pending":
+		return nil, true, false, nil
+	case "slow_down":
+		return nil, true, true, nil
+	case "access_denied":
+		return nil, false, false, fmt.Errorf("login was denied — re-run `retab auth login` and approve the request")
+	case "expired_token":
+		return nil, false, false, fmt.Errorf("the login code expired before it was approved — re-run `retab auth login`")
+	case "":
+		return nil, false, false, fmt.Errorf("authenticate endpoint returned %d", status)
+	default:
+		return nil, false, false, fmt.Errorf("authenticate endpoint %s: %s", tr.Error, tr.ErrorDescription)
+	}
+}
+
+// refreshAccessToken trades a refresh_token for a new access_token against the
+// WorkOS User Management authenticate endpoint. On success the returned struct
+// carries the same WorkosAPIBaseURL/ClientID so the caller can save it back to
+// disk without re-doing discovery.
 //
-// WorkOS AuthKit rotates refresh tokens by default (each call returns a
-// new refresh_token and invalidates the one we just used), so the result
-// MUST be persisted promptly — see makeOAuthTokenProvider.
+// WorkOS rotates refresh tokens by default (each call returns a new
+// refresh_token and invalidates the one we just used), so the result MUST be
+// persisted promptly — see makeOAuthTokenProvider.
 //
 // Defensive note: if the server happens to omit `refresh_token` from the
-// rotation response (other OAuth providers signal "keep using the same
-// one" this way), we preserve the caller's existing refresh_token rather
-// than wiping it. WorkOS in practice always returns a new one, but the
-// fallback costs nothing and protects against future regressions.
+// rotation response, we preserve the caller's existing refresh_token rather
+// than wiping it.
 func refreshAccessToken(ctx context.Context, tok *oauthTokens) (*oauthTokens, error) {
 	if tok == nil || tok.RefreshToken == "" {
 		return nil, fmt.Errorf("no refresh_token on file; re-run `retab auth login`")
 	}
-	if tok.AuthKitDomain == "" || tok.ClientID == "" {
-		return nil, fmt.Errorf("config is missing authkit_domain/client_id; re-run `retab auth login`")
+	if tok.ClientID == "" {
+		return nil, fmt.Errorf("config is missing client_id; re-run `retab auth login`")
 	}
+	base := workosBaseURL(tok.WorkosAPIBaseURL)
 	form := url.Values{}
 	form.Set("grant_type", "refresh_token")
 	form.Set("refresh_token", tok.RefreshToken)
 	form.Set("client_id", tok.ClientID)
-	tokenURL := fmt.Sprintf("https://%s/oauth2/token", tok.AuthKitDomain)
-	disc := &cliOAuthDiscovery{AuthKitDomain: tok.AuthKitDomain, ClientID: tok.ClientID}
-	refreshed, err := postTokenEndpoint(ctx, tokenURL, form, disc)
+
+	endpoint := base + "/user_management/authenticate"
+	tr, status, err := postForm(ctx, endpoint, form)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK || tr.Error != "" {
+		if tr.Error == "invalid_grant" {
+			return nil, fmt.Errorf("refresh failed: %s — run `retab auth login` to re-authenticate", tr.ErrorDescription)
+		}
+		if tr.Error != "" {
+			return nil, fmt.Errorf("token endpoint %s: %s", tr.Error, tr.ErrorDescription)
+		}
+		return nil, fmt.Errorf("token endpoint returned %d", status)
+	}
+	disc := &cliOAuthDiscovery{ClientID: tok.ClientID, WorkosAPIBaseURL: tok.WorkosAPIBaseURL}
+	refreshed, err := tokensFromResponse(tr, disc)
 	if err != nil {
 		return nil, err
 	}
@@ -399,59 +352,68 @@ func refreshAccessToken(ctx context.Context, tok *oauthTokens) (*oauthTokens, er
 	return refreshed, nil
 }
 
-// tokenHTTPClient is the HTTP client used for OAuth token endpoint POSTs.
-// Tests override it to trust the self-signed cert served by
-// httptest.NewTLSServer; production never assigns to it.
+// workosBaseURL normalizes a discovered/persisted WorkOS API base URL,
+// defaulting to api.workos.com and trimming a trailing slash so endpoint
+// concatenation is clean.
+func workosBaseURL(base string) string {
+	base = strings.TrimSpace(base)
+	if base == "" {
+		base = defaultWorkosAPIBaseURL
+	}
+	return strings.TrimRight(base, "/")
+}
+
+// tokensFromResponse converts a successful authenticate response into the
+// persisted oauthTokens shape, stamping the discovery fields so refresh keeps
+// working without re-discovery.
+func tokensFromResponse(tr *tokenResponse, disc *cliOAuthDiscovery) (*oauthTokens, error) {
+	if tr.AccessToken == "" {
+		return nil, fmt.Errorf("token endpoint returned no access_token")
+	}
+	ttl := time.Duration(tr.ExpiresIn) * time.Second
+	if ttl <= 0 {
+		// WorkOS access tokens default to ~5-10 minutes; if the server didn't
+		// report a TTL, assume short.
+		ttl = 10 * time.Minute
+	}
+	return &oauthTokens{
+		AccessToken:      tr.AccessToken,
+		RefreshToken:     tr.RefreshToken,
+		TokenType:        tr.TokenType,
+		ExpiresAt:        time.Now().Add(ttl),
+		ClientID:         disc.ClientID,
+		WorkosAPIBaseURL: disc.WorkosAPIBaseURL,
+		OrganizationID:   tr.OrganizationID,
+	}, nil
+}
+
+// tokenHTTPClient is the HTTP client used for WorkOS endpoint POSTs. Tests
+// override it to trust the self-signed cert served by httptest.NewTLSServer;
+// production never assigns to it.
 var tokenHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
-// postTokenEndpoint is the shared POST-form helper. It maps server-side
-// OAuth errors to typed Go errors so the caller can decide whether to
-// prompt re-login (`invalid_grant`) or surface the message as-is.
-func postTokenEndpoint(ctx context.Context, tokenURL string, form url.Values, disc *cliOAuthDiscovery) (*oauthTokens, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
+// postForm is the shared form-POST → JSON helper for the device poll and the
+// refresh grant. It returns the decoded tokenResponse plus the HTTP status so
+// callers can branch on OAuth error codes carried in the JSON body.
+func postForm(ctx context.Context, endpoint string, form url.Values) (*tokenResponse, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return nil, fmt.Errorf("build token request: %w", err)
+		return nil, 0, fmt.Errorf("build token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := tokenHTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("POST %s: %w", tokenURL, err)
+		return nil, 0, fmt.Errorf("POST %s: %w", endpoint, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	var tr tokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
-		return nil, fmt.Errorf("decode token response (status %d): %w", resp.StatusCode, err)
+		return nil, resp.StatusCode, fmt.Errorf("decode token response (status %d): %w", resp.StatusCode, err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		if tr.Error == "invalid_grant" {
-			return nil, fmt.Errorf("refresh failed: %s — run `retab auth login` to re-authenticate", tr.ErrorDescription)
-		}
-		if tr.Error != "" {
-			return nil, fmt.Errorf("token endpoint %s: %s", tr.Error, tr.ErrorDescription)
-		}
-		return nil, fmt.Errorf("token endpoint returned %d", resp.StatusCode)
-	}
-	if tr.AccessToken == "" {
-		return nil, fmt.Errorf("token endpoint returned no access_token")
-	}
-	ttl := time.Duration(tr.ExpiresIn) * time.Second
-	if ttl <= 0 {
-		// WorkOS access tokens default to 10 minutes; if the server didn't
-		// report a TTL, assume short.
-		ttl = 10 * time.Minute
-	}
-	return &oauthTokens{
-		AccessToken:   tr.AccessToken,
-		RefreshToken:  tr.RefreshToken,
-		TokenType:     tr.TokenType,
-		ExpiresAt:     time.Now().Add(ttl),
-		Scope:         tr.Scope,
-		AuthKitDomain: disc.AuthKitDomain,
-		ClientID:      disc.ClientID,
-	}, nil
+	return &tr, resp.StatusCode, nil
 }
 
 // accessTokenOrgID reads the `org_id` claim from a WorkOS access token WITHOUT
@@ -479,8 +441,7 @@ func accessTokenOrgID(accessToken string) string {
 
 // browserOpener is the function flows use to open the user's browser. It is a
 // package var (defaulting to openBrowser) so tests can stub the browser step of
-// flows driven through a cobra RunE — `auth login` and `org switch` — without
-// shelling out. Tests that call runLoginFlow directly pass their own opener.
+// flows driven through a cobra RunE without shelling out.
 var browserOpener = openBrowser
 
 // openBrowser launches the user's default browser. Best-effort: on
@@ -500,79 +461,3 @@ func openBrowser(target string) error {
 	}
 	return cmd.Start()
 }
-
-// renderHTML writes the page the user sees after the OAuth redirect. We
-// keep it intentionally minimal — most users will close the tab seconds
-// after it appears.
-func renderHTML(w http.ResponseWriter, success bool, detail string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	if success {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(successHTML))
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
-		// Don't reflect arbitrary server text into HTML without escaping.
-		// `detail` originates from query params, so go through the
-		// template's escaping by way of a simple substitution.
-		page := strings.ReplaceAll(failureHTMLTemplate, "{{DETAIL}}", htmlEscape(detail))
-		_, _ = w.Write([]byte(page))
-	}
-}
-
-func htmlEscape(s string) string {
-	r := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;", "'", "&#39;")
-	return r.Replace(s)
-}
-
-// retabLogoSVG is the Retab mark inlined from
-// open-source/sdk/assets/visuals/retab-icon.svg. Inlined (not linked) so the
-// page renders with no network round-trip on the localhost callback, and it
-// uses currentColor so the surrounding CSS controls the tint.
-const retabLogoSVG = `<svg class="logo" viewBox="0 0 210 216" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Retab"><rect y="108" width="58" height="54" fill="currentColor"/><rect width="58" height="54" fill="currentColor"/><rect x="58" y="54" width="152" height="54" fill="currentColor"/><rect x="58" y="162" width="152" height="54" fill="currentColor"/></svg>`
-
-const successHTML = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retab CLI — Logged in</title>
-<style>
-:root { color-scheme: light dark; }
-* { box-sizing: border-box; }
-body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; margin: 0; min-height: 100vh; position: relative; color: #1a1a1a; background: #fff; }
-.box { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 30rem; padding: 0 2rem; text-align: center; }
-.logo { width: 54px; height: auto; color: #111; margin-bottom: 1.5rem; }
-h1 { color: #111; font-size: 1.6rem; font-weight: 600; line-height: 1.2; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
-p { color: #555; margin: 0; }
-@media (prefers-color-scheme: dark) {
-  body { color: #ededed; background: #0c0c0c; }
-  .logo { color: #fff; }
-  h1 { color: #fff; }
-  p { color: #9a9a9a; }
-}
-</style></head>
-<body><div class="box">` + retabLogoSVG + `
-<h1>You're logged in</h1>
-<p>You can close this tab and return to the terminal.</p>
-</div></body></html>`
-
-const failureHTMLTemplate = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retab CLI — Login failed</title>
-<style>
-:root { color-scheme: light dark; }
-* { box-sizing: border-box; }
-body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; margin: 0; min-height: 100vh; position: relative; color: #1a1a1a; background: #fff; }
-.box { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 30rem; padding: 0 2rem; text-align: center; }
-.logo { width: 54px; height: auto; color: #111; margin-bottom: 1.5rem; }
-h1 { color: #c0392b; font-size: 1.6rem; font-weight: 600; line-height: 1.2; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
-p { color: #555; margin: 0; }
-.detail { color: #888; font-size: 0.9rem; margin-top: 0.75rem; }
-@media (prefers-color-scheme: dark) {
-  body { color: #ededed; background: #0c0c0c; }
-  .logo { color: #fff; }
-  p { color: #9a9a9a; }
-  .detail { color: #777; }
-}
-</style></head>
-<body><div class="box">` + retabLogoSVG + `
-<h1>Login failed</h1>
-<p>Return to your terminal — it will show the error.</p>
-<p class="detail">{{DETAIL}}</p>
-</div></body></html>`

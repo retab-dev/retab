@@ -350,11 +350,11 @@ func TestProbeAuthStatus_UsesAuthStatusEndpointForOAuth(t *testing.T) {
 	if err := saveConfig(retabConfig{
 		BaseURL: server.URL,
 		OAuth: &oauthTokens{
-			AccessToken:   "at_probe",
-			RefreshToken:  "rt_probe",
-			ExpiresAt:     time.Now().Add(time.Hour),
-			AuthKitDomain: "auth.example.com",
-			ClientID:      "client_123",
+			AccessToken:      "at_probe",
+			RefreshToken:     "rt_probe",
+			ExpiresAt:        time.Now().Add(time.Hour),
+			WorkosAPIBaseURL: "https://api.workos.com",
+			ClientID:         "client_123",
 		},
 	}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
@@ -411,11 +411,11 @@ func TestAddSelectedEnvironmentStatusIncludesSelectedEnvironment(t *testing.T) {
 		retabConfig{
 			EnvironmentID: "env_prod",
 			OAuth: &oauthTokens{
-				AccessToken:   "at_status",
-				RefreshToken:  "rt_status",
-				ExpiresAt:     time.Now().Add(time.Hour),
-				AuthKitDomain: "auth.example.com",
-				ClientID:      "client_123",
+				AccessToken:      "at_status",
+				RefreshToken:     "rt_status",
+				ExpiresAt:        time.Now().Add(time.Hour),
+				WorkosAPIBaseURL: "https://api.workos.com",
+				ClientID:         "client_123",
 			},
 		},
 		server.URL,
@@ -573,9 +573,10 @@ func TestWriteAuthStatusTable_AuthenticatedOAuth(t *testing.T) {
 		"base_url":      "http://localhost:4000/v1",
 		"valid":         true,
 		"oauth": map[string]any{
-			"authkit_domain": "meaningful-awakening-88-staging.authkit.app",
-			"expires_at":     "2026-05-21T23:45:46Z",
-			"has_refresh":    true,
+			"workos_api_base_url": "https://api.workos.com",
+			"organization_id":     "org_acme",
+			"expires_at":          "2026-05-21T23:45:46Z",
+			"has_refresh":         true,
 		},
 		"environment": map[string]any{
 			"id":     "env_prod",
@@ -595,8 +596,10 @@ func TestWriteAuthStatusTable_AuthenticatedOAuth(t *testing.T) {
 		"http://localhost:4000/v1",
 		"SOURCE",
 		"~/.retab/config.json (oauth)",
-		"OAUTH_DOMAIN",
-		"meaningful-awakening-88-staging.authkit.app",
+		"WORKOS_API_BASE_URL",
+		"https://api.workos.com",
+		"ORGANIZATION_ID",
+		"org_acme",
 		"EXPIRES_AT",
 		"2026-05-21T23:45:46Z",
 		"HAS_REFRESH",

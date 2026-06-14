@@ -101,7 +101,7 @@ override and takes precedence over anything written to disk.`,
 		if err != nil {
 			return fmt.Errorf("OAuth discovery failed: %w", err)
 		}
-		tokens, err := runLoginFlow(ctx, disc, browserOpener, "")
+		tokens, err := runLoginFlow(ctx, disc, browserOpener)
 		if err != nil {
 			return err
 		}
@@ -314,9 +314,10 @@ compact human block for interactive terminals).`,
 		}
 		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
 			out["oauth"] = map[string]any{
-				"authkit_domain": cfg.OAuth.AuthKitDomain,
-				"expires_at":     cfg.OAuth.ExpiresAt,
-				"has_refresh":    cfg.OAuth.RefreshToken != "",
+				"workos_api_base_url": cfg.OAuth.WorkosAPIBaseURL,
+				"organization_id":     cfg.OAuth.OrganizationID,
+				"expires_at":          cfg.OAuth.ExpiresAt,
+				"has_refresh":         cfg.OAuth.RefreshToken != "",
 			}
 		}
 		if source == "~/.retab/config.json (oauth)" {
@@ -726,7 +727,7 @@ func authStatusEnvironmentDisplay(out map[string]any) string {
 //
 // Row order is fixed (not map iteration order) so the output is
 // deterministic across runs and easy to scan visually. Optional rows
-// (BASE_URL, OAUTH_DOMAIN, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
+// (BASE_URL, WORKOS_API_BASE_URL, ORGANIZATION_ID, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
 // ORGANIZATION, ENVIRONMENT, ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID,
 // ERROR, HINT) are only emitted when present in the payload — rendering an
 // empty value would just be noise.
@@ -763,8 +764,11 @@ func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	}
 	if oauthAny, ok := out["oauth"]; ok {
 		if oauth, ok := oauthAny.(map[string]any); ok {
-			if d, _ := oauth["authkit_domain"].(string); d != "" {
-				row("OAUTH_DOMAIN", d)
+			if d, _ := oauth["workos_api_base_url"].(string); d != "" {
+				row("WORKOS_API_BASE_URL", d)
+			}
+			if o, _ := oauth["organization_id"].(string); o != "" {
+				row("ORGANIZATION_ID", o)
 			}
 			// ExpiresAt arrives here as a time.Time (the in-memory
 			// config shape) rather than a JSON string. Stringify both

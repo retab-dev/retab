@@ -245,12 +245,12 @@ func TestNewClientUsesDashboardContextTokenForSelectedOAuthEnvironment(t *testin
 		BaseURL:       server.URL,
 		EnvironmentID: environmentID,
 		OAuth: &oauthTokens{
-			AccessToken:   "at_cli",
-			RefreshToken:  "rt_cli",
-			TokenType:     "Bearer",
-			ExpiresAt:     time.Now().Add(time.Hour),
-			AuthKitDomain: "auth.example.com",
-			ClientID:      "client_123",
+			AccessToken:      "at_cli",
+			RefreshToken:     "rt_cli",
+			TokenType:        "Bearer",
+			ExpiresAt:        time.Now().Add(time.Hour),
+			WorkosAPIBaseURL: "https://api.workos.com",
+			ClientID:         "client_123",
 		},
 	}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
@@ -327,12 +327,12 @@ func TestCLIJSONRequestUsesDashboardContextTokenForSelectedOAuthEnvironment(t *t
 		BaseURL:       server.URL,
 		EnvironmentID: environmentID,
 		OAuth: &oauthTokens{
-			AccessToken:   "at_raw_json",
-			RefreshToken:  "rt_raw_json",
-			TokenType:     "Bearer",
-			ExpiresAt:     time.Now().Add(time.Hour),
-			AuthKitDomain: "auth.example.com",
-			ClientID:      "client_123",
+			AccessToken:      "at_raw_json",
+			RefreshToken:     "rt_raw_json",
+			TokenType:        "Bearer",
+			ExpiresAt:        time.Now().Add(time.Hour),
+			WorkosAPIBaseURL: "https://api.workos.com",
+			ClientID:         "client_123",
 		},
 	}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
@@ -382,12 +382,12 @@ func TestEnvSwitchUsesRawOAuthAndDoesNotMintDashboardContext(t *testing.T) {
 		BaseURL:       server.URL,
 		EnvironmentID: "env_stale",
 		OAuth: &oauthTokens{
-			AccessToken:   "at_env",
-			RefreshToken:  "rt_env",
-			TokenType:     "Bearer",
-			ExpiresAt:     time.Now().Add(time.Hour),
-			AuthKitDomain: "auth.example.com",
-			ClientID:      "client_123",
+			AccessToken:      "at_env",
+			RefreshToken:     "rt_env",
+			TokenType:        "Bearer",
+			ExpiresAt:        time.Now().Add(time.Hour),
+			WorkosAPIBaseURL: "https://api.workos.com",
+			ClientID:         "client_123",
 		},
 	}); err != nil {
 		t.Fatalf("saveConfig: %v", err)

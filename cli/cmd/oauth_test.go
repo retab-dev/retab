@@ -2,138 +2,24 @@ package cmd
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
 
-// TestGeneratePKCEHasCorrectShape verifies RFC 7636 properties: the
-// verifier decodes back to 32 bytes of entropy, and the challenge equals
-// base64url(SHA256(verifier)). A subtle bug here would let users complete
-// a login that the WorkOS server then rejects with `invalid_grant`.
-func TestGeneratePKCEHasCorrectShape(t *testing.T) {
-	verifier, challenge, err := generatePKCE()
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Verifier should be 43 chars of base64url (32 bytes raw).
-	if len(verifier) != 43 {
-		t.Errorf("verifier length: got %d, want 43", len(verifier))
-	}
-	raw, err := base64.RawURLEncoding.DecodeString(verifier)
-	if err != nil {
-		t.Errorf("verifier is not base64url: %v", err)
-	}
-	if len(raw) != 32 {
-		t.Errorf("decoded verifier length: got %d, want 32", len(raw))
-	}
-	// Challenge must be S256(verifier).
-	want := sha256.Sum256([]byte(verifier))
-	wantB64 := base64.RawURLEncoding.EncodeToString(want[:])
-	if challenge != wantB64 {
-		t.Errorf("challenge mismatch:\n  got  %s\n  want %s", challenge, wantB64)
-	}
-}
-
-// TestGeneratePKCEIsRandom is a smoke test against the "I forgot to seed
-// the RNG" class of bug. Two consecutive calls must produce different
-// verifiers.
-func TestGeneratePKCEIsRandom(t *testing.T) {
-	v1, _, _ := generatePKCE()
-	v2, _, _ := generatePKCE()
-	if v1 == v2 {
-		t.Errorf("two PKCE verifiers were identical: %s", v1)
-	}
-}
-
-// TestBuildAuthorizeURLContainsAllOAuthParams pins the query-string shape.
-// If a future refactor accidentally drops `code_challenge_method=S256` the
-// server will silently fall back to plain PKCE, which is a downgrade attack.
-func TestBuildAuthorizeURLContainsAllOAuthParams(t *testing.T) {
-	disc := &cliOAuthDiscovery{
-		AuthKitDomain: "auth.retab.com",
-		ClientID:      "client_test",
-		Scopes:        []string{"openid", "offline_access"},
-	}
-	got := buildAuthorizeURL(disc, "http://127.0.0.1:54321/callback", "ch_xyz", "state_abc", "")
-
-	if !strings.HasPrefix(got, "https://auth.retab.com/oauth2/authorize?") {
-		t.Fatalf("wrong host/path: %s", got)
-	}
-	u, err := url.Parse(got)
-	if err != nil {
-		t.Fatal(err)
-	}
-	q := u.Query()
-	cases := map[string]string{
-		"response_type":         "code",
-		"client_id":             "client_test",
-		"redirect_uri":          "http://127.0.0.1:54321/callback",
-		"code_challenge":        "ch_xyz",
-		"code_challenge_method": "S256",
-		"state":                 "state_abc",
-		"scope":                 "openid offline_access",
-	}
-	for k, want := range cases {
-		if q.Get(k) != want {
-			t.Errorf("query %q: got %q, want %q", k, q.Get(k), want)
-		}
-	}
-}
-
-// TestBuildAuthorizeURLDefaultsScopesWhenEmpty — discovery is allowed to
-// omit `scopes` (e.g. a stripped-down stub), and we must not send an
-// empty `scope=` parameter, which WorkOS rejects.
-func TestBuildAuthorizeURLDefaultsScopesWhenEmpty(t *testing.T) {
-	disc := &cliOAuthDiscovery{AuthKitDomain: "auth.retab.com", ClientID: "c"}
-	got := buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", "")
-	u, _ := url.Parse(got)
-	scope := u.Query().Get("scope")
-	if !strings.Contains(scope, "offline_access") {
-		t.Errorf("default scopes should include offline_access; got %q", scope)
-	}
-}
-
-// TestBuildAuthorizeURLOrganizationScoping pins the org-switch contract: when
-// an organization id is supplied, the authorize URL MUST carry both
-// organization_id AND provider=authkit. WorkOS only auto-selects the org when
-// both are present; dropping provider=authkit would silently leave the switch
-// in the sticky default org. The no-org login path must emit NEITHER param.
-func TestBuildAuthorizeURLOrganizationScoping(t *testing.T) {
-	disc := &cliOAuthDiscovery{AuthKitDomain: "auth.retab.com", ClientID: "c", Scopes: []string{"openid"}}
-
-	withOrg, _ := url.Parse(buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", "org_target"))
-	if got := withOrg.Query().Get("organization_id"); got != "org_target" {
-		t.Errorf("organization_id = %q, want org_target", got)
-	}
-	if got := withOrg.Query().Get("provider"); got != "authkit" {
-		t.Errorf("provider = %q, want authkit (required for org auto-selection)", got)
-	}
-	// prompt=login forces fresh auth; without it WorkOS reuses the session
-	// cookie's org and the switch is a silent no-op (verified live).
-	if got := withOrg.Query().Get("prompt"); got != "login" {
-		t.Errorf("prompt = %q, want login (forces re-auth so organization_id takes effect)", got)
-	}
-
-	noOrg, _ := url.Parse(buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", ""))
-	if noOrg.Query().Has("organization_id") {
-		t.Error("login (no org) must not set organization_id")
-	}
-	if noOrg.Query().Has("provider") {
-		t.Error("login (no org) must not set provider")
-	}
-	if noOrg.Query().Has("prompt") {
-		t.Error("login (no org) must not force prompt=login")
-	}
+// withTrustingTokenClient swaps the package-level tokenHTTPClient for one
+// that trusts the test server's self-signed cert, and restores it after
+// the test. Without this, the WorkOS endpoint round-trip would fail with
+// x509 "unknown authority".
+func withTrustingTokenClient(t *testing.T, c *http.Client) {
+	t.Helper()
+	prev := tokenHTTPClient
+	tokenHTTPClient = c
+	t.Cleanup(func() { tokenHTTPClient = prev })
 }
 
 // TestAccessTokenOrgID pins the org_id claim decode used to confirm an org
@@ -152,7 +38,7 @@ func TestAccessTokenOrgID(t *testing.T) {
 }
 
 // TestFetchOAuthDiscoveryParsesResponse hits a stub server that mimics
-// the real /v1/auth/cli/config payload.
+// the real /v1/auth/cli/config payload for the device flow.
 func TestFetchOAuthDiscoveryParsesResponse(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/auth/cli/config" {
@@ -161,7 +47,7 @@ func TestFetchOAuthDiscoveryParsesResponse(t *testing.T) {
 		if r.Header.Get("Authorization") != "" {
 			t.Error("discovery must not require auth")
 		}
-		_, _ = w.Write([]byte(`{"authkit_domain":"auth.stage.retab.com","client_id":"client_42","scopes":["openid","email"]}`))
+		_, _ = w.Write([]byte(`{"client_id":"client_42","workos_api_base_url":"https://api.workos.com","authkit_domain":"auth.stage.retab.com","scopes":["openid","email"]}`))
 	}))
 	defer srv.Close()
 
@@ -169,11 +55,29 @@ func TestFetchOAuthDiscoveryParsesResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if disc.AuthKitDomain != "auth.stage.retab.com" || disc.ClientID != "client_42" {
-		t.Errorf("unexpected discovery payload: %+v", disc)
+	if disc.ClientID != "client_42" {
+		t.Errorf("client_id = %q, want client_42", disc.ClientID)
 	}
-	if len(disc.Scopes) != 2 {
-		t.Errorf("expected 2 scopes, got %d", len(disc.Scopes))
+	if disc.WorkosAPIBaseURL != "https://api.workos.com" {
+		t.Errorf("workos_api_base_url = %q, want https://api.workos.com", disc.WorkosAPIBaseURL)
+	}
+}
+
+// TestFetchOAuthDiscoveryDefaultsWorkosBaseURL — discovery is allowed to omit
+// workos_api_base_url; the CLI must default it to https://api.workos.com so the
+// device flow has somewhere to run.
+func TestFetchOAuthDiscoveryDefaultsWorkosBaseURL(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"client_id":"client_42"}`))
+	}))
+	defer srv.Close()
+
+	disc, err := fetchOAuthDiscovery(context.Background(), srv.URL+"/v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if disc.WorkosAPIBaseURL != defaultWorkosAPIBaseURL {
+		t.Errorf("workos_api_base_url = %q, want default %q", disc.WorkosAPIBaseURL, defaultWorkosAPIBaseURL)
 	}
 }
 
@@ -184,7 +88,7 @@ func TestFetchOAuthDiscoveryAppendsPathWhenBaseURLLacksV1(t *testing.T) {
 	var gotPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
-		_, _ = w.Write([]byte(`{"authkit_domain":"x","client_id":"y"}`))
+		_, _ = w.Write([]byte(`{"client_id":"y","workos_api_base_url":"https://api.workos.com"}`))
 	}))
 	defer srv.Close()
 
@@ -197,126 +101,83 @@ func TestFetchOAuthDiscoveryAppendsPathWhenBaseURLLacksV1(t *testing.T) {
 	}
 }
 
-// withTrustingTokenClient swaps the package-level tokenHTTPClient for one
-// that trusts the test server's self-signed cert, and restores it after
-// the test. Without this, the token endpoint round-trip would fail with
-// x509 "unknown authority".
-func withTrustingTokenClient(t *testing.T, c *http.Client) {
+// newDeviceFlowWorkOS stands up a fake WorkOS User Management server that
+// implements the device authorization + authenticate endpoints. The
+// authenticate endpoint returns authorization_pending exactly once (so the test
+// exercises the poll loop) and then the token bag.
+func newDeviceFlowWorkOS(t *testing.T) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
-	prev := tokenHTTPClient
-	tokenHTTPClient = c
-	t.Cleanup(func() { tokenHTTPClient = prev })
-}
-
-// TestBindLoopbackListenerUsesRegisteredPort verifies the callback
-// listener binds one of the ports registered with WorkOS. If this
-// regresses to a kernel-picked port, every `retab auth login` fails with
-// WorkOS `invalid_redirect_uri` because the redirect_uri won't match a
-// pre-registered entry.
-func TestBindLoopbackListenerUsesRegisteredPort(t *testing.T) {
-	listener, port, err := bindLoopbackListener()
-	if err != nil {
-		t.Fatalf("bindLoopbackListener: %v", err)
-	}
-	defer func() { _ = listener.Close() }()
-
-	if slices.Contains(cliRedirectPorts, port) {
-		return
-	}
-	t.Errorf("bound port %d is not in the registered set %v", port, cliRedirectPorts)
-}
-
-// TestBindLoopbackListenerFallsThroughOccupiedPort verifies that when an
-// earlier port in the set is taken, the CLI falls through to the next one
-// instead of failing the login.
-func TestBindLoopbackListenerFallsThroughOccupiedPort(t *testing.T) {
-	blocker, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cliRedirectPorts[0]))
-	if err != nil {
-		t.Skipf("could not occupy port %d to set up the test: %v", cliRedirectPorts[0], err)
-	}
-	defer func() { _ = blocker.Close() }()
-
-	listener, port, err := bindLoopbackListener()
-	if err != nil {
-		t.Fatalf("bindLoopbackListener should fall through to a free port: %v", err)
-	}
-	defer func() { _ = listener.Close() }()
-
-	if port == cliRedirectPorts[0] {
-		t.Errorf("expected a port other than the occupied %d", cliRedirectPorts[0])
-	}
-}
-
-// TestRunLoginFlowHappyPath exercises end-to-end:
-//   - PKCE pair generated
-//   - loopback listener bound
-//   - "browser" hits the callback with code + matching state
-//   - token endpoint returns access_token + refresh_token
-//   - returned oauthTokens has sensible expiry + records discovery
-//
-// This is the load-bearing test for the entire login UX.
-func TestRunLoginFlowHappyPath(t *testing.T) {
-	var receivedCodeVerifier string
-	var receivedCode string
-
-	// Stand up a fake WorkOS that handles BOTH /authorize and /token. The
-	// authorize endpoint redirects to the loopback with the right state +
-	// a stub code.
-	workosMux := http.NewServeMux()
-	workosMux.HandleFunc("/oauth2/authorize", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		redirectURI := q.Get("redirect_uri")
-		state := q.Get("state")
-		// Server-side, push the user back to the CLI's loopback.
-		http.Redirect(w, r, redirectURI+"?code=stub_auth_code&state="+state, http.StatusFound)
-	})
-	workosMux.HandleFunc("/oauth2/token", func(w http.ResponseWriter, r *http.Request) {
+	var authenticateCalls atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/user_management/authorize/device", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
-		receivedCode = r.PostForm.Get("code")
-		receivedCodeVerifier = r.PostForm.Get("code_verifier")
+		if r.PostForm.Get("client_id") != "client_test" {
+			t.Errorf("device authorize client_id = %q, want client_test", r.PostForm.Get("client_id"))
+		}
 		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"device_code": "dc_abc",
+			"user_code": "WXYZ-1234",
+			"verification_uri": "https://workos.com/device",
+			"verification_uri_complete": "https://workos.com/device?code=WXYZ-1234",
+			"expires_in": 300,
+			"interval": 1
+		}`))
+	})
+	mux.HandleFunc("/user_management/authenticate", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		if gt := r.PostForm.Get("grant_type"); gt != deviceCodeGrantType {
+			t.Errorf("authenticate grant_type = %q, want %q", gt, deviceCodeGrantType)
+		}
+		if r.PostForm.Get("device_code") != "dc_abc" {
+			t.Errorf("authenticate device_code = %q, want dc_abc", r.PostForm.Get("device_code"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if authenticateCalls.Add(1) == 1 {
+			// First poll: still waiting for the user.
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"authorization_pending","error_description":"waiting"}`))
+			return
+		}
 		_, _ = w.Write([]byte(`{
 			"access_token": "at_xyz",
 			"refresh_token": "rt_xyz",
 			"token_type": "Bearer",
-			"expires_in": 3600
+			"expires_in": 3600,
+			"organization_id": "org_login"
 		}`))
 	})
-	workosSrv := httptest.NewTLSServer(workosMux)
-	defer workosSrv.Close()
+	srv := httptest.NewTLSServer(mux)
+	t.Cleanup(srv.Close)
+	return srv, &authenticateCalls
+}
+
+// TestRunLoginFlowDeviceHappyPath exercises the device flow end-to-end:
+//   - device authorization returns user/device codes
+//   - the poll loop tolerates a single authorization_pending
+//   - the token bag is parsed, with org_id + sensible expiry recorded
+//   - discovery fields (client_id / workos_api_base_url) are echoed onto tokens
+//
+// This is the load-bearing test for the entire login UX.
+func TestRunLoginFlowDeviceHappyPath(t *testing.T) {
+	workosSrv, calls := newDeviceFlowWorkOS(t)
 	withTrustingTokenClient(t, workosSrv.Client())
 
-	// `buildAuthorizeURL` hardcodes `https://{AuthKitDomain}/...`, and
-	// httptest.NewTLSServer issues a self-signed cert that http.Get can't
-	// validate by default. We bypass that by extracting the test server's
-	// real host and rewriting the URL we hand to the "browser" stub.
 	disc := &cliOAuthDiscovery{
-		AuthKitDomain: strings.TrimPrefix(workosSrv.URL, "https://"),
-		ClientID:      "client_test",
-		Scopes:        []string{"openid", "offline_access"},
+		ClientID:         "client_test",
+		WorkosAPIBaseURL: workosSrv.URL,
 	}
 
-	// The browser stub: rewrite the URL onto the test server with its
-	// real (insecure) TLS config, and GET it. The redirect chain pushes
-	// us to the loopback, which is what we actually want to test.
+	var openedURL string
 	opener := func(target string) error {
-		u, err := url.Parse(target)
-		if err != nil {
-			return err
-		}
-		// Replace scheme://host with the real test server.
-		realTarget := workosSrv.URL + u.Path + "?" + u.RawQuery
-		go func() {
-			client := workosSrv.Client() // uses the right cert
-			_, _ = client.Get(realTarget)
-		}()
+		openedURL = target
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	tokens, err := runLoginFlow(ctx, disc, opener, "")
+	tokens, err := runLoginFlow(ctx, disc, opener)
 	if err != nil {
 		t.Fatalf("login flow failed: %v", err)
 	}
@@ -324,104 +185,109 @@ func TestRunLoginFlowHappyPath(t *testing.T) {
 	if tokens.AccessToken != "at_xyz" || tokens.RefreshToken != "rt_xyz" {
 		t.Errorf("unexpected tokens: %+v", tokens)
 	}
-	if tokens.AuthKitDomain != disc.AuthKitDomain {
-		t.Errorf("authkit_domain not echoed onto tokens: got %q", tokens.AuthKitDomain)
-	}
 	if tokens.ClientID != disc.ClientID {
 		t.Errorf("client_id not echoed onto tokens: got %q", tokens.ClientID)
+	}
+	if tokens.WorkosAPIBaseURL != disc.WorkosAPIBaseURL {
+		t.Errorf("workos_api_base_url not echoed onto tokens: got %q", tokens.WorkosAPIBaseURL)
+	}
+	if tokens.OrganizationID != "org_login" {
+		t.Errorf("organization_id = %q, want org_login", tokens.OrganizationID)
 	}
 	if time.Until(tokens.ExpiresAt) < 50*time.Minute {
 		t.Errorf("expiry too short; expected ~1h, got %v", time.Until(tokens.ExpiresAt))
 	}
-
-	// Most important assertion: the verifier sent to the token endpoint
-	// must match the verifier that produced the challenge in the
-	// authorize URL. There's no way for us to inspect the verifier
-	// directly (it's a closure variable inside runLoginFlow) but we know
-	// it must be 43 chars of base64url, AND the upstream code must be
-	// what the authorize redirect handed us.
-	if receivedCode != "stub_auth_code" {
-		t.Errorf("token endpoint got wrong code: %q", receivedCode)
+	// The poll loop must have hit authenticate twice: pending, then success.
+	if n := calls.Load(); n != 2 {
+		t.Errorf("authenticate calls = %d, want 2 (one pending + one success)", n)
 	}
-	if len(receivedCodeVerifier) != 43 {
-		t.Errorf("token endpoint got malformed verifier (len %d): %q", len(receivedCodeVerifier), receivedCodeVerifier)
+	// The browser was opened to the completed verification URL (embeds the code).
+	if !strings.Contains(openedURL, "WXYZ-1234") {
+		t.Errorf("opener URL %q should contain the user_code", openedURL)
 	}
 }
 
-// TestRunLoginFlowRejectsStateMismatch ensures the CSRF guard fires. If
-// this regresses, an attacker who can lure the user to a crafted URL
-// could inject their own session.
-func TestRunLoginFlowRejectsStateMismatch(t *testing.T) {
-	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Authorize handler returns a WRONG state on the redirect.
-		q := r.URL.Query()
-		http.Redirect(w, r, q.Get("redirect_uri")+"?code=c&state=wrong_state", http.StatusFound)
-	}))
+// TestRunLoginFlowSurfacesAccessDenied — when the user denies the request,
+// the device poll must fail clearly instead of looping forever.
+func TestRunLoginFlowSurfacesAccessDenied(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/user_management/authorize/device", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"device_code":"dc","user_code":"UC","verification_uri":"https://x","verification_uri_complete":"https://x?c=UC","expires_in":300,"interval":1}`))
+	})
+	mux.HandleFunc("/user_management/authenticate", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"access_denied","error_description":"user denied"}`))
+	})
+	srv := httptest.NewTLSServer(mux)
 	defer srv.Close()
-	disc := &cliOAuthDiscovery{
-		AuthKitDomain: strings.TrimPrefix(srv.URL, "https://"),
-		ClientID:      "x",
-	}
-	opener := func(target string) error {
-		u, _ := url.Parse(target)
-		go func() {
-			_, _ = srv.Client().Get(srv.URL + u.Path + "?" + u.RawQuery)
-		}()
-		return nil
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	withTrustingTokenClient(t, srv.Client())
+
+	disc := &cliOAuthDiscovery{ClientID: "c", WorkosAPIBaseURL: srv.URL}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := runLoginFlow(ctx, disc, opener, "")
-	if err == nil || !strings.Contains(err.Error(), "state mismatch") {
-		t.Errorf("expected state mismatch error, got %v", err)
-	}
-}
-
-// TestRunLoginFlowSurfacesOAuthError — when WorkOS redirects back with
-// ?error=access_denied, the CLI must propagate that as a user-readable
-// error, not hang on the listener.
-func TestRunLoginFlowSurfacesOAuthError(t *testing.T) {
-	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		http.Redirect(w, r, q.Get("redirect_uri")+"?error=access_denied&error_description=user+cancelled", http.StatusFound)
-	}))
-	defer srv.Close()
-	disc := &cliOAuthDiscovery{
-		AuthKitDomain: strings.TrimPrefix(srv.URL, "https://"),
-		ClientID:      "x",
-	}
-	opener := func(target string) error {
-		u, _ := url.Parse(target)
-		go func() {
-			_, _ = srv.Client().Get(srv.URL + u.Path + "?" + u.RawQuery)
-		}()
-		return nil
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	_, err := runLoginFlow(ctx, disc, opener, "")
+	_, err := runLoginFlow(ctx, disc, func(string) error { return nil })
 	if err == nil {
-		t.Fatal("expected error from OAuth ?error= response")
+		t.Fatal("expected error from access_denied response")
 	}
-	if !strings.Contains(err.Error(), "access_denied") {
-		t.Errorf("error should surface the OAuth error code; got %v", err)
+	if !strings.Contains(err.Error(), "denied") {
+		t.Errorf("error should explain the denial; got %v", err)
 	}
 }
 
-// TestRefreshAccessTokenSwapsTokens — the refresh path must produce a
-// token bag with the new access token AND must preserve the recorded
-// authkit_domain/client_id so subsequent refreshes can still find their
-// way home without re-doing discovery.
+// TestRunLoginFlowSurfacesExpiredToken — when the device code expires before
+// approval, the poll must fail with a clear re-run instruction.
+func TestRunLoginFlowSurfacesExpiredToken(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/user_management/authorize/device", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"device_code":"dc","user_code":"UC","verification_uri":"https://x","verification_uri_complete":"https://x?c=UC","expires_in":300,"interval":1}`))
+	})
+	mux.HandleFunc("/user_management/authenticate", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"expired_token","error_description":"code expired"}`))
+	})
+	srv := httptest.NewTLSServer(mux)
+	defer srv.Close()
+	withTrustingTokenClient(t, srv.Client())
+
+	disc := &cliOAuthDiscovery{ClientID: "c", WorkosAPIBaseURL: srv.URL}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := runLoginFlow(ctx, disc, func(string) error { return nil })
+	if err == nil {
+		t.Fatal("expected error from expired_token response")
+	}
+	if !strings.Contains(err.Error(), "expired") {
+		t.Errorf("error should explain the expiry; got %v", err)
+	}
+}
+
+// TestRefreshAccessTokenSwapsTokens — the refresh path posts a refresh_token
+// grant to {workos_api_base}/user_management/authenticate (no client_secret, no
+// organization_id) and produces a token bag carrying the new access token while
+// preserving the recorded client_id/workos_api_base_url for future refreshes.
 func TestRefreshAccessTokenSwapsTokens(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/user_management/authenticate" {
+			t.Errorf("refresh hit %q, want /user_management/authenticate", r.URL.Path)
+		}
 		_ = r.ParseForm()
 		if r.PostForm.Get("grant_type") != "refresh_token" {
 			t.Errorf("wrong grant_type: %q", r.PostForm.Get("grant_type"))
 		}
 		if r.PostForm.Get("refresh_token") != "old_refresh" {
 			t.Errorf("wrong refresh_token: %q", r.PostForm.Get("refresh_token"))
+		}
+		if r.PostForm.Get("client_id") != "c" {
+			t.Errorf("wrong client_id: %q", r.PostForm.Get("client_id"))
+		}
+		// A public client must NOT send a secret or organization_id on refresh.
+		if r.PostForm.Has("client_secret") {
+			t.Error("refresh must not send client_secret")
+		}
+		if r.PostForm.Has("organization_id") {
+			t.Error("refresh must not send organization_id")
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
@@ -432,96 +298,24 @@ func TestRefreshAccessTokenSwapsTokens(t *testing.T) {
 		}`))
 	}))
 	defer srv.Close()
+	withTrustingTokenClient(t, srv.Client())
 
-	// Drive refreshAccessToken via a custom http client by overriding
-	// the default one. We can't easily do that without exposing more
-	// internals, so instead we round-trip through postTokenEndpoint
-	// directly with the test server's URL.
-	form := url.Values{}
-	form.Set("grant_type", "refresh_token")
-	form.Set("refresh_token", "old_refresh")
-	form.Set("client_id", "c")
-
-	// We need to use the TLS server's client to avoid cert validation.
-	// postTokenEndpoint builds its own http.Client, so for this test we
-	// reach through the public refreshAccessToken path is the simplest
-	// approach if we hack the URL. Easier: just hit the endpoint
-	// directly with the test server's TLS-trusting client and assert
-	// shape parity with what refreshAccessToken would produce.
-	resp, err := srv.Client().PostForm(srv.URL+"/oauth2/token", form)
+	tok := &oauthTokens{
+		AccessToken:      "old_access",
+		RefreshToken:     "old_refresh",
+		ClientID:         "c",
+		WorkosAPIBaseURL: srv.URL,
+		ExpiresAt:        time.Now(),
+	}
+	got, err := refreshAccessToken(context.Background(), tok)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("refresh: %v", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
-	var tr tokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
-		t.Fatal(err)
+	if got.AccessToken != "new_access" || got.RefreshToken != "new_refresh" {
+		t.Errorf("unexpected token bag: %+v", got)
 	}
-	if tr.AccessToken != "new_access" || tr.RefreshToken != "new_refresh" {
-		t.Errorf("unexpected token response: %+v", tr)
+	// Discovery fields survive so subsequent refreshes find their way home.
+	if got.ClientID != "c" || got.WorkosAPIBaseURL != srv.URL {
+		t.Errorf("discovery fields lost: client=%q base=%q", got.ClientID, got.WorkosAPIBaseURL)
 	}
-}
-
-// TestHtmlEscape pins basic XSS hygiene on the failure page. If we ever
-// reflect a server-controlled string into the HTML response, this guard
-// is what stops it being arbitrary markup.
-func TestHtmlEscape(t *testing.T) {
-	in := `<script>alert(1)</script>&"' `
-	got := htmlEscape(in)
-	for _, dangerous := range []string{"<script>", "</script>"} {
-		if strings.Contains(got, dangerous) {
-			t.Errorf("escape kept dangerous substring %q in %q", dangerous, got)
-		}
-	}
-}
-
-// TestRenderHTMLEmbedsRetabLogo guards the post-redirect pages the user sees
-// after OAuth. Both the success and failure pages must inline the Retab mark
-// (no network round-trip on the localhost callback) and carry their headline
-// copy. This is a regression guard against the logo silently dropping back to
-// the old plain-tick page.
-func TestRenderHTMLEmbedsRetabLogo(t *testing.T) {
-	// The inlined mark is the 4-rect Retab icon using currentColor so CSS
-	// can tint it. If the asset shape changes, update retabLogoSVG.
-	const logoMarker = `aria-label="Retab"`
-
-	t.Run("success", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		renderHTML(rec, true, "")
-		body := rec.Body.String()
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status: got %d, want 200", rec.Code)
-		}
-		if !strings.Contains(body, logoMarker) {
-			t.Errorf("success page is missing the inlined Retab logo:\n%s", body)
-		}
-		if !strings.Contains(body, "currentColor") {
-			t.Errorf("logo should use currentColor so CSS controls the tint:\n%s", body)
-		}
-		if !strings.Contains(body, "You're logged in") {
-			t.Errorf("success page missing headline:\n%s", body)
-		}
-	})
-
-	t.Run("failure", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		renderHTML(rec, false, "boom <script>")
-		body := rec.Body.String()
-		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("status: got %d, want 400", rec.Code)
-		}
-		if !strings.Contains(body, logoMarker) {
-			t.Errorf("failure page is missing the inlined Retab logo:\n%s", body)
-		}
-		if !strings.Contains(body, "Login failed") {
-			t.Errorf("failure page missing headline:\n%s", body)
-		}
-		// The detail comes from query params and must stay escaped.
-		if strings.Contains(body, "<script>") {
-			t.Errorf("failure detail was not HTML-escaped:\n%s", body)
-		}
-		if !strings.Contains(body, "&lt;script&gt;") {
-			t.Errorf("failure detail should be escaped to &lt;script&gt;:\n%s", body)
-		}
-	})
 }

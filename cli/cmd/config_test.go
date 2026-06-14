@@ -114,7 +114,7 @@ func TestSaveConfig_PreservesAllFields(t *testing.T) {
 	in := retabConfig{
 		APIKey:             "sk_retab_legacy",
 		BaseURL:            "https://api.test/v1",
-		OAuth:              &oauthTokens{AccessToken: "tok", AuthKitDomain: "auth.test"},
+		OAuth:              &oauthTokens{AccessToken: "tok", WorkosAPIBaseURL: "https://api.workos.com"},
 		DefaultEnvironment: "test",
 		Environments: map[string]*environmentProfile{
 			"test": {Name: "Test", APIKey: "rt_test_abc", APIKeyPreview: "rt_t...abc"},

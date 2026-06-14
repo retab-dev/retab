@@ -5,16 +5,14 @@ package cmd
 // resource: an organization is a scope you select, exactly like an environment
 // (which itself lives inside an organization).
 //
-// Background: a CLI OAuth login (see oauth.go) authenticates as a PUBLIC OAuth
-// app (PKCE, no client secret) and lands you in whichever organization WorkOS
-// resolved for the session. Unlike the dashboard — a confidential client that
-// can call WorkOS `refreshSession({ organizationId })` server-side — a public
-// client's refresh token CANNOT be exchanged for a different org (WorkOS
-// rejects it with invalid_client / unauthorized_client). So org switching has
-// no browserless path: `retab org switch` re-runs the browser auth flow with
-// `organization_id` + `provider=authkit`, which makes AuthKit auto-select the
-// target org and mint a fresh token already scoped to it. The user must be a
-// member of the target org (run `retab org list` to confirm).
+// Background: a CLI OAuth login (see oauth.go) uses the WorkOS User Management
+// device flow and lands you in whichever organization WorkOS resolved for the
+// session. Device-flow tokens ARE User Management session tokens, so switching
+// is browserless: `retab org switch` POSTs the stored refresh_token + target
+// organization_id to the backend's `/v1/auth/cli/switch-organization` endpoint,
+// which performs the confidential `refresh + organization_id` exchange
+// server-side and returns a fresh token pair already scoped to the target org.
+// The user must be a member of the target org (run `retab org list` to confirm).
 
 import (
 	"context"
@@ -22,9 +20,52 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
+
+// cliSwitchOrganizationRequest is the POST /v1/auth/cli/switch-organization
+// body. The refresh token IS the credential, so the route is public.
+type cliSwitchOrganizationRequest struct {
+	RefreshToken   string `json:"refresh_token"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// cliSwitchOrganizationResponse mirrors the subset of the WorkOS token response
+// the backend returns to the CLI.
+type cliSwitchOrganizationResponse struct {
+	AccessToken    string `json:"access_token"`
+	RefreshToken   string `json:"refresh_token"`
+	TokenType      string `json:"token_type"`
+	ExpiresIn      *int   `json:"expires_in,omitempty"`
+	OrganizationID string `json:"organization_id,omitempty"`
+}
+
+// switchOrganizationViaBackend POSTs the stored refresh token + target org to
+// the backend's confidential switch endpoint and returns the fresh token pair.
+// It uses the RAW request (not the env-scoped dashboard-context wrapper):
+// switching organizations is a user-level operation and the route is public
+// (the refresh token authenticates it), so no bearer token is attached.
+func switchOrganizationViaBackend(ctx context.Context, baseURL, refreshToken, organizationID string) (cliSwitchOrganizationResponse, error) {
+	body := cliSwitchOrganizationRequest{RefreshToken: refreshToken, OrganizationID: organizationID}
+	var resp cliSwitchOrganizationResponse
+	if err := doCLIJSONRequest(
+		ctx,
+		http.DefaultClient,
+		canonicalAPIBaseURL(baseURL),
+		http.MethodPost,
+		"/v1/auth/cli/switch-organization",
+		nil,
+		body,
+		"",
+		"",
+		&resp,
+	); err != nil {
+		return cliSwitchOrganizationResponse{}, err
+	}
+	return resp, nil
+}
 
 // cliOrganization mirrors one entry of GET /v1/auth/cli/organizations.
 type cliOrganization struct {
@@ -196,8 +237,8 @@ var orgCmd = &cobra.Command{
 
 Organizations are the top-level scope above environments. A login lands you in
 whichever organization WorkOS resolved for your session; ` + "`retab org switch`" + `
-moves the session to a different organization you belong to by re-authenticating
-in the browser scoped to that organization.`,
+moves the session to a different organization you belong to via a browserless
+token exchange through the Retab backend.`,
 	Example: `  retab org list
   retab org switch "Acme Inc"`,
 }
@@ -253,16 +294,14 @@ The organization the active session is currently scoped to is marked
 
 var orgSwitchCmd = &cobra.Command{
 	Use:   "switch <organization-id-or-name>",
-	Short: "Switch the active organization (re-authenticates in the browser)",
+	Short: "Switch the active organization (browserless token exchange)",
 	Long: `Switch the organization your CLI session is scoped to.
 
-Opens a browser to re-authenticate scoped to the target organization, then
-persists the fresh token pair. A CLI logs in as a public OAuth client, whose
-refresh token WorkOS will not exchange for a different organization — so unlike
-the dashboard there is no token-only switch, and the browser step is required.
-You must already be a member of the target organization. After switching, the
-selected environment is reset to the new organization's default (environments
-are per-organization).
+Exchanges your stored OAuth refresh token for a token pair scoped to the target
+organization, via the Retab backend's confidential WorkOS exchange — no browser
+re-authentication required. You must already be a member of the target
+organization. After switching, the selected environment is reset to the new
+organization's default (environments are per-organization).
 
 Only works for OAuth logins. API-key sessions are already bound to a single
 organization; to use a different org's key, run ` + "`retab auth login --api-key <key>`" + `.
@@ -320,41 +359,59 @@ The argument accepts either an organization id (org_...) or a name; run
 			return nil
 		}
 
-		// Switch by RE-AUTHENTICATING scoped to the target org. A CLI logs in as
-		// a public OAuth app (PKCE, no secret); WorkOS will not exchange that
-		// kind of refresh token for a different organization, so there is no
-		// browserless path. Instead we run the same browser flow as `auth login`
-		// with organization_id + provider=authkit, which makes AuthKit
-		// auto-select the target org and mint a token already scoped to it.
-		// Discovery uses the SESSION's base URL (not the login default) so we
-		// stay on whatever deployment this session targets.
-		disc, err := fetchOAuthDiscovery(ctx, baseURL)
-		if err != nil {
-			return fmt.Errorf("OAuth discovery failed: %w", err)
+		// listOrganizationsWithToken / fetchCurrentOrganizationWithToken may
+		// have transparently refreshed and rotated the stored refresh token, so
+		// reload to read the freshest one before handing it to the backend.
+		cfg, _ = loadConfig()
+		if cfg.OAuth == nil || strings.TrimSpace(cfg.OAuth.RefreshToken) == "" {
+			return fmt.Errorf("OAuth session was cleared; run `retab auth login`")
 		}
-		tokens, err := runLoginFlow(ctx, disc, browserOpener, target)
+
+		// Switch by exchanging the refresh token through the backend's
+		// confidential WorkOS endpoint. Device-flow refresh tokens ARE User
+		// Management session tokens, so this returns a fresh pair already scoped
+		// to the target org — no browser re-auth. The endpoint uses the
+		// SESSION's base URL so we stay on whatever deployment this session
+		// targets.
+		switched, err := switchOrganizationViaBackend(ctx, baseURL, cfg.OAuth.RefreshToken, target)
 		if err != nil {
 			return err
 		}
-		if tokens == nil || strings.TrimSpace(tokens.AccessToken) == "" {
+		if strings.TrimSpace(switched.AccessToken) == "" {
 			return fmt.Errorf("organization switch returned no access token")
 		}
 
-		// Confirm the session actually landed in the requested org. AuthKit
-		// auto-selects it when the user is a member (and `org list` already
-		// proved membership), but if it landed elsewhere, say so plainly rather
-		// than reporting a switch that did not happen.
-		if landed := accessTokenOrgID(tokens.AccessToken); landed != "" && landed != target {
+		// Confirm the new token actually landed in the requested org. The
+		// backend scopes the exchange to it (and `org list` already proved
+		// membership), but if it landed elsewhere, say so plainly rather than
+		// reporting a switch that did not happen.
+		if landed := accessTokenOrgID(switched.AccessToken); landed != "" && landed != target {
 			fmt.Fprintf(os.Stderr,
 				"warning: requested organization %s but the new session is scoped to %s\n",
 				target, landed)
 			target = landed
 		}
 
-		// Persist the freshly-minted tokens. runLoginFlow already stamped
-		// AuthKitDomain/ClientID/ExpiresAt from discovery, so the transparent
-		// refresh path keeps working.
-		cfg.OAuth = tokens
+		// Persist the freshly-minted tokens, preserving ClientID +
+		// WorkosAPIBaseURL from the prior session so transparent refresh keeps
+		// working (the backend response carries only the token pair).
+		ttl := 10 * time.Minute
+		if switched.ExpiresIn != nil && *switched.ExpiresIn > 0 {
+			ttl = time.Duration(*switched.ExpiresIn) * time.Second
+		}
+		refreshToken := switched.RefreshToken
+		if refreshToken == "" {
+			refreshToken = cfg.OAuth.RefreshToken
+		}
+		cfg.OAuth = &oauthTokens{
+			AccessToken:      switched.AccessToken,
+			RefreshToken:     refreshToken,
+			TokenType:        switched.TokenType,
+			ExpiresAt:        time.Now().Add(ttl),
+			ClientID:         cfg.OAuth.ClientID,
+			WorkosAPIBaseURL: cfg.OAuth.WorkosAPIBaseURL,
+			OrganizationID:   target,
+		}
 
 		// Environments are per-organization, so the previously-selected
 		// environment id no longer belongs to this session. Re-select the new

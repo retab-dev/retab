@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,89 +21,22 @@ import (
 // These tests pin the contract that makes a WorkOS OAuth session genuinely
 // long-lived in the face of real-world flakiness:
 //
-//   1. `offline_access` is unconditionally requested, so AuthKit always
-//      mints a refresh_token alongside the access_token. Without this,
-//      sessions die after ~10 min and no amount of refresh logic helps.
-//
-//   2. Refresh-token rotation: every successful refresh persists the
+//   1. Refresh-token rotation: every successful refresh persists the
 //      newly-issued refresh_token before WorkOS server-side invalidates
 //      the old one. A torn save here is the canonical "user mysteriously
 //      logged out a few hours later" bug.
 //
-//   3. Atomic save: an interrupted write must leave the prior valid
+//   2. Atomic save: an interrupted write must leave the prior valid
 //      config intact, NOT a truncated / partially-rotated file the next
 //      invocation will choke on.
 //
-//   4. Concurrent CLI invocations racing on refresh: the second instance
+//   3. Concurrent CLI invocations racing on refresh: the second instance
 //      must recover by re-reading the rotated tokens from disk rather
 //      than failing with an erroneous "session expired" error.
 //
-//   5. Defensive: a server that omits refresh_token on the rotation
+//   4. Defensive: a server that omits refresh_token on the rotation
 //      response (other OAuth providers signal "reuse existing" this way)
 //      must not wipe the caller's existing one.
-
-// Test 1 — `offline_access` is always requested, even when discovery
-// forgets to include it. Without this, no refresh_token is issued at all.
-func TestBuildAuthorizeURL_AlwaysRequestsOfflineAccess(t *testing.T) {
-	cases := []struct {
-		name        string
-		discScopes  []string
-		wantInScope []string
-	}{
-		{
-			name:        "empty discovery uses defaults with offline_access",
-			discScopes:  nil,
-			wantInScope: []string{"openid", "offline_access"},
-		},
-		{
-			name:        "discovery omits offline_access — CLI adds it back",
-			discScopes:  []string{"openid", "profile", "email"},
-			wantInScope: []string{"openid", "offline_access"},
-		},
-		{
-			name:        "discovery includes offline_access — no duplicate",
-			discScopes:  []string{"openid", "offline_access"},
-			wantInScope: []string{"openid", "offline_access"},
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			disc := &cliOAuthDiscovery{
-				AuthKitDomain: "auth.retab.com",
-				ClientID:      "c",
-				Scopes:        tc.discScopes,
-			}
-			got := buildAuthorizeURL(disc, "http://localhost/cb", "chal", "state", "")
-			u, err := url.Parse(got)
-			if err != nil {
-				t.Fatalf("parse: %v", err)
-			}
-			scopes := strings.Fields(u.Query().Get("scope"))
-			for _, want := range tc.wantInScope {
-				found := false
-				for _, s := range scopes {
-					if s == want {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("scope %q missing from %v", want, scopes)
-				}
-			}
-			// Sanity: offline_access should appear exactly once.
-			n := 0
-			for _, s := range scopes {
-				if s == "offline_access" {
-					n++
-				}
-			}
-			if n != 1 {
-				t.Errorf("offline_access appears %d times in %v, want exactly 1", n, scopes)
-			}
-		})
-	}
-}
 
 // Test 2 — saveConfig is atomic. An interrupted write doesn't leave a
 // truncated or empty file that a subsequent loadConfig would choke on.
@@ -129,11 +61,11 @@ func TestSaveConfig_IsAtomic(t *testing.T) {
 	// we just verify the contents are valid JSON post-save.
 	second := retabConfig{
 		OAuth: &oauthTokens{
-			AccessToken:   "at_2",
-			RefreshToken:  "rt_2",
-			AuthKitDomain: "auth.retab.com",
-			ClientID:      "c",
-			ExpiresAt:     time.Now().Add(10 * time.Minute),
+			AccessToken:      "at_2",
+			RefreshToken:     "rt_2",
+			WorkosAPIBaseURL: "https://api.workos.com",
+			ClientID:         "c",
+			ExpiresAt:        time.Now().Add(10 * time.Minute),
 		},
 	}
 	if err := saveConfig(second); err != nil {
@@ -199,23 +131,15 @@ func TestRefreshAccessToken_PreservesRefreshTokenWhenServerOmitsIt(t *testing.T)
 	defer srv.Close()
 	withTrustingTokenClient(t, srv.Client())
 
-	// Point the token URL at our fake server by parking domain "" and
-	// using a custom domain that exchangeURL would format into our URL.
-	// Easiest path: hijack tokenHTTPClient (done above) and pass a
-	// discovery struct whose AuthKitDomain resolves to the server host.
-	u, _ := url.Parse(srv.URL)
-	// We can't override the URL scheme in refreshAccessToken cleanly, so
-	// instead we test the post-processing logic: call postTokenEndpoint
-	// directly via refreshAccessToken with a domain we've redirected.
+	// Point the refresh at our fake server: refreshAccessToken builds the URL
+	// as `<workos_api_base_url>/user_management/authenticate`, and the TLS
+	// server answers on any path, so the full server URL is sufficient.
 	tok := &oauthTokens{
-		RefreshToken:  "rt_original",
-		AuthKitDomain: u.Host, // host:port that our fake server is listening on
-		ClientID:      "c",
-		ExpiresAt:     time.Now(),
+		RefreshToken:     "rt_original",
+		WorkosAPIBaseURL: srv.URL,
+		ClientID:         "c",
+		ExpiresAt:        time.Now(),
 	}
-	// refreshAccessToken builds the URL as `https://<authkit_domain>/oauth2/token`;
-	// our fake server uses TLS and answers on any path, so the host:port match
-	// is sufficient.
 	got, err := refreshAccessToken(context.Background(), tok)
 	if err != nil {
 		t.Fatalf("refresh: %v", err)
@@ -264,27 +188,25 @@ func TestMakeOAuthTokenProvider_RecoversFromConcurrentRefresh(t *testing.T) {
 	defer srv.Close()
 	withTrustingTokenClient(t, srv.Client())
 
-	u, _ := url.Parse(srv.URL)
-
 	// In-memory snapshot the closure starts with — the OLD refresh token,
 	// which the server will reject on first call.
 	initial := &oauthTokens{
-		AccessToken:   "at_stale",
-		RefreshToken:  "rt_stale",
-		ExpiresAt:     time.Now().Add(-1 * time.Minute), // already expired
-		AuthKitDomain: u.Host,
-		ClientID:      "c",
+		AccessToken:      "at_stale",
+		RefreshToken:     "rt_stale",
+		ExpiresAt:        time.Now().Add(-1 * time.Minute), // already expired
+		WorkosAPIBaseURL: srv.URL,
+		ClientID:         "c",
 	}
 
 	// Execute "the other CLI process refreshed first and saved": put a
 	// fresh refresh_token on disk that differs from the initial.
 	if err := saveConfig(retabConfig{
 		OAuth: &oauthTokens{
-			AccessToken:   "at_other_proc",
-			RefreshToken:  "rt_rotated_v2",
-			ExpiresAt:     time.Now().Add(-1 * time.Minute), // also expired, forcing the second refresh path
-			AuthKitDomain: u.Host,
-			ClientID:      "c",
+			AccessToken:      "at_other_proc",
+			RefreshToken:     "rt_rotated_v2",
+			ExpiresAt:        time.Now().Add(-1 * time.Minute), // also expired, forcing the second refresh path
+			WorkosAPIBaseURL: srv.URL,
+			ClientID:         "c",
 		},
 	}); err != nil {
 		t.Fatalf("seed disk: %v", err)
@@ -331,16 +253,14 @@ func TestMakeOAuthTokenProvider_FailsWhenRefreshTokenIsGenuinelyDead(t *testing.
 	defer srv.Close()
 	withTrustingTokenClient(t, srv.Client())
 
-	u, _ := url.Parse(srv.URL)
-
 	// Disk and in-memory refresh tokens match — no race, this is the real
 	// "session expired" case.
 	tok := &oauthTokens{
-		AccessToken:   "at_x",
-		RefreshToken:  "rt_dead",
-		ExpiresAt:     time.Now().Add(-1 * time.Hour),
-		AuthKitDomain: u.Host,
-		ClientID:      "c",
+		AccessToken:      "at_x",
+		RefreshToken:     "rt_dead",
+		ExpiresAt:        time.Now().Add(-1 * time.Hour),
+		WorkosAPIBaseURL: srv.URL,
+		ClientID:         "c",
 	}
 	if err := saveConfig(retabConfig{OAuth: tok}); err != nil {
 		t.Fatalf("seed: %v", err)
@@ -376,8 +296,6 @@ func TestMakeOAuthTokenProvider_InFlightSucceedsEvenWhenSaveFails(t *testing.T) 
 	defer srv.Close()
 	withTrustingTokenClient(t, srv.Client())
 
-	u, _ := url.Parse(srv.URL)
-
 	// Point HOME at a path that exists but is NOT writable, so MkdirAll
 	// inside saveConfig will fail. macOS's /etc is a portable choice
 	// because non-root users can't create dirs there.
@@ -388,10 +306,10 @@ func TestMakeOAuthTokenProvider_InFlightSucceedsEvenWhenSaveFails(t *testing.T) 
 	t.Cleanup(func() { _ = os.RemoveAll("/etc/.retab") })
 
 	tok := &oauthTokens{
-		RefreshToken:  "rt_stale",
-		ExpiresAt:     time.Now().Add(-1 * time.Minute),
-		AuthKitDomain: u.Host,
-		ClientID:      "c",
+		RefreshToken:     "rt_stale",
+		ExpiresAt:        time.Now().Add(-1 * time.Minute),
+		WorkosAPIBaseURL: srv.URL,
+		ClientID:         "c",
 	}
 	provider := makeOAuthTokenProvider(tok)
 	got, err := provider(context.Background())

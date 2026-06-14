@@ -103,9 +103,16 @@ type oauthTokens struct {
 	Scope        string    `json:"scope,omitempty"`
 
 	// Echoed from the /v1/auth/cli/config discovery call at login time so
-	// that the refresh path doesn't need to re-discover.
-	AuthKitDomain string `json:"authkit_domain,omitempty"`
-	ClientID      string `json:"client_id,omitempty"`
+	// that the refresh path doesn't need to re-discover. The CLI refreshes
+	// against {workos_api_base_url}/user_management/authenticate.
+	ClientID         string `json:"client_id,omitempty"`
+	WorkosAPIBaseURL string `json:"workos_api_base_url,omitempty"`
+
+	// OrganizationID records the WorkOS organization the session is scoped to,
+	// echoed from the device-auth / switch-organization response. Informational
+	// only — the authoritative org is the `org_id` claim inside the access
+	// token; the backend re-resolves it on every request.
+	OrganizationID string `json:"organization_id,omitempty"`
 }
 
 func configDir() (string, error) {
