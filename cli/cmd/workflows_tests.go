@@ -598,7 +598,7 @@ flaky runs.`,
 		}
 		if source != nil {
 			if err := validateWorkflowTestSource(source); err != nil {
-				return fmt.Errorf("source: %w", err)
+				return fmt.Errorf("--source-file: %w", err)
 			}
 			req.Source = &retab.WorkflowTestSource{}
 			if err := decodeJSONInto("source", source, req.Source); err != nil {

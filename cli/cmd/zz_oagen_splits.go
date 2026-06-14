@@ -139,6 +139,7 @@ var splitsListCmd = &cobra.Command{
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.SplitsListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		if v, _ := cmd.Flags().GetString("status"); v != "" {
 			typed := retab.SplitsStatus(v)
 			params.Status = &typed

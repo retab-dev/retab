@@ -150,6 +150,7 @@ var classificationsListCmd = &cobra.Command{
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ClassificationsListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		if v, _ := cmd.Flags().GetString("status"); v != "" {
 			typed := retab.ClassificationsStatus(v)
 			params.Status = &typed

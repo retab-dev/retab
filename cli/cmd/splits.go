@@ -190,6 +190,7 @@ Page by split id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size 
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.SplitsListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		result, err := client.Splits.List(ctx, &params)
 		if err != nil {
 			return err

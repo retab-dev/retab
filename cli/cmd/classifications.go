@@ -202,6 +202,7 @@ ascending and descending.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ClassificationsListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		result, err := client.Classifications.List(ctx, &params)
 		if err != nil {
 			return err

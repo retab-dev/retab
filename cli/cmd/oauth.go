@@ -316,6 +316,13 @@ func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, stat
 		// org (rather than merely route SSO); without it AuthKit ignores the
 		// hint and the switch silently lands back in the default org.
 		q.Set("provider", "authkit")
+		// prompt=login forces a fresh authentication. WorkOS only honors
+		// organization_id "during the authentication flow"; with an active
+		// AuthKit session cookie it otherwise silently REUSES the existing
+		// session (and its org), so the switch lands back in the current org.
+		// Forcing re-auth is what makes the org actually change — verified
+		// live: without it the new token came back scoped to the old org.
+		q.Set("prompt", "login")
 	}
 	scopes := disc.Scopes
 	if len(scopes) == 0 {

@@ -1472,6 +1472,19 @@ func collectListParams(cmd *cobra.Command) retab.PaginationParams {
 	return params
 }
 
+func collectFileDateListFilters(cmd *cobra.Command) (filename, fromDate, toDate *string) {
+	if v, _ := cmd.Flags().GetString("filename"); v != "" {
+		filename = ptr(v)
+	}
+	if v, _ := cmd.Flags().GetString("from-date"); v != "" {
+		fromDate = ptr(v)
+	}
+	if v, _ := cmd.Flags().GetString("to-date"); v != "" {
+		toDate = ptr(v)
+	}
+	return filename, fromDate, toDate
+}
+
 func getIntFlagOrDefault(cmd *cobra.Command, name string, defaultValue int) int {
 	if !cmd.Flags().Changed(name) {
 		return defaultValue

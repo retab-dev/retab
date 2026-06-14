@@ -118,6 +118,11 @@ func TestBuildAuthorizeURLOrganizationScoping(t *testing.T) {
 	if got := withOrg.Query().Get("provider"); got != "authkit" {
 		t.Errorf("provider = %q, want authkit (required for org auto-selection)", got)
 	}
+	// prompt=login forces fresh auth; without it WorkOS reuses the session
+	// cookie's org and the switch is a silent no-op (verified live).
+	if got := withOrg.Query().Get("prompt"); got != "login" {
+		t.Errorf("prompt = %q, want login (forces re-auth so organization_id takes effect)", got)
+	}
 
 	noOrg, _ := url.Parse(buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", ""))
 	if noOrg.Query().Has("organization_id") {
@@ -125,6 +130,9 @@ func TestBuildAuthorizeURLOrganizationScoping(t *testing.T) {
 	}
 	if noOrg.Query().Has("provider") {
 		t.Error("login (no org) must not set provider")
+	}
+	if noOrg.Query().Has("prompt") {
+		t.Error("login (no org) must not force prompt=login")
 	}
 }
 

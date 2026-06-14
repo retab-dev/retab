@@ -120,6 +120,7 @@ var parsesListCmd = &cobra.Command{
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ParsesListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		result, err := client.Parses.List(ctx, &params)
 		if err != nil {
 			return err
