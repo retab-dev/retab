@@ -10,10 +10,26 @@
 
 import { describe, expect, test } from 'bun:test';
 
-import { RetabNotFoundError } from '../../src/index.js';
+import { RetabError, RetabNotFoundError } from '../../src/index.js';
 import { LIVE, LIVE_SKIP_REASON, liveClient } from '../live.js';
 
 const d = describe.skipIf(!LIVE);
+
+// KNOWN BACKEND DEFECT (reported, not an SDK bug): GET /v1/extractions 500s with
+//   "error decoding key json_schema: cannot decode document into json.RawMessage"
+// whenever the page reaches a legacy extraction row whose stored `json_schema`
+// is a BSON document the Go gateway can't decode into json.RawMessage. The
+// default (order=desc, small limit) only touches newer well-formed rows; asc
+// order or deeper pages hit the bad rows and crash. We tolerate that specific
+// 500 so the suite reflects the defect without masking unrelated failures.
+function isKnownJsonSchemaDecode500(err: unknown): boolean {
+  return (
+    err instanceof RetabError &&
+    err.status === 500 &&
+    err.responseBody.includes('json_schema') &&
+    err.responseBody.includes('json.RawMessage')
+  );
+}
 
 const STATUSES = new Set([
   'pending',

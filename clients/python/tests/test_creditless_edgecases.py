@@ -1,4 +1,4 @@
-# pyright: reportUnusedVariable=false
+# pyright: reportArgumentType=false, reportUnusedVariable=false
 """Creditless edge / negative / cross-cutting coverage for the Retab SDK.
 
 Every test here is CREDITLESS: it only exercises list / get, validation /

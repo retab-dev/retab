@@ -44,9 +44,11 @@ d('list query: invalid order enum', () => {
     );
     if (err) {
       // A thrown error must be a typed RetabError carrying a numeric status.
+      // The gateway validates the order enum and rejects with 422 (FastAPI-style
+      // request-validation) rather than 400 here.
       expect(err).toBeInstanceOf(RetabError);
       expect(typeof (err as RetabError).status).toBe('number');
-      expect((err as RetabError).status).toBe(400);
+      expect([400, 422]).toContain((err as RetabError).status);
     } else {
       expect(Array.isArray(page!.data)).toBe(true);
     }
