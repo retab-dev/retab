@@ -530,6 +530,56 @@ func workflowTestCell(row any, key string) string {
 	return stringifyCell(value)
 }
 
+// workflowTestRunColumns is the dedicated TableColumn spec for
+// `workflows tests runs list --output table/csv`. The generic auto-renderer only
+// surfaced ID + a TYPE column that confusingly showed the lifecycle status; these
+// columns show what a user reads off a test-suite run: status and the pass/fail
+// tally.
+var workflowTestRunColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowTestCell(row, "id") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowTestCell(row, "lifecycle.status") }},
+	{Header: "TESTS", Extract: func(row any) string { return workflowTestCell(row, "total_tests") }},
+	{Header: "PASSED", Extract: func(row any) string { return workflowTestCell(row, "counts.outcome.passed") }},
+	{Header: "FAILED", Extract: func(row any) string { return workflowTestCell(row, "counts.outcome.failed") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowTestCell(row, "timing.created_at") }},
+}
+
+func printWorkflowTestsRunsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowTestRun]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, workflowTestRunColumns)
+			}
+		}
+	}
+	return printJSON(result)
+}
+
+// workflowTestResultColumns is the dedicated TableColumn spec for
+// `workflows tests results list --output table/csv`. The generic auto-renderer
+// dropped VERDICT — the single most important field of a test result
+// (passed/failed) — and mislabeled the status as TYPE.
+var workflowTestResultColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowTestCell(row, "id") }},
+	{Header: "VERDICT", Extract: func(row any) string { return workflowTestCell(row, "verdict") }},
+	{Header: "TARGET", Extract: func(row any) string { return workflowTestCell(row, "target.block_id") }},
+	{Header: "SOURCE", Extract: func(row any) string { return workflowTestCell(row, "source.type") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowTestCell(row, "lifecycle.status") }},
+}
+
+func printWorkflowTestResultsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowTestResult]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, workflowTestResultColumns)
+			}
+		}
+	}
+	return printJSON(result)
+}
+
 var workflowsTestsUpdateCmd = &cobra.Command{
 	Use:   "update <test-id>",
 	Short: "Update a test",
@@ -978,7 +1028,7 @@ workspace-wide.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowTestsRunsListResult(cmd, result)
 	}),
 }
 
@@ -1078,7 +1128,7 @@ var workflowsTestsResultsListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowTestResultsListResult(cmd, result)
 	}),
 }
 
