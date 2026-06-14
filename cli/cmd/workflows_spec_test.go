@@ -171,6 +171,33 @@ func TestWorkflowsSpecHelpUsesWorkflowVocabulary(t *testing.T) {
 	}
 }
 
+// `spec get --format json` returns the server envelope
+// (`{workflow_id, yaml_definition}`) where the spec body is an opaque YAML
+// string, NOT a parsed JSON tree. The help text and example must say so —
+// otherwise a `--format json | jq .` example invites users to try
+// `jq '.spec.blocks'`, which silently returns nothing.
+func TestWorkflowsSpecGetHelpIsHonestAboutJSONShape(t *testing.T) {
+	help := workflowsSpecExportCmd.Long + "\n" + workflowsSpecExportCmd.Example
+
+	// The example must not imply a queryable parsed spec by piping the bare
+	// envelope into a plain `jq .` (which reads as "the spec is JSON here").
+	if strings.Contains(help, "--format json | jq .\n") || strings.HasSuffix(strings.TrimSpace(help), "--format json | jq .") {
+		t.Fatalf("spec get help still implies a parsed spec via `--format json | jq .`:\n%s", help)
+	}
+
+	// It must name the real envelope fields so users know what they get.
+	for _, want := range []string{"yaml_definition", "workflow_id"} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("spec get help should describe the %q envelope field, got:\n%s", want, help)
+		}
+	}
+
+	// And it must make clear the JSON body is not a parsed spec tree.
+	if !strings.Contains(help, "yaml_definition`") {
+		t.Fatalf("spec get help should point at the yaml_definition string body, got:\n%s", help)
+	}
+}
+
 func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

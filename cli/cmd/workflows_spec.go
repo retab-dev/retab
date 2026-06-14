@@ -537,10 +537,15 @@ back into a git-managed YAML file, or for diffing two environments.
 
 By default, the raw YAML body is written to stdout so the command can
 be redirected straight into a file. Pass ` + "`--format json`" + ` to see
-the full server response object (handy for piping into ` + "`jq`" + ` to
-pull out other fields).`,
+the server response envelope instead: a JSON object of the shape
+` + "`{\"workflow_id\": \"...\", \"yaml_definition\": \"<yaml string>\"}`" + `.
+Note the spec is NOT a parsed JSON tree — the whole spec body is the
+YAML string under ` + "`yaml_definition`" + `, so ` + "`jq '.spec.blocks'`" + ` will
+not work; use the default YAML output (or a YAML parser) to query the
+spec itself.`,
 	Example: `  retab workflows spec get wf_abc123 > workflow.yaml
-  retab workflows spec get wf_abc123 --format json | jq .`,
+  # --format json returns the envelope; the spec is the YAML string under .yaml_definition
+  retab workflows spec get wf_abc123 --format json | jq -r .yaml_definition`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		format, err := cmd.Flags().GetString("format")
