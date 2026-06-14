@@ -64,7 +64,7 @@ func TestBuildAuthorizeURLContainsAllOAuthParams(t *testing.T) {
 		ClientID:      "client_test",
 		Scopes:        []string{"openid", "offline_access"},
 	}
-	got := buildAuthorizeURL(disc, "http://127.0.0.1:54321/callback", "ch_xyz", "state_abc")
+	got := buildAuthorizeURL(disc, "http://127.0.0.1:54321/callback", "ch_xyz", "state_abc", "")
 
 	if !strings.HasPrefix(got, "https://auth.retab.com/oauth2/authorize?") {
 		t.Fatalf("wrong host/path: %s", got)
@@ -95,11 +95,51 @@ func TestBuildAuthorizeURLContainsAllOAuthParams(t *testing.T) {
 // empty `scope=` parameter, which WorkOS rejects.
 func TestBuildAuthorizeURLDefaultsScopesWhenEmpty(t *testing.T) {
 	disc := &cliOAuthDiscovery{AuthKitDomain: "auth.retab.com", ClientID: "c"}
-	got := buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st")
+	got := buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", "")
 	u, _ := url.Parse(got)
 	scope := u.Query().Get("scope")
 	if !strings.Contains(scope, "offline_access") {
 		t.Errorf("default scopes should include offline_access; got %q", scope)
+	}
+}
+
+// TestBuildAuthorizeURLOrganizationScoping pins the org-switch contract: when
+// an organization id is supplied, the authorize URL MUST carry both
+// organization_id AND provider=authkit. WorkOS only auto-selects the org when
+// both are present; dropping provider=authkit would silently leave the switch
+// in the sticky default org. The no-org login path must emit NEITHER param.
+func TestBuildAuthorizeURLOrganizationScoping(t *testing.T) {
+	disc := &cliOAuthDiscovery{AuthKitDomain: "auth.retab.com", ClientID: "c", Scopes: []string{"openid"}}
+
+	withOrg, _ := url.Parse(buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", "org_target"))
+	if got := withOrg.Query().Get("organization_id"); got != "org_target" {
+		t.Errorf("organization_id = %q, want org_target", got)
+	}
+	if got := withOrg.Query().Get("provider"); got != "authkit" {
+		t.Errorf("provider = %q, want authkit (required for org auto-selection)", got)
+	}
+
+	noOrg, _ := url.Parse(buildAuthorizeURL(disc, "http://127.0.0.1:1/callback", "ch", "st", ""))
+	if noOrg.Query().Has("organization_id") {
+		t.Error("login (no org) must not set organization_id")
+	}
+	if noOrg.Query().Has("provider") {
+		t.Error("login (no org) must not set provider")
+	}
+}
+
+// TestAccessTokenOrgID pins the org_id claim decode used to confirm an org
+// switch landed where it was asked to.
+func TestAccessTokenOrgID(t *testing.T) {
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"org_id":"org_xyz","sub":"user_1"}`))
+	if got := accessTokenOrgID("h." + payload + ".s"); got != "org_xyz" {
+		t.Errorf("org_id = %q, want org_xyz", got)
+	}
+	// Malformed / non-JWT inputs degrade to "" rather than panicking.
+	for _, bad := range []string{"", "not-a-jwt", "a.b", "h..s"} {
+		if got := accessTokenOrgID(bad); got != "" {
+			t.Errorf("accessTokenOrgID(%q) = %q, want empty", bad, got)
+		}
 	}
 }
 
@@ -268,7 +308,7 @@ func TestRunLoginFlowHappyPath(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tokens, err := runLoginFlow(ctx, disc, opener)
+	tokens, err := runLoginFlow(ctx, disc, opener, "")
 	if err != nil {
 		t.Fatalf("login flow failed: %v", err)
 	}
@@ -324,7 +364,7 @@ func TestRunLoginFlowRejectsStateMismatch(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := runLoginFlow(ctx, disc, opener)
+	_, err := runLoginFlow(ctx, disc, opener, "")
 	if err == nil || !strings.Contains(err.Error(), "state mismatch") {
 		t.Errorf("expected state mismatch error, got %v", err)
 	}
@@ -353,7 +393,7 @@ func TestRunLoginFlowSurfacesOAuthError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := runLoginFlow(ctx, disc, opener)
+	_, err := runLoginFlow(ctx, disc, opener, "")
 	if err == nil {
 		t.Fatal("expected error from OAuth ?error= response")
 	}

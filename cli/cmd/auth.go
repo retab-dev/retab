@@ -101,7 +101,7 @@ override and takes precedence over anything written to disk.`,
 		if err != nil {
 			return fmt.Errorf("OAuth discovery failed: %w", err)
 		}
-		tokens, err := runLoginFlow(ctx, disc, openBrowser)
+		tokens, err := runLoginFlow(ctx, disc, browserOpener, "")
 		if err != nil {
 			return err
 		}

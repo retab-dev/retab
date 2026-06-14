@@ -74,7 +74,7 @@ func TestBuildAuthorizeURL_AlwaysRequestsOfflineAccess(t *testing.T) {
 				ClientID:      "c",
 				Scopes:        tc.discScopes,
 			}
-			got := buildAuthorizeURL(disc, "http://localhost/cb", "chal", "state")
+			got := buildAuthorizeURL(disc, "http://localhost/cb", "chal", "state", "")
 			u, err := url.Parse(got)
 			if err != nil {
 				t.Fatalf("parse: %v", err)

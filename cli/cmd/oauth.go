@@ -187,7 +187,14 @@ type callbackResult struct {
 // runLoginFlow drives the full PKCE flow end-to-end and returns persisted
 // tokens. The browser is opened with `opener`; tests pass a stub that hits
 // the callback URL itself instead of shelling out.
-func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url string) error) (*oauthTokens, error) {
+//
+// organizationID is empty for a normal login (WorkOS resolves the user's
+// default/last-selected org). For `retab org switch` it is the target org id:
+// passed to the authorize URL with provider=authkit, it makes AuthKit
+// auto-select that organization so the resulting token is scoped to it. This
+// is the only org-switch path available to a public OAuth client — its refresh
+// token cannot be exchanged for a different org at WorkOS user_management.
+func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url string) error, organizationID string) (*oauthTokens, error) {
 	verifier, challenge, err := generatePKCE()
 	if err != nil {
 		return nil, err
@@ -259,7 +266,7 @@ func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url 
 		_ = srv.Shutdown(shutdownCtx)
 	}()
 
-	authorizeURL := buildAuthorizeURL(disc, redirectURI, challenge, state)
+	authorizeURL := buildAuthorizeURL(disc, redirectURI, challenge, state, organizationID)
 	if err := opener(authorizeURL); err != nil {
 		// Don't fail — print the URL so the user can open it manually.
 		fmt.Fprintf(os.Stderr, "Could not open browser automatically.\nVisit this URL to log in:\n\n  %s\n\n", authorizeURL)
@@ -289,7 +296,13 @@ func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url 
 
 // buildAuthorizeURL constructs the WorkOS authorize URL. Pure function so
 // it's trivially testable.
-func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, state string) string {
+//
+// When organizationID is non-empty, it is set alongside provider=authkit:
+// per WorkOS, "if organization_id is passed when provider is also set to
+// authkit, then the organization will be automatically selected during the
+// authentication flow." That is how `retab org switch` lands the new session in
+// a specific org instead of WorkOS silently reusing the last-selected one.
+func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, state, organizationID string) string {
 	q := url.Values{}
 	q.Set("response_type", "code")
 	q.Set("client_id", disc.ClientID)
@@ -297,6 +310,13 @@ func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, stat
 	q.Set("code_challenge", codeChallenge)
 	q.Set("code_challenge_method", "S256")
 	q.Set("state", state)
+	if strings.TrimSpace(organizationID) != "" {
+		q.Set("organization_id", organizationID)
+		// provider=authkit is REQUIRED for organization_id to auto-select the
+		// org (rather than merely route SSO); without it AuthKit ignores the
+		// hint and the switch silently lands back in the default org.
+		q.Set("provider", "authkit")
+	}
 	scopes := disc.Scopes
 	if len(scopes) == 0 {
 		scopes = []string{"openid", "profile", "email", "offline_access"}
@@ -426,6 +446,35 @@ func postTokenEndpoint(ctx context.Context, tokenURL string, form url.Values, di
 		ClientID:      disc.ClientID,
 	}, nil
 }
+
+// accessTokenOrgID reads the `org_id` claim from a WorkOS access token WITHOUT
+// verifying the signature — WorkOS just minted it and the backend re-verifies on
+// every request; here we only need to confirm which organization the session
+// landed in after an org switch. Any decode failure returns "" (the caller then
+// trusts the requested target rather than failing a working login).
+func accessTokenOrgID(accessToken string) string {
+	parts := strings.Split(accessToken, ".")
+	if len(parts) != 3 {
+		return ""
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return ""
+	}
+	var claims struct {
+		OrgID string `json:"org_id"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return ""
+	}
+	return claims.OrgID
+}
+
+// browserOpener is the function flows use to open the user's browser. It is a
+// package var (defaulting to openBrowser) so tests can stub the browser step of
+// flows driven through a cobra RunE — `auth login` and `org switch` — without
+// shelling out. Tests that call runLoginFlow directly pass their own opener.
+var browserOpener = openBrowser
 
 // openBrowser launches the user's default browser. Best-effort: on
 // platforms where we can't determine the right command, callers should

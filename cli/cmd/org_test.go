@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -55,15 +57,50 @@ func TestResolveTargetOrganization(t *testing.T) {
 	}
 }
 
+// orgScopedAccessToken builds an unsigned JWT-shaped access token carrying an
+// `org_id` claim, so accessTokenOrgID can confirm which org the switch landed
+// in. Only the payload segment is read; header/sig are placeholders.
+func orgScopedAccessToken(t *testing.T, orgID string) string {
+	t.Helper()
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"org_id":"` + orgID + `"}`))
+	return "h." + payload + ".s"
+}
+
 func TestOrgSwitchEndToEnd(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")
 
-	var switchBody map[string]string
-	var switchAuth string
 	isDefault := true
+	betaToken := orgScopedAccessToken(t, "org_beta")
+
+	// Fake WorkOS AuthKit (TLS) serving the browser re-auth: /oauth2/authorize
+	// redirects to the CLI loopback with a code, /oauth2/token mints a token
+	// already scoped to org_beta. The authorize handler also asserts the switch
+	// passed organization_id + provider=authkit — that pairing is what makes
+	// AuthKit auto-select the target org.
+	var authorizeOrg, authorizeProvider string
+	workosMux := http.NewServeMux()
+	workosMux.HandleFunc("/oauth2/authorize", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		authorizeOrg = q.Get("organization_id")
+		authorizeProvider = q.Get("provider")
+		http.Redirect(w, r, q.Get("redirect_uri")+"?code=stub_code&state="+q.Get("state"), http.StatusFound)
+	})
+	workosMux.HandleFunc("/oauth2/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"access_token":  betaToken,
+			"refresh_token": "rt_new",
+			"token_type":    "Bearer",
+			"expires_in":    3600,
+		})
+	})
+	workosSrv := httptest.NewTLSServer(workosMux)
+	defer workosSrv.Close()
+	withTrustingTokenClient(t, workosSrv.Client())
+	authkitHost := strings.TrimPrefix(workosSrv.URL, "https://")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -75,17 +112,12 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 					{ID: "org_beta", Name: "Beta"},
 				},
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/v1/auth/cli/switch-organization":
-			switchAuth = r.Header.Get("Authorization")
-			raw, _ := io.ReadAll(r.Body)
-			_ = json.Unmarshal(raw, &switchBody)
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/cli/config":
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(cliSwitchOrganizationResponse{
-				AccessToken:    "at_new",
-				RefreshToken:   "rt_new",
-				TokenType:      "Bearer",
-				ExpiresIn:      600,
-				OrganizationID: "org_beta",
+			_ = json.NewEncoder(w).Encode(cliOAuthDiscovery{
+				AuthKitDomain: authkitHost,
+				ClientID:      "client_cli",
+				Scopes:        []string{"openid", "offline_access"},
 			})
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/organization":
 			w.Header().Set("Content-Type", "application/json")
@@ -104,15 +136,28 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 	}))
 	defer server.Close()
 
+	// Stub the browser: rewrite the authorize URL onto the TLS WorkOS server
+	// (its self-signed cert) and GET it; the redirect chain drives the loopback.
+	prevOpener := browserOpener
+	browserOpener = func(target string) error {
+		u, err := url.Parse(target)
+		if err != nil {
+			return err
+		}
+		go func() { _, _ = workosSrv.Client().Get(workosSrv.URL + u.Path + "?" + u.RawQuery) }()
+		return nil
+	}
+	t.Cleanup(func() { browserOpener = prevOpener })
+
 	// Start logged into Acme, with a stale environment from that org.
 	if err := saveConfig(retabConfig{
 		BaseURL:       server.URL,
 		EnvironmentID: "env_acme_old",
 		OAuth: &oauthTokens{
-			AccessToken:   "at_old",
+			AccessToken:   orgScopedAccessToken(t, "org_acme"),
 			RefreshToken:  "rt_old",
 			ExpiresAt:     time.Now().Add(time.Hour),
-			AuthKitDomain: "auth.example.com",
+			AuthKitDomain: authkitHost,
 			ClientID:      "client_cli",
 		},
 	}); err != nil {
@@ -128,16 +173,13 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 		t.Fatalf("org switch: %v", err)
 	}
 
-	// The switch request carried the stored refresh token + resolved org id and
-	// no bearer (the refresh token is the credential).
-	if switchBody["refresh_token"] != "rt_old" {
-		t.Fatalf("switch refresh_token = %q, want rt_old", switchBody["refresh_token"])
+	// The browser re-auth carried the resolved target org + provider=authkit, so
+	// AuthKit auto-selects org_beta rather than reusing the sticky default.
+	if authorizeOrg != "org_beta" {
+		t.Fatalf("authorize organization_id = %q, want org_beta", authorizeOrg)
 	}
-	if switchBody["organization_id"] != "org_beta" {
-		t.Fatalf("switch organization_id = %q, want org_beta", switchBody["organization_id"])
-	}
-	if switchAuth != "" {
-		t.Fatalf("switch request carried Authorization %q, want none", switchAuth)
+	if authorizeProvider != "authkit" {
+		t.Fatalf("authorize provider = %q, want authkit", authorizeProvider)
 	}
 
 	// The new tokens and the new org's default environment were persisted.
@@ -148,14 +190,14 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 	if cfg.OAuth == nil {
 		t.Fatal("OAuth config was cleared")
 	}
-	if cfg.OAuth.AccessToken != "at_new" {
-		t.Fatalf("AccessToken = %q, want at_new", cfg.OAuth.AccessToken)
+	if cfg.OAuth.AccessToken != betaToken {
+		t.Fatalf("AccessToken = %q, want the org_beta-scoped token", cfg.OAuth.AccessToken)
 	}
 	if cfg.OAuth.RefreshToken != "rt_new" {
 		t.Fatalf("RefreshToken = %q, want rt_new", cfg.OAuth.RefreshToken)
 	}
 	// Discovery fields survive so transparent refresh keeps working.
-	if cfg.OAuth.AuthKitDomain != "auth.example.com" || cfg.OAuth.ClientID != "client_cli" {
+	if cfg.OAuth.AuthKitDomain != authkitHost || cfg.OAuth.ClientID != "client_cli" {
 		t.Fatalf("discovery fields lost: domain=%q client=%q", cfg.OAuth.AuthKitDomain, cfg.OAuth.ClientID)
 	}
 	if cfg.EnvironmentID != "env_beta_prod" {
@@ -172,7 +214,9 @@ func TestOrgSwitchCurrentOrganizationIsNoop(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")
 
-	var switchCalled bool
+	// No discovery / authorize endpoints are stubbed: a no-op switch must
+	// short-circuit BEFORE any browser re-auth. Hitting /v1/auth/cli/config or
+	// the WorkOS flow would fail the unexpected-request guard below.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/cli/organizations":
@@ -186,9 +230,6 @@ func TestOrgSwitchCurrentOrganizationIsNoop(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/organization":
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(cliAuthOrganization{ID: "org_beta", Name: "Beta"})
-		case r.Method == http.MethodPost && r.URL.Path == "/v1/auth/cli/switch-organization":
-			switchCalled = true
-			w.WriteHeader(http.StatusForbidden)
 		default:
 			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
@@ -217,9 +258,6 @@ func TestOrgSwitchCurrentOrganizationIsNoop(t *testing.T) {
 
 	if err := orgSwitchCmd.RunE(cmd, []string{"Beta"}); err != nil {
 		t.Fatalf("switch current org should be a no-op: %v", err)
-	}
-	if switchCalled {
-		t.Fatal("switch endpoint was called for the already-current organization")
 	}
 	cfg, err := loadConfig()
 	if err != nil {
