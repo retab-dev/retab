@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -88,6 +89,22 @@ exact handle ids.
 
   # Tail of a pipe
   cat workflow.yaml | retab workflows spec apply -`,
+}
+
+// specMetadataIDPattern matches a spec's metadata.id (a wrk_ id). In a spec,
+// block ids are dict KEYS (e.g. `block_x:`), not `id:` values, and only workflow
+// ids carry the wrk_ prefix — so a line `id: wrk_…` reliably identifies the
+// source workflow id that `spec get` always emits.
+var specMetadataIDPattern = regexp.MustCompile(`(?m)^\s+id:\s*(wrk_[A-Za-z0-9_-]+)`)
+
+// specSourceWorkflowID extracts the spec's metadata.id (the source workflow id),
+// or "" when absent. Used to warn when a metadata.id-bearing spec is applied with
+// --project-id (create-new), which silently makes a duplicate.
+func specSourceWorkflowID(yaml string) string {
+	if m := specMetadataIDPattern.FindStringSubmatch(yaml); len(m) == 2 {
+		return m[1]
+	}
+	return ""
 }
 
 // readSpecYAML reads the YAML body for validate/plan/apply. The server
@@ -172,7 +189,7 @@ Plan is read-only — safe to run on production specs. Pair it with
 ` + "`apply`" + ` for a declarative workflow review-then-apply loop.`,
 	Example: `  retab workflows spec plan ./workflow.yaml
   retab workflows spec plan ./workflow.yaml --to wf_abc123   # diff against an existing workflow
-  cat workflow.yaml | retab workflows spec plan - | jq .changes`,
+  cat workflow.yaml | retab workflows spec plan - | jq .resource_changes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[0])
@@ -220,7 +237,7 @@ draft. The target workflow id comes from the URL argument, not from
 
 Plan is read-only — safe to run before ` + "`apply --to`" + `.`,
 	Example: `  retab workflows spec plan-to wf_abc123 ./workflow.yaml
-  cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .changes`,
+  cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .resource_changes`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[1])
@@ -288,6 +305,19 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		}
 		if to == "" && projectID == "" {
 			return fmt.Errorf("--project-id is required to create a new workflow from a spec (or pass --to <workflow-id> to update an existing one)")
+		}
+		// Footgun guard: `spec get` always emits metadata.id, so the natural
+		// round-trip `spec get > f.yaml; spec apply f.yaml --project-id …` would
+		// silently create a DUPLICATE workflow (metadata.id is ignored on the
+		// create path). Warn — non-fatal, since cloning a source spec into a new
+		// workflow is a legitimate use — and point at the in-place update path.
+		if projectID != "" {
+			if srcID := specSourceWorkflowID(yaml); srcID != "" {
+				fmt.Fprintf(cmd.ErrOrStderr(),
+					"warning: this spec carries metadata.id %s, but --project-id creates a NEW workflow — %s is left unchanged and a duplicate is created.\n"+
+						"  To update %s in place instead, run: retab workflows spec apply %s --to %s\n",
+					srcID, srcID, srcID, args[0], srcID)
+			}
 		}
 		// Plan first so we can gate destructive applies. The server's
 		// `spec apply` returns the same `summary` / `resource_changes`
