@@ -53,11 +53,10 @@ from retab.exceptions import (
 _LIST_RESOURCES: list[str] = ["files", "extractions", "parses", "classifications", "splits", "partitions"]
 
 # Resources whose list route validates the ``order`` enum (returns 422 on a bad
-# value). NOTE: ``splits`` is deliberately excluded — staging's splits list route
-# silently accepts an invalid ``order`` instead of returning 422, unlike every
-# other list resource. That backend inconsistency is pinned separately in
-# ``test_splits_order_validation_inconsistency`` so this sweep stays meaningful.
-_ORDER_VALIDATING_RESOURCES: list[str] = ["files", "extractions", "parses", "classifications", "partitions"]
+# value). ``splits`` is included now that its list route enforces the asc/desc
+# enum (backend fix in main_server_go); it previously accepted any value and
+# returned 200, which was the lone inconsistency in this sweep.
+_ORDER_VALIDATING_RESOURCES: list[str] = ["files", "extractions", "parses", "classifications", "splits", "partitions"]
 
 # (resource attribute name, get callable arg, bogus id) for the typed-404 contract sweep.
 _GET_404_CASES: list[tuple[str, str]] = [
@@ -118,21 +117,6 @@ def test_invalid_order_value_raises_422(sync_client: Retab, resource_name: str) 
             _raw_list(client, resource_name, limit=2, order="sideways")
         assert excinfo.value.status_code == 422
         assert isinstance(excinfo.value, ValidationError)
-
-
-@pytest.mark.xfail(
-    reason="BACKEND BUG: the splits list route silently accepts an invalid `order` "
-    "value and returns a 200 page, while files/extractions/parses/classifications/"
-    "partitions all return 422. Pinned as xfail(strict) so it flips to a failure "
-    "the moment the splits route is fixed to validate the enum.",
-    strict=True,
-)
-def test_splits_order_validation_inconsistency(sync_client: Retab) -> None:
-    """Documents the splits-vs-others ``order`` validation gap (see xfail reason)."""
-    with sync_client as client:
-        with pytest.raises(APIError) as excinfo:
-            _raw_list(client, "splits", limit=2, order="sideways")
-        assert excinfo.value.status_code == 422
 
 
 @pytest.mark.parametrize("resource_name", _LIST_RESOURCES)
