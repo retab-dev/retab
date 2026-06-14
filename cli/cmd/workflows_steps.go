@@ -117,15 +117,19 @@ correlate against the step's block config.`,
   # Save the input payload for offline replay
   retab workflows steps get step_extract_1 \
     | jq '.handle_inputs' > inputs.json`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		stepID, err := scopedResourceID(args, "step id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Steps.Get(ctx, args[0], nil)
+		result, err := client.Workflows.Steps.Get(ctx, stepID, nil)
 		if err != nil {
 			return err
 		}

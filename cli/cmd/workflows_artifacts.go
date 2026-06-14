@@ -72,9 +72,12 @@ derives the backing collection from the id prefix.`,
 
   # Fetch one classification artifact
   retab workflows artifacts get clss_xyz_123`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		artifactID := args[0]
+		artifactID, err := scopedResourceID(args, "artifact id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -120,8 +123,12 @@ one. The two are mutually exclusive.`,
   # Next page
   retab workflows artifacts list run_xyz789 --limit 50 \
     --after $(retab workflows artifacts list run_xyz789 --limit 50 --output json | jq -r '.list_metadata.after')`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		runID, err := scopedResourceID(args, "run id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -129,7 +136,7 @@ one. The two are mutually exclusive.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.WorkflowArtifactsListParams{PaginationParams: collectListParams(cmd)}
-		params.RunID = ptr(args[0])
+		params.RunID = ptr(runID)
 		operation, _ := cmd.Flags().GetString("operation")
 		if err := validateWorkflowArtifactOperation(operation); err != nil {
 			return err
