@@ -107,12 +107,12 @@ func TestFilesCompleteUploadOmitsEmptySha256(t *testing.T) {
 			bodyPresent = false
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{"filename":"sample.pdf","url":"https://storage.retab.com/org_01J/file_abc123.pdf","mime_type":"application/pdf"}`)
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	_, _ = captureStd(t, func() {
+	stdout, _ := captureStd(t, func() {
 		if err := runRootForTest(
 			t,
 			"files", "complete-upload", "file_abc123",
@@ -125,5 +125,16 @@ func TestFilesCompleteUploadOmitsEmptySha256(t *testing.T) {
 		if _, present := body["sha256"]; present {
 			t.Fatalf("sha256 present in body when --sha256 was omitted: %#v", body["sha256"])
 		}
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout)
+	}
+	if got["id"] != "file_abc123" {
+		t.Fatalf("stdout id = %#v, want file_abc123; raw:\n%s", got["id"], stdout)
+	}
+	if got["filename"] != "sample.pdf" {
+		t.Fatalf("stdout filename = %#v, want sample.pdf", got["filename"])
 	}
 }

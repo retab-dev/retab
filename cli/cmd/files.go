@@ -396,6 +396,30 @@ func shapeUploadResponse(result *retab.MIMEData, uploadPath, detectedContentType
 	return out, nil
 }
 
+func shapeCompleteUploadResponse(result *retab.MIMEData, fileID string) (uploadResponse, error) {
+	id := result.ID()
+	if id == "" {
+		id = fileIDFromURL(result.URL)
+	}
+	if id == "" {
+		id = fileID
+	}
+	if id == "" {
+		return uploadResponse{}, fmt.Errorf("complete-upload succeeded but server response is missing a file id")
+	}
+	out := uploadResponse{
+		pairs: []uploadResponseField{
+			{"id", id},
+			{"filename", result.Filename},
+			{"url", result.URL},
+		},
+	}
+	if mimeType := resolveUploadMIMEType(result.MIMEType, result.Filename, ""); mimeType != "" {
+		out.pairs = append(out.pairs, uploadResponseField{"mime_type", mimeType})
+	}
+	return out, nil
+}
+
 // resolveUploadMIMEType picks the mime_type displayed by `files upload`,
 // never returning empty for a normal upload. It prefers the server-resolved
 // type, then the extension-based type (matching the server's run-time
@@ -832,7 +856,11 @@ against the digest you computed locally.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		out, err := shapeCompleteUploadResponse(result, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(out)
 	}),
 }
 
