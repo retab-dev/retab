@@ -118,6 +118,31 @@ var membershipColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return membershipCell(row, "id") }},
 }
 
+// resolveAccessResourceID returns the resource id an access-list command is
+// scoped to, accepting it either positionally (preferred, matching the workflow
+// subcommand convention `list <id>`) or via the named flag (--project-id /
+// --workflow-id). The two forms are co-equal; passing both is allowed only when
+// they agree. The id is required: these routes authorize the read against a
+// specific resource, so an org-wide listing is rejected server-side anyway.
+func resolveAccessResourceID(cmd *cobra.Command, args []string, flagName string) (string, error) {
+	flagVal, _ := cmd.Flags().GetString(flagName)
+	flagVal = strings.TrimSpace(flagVal)
+	var positional string
+	if len(args) > 0 {
+		positional = strings.TrimSpace(args[0])
+	}
+	switch {
+	case positional != "" && flagVal != "" && positional != flagVal:
+		return "", fmt.Errorf("conflicting %s: positional %q vs --%s %q", flagName, positional, flagName, flagVal)
+	case positional != "":
+		return positional, nil
+	case flagVal != "":
+		return flagVal, nil
+	default:
+		return "", fmt.Errorf("a %s is required (as the first argument or via --%s)", flagName, flagName)
+	}
+}
+
 // printMembershipList renders a paginated membership envelope, shared by the
 // project- and workflow-access list commands.
 func printMembershipList(cmd *cobra.Command, result *cliPaginatedList[cliMembership]) error {
@@ -178,20 +203,21 @@ organization + environment and require a dashboard (OAuth) session.`,
 }
 
 var projectsAccessListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list <project-id>",
 	Short: "List project access grants",
 	Long: `List who can access a project, and at which role.
 
---project-id is required: the route authorizes the read against that specific
-project. Filter further with --subject-id / --role, and include revoked grants
-with --include-inactive.`,
-	Example: `  retab projects access list --project-id proj_01HX...
-  retab projects access list --project-id proj_01HX... --role project-owner`,
-	Args: cobra.NoArgs,
+Name the project either positionally (` + "`list <project-id>`" + `) or with the
+` + "`--project-id`" + ` flag — the project id is required because the route
+authorizes the read against that specific project. Filter further with
+--subject-id / --role, and include revoked grants with --include-inactive.`,
+	Example: `  retab projects access list proj_01HX...
+  retab projects access list proj_01HX... --role project-owner`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		projectID, _ := cmd.Flags().GetString("project-id")
-		if strings.TrimSpace(projectID) == "" {
-			return fmt.Errorf("--project-id is required")
+		projectID, err := resolveAccessResourceID(cmd, args, "project-id")
+		if err != nil {
+			return err
 		}
 		query, err := membershipListQuery(cmd)
 		if err != nil {
@@ -352,8 +378,7 @@ func addMembershipListFlags(cmd *cobra.Command) {
 
 func init() {
 	addMembershipListFlags(projectsAccessListCmd)
-	projectsAccessListCmd.Flags().String("project-id", "", "project whose grants to list (required)")
-	_ = projectsAccessListCmd.MarkFlagRequired("project-id")
+	projectsAccessListCmd.Flags().String("project-id", "", "project whose grants to list (alternative to the positional form)")
 
 	projectsAccessGrantCmd.Flags().String("project-id", "", "project to grant access to (required)")
 	projectsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via `retab members list`; alternative to --subject-id)")

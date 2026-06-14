@@ -118,10 +118,17 @@ var workflowsSpecValidateCmd = &cobra.Command{
 created or modified — the server only returns whether the spec parses
 and whether its referenced blocks / schemas / model ids exist.
 
+For a spec that describes a NEW workflow (no ` + "`metadata.id`" + `), pass
+` + "`--project-id`" + ` — the server authorizes the request as a create against
+that project, exactly like ` + "`plan`" + ` / ` + "`apply`" + `, and returns a
+422 without it. A spec that carries a ` + "`metadata.id`" + ` (an existing
+workflow) needs no project.
+
 Returns a non-zero exit if validation fails, with the server's diagnostic
 JSON on stderr — wire it into pre-commit / CI to keep broken specs out
 of main.`,
 	Example: `  retab workflows spec validate ./workflow.yaml
+  retab workflows spec validate ./new-workflow.yaml --project-id proj_abc123
   cat workflow.yaml | retab workflows spec validate -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -135,7 +142,11 @@ of main.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Spec.Validate(ctx, &retab.WorkflowSpecValidateParams{YamlDefinition: yaml})
+		params := &retab.WorkflowSpecValidateParams{YamlDefinition: yaml}
+		if projectID, _ := cmd.Flags().GetString("project-id"); projectID != "" {
+			params.ProjectID = ptr(projectID)
+		}
+		result, err := client.Workflows.Spec.Validate(ctx, params)
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
@@ -655,6 +666,7 @@ func init() {
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
 	workflowsSpecApplyCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
+	workflowsSpecValidateCmd.Flags().String("project-id", "", "project to authorize a create-spec validation against (required for a spec with no metadata.id)")
 	workflowsSpecApplyCmd.Flags().String("project-id", "", "project that will own the new workflow (required unless --to is given)")
 	workflowsSpecApplyCmd.Flags().String("to", "", "apply to an existing workflow draft instead of creating a new one (mutually exclusive with --project-id)")
 	workflowsSpecPlanCmd.Flags().String("project-id", "", "project to scope a create-new plan to (matches the --project-id used by apply)")

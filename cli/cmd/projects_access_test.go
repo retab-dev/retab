@@ -55,6 +55,53 @@ func TestProjectsAccessListHitsMembershipsEndpoint(t *testing.T) {
 	}
 }
 
+// TestProjectsAccessListAcceptsPositionalID pins that the project id can be
+// passed positionally (the preferred form) and reaches the query.
+func TestProjectsAccessListAcceptsPositionalID(t *testing.T) {
+	resetEnvironmentCommandPersistentFlags(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var seenQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"before":null,"after":null}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if _, err := captureStdAndRun(t, func() error {
+		return projectsAccessListCmd.RunE(projectsAccessListCmd, []string{"proj_pos"})
+	}); err != nil {
+		t.Fatalf("projects access list <positional>: %v", err)
+	}
+	if !strings.Contains(seenQuery, "project_id=proj_pos") {
+		t.Fatalf("query %q missing project_id=proj_pos", seenQuery)
+	}
+}
+
+// TestProjectsAccessListPositionalFlagConflict pins that a positional id that
+// disagrees with --project-id is a clean error.
+func TestProjectsAccessListPositionalFlagConflict(t *testing.T) {
+	resetEnvironmentCommandPersistentFlags(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
+
+	if err := projectsAccessListCmd.Flags().Set("project-id", "proj_flag"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = projectsAccessListCmd.Flags().Set("project-id", "") })
+
+	_, err := captureStdAndRun(t, func() error {
+		return projectsAccessListCmd.RunE(projectsAccessListCmd, []string{"proj_pos"})
+	})
+	if err == nil || !strings.Contains(err.Error(), "conflicting project-id") {
+		t.Fatalf("expected conflict error, got %v", err)
+	}
+}
+
 // TestProjectsAccessGrantPostsBody pins method, path, and the create body.
 func TestProjectsAccessGrantPostsBody(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
