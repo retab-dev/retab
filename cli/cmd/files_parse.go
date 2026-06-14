@@ -56,9 +56,12 @@ parse/grep calls with the same flags reuse the expensive text extraction/OCR.`,
 
   # A spreadsheet, parsed natively
   retab files parse data.xlsx --format json -o data.json`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path := args[0]
+		path, err := localFilePath(cmd, args)
+		if err != nil {
+			return err
+		}
 		kind := detectKind(path)
 		if kind == kindUnknown {
 			return fmt.Errorf("unsupported file type for %s (supported: pdf, images, txt/md/json, csv/tsv, xlsx, docx)", path)
@@ -69,6 +72,14 @@ parse/grep calls with the same flags reuse the expensive text extraction/OCR.`,
 		case "", "text", "json":
 		default:
 			return fmt.Errorf("--format %q must be text or json", format)
+		}
+		// When --format is left at its default, honor the global --output flag so
+		// `files parse --output json` matches its siblings `files grep`/`files
+		// inspect` (which already route through --output). An explicit --format wins.
+		if !cmd.Flags().Changed("format") {
+			if global, gerr := ResolveOutputFormat(cmd, os.Stdout); gerr == nil && global == OutputJSON {
+				format = "json"
+			}
 		}
 		withBbox, _ := cmd.Flags().GetBool("bbox")
 

@@ -68,9 +68,12 @@ The selected mode must match the document type.`,
 
   # Render one local image to a normalized PNG and print its path
   retab files inspect receipt.jpg --render 1 --out ./pages`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path := args[0]
+		path, err := localFilePath(cmd, args)
+		if err != nil {
+			return err
+		}
 		kind := detectKind(path)
 		if kind == kindUnknown {
 			return fmt.Errorf("unsupported file type for %s (supported: pdf, images, txt/md/json, csv/tsv, xlsx, docx)", path)

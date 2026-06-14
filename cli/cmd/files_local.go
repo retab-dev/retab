@@ -24,11 +24,13 @@ import (
 
 func init() {
 	addParseOptionFlags(filesParseCmd)
+	filesParseCmd.Flags().String("file", "", "path to the local document (alternative to the positional <path>)")
 	filesParseCmd.Flags().String("format", "text", "output format: text | json")
 	filesParseCmd.Flags().Bool("bbox", false, "include per-item bounding boxes in JSON output (pdf/image)")
 	filesParseCmd.Flags().StringP("out", "o", "", "write output to this path instead of stdout")
 
 	addParseOptionFlags(filesGrepCmd)
+	filesGrepCmd.Flags().String("file", "", "path to the local document (alternative to the positional <path>)")
 	filesGrepCmd.Flags().Bool("regex", false, "treat the pattern as a regular expression")
 	filesGrepCmd.Flags().Bool("case-sensitive", false, "match case-sensitively (default: case-insensitive)")
 	filesGrepCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 500, value: "50"}, "max-results", "max matches to return (1-500)")
@@ -36,6 +38,7 @@ func init() {
 	filesGrepCmd.Flags().Bool("bbox", false, "attach a normalized bounding box to pdf/image matches")
 
 	addParseOptionFlags(filesInspectCmd)
+	filesInspectCmd.Flags().String("file", "", "path to the local document (alternative to the positional <path>)")
 	filesInspectCmd.Flags().String("lines", "", "line range for text/docx, e.g. 10-40 (1-based, inclusive)")
 	filesInspectCmd.Flags().String("cells", "", "cell range for csv/xlsx, e.g. A1:Z100")
 	filesInspectCmd.Flags().String("sheet", "", "sheet name or 1-based index for xlsx (default: first sheet)")
@@ -44,6 +47,39 @@ func init() {
 	filesInspectCmd.MarkFlagsMutuallyExclusive("lines", "cells", "render")
 
 	filesCmd.AddCommand(filesParseCmd, filesGrepCmd, filesInspectCmd)
+}
+
+// localFilePath resolves a single local document path for the files
+// parse/inspect/upload commands. The path may be given positionally (the
+// idiomatic, documented form) or via --file — the flag form mirrors the document
+// primitives' --file so muscle memory from `extractions create --file ...` works
+// on the local `files` commands too. The positional wins when both are present.
+func localFilePath(cmd *cobra.Command, args []string) (string, error) {
+	if len(args) >= 1 && strings.TrimSpace(args[0]) != "" {
+		return args[0], nil
+	}
+	if flag, _ := cmd.Flags().GetString("file"); strings.TrimSpace(flag) != "" {
+		return flag, nil
+	}
+	return "", fmt.Errorf("a file path is required: pass it positionally (<path>) or with --file")
+}
+
+// localGrepInputs resolves grep's <path> and <pattern>. The path may come from
+// the positional <path> or --file; the pattern is always a positional. So both
+// `files grep doc.pdf "term"` and `files grep --file doc.pdf "term"` work.
+func localGrepInputs(cmd *cobra.Command, args []string) (path string, pattern string, err error) {
+	flag, _ := cmd.Flags().GetString("file")
+	flag = strings.TrimSpace(flag)
+	if flag != "" {
+		if len(args) != 1 {
+			return "", "", fmt.Errorf("with --file, provide exactly one positional argument: the <pattern>")
+		}
+		return flag, args[0], nil
+	}
+	if len(args) != 2 {
+		return "", "", fmt.Errorf("provide <path> and <pattern> (or --file <path> with a single <pattern> positional)")
+	}
+	return args[0], args[1], nil
 }
 
 // addParseOptionFlags attaches the LiteParse-tuning flags shared by parse,

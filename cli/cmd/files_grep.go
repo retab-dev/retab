@@ -57,9 +57,12 @@ regular expression and --case-sensitive to match case.`,
 
   # Search a spreadsheet (returns cell anchors)
   retab files grep data.xlsx 42000`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path, pattern := args[0], args[1]
+		path, pattern, err := localGrepInputs(cmd, args)
+		if err != nil {
+			return err
+		}
 		kind := detectKind(path)
 		if kind == kindUnknown {
 			return fmt.Errorf("unsupported file type for %s (supported: pdf, images, txt/md/json, csv/tsv, xlsx, docx)", path)
