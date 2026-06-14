@@ -273,7 +273,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
 		Filename:    filename,
 		ContentType: &contentType,
-		SizeBytes:   int64(len(data)),
+		SizeBytes:   len(data),
 		Sha256:      &sha256Hash,
 	})
 	if err != nil {
@@ -757,7 +757,7 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		params := &retab.FilesCreateUploadParams{
 			Filename:    filename,
 			ContentType: &contentType,
-			SizeBytes:   size,
+			SizeBytes:   int(size),
 		}
 		// Only send sha256 when actually provided. An empty *string still
 		// marshals "sha256":"", which fails the server's hex-digest pattern
