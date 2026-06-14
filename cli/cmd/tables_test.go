@@ -731,6 +731,52 @@ func TestTablesQueryCSVRendersNullAsEmptyCell(t *testing.T) {
 	}
 }
 
+// CSV must render JSON scalars faithfully and re-importably: booleans as
+// lowercase true/false (not Go/Python-style True/False), integral numbers
+// without a trailing .0, and fractional numbers at full precision.
+func TestTablesQueryCSVRendersScalarsFaithfully(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"table_id": "tbl_scalars",
+			"columns":  []map[string]any{{"name": "active"}, {"name": "age"}, {"name": "salary"}},
+			"rows": []map[string]any{
+				{"id": "r0", "position": 0, "data": map[string]any{"active": true, "age": 30, "salary": 50000.5}},
+				{"id": "r1", "position": 1, "data": map[string]any{"active": false, "age": 25, "salary": 42000}},
+			},
+			"row_count":          2,
+			"filtered_row_count": 2,
+			"offset":             0,
+			"limit":              2,
+			"has_more":           false,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t, "tables", "query", "tbl_scalars", "--output", "csv"); err != nil {
+			t.Fatalf("tables query: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "active,age,salary") {
+		t.Fatalf("missing CSV header:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "true,30,50000.5") {
+		t.Fatalf("expected faithful row 'true,30,50000.5', got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "false,25,42000") {
+		t.Fatalf("expected faithful row 'false,25,42000' (no trailing .0), got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "True") || strings.Contains(stdout, "False") {
+		t.Fatalf("booleans must be lowercase in CSV, got:\n%s", stdout)
+	}
+}
+
 func TestTablesQueryAllFetchesEveryPage(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
