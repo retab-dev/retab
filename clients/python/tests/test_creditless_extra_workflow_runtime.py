@@ -21,6 +21,7 @@ import pytest
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import APIError, AuthenticationError, NotFoundError
+from retab.types.classifications import WorkflowRunsStatus
 from retab.types.workflows.artifacts import WorkflowArtifact
 from retab.types.workflows.reviews import Review
 from retab.types.workflows.runs import WorkflowRun
@@ -53,7 +54,7 @@ def test_runs_pagination_after_cursor_disjoint(sync_client: Retab) -> None:
 
 
 def test_runs_status_filter_shape(sync_client: Retab) -> None:
-    page = sync_client.workflows.runs.list(limit=5, status="completed")
+    page = sync_client.workflows.runs.list(limit=5, status=WorkflowRunsStatus.COMPLETED)
     assert isinstance(page.data, list)
     for run in page.data:
         assert isinstance(run, WorkflowRun)
