@@ -10,17 +10,14 @@ from retab.types.workflows.reviews import Actor
 class CreateReviewVersionRequest(BaseModel):
     """Create a corrected version of a review.
 
-    `parent_id` must reference an existing version under the same
-    `review_id`."""
+`parent_id` must reference an existing version under the same
+`review_id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     review_id: str
     parent_id: str
-    snapshot: dict[str, Any] = Field(
-        ...,
-        description="The full reviewed snapshot to store as an immutable version. The object must match the gated block type: extract uses the raw output object; classifier uses {'category': string}; split uses {'documents': [{'name': string, 'pages': positive sorted int[]}]}; for_each uses {'partitions': [{'key': string, 'pages': positive sorted int[]}]}. The server validates the shape and stores the exact submitted object when valid.",
-    )
+    snapshot: dict[str, Any] = Field(..., description="The full reviewed snapshot to store as an immutable version. The object must match the gated block type: extract uses the raw output object; classifier uses {'category': string}; split uses {'documents': [{'name': string, 'pages': positive sorted int[]}]}; for_each uses {'partitions': [{'key': string, 'pages': positive sorted int[]}]}. The server validates the shape and stores the exact submitted object when valid.")
     note: str | None = None
 
 

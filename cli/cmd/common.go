@@ -1738,11 +1738,12 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	dumpReq := req.Clone(req.Context())
 	redactSensitiveHeaders(dumpReq.Header)
 	if requestBody != nil {
-		dumpReq.Body = io.NopCloser(bytes.NewReader(requestBody))
+		debugRequestBody := redactSensitiveDebugBody(requestBody, req.Header.Get("Content-Type"), req.URL.Path)
+		dumpReq.Body = io.NopCloser(bytes.NewReader(debugRequestBody))
 		dumpReq.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(requestBody)), nil
+			return io.NopCloser(bytes.NewReader(debugRequestBody)), nil
 		}
-		dumpReq.ContentLength = int64(len(requestBody))
+		dumpReq.ContentLength = int64(len(debugRequestBody))
 	}
 	includeReqBody := len(requestBody) <= maxDebugDumpBody
 	if dump, err := httputil.DumpRequestOut(dumpReq, includeReqBody); err == nil {
@@ -1765,8 +1766,9 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp.Body = io.NopCloser(bytes.NewReader(body))
 	includeRespBody := len(body) <= maxDebugDumpBody
 	dumpResp := *resp
-	dumpResp.Body = io.NopCloser(bytes.NewReader(body))
-	dumpResp.ContentLength = int64(len(body))
+	debugResponseBody := redactSensitiveDebugBody(body, resp.Header.Get("Content-Type"), req.URL.Path)
+	dumpResp.Body = io.NopCloser(bytes.NewReader(debugResponseBody))
+	dumpResp.ContentLength = int64(len(debugResponseBody))
 	if dump, err := httputil.DumpResponse(&dumpResp, includeRespBody); err == nil {
 		fmt.Fprintf(os.Stderr, "--- HTTP response ---\n%s\n", dump)
 		if !includeRespBody {
@@ -1774,6 +1776,53 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 	return resp, nil
+}
+
+var sensitiveJSONFields = map[string]bool{
+	"api_key":       true,
+	"access_token":  true,
+	"refresh_token": true,
+	"id_token":      true,
+	"token":         true,
+}
+
+func redactSensitiveDebugBody(body []byte, contentType, path string) []byte {
+	if len(body) == 0 {
+		return body
+	}
+	if strings.Contains(path, "/secrets/") {
+		return []byte("[REDACTED]")
+	}
+	if !strings.Contains(strings.ToLower(contentType), "json") {
+		return body
+	}
+	var value any
+	if err := json.Unmarshal(body, &value); err != nil {
+		return body
+	}
+	redactSensitiveJSONValue(value)
+	redacted, err := json.Marshal(value)
+	if err != nil {
+		return body
+	}
+	return redacted
+}
+
+func redactSensitiveJSONValue(value any) {
+	switch typed := value.(type) {
+	case map[string]any:
+		for key, child := range typed {
+			if sensitiveJSONFields[strings.ToLower(key)] {
+				typed[key] = "[REDACTED]"
+				continue
+			}
+			redactSensitiveJSONValue(child)
+		}
+	case []any:
+		for _, child := range typed {
+			redactSensitiveJSONValue(child)
+		}
+	}
 }
 
 // redactSensitiveHeaders replaces credential-carrying header values in

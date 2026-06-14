@@ -28,18 +28,8 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class SplitsMixin:
-    def prepare_list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: SplitsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: SplitsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PreparedRequest:
         """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         params: dict[str, Any] = {
             "before": before,
@@ -57,34 +47,17 @@ class SplitsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/splits", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument],
-        model: str = "retab-small",
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, subdocuments: list[Subdocument], model: str = "retab-small", instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> PreparedRequest:
         """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
             document_payload = _coerce_mime_document_input(document_payload)
-        payload = SplitRequest(
-            document=cast(Any, document_payload),
-            subdocuments=cast(Any, subdocuments),
-            model=cast(Any, model),
-            instructions=cast(Any, instructions),
-            n_consensus=cast(Any, n_consensus),
-            bust_cache=cast(Any, bust_cache),
-            background=cast(Any, background),
-        )
+        payload = SplitRequest(document=cast(Any, document_payload), subdocuments=cast(Any, subdocuments), model=cast(Any, model), instructions=cast(Any, instructions), n_consensus=cast(Any, n_consensus), bust_cache=cast(Any, bust_cache), background=cast(Any, background))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/splits", params=params or None, data=data)
 
@@ -101,7 +74,8 @@ class SplitsMixin:
 
     def prepare_delete(self, split_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Split Delete a split. Permanently deletes the split identified by `split_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the split does not exist."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -110,7 +84,8 @@ class SplitsMixin:
 
     def prepare_create_split_cancel(self, split_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Split"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -121,46 +96,14 @@ class SplitsMixin:
 class Splits(SyncAPIResource, SplitsMixin):
     """Splits API wrapper."""
 
-    def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: SplitsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PaginatedList[Split]:
+    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: SplitsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PaginatedList[Split]:
         """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return self.request_page(prepared_request, model=Split)
 
-    def create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument],
-        model: str = "retab-small",
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Split:
+    def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, subdocuments: list[Subdocument], model: str = "retab-small", instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Split:
         """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
-        prepared_request = self.prepare_create(
-            document=document,
-            subdocuments=subdocuments,
-            model=model,
-            instructions=instructions,
-            n_consensus=n_consensus,
-            bust_cache=bust_cache,
-            background=background,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(document=document, subdocuments=subdocuments, model=model, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
@@ -186,46 +129,14 @@ class Splits(SyncAPIResource, SplitsMixin):
 class AsyncSplits(AsyncAPIResource, SplitsMixin):
     """Async Splits API wrapper."""
 
-    async def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: SplitsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[Split]:
+    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: SplitsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Split]:
         """List Splits List splits. Returns a paginated list of splits for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return await self.request_page(prepared_request, model=Split)
 
-    async def create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument],
-        model: str = "retab-small",
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Split:
+    async def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, subdocuments: list[Subdocument], model: str = "retab-small", instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Split:
         """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
-        prepared_request = self.prepare_create(
-            document=document,
-            subdocuments=subdocuments,
-            model=model,
-            instructions=instructions,
-            n_consensus=n_consensus,
-            bust_cache=bust_cache,
-            background=background,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(document=document, subdocuments=subdocuments, model=model, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
@@ -246,6 +157,5 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         prepared_request = self.prepare_create_split_cancel(split_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
-
 
 __all__ = ["Splits", "AsyncSplits", "SplitsMixin"]

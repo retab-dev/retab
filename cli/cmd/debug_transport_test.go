@@ -80,6 +80,78 @@ func TestDebugTransport_RedactsBearerTokenButKeepsScheme(t *testing.T) {
 	}
 }
 
+func TestDebugTransport_RedactsSensitiveJSONResponseFields(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"token":"ctx_SUPER_SECRET_TOKEN","access_token":"at_SUPER_SECRET_TOKEN","refresh_token":"rt_SUPER_SECRET_TOKEN","ok":true}`))
+	}))
+	defer srv.Close()
+
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	tr := &debugTransport{wrapped: http.DefaultTransport}
+	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
+	resp, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("roundtrip: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read response body: %v", err)
+	}
+	if !strings.Contains(string(body), "ctx_SUPER_SECRET_TOKEN") {
+		t.Fatalf("wire response body was mutated: %s", body)
+	}
+
+	got := stderr.read()
+	for _, leaked := range []string{"ctx_SUPER_SECRET_TOKEN", "at_SUPER_SECRET_TOKEN", "rt_SUPER_SECRET_TOKEN"} {
+		if strings.Contains(got, leaked) {
+			t.Fatalf("sensitive response token leaked into --debug output:\n%s", got)
+		}
+	}
+	if !strings.Contains(got, `"ok":true`) {
+		t.Fatalf("non-sensitive response body fields should remain visible:\n%s", got)
+	}
+}
+
+func TestDebugTransport_RedactsSensitiveJSONRequestFields(t *testing.T) {
+	var sawBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request body: %v", err)
+		}
+		sawBody = string(body)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	tr := &debugTransport{wrapped: http.DefaultTransport}
+	req, _ := http.NewRequest(http.MethodPost, srv.URL, strings.NewReader(`{"refresh_token":"rt_SUPER_SECRET_TOKEN","organization_id":"org_1"}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("roundtrip: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if sawBody != `{"refresh_token":"rt_SUPER_SECRET_TOKEN","organization_id":"org_1"}` {
+		t.Fatalf("wire request body was mutated: %s", sawBody)
+	}
+
+	got := stderr.read()
+	if strings.Contains(got, "rt_SUPER_SECRET_TOKEN") {
+		t.Fatalf("sensitive request token leaked into --debug output:\n%s", got)
+	}
+	if !strings.Contains(got, `"organization_id":"org_1"`) {
+		t.Fatalf("non-sensitive request body fields should remain visible:\n%s", got)
+	}
+}
+
 func TestDebugTransport_NonSensitiveHeadersUnchanged(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

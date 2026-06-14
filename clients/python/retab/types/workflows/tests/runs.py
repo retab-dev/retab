@@ -6,23 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.experiments import ArtifactFreshness
 from retab.types.workflows.runs import TriggerInfo
 from retab.types.workflows.tests import WorkflowTestBlockTarget
-from retab.types.workflows.tests.results import (
-    CancelledWorkflowTestRun,
-    CompletedWorkflowTestRun,
-    ErrorWorkflowTestRun,
-    PendingWorkflowTestRun,
-    QueuedWorkflowTestRun,
-    RunningWorkflowTestRun,
-    WorkflowTestRunTiming,
-)
+from retab.types.workflows.tests.results import CancelledWorkflowTestRun, CompletedWorkflowTestRun, ErrorWorkflowTestRun, PendingWorkflowTestRun, QueuedWorkflowTestRun, RunningWorkflowTestRun, WorkflowTestRunTiming
 
 
 class BlockTestBatchExecutionCounts(BaseModel):
     """Aggregate counts for a batch of block-test runs.
 
-    Each individual run contributes to exactly one `lifecycle_counts`
-    bucket, and additionally to one `outcome` bucket when
-    `lifecycle_counts.completed` is incremented."""
+Each individual run contributes to exactly one `lifecycle_counts`
+bucket, and additionally to one `outcome` bucket when
+`lifecycle_counts.completed` is incremented."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -59,9 +51,7 @@ class CreateWorkflowTestRunRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str
-    scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = Field(
-        default=None, description="Optional execution scope. Omit (or pass null) to run every saved test in the workflow.", discriminator="type"
-    )
+    scope: WorkflowTestRunSingleScope | WorkflowTestRunWorkflowScope | WorkflowTestRunBlockScope | None = Field(default=None, description="Optional execution scope. Omit (or pass null) to run every saved test in the workflow.", discriminator="type")
 
 
 class WorkflowTestRun(BaseModel):
@@ -73,17 +63,12 @@ class WorkflowTestRun(BaseModel):
     workflow_id: str
     workflow_version_id: str
     trigger: TriggerInfo
-    lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun = Field(
-        ..., discriminator="status"
-    )
+    lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun = Field(..., discriminator="status")
     timing: WorkflowTestRunTiming
     target: WorkflowTestBlockTarget | None = None
     test_id: str | None = None
     total_tests: int
-    counts: BlockTestBatchExecutionCounts | None = Field(
-        default={"lifecycle_counts": {"cancelled": 0, "completed": 0, "error": 0, "pending": 0, "queued": 0, "running": 0}, "outcome": {"blocked": 0, "failed": 0, "passed": 0}},
-        validate_default=True,
-    )
+    counts: BlockTestBatchExecutionCounts | None = Field(default={"lifecycle_counts": {"cancelled": 0, "completed": 0, "error": 0, "pending": 0, "queued": 0, "running": 0}, "outcome": {"blocked": 0, "failed": 0, "passed": 0}}, validate_default=True)
     freshness: ArtifactFreshness | None = None
 
 

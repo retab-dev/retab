@@ -16,6 +16,7 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 	help := workflowsBlocksCreateCmd.Long + "\n" + workflowsBlocksCreateCmd.Example
 
 	for _, want := range []string{
+		"`id` (optional)",
 		`"type": "extract"`,
 		`"review"`,
 		`"predicate"`,

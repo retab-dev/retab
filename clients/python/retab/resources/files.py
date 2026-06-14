@@ -6,34 +6,13 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.files import (
-    CompleteFileUploadRequest,
-    CreateFileBlueprintRequest,
-    CreateFileBlueprintRequestMode,
-    CreateUploadResponse,
-    File,
-    FileBlueprint,
-    FileLink,
-    UploadFileRequest,
-)
+from retab.types.files import CompleteFileUploadRequest, CreateFileBlueprintRequest, CreateFileBlueprintRequestMode, CreateUploadResponse, File, FileBlueprint, FileLink, UploadFileRequest
 from retab.types.mime import MIMEData
 
 
 class FilesMixin:
-    def prepare_list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        mime_type: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        include_embeddings: bool | None = False,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, mime_type: str | None = None, from_date: str | None = None, to_date: str | None = None, include_embeddings: bool | None = False, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> PreparedRequest:
         """List Files List files with pagination and optional filtering."""
         params: dict[str, Any] = {
             "before": before,
@@ -53,11 +32,10 @@ class FilesMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/files", params=params or None, data=data)
 
-    def prepare_create_blueprint(
-        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
-    ) -> PreparedRequest:
+    def prepare_create_blueprint(self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any) -> PreparedRequest:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -78,7 +56,8 @@ class FilesMixin:
 
     def prepare_create_blueprint_cancel(self, blueprint_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel File Blueprint Cancel an in-flight background file blueprint."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -87,7 +66,8 @@ class FilesMixin:
 
     def prepare_create_upload(self, filename: str, size_bytes: int, content_type: str | None = None, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Upload File Start a file upload. Reserves a file record for the given `filename`, `content_type`, and `size_bytes`, and returns a short-lived signed `upload_url` the client uses to `PUT` the file content directly. Call the complete-upload endpoint with the returned `file_id` once the bytes have been uploaded."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -97,7 +77,8 @@ class FilesMixin:
 
     def prepare_complete_upload(self, file_id: str, sha256: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Complete Upload File Finalize a file upload. Confirms that the content for `file_id` has been uploaded, verifying the object's size and optional `sha256` checksum against the upload session, and marks the file ready. Returns a durable reference to the stored file. Responds with `404` if the upload session is unknown, `410` if it has expired, and `422` if the size or checksum does not match."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -107,7 +88,8 @@ class FilesMixin:
 
     def prepare_get(self, file_id: str, **extra_params: Any) -> PreparedRequest:
         """Get File Retrieve a file. Returns metadata for the file identified by `file_id`, including its `filename`, `page_count`, and timestamps. Responds with `404` if no matching file exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -116,7 +98,8 @@ class FilesMixin:
 
     def prepare_get_download_link(self, file_id: str, **extra_params: Any) -> PreparedRequest:
         """Download Link Get a temporary download link for a file. Returns a short-lived signed `download_url` for the file identified by `file_id`, along with its `filename` and expiration. Responds with `404` if no matching file exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -127,39 +110,12 @@ class FilesMixin:
 class Files(SyncAPIResource, FilesMixin):
     """Files API wrapper."""
 
-    def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        mime_type: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        include_embeddings: bool | None = False,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> PaginatedList[File]:
+    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, mime_type: str | None = None, from_date: str | None = None, to_date: str | None = None, include_embeddings: bool | None = False, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> PaginatedList[File]:
         """List Files List files with pagination and optional filtering."""
-        prepared_request = self.prepare_list(
-            before=before,
-            after=after,
-            limit=limit,
-            order=order,
-            filename=filename,
-            mime_type=mime_type,
-            from_date=from_date,
-            to_date=to_date,
-            include_embeddings=include_embeddings,
-            sort_by=sort_by,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, from_date=from_date, to_date=to_date, include_embeddings=include_embeddings, sort_by=sort_by, **extra_params)
         return self.request_page(prepared_request, model=File)
 
-    def create_blueprint(
-        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
-    ) -> FileBlueprint:
+    def create_blueprint(self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any) -> FileBlueprint:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
         prepared_request = self.prepare_create_blueprint(file_id=file_id, mode=mode, intent=intent, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -205,39 +161,12 @@ class Files(SyncAPIResource, FilesMixin):
 class AsyncFiles(AsyncAPIResource, FilesMixin):
     """Async Files API wrapper."""
 
-    async def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        mime_type: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        include_embeddings: bool | None = False,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[File]:
+    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, mime_type: str | None = None, from_date: str | None = None, to_date: str | None = None, include_embeddings: bool | None = False, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> AsyncPaginatedList[File]:
         """List Files List files with pagination and optional filtering."""
-        prepared_request = self.prepare_list(
-            before=before,
-            after=after,
-            limit=limit,
-            order=order,
-            filename=filename,
-            mime_type=mime_type,
-            from_date=from_date,
-            to_date=to_date,
-            include_embeddings=include_embeddings,
-            sort_by=sort_by,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, mime_type=mime_type, from_date=from_date, to_date=to_date, include_embeddings=include_embeddings, sort_by=sort_by, **extra_params)
         return await self.request_page(prepared_request, model=File)
 
-    async def create_blueprint(
-        self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any
-    ) -> FileBlueprint:
+    async def create_blueprint(self, file_id: str, mode: CreateFileBlueprintRequestMode | None = None, intent: str | None = None, background: bool = False, **extra_params: Any) -> FileBlueprint:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
         prepared_request = self.prepare_create_blueprint(file_id=file_id, mode=mode, intent=intent, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -278,6 +207,5 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         prepared_request = self.prepare_get_download_link(file_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return FileLink.model_validate(response)
-
 
 __all__ = ["Files", "AsyncFiles", "FilesMixin"]

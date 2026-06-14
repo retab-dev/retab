@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 )
@@ -57,6 +58,19 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() error {
+	return executeRoot()
+}
+
+func ExecuteArgs(args []string) error {
+	normalizedArgs := normalizeUnicodeDashArgs(args)
+	rootCmd.SetArgs(normalizedArgs)
+	if err := validateHelpCommandPath(normalizedArgs); err != nil {
+		return err
+	}
+	return executeRoot()
+}
+
+func executeRoot() error {
 	hardenGroupCommands(rootCmd)
 	notify := startUpdateNotifier()
 	err := rootCmd.Execute()
@@ -69,6 +83,109 @@ func Execute() error {
 		return errSilent
 	}
 	return err
+}
+
+func normalizeUnicodeDashArgs(args []string) []string {
+	out := make([]string, len(args))
+	for i, arg := range args {
+		out[i] = normalizeUnicodeDashArg(arg)
+	}
+	return out
+}
+
+func normalizeUnicodeDashArg(arg string) string {
+	for _, dash := range []string{"—", "–", "−"} {
+		if strings.HasPrefix(arg, dash+dash) {
+			return "--" + strings.TrimPrefix(arg, dash+dash)
+		}
+		if strings.HasPrefix(arg, dash) {
+			suffix := strings.TrimPrefix(arg, dash)
+			if utf8.RuneCountInString(suffix) == 1 {
+				return "-" + suffix
+			}
+			return "--" + suffix
+		}
+	}
+	return arg
+}
+
+func validateHelpCommandPath(args []string) error {
+	if !hasHelpFlag(args) {
+		return nil
+	}
+	current := rootCmd
+	skipNext := false
+	for _, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if isHelpFlag(arg) {
+			return nil
+		}
+		if arg == "--" {
+			return nil
+		}
+		if strings.HasPrefix(arg, "-") {
+			skipNext = commandFlagTakesValue(current, arg)
+			continue
+		}
+		sub := findCommandByNameOrAlias(current, arg)
+		if sub == nil {
+			return fmt.Errorf("unknown command %q for %q", arg, current.CommandPath())
+		}
+		current = sub
+	}
+	return nil
+}
+
+func hasHelpFlag(args []string) bool {
+	for _, arg := range args {
+		if isHelpFlag(arg) {
+			return true
+		}
+	}
+	return false
+}
+
+func isHelpFlag(arg string) bool {
+	return arg == "--help" || arg == "-h" || strings.HasPrefix(arg, "--help=")
+}
+
+func commandFlagTakesValue(cmd *cobra.Command, arg string) bool {
+	if strings.Contains(arg, "=") {
+		return false
+	}
+	name := strings.TrimLeft(arg, "-")
+	if name == "" {
+		return false
+	}
+	if utf8.RuneCountInString(name) == 1 {
+		if flag := cmd.Flags().ShorthandLookup(name); flag != nil {
+			return flag.NoOptDefVal == ""
+		}
+		if flag := cmd.InheritedFlags().ShorthandLookup(name); flag != nil {
+			return flag.NoOptDefVal == ""
+		}
+	}
+	if flag := cmd.Flag(name); flag != nil {
+		return flag.NoOptDefVal == ""
+	}
+	return false
+}
+
+func findCommandByNameOrAlias(cmd *cobra.Command, name string) *cobra.Command {
+	for _, sub := range cmd.Commands() {
+		if sub.Name() == name {
+			return sub
+		}
+		for _, alias := range sub.Aliases {
+			if alias == name {
+				return sub
+			}
+		}
+	}
+	return nil
 }
 
 // hardenGroupCommands makes router commands (those that only group

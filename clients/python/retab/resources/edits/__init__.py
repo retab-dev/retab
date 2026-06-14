@@ -31,19 +31,8 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class EditsMixin:
-    def prepare_list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        template_id: str | None = None,
-        status: EditsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, template_id: str | None = None, status: EditsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PreparedRequest:
         """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
         params: dict[str, Any] = {
             "before": before,
@@ -62,34 +51,17 @@ class EditsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/edits", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        template_id: str | None = None,
-        model: str = "retab-small",
-        config: EditConfig | None = None,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, instructions: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None, template_id: str | None = None, model: str = "retab-small", config: EditConfig | None = None, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> PreparedRequest:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
             document_payload = _coerce_mime_document_input(document_payload)
-        payload = EditRequest(
-            instructions=cast(Any, instructions),
-            document=cast(Any, document_payload),
-            template_id=cast(Any, template_id),
-            model=cast(Any, model),
-            config=cast(Any, config),
-            bust_cache=cast(Any, bust_cache),
-            background=cast(Any, background),
-        )
+        payload = EditRequest(instructions=cast(Any, instructions), document=cast(Any, document_payload), template_id=cast(Any, template_id), model=cast(Any, model), config=cast(Any, config), bust_cache=cast(Any, bust_cache), background=cast(Any, background))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/edits", params=params or None, data=data)
 
@@ -106,7 +78,8 @@ class EditsMixin:
 
     def prepare_delete(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -115,7 +88,8 @@ class EditsMixin:
 
     def prepare_create_edit_cancel(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Edit"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -130,40 +104,15 @@ class Edits(SyncAPIResource, EditsMixin):
         super().__init__(client=client)
         self.templates = EditTemplates(client=client)
 
-    def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        template_id: str | None = None,
-        status: EditsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PaginatedList[Edit]:
+
+    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, template_id: str | None = None, status: EditsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PaginatedList[Edit]:
         """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return self.request_page(prepared_request, model=Edit)
 
-    def create(
-        self,
-        instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        template_id: str | None = None,
-        model: str = "retab-small",
-        config: EditConfig | None = None,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Edit:
+    def create(self, instructions: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None, template_id: str | None = None, model: str = "retab-small", config: EditConfig | None = None, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Edit:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
-        prepared_request = self.prepare_create(
-            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params
-        )
+        prepared_request = self.prepare_create(instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
@@ -193,40 +142,15 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         super().__init__(client=client)
         self.templates = AsyncEditTemplates(client=client)
 
-    async def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        template_id: str | None = None,
-        status: EditsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[Edit]:
+
+    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, template_id: str | None = None, status: EditsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Edit]:
         """List Edits List edits. Returns a paginated list of edits. Filter by `filename` (case-insensitive prefix match), `template_id`, and a `from_date`/`to_date` creation range (each `YYYY-MM-DD`). Page with `before`/`after` cursors, `limit`, and `order`; an invalid date format responds with `400`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, template_id=template_id, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return await self.request_page(prepared_request, model=Edit)
 
-    async def create(
-        self,
-        instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        template_id: str | None = None,
-        model: str = "retab-small",
-        config: EditConfig | None = None,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Edit:
+    async def create(self, instructions: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None, template_id: str | None = None, model: str = "retab-small", config: EditConfig | None = None, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Edit:
         """Create Edit Create an edit. Fills the form fields of a document according to `instructions` and renders the values into a PDF. Provide exactly one of `document` (a PDF, DOCX, XLSX, or PPTX) or `template_id` (an existing edit template) — supplying both or neither responds with `400`. Returns the created edit with the filled form data and rendered document; responds with `201`."""
-        prepared_request = self.prepare_create(
-            instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params
-        )
+        prepared_request = self.prepare_create(instructions=instructions, document=document, template_id=template_id, model=model, config=config, bust_cache=bust_cache, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
@@ -247,7 +171,6 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         prepared_request = self.prepare_create_edit_cancel(edit_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
-
 
 from .templates import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 

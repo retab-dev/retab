@@ -24,8 +24,8 @@ class StepArtifactRefOperation(str, Enum):
 class StoredBlockExecution(BaseModel):
     """The result of executing a single workflow block.
 
-    The terminal state is carried by the `lifecycle` field, which is one of
-    completed, error, or skipped."""
+The terminal state is carried by the `lifecycle` field, which is one of
+completed, error, or skipped."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -34,11 +34,7 @@ class StoredBlockExecution(BaseModel):
     run_id: str = Field(..., description="Run whose inputs were used")
     block_id: str = Field(..., description="ID of the block that was executed")
     block_type: str = Field(..., description="Type of the block")
-    lifecycle: CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle = Field(
-        ...,
-        description="Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.",
-        discriminator="status",
-    )
+    lifecycle: CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle = Field(..., description="Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.", discriminator="status")
     handle_inputs: dict[str, Any] | None = Field(default=None, description="Input payloads keyed by handle ID (file metadata for files, data for json)")
     artifact: StepArtifactRef | None = Field(default=None, description="Reference to the artifact produced by this block execution, if any.")
     handle_outputs: dict[str, Any] | None = Field(default=None, description="Output payloads keyed by handle ID")
@@ -61,10 +57,10 @@ class CompletedBlockExecutionLifecycle(BaseModel):
 class CreateBlockExecutionRequest(BaseModel):
     """Re-run a single block.
 
-    `block_id` is the block to run; `run_id` is the workflow run that
-    supplied the original inputs. `step_id` optionally selects a specific
-    step whose inputs should be used, which is useful for blocks inside a
-    `for_each` loop."""
+`block_id` is the block to run; `run_id` is the workflow run that
+supplied the original inputs. `step_id` optionally selects a specific
+step whose inputs should be used, which is useful for blocks inside a
+`for_each` loop."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -72,14 +68,12 @@ class CreateBlockExecutionRequest(BaseModel):
     block_id: str = Field(..., description="Workflow block id to execute.")
     step_id: str | None = Field(default=None, description="Optional concrete step id whose inputs should be used. When omitted, the block id is used to look up the step.")
     n_consensus: int | None = Field(default=None, description="Optional override for n_consensus on extract / split / classifier blocks. Must be 3, 5, or 7.")
-    check_eligibility: bool | None = Field(
-        default=True, description="Whether to verify the upstream subgraph hasn't drifted since the source run. Disable only for explicit force-rerun flows."
-    )
+    check_eligibility: bool | None = Field(default=True, description="Whether to verify the upstream subgraph hasn't drifted since the source run. Disable only for explicit force-rerun flows.")
 
 
 class ErrorBlockExecutionLifecycle(BaseModel):
     """Terminal: the executed block raised. `message` is the executor's
-    error string."""
+error string."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -89,8 +83,8 @@ class ErrorBlockExecutionLifecycle(BaseModel):
 
 class SkippedBlockExecutionLifecycle(BaseModel):
     """Terminal: the block declared its inputs unsatisfied via
-    `should_skip_block` and was skipped. `reason` is the skip rationale
-    surfaced by the block's input requirements registry."""
+`should_skip_block` and was skipped. `reason` is the skip rationale
+surfaced by the block's input requirements registry."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -101,8 +95,8 @@ class SkippedBlockExecutionLifecycle(BaseModel):
 class StepArtifactRef(BaseModel):
     """A resource produced by a workflow step.
 
-    An `(operation, id)` reference. The artifact itself carries no payload —
-    consumers dispatch on `operation` and fetch the referenced record by `id`."""
+An `(operation, id)` reference. The artifact itself carries no payload —
+consumers dispatch on `operation` and fetch the referenced record by `id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

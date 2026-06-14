@@ -42,18 +42,15 @@ class CreateFileBlueprintRequest(BaseModel):
     file_id: str = Field(..., description="File id to analyze.")
     mode: FileBlueprintMode | None = Field(default=None, description="Optional analysis depth override. Omit to let Retab choose.")
     intent: str | None = Field(default=None, description="Optional user intent used to guide the blueprint analysis.")
-    background: bool | None = Field(
-        default=False,
-        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
-    )
+    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
 
 
 class CreateUploadResponse(BaseModel):
     """Instructions for uploading file content to a reserved file record.
 
-    Returned when starting a file upload. Carries the new `file_id`, a
-    short-lived signed `upload_url` with the HTTP method and headers to use,
-    a durable reference to the file, and the URL's `expires_at` time."""
+Returned when starting a file upload. Carries the new `file_id`, a
+short-lived signed `upload_url` with the HTTP method and headers to use,
+a durable reference to the file, and the URL's `expires_at` time."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -90,14 +87,8 @@ class FileBlueprint(BaseModel):
     mode: FileBlueprintMode | None = Field(default=None, description="Analysis depth used or requested.")
     intent: str | None = Field(default=None, description="User intent supplied with the blueprint request.")
     output: dict[str, Any] | None = Field(default={}, description="The generated Document Blueprint payload.")
-    status: FileBlueprintStatus | None = Field(
-        default=cast(FileBlueprintStatus, "pending"),
-        validate_default=True,
-        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
-    )
-    error: PrimitiveError | None = Field(
-        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
-    )
+    status: FileBlueprintStatus | None = Field(default=cast(FileBlueprintStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
+    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
     created_at: datetime.datetime | None = None
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None

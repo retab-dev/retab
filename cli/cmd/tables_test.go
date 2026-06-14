@@ -296,6 +296,60 @@ func TestTablesCreateUploadsCSVAsMultipart(t *testing.T) {
 	}
 }
 
+func TestTablesCreateJSONPrintsCreatedTableObject(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	csvPath := filepath.Join(t.TempDir(), "bank-holidays.csv")
+	if err := os.WriteFile(csvPath, []byte("countrycode,holidaystartdate\nGB,2026-01-01\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/tables" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.RequestURI())
+		}
+		w.Header().Set("Content-Type", "application/json")
+		olderTable := tableFixture()
+		olderTable["id"] = "tbl_older"
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"tables": []map[string]any{
+				tableFixture(),
+				olderTable,
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		err := runRootForTest(t,
+			"tables", "create",
+			"--name", "bank_holidays",
+			"--file", csvPath,
+			"--project-id", "proj_abc123",
+			"--output", "json",
+		)
+		if err != nil {
+			t.Fatalf("tables create: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("decode stdout %q: %v", stdout, err)
+	}
+	if got["id"] != "tbl_bank" {
+		t.Fatalf("id = %v, want tbl_bank; stdout=%s", got["id"], stdout)
+	}
+	if _, hasTables := got["tables"]; hasTables {
+		t.Fatalf("create JSON should be a single table object, got list envelope: %s", stdout)
+	}
+}
+
 func TestTablesQueryTableOutputRendersRowsAsDataGrid(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

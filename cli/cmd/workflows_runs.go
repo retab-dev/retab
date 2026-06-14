@@ -175,7 +175,7 @@ var workflowsRunsCmd = &cobra.Command{
 
 A run is one execution of a workflow against a set of inputs. Use this
 subgroup to start runs (` + "`create`" + `), watch their lifecycle
-(` + "`get`" + `, ` + "`workflows steps list`" + `), or restart failed runs
+(` + "`get`" + `, ` + "`workflows steps list`" + `), or replay prior inputs
 (` + "`restart`" + `).
 
 Review-based: when a block pauses for review, the run enters status
@@ -405,6 +405,12 @@ removed in a future release.`,
 		}
 		if req.Documents != nil {
 			req.Documents, err = resolveWorkflowRunDocumentAliases(ctx, client, args[0], req.Documents)
+			if err != nil {
+				return err
+			}
+		}
+		if req.JSONInputs != nil {
+			req.JSONInputs, err = resolveWorkflowRunJSONInputAliases(ctx, client, args[0], req.JSONInputs)
 			if err != nil {
 				return err
 			}
@@ -732,6 +738,68 @@ func resolveWorkflowRunDocumentAliases(
 	return resolved, nil
 }
 
+func resolveWorkflowRunJSONInputAliases(
+	ctx context.Context,
+	client *retab.Client,
+	workflowID string,
+	inputs map[string]any,
+) (map[string]any, error) {
+	if len(inputs) == 0 {
+		return inputs, nil
+	}
+	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	if err != nil {
+		return nil, fmt.Errorf("resolve --json-inputs-file aliases: %w", err)
+	}
+	blockIDs := map[string]bool{}
+	var startJSONBlocks []retab.WorkflowBlock
+	for _, block := range blocks.Data {
+		blockIDs[block.ID] = true
+		if block.Type == "start_json" {
+			startJSONBlocks = append(startJSONBlocks, block)
+		}
+	}
+	resolved := make(map[string]any, len(inputs))
+	for key, value := range inputs {
+		resolvedKey, err := resolveWorkflowRunJSONInputKey(key, blockIDs, startJSONBlocks)
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := resolved[resolvedKey]; exists {
+			return nil, fmt.Errorf("--json-inputs-file supplies more than one input for start_json block %q", resolvedKey)
+		}
+		resolved[resolvedKey] = value
+	}
+	return resolved, nil
+}
+
+func resolveWorkflowRunJSONInputKey(key string, blockIDs map[string]bool, startJSONBlocks []retab.WorkflowBlock) (string, error) {
+	if blockIDs[key] {
+		return key, nil
+	}
+	var matches []retab.WorkflowBlock
+	for _, block := range startJSONBlocks {
+		if block.DeclarativePath != nil && *block.DeclarativePath == key {
+			matches = append(matches, block)
+			continue
+		}
+		if block.DeclarativeSourceBlockID != nil && *block.DeclarativeSourceBlockID == key {
+			matches = append(matches, block)
+		}
+	}
+	if len(matches) == 0 && key == "start" {
+		matches = startJSONBlocks
+	}
+	switch len(matches) {
+	case 0:
+		return key, nil
+	case 1:
+		return matches[0].ID, nil
+	default:
+		return "", fmt.Errorf("--json-inputs-file key %q is ambiguous: workflow has %d matching start_json blocks; use the concrete block id", key, len(matches))
+	}
+}
+
 var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
@@ -1018,10 +1086,10 @@ make the cancel idempotent if you may retry the request.`,
 var workflowsRunsRestartCmd = &cobra.Command{
 	Use:   "restart <run-id>",
 	Short: "Restart a workflow run",
-	Long: `Re-execute a failed or cancelled run, reusing the original
-inputs. By default the restarted run uses the latest published workflow
-config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
-	Example: `  # Restart a failed run
+	Long: `Re-execute a previous run, reusing the original inputs.
+By default the restarted run uses the latest published workflow config.
+Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
+	Example: `  # Restart a previous run with the same inputs
   retab workflows runs restart run_xyz789
 
   # Restart against the current draft config

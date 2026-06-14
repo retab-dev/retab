@@ -101,17 +101,9 @@ class Classification(BaseModel):
     categories: list[Category] = Field(..., description="Categories the document was classified against")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
-    output: ClassificationDecision | None = Field(
-        default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status."
-    )
-    status: EditsStatus | None = Field(
-        default=cast(EditsStatus, "pending"),
-        validate_default=True,
-        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
-    )
-    error: PrimitiveError | None = Field(
-        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
-    )
+    output: ClassificationDecision | None = Field(default=None, description="The classification result with reasoning. A degenerate empty decision until status == 'completed'; gate reads on status.")
+    status: EditsStatus | None = Field(default=cast(EditsStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
+    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
     consensus: ClassificationConsensus | None = Field(default=None, description="Consensus metadata for multi-vote classification runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the classification")
     created_at: datetime.datetime | None = None
@@ -139,17 +131,11 @@ class ClassificationRequest(BaseModel):
     document: MIMEData | FileRef = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str | None = Field(default="retab-small", description="The model to use for classification")
-    first_n_pages: int | None = Field(
-        default=None,
-        description="Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.",
-    )
+    first_n_pages: int | None = Field(default=None, description="Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the classification.")
     n_consensus: int | None = Field(default=1, description="Number of classification runs to use for consensus voting. Uses deterministic single-pass when set to 1.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
-    background: bool | None = Field(
-        default=False,
-        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
-    )
+    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
 
 
 class HttpValidationError(BaseModel):

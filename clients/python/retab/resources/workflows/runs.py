@@ -13,18 +13,7 @@ from retab.types.pagination import AsyncPaginatedList, PaginatedList, Pagination
 from retab.utils.mime import prepare_mime_document
 from retab.types.classifications import WorkflowRunsExcludeStatus, WorkflowRunsStatus, WorkflowRunsTriggerType
 from retab.types.mime import FileRef, MIMEData
-from retab.types.workflows.runs import (
-    CancelWorkflowRequest,
-    CancelWorkflowResponse,
-    CreateWorkflowRunRequest,
-    WorkflowExportPayloadRequest,
-    WorkflowExportPayloadRequestExcludeStatus,
-    WorkflowExportPayloadRequestExportSource,
-    WorkflowExportPayloadRequestStatus,
-    WorkflowExportPayloadRequestTriggerType,
-    WorkflowExportPayloadResponse,
-    WorkflowRun,
-)
+from retab.types.workflows.runs import CancelWorkflowRequest, CancelWorkflowResponse, CreateWorkflowRunRequest, WorkflowExportPayloadRequest, WorkflowExportPayloadRequestExcludeStatus, WorkflowExportPayloadRequestExportSource, WorkflowExportPayloadRequestStatus, WorkflowExportPayloadRequestTriggerType, WorkflowExportPayloadResponse, WorkflowRun
 
 
 def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
@@ -39,24 +28,8 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class WorkflowRunsMixin:
-    def prepare_list(
-        self,
-        workflow_id: str | None = None,
-        status: WorkflowRunsStatus | None = None,
-        exclude_status: WorkflowRunsExcludeStatus | None = None,
-        trigger_type: WorkflowRunsTriggerType | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        min_duration_ms: int | None = None,
-        max_duration_ms: int | None = None,
-        search: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        sort_by: str | None = cast(str, "timing.created_at"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, workflow_id: str | None = None, status: WorkflowRunsStatus | None = None, exclude_status: WorkflowRunsExcludeStatus | None = None, trigger_type: WorkflowRunsTriggerType | None = None, from_date: str | None = None, to_date: str | None = None, min_duration_ms: int | None = None, max_duration_ms: int | None = None, search: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "timing.created_at"), **extra_params: Any) -> PreparedRequest:
         """List Workflow Runs List workflow runs with pagination and optional filters."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -80,73 +53,35 @@ class WorkflowRunsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/runs", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        workflow_id: str,
-        documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
-        json_inputs: dict[str, Any] | None = None,
-        version: str = "production",
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, workflow_id: str, documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None, json_inputs: dict[str, Any] | None = None, version: str = "production", **extra_params: Any) -> PreparedRequest:
         """Create Workflow Run Create a fresh workflow run."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         documents_payload: Any = documents
         if documents_payload is not None:
             documents_payload = {__k: _coerce_mime_document_input(__v) for __k, __v in documents_payload.items()}
-        payload = CreateWorkflowRunRequest(
-            workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version)
-        )
+        payload = CreateWorkflowRunRequest(workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/runs", params=params or None, data=data)
 
-    def prepare_export(
-        self,
-        workflow_id: str,
-        block_id: str,
-        export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"),
-        selected_run_ids: list[str] | None = None,
-        selected_doc_types: list[str] | None = None,
-        status: WorkflowExportPayloadRequestStatus | None = None,
-        exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        trigger_type: WorkflowExportPayloadRequestTriggerType | None = None,
-        preferred_columns: list[str] | None = None,
-        delimiter: str = ";",
-        line_delimiter: str = "\n",
-        quote: str = '"',
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_export(self, workflow_id: str, block_id: str, export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"), selected_run_ids: list[str] | None = None, selected_doc_types: list[str] | None = None, status: WorkflowExportPayloadRequestStatus | None = None, exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None, from_date: str | None = None, to_date: str | None = None, trigger_type: WorkflowExportPayloadRequestTriggerType | None = None, preferred_columns: list[str] | None = None, delimiter: str = ";", line_delimiter: str = "\n", quote: str = "\"", **extra_params: Any) -> PreparedRequest:
         """Get Workflow Export Payload Build CSV content for workflow run exports."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = WorkflowExportPayloadRequest(
-            workflow_id=cast(Any, workflow_id),
-            block_id=cast(Any, block_id),
-            export_source=cast(Any, export_source),
-            selected_run_ids=cast(Any, selected_run_ids),
-            selected_doc_types=cast(Any, selected_doc_types),
-            status=cast(Any, status),
-            exclude_status=cast(Any, exclude_status),
-            from_date=cast(Any, from_date),
-            to_date=cast(Any, to_date),
-            trigger_type=cast(Any, trigger_type),
-            preferred_columns=cast(Any, preferred_columns),
-            delimiter=cast(Any, delimiter),
-            line_delimiter=cast(Any, line_delimiter),
-            quote=cast(Any, quote),
-        )
+        payload = WorkflowExportPayloadRequest(workflow_id=cast(Any, workflow_id), block_id=cast(Any, block_id), export_source=cast(Any, export_source), selected_run_ids=cast(Any, selected_run_ids), selected_doc_types=cast(Any, selected_doc_types), status=cast(Any, status), exclude_status=cast(Any, exclude_status), from_date=cast(Any, from_date), to_date=cast(Any, to_date), trigger_type=cast(Any, trigger_type), preferred_columns=cast(Any, preferred_columns), delimiter=cast(Any, delimiter), line_delimiter=cast(Any, line_delimiter), quote=cast(Any, quote))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/runs/export", params=params or None, data=data)
 
     def prepare_get(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Workflow Run Get a single workflow run by ID."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -155,7 +90,8 @@ class WorkflowRunsMixin:
 
     def prepare_delete(self, run_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Workflow Run Delete a workflow run and its associated step data."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -164,7 +100,8 @@ class WorkflowRunsMixin:
 
     def prepare_cancel(self, run_id: str, command_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Cancel Workflow Run Cancel a pending, running, or waiting workflow run."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -176,93 +113,20 @@ class WorkflowRunsMixin:
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     """WorkflowRuns API wrapper."""
 
-    def list(
-        self,
-        workflow_id: str | None = None,
-        status: WorkflowRunsStatus | None = None,
-        exclude_status: WorkflowRunsExcludeStatus | None = None,
-        trigger_type: WorkflowRunsTriggerType | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        min_duration_ms: int | None = None,
-        max_duration_ms: int | None = None,
-        search: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        sort_by: str | None = cast(str, "timing.created_at"),
-        **extra_params: Any,
-    ) -> PaginatedList[WorkflowRun]:
+    def list(self, workflow_id: str | None = None, status: WorkflowRunsStatus | None = None, exclude_status: WorkflowRunsExcludeStatus | None = None, trigger_type: WorkflowRunsTriggerType | None = None, from_date: str | None = None, to_date: str | None = None, min_duration_ms: int | None = None, max_duration_ms: int | None = None, search: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "timing.created_at"), **extra_params: Any) -> PaginatedList[WorkflowRun]:
         """List Workflow Runs List workflow runs with pagination and optional filters."""
-        prepared_request = self.prepare_list(
-            workflow_id=workflow_id,
-            status=status,
-            exclude_status=exclude_status,
-            trigger_type=trigger_type,
-            from_date=from_date,
-            to_date=to_date,
-            min_duration_ms=min_duration_ms,
-            max_duration_ms=max_duration_ms,
-            search=search,
-            before=before,
-            after=after,
-            limit=limit,
-            order=order,
-            sort_by=sort_by,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(workflow_id=workflow_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, min_duration_ms=min_duration_ms, max_duration_ms=max_duration_ms, search=search, before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
         return self.request_page(prepared_request, model=WorkflowRun)
 
-    def create(
-        self,
-        workflow_id: str,
-        documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
-        json_inputs: dict[str, Any] | None = None,
-        version: str = "production",
-        **extra_params: Any,
-    ) -> WorkflowRun:
+    def create(self, workflow_id: str, documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None, json_inputs: dict[str, Any] | None = None, version: str = "production", **extra_params: Any) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
-    def export(
-        self,
-        workflow_id: str,
-        block_id: str,
-        export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"),
-        selected_run_ids: list[str] | None = None,
-        selected_doc_types: list[str] | None = None,
-        status: WorkflowExportPayloadRequestStatus | None = None,
-        exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        trigger_type: WorkflowExportPayloadRequestTriggerType | None = None,
-        preferred_columns: list[str] | None = None,
-        delimiter: str = ";",
-        line_delimiter: str = "\n",
-        quote: str = '"',
-        **extra_params: Any,
-    ) -> WorkflowExportPayloadResponse:
+    def export(self, workflow_id: str, block_id: str, export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"), selected_run_ids: list[str] | None = None, selected_doc_types: list[str] | None = None, status: WorkflowExportPayloadRequestStatus | None = None, exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None, from_date: str | None = None, to_date: str | None = None, trigger_type: WorkflowExportPayloadRequestTriggerType | None = None, preferred_columns: list[str] | None = None, delimiter: str = ";", line_delimiter: str = "\n", quote: str = "\"", **extra_params: Any) -> WorkflowExportPayloadResponse:
         """Get Workflow Export Payload Build CSV content for workflow run exports."""
-        prepared_request = self.prepare_export(
-            workflow_id=workflow_id,
-            block_id=block_id,
-            export_source=export_source,
-            selected_run_ids=selected_run_ids,
-            selected_doc_types=selected_doc_types,
-            status=status,
-            exclude_status=exclude_status,
-            from_date=from_date,
-            to_date=to_date,
-            trigger_type=trigger_type,
-            preferred_columns=preferred_columns,
-            delimiter=delimiter,
-            line_delimiter=line_delimiter,
-            quote=quote,
-            **extra_params,
-        )
+        prepared_request = self.prepare_export(workflow_id=workflow_id, block_id=block_id, export_source=export_source, selected_run_ids=selected_run_ids, selected_doc_types=selected_doc_types, status=status, exclude_status=exclude_status, from_date=from_date, to_date=to_date, trigger_type=trigger_type, preferred_columns=preferred_columns, delimiter=delimiter, line_delimiter=line_delimiter, quote=quote, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowExportPayloadResponse.model_validate(response)
 
@@ -288,93 +152,20 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     """Async WorkflowRuns API wrapper."""
 
-    async def list(
-        self,
-        workflow_id: str | None = None,
-        status: WorkflowRunsStatus | None = None,
-        exclude_status: WorkflowRunsExcludeStatus | None = None,
-        trigger_type: WorkflowRunsTriggerType | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        min_duration_ms: int | None = None,
-        max_duration_ms: int | None = None,
-        search: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        sort_by: str | None = cast(str, "timing.created_at"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[WorkflowRun]:
+    async def list(self, workflow_id: str | None = None, status: WorkflowRunsStatus | None = None, exclude_status: WorkflowRunsExcludeStatus | None = None, trigger_type: WorkflowRunsTriggerType | None = None, from_date: str | None = None, to_date: str | None = None, min_duration_ms: int | None = None, max_duration_ms: int | None = None, search: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "timing.created_at"), **extra_params: Any) -> AsyncPaginatedList[WorkflowRun]:
         """List Workflow Runs List workflow runs with pagination and optional filters."""
-        prepared_request = self.prepare_list(
-            workflow_id=workflow_id,
-            status=status,
-            exclude_status=exclude_status,
-            trigger_type=trigger_type,
-            from_date=from_date,
-            to_date=to_date,
-            min_duration_ms=min_duration_ms,
-            max_duration_ms=max_duration_ms,
-            search=search,
-            before=before,
-            after=after,
-            limit=limit,
-            order=order,
-            sort_by=sort_by,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(workflow_id=workflow_id, status=status, exclude_status=exclude_status, trigger_type=trigger_type, from_date=from_date, to_date=to_date, min_duration_ms=min_duration_ms, max_duration_ms=max_duration_ms, search=search, before=before, after=after, limit=limit, order=order, sort_by=sort_by, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowRun)
 
-    async def create(
-        self,
-        workflow_id: str,
-        documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
-        json_inputs: dict[str, Any] | None = None,
-        version: str = "production",
-        **extra_params: Any,
-    ) -> WorkflowRun:
+    async def create(self, workflow_id: str, documents: dict[str, Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl] | None = None, json_inputs: dict[str, Any] | None = None, version: str = "production", **extra_params: Any) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
         prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
-    async def export(
-        self,
-        workflow_id: str,
-        block_id: str,
-        export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"),
-        selected_run_ids: list[str] | None = None,
-        selected_doc_types: list[str] | None = None,
-        status: WorkflowExportPayloadRequestStatus | None = None,
-        exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        trigger_type: WorkflowExportPayloadRequestTriggerType | None = None,
-        preferred_columns: list[str] | None = None,
-        delimiter: str = ";",
-        line_delimiter: str = "\n",
-        quote: str = '"',
-        **extra_params: Any,
-    ) -> WorkflowExportPayloadResponse:
+    async def export(self, workflow_id: str, block_id: str, export_source: WorkflowExportPayloadRequestExportSource = cast(WorkflowExportPayloadRequestExportSource, "outputs"), selected_run_ids: list[str] | None = None, selected_doc_types: list[str] | None = None, status: WorkflowExportPayloadRequestStatus | None = None, exclude_status: WorkflowExportPayloadRequestExcludeStatus | None = None, from_date: str | None = None, to_date: str | None = None, trigger_type: WorkflowExportPayloadRequestTriggerType | None = None, preferred_columns: list[str] | None = None, delimiter: str = ";", line_delimiter: str = "\n", quote: str = "\"", **extra_params: Any) -> WorkflowExportPayloadResponse:
         """Get Workflow Export Payload Build CSV content for workflow run exports."""
-        prepared_request = self.prepare_export(
-            workflow_id=workflow_id,
-            block_id=block_id,
-            export_source=export_source,
-            selected_run_ids=selected_run_ids,
-            selected_doc_types=selected_doc_types,
-            status=status,
-            exclude_status=exclude_status,
-            from_date=from_date,
-            to_date=to_date,
-            trigger_type=trigger_type,
-            preferred_columns=preferred_columns,
-            delimiter=delimiter,
-            line_delimiter=line_delimiter,
-            quote=quote,
-            **extra_params,
-        )
+        prepared_request = self.prepare_export(workflow_id=workflow_id, block_id=block_id, export_source=export_source, selected_run_ids=selected_run_ids, selected_doc_types=selected_doc_types, status=status, exclude_status=exclude_status, from_date=from_date, to_date=to_date, trigger_type=trigger_type, preferred_columns=preferred_columns, delimiter=delimiter, line_delimiter=line_delimiter, quote=quote, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowExportPayloadResponse.model_validate(response)
 
@@ -395,6 +186,5 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         prepared_request = self.prepare_cancel(run_id, command_id=command_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return CancelWorkflowResponse.model_validate(response)
-
 
 __all__ = ["WorkflowRuns", "AsyncWorkflowRuns", "WorkflowRunsMixin"]

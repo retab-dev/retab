@@ -7,15 +7,7 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows.experiments import (
-    CreateExperimentRequest,
-    CreateExperimentRequestNConsensus,
-    ExperimentDocumentCaptureRequest,
-    ExplicitExperimentDocumentRequest,
-    UpdateExperimentRequest,
-    UpdateExperimentRequestNConsensus,
-    WorkflowExperiment,
-)
+from retab.types.workflows.experiments import CreateExperimentRequest, CreateExperimentRequestNConsensus, ExperimentDocumentCaptureRequest, ExplicitExperimentDocumentRequest, UpdateExperimentRequest, UpdateExperimentRequestNConsensus, WorkflowExperiment
 
 from .metrics import ExperimentRunMetrics, AsyncExperimentRunMetrics
 from .results import ExperimentRunResults, AsyncExperimentRunResults
@@ -23,15 +15,8 @@ from .runs import ExperimentRuns, AsyncExperimentRuns
 
 
 class WorkflowExperimentsMixin:
-    def prepare_list(
-        self,
-        workflow_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
         """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -46,54 +31,31 @@ class WorkflowExperimentsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/experiments", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: CreateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        source_experiment_id: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, workflow_id: str, block_id: str | None = None, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: CreateExperimentRequestNConsensus | None = None, name: str | None = None, source_experiment_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateExperimentRequest(
-            workflow_id=cast(Any, workflow_id),
-            block_id=cast(Any, block_id),
-            document_captures=cast(Any, document_captures),
-            documents=cast(Any, documents),
-            n_consensus=cast(Any, n_consensus),
-            name=cast(Any, name),
-            source_experiment_id=cast(Any, source_experiment_id),
-        )
+        payload = CreateExperimentRequest(workflow_id=cast(Any, workflow_id), block_id=cast(Any, block_id), document_captures=cast(Any, document_captures), documents=cast(Any, documents), n_consensus=cast(Any, n_consensus), name=cast(Any, name), source_experiment_id=cast(Any, source_experiment_id))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/experiments", params=params or None, data=data)
 
     def prepare_get(self, experiment_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Experiment Retrieve a single experiment. Identified by `experiment_id`. Returns the experiment along with its latest-run status, score, staleness, and schema-drift detection. Returns 404 if no experiment with that ID exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="GET", url=f"/v1/workflows/experiments/{experiment_id}", params=params or None, data=data)
 
-    def prepare_update(
-        self,
-        experiment_id: str,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: UpdateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_update(self, experiment_id: str, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: UpdateExperimentRequestNConsensus | None = None, name: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -103,7 +65,8 @@ class WorkflowExperimentsMixin:
 
     def prepare_delete(self, experiment_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Experiment Delete an experiment. Identified by `experiment_id`. Also removes the experiment's runs and results. Returns 204 on success, 404 if not found, and 409 if the latest run is still pending or running (cancel it first)."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -120,41 +83,15 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         self.results = ExperimentRunResults(client=client)
         self.runs = ExperimentRuns(client=client)
 
-    def list(
-        self,
-        workflow_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PaginatedList[WorkflowExperiment]:
+
+    def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[WorkflowExperiment]:
         """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowExperiment)
 
-    def create(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: CreateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        source_experiment_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowExperiment:
+    def create(self, workflow_id: str, block_id: str | None = None, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: CreateExperimentRequestNConsensus | None = None, name: str | None = None, source_experiment_id: str | None = None, **extra_params: Any) -> WorkflowExperiment:
         """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            block_id=block_id,
-            document_captures=document_captures,
-            documents=documents,
-            n_consensus=n_consensus,
-            name=name,
-            source_experiment_id=source_experiment_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(workflow_id=workflow_id, block_id=block_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, source_experiment_id=source_experiment_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
@@ -164,15 +101,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
-    def update(
-        self,
-        experiment_id: str,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: UpdateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowExperiment:
+    def update(self, experiment_id: str, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: UpdateExperimentRequestNConsensus | None = None, name: str | None = None, **extra_params: Any) -> WorkflowExperiment:
         """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
         prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -194,41 +123,15 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         self.results = AsyncExperimentRunResults(client=client)
         self.runs = AsyncExperimentRuns(client=client)
 
-    async def list(
-        self,
-        workflow_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[WorkflowExperiment]:
+
+    async def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[WorkflowExperiment]:
         """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowExperiment)
 
-    async def create(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: CreateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        source_experiment_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowExperiment:
+    async def create(self, workflow_id: str, block_id: str | None = None, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: CreateExperimentRequestNConsensus | None = None, name: str | None = None, source_experiment_id: str | None = None, **extra_params: Any) -> WorkflowExperiment:
         """Create Experiment Create an experiment. When `source_experiment_id` is set, duplicates the source experiment (block, name + "(Copy)", n_consensus, documents) and rejects any other field. Otherwise creates a fresh experiment from the provided fields."""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            block_id=block_id,
-            document_captures=document_captures,
-            documents=documents,
-            n_consensus=n_consensus,
-            name=name,
-            source_experiment_id=source_experiment_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(workflow_id=workflow_id, block_id=block_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, source_experiment_id=source_experiment_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
@@ -238,15 +141,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowExperiment.model_validate(response)
 
-    async def update(
-        self,
-        experiment_id: str,
-        document_captures: list[ExperimentDocumentCaptureRequest] | None = None,
-        documents: list[ExplicitExperimentDocumentRequest] | None = None,
-        n_consensus: UpdateExperimentRequestNConsensus | None = None,
-        name: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowExperiment:
+    async def update(self, experiment_id: str, document_captures: list[ExperimentDocumentCaptureRequest] | None = None, documents: list[ExplicitExperimentDocumentRequest] | None = None, n_consensus: UpdateExperimentRequestNConsensus | None = None, name: str | None = None, **extra_params: Any) -> WorkflowExperiment:
         """Update Experiment Update an experiment. Identified by `experiment_id`. Send any of `name`, `n_consensus`, `documents`, or `document_captures`; omitted fields are left unchanged. Returns the updated experiment with its latest-run status and drift info."""
         prepared_request = self.prepare_update(experiment_id, document_captures=document_captures, documents=documents, n_consensus=n_consensus, name=name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -258,22 +153,8 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         await self._client._prepared_request(prepared_request)
         return None
 
-
 from .metrics import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .results import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
-__all__ = [
-    "WorkflowExperiments",
-    "AsyncWorkflowExperiments",
-    "WorkflowExperimentsMixin",
-    "ExperimentRunMetrics",
-    "AsyncExperimentRunMetrics",
-    "ExperimentRunMetricsMixin",
-    "ExperimentRunResults",
-    "AsyncExperimentRunResults",
-    "ExperimentRunResultsMixin",
-    "ExperimentRuns",
-    "AsyncExperimentRuns",
-    "ExperimentRunsMixin",
-]
+__all__ = ["WorkflowExperiments", "AsyncWorkflowExperiments", "WorkflowExperimentsMixin", "ExperimentRunMetrics", "AsyncExperimentRunMetrics", "ExperimentRunMetricsMixin", "ExperimentRunResults", "AsyncExperimentRunResults", "ExperimentRunResultsMixin", "ExperimentRuns", "AsyncExperimentRuns", "ExperimentRunsMixin"]

@@ -223,7 +223,35 @@ func runTableCSVUpload(cmd *cobra.Command, method string, path string, filePath 
 	if err := cliMultipartRequestInto(cmd, method, path, nil, fields, "file", filePath, &result); err != nil {
 		return err
 	}
-	return printTableCommandResult(cmd, result)
+	return printTableMutationResult(cmd, result)
+}
+
+func printTableMutationResult(cmd *cobra.Command, result any) error {
+	if tableSelected(cmd) {
+		return renderTableCommandResult(result)
+	}
+	table, ok, err := singleTableMutationResult(result)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return printJSON(table)
+	}
+	return printJSON(result)
+}
+
+func singleTableMutationResult(result any) (map[string]any, bool, error) {
+	normalized, err := normalizeTableCommandResult(result)
+	if err != nil {
+		return nil, false, err
+	}
+	if table, ok := mapValue(normalized["table"]); ok {
+		return table, true, nil
+	}
+	if tables, ok := mapSliceValue(normalized["tables"]); ok && len(tables) > 0 {
+		return tables[0], true, nil
+	}
+	return nil, false, nil
 }
 
 func runTableDownload(cmd *cobra.Command, tableID string) error {

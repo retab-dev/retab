@@ -27,10 +27,7 @@ class GenerateSchemaRequest(BaseModel):
     model: str | None = Field(default="retab-small")
     instructions: str | None = None
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
-    background: bool | None = Field(
-        default=False,
-        description="If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.",
-    )
+    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.")
 
 
 class SchemaGeneration(BaseModel):
@@ -43,14 +40,8 @@ class SchemaGeneration(BaseModel):
     json_schema: dict[str, Any] | None = Field(default={})
     strict: bool | None = Field(default=True)
     id: str = Field(..., description="Unique identifier of the schema generation.")
-    status: SchemaGenerationStatus | None = Field(
-        default=cast(SchemaGenerationStatus, "pending"),
-        validate_default=True,
-        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
-    )
-    error: PrimitiveError | None = Field(
-        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
-    )
+    status: SchemaGenerationStatus | None = Field(default=cast(SchemaGenerationStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
+    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

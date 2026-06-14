@@ -341,7 +341,7 @@ var workflowsBlocksCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id>",
 	Short: "Create a workflow block from --block-file",
 	Long: `Add a block to a workflow's draft graph. The block file is a
-JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required),
+JSON object with the keys ` + "`id`" + ` (optional), ` + "`type`" + ` (required),
 ` + "`label`" + `, ` + "`position_x`" + `, ` + "`position_y`" + `, ` + "`width`" + `,
 ` + "`height`" + `, ` + "`parent_id`" + `, and ` + "`config`" + `.
 

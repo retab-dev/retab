@@ -27,14 +27,7 @@ class CancelWorkflowExperimentRunResponse(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
-    lifecycle: (
-        PendingWorkflowExperimentRun
-        | QueuedWorkflowExperimentRun
-        | RunningWorkflowExperimentRun
-        | CompletedWorkflowExperimentRun
-        | ErrorWorkflowExperimentRun
-        | CancelledWorkflowExperimentRun
-    ) = Field(..., discriminator="status")
+    lifecycle: PendingWorkflowExperimentRun | QueuedWorkflowExperimentRun | RunningWorkflowExperimentRun | CompletedWorkflowExperimentRun | ErrorWorkflowExperimentRun | CancelledWorkflowExperimentRun = Field(..., discriminator="status")
 
 
 class CancelledWorkflowExperimentRun(BaseModel):
@@ -57,23 +50,20 @@ class CompletedWorkflowExperimentRun(BaseModel):
 class CreateExperimentRunRequest(BaseModel):
     """Request body to create an experiment run.
 
-    `workflow_id` is optional; when omitted it is taken from the experiment,
-    and when supplied it must match the experiment's workflow."""
+`workflow_id` is optional; when omitted it is taken from the experiment,
+and when supplied it must match the experiment's workflow."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     experiment_id: str = Field(..., description="The experiment to create a run for.")
-    workflow_id: str | None = Field(
-        default=None,
-        description="Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).",
-    )
+    workflow_id: str | None = Field(default=None, description="Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).")
 
 
 class ErrorWorkflowExperimentRun(BaseModel):
     """The experiment run failed.
 
-    Carries a human-readable `message` and a structured `details` envelope
-    consumers can branch on instead of parsing free text."""
+Carries a human-readable `message` and a structured `details` envelope
+consumers can branch on instead of parsing free text."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -134,14 +124,7 @@ class ExperimentRun(BaseModel):
     block_id: str
     block_type: ExperimentRunBlockType
     n_consensus: ExperimentRunNConsensus
-    lifecycle: (
-        PendingWorkflowExperimentRun
-        | QueuedWorkflowExperimentRun
-        | RunningWorkflowExperimentRun
-        | CompletedWorkflowExperimentRun
-        | ErrorWorkflowExperimentRun
-        | CancelledWorkflowExperimentRun
-    ) = Field(..., discriminator="status")
+    lifecycle: PendingWorkflowExperimentRun | QueuedWorkflowExperimentRun | RunningWorkflowExperimentRun | CompletedWorkflowExperimentRun | ErrorWorkflowExperimentRun | CancelledWorkflowExperimentRun = Field(..., discriminator="status")
     timing: ExperimentRunTiming
     parent_run_id: str | None = None
     block_version_id: str | None = None

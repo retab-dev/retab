@@ -10,6 +10,7 @@ from retab.types.workflows.reviews.versions import CreateReviewVersionRequest, R
 
 
 class WorkflowReviewVersionsMixin:
+
     def prepare_list(self, review_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
         """List Review Versions List versions for one review. `review_id` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
         params: dict[str, Any] = {
@@ -26,7 +27,8 @@ class WorkflowReviewVersionsMixin:
 
     def prepare_create(self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Create Review Version Create one immutable, content-addressed review version."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -36,7 +38,8 @@ class WorkflowReviewVersionsMixin:
 
     def prepare_get(self, version_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Review Version Read one review version by its content-addressed id."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -84,6 +87,5 @@ class AsyncWorkflowReviewVersions(AsyncAPIResource, WorkflowReviewVersionsMixin)
         prepared_request = self.prepare_get(version_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ReviewVersion.model_validate(response)
-
 
 __all__ = ["WorkflowReviewVersions", "AsyncWorkflowReviewVersions", "WorkflowReviewVersionsMixin"]
