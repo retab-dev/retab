@@ -349,7 +349,20 @@ workflow id is required: experiments have no org-wide listing.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.List(ctx, &retab.WorkflowExperimentsListParams{WorkflowID: workflowID})
+		params := &retab.WorkflowExperimentsListParams{WorkflowID: workflowID}
+		if before, _ := cmd.Flags().GetString("before"); before != "" {
+			params.Before = ptr(before)
+		}
+		if after, _ := cmd.Flags().GetString("after"); after != "" {
+			params.After = ptr(after)
+		}
+		if v, _ := cmd.Flags().GetInt("limit"); v > 0 {
+			params.Limit = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("order"); v != "" {
+			params.Order = ptr(v)
+		}
+		result, err := client.Workflows.Experiments.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -1092,6 +1105,10 @@ func init() {
 	// with cobra's unconditional MarkFlagRequired.
 
 	workflowsExperimentsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
+	workflowsExperimentsListCmd.Flags().String("before", "", "experiment id: return items before this id (mutually exclusive with --after)")
+	workflowsExperimentsListCmd.Flags().String("after", "", "experiment id: return items after this id (mutually exclusive with --before)")
+	workflowsExperimentsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100; default 50)")
+	workflowsExperimentsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
