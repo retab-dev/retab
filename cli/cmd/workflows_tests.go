@@ -541,16 +541,34 @@ flaky runs.`,
   retab workflows tests update wfnodetest_jkl012 \
     --assertion-file ./new-assertion.json
 
+  # Same, inline — no JSON file needed (mirrors 'tests create')
+  retab workflows tests update wfnodetest_jkl012 \
+    --path net_amount_payable_usd --equals 300000
+
+  # Re-pin the source run inline
+  retab workflows tests update wfnodetest_jkl012 --run-id run_xyz789
+
   # Rename a test
   retab workflows tests update wfnodetest_jkl012 \
     --name "Invoice 17 baseline (v2 schema)"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// The assertion and source may each be supplied as a JSON file OR via the
+		// same inline flag form `tests create` accepts (mutually exclusive per
+		// component, enforced by resolveTestComponent).
+		inlineSource, inlineSourceSet := inlineTestSource(cmd)
+		inlineAssertion, inlineAssertionSet, err := inlineTestAssertion(cmd)
+		if err != nil {
+			return err
+		}
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
-		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("assertion-file") &&
-			!cmd.Flags().Changed("source-file") {
-			return fmt.Errorf("nothing to update: pass at least one of --name, --assertion-file, or --source-file")
+		if !cmd.Flags().Changed("name") &&
+			!cmd.Flags().Changed("assertion-file") && !inlineAssertionSet &&
+			!cmd.Flags().Changed("source-file") && !inlineSourceSet {
+			return fmt.Errorf("nothing to update: pass at least one of --name, the assertion " +
+				"(--assertion-file or --output-handle-id/--path/--equals), or the source " +
+				"(--source-file or --run-id/--step-id)")
 		}
 		req := retab.WorkflowTestsUpdateParams{}
 		if cmd.Flags().Changed("name") {
@@ -561,29 +579,29 @@ flaky runs.`,
 			}
 			req.Name = &trimmed
 		}
-		assertion, err := resolveJSONMap(cmd, "assertion-file")
+		assertion, err := resolveTestComponent(cmd, "assertion-file", "--output-handle-id/--path/--equals", inlineAssertion, inlineAssertionSet)
 		if err != nil {
 			return err
 		}
-		source, err := resolveJSONMap(cmd, "source-file")
+		source, err := resolveTestComponent(cmd, "source-file", "--run-id/--step-id", inlineSource, inlineSourceSet)
 		if err != nil {
 			return err
 		}
 		if assertion != nil {
 			if err := validateWorkflowTestAssertion(assertion); err != nil {
-				return fmt.Errorf("--assertion-file: %w", err)
+				return fmt.Errorf("assertion: %w", err)
 			}
 			req.Assertion = &retab.AssertionSpec{}
-			if err := decodeJSONInto("assertion-file", assertion, req.Assertion); err != nil {
+			if err := decodeJSONInto("assertion", assertion, req.Assertion); err != nil {
 				return err
 			}
 		}
 		if source != nil {
 			if err := validateWorkflowTestSource(source); err != nil {
-				return fmt.Errorf("--source-file: %w", err)
+				return fmt.Errorf("source: %w", err)
 			}
 			req.Source = &retab.WorkflowTestSource{}
-			if err := decodeJSONInto("source-file", source, req.Source); err != nil {
+			if err := decodeJSONInto("source", source, req.Source); err != nil {
 				return err
 			}
 		}
@@ -1107,8 +1125,15 @@ func init() {
 	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
 
 	workflowsTestsUpdateCmd.Flags().String("name", "", "new test name")
-	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin)")
-	workflowsTestsUpdateCmd.Flags().String("source-file", "", "JSON file with new source (or - for stdin)")
+	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin). Alternative to --output-handle-id/--path/--equals.")
+	workflowsTestsUpdateCmd.Flags().String("source-file", "", "JSON file with new source (or - for stdin). Alternative to --run-id/--step-id.")
+	// Inline assertion/source flags, mirroring `tests create`, so a test's
+	// assertion or source can be re-pinned without hand-authoring JSON.
+	workflowsTestsUpdateCmd.Flags().String("output-handle-id", "", "new assertion output handle id (inline; defaults to output-json-0)")
+	workflowsTestsUpdateCmd.Flags().String("path", "", "new assertion field path inside the output handle (inline; pairs with --equals)")
+	workflowsTestsUpdateCmd.Flags().String("equals", "", "new expected value for an inline equals assertion (JSON literal or string; alternative to --assertion-file)")
+	workflowsTestsUpdateCmd.Flags().String("run-id", "", "new source run id for a run_step source (inline alternative to --source-file)")
+	workflowsTestsUpdateCmd.Flags().String("step-id", "", "new source step id within --run-id (optional; pairs with --run-id)")
 
 	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsTestsRunsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")

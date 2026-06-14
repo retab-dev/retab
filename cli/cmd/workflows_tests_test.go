@@ -1234,6 +1234,58 @@ func TestWorkflowsTestsUpdateAllowsAbsentNameFlag(t *testing.T) {
 	}
 }
 
+// TestWorkflowsTestsUpdateInlineAssertion pins that `tests update` accepts the
+// same inline assertion flags as `tests create` (--path/--equals), assembling the
+// equals-assertion body without a JSON file — closing the create/update ergonomics
+// gap where update previously required hand-authored --assertion-file JSON.
+func TestWorkflowsTestsUpdateInlineAssertion(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"wfnodetest_x"}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{"path": "vendor_name", "equals": "Acme"} {
+		if err := workflowsTestsUpdateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, f := range []string{"path", "equals", "output-handle-id", "run-id", "step-id", "assertion-file", "source-file", "name"} {
+			_ = workflowsTestsUpdateCmd.Flags().Set(f, "")
+			workflowsTestsUpdateCmd.Flags().Lookup(f).Changed = false
+		}
+	})
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"wfnodetest_x"})
+	})
+	if err != nil {
+		t.Fatalf("update (inline assertion): %v", err)
+	}
+	assertion, ok := gotBody["assertion"].(map[string]any)
+	if !ok {
+		t.Fatalf("assertion missing from PATCH body: %#v", gotBody)
+	}
+	at, ok := assertion["target"].(map[string]any)
+	if !ok || at["output_handle_id"] != "output-json-0" || at["path"] != "vendor_name" {
+		t.Fatalf("assertion.target = %#v, want {output_handle_id:output-json-0, path:vendor_name}", assertion["target"])
+	}
+	condition, ok := assertion["condition"].(map[string]any)
+	if !ok || condition["kind"] != "equals" || condition["expected"] != "Acme" {
+		t.Fatalf("assertion.condition = %#v, want {kind:equals, expected:Acme}", assertion["condition"])
+	}
+}
+
 func TestWorkflowsExperimentsCreateHelpDoesNotMentionRunBatch(t *testing.T) {
 	if strings.Contains(workflowsExperimentsCreateCmd.Long, "run-batch") {
 		t.Fatalf("experiments create help should not mention run-batch, got:\n%s", workflowsExperimentsCreateCmd.Long)
