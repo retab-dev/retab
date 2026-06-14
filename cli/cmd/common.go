@@ -1857,6 +1857,14 @@ func confirmDestructive(cmd *cobra.Command, kind, id string) error {
 	if yes, _ := cmd.Flags().GetBool("yes"); yes {
 		return nil
 	}
+	// --confirm (the production-mutation acknowledgment shared by every high-risk
+	// command) also satisfies the destructive gate, so a production delete needs
+	// only --confirm rather than both --confirm and --yes. --yes still stands on
+	// its own for deletes in non-production environments, where productionGate is
+	// a no-op and --confirm is not required.
+	if confirm, _ := cmd.Flags().GetBool(confirmFlagName); confirm {
+		return nil
+	}
 	stdin, ok := cmd.InOrStdin().(*os.File)
 	if !ok || !term.IsTerminal(int(stdin.Fd())) {
 		return fmt.Errorf("refusing to delete %s %q without --yes (stdin is not a terminal)", kind, id)
