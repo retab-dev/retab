@@ -912,3 +912,43 @@ func TestConfirmDestructiveAcceptsConfirmFlag(t *testing.T) {
 		t.Fatalf("--confirm should satisfy the destructive gate: %v", err)
 	}
 }
+
+func TestScopedResourceID(t *testing.T) {
+	// Single arg: returned as-is.
+	if got, err := scopedResourceID([]string{"run_abc"}, "run id"); err != nil || got != "run_abc" {
+		t.Fatalf("single arg = %q, %v; want run_abc, nil", got, err)
+	}
+	// Optional leading workflow id is tolerated and dropped.
+	if got, err := scopedResourceID([]string{"wrk_123", "run_abc"}, "run id"); err != nil || got != "run_abc" {
+		t.Fatalf("workflow-prefixed = %q, %v; want run_abc, nil", got, err)
+	}
+	// A second arg that is NOT a workflow id is a real mistake → error.
+	if _, err := scopedResourceID([]string{"run_abc", "run_def"}, "run id"); err == nil {
+		t.Fatal("two non-workflow args should error")
+	}
+}
+
+func TestDocumentPathHint(t *testing.T) {
+	cases := []struct {
+		path string
+		want string // substring expected in the hint ("" = no hint)
+	}{
+		{"file_abc123", "--document-id"},
+		{"--file-id file_abc123", "--document-id"},
+		{"https://example.com/x.pdf", "--document-url"},
+		{"./invoice.pdf", ""},
+		{"invoice.pdf", ""},
+	}
+	for _, c := range cases {
+		got := documentPathHint("start", c.path)
+		if c.want == "" {
+			if got != "" {
+				t.Fatalf("documentPathHint(%q) = %q; want no hint", c.path, got)
+			}
+			continue
+		}
+		if !strings.Contains(got, c.want) {
+			t.Fatalf("documentPathHint(%q) = %q; want substring %q", c.path, got, c.want)
+		}
+	}
+}

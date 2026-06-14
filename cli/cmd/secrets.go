@@ -130,21 +130,10 @@ var secretsDeleteCmd = &cobra.Command{
 }
 
 func secretValueFromInput(cmd *cobra.Command) (string, error) {
-	inline, _ := cmd.Flags().GetString("value")
-	inlineSet := cmd.Flags().Changed("value")
 	fromFile, _ := cmd.Flags().GetString("from-file")
 	fromStdin, _ := cmd.Flags().GetBool("from-stdin")
-	sources := 0
-	for _, on := range []bool{inlineSet, fromFile != "", fromStdin} {
-		if on {
-			sources++
-		}
-	}
-	if sources > 1 {
-		return "", fmt.Errorf("--value, --from-file, and --from-stdin are mutually exclusive")
-	}
-	if inlineSet {
-		return inline, nil
+	if fromFile != "" && fromStdin {
+		return "", fmt.Errorf("--from-file and --from-stdin are mutually exclusive")
 	}
 	if fromFile != "" {
 		raw, err := os.ReadFile(fromFile)
@@ -216,7 +205,6 @@ func secretCell(row any, key string) string {
 }
 
 func init() {
-	secretsSetCmd.Flags().String("value", "", "secret value (inline; alternative to --from-file/--from-stdin)")
 	secretsSetCmd.Flags().String("from-file", "", "read secret value from a file")
 	secretsSetCmd.Flags().Bool("from-stdin", false, "read secret value from stdin")
 	secretsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
