@@ -873,3 +873,42 @@ func TestPrintJSONRoundTrip(t *testing.T) {
 		t.Fatalf("got=%v", got)
 	}
 }
+
+// confirmDestructive must accept --confirm as also satisfying the destructive
+// gate. A production-env delete is already gated by productionGate's --confirm;
+// demanding an ADDITIONAL --yes made delete the only production-mutating command
+// needing two ack flags. --confirm is a strictly explicit acknowledgment, so it
+// unifies the two gates: a production delete needs only --confirm (like publish/
+// runs create), while --yes still works on its own for non-production deletes.
+func TestConfirmDestructiveAcceptsConfirmFlag(t *testing.T) {
+	newCmd := func() *cobra.Command {
+		c := &cobra.Command{Use: "delete"}
+		c.Flags().BoolP("yes", "y", false, "")
+		addConfirmFlag(c)
+		c.SetIn(strings.NewReader("")) // non-terminal stdin → no interactive prompt
+		return c
+	}
+
+	// Neither flag, non-interactive → refuses.
+	if err := confirmDestructive(newCmd(), "workflow", "wrk_1"); err == nil {
+		t.Fatal("expected refusal without --yes/--confirm in non-interactive mode")
+	}
+
+	// --yes alone → passes (existing behavior, unchanged).
+	cy := newCmd()
+	if err := cy.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := confirmDestructive(cy, "workflow", "wrk_1"); err != nil {
+		t.Fatalf("--yes should satisfy the destructive gate: %v", err)
+	}
+
+	// --confirm alone → passes (new unified behavior).
+	cc := newCmd()
+	if err := cc.Flags().Set("confirm", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := confirmDestructive(cc, "workflow", "wrk_1"); err != nil {
+		t.Fatalf("--confirm should satisfy the destructive gate: %v", err)
+	}
+}
