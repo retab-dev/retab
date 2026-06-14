@@ -34,13 +34,18 @@ func TestTablesCreateRejectsInvalidColumnSchemaOverrides(t *testing.T) {
 		}
 	})
 
+	// The validation error originates inside RunE, so executeRoot converts it to
+	// errSilent (message already printed to stderr). Assert on stderr + non-nil.
 	args := []string{"tables", "create", "--name", "demo", "--file", csvPath, "--project-id", "proj_abc123", "--column-schema-overrides", "not json"}
-	err := runRootForTest(t, args...)
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = runRootForTest(t, args...)
+	})
 	if err == nil {
 		t.Fatalf("expected an error for invalid --column-schema-overrides")
 	}
-	if !strings.Contains(err.Error(), "column-schema-overrides") {
-		t.Fatalf("error = %q, want it to mention --column-schema-overrides", err.Error())
+	if !strings.Contains(stderr, "column-schema-overrides") {
+		t.Fatalf("stderr = %q, want it to mention --column-schema-overrides", stderr)
 	}
 }
 
