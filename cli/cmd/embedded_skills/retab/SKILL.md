@@ -51,10 +51,10 @@ dotnet add package Retab
 cargo add retab
 
 # Java SDK - Maven
-mvn dependency:get -Dartifact=com.retab:retab:0.0.9
+mvn dependency:get -Dartifact=com.retab:retab:0.0.10
 
 # Java SDK - Gradle
-# Add implementation("com.retab:retab:0.0.9") to build.gradle.kts
+# Add implementation("com.retab:retab:0.0.10") to build.gradle.kts
 ```
 
 MCP:

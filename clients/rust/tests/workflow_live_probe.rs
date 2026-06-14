@@ -159,8 +159,7 @@ spec:
         let plan = api!(
             client
                 .workflows()
-                .spec()
-                .plan(resources::workflow_spec::PlanParams::new(spec_body.clone())),
+                .plan(resources::workflows::PlanParams::new(spec_body.clone())),
             "plan workflow spec"
         );
         if plan.action != DeclarativePlanResponseAction::Create {
@@ -173,8 +172,7 @@ spec:
         let apply = api!(
             client
                 .workflows()
-                .spec()
-                .apply(resources::workflow_spec::ApplyParams::new(spec_body)),
+                .apply(resources::workflows::ApplyParams::new(spec_body)),
             "apply workflow spec"
         );
         if apply.workflow_id != workflow_id {
@@ -284,8 +282,7 @@ spec:
         let exported_plan = api!(
             client
                 .workflows()
-                .spec()
-                .plan(resources::workflow_spec::PlanParams::new(
+                .plan(resources::workflows::PlanParams::new(
                     exported_body.clone(),
                 )),
             "plan exported workflow spec"
@@ -299,8 +296,7 @@ spec:
         let exported_apply = api!(
             client
                 .workflows()
-                .spec()
-                .apply(resources::workflow_spec::ApplyParams::new(exported_body)),
+                .apply(resources::workflows::ApplyParams::new(exported_body)),
             "apply exported workflow spec"
         );
         if exported_apply.action != DeclarativeApplyResponseAction::Noop {

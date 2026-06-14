@@ -98,7 +98,7 @@ describe('files.list query mapping', () => {
 });
 
 describe('files upload lifecycle', () => {
-  test('create_upload posts filename/content_type/size_bytes/sha_256', async () => {
+  test('create_upload posts filename/content_type/size_bytes/sha256', async () => {
     const { client, calls } = clientCapturing({
       file_id: 'file_1',
       upload_url: 'https://upload.example/x',
@@ -117,11 +117,11 @@ describe('files upload lifecycle', () => {
       filename: 'invoice.pdf',
       content_type: 'application/pdf',
       size_bytes: 12345,
-      sha_256: 'abc123',
+      sha256: 'abc123',
     });
   });
 
-  test('complete_upload targets /v1/files/upload/{fileId}/complete with sha_256 body', async () => {
+  test('complete_upload targets /v1/files/upload/{fileId}/complete with sha256 body', async () => {
     const { client, calls } = clientCapturing({
       filename: 'invoice.pdf',
       url: 'https://storage.retab.com/org/file_1.pdf',
@@ -132,7 +132,7 @@ describe('files upload lifecycle', () => {
     const call = lastCall(calls);
     expect(call.method).toBe('POST');
     expect(call.path).toBe('/v1/files/upload/file_1/complete');
-    expect(call.body).toEqual({ sha_256: 'abc123' });
+    expect(call.body).toEqual({ sha256: 'abc123' });
   });
 });
 

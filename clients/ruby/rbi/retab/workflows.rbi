@@ -159,15 +159,5 @@ module Retab
     end
     def publish(workflow_id:, description:, request_options:); end
 
-    sig do
-      params(
-        workflow_id: String,
-        yaml_definition: String,
-        project_id: T.nilable(String),
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::DeclarativePlanResponse)
-    end
-    def create_plan(workflow_id:, yaml_definition:, project_id:, request_options:); end
-
   end
 end

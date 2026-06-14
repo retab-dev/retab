@@ -257,7 +257,7 @@ spec:
         {
             Method = HttpMethod.Post,
             Path = "/v1/workflows/spec/apply",
-            Options = new WorkflowSpecApplyOptions { YamlDefinition = InvoiceWorkflowYaml },
+            Options = new WorkflowsApplyOptions { YamlDefinition = InvoiceWorkflowYaml },
             ExtraQuery = new Dictionary<string, string> { ["trace"] = "1" },
         });
 
@@ -313,7 +313,8 @@ spec:
             CancellationToken.None
         );
 
-        Assert.IsType<ApiTrigger>(run.Trigger);
+        var trigger = Assert.IsType<TriggerInfo>(run.Trigger);
+        Assert.Equal(TriggerInfoType.Api, trigger.Type);
         Assert.IsType<CompletedBlockExecutionLifecycle>(run.Lifecycle);
     }
 

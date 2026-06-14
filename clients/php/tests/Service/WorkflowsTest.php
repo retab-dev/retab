@@ -201,21 +201,6 @@ class WorkflowsTest extends TestCase
         $this->assertStringEndsWith('v1/workflows/test_workflow_id/publish', $request->getUri()->getPath());
     }
 
-    public function testCreatePlan(): void
-    {
-        $fixture = $this->loadFixture('declarative_plan_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->createPlan('test_workflow_id', yamlDefinition: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\DeclarativePlanResponse::class, $result);
-        $this->assertSame($fixture['workflow_id'], $result->workflowId);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/test_workflow_id/spec/plan', $request->getUri()->getPath());
-        $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('test_value', $body['yaml_definition']);
-    }
-
     public function testPaginationBoundary(): void
     {
         $fixture = $this->loadFixture('list_workflow');

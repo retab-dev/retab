@@ -25,13 +25,6 @@ class WorkflowSpecTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_apply_to_workflow_returns_expected_result
-    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/stub/spec/apply(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.workflows.spec.apply_to_workflow(workflow_id: "stub", yaml_definition: "stub")
-    refute_nil(result)
-  end
-
   # Parameterized authentication error tests (one per endpoint).
   [
     {
@@ -45,12 +38,6 @@ class WorkflowSpecTest < Minitest::Test
       verb: :get,
       url: %r{\Ahttps://api\.retab\.com/v1/workflows/stub/spec(\?|\z)},
       args: {workflow_id: "stub"}
-    },
-    {
-      name: :apply_to_workflow,
-      verb: :post,
-      url: %r{\Ahttps://api\.retab\.com/v1/workflows/stub/spec/apply(\?|\z)},
-      args: {workflow_id: "stub", yaml_definition: "stub"}
     }
   ].each do |spec|
     define_method("test_#{spec[:name]}_raises_authentication_error_on_401") do

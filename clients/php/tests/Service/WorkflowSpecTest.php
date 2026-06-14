@@ -40,19 +40,4 @@ class WorkflowSpecTest extends TestCase
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/test_workflow_id/spec', $request->getUri()->getPath());
     }
-
-    public function testApplyToWorkflow(): void
-    {
-        $fixture = $this->loadFixture('declarative_apply_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->spec()->applyToWorkflow('test_workflow_id', yamlDefinition: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\DeclarativeApplyResponse::class, $result);
-        $this->assertSame($fixture['workflow_id'], $result->workflowId);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/workflows/test_workflow_id/spec/apply', $request->getUri()->getPath());
-        $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('test_value', $body['yaml_definition']);
-    }
 }
