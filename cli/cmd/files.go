@@ -874,6 +874,7 @@ func init() {
 
 	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
+	filesUploadCmd.Flags().String("file", "", "path to the local file (alternative to the positional <path>)")
 	filesUploadCmd.Flags().String("filename", "", "filename to record on the server (required when reading from stdin)")
 
 	filesCreateUploadCmd.Flags().String("filename", "", "filename (required)")

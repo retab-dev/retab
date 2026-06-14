@@ -101,7 +101,10 @@ var tablesGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printTableCommandResult(cmd, result)
+		// Unwrap the single-table `{table: {...}}` envelope for JSON output so
+		// `tables get` matches `tables create`/`replace` (which already print the
+		// table object flat). `list` keeps its plural `{tables: [...]}` shape.
+		return printTableMutationResult(cmd, result)
 	}),
 }
 
