@@ -802,7 +802,7 @@ func TestTablesSchemaProfileValidateCommandsUsePublicRoutes(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/tables/tbl_bank/schema":
 			_ = json.NewEncoder(w).Encode(map[string]any{"table_id": "tbl_bank", "columns": []map[string]any{{"name": "countrycode"}}})
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/tables/tbl_bank/profile":
-			if r.URL.Query()["select"][0] != "countrycode" {
+			if got := r.URL.Query()["select"]; len(got) != 1 || got[0] != "countrycode,holidaystartdate" {
 				t.Fatalf("profile query = %s", r.URL.RawQuery)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"table_id": "tbl_bank", "row_count": 1, "columns": []map[string]any{}})
@@ -824,7 +824,7 @@ func TestTablesSchemaProfileValidateCommandsUsePublicRoutes(t *testing.T) {
 
 	for _, args := range [][]string{
 		{"tables", "schema", "tbl_bank"},
-		{"tables", "profile", "tbl_bank", "--select", "countrycode"},
+		{"tables", "profile", "tbl_bank", "--select", "countrycode, holidaystartdate"},
 		{"tables", "validate", "tbl_bank", "--required", "countrycode", "--not-empty", "countrycode", "--unique", "countrycode"},
 	} {
 		_, _ = captureStd(t, func() {

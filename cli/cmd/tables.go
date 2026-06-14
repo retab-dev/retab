@@ -169,8 +169,8 @@ var tablesProfileCmd = &cobra.Command{
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		query := url.Values{}
 		if v, _ := cmd.Flags().GetString("select"); v != "" || cmd.Flags().Changed("select") {
-			for _, column := range splitCommaList(v) {
-				query.Add("select", column)
+			if columns := splitCommaList(v); len(columns) > 0 {
+				query.Set("select", strings.Join(columns, ","))
 			}
 		}
 		var result any
