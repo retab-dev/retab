@@ -381,7 +381,7 @@ func init() {
 	projectsAccessListCmd.Flags().String("project-id", "", "project whose grants to list (alternative to the positional form)")
 
 	projectsAccessGrantCmd.Flags().String("project-id", "", "project to grant access to (required)")
-	projectsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via `retab members list`; alternative to --subject-id)")
+	projectsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via the org member list; alternative to --subject-id)")
 	projectsAccessGrantCmd.Flags().String("subject-id", "", "explicit subject id, e.g. a user id (alternative to --email)")
 	projectsAccessGrantCmd.Flags().String("subject-type", "user", "subject type: user, application, or organization_membership")
 	projectsAccessGrantCmd.Flags().String("role", "", "role to grant: project-owner, project-editor, project-operator, or project-viewer (required)")
