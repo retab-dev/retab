@@ -93,9 +93,7 @@ class CancelWorkflowResponse(BaseModel):
 
     run: WorkflowRun
     redis_available: bool | None = Field(default=True, description="Whether immediate cancellation signaling was available")
-    cancellation_status: CancelWorkflowResponseCancellationStatus | None = Field(
-        default=cast(CancelWorkflowResponseCancellationStatus, "cancellation_requested"), validate_default=True, description="Cancellation delivery state from this request"
-    )
+    cancellation_status: CancelWorkflowResponseCancellationStatus | None = Field(default=cast(CancelWorkflowResponseCancellationStatus, "cancellation_requested"), validate_default=True, description="Cancellation delivery state from this request")
 
 
 class CancelledTerminal(BaseModel):
@@ -123,9 +121,7 @@ class CreateWorkflowRunRequest(BaseModel):
     workflow_id: str = Field(..., description="Workflow id for the fresh run.")
     documents: dict[str, FileRef | MIMEData] | None = Field(default={}, description="Mapping of start_document block IDs to their input documents.")
     json_inputs: dict[str, Any] | None = Field(default={}, description="Mapping of start-json block IDs to their input JSON data.")
-    version: str | None = Field(
-        default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
-    )
+    version: str | None = Field(default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.")
 
 
 class ErrorTerminal(BaseModel):
@@ -161,9 +157,9 @@ class RunInputs(BaseModel):
 class RunTiming(BaseModel):
     """Timing information for a run.
 
-    Three event timestamps that consumers cannot reconstruct on their own.
-    Wall-clock duration is a trivial `completed_at - started_at` subtraction
-    done client-side; it is not stored or exposed."""
+Three event timestamps that consumers cannot reconstruct on their own.
+Wall-clock duration is a trivial `completed_at - started_at` subtraction
+done client-side; it is not stored or exposed."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -183,9 +179,9 @@ class RunningRun(BaseModel):
 class TriggerInfo(BaseModel):
     """Public summary of what started a run: just the trigger category.
 
-    The full per-variant detail (schedule_id, parent_run_id, sender, ...) is
-    kept internally on `StoredWorkflowRun.trigger` but intentionally not
-    exposed in the public API surface."""
+The full per-variant detail (schedule_id, parent_run_id, sender, ...) is
+kept internally on `StoredWorkflowRun.trigger` but intentionally not
+exposed in the public API surface."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -199,9 +195,7 @@ class WorkflowExportPayloadRequest(BaseModel):
 
     workflow_id: str = Field(..., description="Workflow ID to export")
     block_id: str = Field(..., description="Block ID to export")
-    export_source: WorkflowExportPayloadRequestExportSource | None = Field(
-        default=cast(WorkflowExportPayloadRequestExportSource, "outputs"), validate_default=True, description="Use block outputs or inputs"
-    )
+    export_source: WorkflowExportPayloadRequestExportSource | None = Field(default=cast(WorkflowExportPayloadRequestExportSource, "outputs"), validate_default=True, description="Use block outputs or inputs")
     selected_run_ids: list[str] | None = Field(default=None, description="Run IDs filter (null means all runs)")
     selected_doc_types: list[str] | None = Field(default=None, description="Doc type filter (null/empty means all)")
     status: WorkflowExportPayloadRequestStatus | None = Field(default=None, description="Optional status filter (intersects with completed-only export scope)")
@@ -210,12 +204,9 @@ class WorkflowExportPayloadRequest(BaseModel):
     to_date: str | None = Field(default=None, description="Optional end date filter (YYYY-MM-DD)")
     trigger_type: WorkflowExportPayloadRequestTriggerType | None = Field(default=None, description="Optional trigger type filter")
     preferred_columns: list[str] | None = Field(default=[], description="Preferred data column order")
-    delimiter: str | None = Field(
-        default=";",
-        description="CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.",
-    )
+    delimiter: str | None = Field(default=";", description="CSV field delimiter. Default is ';' (the Excel EU-locale default); pass ',' for RFC 4180 compatibility. Cell values are always quoted when they contain the delimiter, the line terminator, or the quote character, with embedded quotes doubled per RFC 4180.")
     line_delimiter: str | None = Field(default="\n", description="CSV line delimiter")
-    quote: str | None = Field(default='"', description="CSV quote character")
+    quote: str | None = Field(default="\"", description="CSV quote character")
 
 
 class WorkflowExportPayloadResponse(BaseModel):
@@ -237,9 +228,7 @@ class WorkflowRun(BaseModel):
     workflow_id: str = Field(..., description="ID of the workflow that was run")
     workflow_version_id: str = Field(..., description="Content-addressed workflow version used for this run.")
     trigger: TriggerInfo = Field(..., description="What started this run")
-    lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal = Field(
-        ..., description="Lifecycle state of the run.", discriminator="status"
-    )
+    lifecycle: PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal = Field(..., description="Lifecycle state of the run.", discriminator="status")
     timing: RunTiming = Field(..., description="All timing information")
     inputs: RunInputs | None = Field(default={"documents": {}, "json_data": {}}, validate_default=True, description="Input payloads supplied at run creation time")
 

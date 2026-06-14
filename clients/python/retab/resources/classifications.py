@@ -27,18 +27,8 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class ClassificationsMixin:
-    def prepare_list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: ClassificationsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: ClassificationsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PreparedRequest:
         """List Classifications List classifications. Returns a paginated list of classifications, most recent first. Filter by `filename` or a `from_date`/`to_date` range, and page with `before`/`after`."""
         params: dict[str, Any] = {
             "before": before,
@@ -56,36 +46,17 @@ class ClassificationsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/classifications", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category],
-        model: str = "retab-small",
-        first_n_pages: int | None = None,
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, categories: list[Category], model: str = "retab-small", first_n_pages: int | None = None, instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> PreparedRequest:
         """Create Classification Classify a document. Runs a classification on the supplied `document` against the provided `categories`. Tune the run with `model`, `instructions`, `first_n_pages` (limit to the first pages), and `n_consensus` (number of votes to combine). Returns the created classification with the chosen category and reasoning; responds with `201`."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
             document_payload = _coerce_mime_document_input(document_payload)
-        payload = ClassificationRequest(
-            document=cast(Any, document_payload),
-            categories=cast(Any, categories),
-            model=cast(Any, model),
-            first_n_pages=cast(Any, first_n_pages),
-            instructions=cast(Any, instructions),
-            n_consensus=cast(Any, n_consensus),
-            bust_cache=cast(Any, bust_cache),
-            background=cast(Any, background),
-        )
+        payload = ClassificationRequest(document=cast(Any, document_payload), categories=cast(Any, categories), model=cast(Any, model), first_n_pages=cast(Any, first_n_pages), instructions=cast(Any, instructions), n_consensus=cast(Any, n_consensus), bust_cache=cast(Any, bust_cache), background=cast(Any, background))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/classifications", params=params or None, data=data)
 
@@ -102,7 +73,8 @@ class ClassificationsMixin:
 
     def prepare_delete(self, classification_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Classification Delete a classification. Permanently deletes the classification identified by `classification_id`. Responds with 204 on success, or 404 if no such classification exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -111,7 +83,8 @@ class ClassificationsMixin:
 
     def prepare_create_classification_cancel(self, classification_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Classification"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -122,48 +95,14 @@ class ClassificationsMixin:
 class Classifications(SyncAPIResource, ClassificationsMixin):
     """Classifications API wrapper."""
 
-    def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: ClassificationsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> PaginatedList[Classification]:
+    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: ClassificationsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PaginatedList[Classification]:
         """List Classifications List classifications. Returns a paginated list of classifications, most recent first. Filter by `filename` or a `from_date`/`to_date` range, and page with `before`/`after`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return self.request_page(prepared_request, model=Classification)
 
-    def create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category],
-        model: str = "retab-small",
-        first_n_pages: int | None = None,
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Classification:
+    def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, categories: list[Category], model: str = "retab-small", first_n_pages: int | None = None, instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Classification:
         """Create Classification Classify a document. Runs a classification on the supplied `document` against the provided `categories`. Tune the run with `model`, `instructions`, `first_n_pages` (limit to the first pages), and `n_consensus` (number of votes to combine). Returns the created classification with the chosen category and reasoning; responds with `201`."""
-        prepared_request = self.prepare_create(
-            document=document,
-            categories=categories,
-            model=model,
-            first_n_pages=first_n_pages,
-            instructions=instructions,
-            n_consensus=n_consensus,
-            bust_cache=bust_cache,
-            background=background,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(document=document, categories=categories, model=model, first_n_pages=first_n_pages, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return Classification.model_validate(response)
 
@@ -189,48 +128,14 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
 class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
     """Async Classifications API wrapper."""
 
-    async def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        filename: str | None = None,
-        status: ClassificationsStatus | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[Classification]:
+    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: ClassificationsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Classification]:
         """List Classifications List classifications. Returns a paginated list of classifications, most recent first. Filter by `filename` or a `from_date`/`to_date` range, and page with `before`/`after`."""
-        prepared_request = self.prepare_list(
-            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
-        )
+        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
         return await self.request_page(prepared_request, model=Classification)
 
-    async def create(
-        self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category],
-        model: str = "retab-small",
-        first_n_pages: int | None = None,
-        instructions: str | None = None,
-        n_consensus: int = 1,
-        bust_cache: bool = False,
-        background: bool = False,
-        **extra_params: Any,
-    ) -> Classification:
+    async def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, categories: list[Category], model: str = "retab-small", first_n_pages: int | None = None, instructions: str | None = None, n_consensus: int = 1, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Classification:
         """Create Classification Classify a document. Runs a classification on the supplied `document` against the provided `categories`. Tune the run with `model`, `instructions`, `first_n_pages` (limit to the first pages), and `n_consensus` (number of votes to combine). Returns the created classification with the chosen category and reasoning; responds with `201`."""
-        prepared_request = self.prepare_create(
-            document=document,
-            categories=categories,
-            model=model,
-            first_n_pages=first_n_pages,
-            instructions=instructions,
-            n_consensus=n_consensus,
-            bust_cache=bust_cache,
-            background=background,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(document=document, categories=categories, model=model, first_n_pages=first_n_pages, instructions=instructions, n_consensus=n_consensus, bust_cache=bust_cache, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Classification.model_validate(response)
 
@@ -251,6 +156,5 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
         prepared_request = self.prepare_create_classification_cancel(classification_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Classification.model_validate(response)
-
 
 __all__ = ["Classifications", "AsyncClassifications", "ClassificationsMixin"]

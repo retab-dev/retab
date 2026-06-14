@@ -86,14 +86,7 @@ class ExperimentResult(BaseModel):
     run_id: str
     experiment_id: str
     document_id: str
-    lifecycle: (
-        PendingWorkflowExperimentResult
-        | QueuedWorkflowExperimentResult
-        | RunningWorkflowExperimentResult
-        | CompletedWorkflowExperimentResult
-        | ErrorWorkflowExperimentResult
-        | CancelledWorkflowExperimentResult
-    ) = Field(..., discriminator="status")
+    lifecycle: PendingWorkflowExperimentResult | QueuedWorkflowExperimentResult | RunningWorkflowExperimentResult | CompletedWorkflowExperimentResult | ErrorWorkflowExperimentResult | CancelledWorkflowExperimentResult = Field(..., discriminator="status")
     timing: ExperimentResultTiming
     block_type: ExperimentResultBlockType
     handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})

@@ -17,7 +17,6 @@ import (
 func runRootForTest(t *testing.T, args ...string) error {
 	t.Helper()
 	var buf bytes.Buffer
-	rootCmd.SetArgs(args)
 	rootCmd.SetOut(&buf)
 	rootCmd.SetErr(&buf)
 	t.Cleanup(func() {
@@ -31,7 +30,7 @@ func runRootForTest(t *testing.T, args ...string) error {
 			_ = rootCmd.PersistentFlags().Set(name, "")
 		}
 	})
-	return Execute()
+	return ExecuteArgs(args)
 }
 
 func TestUnknownSubcommandFailsOnRouters(t *testing.T) {
@@ -47,6 +46,25 @@ func TestUnknownSubcommandFailsOnRouters(t *testing.T) {
 			err := runRootForTest(t, args...)
 			if err == nil {
 				t.Fatalf("retab %s: expected an error for an unknown subcommand, got nil (would exit 0)", strings.Join(args, " "))
+			}
+			if !strings.Contains(err.Error(), "unknown command") {
+				t.Fatalf("retab %s: expected an \"unknown command\" error, got: %v", strings.Join(args, " "), err)
+			}
+		})
+	}
+}
+
+func TestUnknownSubcommandWithHelpFailsOnRouters(t *testing.T) {
+	cases := [][]string{
+		{"files", "delete", "--help"},
+		{"workflows", "nope", "--help"},
+		{"workflows", "runs", "nope", "--help"},
+	}
+	for _, args := range cases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			err := runRootForTest(t, args...)
+			if err == nil {
+				t.Fatalf("retab %s: expected an error for an unknown subcommand before --help, got nil", strings.Join(args, " "))
 			}
 			if !strings.Contains(err.Error(), "unknown command") {
 				t.Fatalf("retab %s: expected an \"unknown command\" error, got: %v", strings.Join(args, " "), err)
@@ -74,5 +92,11 @@ func TestBareRouterPrintsHelpWithoutError(t *testing.T) {
 				t.Fatalf("retab %s: bare router should not error, got: %v", router, err)
 			}
 		})
+	}
+}
+
+func TestUnicodeDashHelpFlagIsNormalized(t *testing.T) {
+	if err := runRootForTest(t, "workflows", "—help"); err != nil {
+		t.Fatalf("retab workflows —help should behave like --help, got: %v", err)
 	}
 }

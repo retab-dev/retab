@@ -609,6 +609,83 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsCreateResolvesStartJSONAliasFromJSONInputsFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedJSONInputs map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{
+						"id":                          "block_generated_json",
+						"type":                        "start_json",
+						"label":                       "JSON Input",
+						"declarative_path":            "start",
+						"declarative_source_block_id": "block_start",
+					},
+				},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if body["workflow_id"] != "wf_123" {
+				t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
+			}
+			postedJSONInputs, _ = body["json_inputs"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":     "run_123",
+				"status": "running",
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	inputsPath := filepath.Join(t.TempDir(), "inputs.json")
+	if err := os.WriteFile(inputsPath, []byte(`{"start":{"value":"hello"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+	if err := cmd.Flags().Set("json-inputs-file", inputsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	if _, ok := postedJSONInputs["block_generated_json"]; !ok {
+		t.Fatalf("json inputs posted under keys %#v, want block_generated_json", keysOfAnyMap(postedJSONInputs))
+	}
+	if _, ok := postedJSONInputs["start"]; ok {
+		t.Fatalf("friendly alias leaked into request body: %#v", postedJSONInputs)
+	}
+}
+
 func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -2069,6 +2146,15 @@ func TestWorkflowsRunsRestartExampleIndentsSecondCommandLineConsistently(t *test
 	}
 	if !strings.Contains(example, "\n  retab workflows runs restart run_xyz789 --config-source draft") {
 		t.Fatalf("restart example should align the draft-config-source example with two spaces:\n%s", example)
+	}
+	if strings.Contains(workflowsRunsRestartCmd.Long, "failed or cancelled") {
+		t.Fatalf("restart help should not claim only failed/cancelled runs are supported:\n%s", workflowsRunsRestartCmd.Long)
+	}
+	if !strings.Contains(workflowsRunsRestartCmd.Long, "previous run") {
+		t.Fatalf("restart help should describe replaying a previous run:\n%s", workflowsRunsRestartCmd.Long)
+	}
+	if strings.Contains(workflowsRunsCmd.Long, "restart failed runs") {
+		t.Fatalf("runs help should not claim restart is limited to failed runs:\n%s", workflowsRunsCmd.Long)
 	}
 }
 

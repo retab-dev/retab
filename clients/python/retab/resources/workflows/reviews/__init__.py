@@ -13,19 +13,8 @@ from .versions import WorkflowReviewVersions, AsyncWorkflowReviewVersions
 
 
 class WorkflowReviewsMixin:
-    def prepare_list(
-        self,
-        workflow_id: str | None = None,
-        run_id: str | None = None,
-        block_id: str | None = None,
-        step_id: str | None = None,
-        iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, workflow_id: str | None = None, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, iteration_key: str | None = None, decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"), before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -46,7 +35,8 @@ class WorkflowReviewsMixin:
 
     def prepare_get(self, review_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Review Read one review's metadata + decision. Versions are fetched separately."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -55,7 +45,8 @@ class WorkflowReviewsMixin:
 
     def prepare_approve(self, review_id: str, version_id: str, **extra_params: Any) -> PreparedRequest:
         """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -65,7 +56,8 @@ class WorkflowReviewsMixin:
 
     def prepare_reject(self, review_id: str, version_id: str, reason: str, **extra_params: Any) -> PreparedRequest:
         """Reject Review Reject one review version and resume the workflow run. A `reason` is required."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -81,32 +73,10 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         super().__init__(client=client)
         self.versions = WorkflowReviewVersions(client=client)
 
-    def list(
-        self,
-        workflow_id: str | None = None,
-        run_id: str | None = None,
-        block_id: str | None = None,
-        step_id: str | None = None,
-        iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> PaginatedList[Review]:
+
+    def list(self, workflow_id: str | None = None, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, iteration_key: str | None = None, decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"), before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PaginatedList[Review]:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
-        prepared_request = self.prepare_list(
-            workflow_id=workflow_id,
-            run_id=run_id,
-            block_id=block_id,
-            step_id=step_id,
-            iteration_key=iteration_key,
-            decision_status=decision_status,
-            before=before,
-            after=after,
-            limit=limit,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(workflow_id=workflow_id, run_id=run_id, block_id=block_id, step_id=step_id, iteration_key=iteration_key, decision_status=decision_status, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=Review)
 
     def get(self, review_id: str, **extra_params: Any) -> Review:
@@ -135,32 +105,10 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         super().__init__(client=client)
         self.versions = AsyncWorkflowReviewVersions(client=client)
 
-    async def list(
-        self,
-        workflow_id: str | None = None,
-        run_id: str | None = None,
-        block_id: str | None = None,
-        step_id: str | None = None,
-        iteration_key: str | None = None,
-        decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"),
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[Review]:
+
+    async def list(self, workflow_id: str | None = None, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, iteration_key: str | None = None, decision_status: ReviewDecisionStatus | None = cast(ReviewDecisionStatus, "pending"), before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[Review]:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
-        prepared_request = self.prepare_list(
-            workflow_id=workflow_id,
-            run_id=run_id,
-            block_id=block_id,
-            step_id=step_id,
-            iteration_key=iteration_key,
-            decision_status=decision_status,
-            before=before,
-            after=after,
-            limit=limit,
-            **extra_params,
-        )
+        prepared_request = self.prepare_list(workflow_id=workflow_id, run_id=run_id, block_id=block_id, step_id=step_id, iteration_key=iteration_key, decision_status=decision_status, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=Review)
 
     async def get(self, review_id: str, **extra_params: Any) -> Review:
@@ -181,17 +129,8 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
-
 from retab.types.workflows.reviews import ReviewDecisionStatus  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 
 from .versions import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
-__all__ = [
-    "WorkflowReviews",
-    "AsyncWorkflowReviews",
-    "WorkflowReviewsMixin",
-    "ReviewDecisionStatus",
-    "WorkflowReviewVersions",
-    "AsyncWorkflowReviewVersions",
-    "WorkflowReviewVersionsMixin",
-]
+__all__ = ["WorkflowReviews", "AsyncWorkflowReviews", "WorkflowReviewsMixin", "ReviewDecisionStatus", "WorkflowReviewVersions", "AsyncWorkflowReviewVersions", "WorkflowReviewVersionsMixin"]

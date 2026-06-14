@@ -7,23 +7,13 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
-from retab.types.workflows.blocks import (
-    UpdateWorkflowBlockRequest,
-    UpdateWorkflowBlockRequestConfigMode,
-    ValidateWorkflowBlockConfigRequest,
-    ValidateWorkflowBlockConfigRequestConfigMode,
-    ValidateWorkflowBlockConfigResponse,
-    WorkflowBlock,
-    WorkflowBlockCreateRequest,
-    WorkflowBlockCreateRequestType,
-    WorkflowBlockVersion,
-    WorkflowBlockVersionDiff,
-)
+from retab.types.workflows.blocks import UpdateWorkflowBlockRequest, UpdateWorkflowBlockRequestConfigMode, ValidateWorkflowBlockConfigRequest, ValidateWorkflowBlockConfigRequestConfigMode, ValidateWorkflowBlockConfigResponse, WorkflowBlock, WorkflowBlockCreateRequest, WorkflowBlockCreateRequestType, WorkflowBlockVersion, WorkflowBlockVersionDiff
 
 from .executions import WorkflowBlockExecutions, AsyncWorkflowBlockExecutions
 
 
 class WorkflowBlocksMixin:
+
     def prepare_list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PreparedRequest:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         params: dict[str, Any] = {
@@ -38,50 +28,18 @@ class WorkflowBlocksMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/blocks", params=params or None, data=data)
 
-    def prepare_create(
-        self,
-        workflow_id: str,
-        type: WorkflowBlockCreateRequestType,
-        id: str | None = None,
-        label: str = "",
-        position_x: float = 0,
-        position_y: float = 0,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create(self, workflow_id: str, type: WorkflowBlockCreateRequestType, id: str | None = None, label: str = "", position_x: float = 0, position_y: float = 0, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Create Block Create a new block in a workflow."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = WorkflowBlockCreateRequest(
-            workflow_id=cast(Any, workflow_id),
-            id=cast(Any, id),
-            type=cast(Any, type),
-            label=cast(Any, label),
-            position_x=cast(Any, position_x),
-            position_y=cast(Any, position_y),
-            width=cast(Any, width),
-            height=cast(Any, height),
-            config=cast(Any, config),
-            parent_id=cast(Any, parent_id),
-        )
+        payload = WorkflowBlockCreateRequest(workflow_id=cast(Any, workflow_id), id=cast(Any, id), type=cast(Any, type), label=cast(Any, label), position_x=cast(Any, position_x), position_y=cast(Any, position_y), width=cast(Any, width), height=cast(Any, height), config=cast(Any, config), parent_id=cast(Any, parent_id))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/blocks", params=params or None, data=data)
 
-    def prepare_list_versions(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        workflow_version_id: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_list_versions(self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
         """List Block Versions"""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -111,7 +69,8 @@ class WorkflowBlocksMixin:
 
     def prepare_get_version(self, block_version_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Block Version"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -120,7 +79,8 @@ class WorkflowBlocksMixin:
 
     def prepare_create_version_restore(self, block_version_id: str, **extra_params: Any) -> PreparedRequest:
         """Restore Block Version"""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -138,20 +98,7 @@ class WorkflowBlocksMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/workflows/blocks/{block_id}", params=params or None, data=data)
 
-    def prepare_update(
-        self,
-        block_id: str,
-        label: str | None = None,
-        position_x: float | None = None,
-        position_y: float | None = None,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        config_mode: UpdateWorkflowBlockRequestConfigMode | None = None,
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_update(self, block_id: str, label: str | None = None, position_x: float | None = None, position_y: float | None = None, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, config_mode: UpdateWorkflowBlockRequestConfigMode | None = None, workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Update Block Update a block with partial data. Only the provided fields are updated. This enables targeted updates like position changes without affecting other block properties."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -159,16 +106,7 @@ class WorkflowBlocksMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = UpdateWorkflowBlockRequest(
-            label=cast(Any, label),
-            position_x=cast(Any, position_x),
-            position_y=cast(Any, position_y),
-            width=cast(Any, width),
-            height=cast(Any, height),
-            config=cast(Any, config),
-            parent_id=cast(Any, parent_id),
-            config_mode=cast(Any, config_mode),
-        )
+        payload = UpdateWorkflowBlockRequest(label=cast(Any, label), position_x=cast(Any, position_x), position_y=cast(Any, position_y), width=cast(Any, width), height=cast(Any, height), config=cast(Any, config), parent_id=cast(Any, parent_id), config_mode=cast(Any, config_mode))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="PATCH", url=f"/v1/workflows/blocks/{block_id}", params=params or None, data=data)
 
@@ -183,14 +121,7 @@ class WorkflowBlocksMixin:
         data = None
         return PreparedRequest(method="DELETE", url=f"/v1/workflows/blocks/{block_id}", params=params or None, data=data)
 
-    def prepare_create_block_validate_config(
-        self,
-        block_id: str,
-        config: dict[str, Any],
-        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> PreparedRequest:
+    def prepare_create_block_validate_config(self, block_id: str, config: dict[str, Any], config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"), workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
@@ -210,56 +141,21 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         super().__init__(client=client)
         self.executions = WorkflowBlockExecutions(client=client)
 
+
     def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PaginatedList[WorkflowBlock]:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowBlock)
 
-    def create(
-        self,
-        workflow_id: str,
-        type: WorkflowBlockCreateRequestType,
-        id: str | None = None,
-        label: str = "",
-        position_x: float = 0,
-        position_y: float = 0,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowBlock:
+    def create(self, workflow_id: str, type: WorkflowBlockCreateRequestType, id: str | None = None, label: str = "", position_x: float = 0, position_y: float = 0, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Create Block Create a new block in a workflow."""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            id=id,
-            type=type,
-            label=label,
-            position_x=position_x,
-            position_y=position_y,
-            width=width,
-            height=height,
-            config=config,
-            parent_id=parent_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(workflow_id=workflow_id, id=id, type=type, label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    def list_versions(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        workflow_version_id: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> PaginatedList[WorkflowBlockVersion]:
+    def list_versions(self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PaginatedList[WorkflowBlockVersion]:
         """List Block Versions"""
-        prepared_request = self.prepare_list_versions(
-            workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
-        )
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowBlockVersion)
 
     def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
@@ -286,34 +182,9 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    def update(
-        self,
-        block_id: str,
-        label: str | None = None,
-        position_x: float | None = None,
-        position_y: float | None = None,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        config_mode: UpdateWorkflowBlockRequestConfigMode | None = None,
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowBlock:
+    def update(self, block_id: str, label: str | None = None, position_x: float | None = None, position_y: float | None = None, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, config_mode: UpdateWorkflowBlockRequestConfigMode | None = None, workflow_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Update Block Update a block with partial data. Only the provided fields are updated. This enables targeted updates like position changes without affecting other block properties."""
-        prepared_request = self.prepare_update(
-            block_id,
-            label=label,
-            position_x=position_x,
-            position_y=position_y,
-            width=width,
-            height=height,
-            config=config,
-            parent_id=parent_id,
-            config_mode=config_mode,
-            workflow_id=workflow_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_update(block_id, label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
@@ -323,14 +194,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         self._client._prepared_request(prepared_request)
         return None
 
-    def create_block_validate_config(
-        self,
-        block_id: str,
-        config: dict[str, Any],
-        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> ValidateWorkflowBlockConfigResponse:
+    def create_block_validate_config(self, block_id: str, config: dict[str, Any], config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"), workflow_id: str | None = None, **extra_params: Any) -> ValidateWorkflowBlockConfigResponse:
         """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -344,56 +208,21 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         super().__init__(client=client)
         self.executions = AsyncWorkflowBlockExecutions(client=client)
 
+
     async def list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> AsyncPaginatedList[WorkflowBlock]:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowBlock)
 
-    async def create(
-        self,
-        workflow_id: str,
-        type: WorkflowBlockCreateRequestType,
-        id: str | None = None,
-        label: str = "",
-        position_x: float = 0,
-        position_y: float = 0,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowBlock:
+    async def create(self, workflow_id: str, type: WorkflowBlockCreateRequestType, id: str | None = None, label: str = "", position_x: float = 0, position_y: float = 0, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Create Block Create a new block in a workflow."""
-        prepared_request = self.prepare_create(
-            workflow_id=workflow_id,
-            id=id,
-            type=type,
-            label=label,
-            position_x=position_x,
-            position_y=position_y,
-            width=width,
-            height=height,
-            config=config,
-            parent_id=parent_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_create(workflow_id=workflow_id, id=id, type=type, label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    async def list_versions(
-        self,
-        workflow_id: str,
-        block_id: str | None = None,
-        workflow_version_id: str | None = None,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 50,
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[WorkflowBlockVersion]:
+    async def list_versions(self, workflow_id: str, block_id: str | None = None, workflow_version_id: str | None = None, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[WorkflowBlockVersion]:
         """List Block Versions"""
-        prepared_request = self.prepare_list_versions(
-            workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params
-        )
+        prepared_request = self.prepare_list_versions(workflow_id=workflow_id, block_id=block_id, workflow_version_id=workflow_version_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowBlockVersion)
 
     async def list_diff(self, from_block_version_id: str, to_block_version_id: str, **extra_params: Any) -> WorkflowBlockVersionDiff:
@@ -420,34 +249,9 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    async def update(
-        self,
-        block_id: str,
-        label: str | None = None,
-        position_x: float | None = None,
-        position_y: float | None = None,
-        width: float | None = None,
-        height: float | None = None,
-        config: dict[str, Any] | None = None,
-        parent_id: str | None = None,
-        config_mode: UpdateWorkflowBlockRequestConfigMode | None = None,
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> WorkflowBlock:
+    async def update(self, block_id: str, label: str | None = None, position_x: float | None = None, position_y: float | None = None, width: float | None = None, height: float | None = None, config: dict[str, Any] | None = None, parent_id: str | None = None, config_mode: UpdateWorkflowBlockRequestConfigMode | None = None, workflow_id: str | None = None, **extra_params: Any) -> WorkflowBlock:
         """Update Block Update a block with partial data. Only the provided fields are updated. This enables targeted updates like position changes without affecting other block properties."""
-        prepared_request = self.prepare_update(
-            block_id,
-            label=label,
-            position_x=position_x,
-            position_y=position_y,
-            width=width,
-            height=height,
-            config=config,
-            parent_id=parent_id,
-            config_mode=config_mode,
-            workflow_id=workflow_id,
-            **extra_params,
-        )
+        prepared_request = self.prepare_update(block_id, label=label, position_x=position_x, position_y=position_y, width=width, height=height, config=config, parent_id=parent_id, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
@@ -457,19 +261,11 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         await self._client._prepared_request(prepared_request)
         return None
 
-    async def create_block_validate_config(
-        self,
-        block_id: str,
-        config: dict[str, Any],
-        config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"),
-        workflow_id: str | None = None,
-        **extra_params: Any,
-    ) -> ValidateWorkflowBlockConfigResponse:
+    async def create_block_validate_config(self, block_id: str, config: dict[str, Any], config_mode: ValidateWorkflowBlockConfigRequestConfigMode | None = cast(ValidateWorkflowBlockConfigRequestConfigMode, "replace"), workflow_id: str | None = None, **extra_params: Any) -> ValidateWorkflowBlockConfigResponse:
         """Validate Block Config Validate an assembled block config without mutating the workflow draft."""
         prepared_request = self.prepare_create_block_validate_config(block_id, config=config, config_mode=config_mode, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ValidateWorkflowBlockConfigResponse.model_validate(response)
-
 
 from .executions import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 

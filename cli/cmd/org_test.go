@@ -87,6 +87,9 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 				ExpiresIn:      600,
 				OrganizationID: "org_beta",
 			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/organization":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cliAuthOrganization{ID: "org_acme", Name: "Acme Inc"})
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/environments":
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(cliPaginatedList[cliEnvironment]{
@@ -160,6 +163,73 @@ func TestOrgSwitchEndToEnd(t *testing.T) {
 	}
 	if cfg.EnvironmentType != "production" {
 		t.Fatalf("EnvironmentType = %q, want production", cfg.EnvironmentType)
+	}
+}
+
+func TestOrgSwitchCurrentOrganizationIsNoop(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	var switchCalled bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/cli/organizations":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cliOrganizationsResponse{
+				Data: []cliOrganization{
+					{ID: "org_acme", Name: "Acme Inc"},
+					{ID: "org_beta", Name: "Beta"},
+				},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/auth/organization":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cliAuthOrganization{ID: "org_beta", Name: "Beta"})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/auth/cli/switch-organization":
+			switchCalled = true
+			w.WriteHeader(http.StatusForbidden)
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL:       server.URL,
+		EnvironmentID: "env_beta_prod",
+		OAuth: &oauthTokens{
+			AccessToken:   "at_current",
+			RefreshToken:  "rt_current",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			AuthKitDomain: "auth.example.com",
+			ClientID:      "client_cli",
+		},
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	cmd.PersistentFlags().Bool("debug", false, "")
+
+	if err := orgSwitchCmd.RunE(cmd, []string{"Beta"}); err != nil {
+		t.Fatalf("switch current org should be a no-op: %v", err)
+	}
+	if switchCalled {
+		t.Fatal("switch endpoint was called for the already-current organization")
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.EnvironmentID != "env_beta_prod" {
+		t.Fatalf("EnvironmentID = %q, want unchanged env_beta_prod", cfg.EnvironmentID)
+	}
+	if cfg.OAuth == nil || cfg.OAuth.AccessToken != "at_current" || cfg.OAuth.RefreshToken != "rt_current" {
+		t.Fatalf("OAuth tokens changed on no-op switch: %#v", cfg.OAuth)
 	}
 }
 

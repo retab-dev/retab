@@ -127,6 +127,29 @@ func listOrganizationsWithToken(ctx context.Context, baseURL string, oauth *oaut
 	return resp.Data, nil
 }
 
+func fetchCurrentOrganizationWithToken(ctx context.Context, baseURL string, oauth *oauthTokens) (cliAuthOrganization, error) {
+	token, err := makeOAuthTokenProvider(oauth)(ctx)
+	if err != nil {
+		return cliAuthOrganization{}, err
+	}
+	var organization cliAuthOrganization
+	if err := doCLIJSONRequest(
+		ctx,
+		http.DefaultClient,
+		canonicalAPIBaseURL(baseURL),
+		http.MethodGet,
+		"/v1/auth/organization",
+		nil,
+		nil,
+		"",
+		token,
+		&organization,
+	); err != nil {
+		return cliAuthOrganization{}, err
+	}
+	return organization, nil
+}
+
 // organizationDisplay renders "<name> (<id>)" when a name is known, else the id.
 func organizationDisplay(id, name string) string {
 	if strings.TrimSpace(name) != "" {
@@ -297,6 +320,12 @@ The argument accepts either an organization id (org_...) or a name; run
 				return resolveErr
 			}
 			target = resolved
+		}
+		current, currentErr := fetchCurrentOrganizationWithToken(ctx, baseURL, cfg.OAuth)
+		if currentErr == nil && current.ID == target {
+			display := organizationDisplay(current.ID, current.Name)
+			fmt.Fprintf(os.Stderr, "Already using organization %s\n", display)
+			return nil
 		}
 
 		// Exchange the refresh token for a token pair scoped to the new org. The

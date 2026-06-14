@@ -152,16 +152,7 @@ class WorkflowRunStep(BaseModel):
     step_id: str = Field(..., description="Full step ID with iteration context. Assigned ONCE at creation, never recomputed.")
     block_type: WorkflowRunStepBlockType = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
-    lifecycle: (
-        PendingStepLifecycle
-        | QueuedStepLifecycle
-        | RunningStepLifecycle
-        | CompletedStepLifecycle
-        | AwaitingReviewStepLifecycle
-        | ErrorStepLifecycle
-        | SkippedStepLifecycle
-        | CancelledStepLifecycle
-    ) = Field(..., description="Current step lifecycle", discriminator="status")
+    lifecycle: PendingStepLifecycle | QueuedStepLifecycle | RunningStepLifecycle | CompletedStepLifecycle | AwaitingReviewStepLifecycle | ErrorStepLifecycle | SkippedStepLifecycle | CancelledStepLifecycle = Field(..., description="Current step lifecycle", discriminator="status")
     started_at: datetime.datetime | None = Field(default=None, description="When the step started executing")
     completed_at: datetime.datetime | None = Field(default=None, description="When the step finished executing")
     model: str | None = Field(default=None, description="LLM model used by this step, when applicable")

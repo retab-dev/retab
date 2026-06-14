@@ -28,16 +28,8 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class EditTemplatesMixin:
-    def prepare_list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        name: str | None = None,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), name: str | None = None, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> PreparedRequest:
         """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         params: dict[str, Any] = {
             "before": before,
@@ -53,11 +45,10 @@ class EditTemplatesMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/edits/templates", params=params or None, data=data)
 
-    def prepare_create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
-    ) -> PreparedRequest:
+    def prepare_create(self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any) -> PreparedRequest:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -70,7 +61,8 @@ class EditTemplatesMixin:
 
     def prepare_get(self, template_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Template Retrieve an edit template. Fetches a single edit template by its `template_id`, including its form fields. Responds with `404` if no template with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -79,7 +71,8 @@ class EditTemplatesMixin:
 
     def prepare_update(self, template_id: str, name: str | None = None, form_fields: list[FormField] | None = None, **extra_params: Any) -> PreparedRequest:
         """Update Template Update an edit template. Applies a partial update to the template identified by `template_id`. Set `name` to rename it and/or `form_fields` to replace its field list; omitted fields are left unchanged. Returns the updated template, or `404` if no template with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -89,7 +82,8 @@ class EditTemplatesMixin:
 
     def prepare_delete(self, template_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Template Delete an edit template. Permanently deletes the edit template identified by `template_id`. Returns `204` on success, or `404` if no template with that id exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -100,23 +94,12 @@ class EditTemplatesMixin:
 class EditTemplates(SyncAPIResource, EditTemplatesMixin):
     """EditTemplates API wrapper."""
 
-    def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        name: str | None = None,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> PaginatedList[EditTemplate]:
+    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), name: str | None = None, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> PaginatedList[EditTemplate]:
         """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, name=name, sort_by=sort_by, **extra_params)
         return self.request_page(prepared_request, model=EditTemplate)
 
-    def create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
-    ) -> EditTemplate:
+    def create(self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any) -> EditTemplate:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         prepared_request = self.prepare_create(name=name, document=document, form_fields=form_fields, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -144,23 +127,12 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
 class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
     """Async EditTemplates API wrapper."""
 
-    async def list(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 10,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        name: str | None = None,
-        sort_by: str | None = cast(str, "created_at"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[EditTemplate]:
+    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), name: str | None = None, sort_by: str | None = cast(str, "created_at"), **extra_params: Any) -> AsyncPaginatedList[EditTemplate]:
         """List Templates List edit templates. Returns a paginated list of edit templates. Filter by `name` (case-insensitive substring match) and order results by `sort_by` (`created_at` or `name`). Page with `before`/`after` cursors, `limit`, and `order`. Form fields are omitted from list items; fetch a single template to retrieve them."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, name=name, sort_by=sort_by, **extra_params)
         return await self.request_page(prepared_request, model=EditTemplate)
 
-    async def create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
-    ) -> EditTemplate:
+    async def create(self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any) -> EditTemplate:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         prepared_request = self.prepare_create(name=name, document=document, form_fields=form_fields, **extra_params)
         response = await self._client._prepared_request(prepared_request)
@@ -183,6 +155,5 @@ class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
         prepared_request = self.prepare_delete(template_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None
-
 
 __all__ = ["EditTemplates", "AsyncEditTemplates", "EditTemplatesMixin"]

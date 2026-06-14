@@ -10,16 +10,8 @@ from retab.types.workflows.blocks.executions import CreateBlockExecutionRequest,
 
 
 class WorkflowBlockExecutionsMixin:
-    def prepare_list(
-        self,
-        run_id: str,
-        block_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, run_id: str, block_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
         """List Block Executions List recent block executions for one workflow run block. Cursor pagination matches the conventions used by `GET /v1/extractions` — pass `after` from the previous page's `list_metadata.after` to advance, `before` to step backwards, and `order` to flip the sort direction. `run_id` + `block_id` are required scope filters; without them this endpoint would expose cross-run…"""
         params: dict[str, Any] = {
             "run_id": run_id,
@@ -35,17 +27,14 @@ class WorkflowBlockExecutionsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/blocks/executions", params=params or None, data=data)
 
-    def prepare_create(
-        self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any
-    ) -> PreparedRequest:
+    def prepare_create(self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any) -> PreparedRequest:
         """Create Block Execution Create a block execution for `block_id` against the current draft."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateBlockExecutionRequest(
-            run_id=cast(Any, run_id), block_id=cast(Any, block_id), step_id=cast(Any, step_id), n_consensus=cast(Any, n_consensus), check_eligibility=cast(Any, check_eligibility)
-        )
+        payload = CreateBlockExecutionRequest(run_id=cast(Any, run_id), block_id=cast(Any, block_id), step_id=cast(Any, step_id), n_consensus=cast(Any, n_consensus), check_eligibility=cast(Any, check_eligibility))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/blocks/executions", params=params or None, data=data)
 
@@ -53,23 +42,12 @@ class WorkflowBlockExecutionsMixin:
 class WorkflowBlockExecutions(SyncAPIResource, WorkflowBlockExecutionsMixin):
     """WorkflowBlockExecutions API wrapper."""
 
-    def list(
-        self,
-        run_id: str,
-        block_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PaginatedList[StoredBlockExecution]:
+    def list(self, run_id: str, block_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[StoredBlockExecution]:
         """List Block Executions List recent block executions for one workflow run block. Cursor pagination matches the conventions used by `GET /v1/extractions` — pass `after` from the previous page's `list_metadata.after` to advance, `before` to step backwards, and `order` to flip the sort direction. `run_id` + `block_id` are required scope filters; without them this endpoint would expose cross-run…"""
         prepared_request = self.prepare_list(run_id=run_id, block_id=block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=StoredBlockExecution)
 
-    def create(
-        self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any
-    ) -> StoredBlockExecution:
+    def create(self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any) -> StoredBlockExecution:
         """Create Block Execution Create a block execution for `block_id` against the current draft."""
         prepared_request = self.prepare_create(run_id=run_id, block_id=block_id, step_id=step_id, n_consensus=n_consensus, check_eligibility=check_eligibility, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -79,27 +57,15 @@ class WorkflowBlockExecutions(SyncAPIResource, WorkflowBlockExecutionsMixin):
 class AsyncWorkflowBlockExecutions(AsyncAPIResource, WorkflowBlockExecutionsMixin):
     """Async WorkflowBlockExecutions API wrapper."""
 
-    async def list(
-        self,
-        run_id: str,
-        block_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 20,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[StoredBlockExecution]:
+    async def list(self, run_id: str, block_id: str, before: str | None = None, after: str | None = None, limit: int | None = 20, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[StoredBlockExecution]:
         """List Block Executions List recent block executions for one workflow run block. Cursor pagination matches the conventions used by `GET /v1/extractions` — pass `after` from the previous page's `list_metadata.after` to advance, `before` to step backwards, and `order` to flip the sort direction. `run_id` + `block_id` are required scope filters; without them this endpoint would expose cross-run…"""
         prepared_request = self.prepare_list(run_id=run_id, block_id=block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=StoredBlockExecution)
 
-    async def create(
-        self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any
-    ) -> StoredBlockExecution:
+    async def create(self, run_id: str, block_id: str, step_id: str | None = None, n_consensus: int | None = None, check_eligibility: bool = True, **extra_params: Any) -> StoredBlockExecution:
         """Create Block Execution Create a block execution for `block_id` against the current draft."""
         prepared_request = self.prepare_create(run_id=run_id, block_id=block_id, step_id=step_id, n_consensus=n_consensus, check_eligibility=check_eligibility, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return StoredBlockExecution.model_validate(response)
-
 
 __all__ = ["WorkflowBlockExecutions", "AsyncWorkflowBlockExecutions", "WorkflowBlockExecutionsMixin"]

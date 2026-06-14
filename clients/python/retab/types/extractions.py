@@ -31,9 +31,9 @@ class SourcesResponseDocumentType(str, Enum):
 class ExtractionRequest(BaseModel):
     """Request to run a structured extraction on a single document.
 
-    Extends the base extraction request with the `document` to process (either
-    inline content or a reference to a previously uploaded file) and a `stream`
-    flag that controls whether results are returned incrementally."""
+Extends the base extraction request with the `document` to process (either
+inline content or a reference to a previously uploaded file) and a `stream`
+flag that controls whether results are returned incrementally."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -47,10 +47,7 @@ class ExtractionRequest(BaseModel):
     additional_messages: list[dict[str, Any]] | None = Field(default=None, description="Additional chat messages forwarded to the extraction model.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
     stream: bool | None = Field(default=False)
-    background: bool | None = Field(
-        default=False,
-        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
-    )
+    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
     chunking_keys: dict[str, str] | None = None
 
 
@@ -67,14 +64,8 @@ class Extraction(BaseModel):
     image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
-    status: ExtractionStatus | None = Field(
-        default=cast(ExtractionStatus, "pending"),
-        validate_default=True,
-        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
-    )
-    error: PrimitiveError | None = Field(
-        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
-    )
+    status: ExtractionStatus | None = Field(default=cast(ExtractionStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
+    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
     consensus: ExtractionConsensus | None = Field(default=None, description="Consensus metadata for multi-vote extraction runs")
     metadata: dict[str, str] | None = None
     usage: RetabUsage | None = Field(default=None, description="Usage information for the extraction")
@@ -85,20 +76,17 @@ class ExtractionConsensus(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     choices: list[dict[str, Any]] | None = Field(default=[], description="Alternative extraction vote outputs used to build the consolidated result.")
-    likelihoods: dict[str, Any] | None = Field(
-        default=None,
-        description="Consensus likelihood tree mirroring the extraction output. Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves carry one entry per matched list item.",
-    )
+    likelihoods: dict[str, Any] | None = Field(default=None, description="Consensus likelihood tree mirroring the extraction output. Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves carry one entry per matched list item.")
 
 
 class SourcesResponse(BaseModel):
     """An extraction's output annotated with the source that backs each value.
 
-    Returned when fetching the sources for an extraction. Carries the source
-    `file` and its detected `document_type`, the original `extraction` output,
-    and a parallel `sources` tree where each leaf is a `{value, source}` object
-    locating the value in the document (a page region for PDFs, a cell for
-    spreadsheets, a text span for plain text, and so on)."""
+Returned when fetching the sources for an extraction. Carries the source
+`file` and its detected `document_type`, the original `extraction` output,
+and a parallel `sources` tree where each leaf is a `{value, source}` object
+locating the value in the document (a page region for PDFs, a cell for
+spreadsheets, a text span for plain text, and so on)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

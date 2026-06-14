@@ -10,15 +10,8 @@ from retab.types.workflows.experiments.results import ExperimentResult
 
 
 class ExperimentRunResultsMixin:
-    def prepare_list(
-        self,
-        run_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 100,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PreparedRequest:
+
+    def prepare_list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PreparedRequest:
         """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         params: dict[str, Any] = {
             "run_id": run_id,
@@ -35,7 +28,8 @@ class ExperimentRunResultsMixin:
 
     def prepare_get(self, result_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Experiment Result Retrieve a single experiment result. Identified by `result_id`. Returns the per-document result with its lifecycle status, timing, and produced artifact. Returns 404 if no result with that ID exists."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -46,15 +40,7 @@ class ExperimentRunResultsMixin:
 class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
     """ExperimentRunResults API wrapper."""
 
-    def list(
-        self,
-        run_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 100,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> PaginatedList[ExperimentResult]:
+    def list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> PaginatedList[ExperimentResult]:
         """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=ExperimentResult)
@@ -69,15 +55,7 @@ class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
 class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
     """Async ExperimentRunResults API wrapper."""
 
-    async def list(
-        self,
-        run_id: str,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int | None = 100,
-        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
-        **extra_params: Any,
-    ) -> AsyncPaginatedList[ExperimentResult]:
+    async def list(self, run_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, order: PaginationOrder | None = cast(PaginationOrder, "desc"), **extra_params: Any) -> AsyncPaginatedList[ExperimentResult]:
         """List Experiment Results List per-document results for an experiment run. Requires the `run_id` query parameter. Returns one result row per document in the run, with each row's lifecycle status, timing, and produced artifact, as a cursor-paginated list."""
         prepared_request = self.prepare_list(run_id=run_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=ExperimentResult)
@@ -87,6 +65,5 @@ class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
         prepared_request = self.prepare_get(result_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return ExperimentResult.model_validate(response)
-
 
 __all__ = ["ExperimentRunResults", "AsyncExperimentRunResults", "ExperimentRunResultsMixin"]

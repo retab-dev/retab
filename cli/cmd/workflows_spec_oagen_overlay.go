@@ -46,7 +46,7 @@ workflow draft. The target workflow id comes from the URL argument, not from
 
 Plan is read-only — safe to run before ` + "`apply-to`" + `.`,
 	Example: `  retab workflows spec plan-to wf_abc123 ./workflow.yaml
-  cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .changes`,
+  cat workflow.yaml | retab workflows spec plan-to wf_abc123 - | jq .resource_changes`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[1])

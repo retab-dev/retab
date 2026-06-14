@@ -70,22 +70,7 @@ class ReviewAllOf(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     kind: Literal["all_of"] = Field(default="all_of")
-    predicates: list[
-        ReviewAlways
-        | ReviewValidationFailed
-        | ReviewConfidenceLt
-        | ReviewCategoryIn
-        | ReviewTopMarginLt
-        | ReviewSplitCountNeq
-        | ReviewAnySplitPagesLt
-        | ReviewBoundaryConfidenceLt
-        | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
-        | ReviewJsonCondition
-        | ReviewBranchIn
-        | ReviewAnyOf
-        | ReviewAllOf
-    ]
+    predicates: list[ReviewAlways | ReviewValidationFailed | ReviewConfidenceLt | ReviewCategoryIn | ReviewTopMarginLt | ReviewSplitCountNeq | ReviewAnySplitPagesLt | ReviewBoundaryConfidenceLt | ReviewAnyRequiredFieldNull | ReviewFieldConfidenceLt | ReviewJsonCondition | ReviewBranchIn | ReviewAnyOf | ReviewAllOf]
 
 
 class ReviewAlways(BaseModel):
@@ -98,27 +83,12 @@ class ReviewAlways(BaseModel):
 
 class ReviewAnyOf(BaseModel):
     """Gate fires if ANY child predicate fires. Evaluated in list order;
-    `triggered_by` reports the first match (decision: first-match wins)."""
+`triggered_by` reports the first match (decision: first-match wins)."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     kind: Literal["any_of"] = Field(default="any_of")
-    predicates: list[
-        ReviewAlways
-        | ReviewValidationFailed
-        | ReviewConfidenceLt
-        | ReviewCategoryIn
-        | ReviewTopMarginLt
-        | ReviewSplitCountNeq
-        | ReviewAnySplitPagesLt
-        | ReviewBoundaryConfidenceLt
-        | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
-        | ReviewJsonCondition
-        | ReviewBranchIn
-        | ReviewAnyOf
-        | ReviewAllOf
-    ]
+    predicates: list[ReviewAlways | ReviewValidationFailed | ReviewConfidenceLt | ReviewCategoryIn | ReviewTopMarginLt | ReviewSplitCountNeq | ReviewAnySplitPagesLt | ReviewBoundaryConfidenceLt | ReviewAnyRequiredFieldNull | ReviewFieldConfidenceLt | ReviewJsonCondition | ReviewBranchIn | ReviewAnyOf | ReviewAllOf]
 
 
 class ReviewAnyRequiredFieldNull(BaseModel):
@@ -150,8 +120,8 @@ class ReviewBoundaryConfidenceLt(BaseModel):
 class ReviewBranchIn(BaseModel):
     """Gate when a conditional-style result chose a branch in `branches`.
 
-    Conditional blocks are intentionally not reviewable. The predicate remains in
-    the global union so old review/evaluator payloads can still be parsed."""
+Conditional blocks are intentionally not reviewable. The predicate remains in
+the global union so old review/evaluator payloads can still be parsed."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -171,8 +141,8 @@ class ReviewCategoryIn(BaseModel):
 class ReviewConfidenceLt(BaseModel):
     """Gate if the overall block confidence is below `threshold`.
 
-    Note: LLM confidences are poorly calibrated; per-field confidence
-    (ReviewFieldConfidenceLt) tends to behave better."""
+Note: LLM confidences are poorly calibrated; per-field confidence
+(ReviewFieldConfidenceLt) tends to behave better."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -193,10 +163,10 @@ class ReviewFieldConfidenceLt(BaseModel):
 class ReviewJsonCondition(BaseModel):
     """Gate when a conditional-block-style JSON condition matches.
 
-    The `condition` payload uses the same shape as workflow conditional blocks:
-    one condition group with `sub_conditions` and a `logical_operator`. Paths are
-    evaluated against a review condition root, for example `data.invoice_total`
-    or `likelihoods.invoice_total`."""
+The `condition` payload uses the same shape as workflow conditional blocks:
+one condition group with `sub_conditions` and a `logical_operator`. Paths are
+evaluated against a review condition root, for example `data.invoice_total`
+or `likelihoods.invoice_total`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -244,22 +214,7 @@ class Review(BaseModel):
     parent_step_id: str | None = None
     iteration_key: str | None = None
     block_type: ReviewBlockType
-    triggered_by: (
-        ReviewAlways
-        | ReviewValidationFailed
-        | ReviewConfidenceLt
-        | ReviewCategoryIn
-        | ReviewTopMarginLt
-        | ReviewSplitCountNeq
-        | ReviewAnySplitPagesLt
-        | ReviewBoundaryConfidenceLt
-        | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
-        | ReviewJsonCondition
-        | ReviewBranchIn
-        | ReviewAnyOf
-        | ReviewAllOf
-    ) = Field(..., discriminator="kind")
+    triggered_by: ReviewAlways | ReviewValidationFailed | ReviewConfidenceLt | ReviewCategoryIn | ReviewTopMarginLt | ReviewSplitCountNeq | ReviewAnySplitPagesLt | ReviewBoundaryConfidenceLt | ReviewAnyRequiredFieldNull | ReviewFieldConfidenceLt | ReviewJsonCondition | ReviewBranchIn | ReviewAnyOf | ReviewAllOf = Field(..., discriminator="kind")
     created_at: datetime.datetime = Field(..., description="When the review was created.")
     decision: ReviewDecision | None = None
 
@@ -267,8 +222,8 @@ class Review(BaseModel):
 class SubmitDecisionResponse(BaseModel):
     """Response to a review approve or reject request.
 
-    Carries `resume_status` so callers can see whether the run resumed
-    successfully."""
+Carries `resume_status` so callers can see whether the run resumed
+successfully."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -277,39 +232,9 @@ class SubmitDecisionResponse(BaseModel):
     resume_status: ResumeStatus | None = Field(default=cast(ResumeStatus, "resumed"), validate_default=True)
     resume_error: str | None = None
 
-
 from .versions import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = [
-    "Actor",
-    "ActorKind",
-    "ApproveReviewRequest",
-    "CreateReviewVersionRequest",
-    "RejectReviewRequest",
-    "ResumeStatus",
-    "Review",
-    "ReviewAllOf",
-    "ReviewAlways",
-    "ReviewAnyOf",
-    "ReviewAnyRequiredFieldNull",
-    "ReviewAnySplitPagesLt",
-    "ReviewBlockType",
-    "ReviewBoundaryConfidenceLt",
-    "ReviewBranchIn",
-    "ReviewCategoryIn",
-    "ReviewConfidenceLt",
-    "ReviewDecision",
-    "ReviewDecisionStatus",
-    "ReviewFieldConfidenceLt",
-    "ReviewJsonCondition",
-    "ReviewSplitCountNeq",
-    "ReviewTopMarginLt",
-    "ReviewValidationFailed",
-    "ReviewVerdict",
-    "ReviewVersion",
-    "SubmissionStatus",
-    "SubmitDecisionResponse",
-]
+__all__ = ["Actor", "ActorKind", "ApproveReviewRequest", "CreateReviewVersionRequest", "RejectReviewRequest", "ResumeStatus", "Review", "ReviewAllOf", "ReviewAlways", "ReviewAnyOf", "ReviewAnyRequiredFieldNull", "ReviewAnySplitPagesLt", "ReviewBlockType", "ReviewBoundaryConfidenceLt", "ReviewBranchIn", "ReviewCategoryIn", "ReviewConfidenceLt", "ReviewDecision", "ReviewDecisionStatus", "ReviewFieldConfidenceLt", "ReviewJsonCondition", "ReviewSplitCountNeq", "ReviewTopMarginLt", "ReviewValidationFailed", "ReviewVerdict", "ReviewVersion", "SubmissionStatus", "SubmitDecisionResponse"]
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
