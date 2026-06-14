@@ -190,3 +190,90 @@ func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 		t.Fatalf("server was hit %d time(s), want no requests", got)
 	}
 }
+
+// TestSchemasGenerateBackgroundSendsFlagAndPrintsRecord pins that
+// `schemas generate --background` forwards background:true and, without --wait,
+// prints the queued record (which has no schema yet) rather than erroring on the
+// missing json_schema.
+func TestSchemasGenerateBackgroundSendsFlagAndPrintsRecord(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotBackground atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if bg, _ := body["background"].(bool); bg {
+			gotBackground.Store(true)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "sch_queued1", "status": "queued"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
+	if err := schemasGenerateCmd.Flags().Set("url", "https://example.com/doc.pdf"); err != nil {
+		t.Fatal(err)
+	}
+	if err := schemasGenerateCmd.Flags().Set("background", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = schemasGenerateCmd.Flags().Set("background", "false")
+		if slice, ok := schemasGenerateCmd.Flags().Lookup("url").Value.(interface{ Replace([]string) error }); ok {
+			_ = slice.Replace(nil)
+		}
+	})
+
+	var err error
+	stdout, _ := captureStd(t, func() { err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil) })
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !gotBackground.Load() {
+		t.Fatal("request body did not carry background:true")
+	}
+	for _, want := range []string{"sch_queued1", "queued"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("queued record output missing %q:\n%s", want, stdout)
+		}
+	}
+}
+
+// TestSchemasGetAndCancelHitGenerationSubpaths pins that the new get/cancel
+// commands target /v1/schemas/generate/{id}[/cancel] (the background-primitive
+// routes), not /v1/schemas/{id}.
+func TestSchemasGetAndCancelHitGenerationSubpaths(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotPath, gotMethod atomic.Value
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath.Store(r.URL.Path)
+		gotMethod.Store(r.Method)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "sch_x", "status": "cancelled"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, _ = captureStd(t, func() {
+		if err := schemasGetCmd.RunE(schemasGetCmd, []string{"sch_x"}); err != nil {
+			t.Errorf("get: %v", err)
+		}
+	})
+	if gotPath.Load() != "/v1/schemas/generate/sch_x" || gotMethod.Load() != http.MethodGet {
+		t.Fatalf("get hit %v %v, want GET /v1/schemas/generate/sch_x", gotMethod.Load(), gotPath.Load())
+	}
+
+	_, _ = captureStd(t, func() {
+		if err := schemasCancelCmd.RunE(schemasCancelCmd, []string{"sch_x"}); err != nil {
+			t.Errorf("cancel: %v", err)
+		}
+	})
+	if gotPath.Load() != "/v1/schemas/generate/sch_x/cancel" || gotMethod.Load() != http.MethodPost {
+		t.Fatalf("cancel hit %v %v, want POST /v1/schemas/generate/sch_x/cancel", gotMethod.Load(), gotPath.Load())
+	}
+}

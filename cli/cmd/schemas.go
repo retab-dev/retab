@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -156,12 +158,98 @@ alongside your code.
 		if model, _ := cmd.Flags().GetString("model"); model != "" {
 			params.Model = ptr(model)
 		}
+		background, _ := cmd.Flags().GetBool("background")
+		if background {
+			params.Background = ptr(true)
+		}
 		result, err := client.Schemas.Generate(ctx, params)
 		if err != nil {
 			return err
 		}
-		return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+
+		// Synchronous (default): the response already carries the inferred schema.
+		if !background {
+			return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+		}
+		// Background without --wait: the server returns a queued envelope with no
+		// schema yet, so print the record (id + status) for the caller to poll.
+		wait, _ := cmd.Flags().GetBool("wait")
+		if !wait {
+			return printJSON(result)
+		}
+		// Background with --wait: poll the queued generation to a terminal status,
+		// then emit the schema (honouring --format) exactly like a sync run.
+		pollInterval, timeout := primitiveWaitDurations(cmd)
+		final, waitErr := waitForPrimitive(ctx, cmd, schemaGenerationWaitSpec, result.ID, pollInterval, timeout)
+		if waitErr != nil {
+			if final != nil {
+				_ = printJSON(final)
+			}
+			return waitErr
+		}
+		if termErr := primitiveTerminalError(schemaGenerationWaitSpec, final); termErr != nil {
+			_ = printJSON(final)
+			return termErr
+		}
+		return writeSchemaFromMap(cmd.OutOrStdout(), final, format)
 	}),
+}
+
+var schemasGetCmd = &cobra.Command{
+	Use:   "get <schema-generation-id>",
+	Short: "Get a schema generation by id",
+	Long: `Fetch a background schema generation by its id.
+
+Created with ` + "`schemas generate --background`" + `, a generation runs
+asynchronously (pending -> queued -> in_progress -> completed | failed |
+cancelled). This prints the full record — including ` + "`status`" + ` and,
+once complete, ` + "`json_schema`" + `. Use ` + "`schemas wait`" + ` to block
+until it finishes.`,
+	Example: `  retab schemas get sch_abc123`,
+	Args:    cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		var result retab.SchemaGeneration
+		path := schemaGenerationWaitSpec.path + "/" + url.PathEscape(args[0])
+		if err := cliJSONRequestInto(cmd, http.MethodGet, path, nil, nil, &result); err != nil {
+			return err
+		}
+		return printJSON(&result)
+	}),
+}
+
+var schemasCancelCmd = &cobra.Command{
+	Use:   "cancel <schema-generation-id>",
+	Short: "Cancel a background schema generation",
+	Long: `Cancel an in-flight background schema generation.
+
+A non-terminal generation (pending / queued / in_progress) transitions to
+` + "`cancelled`" + `; a generation that already reached a terminal status is
+returned unchanged.`,
+	Example: `  retab schemas cancel sch_abc123`,
+	Args:    cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		var result retab.SchemaGeneration
+		path := schemaGenerationWaitSpec.path + "/" + url.PathEscape(args[0]) + "/cancel"
+		if err := cliJSONRequestInto(cmd, http.MethodPost, path, nil, nil, &result); err != nil {
+			return err
+		}
+		return printJSON(&result)
+	}),
+}
+
+// writeSchemaFromMap re-marshals a polled generation record into a
+// SchemaGeneration so --wait output goes through the same writer (and --format
+// handling) as a synchronous generate.
+func writeSchemaFromMap(w io.Writer, final map[string]any, format string) error {
+	raw, err := json.Marshal(final)
+	if err != nil {
+		return fmt.Errorf("encode schema generation: %w", err)
+	}
+	var result retab.SchemaGeneration
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return fmt.Errorf("decode schema generation: %w", err)
+	}
+	return writeGeneratedSchema(w, &result, format)
 }
 
 func writeGeneratedSchema(w io.Writer, result *retab.SchemaGeneration, format string) error {
@@ -191,7 +279,14 @@ func init() {
 	schemasGenerateCmd.Flags().String("documents-file", "", "JSON array of documents (or - for stdin)")
 	schemasGenerateCmd.Flags().String("model", "", "model identifier")
 	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")
+	// Async surface, matching `extractions create` / `edits create`: --background
+	// queues the generation server-side; --wait blocks until it finishes.
+	addPrimitiveBackgroundFlag(schemasGenerateCmd)
+	addPrimitiveCreateWaitFlags(schemasGenerateCmd)
 
 	schemasCmd.AddCommand(schemasGenerateCmd)
+	schemasCmd.AddCommand(schemasGetCmd)
+	schemasCmd.AddCommand(schemasCancelCmd)
+	schemasCmd.AddCommand(primitiveWaitCommand(schemaGenerationWaitSpec))
 	rootCmd.AddCommand(schemasCmd)
 }

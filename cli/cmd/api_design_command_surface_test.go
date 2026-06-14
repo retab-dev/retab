@@ -138,7 +138,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"partitions":                    {"create", "get", "list", "cancel", "delete", "wait"},
 		"projects":                      {"list", "get", "create", "access"},
 		"projects access":               {"list", "grant", "get", "update", "revoke"},
-		"schemas":                       {"generate"},
+		"schemas":                       {"generate", "get", "cancel", "wait"},
 		"secrets":                       {"delete", "get", "list", "set", "value"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"tables":                        {"create", "delete", "download", "get", "list", "profile", "query", "replace", "schema", "validate"},

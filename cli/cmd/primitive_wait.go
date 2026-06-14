@@ -26,6 +26,11 @@ var (
 	parseWaitSpec          = primitiveWaitSpec{singular: "parse", idName: "parse-id", path: "/v1/parses"}
 	partitionWaitSpec      = primitiveWaitSpec{singular: "partition", idName: "partition-id", path: "/v1/partitions"}
 	splitWaitSpec          = primitiveWaitSpec{singular: "split", idName: "split-id", path: "/v1/splits"}
+	// schemaGenerationWaitSpec drives `schemas generate --wait` / `schemas wait`.
+	// The background primitive lives under /v1/schemas/generate (not /v1/schemas),
+	// so get/cancel are /v1/schemas/generate/{id}[/cancel]; commandPath pins the
+	// command group to `schemas` for the help/examples.
+	schemaGenerationWaitSpec = primitiveWaitSpec{singular: "schema generation", idName: "schema-generation-id", path: "/v1/schemas/generate", commandPath: "schemas"}
 )
 
 func addPrimitiveCreateWaitFlags(cmd *cobra.Command) {
