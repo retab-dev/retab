@@ -376,7 +376,7 @@ func TestWorkflowsExperimentsListTableRendersBlockKindColumn(t *testing.T) {
 			map[string]any{
 				"id":         "exp_smoke",
 				"name":       "smoke-exp",
-				"block_kind": "extract",
+				"block_type": "extract",
 				"status":     "completed",
 				"freshness": map[string]any{
 					"status": "stale",

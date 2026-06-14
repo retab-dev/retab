@@ -393,12 +393,13 @@ func printWorkflowExperimentsListResult(cmd *cobra.Command, result *retab.Pagina
 // workflowExperimentColumns is the dedicated TableColumn spec for
 // `workflows experiments list --output table`. BLOCK_KIND replaces the
 // always-empty TYPE column the generic auto-renderer used to render
-// before bug #12 was fixed; the value comes from the `block_kind` field
-// on each Experiment record (extract / split / classifier / …).
+// before bug #12 was fixed; the value comes from the `block_type` field
+// on each Experiment record (extract / split / classifier / …). (The field
+// is `block_type`, not `block_kind` — the latter was always empty.)
 var workflowExperimentColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return workflowExperimentCell(row, "id") }},
 	{Header: "NAME", Extract: func(row any) string { return workflowExperimentCell(row, "name") }},
-	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_kind") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_type") }},
 	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "status") }},
 	{Header: "FRESHNESS", Extract: artifactFreshnessCell},
 	{Header: "CREATED_AT", Extract: func(row any) string { return workflowExperimentCell(row, "created_at") }},
