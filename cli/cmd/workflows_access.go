@@ -45,20 +45,22 @@ which cascades to the project's workflows.`,
 }
 
 var workflowsAccessListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list <workflow-id>",
 	Short: "List direct workflow access grants",
 	Long: `List the direct role grants on a workflow (additive grants on top of
 what the parent project grants).
 
---workflow-id is required: the route authorizes the read against that specific
-workflow. Filter further with --subject-id / --role, and include revoked grants
-with --include-inactive.`,
-	Example: `  retab workflows access list --workflow-id wf_01HX...`,
-	Args:    cobra.NoArgs,
+Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
+the ` + "`--workflow-id`" + ` flag — the workflow id is required because the
+route authorizes the read against that specific workflow. Filter further with
+--subject-id / --role, and include revoked grants with --include-inactive.`,
+	Example: `  retab workflows access list wf_01HX...
+  retab workflows access list wf_01HX... --role workflow-owner`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		workflowID, _ := cmd.Flags().GetString("workflow-id")
-		if strings.TrimSpace(workflowID) == "" {
-			return fmt.Errorf("--workflow-id is required")
+		workflowID, err := resolveAccessResourceID(cmd, args, "workflow-id")
+		if err != nil {
+			return err
 		}
 		query, err := membershipListQuery(cmd)
 		if err != nil {
@@ -201,8 +203,7 @@ Requires --yes when stdin is not a terminal.`,
 
 func init() {
 	addMembershipListFlags(workflowsAccessListCmd)
-	workflowsAccessListCmd.Flags().String("workflow-id", "", "workflow whose grants to list (required)")
-	_ = workflowsAccessListCmd.MarkFlagRequired("workflow-id")
+	workflowsAccessListCmd.Flags().String("workflow-id", "", "workflow whose grants to list (alternative to the positional form)")
 
 	workflowsAccessGrantCmd.Flags().String("workflow-id", "", "workflow to grant access to (required)")
 	workflowsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via `retab members list`; alternative to --subject-id)")
