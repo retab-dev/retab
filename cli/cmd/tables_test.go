@@ -116,7 +116,7 @@ func TestTablesCommandsHonorOutputTable(t *testing.T) {
 		},
 		{
 			name: "list",
-			args: []string{"tables", "list", "--output-table"},
+			args: []string{"tables", "list", "--project-id", "proj_bank", "--output-table"},
 			want: []string{"id", "name", "filename", "rows", "columns", "tbl_bank", "bank_holidays"},
 		},
 		{
@@ -686,6 +686,48 @@ func TestTablesQueryCSVOutputAndRowMetadata(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "showing 1 of 1 rows") {
 		t.Fatalf("missing summary footer: %q", stderr)
+	}
+}
+
+func TestTablesQueryCSVRendersNullAsEmptyCell(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"table_id": "tbl_nulls",
+			"columns":  []map[string]any{{"name": "name"}, {"name": "age"}, {"name": "salary"}},
+			"rows": []map[string]any{
+				{
+					"id":       "workflow_table_row_5",
+					"position": 5,
+					"data":     map[string]any{"name": "Frank", "age": nil, "salary": nil},
+				},
+			},
+			"row_count":          6,
+			"filtered_row_count": 1,
+			"offset":             5,
+			"limit":              1,
+			"has_more":           false,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t, "tables", "query", "tbl_nulls", "--output", "csv"); err != nil {
+			t.Fatalf("tables query: %v", err)
+		}
+	})
+
+	// Null cells must be empty in CSV (a faithful, re-importable CSV), not the
+	// human "-" placeholder used in table output.
+	if !strings.Contains(stdout, "Frank,,") {
+		t.Fatalf("null cells should render as empty CSV fields, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "-") {
+		t.Fatalf("CSV output must not contain the table null placeholder '-':\n%s", stdout)
 	}
 }
 

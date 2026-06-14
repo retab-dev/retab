@@ -868,8 +868,15 @@ func workflowTableColumnNames(result *retab.WorkflowTableRowsResponse) []string 
 }
 
 func workflowTableCellText(value any, options tableQueryRenderOptions) string {
+	// CSV output must be a faithful, re-importable table: null/empty cells render
+	// as empty fields, not the human-readable "-" placeholder used in the data
+	// grid (which would corrupt the value on round-trip).
+	emptyCell := "-"
+	if options.CSV {
+		emptyCell = ""
+	}
 	if value == nil {
-		return "-"
+		return emptyCell
 	}
 	var cleaned string
 	if workflowTableCellNeedsJSON(value) {
@@ -877,14 +884,14 @@ func workflowTableCellText(value any, options tableQueryRenderOptions) string {
 		if err == nil {
 			cleaned = cleanWorkflowTableCell(string(encoded), options)
 			if cleaned == "" {
-				return "-"
+				return emptyCell
 			}
 			return cleaned
 		}
 	}
 	cleaned = cleanWorkflowTableCell(stringifyCell(value), options)
 	if cleaned == "" {
-		return "-"
+		return emptyCell
 	}
 	return cleaned
 }
@@ -1239,7 +1246,8 @@ func init() {
 	tablesReplaceCmd.Flags().String("file", "", "CSV file path (required)")
 	_ = tablesReplaceCmd.MarkFlagRequired("file")
 	tablesReplaceCmd.Flags().String("column-schema-overrides", "", "JSON column schema overrides")
-	tablesListCmd.Flags().String("project-id", "", "only return tables belonging to this project")
+	tablesListCmd.Flags().String("project-id", "", "project whose tables to list (required)")
+	_ = tablesListCmd.MarkFlagRequired("project-id")
 
 	tablesCmd.AddCommand(tablesCreateCmd, tablesDeleteCmd, tablesDownloadCmd, tablesGetCmd, tablesListCmd, tablesProfileCmd, tablesQueryCmd, tablesReplaceCmd, tablesSchemaCmd, tablesValidateCmd)
 	rootCmd.AddCommand(tablesCmd)
