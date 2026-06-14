@@ -1017,6 +1017,35 @@ func TestWorkflowsRunsListRejectsInvalidListFlagsLocally(t *testing.T) {
 	}
 }
 
+// TestWorkflowsRunsDateFlagsAcceptBareDateAndRFC3339 guards a staging-dogfood
+// bug: `workflows runs list` / `runs export` bound --from-date/--to-date to the
+// legacy strict dateFlagValue, which rejected full RFC3339 timestamps with "must
+// use YYYY-MM-DD date format" — even though `files list` (via addListFlags +
+// rfc3339FlagValue) accepts both bare dates AND RFC3339, and the backend's
+// parseISO (StartOfDayUTC/EndOfDayUTC) accepts both. After migrating these flags
+// to rfc3339FlagValue, both forms must parse for both commands.
+func TestWorkflowsRunsDateFlagsAcceptBareDateAndRFC3339(t *testing.T) {
+	cmds := []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "list", cmd: workflowsRunsListCmd},
+		{name: "export", cmd: workflowsRunsExportCmd},
+	}
+	for _, c := range cmds {
+		for _, flag := range []string{"from-date", "to-date"} {
+			for _, val := range []string{"2026-06-13", "2026-06-13T00:00:00Z"} {
+				t.Run(c.name+"/"+flag+"/"+val, func(t *testing.T) {
+					if err := c.cmd.Flags().Set(flag, val); err != nil {
+						t.Fatalf("--%s %q should be accepted, got: %v", flag, val, err)
+					}
+					t.Cleanup(func() { resetWorkflowRunsFlag(t, c.cmd, flag) })
+				})
+			}
+		}
+	}
+}
+
 func TestWorkflowsRunsListRejectsOverLimitLocally(t *testing.T) {
 	err := workflowsRunsListCmd.Flags().Set("limit", "101")
 	if err == nil {
