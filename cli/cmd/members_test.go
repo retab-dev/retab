@@ -191,3 +191,40 @@ func TestMembersPermissionsHitsEndpoint(t *testing.T) {
 		t.Fatalf("permissions output missing grant, got:\n%s", stdout)
 	}
 }
+
+// TestMembersPermissionsResolvesEmail pins that `members permissions <email>`
+// resolves the email to a user id via the member list (like `update`/`remove`)
+// before hitting the permissions endpoint. Without resolution the email is
+// URL-escaped straight into the path and the backend 404s with a confusing
+// "Member not found" — the bug this guards against.
+func TestMembersPermissionsResolvesEmail(t *testing.T) {
+	resetEnvironmentCommandPersistentFlags(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "test-key")
+
+	var permissionsPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/internal/workos/organizations/members":
+			_, _ = w.Write([]byte(`[{"id":"user_1","email":"alice@acme.com","role":"member"}]`))
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/permissions"):
+			permissionsPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"projects":[],"workflows":[]}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if _, err := captureStdAndRun(t, func() error {
+		return membersPermissionsCmd.RunE(membersPermissionsCmd, []string{"alice@acme.com"})
+	}); err != nil {
+		t.Fatalf("members permissions by email: %v", err)
+	}
+	if permissionsPath != "/internal/workos/organizations/members/user_1/permissions" {
+		t.Fatalf("email not resolved to user id: permissions path = %q, want .../members/user_1/permissions", permissionsPath)
+	}
+}

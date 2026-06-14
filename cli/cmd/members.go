@@ -263,11 +263,24 @@ Requires --yes when stdin is not a terminal.`,
 }
 
 var membersPermissionsCmd = &cobra.Command{
-	Use:   "permissions <member-id>",
+	Use:   "permissions <member>",
 	Short: "Show a member's project and workflow permissions",
-	Args:  cobra.ExactArgs(1),
+	Long: `Show a member's project and workflow permissions.
+
+The member is a user id or an email (resolved against the member list), the
+same as ` + "`members update`" + ` / ` + "`members remove`" + `.`,
+	Example: `  retab members permissions alice@acme.com
+  retab members permissions user_01HX...`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		path := membersBasePath + "/" + url.PathEscape(args[0]) + "/permissions"
+		// Resolve email → user id (like update/remove); passing the email
+		// straight into the path makes the backend 404 with a misleading
+		// "Member not found".
+		memberID, err := resolveMemberRef(cmd, args[0])
+		if err != nil {
+			return err
+		}
+		path := membersBasePath + "/" + url.PathEscape(memberID) + "/permissions"
 		var result cliMemberPermissions
 		if err := cliJSONRequestInto(cmd, http.MethodGet, path, nil, nil, &result); err != nil {
 			return err
