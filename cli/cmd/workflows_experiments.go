@@ -421,6 +421,35 @@ func artifactFreshnessCell(row any) string {
 	return stringifyCell(value)
 }
 
+// experimentResultColumns is the dedicated TableColumn spec for
+// `workflows experiments results list --output table/csv`. The generic
+// auto-renderer only surfaced ID + a confusing TYPE column; these columns show
+// the per-document result fields a user actually compares (which document, its
+// lifecycle status, and how long it took). ExperimentResult has no verdict —
+// experiments measure outputs for comparison, they don't pass/fail like tests.
+var experimentResultColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowExperimentCell(row, "id") }},
+	{Header: "DOCUMENT", Extract: func(row any) string { return workflowExperimentCell(row, "document_id") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_type") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "lifecycle.status") }},
+	{Header: "DURATION_MS", Extract: func(row any) string { return workflowExperimentCell(row, "timing.duration_ms") }},
+}
+
+// printExperimentResultsList renders the results page through the dedicated
+// column spec for table/csv, falling back to JSON otherwise (matching the
+// experiments-list renderer).
+func printExperimentResultsList(cmd *cobra.Command, result *retab.PaginatedList[retab.ExperimentResult]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, experimentResultColumns)
+			}
+		}
+	}
+	return printJSON(result)
+}
+
 var workflowsExperimentsGetCmd = &cobra.Command{
 	Use:   "get [workflow-id] <experiment-id>",
 	Short: "Get an experiment",
@@ -975,7 +1004,7 @@ var workflowsExperimentsResultsListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printExperimentResultsList(cmd, result)
 	}),
 }
 
