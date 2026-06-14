@@ -7,7 +7,17 @@ from typing import Any, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
-from retab.types.workflows import CreateWorkflowRequest, DeclarativeApplyResponse, DeclarativePlanResponse, DeclarativeWorkflowRequest, PublishWorkflowRequest, UpdateWorkflowRequest, Workflow, WorkflowGraphVersion, WorkflowGraphVersionDiff
+from retab.types.workflows import (
+    CreateWorkflowRequest,
+    DeclarativeApplyResponse,
+    DeclarativePlanResponse,
+    DeclarativeWorkflowRequest,
+    PublishWorkflowRequest,
+    UpdateWorkflowRequest,
+    Workflow,
+    WorkflowGraphVersion,
+    WorkflowGraphVersionDiff,
+)
 
 from .artifacts import WorkflowArtifacts, AsyncWorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
@@ -21,8 +31,16 @@ from .tests import WorkflowTests, AsyncWorkflowTests
 
 
 class WorkflowsMixin:
-
-    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "updated_at"), project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Workflows List workflows with pagination and optional filtering."""
         params: dict[str, Any] = {
             "before": before,
@@ -40,8 +58,7 @@ class WorkflowsMixin:
 
     def prepare_create(self, project_id: str, name: str = "Untitled Workflow", description: str = "", **extra_params: Any) -> PreparedRequest:
         """Create Workflow Create a new workflow. The workflow starts unpublished with a default "Document" input block."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -55,8 +72,7 @@ class WorkflowsMixin:
             __url = f"/v1/workflows/{workflow_id}/spec/apply"
         else:
             __url = "/v1/workflows/spec/apply"
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -70,8 +86,7 @@ class WorkflowsMixin:
             __url = f"/v1/workflows/{workflow_id}/spec/plan"
         else:
             __url = "/v1/workflows/spec/plan"
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -130,8 +145,7 @@ class WorkflowsMixin:
 
     def prepare_get(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
         """Get Workflow Get a single workflow by ID. Returns workflow metadata only."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -140,8 +154,7 @@ class WorkflowsMixin:
 
     def prepare_update(self, workflow_id: str, name: str | None = None, description: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Update Workflow Update an existing workflow."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -151,8 +164,7 @@ class WorkflowsMixin:
 
     def prepare_delete(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Workflow Delete a workflow and all its associated entities. This deletes the workflow, all of its blocks and edges, and all of their snapshots."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -161,8 +173,7 @@ class WorkflowsMixin:
 
     def prepare_discard_draft(self, workflow_id: str, **extra_params: Any) -> PreparedRequest:
         """Discard Draft Workflow Discard all draft changes and restore the workflow to its published state. The workflow must already be published."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -171,8 +182,7 @@ class WorkflowsMixin:
 
     def prepare_publish(self, workflow_id: str, description: str = "", **extra_params: Any) -> PreparedRequest:
         """Publish Workflow Publish a workflow. This creates an immutable snapshot of the workflow configuration, making it available for workflow runs. The live entities remain unchanged so users can continue editing."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -196,8 +206,16 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.steps = WorkflowSteps(client=client)
         self.tests = WorkflowTests(client=client)
 
-
-    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "updated_at"), project_id: str | None = None, **extra_params: Any) -> PaginatedList[Workflow]:
+    def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
+        **extra_params: Any,
+    ) -> PaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return self.request_page(prepared_request, model=Workflow)
@@ -220,14 +238,18 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 
-    def list_versions(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PaginatedList[WorkflowGraphVersion]:
+    def list_versions(
+        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> PaginatedList[WorkflowGraphVersion]:
         """List Workflow Versions"""
         prepared_request = self.prepare_list_versions(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=WorkflowGraphVersion)
 
     def list_diff(self, workflow_id: str, from_workflow_version_id: str, to_workflow_version_id: str, **extra_params: Any) -> WorkflowGraphVersionDiff:
         """Diff Workflow Versions"""
-        prepared_request = self.prepare_list_diff(workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params)
+        prepared_request = self.prepare_list_diff(
+            workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
         return WorkflowGraphVersionDiff.model_validate(response)
 
@@ -289,8 +311,16 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.steps = AsyncWorkflowSteps(client=client)
         self.tests = AsyncWorkflowTests(client=client)
 
-
-    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), sort_by: str | None = cast(str, "updated_at"), project_id: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Workflow]:
+    async def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        sort_by: str | None = cast(str, "updated_at"),
+        project_id: str | None = None,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[Workflow]:
         """List Workflows List workflows with pagination and optional filtering."""
         prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, sort_by=sort_by, project_id=project_id, **extra_params)
         return await self.request_page(prepared_request, model=Workflow)
@@ -313,14 +343,18 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         response = await self._client._prepared_request(prepared_request)
         return DeclarativePlanResponse.model_validate(response)
 
-    async def list_versions(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> AsyncPaginatedList[WorkflowGraphVersion]:
+    async def list_versions(
+        self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any
+    ) -> AsyncPaginatedList[WorkflowGraphVersion]:
         """List Workflow Versions"""
         prepared_request = self.prepare_list_versions(workflow_id=workflow_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowGraphVersion)
 
     async def list_diff(self, workflow_id: str, from_workflow_version_id: str, to_workflow_version_id: str, **extra_params: Any) -> WorkflowGraphVersionDiff:
         """Diff Workflow Versions"""
-        prepared_request = self.prepare_list_diff(workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params)
+        prepared_request = self.prepare_list_diff(
+            workflow_id=workflow_id, from_workflow_version_id=from_workflow_version_id, to_workflow_version_id=to_workflow_version_id, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
         return WorkflowGraphVersionDiff.model_validate(response)
 
@@ -366,6 +400,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         response = await self._client._prepared_request(prepared_request)
         return Workflow.model_validate(response)
 
+
 from .artifacts import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .blocks import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .edges import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
@@ -376,4 +411,56 @@ from .spec import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .steps import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .tests import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
-__all__ = ["Workflows", "AsyncWorkflows", "WorkflowsMixin", "WorkflowArtifacts", "AsyncWorkflowArtifacts", "WorkflowArtifactsMixin", "WorkflowBlocks", "AsyncWorkflowBlocks", "WorkflowBlocksMixin", "WorkflowBlockExecutions", "AsyncWorkflowBlockExecutions", "WorkflowBlockExecutionsMixin", "WorkflowEdges", "AsyncWorkflowEdges", "WorkflowEdgesMixin", "WorkflowExperiments", "AsyncWorkflowExperiments", "WorkflowExperimentsMixin", "ExperimentRunMetrics", "AsyncExperimentRunMetrics", "ExperimentRunMetricsMixin", "ExperimentRunResults", "AsyncExperimentRunResults", "ExperimentRunResultsMixin", "ExperimentRuns", "AsyncExperimentRuns", "ExperimentRunsMixin", "WorkflowReviews", "AsyncWorkflowReviews", "WorkflowReviewsMixin", "WorkflowReviewVersions", "AsyncWorkflowReviewVersions", "WorkflowReviewVersionsMixin", "WorkflowRuns", "AsyncWorkflowRuns", "WorkflowRunsMixin", "WorkflowSpec", "AsyncWorkflowSpec", "WorkflowSpecMixin", "WorkflowSteps", "AsyncWorkflowSteps", "WorkflowStepsMixin", "WorkflowTests", "AsyncWorkflowTests", "WorkflowTestsMixin", "WorkflowTestRunResults", "AsyncWorkflowTestRunResults", "WorkflowTestRunResultsMixin", "WorkflowTestRuns", "AsyncWorkflowTestRuns", "WorkflowTestRunsMixin"]
+__all__ = [
+    "Workflows",
+    "AsyncWorkflows",
+    "WorkflowsMixin",
+    "WorkflowArtifacts",
+    "AsyncWorkflowArtifacts",
+    "WorkflowArtifactsMixin",
+    "WorkflowBlocks",
+    "AsyncWorkflowBlocks",
+    "WorkflowBlocksMixin",
+    "WorkflowBlockExecutions",
+    "AsyncWorkflowBlockExecutions",
+    "WorkflowBlockExecutionsMixin",
+    "WorkflowEdges",
+    "AsyncWorkflowEdges",
+    "WorkflowEdgesMixin",
+    "WorkflowExperiments",
+    "AsyncWorkflowExperiments",
+    "WorkflowExperimentsMixin",
+    "ExperimentRunMetrics",
+    "AsyncExperimentRunMetrics",
+    "ExperimentRunMetricsMixin",
+    "ExperimentRunResults",
+    "AsyncExperimentRunResults",
+    "ExperimentRunResultsMixin",
+    "ExperimentRuns",
+    "AsyncExperimentRuns",
+    "ExperimentRunsMixin",
+    "WorkflowReviews",
+    "AsyncWorkflowReviews",
+    "WorkflowReviewsMixin",
+    "WorkflowReviewVersions",
+    "AsyncWorkflowReviewVersions",
+    "WorkflowReviewVersionsMixin",
+    "WorkflowRuns",
+    "AsyncWorkflowRuns",
+    "WorkflowRunsMixin",
+    "WorkflowSpec",
+    "AsyncWorkflowSpec",
+    "WorkflowSpecMixin",
+    "WorkflowSteps",
+    "AsyncWorkflowSteps",
+    "WorkflowStepsMixin",
+    "WorkflowTests",
+    "AsyncWorkflowTests",
+    "WorkflowTestsMixin",
+    "WorkflowTestRunResults",
+    "AsyncWorkflowTestRunResults",
+    "WorkflowTestRunResultsMixin",
+    "WorkflowTestRuns",
+    "AsyncWorkflowTestRuns",
+    "WorkflowTestRunsMixin",
+]

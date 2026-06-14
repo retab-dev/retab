@@ -132,8 +132,8 @@ class ExperimentMetricsMissingError(BaseModel):
 
 class ExperimentMetricsStaleError(BaseModel):
     """Returned when the latest run's config or document set has drifted
-from the current draft, so its metrics no longer reflect the
-experiment's definition."""
+    from the current draft, so its metrics no longer reflect the
+    experiment's definition."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -160,8 +160,8 @@ class ExperimentSummaryMetricDocument(BaseModel):
 class ExperimentSummaryMetricsResponse(BaseModel):
     """Run-level summary plus block-specific diagnostics.
 
-`prior_run_id` + `prior_score` populate when the request opts into
-prior-comparison and a completed prior run exists."""
+    `prior_run_id` + `prior_score` populate when the request opts into
+    prior-comparison and a completed prior run exists."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

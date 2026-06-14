@@ -28,8 +28,18 @@ def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef 
 
 
 class PartitionsMixin:
-
-    def prepare_list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: PartitionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        status: PartitionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Partitions List partitions. Returns a paginated list of partitions for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
         params: dict[str, Any] = {
             "before": before,
@@ -47,17 +57,36 @@ class PartitionsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/partitions", params=params or None, data=data)
 
-    def prepare_create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, key: str, instructions: str, model: str = "retab-small", n_consensus: int = 1, allow_overlap: bool = True, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        key: str,
+        instructions: str,
+        model: str = "retab-small",
+        n_consensus: int = 1,
+        allow_overlap: bool = True,
+        bust_cache: bool = False,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Create Partitions Create a partition. Groups the pages of a `document` into chunks by a partition `key`, guided by `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple votes and consolidate them, and `allow_overlap` to let a page belong to more than one chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
             document_payload = _coerce_mime_document_input(document_payload)
-        payload = PartitionRequest(document=cast(Any, document_payload), key=cast(Any, key), instructions=cast(Any, instructions), model=cast(Any, model), n_consensus=cast(Any, n_consensus), allow_overlap=cast(Any, allow_overlap), bust_cache=cast(Any, bust_cache), background=cast(Any, background))
+        payload = PartitionRequest(
+            document=cast(Any, document_payload),
+            key=cast(Any, key),
+            instructions=cast(Any, instructions),
+            model=cast(Any, model),
+            n_consensus=cast(Any, n_consensus),
+            allow_overlap=cast(Any, allow_overlap),
+            bust_cache=cast(Any, bust_cache),
+            background=cast(Any, background),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/partitions", params=params or None, data=data)
 
@@ -74,8 +103,7 @@ class PartitionsMixin:
 
     def prepare_delete(self, partition_id: str, **extra_params: Any) -> PreparedRequest:
         """Delete Partition Delete a partition. Permanently deletes the partition identified by `partition_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the partition does not exist."""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -84,8 +112,7 @@ class PartitionsMixin:
 
     def prepare_create_partition_cancel(self, partition_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Partition"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -96,14 +123,48 @@ class PartitionsMixin:
 class Partitions(SyncAPIResource, PartitionsMixin):
     """Partitions API wrapper."""
 
-    def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: PartitionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> PaginatedList[Partition]:
+    def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        status: PartitionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        **extra_params: Any,
+    ) -> PaginatedList[Partition]:
         """List Partitions List partitions. Returns a paginated list of partitions for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
+        prepared_request = self.prepare_list(
+            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
+        )
         return self.request_page(prepared_request, model=Partition)
 
-    def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, key: str, instructions: str, model: str = "retab-small", n_consensus: int = 1, allow_overlap: bool = True, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Partition:
+    def create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        key: str,
+        instructions: str,
+        model: str = "retab-small",
+        n_consensus: int = 1,
+        allow_overlap: bool = True,
+        bust_cache: bool = False,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> Partition:
         """Create Partitions Create a partition. Groups the pages of a `document` into chunks by a partition `key`, guided by `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple votes and consolidate them, and `allow_overlap` to let a page belong to more than one chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`."""
-        prepared_request = self.prepare_create(document=document, key=key, instructions=instructions, model=model, n_consensus=n_consensus, allow_overlap=allow_overlap, bust_cache=bust_cache, background=background, **extra_params)
+        prepared_request = self.prepare_create(
+            document=document,
+            key=key,
+            instructions=instructions,
+            model=model,
+            n_consensus=n_consensus,
+            allow_overlap=allow_overlap,
+            bust_cache=bust_cache,
+            background=background,
+            **extra_params,
+        )
         response = self._client._prepared_request(prepared_request)
         return Partition.model_validate(response)
 
@@ -129,14 +190,48 @@ class Partitions(SyncAPIResource, PartitionsMixin):
 class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
     """Async Partitions API wrapper."""
 
-    async def list(self, before: str | None = None, after: str | None = None, limit: int | None = 10, order: PaginationOrder | None = cast(PaginationOrder, "desc"), filename: str | None = None, status: PartitionsStatus | None = None, from_date: str | None = None, to_date: str | None = None, **extra_params: Any) -> AsyncPaginatedList[Partition]:
+    async def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: PaginationOrder | None = cast(PaginationOrder, "desc"),
+        filename: str | None = None,
+        status: PartitionsStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[Partition]:
         """List Partitions List partitions. Returns a paginated list of partitions for the authenticated environment, newest first by default. Filter by `filename` prefix (case-insensitive) and by a `created_at` window using `from_date`/`to_date` (`YYYY-MM-DD`). Page through results with `before`/`after`, `limit`, and `order`."""
-        prepared_request = self.prepare_list(before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params)
+        prepared_request = self.prepare_list(
+            before=before, after=after, limit=limit, order=order, filename=filename, status=status, from_date=from_date, to_date=to_date, **extra_params
+        )
         return await self.request_page(prepared_request, model=Partition)
 
-    async def create(self, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, key: str, instructions: str, model: str = "retab-small", n_consensus: int = 1, allow_overlap: bool = True, bust_cache: bool = False, background: bool = False, **extra_params: Any) -> Partition:
+    async def create(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        key: str,
+        instructions: str,
+        model: str = "retab-small",
+        n_consensus: int = 1,
+        allow_overlap: bool = True,
+        bust_cache: bool = False,
+        background: bool = False,
+        **extra_params: Any,
+    ) -> Partition:
         """Create Partitions Create a partition. Groups the pages of a `document` into chunks by a partition `key`, guided by `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple votes and consolidate them, and `allow_overlap` to let a page belong to more than one chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`."""
-        prepared_request = self.prepare_create(document=document, key=key, instructions=instructions, model=model, n_consensus=n_consensus, allow_overlap=allow_overlap, bust_cache=bust_cache, background=background, **extra_params)
+        prepared_request = self.prepare_create(
+            document=document,
+            key=key,
+            instructions=instructions,
+            model=model,
+            n_consensus=n_consensus,
+            allow_overlap=allow_overlap,
+            bust_cache=bust_cache,
+            background=background,
+            **extra_params,
+        )
         response = await self._client._prepared_request(prepared_request)
         return Partition.model_validate(response)
 
@@ -157,5 +252,6 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
         prepared_request = self.prepare_create_partition_cancel(partition_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Partition.model_validate(response)
+
 
 __all__ = ["Partitions", "AsyncPartitions", "PartitionsMixin"]

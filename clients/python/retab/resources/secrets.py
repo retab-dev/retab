@@ -9,11 +9,9 @@ from retab.types.secrets import CreateSecretRequest, SecretListResponse, SecretR
 
 
 class SecretsMixin:
-
     def prepare_list_secrets(self, **extra_params: Any) -> PreparedRequest:
         """Secret.List"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -22,8 +20,7 @@ class SecretsMixin:
 
     def prepare_create_secret(self, name: str, value: str, **extra_params: Any) -> PreparedRequest:
         """Secret.Create"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -33,8 +30,7 @@ class SecretsMixin:
 
     def prepare_get_secret(self, name: str, **extra_params: Any) -> PreparedRequest:
         """Secret.Get"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -43,8 +39,7 @@ class SecretsMixin:
 
     def prepare_update_secret(self, name: str, value: str, **extra_params: Any) -> PreparedRequest:
         """Secret.Set"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -54,8 +49,7 @@ class SecretsMixin:
 
     def prepare_delete_secret(self, name: str, **extra_params: Any) -> PreparedRequest:
         """Secret.Delete"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -64,8 +58,7 @@ class SecretsMixin:
 
     def prepare_list_secret_value(self, name: str, **extra_params: Any) -> PreparedRequest:
         """Secret.Get Value"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -151,5 +144,6 @@ class AsyncSecrets(AsyncAPIResource, SecretsMixin):
         prepared_request = self.prepare_list_secret_value(name, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SecretValueResponse.model_validate(response)
+
 
 __all__ = ["Secrets", "AsyncSecrets", "SecretsMixin"]

@@ -10,8 +10,18 @@ from retab.types.workflows.steps import WorkflowRunStep
 
 
 class WorkflowStepsMixin:
-
-    def prepare_list(self, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, block_type: list[str] | None = None, status: list[str] | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, **extra_params: Any) -> PreparedRequest:
+    def prepare_list(
+        self,
+        run_id: str | None = None,
+        block_id: str | None = None,
+        step_id: str | None = None,
+        block_type: list[str] | None = None,
+        status: list[str] | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
         params: dict[str, Any] = {
             "run_id": run_id,
@@ -44,9 +54,22 @@ class WorkflowStepsMixin:
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
     """WorkflowSteps API wrapper."""
 
-    def list(self, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, block_type: list[str] | None = None, status: list[str] | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, **extra_params: Any) -> PaginatedList[WorkflowRunStep]:
+    def list(
+        self,
+        run_id: str | None = None,
+        block_id: str | None = None,
+        step_id: str | None = None,
+        block_type: list[str] | None = None,
+        status: list[str] | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        **extra_params: Any,
+    ) -> PaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
-        prepared_request = self.prepare_list(run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params)
+        prepared_request = self.prepare_list(
+            run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
+        )
         return self.request_page(prepared_request, model=WorkflowRunStep)
 
     def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
@@ -59,9 +82,22 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
     """Async WorkflowSteps API wrapper."""
 
-    async def list(self, run_id: str | None = None, block_id: str | None = None, step_id: str | None = None, block_type: list[str] | None = None, status: list[str] | None = None, before: str | None = None, after: str | None = None, limit: int | None = 20, **extra_params: Any) -> AsyncPaginatedList[WorkflowRunStep]:
+    async def list(
+        self,
+        run_id: str | None = None,
+        block_id: str | None = None,
+        step_id: str | None = None,
+        block_type: list[str] | None = None,
+        status: list[str] | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 20,
+        **extra_params: Any,
+    ) -> AsyncPaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
-        prepared_request = self.prepare_list(run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params)
+        prepared_request = self.prepare_list(
+            run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
+        )
         return await self.request_page(prepared_request, model=WorkflowRunStep)
 
     async def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
@@ -69,5 +105,6 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         prepared_request = self.prepare_get(step_id, run_id=run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRunStep.model_validate(response)
+
 
 __all__ = ["WorkflowSteps", "AsyncWorkflowSteps", "WorkflowStepsMixin"]

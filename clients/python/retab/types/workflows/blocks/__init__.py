@@ -63,25 +63,31 @@ class WorkflowBlockCreateRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     workflow_id: str = Field(..., description="Workflow to create the block in.")
-    id: str | None = Field(default=None, description="Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409.")
+    id: str | None = Field(
+        default=None,
+        description="Block ID. Omit to let the server generate one (recommended). Block IDs must be unique across your organization, not just within a workflow — reusing a custom id like 'block_extract' in more than one workflow fails with 409.",
+    )
     type: WorkflowBlockCreateRequestType = Field(..., description="Block type")
     label: str | None = Field(default="", description="Display label")
     position_x: float | None = Field(default=0, description="X position")
     position_y: float | None = Field(default=0, description="Y position")
     width: float | None = Field(default=None, description="Block width")
     height: float | None = Field(default=None, description="Block height")
-    config: dict[str, Any] | None = Field(default=None, description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.")
+    config: dict[str, Any] | None = Field(
+        default=None,
+        description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.",
+    )
     parent_id: str | None = Field(default=None, description="ID of parent container block (while_loop, for_each)")
 
 
 class UpdateWorkflowBlockRequest(BaseModel):
     """Update a block. Only the fields you provide are changed.
 
-`config_mode` controls how `config` is applied:
+    `config_mode` controls how `config` is applied:
 
-* `"merge"` (default): the given `config` is merged into the existing
-  one — nested objects are combined, and a `null` value deletes a key.
-* `"replace"`: the given `config` replaces the existing one entirely."""
+    * `"merge"` (default): the given `config` is merged into the existing
+      one — nested objects are combined, and a `null` value deletes a key.
+    * `"replace"`: the given `config` replaces the existing one entirely."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -90,9 +96,15 @@ class UpdateWorkflowBlockRequest(BaseModel):
     position_y: float | None = None
     width: float | None = None
     height: float | None = None
-    config: dict[str, Any] | None = Field(default=None, description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the block's `type` (set at create time, immutable thereafter) — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.")
+    config: dict[str, Any] | None = Field(
+        default=None,
+        description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the block's `type` (set at create time, immutable thereafter) — see `WorkflowBlock.config` for the per-type contract summary and the API reference at https://retab.com/docs/api-reference for full details. The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union.",
+    )
     parent_id: str | None = None
-    config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(default=None, description="How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.")
+    config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(
+        default=None,
+        description="How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config.",
+    )
 
 
 class ValidateWorkflowBlockConfigRequest(BaseModel):
@@ -101,7 +113,11 @@ class ValidateWorkflowBlockConfigRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     config: dict[str, Any] = Field(..., description="Assembled block config to validate.")
-    config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(default=cast(UpdateWorkflowBlockRequestConfigMode, "replace"), validate_default=True, description="How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.")
+    config_mode: UpdateWorkflowBlockRequestConfigMode | None = Field(
+        default=cast(UpdateWorkflowBlockRequestConfigMode, "replace"),
+        validate_default=True,
+        description="How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config.",
+    )
 
 
 class ValidateWorkflowBlockConfigResponse(BaseModel):
@@ -127,7 +143,10 @@ class WorkflowBlock(BaseModel):
     position_y: float | None = Field(default=0, description="Y position on canvas")
     width: float | None = Field(default=None, description="Block width for resizable blocks")
     height: float | None = Field(default=None, description="Block height for resizable blocks")
-    config: dict[str, Any] | None = Field(default=None, description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — each block type has its own config contract:\n\n* `parse` → parser options (e.g. `model`, `image_resolution_dpi`, `browser_canvas`, `table_parsing_format`).\n* `extract` / `edit` / `classifier` → `model`, `prompt`, `json_schema`, `temperature`, consensus settings.\n* `split` → split rules / JSON Schema for partition decisions.\n* `api_call` → `method`, `url`, headers, body template, retry policy.\n* `function` → inline Python source plus IO mapping.\n* `conditional` → branch predicate expressions.\n* `while_loop` / `for_each` → loop body sub-graph and termination/iteration config.\n* `merge_dicts` → merge strategy.\n* `note` / `start_document` / `start_json` / sentinels → minimal or empty.\n\nThe per-type contracts are documented at https://retab.com/docs/api-reference (Workflow Blocks). The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union — adding a new block type on the server must not break older SDK pins.")
+    config: dict[str, Any] | None = Field(
+        default=None,
+        description="Block-specific configuration as a free-form mapping. The wire schema is `additionalProperties: true` (no JSON Schema constraint) because the concrete shape is determined by the sibling `type` field — each block type has its own config contract:\n\n* `parse` → parser options (e.g. `model`, `image_resolution_dpi`, `browser_canvas`, `table_parsing_format`).\n* `extract` / `edit` / `classifier` → `model`, `prompt`, `json_schema`, `temperature`, consensus settings.\n* `split` → split rules / JSON Schema for partition decisions.\n* `api_call` → `method`, `url`, headers, body template, retry policy.\n* `function` → inline Python source plus IO mapping.\n* `conditional` → branch predicate expressions.\n* `while_loop` / `for_each` → loop body sub-graph and termination/iteration config.\n* `merge_dicts` → merge strategy.\n* `note` / `start_document` / `start_json` / sentinels → minimal or empty.\n\nThe per-type contracts are documented at https://retab.com/docs/api-reference (Workflow Blocks). The SDK intentionally mirrors the spec's permissive shape rather than synthesizing a typed union — adding a new block type on the server must not break older SDK pins.",
+    )
     parent_id: str | None = Field(default=None, description="ID of parent container (while_loop, for_each)")
     declarative_path: str | None = Field(default=None, description="Canonical declarative block path used to reconcile imported specs.")
     declarative_source_block_id: str | None = Field(default=None, description="Authored declarative block id before import-time id regeneration.")
@@ -175,9 +194,31 @@ class WorkflowVersionFieldDiff(BaseModel):
     from_value: Any | None = None
     to_value: Any | None = None
 
+
 from .executions import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["CompletedBlockExecutionLifecycle", "CreateBlockExecutionRequest", "ErrorBlockExecutionLifecycle", "SkippedBlockExecutionLifecycle", "StepArtifactRef", "StepArtifactRefOperation", "StoredBlockExecution", "UpdateWorkflowBlockRequest", "UpdateWorkflowBlockRequestConfigMode", "ValidateWorkflowBlockConfigRequest", "ValidateWorkflowBlockConfigRequestConfigMode", "ValidateWorkflowBlockConfigResponse", "WorkflowBlock", "WorkflowBlockCreateRequest", "WorkflowBlockCreateRequestType", "WorkflowBlockType", "WorkflowBlockVersion", "WorkflowBlockVersionDiff", "WorkflowBlockVersionType", "WorkflowVersionFieldDiff"]
+__all__ = [
+    "CompletedBlockExecutionLifecycle",
+    "CreateBlockExecutionRequest",
+    "ErrorBlockExecutionLifecycle",
+    "SkippedBlockExecutionLifecycle",
+    "StepArtifactRef",
+    "StepArtifactRefOperation",
+    "StoredBlockExecution",
+    "UpdateWorkflowBlockRequest",
+    "UpdateWorkflowBlockRequestConfigMode",
+    "ValidateWorkflowBlockConfigRequest",
+    "ValidateWorkflowBlockConfigRequestConfigMode",
+    "ValidateWorkflowBlockConfigResponse",
+    "WorkflowBlock",
+    "WorkflowBlockCreateRequest",
+    "WorkflowBlockCreateRequestType",
+    "WorkflowBlockType",
+    "WorkflowBlockVersion",
+    "WorkflowBlockVersionDiff",
+    "WorkflowBlockVersionType",
+    "WorkflowVersionFieldDiff",
+]
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

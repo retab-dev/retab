@@ -32,11 +32,16 @@ class ParseRequest(BaseModel):
 
     document: MIMEData | FileRef = Field(..., description="The document to parse")
     model: str | None = Field(default="retab-small", description="The model to use for parsing")
-    table_parsing_format: TableParsingFormat | None = Field(default=cast(TableParsingFormat, "html"), validate_default=True, description="Format used to render tables extracted from the document")
+    table_parsing_format: TableParsingFormat | None = Field(
+        default=cast(TableParsingFormat, "html"), validate_default=True, description="Format used to render tables extracted from the document"
+    )
     image_resolution_dpi: int | None = Field(default=192, description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the parse.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
-    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Parse(BaseModel):
@@ -51,8 +56,14 @@ class Parse(BaseModel):
     image_resolution_dpi: int = Field(..., description="DPI used when rasterizing pages for the parser")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
-    status: ParseStatus | None = Field(default=cast(ParseStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: ParseStatus | None = Field(
+        default=cast(ParseStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     usage: RetabUsage | None = Field(default=None, description="Usage information for the parse operation")
     created_at: datetime.datetime | None = None
 

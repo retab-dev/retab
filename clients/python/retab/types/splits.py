@@ -30,7 +30,10 @@ class SplitRequest(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the split.")
     n_consensus: int | None = Field(default=1, description="Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
-    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Split(BaseModel):
@@ -45,8 +48,14 @@ class Split(BaseModel):
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the split request.")
     output: list[SplitResult] | None = Field(default=[], description="The list of document splits with their assigned pages. Empty [] until status == 'completed'.")
-    status: SplitStatus | None = Field(default=cast(SplitStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    status: SplitStatus | None = Field(
+        default=cast(SplitStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     consensus: SplitConsensus | None = Field(default=None, description="Consensus metadata for multi-vote split runs")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the split operation")
     created_at: datetime.datetime | None = None
@@ -78,7 +87,10 @@ class Subdocument(BaseModel):
 
     name: str = Field(..., description="The name of the subdocument")
     description: str | None = Field(default="", description="The description of the subdocument")
-    allow_multiple_instances: bool | None = Field(default=False, description="When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass).")
+    allow_multiple_instances: bool | None = Field(
+        default=False,
+        description="When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass).",
+    )
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

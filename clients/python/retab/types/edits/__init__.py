@@ -42,11 +42,16 @@ class EditRequest(BaseModel):
 
     instructions: str = Field(..., description="Instructions describing how to fill the form fields.")
     document: MIMEData | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
-    template_id: str | None = Field(default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document.")
+    template_id: str | None = Field(
+        default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document."
+    )
     model: str | None = Field(default="retab-small", description="The model to use for edit inference.")
     config: EditConfig | None = Field(default={"color": "#000080"}, validate_default=True, description="Edit configuration (rendering options).")
     bust_cache: bool | None = Field(default=False, description="If true, skip the LLM cache and force a fresh completion.")
-    background: bool | None = Field(default=False, description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
+    background: bool | None = Field(
+        default=False,
+        description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
+    )
 
 
 class Edit(BaseModel):
@@ -60,9 +65,17 @@ class Edit(BaseModel):
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the edit request.")
     config: EditConfig = Field(..., description="Configuration used for the edit operation.")
     template_id: str | None = Field(default=None, description="Template id used when the edit was created from a template; null for direct-document edits.")
-    output: EditResult | None = Field(default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status.")
-    status: EditStatus | None = Field(default=cast(EditStatus, "pending"), validate_default=True, description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.")
-    error: PrimitiveError | None = Field(default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.")
+    output: EditResult | None = Field(
+        default=None, description="The edit result: filled form fields and the rendered PDF. An empty sentinel until status == 'completed'; gate reads on status."
+    )
+    status: EditStatus | None = Field(
+        default=cast(EditStatus, "pending"),
+        validate_default=True,
+        description="Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.",
+    )
+    error: PrimitiveError | None = Field(
+        default=None, description="Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check."
+    )
     filled_document_ref: FileRef | None = Field(default=None, description="Durable file reference for the filled document, when materialized.")
     usage: RetabUsage | None = Field(default=None, description="Usage information for the edit operation.")
     created_at: datetime.datetime | None = None
@@ -90,9 +103,25 @@ class FormField(BaseModel):
     key: str = Field(..., description="Stable key identifying the field in the form data.")
     value: str | None = Field(default=None, description="Filled value of the field as text. Null when no filled value is set.")
 
+
 from .templates import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["BBox", "CreateEditTemplateRequest", "Edit", "EditConfig", "EditRequest", "EditResult", "EditStatus", "EditTemplate", "FieldType", "FileRef", "FormField", "MIMEData", "RetabUsage", "UpdateEditTemplateRequest"]
+__all__ = [
+    "BBox",
+    "CreateEditTemplateRequest",
+    "Edit",
+    "EditConfig",
+    "EditRequest",
+    "EditResult",
+    "EditStatus",
+    "EditTemplate",
+    "FieldType",
+    "FileRef",
+    "FormField",
+    "MIMEData",
+    "RetabUsage",
+    "UpdateEditTemplateRequest",
+]
 
 from .templates import EditTemplate, UpdateEditTemplateRequest  # noqa: E402,F401,F811  (hand-written flat-layout compat)
 

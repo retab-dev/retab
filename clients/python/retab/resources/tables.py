@@ -6,11 +6,30 @@ from typing import Any, Literal, cast
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import PaginationOrder
-from retab.types.tables import CreateWorkflowTableUploadRequest, QueryWorkflowTableRequest, ReplaceWorkflowTableUploadRequest, UpdateWorkflowTableRequest, WorkflowTableAggregationRequest, WorkflowTableDistinctRequest, WorkflowTableFilterRule, WorkflowTableListResponse, WorkflowTableProfileResponse, WorkflowTableResponse, WorkflowTableRowsResponse, WorkflowTableSampleRequest, WorkflowTableSchemaResponse, WorkflowTableSearchRequest, WorkflowTableSortRule, WorkflowTableTailRequest, WorkflowTableValidationColumnRule, WorkflowTableValidationRequest, WorkflowTableValidationResponse
+from retab.types.tables import (
+    CreateWorkflowTableUploadRequest,
+    QueryWorkflowTableRequest,
+    ReplaceWorkflowTableUploadRequest,
+    UpdateWorkflowTableRequest,
+    WorkflowTableAggregationRequest,
+    WorkflowTableDistinctRequest,
+    WorkflowTableFilterRule,
+    WorkflowTableListResponse,
+    WorkflowTableProfileResponse,
+    WorkflowTableResponse,
+    WorkflowTableRowsResponse,
+    WorkflowTableSampleRequest,
+    WorkflowTableSchemaResponse,
+    WorkflowTableSearchRequest,
+    WorkflowTableSortRule,
+    WorkflowTableTailRequest,
+    WorkflowTableValidationColumnRule,
+    WorkflowTableValidationRequest,
+    WorkflowTableValidationResponse,
+)
 
 
 class TablesMixin:
-
     def prepare_list(self, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.List"""
         params: dict[str, Any] = {
@@ -24,19 +43,19 @@ class TablesMixin:
 
     def prepare_create(self, name: str, file: str, column_schema_overrides: str | None = None, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Create"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateWorkflowTableUploadRequest(name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides), project_id=cast(Any, project_id))
+        payload = CreateWorkflowTableUploadRequest(
+            name=cast(Any, name), file=cast(Any, file), column_schema_overrides=cast(Any, column_schema_overrides), project_id=cast(Any, project_id)
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/tables", params=params or None, data=data)
 
     def prepare_get(self, table_id: str, **extra_params: Any) -> PreparedRequest:
         """Table.Get"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -45,8 +64,7 @@ class TablesMixin:
 
     def prepare_replace(self, table_id: str, file: str, column_schema_overrides: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Replace"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -56,8 +74,7 @@ class TablesMixin:
 
     def prepare_update_table(self, table_id: str, name: str | None = None, metadata: dict[str, Any] | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.Update"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -67,8 +84,7 @@ class TablesMixin:
 
     def prepare_delete(self, table_id: str, **extra_params: Any) -> PreparedRequest:
         """Table.Delete"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -77,8 +93,7 @@ class TablesMixin:
 
     def prepare_download(self, table_id: str, **extra_params: Any) -> PreparedRequest:
         """Table.Download"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -96,31 +111,74 @@ class TablesMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/tables/{table_id}/profile", params=params or None, data=data)
 
-    def prepare_query(self, table_id: str, filters: list[WorkflowTableFilterRule] | None = None, search: WorkflowTableSearchRequest | None = None, case_sensitive: bool = False, select: list[str] | None = None, distinct: WorkflowTableDistinctRequest | None = None, group_by: list[str] | None = None, aggregations: list[WorkflowTableAggregationRequest] | None = None, sort: list[WorkflowTableSortRule] | None = None, sample: WorkflowTableSampleRequest | None = None, tail: WorkflowTableTailRequest | None = None, count_only: bool = False, include_explain: bool = False, sort_column: str | None = None, sort_direction: PaginationOrder | None = None, viewer_mode: Literal["windowed"] | None = None, offset: int = 0, limit: int | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_query(
+        self,
+        table_id: str,
+        filters: list[WorkflowTableFilterRule] | None = None,
+        search: WorkflowTableSearchRequest | None = None,
+        case_sensitive: bool = False,
+        select: list[str] | None = None,
+        distinct: WorkflowTableDistinctRequest | None = None,
+        group_by: list[str] | None = None,
+        aggregations: list[WorkflowTableAggregationRequest] | None = None,
+        sort: list[WorkflowTableSortRule] | None = None,
+        sample: WorkflowTableSampleRequest | None = None,
+        tail: WorkflowTableTailRequest | None = None,
+        count_only: bool = False,
+        include_explain: bool = False,
+        sort_column: str | None = None,
+        sort_direction: PaginationOrder | None = None,
+        viewer_mode: Literal["windowed"] | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Table.Query"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = QueryWorkflowTableRequest(filters=cast(Any, filters), search=cast(Any, search), case_sensitive=cast(Any, case_sensitive), select=cast(Any, select), distinct=cast(Any, distinct), group_by=cast(Any, group_by), aggregations=cast(Any, aggregations), sort=cast(Any, sort), sample=cast(Any, sample), tail=cast(Any, tail), count_only=cast(Any, count_only), include_explain=cast(Any, include_explain), sort_column=cast(Any, sort_column), sort_direction=cast(Any, sort_direction), viewer_mode=cast(Any, viewer_mode), offset=cast(Any, offset), limit=cast(Any, limit))
+        payload = QueryWorkflowTableRequest(
+            filters=cast(Any, filters),
+            search=cast(Any, search),
+            case_sensitive=cast(Any, case_sensitive),
+            select=cast(Any, select),
+            distinct=cast(Any, distinct),
+            group_by=cast(Any, group_by),
+            aggregations=cast(Any, aggregations),
+            sort=cast(Any, sort),
+            sample=cast(Any, sample),
+            tail=cast(Any, tail),
+            count_only=cast(Any, count_only),
+            include_explain=cast(Any, include_explain),
+            sort_column=cast(Any, sort_column),
+            sort_direction=cast(Any, sort_direction),
+            viewer_mode=cast(Any, viewer_mode),
+            offset=cast(Any, offset),
+            limit=cast(Any, limit),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/tables/{table_id}/query", params=params or None, data=data)
 
     def prepare_schema(self, table_id: str, **extra_params: Any) -> PreparedRequest:
         """Table.Get Schema"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="GET", url=f"/v1/tables/{table_id}/schema", params=params or None, data=data)
 
-    def prepare_validate(self, table_id: str, required_columns: list[str] | None = None, columns: dict[str, WorkflowTableValidationColumnRule] | None = None, unique: list[list[str]] | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_validate(
+        self,
+        table_id: str,
+        required_columns: list[str] | None = None,
+        columns: dict[str, WorkflowTableValidationColumnRule] | None = None,
+        unique: list[list[str]] | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
         """Table.Validate"""
-        params: dict[str, Any] = {
-        }
+        params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -180,9 +238,50 @@ class Tables(SyncAPIResource, TablesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableProfileResponse.model_validate(response)
 
-    def query(self, table_id: str, filters: list[WorkflowTableFilterRule] | None = None, search: WorkflowTableSearchRequest | None = None, case_sensitive: bool = False, select: list[str] | None = None, distinct: WorkflowTableDistinctRequest | None = None, group_by: list[str] | None = None, aggregations: list[WorkflowTableAggregationRequest] | None = None, sort: list[WorkflowTableSortRule] | None = None, sample: WorkflowTableSampleRequest | None = None, tail: WorkflowTableTailRequest | None = None, count_only: bool = False, include_explain: bool = False, sort_column: str | None = None, sort_direction: PaginationOrder | None = None, viewer_mode: Literal["windowed"] | None = None, offset: int = 0, limit: int | None = None, **extra_params: Any) -> WorkflowTableRowsResponse:
+    def query(
+        self,
+        table_id: str,
+        filters: list[WorkflowTableFilterRule] | None = None,
+        search: WorkflowTableSearchRequest | None = None,
+        case_sensitive: bool = False,
+        select: list[str] | None = None,
+        distinct: WorkflowTableDistinctRequest | None = None,
+        group_by: list[str] | None = None,
+        aggregations: list[WorkflowTableAggregationRequest] | None = None,
+        sort: list[WorkflowTableSortRule] | None = None,
+        sample: WorkflowTableSampleRequest | None = None,
+        tail: WorkflowTableTailRequest | None = None,
+        count_only: bool = False,
+        include_explain: bool = False,
+        sort_column: str | None = None,
+        sort_direction: PaginationOrder | None = None,
+        viewer_mode: Literal["windowed"] | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        **extra_params: Any,
+    ) -> WorkflowTableRowsResponse:
         """Table.Query"""
-        prepared_request = self.prepare_query(table_id, filters=filters, search=search, case_sensitive=case_sensitive, select=select, distinct=distinct, group_by=group_by, aggregations=aggregations, sort=sort, sample=sample, tail=tail, count_only=count_only, include_explain=include_explain, sort_column=sort_column, sort_direction=sort_direction, viewer_mode=viewer_mode, offset=offset, limit=limit, **extra_params)
+        prepared_request = self.prepare_query(
+            table_id,
+            filters=filters,
+            search=search,
+            case_sensitive=case_sensitive,
+            select=select,
+            distinct=distinct,
+            group_by=group_by,
+            aggregations=aggregations,
+            sort=sort,
+            sample=sample,
+            tail=tail,
+            count_only=count_only,
+            include_explain=include_explain,
+            sort_column=sort_column,
+            sort_direction=sort_direction,
+            viewer_mode=viewer_mode,
+            offset=offset,
+            limit=limit,
+            **extra_params,
+        )
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableRowsResponse.model_validate(response)
 
@@ -192,7 +291,14 @@ class Tables(SyncAPIResource, TablesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowTableSchemaResponse.model_validate(response)
 
-    def validate(self, table_id: str, required_columns: list[str] | None = None, columns: dict[str, WorkflowTableValidationColumnRule] | None = None, unique: list[list[str]] | None = None, **extra_params: Any) -> WorkflowTableValidationResponse:
+    def validate(
+        self,
+        table_id: str,
+        required_columns: list[str] | None = None,
+        columns: dict[str, WorkflowTableValidationColumnRule] | None = None,
+        unique: list[list[str]] | None = None,
+        **extra_params: Any,
+    ) -> WorkflowTableValidationResponse:
         """Table.Validate"""
         prepared_request = self.prepare_validate(table_id, required_columns=required_columns, columns=columns, unique=unique, **extra_params)
         response = self._client._prepared_request(prepared_request)
@@ -250,9 +356,50 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableProfileResponse.model_validate(response)
 
-    async def query(self, table_id: str, filters: list[WorkflowTableFilterRule] | None = None, search: WorkflowTableSearchRequest | None = None, case_sensitive: bool = False, select: list[str] | None = None, distinct: WorkflowTableDistinctRequest | None = None, group_by: list[str] | None = None, aggregations: list[WorkflowTableAggregationRequest] | None = None, sort: list[WorkflowTableSortRule] | None = None, sample: WorkflowTableSampleRequest | None = None, tail: WorkflowTableTailRequest | None = None, count_only: bool = False, include_explain: bool = False, sort_column: str | None = None, sort_direction: PaginationOrder | None = None, viewer_mode: Literal["windowed"] | None = None, offset: int = 0, limit: int | None = None, **extra_params: Any) -> WorkflowTableRowsResponse:
+    async def query(
+        self,
+        table_id: str,
+        filters: list[WorkflowTableFilterRule] | None = None,
+        search: WorkflowTableSearchRequest | None = None,
+        case_sensitive: bool = False,
+        select: list[str] | None = None,
+        distinct: WorkflowTableDistinctRequest | None = None,
+        group_by: list[str] | None = None,
+        aggregations: list[WorkflowTableAggregationRequest] | None = None,
+        sort: list[WorkflowTableSortRule] | None = None,
+        sample: WorkflowTableSampleRequest | None = None,
+        tail: WorkflowTableTailRequest | None = None,
+        count_only: bool = False,
+        include_explain: bool = False,
+        sort_column: str | None = None,
+        sort_direction: PaginationOrder | None = None,
+        viewer_mode: Literal["windowed"] | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        **extra_params: Any,
+    ) -> WorkflowTableRowsResponse:
         """Table.Query"""
-        prepared_request = self.prepare_query(table_id, filters=filters, search=search, case_sensitive=case_sensitive, select=select, distinct=distinct, group_by=group_by, aggregations=aggregations, sort=sort, sample=sample, tail=tail, count_only=count_only, include_explain=include_explain, sort_column=sort_column, sort_direction=sort_direction, viewer_mode=viewer_mode, offset=offset, limit=limit, **extra_params)
+        prepared_request = self.prepare_query(
+            table_id,
+            filters=filters,
+            search=search,
+            case_sensitive=case_sensitive,
+            select=select,
+            distinct=distinct,
+            group_by=group_by,
+            aggregations=aggregations,
+            sort=sort,
+            sample=sample,
+            tail=tail,
+            count_only=count_only,
+            include_explain=include_explain,
+            sort_column=sort_column,
+            sort_direction=sort_direction,
+            viewer_mode=viewer_mode,
+            offset=offset,
+            limit=limit,
+            **extra_params,
+        )
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableRowsResponse.model_validate(response)
 
@@ -262,10 +409,18 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableSchemaResponse.model_validate(response)
 
-    async def validate(self, table_id: str, required_columns: list[str] | None = None, columns: dict[str, WorkflowTableValidationColumnRule] | None = None, unique: list[list[str]] | None = None, **extra_params: Any) -> WorkflowTableValidationResponse:
+    async def validate(
+        self,
+        table_id: str,
+        required_columns: list[str] | None = None,
+        columns: dict[str, WorkflowTableValidationColumnRule] | None = None,
+        unique: list[list[str]] | None = None,
+        **extra_params: Any,
+    ) -> WorkflowTableValidationResponse:
         """Table.Validate"""
         prepared_request = self.prepare_validate(table_id, required_columns=required_columns, columns=columns, unique=unique, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowTableValidationResponse.model_validate(response)
+
 
 __all__ = ["Tables", "AsyncTables", "TablesMixin"]

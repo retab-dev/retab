@@ -55,14 +55,58 @@ class AllItemsMatchCondition(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     kind: Literal["all_items_match"] = Field(default="all_items_match")
-    condition: ExistCondition | NotExistsCondition | EqualCondition | NotEqualsCondition | NumberCompareCondition | ContainCondition | ObjectContainsCondition | ArrayContainsCondition | MatcheRegexCondition | JsonSchemaValidCondition | SimilarityGteCondition | LlmJudgedAsCondition | LlmNotJudgedAsCondition | NotContainsCondition | LengthCompareCondition | BetweenCondition | StartWithCondition | EndsWithCondition | AllItemsMatchCondition | AnyItemMatchesCondition | SplitIouCondition = Field(..., discriminator="kind")
+    condition: (
+        ExistCondition
+        | NotExistsCondition
+        | EqualCondition
+        | NotEqualsCondition
+        | NumberCompareCondition
+        | ContainCondition
+        | ObjectContainsCondition
+        | ArrayContainsCondition
+        | MatcheRegexCondition
+        | JsonSchemaValidCondition
+        | SimilarityGteCondition
+        | LlmJudgedAsCondition
+        | LlmNotJudgedAsCondition
+        | NotContainsCondition
+        | LengthCompareCondition
+        | BetweenCondition
+        | StartWithCondition
+        | EndsWithCondition
+        | AllItemsMatchCondition
+        | AnyItemMatchesCondition
+        | SplitIouCondition
+    ) = Field(..., discriminator="kind")
 
 
 class AnyItemMatchesCondition(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     kind: Literal["any_item_matches"] = Field(default="any_item_matches")
-    condition: ExistCondition | NotExistsCondition | EqualCondition | NotEqualsCondition | NumberCompareCondition | ContainCondition | ObjectContainsCondition | ArrayContainsCondition | MatcheRegexCondition | JsonSchemaValidCondition | SimilarityGteCondition | LlmJudgedAsCondition | LlmNotJudgedAsCondition | NotContainsCondition | LengthCompareCondition | BetweenCondition | StartWithCondition | EndsWithCondition | AllItemsMatchCondition | AnyItemMatchesCondition | SplitIouCondition = Field(..., discriminator="kind")
+    condition: (
+        ExistCondition
+        | NotExistsCondition
+        | EqualCondition
+        | NotEqualsCondition
+        | NumberCompareCondition
+        | ContainCondition
+        | ObjectContainsCondition
+        | ArrayContainsCondition
+        | MatcheRegexCondition
+        | JsonSchemaValidCondition
+        | SimilarityGteCondition
+        | LlmJudgedAsCondition
+        | LlmNotJudgedAsCondition
+        | NotContainsCondition
+        | LengthCompareCondition
+        | BetweenCondition
+        | StartWithCondition
+        | EndsWithCondition
+        | AllItemsMatchCondition
+        | AnyItemMatchesCondition
+        | SplitIouCondition
+    ) = Field(..., discriminator="kind")
 
 
 class ArrayContainsCondition(BaseModel):
@@ -86,14 +130,36 @@ class AssertionSchemaDep(BaseModel):
 class AssertionSpec(BaseModel):
     """Block-test assertion against one declared output handle.
 
-`target` is the only supported shape: an output handle id and an
-optional relative path inside that handle's payload."""
+    `target` is the only supported shape: an output handle id and an
+    optional relative path inside that handle's payload."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str | None = None
     target: OutputTarget
-    condition: ExistCondition | NotExistsCondition | EqualCondition | NotEqualsCondition | NumberCompareCondition | ContainCondition | ObjectContainsCondition | ArrayContainsCondition | MatcheRegexCondition | JsonSchemaValidCondition | SimilarityGteCondition | LlmJudgedAsCondition | LlmNotJudgedAsCondition | NotContainsCondition | LengthCompareCondition | BetweenCondition | StartWithCondition | EndsWithCondition | AllItemsMatchCondition | AnyItemMatchesCondition | SplitIouCondition = Field(..., discriminator="kind")
+    condition: (
+        ExistCondition
+        | NotExistsCondition
+        | EqualCondition
+        | NotEqualsCondition
+        | NumberCompareCondition
+        | ContainCondition
+        | ObjectContainsCondition
+        | ArrayContainsCondition
+        | MatcheRegexCondition
+        | JsonSchemaValidCondition
+        | SimilarityGteCondition
+        | LlmJudgedAsCondition
+        | LlmNotJudgedAsCondition
+        | NotContainsCondition
+        | LengthCompareCondition
+        | BetweenCondition
+        | StartWithCondition
+        | EndsWithCondition
+        | AllItemsMatchCondition
+        | AnyItemMatchesCondition
+        | SplitIouCondition
+    ) = Field(..., discriminator="kind")
     label: str | None = None
 
 
@@ -155,10 +221,10 @@ class JsonSchemaValidCondition(BaseModel):
 class LatestBlockTestRunSummary(BaseModel):
     """Summary of the most recent block-test run.
 
-Execution status and verdict outcome are exposed as separate fields.
-The summary is written on terminal-state transitions, so in practice
-`status` is one of `completed | error | cancelled` and `outcome` is
-populated when `status == "completed"`."""
+    Execution status and verdict outcome are exposed as separate fields.
+    The summary is written on terminal-state transitions, so in practice
+    `status` is one of `completed | error | cancelled` and `outcome` is
+    populated when `status == "completed"`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -279,8 +345,8 @@ class SimilarityGteCondition(BaseModel):
 class SplitIouCondition(BaseModel):
     """Intersection-over-Union for split page assignments.
 
-`expected` uses the split payload shape:
-`{"splits": [{"name", "pages"}]}`"""
+    `expected` uses the split payload shape:
+    `{"splits": [{"name", "pages"}]}`"""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -335,19 +401,80 @@ class WorkflowTest(BaseModel):
 class WorkflowTestBlockTarget(BaseModel):
     """Public workflow-test target.
 
-The storage layer remains block-scoped today, but the API shape names the
-tested entity explicitly so workflow-level targets can be added later."""
+    The storage layer remains block-scoped today, but the API shape names the
+    tested entity explicitly so workflow-level targets can be added later."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     type: Literal["block"] = Field(default="block")
     block_id: str
 
+
 from .results import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 from .runs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
-__all__ = ["AllItemsMatchCondition", "AnyItemMatchesCondition", "ArrayContainsCondition", "AssertionDriftStatus", "AssertionFailure", "AssertionOutcome", "AssertionResult", "AssertionSchemaDep", "AssertionSpec", "BetweenCondition", "BlockTestBatchExecutionCounts", "BlockTestLifecycleCounts", "BlockTestOutcomeCounts", "CancelledWorkflowTestRun", "CompletedWorkflowTestRun", "ContainCondition", "CreateWorkflowTestRequest", "CreateWorkflowTestRunRequest", "EndsWithCondition", "EqualCondition", "ErrorWorkflowTestRun", "ExistCondition", "JsonSchemaValidCondition", "LatestBlockTestRunSummary", "LatestBlockTestRunSummaryOutcome", "LatestBlockTestRunSummaryStatus", "LengthCompareCondition", "LengthCompareConditionOp", "LlmJudgedAsCondition", "LlmNotJudgedAsCondition", "ManualWorkflowTestSource", "MatcheRegexCondition", "NotContainsCondition", "NotEqualsCondition", "NotExistsCondition", "NumberCompareCondition", "NumberCompareConditionOp", "ObjectContainsCondition", "OutputTarget", "PendingWorkflowTestRun", "QueuedWorkflowTestRun", "RunStepWorkflowTestSource", "RunningWorkflowTestRun", "SimilarityGteCondition", "SimilarityGteConditionMethod", "SplitIouCondition", "StartWithCondition", "UpdateWorkflowTestRequest", "VerdictSummary", "WorkflowTest", "WorkflowTestBlockTarget", "WorkflowTestResult", "WorkflowTestResultVerdict", "WorkflowTestRun", "WorkflowTestRunBlockScope", "WorkflowTestRunSingleScope", "WorkflowTestRunTiming", "WorkflowTestRunWorkflowScope", "WorkflowTestSchemaDrift"]
+__all__ = [
+    "AllItemsMatchCondition",
+    "AnyItemMatchesCondition",
+    "ArrayContainsCondition",
+    "AssertionDriftStatus",
+    "AssertionFailure",
+    "AssertionOutcome",
+    "AssertionResult",
+    "AssertionSchemaDep",
+    "AssertionSpec",
+    "BetweenCondition",
+    "BlockTestBatchExecutionCounts",
+    "BlockTestLifecycleCounts",
+    "BlockTestOutcomeCounts",
+    "CancelledWorkflowTestRun",
+    "CompletedWorkflowTestRun",
+    "ContainCondition",
+    "CreateWorkflowTestRequest",
+    "CreateWorkflowTestRunRequest",
+    "EndsWithCondition",
+    "EqualCondition",
+    "ErrorWorkflowTestRun",
+    "ExistCondition",
+    "JsonSchemaValidCondition",
+    "LatestBlockTestRunSummary",
+    "LatestBlockTestRunSummaryOutcome",
+    "LatestBlockTestRunSummaryStatus",
+    "LengthCompareCondition",
+    "LengthCompareConditionOp",
+    "LlmJudgedAsCondition",
+    "LlmNotJudgedAsCondition",
+    "ManualWorkflowTestSource",
+    "MatcheRegexCondition",
+    "NotContainsCondition",
+    "NotEqualsCondition",
+    "NotExistsCondition",
+    "NumberCompareCondition",
+    "NumberCompareConditionOp",
+    "ObjectContainsCondition",
+    "OutputTarget",
+    "PendingWorkflowTestRun",
+    "QueuedWorkflowTestRun",
+    "RunStepWorkflowTestSource",
+    "RunningWorkflowTestRun",
+    "SimilarityGteCondition",
+    "SimilarityGteConditionMethod",
+    "SplitIouCondition",
+    "StartWithCondition",
+    "UpdateWorkflowTestRequest",
+    "VerdictSummary",
+    "WorkflowTest",
+    "WorkflowTestBlockTarget",
+    "WorkflowTestResult",
+    "WorkflowTestResultVerdict",
+    "WorkflowTestRun",
+    "WorkflowTestRunBlockScope",
+    "WorkflowTestRunSingleScope",
+    "WorkflowTestRunTiming",
+    "WorkflowTestRunWorkflowScope",
+    "WorkflowTestSchemaDrift",
+]
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
