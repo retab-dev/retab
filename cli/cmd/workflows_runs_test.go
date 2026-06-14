@@ -1490,13 +1490,14 @@ func TestWorkflowRunsListTableUsesStatusColumn(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
+	// Realistic run shape: the response flattens to top-level workflow_id and
+	// carries no workflow.name_at_run_time, so the table surfaces the populated
+	// trigger.type (which varies per run) rather than a structurally-empty NAME.
 	result := map[string]any{
 		"data": []any{
 			map[string]any{
-				"id": "run_1",
-				"workflow": map[string]any{
-					"name_at_run_time": "Invoice workflow",
-				},
+				"id":      "run_1",
+				"trigger": map[string]any{"type": "manual"},
 				"lifecycle": map[string]any{
 					"status": "awaiting_review",
 				},
@@ -1515,12 +1516,16 @@ func TestWorkflowRunsListTableUsesStatusColumn(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	for _, want := range []string{"ID", "NAME", "STATUS", "CREATED_AT", "run_1", "Invoice workflow", "awaiting_review"} {
+	for _, want := range []string{"ID", "TRIGGER", "STATUS", "CREATED_AT", "run_1", "manual", "awaiting_review"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in runs table:\n%s", want, stdout)
 		}
 	}
-	if strings.Contains(strings.SplitN(stdout, "\n", 2)[0], "TYPE") {
+	header := strings.SplitN(stdout, "\n", 2)[0]
+	if strings.Contains(header, "NAME") {
+		t.Fatalf("runs list table should not carry a structurally-empty NAME column:\n%s", stdout)
+	}
+	if strings.Contains(header, "TYPE") {
 		t.Fatalf("runs list table should call lifecycle values STATUS, not TYPE:\n%s", stdout)
 	}
 }

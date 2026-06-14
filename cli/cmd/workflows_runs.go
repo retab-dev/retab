@@ -988,7 +988,12 @@ func printWorkflowRunListResult(cmd *cobra.Command, result any) error {
 
 var workflowRunListColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return workflowRunCell(row, "id") }},
-	{Header: "NAME", Extract: func(row any) string { return workflowRunCell(row, "workflow.name_at_run_time") }},
+	// `runs list` is always scoped to one workflow id, so a per-run workflow
+	// name column would be identical on every row — and the run response
+	// doesn't project workflow.name_at_run_time anyway (it flattens to
+	// workflow_id/workflow_version_id), so that column was structurally empty.
+	// Surface the trigger type instead: it's populated and varies per run.
+	{Header: "TRIGGER", Extract: func(row any) string { return workflowRunCell(row, "trigger.type") }},
 	{Header: "STATUS", Extract: func(row any) string { return workflowRunCell(row, "lifecycle.status") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return workflowRunCell(row, "timing.created_at") }},
 }
