@@ -31,7 +31,8 @@ pub struct CreateUploadResponse {
     pub upload_headers: Option<std::collections::HashMap<String, String>>,
     /// Durable Retab MIMEData reference
     #[serde(rename = "mimeData")]
-    pub mime_data: MimeData,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mime_data: Option<MimeData>,
     /// Upload URL expiration
     #[serde(rename = "expiresAt")]
     pub expires_at: String,
@@ -39,10 +40,9 @@ pub struct CreateUploadResponse {
 impl CreateUploadResponse {
     /// Construct a new `CreateUploadResponse` with the required fields set.
     #[allow(deprecated)]
-    pub fn new<D: Into<crate::MimeData>>(
+    pub fn new(
         file_id: impl Into<String>,
         upload_url: impl Into<String>,
-        mime_data: D,
         expires_at: impl Into<String>,
     ) -> Self {
         Self {
@@ -50,7 +50,7 @@ impl CreateUploadResponse {
             upload_url: upload_url.into(),
             upload_method: Default::default(),
             upload_headers: Default::default(),
-            mime_data: mime_data.into(),
+            mime_data: Default::default(),
             expires_at: expires_at.into(),
         }
     }

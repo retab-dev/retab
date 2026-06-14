@@ -57,16 +57,32 @@ class Tables
         ?string $projectId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowTableListResponse {
-        $body = array_filter([
-            'name' => $name,
-            'file' => $file,
-            'column_schema_overrides' => $columnSchemaOverrides,
-            'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        $multipart = [];
+        $multipart[] = [
+            'name' => 'name',
+            'contents' => (string) $name,
+        ];
+        $multipart[] = [
+            'name' => 'file',
+            'contents' => $file,
+            'filename' => 'file',
+        ];
+        if ($columnSchemaOverrides !== null) {
+            $multipart[] = [
+                'name' => 'column_schema_overrides',
+                'contents' => (string) $columnSchemaOverrides,
+            ];
+        }
+        if ($projectId !== null) {
+            $multipart[] = [
+                'name' => 'project_id',
+                'contents' => (string) $projectId,
+            ];
+        }
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/tables',
-            body: $body,
+            multipart: $multipart,
             options: $options,
         );
         return WorkflowTableListResponse::fromArray($response);
@@ -104,14 +120,22 @@ class Tables
         ?string $columnSchemaOverrides = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowTableListResponse {
-        $body = array_filter([
-            'file' => $file,
-            'column_schema_overrides' => $columnSchemaOverrides,
-        ], fn($v) => $v !== null);
+        $multipart = [];
+        $multipart[] = [
+            'name' => 'file',
+            'contents' => $file,
+            'filename' => 'file',
+        ];
+        if ($columnSchemaOverrides !== null) {
+            $multipart[] = [
+                'name' => 'column_schema_overrides',
+                'contents' => (string) $columnSchemaOverrides,
+            ];
+        }
         $response = $this->client->request(
             method: 'PUT',
             path: 'v1/tables/' . rawurlencode($tableId),
-            body: $body,
+            multipart: $multipart,
             options: $options,
         );
         return WorkflowTableListResponse::fromArray($response);

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-12T08:42:14.853Z",
+  "generatedAt": "2026-06-14T15:52:28.667Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -84,6 +84,7 @@
     "lib/retab/files/upload_file_request.rb",
     "lib/retab/inflections.rb",
     "lib/retab/mime.rb",
+    "lib/retab/multipart.rb",
     "lib/retab/paginated_list.rb",
     "lib/retab/parses.rb",
     "lib/retab/parses/parse.rb",

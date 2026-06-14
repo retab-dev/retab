@@ -25,7 +25,7 @@ namespace Retab
         public Dictionary<string, string>? UploadHeaders { get; set; }
 
         /// <summary>Durable Retab MIMEData reference</summary>
-        public MimeData MimeData { get; set; } = default!;
+        public MimeData? MimeData { get; set; }
 
         /// <summary>Upload URL expiration</summary>
         public DateTimeOffset ExpiresAt { get; set; }

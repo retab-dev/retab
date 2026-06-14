@@ -32,15 +32,26 @@ func (s *TableService) List(ctx context.Context, params *TablesListParams, opts 
 // TablesCreateParams contains the parameters for Create.
 type TablesCreateParams struct {
 	Name                  string  `json:"name" url:"-"`
-	File                  string  `json:"file" url:"-"`
+	File                  []byte  `json:"file" url:"-"`
 	ColumnSchemaOverrides *string `json:"column_schema_overrides,omitempty" url:"-"`
 	ProjectID             *string `json:"project_id,omitempty" url:"-"`
 }
 
 // Create table.Create
 func (s *TableService) Create(ctx context.Context, params *TablesCreateParams, opts ...RequestOption) (*WorkflowTableListResponse, error) {
+	form := newMultipartForm()
+	if params != nil {
+		form.addField("name", params.Name)
+		form.addFile("file", "file", params.File)
+		if params.ColumnSchemaOverrides != nil {
+			form.addField("column_schema_overrides", *params.ColumnSchemaOverrides)
+		}
+		if params.ProjectID != nil {
+			form.addField("project_id", *params.ProjectID)
+		}
+	}
 	var result WorkflowTableListResponse
-	_, err := s.client.request(ctx, "POST", "/v1/tables", nil, params, &result, opts)
+	_, err := s.client.requestMultipart(ctx, "POST", "/v1/tables", nil, form, &result, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +73,7 @@ func (s *TableService) Get(ctx context.Context, tableID string, opts ...RequestO
 
 // TablesReplaceParams contains the parameters for Replace.
 type TablesReplaceParams struct {
-	File                  string  `json:"file" url:"-"`
+	File                  []byte  `json:"file" url:"-"`
 	ColumnSchemaOverrides *string `json:"column_schema_overrides,omitempty" url:"-"`
 }
 
@@ -71,8 +82,15 @@ func (s *TableService) Replace(ctx context.Context, tableID string, params *Tabl
 	if tableID == "" {
 		return nil, fmt.Errorf("retab: table_id is required")
 	}
+	form := newMultipartForm()
+	if params != nil {
+		form.addFile("file", "file", params.File)
+		if params.ColumnSchemaOverrides != nil {
+			form.addField("column_schema_overrides", *params.ColumnSchemaOverrides)
+		}
+	}
 	var result WorkflowTableListResponse
-	_, err := s.client.request(ctx, "PUT", fmt.Sprintf("/v1/tables/%s", url.PathEscape(tableID)), nil, params, &result, opts)
+	_, err := s.client.requestMultipart(ctx, "PUT", fmt.Sprintf("/v1/tables/%s", url.PathEscape(tableID)), nil, form, &result, opts)
 	if err != nil {
 		return nil, err
 	}

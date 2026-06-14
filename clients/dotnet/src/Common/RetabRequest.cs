@@ -22,6 +22,9 @@ namespace Retab
         /// <summary>Pre-serialized request body (overrides <see cref="Options"/>).</summary>
         public object? Body { get; set; }
 
+        /// <summary>Pre-built multipart/form-data body (e.g. table file upload); overrides <see cref="Body"/> and <see cref="Options"/>.</summary>
+        public HttpContent? MultipartBody { get; set; }
+
         /// <summary>Per-request configuration overrides.</summary>
         public RequestOptions? RequestOptions { get; set; }
 

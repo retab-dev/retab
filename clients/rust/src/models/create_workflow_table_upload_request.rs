@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWorkflowTableUploadRequest {
     pub name: String,
-    pub file: String,
+    pub file: Vec<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub column_schema_overrides: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -17,10 +17,10 @@ pub struct CreateWorkflowTableUploadRequest {
 impl CreateWorkflowTableUploadRequest {
     /// Construct a new `CreateWorkflowTableUploadRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(name: impl Into<String>, file: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, file: Vec<u8>) -> Self {
         Self {
             name: name.into(),
-            file: file.into(),
+            file,
             column_schema_overrides: Default::default(),
             project_id: Default::default(),
         }

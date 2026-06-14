@@ -8,12 +8,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ReplaceWorkflowTableUploadRequest {
-  private final String file;
+  private final byte[] file;
   private final String columnSchemaOverrides;
 
   @JsonCreator
   public ReplaceWorkflowTableUploadRequest(
-      @JsonProperty(value = "file", required = true) String file,
+      @JsonProperty(value = "file", required = true) byte[] file,
       @JsonProperty(value = "column_schema_overrides", required = false)
           String columnSchemaOverrides) {
     this.file = file;
@@ -21,7 +21,7 @@ public final class ReplaceWorkflowTableUploadRequest {
   }
 
   @JsonProperty("file")
-  public String getFile() {
+  public byte[] getFile() {
     return file;
   }
 

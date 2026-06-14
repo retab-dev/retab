@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-12T08:42:08.945Z",
+  "generatedAt": "2026-06-14T15:52:20.474Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -17,6 +17,7 @@
     "go.mod",
     "mime.go",
     "models.go",
+    "multipart.go",
     "pagination.go",
     "parses.go",
     "partitions.go",

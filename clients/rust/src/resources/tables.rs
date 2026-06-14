@@ -134,8 +134,32 @@ impl<'a> TablesApi<'a> {
     ) -> Result<WorkflowTableListResponse, Error> {
         let path = "/v1/tables".to_string();
         let method = http::Method::POST;
+        let __query = serde_json::to_value(&params)
+            .map_err(|e| Error::Builder(format!("query encode failed: {e}")))?;
+        let body = params.body;
+        let mut __form_fields: Vec<crate::client::MultipartField> = Vec::new();
+        __form_fields.push(crate::client::MultipartField::Text {
+            name: "name".to_string(),
+            value: body.name.to_string(),
+        });
+        __form_fields.push(crate::client::MultipartField::File {
+            name: "file".to_string(),
+            bytes: body.file,
+        });
+        if let Some(__v) = body.column_schema_overrides {
+            __form_fields.push(crate::client::MultipartField::Text {
+                name: "column_schema_overrides".to_string(),
+                value: __v.to_string(),
+            });
+        }
+        if let Some(__v) = body.project_id {
+            __form_fields.push(crate::client::MultipartField::Text {
+                name: "project_id".to_string(),
+                value: __v.to_string(),
+            });
+        }
         self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .request_multipart_opts(method, &path, &__query, __form_fields, options)
             .await
     }
 
@@ -177,8 +201,22 @@ impl<'a> TablesApi<'a> {
         let table_id = crate::client::path_segment(table_id);
         let path = format!("/v1/tables/{table_id}");
         let method = http::Method::PUT;
+        let __query = serde_json::to_value(&params)
+            .map_err(|e| Error::Builder(format!("query encode failed: {e}")))?;
+        let body = params.body;
+        let mut __form_fields: Vec<crate::client::MultipartField> = Vec::new();
+        __form_fields.push(crate::client::MultipartField::File {
+            name: "file".to_string(),
+            bytes: body.file,
+        });
+        if let Some(__v) = body.column_schema_overrides {
+            __form_fields.push(crate::client::MultipartField::Text {
+                name: "column_schema_overrides".to_string(),
+                value: __v.to_string(),
+            });
+        }
         self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .request_multipart_opts(method, &path, &__query, __form_fields, options)
             .await
     }
 

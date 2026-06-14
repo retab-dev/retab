@@ -39,7 +39,7 @@ module Retab
 
     # Table.Create
     # @param name [String]
-    # @param file [String]
+    # @param file [String, IO, Pathname]
     # @param column_schema_overrides [String, nil]
     # @param project_id [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -51,12 +51,12 @@ module Retab
       project_id: nil,
       request_options: {}
     )
-      body = {
-        "name" => name,
-        "file" => file,
-        "column_schema_overrides" => column_schema_overrides,
-        "project_id" => project_id
-      }.compact
+      multipart_fields = {}
+      multipart_fields["name"] = name unless name.nil?
+      multipart_fields["file"] = Retab::Multipart::FilePart.new(file, filename: "file") unless file.nil?
+      multipart_fields["column_schema_overrides"] = column_schema_overrides unless column_schema_overrides.nil?
+      multipart_fields["project_id"] = project_id unless project_id.nil?
+      body = Retab::Multipart.new(multipart_fields)
       response = @client.request(
         method: :post,
         path: "/v1/tables",
@@ -98,7 +98,7 @@ module Retab
 
     # Table.Replace
     # @param table_id [String]
-    # @param file [String]
+    # @param file [String, IO, Pathname]
     # @param column_schema_overrides [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowTableListResponse]
@@ -108,10 +108,10 @@ module Retab
       column_schema_overrides: nil,
       request_options: {}
     )
-      body = {
-        "file" => file,
-        "column_schema_overrides" => column_schema_overrides
-      }.compact
+      multipart_fields = {}
+      multipart_fields["file"] = Retab::Multipart::FilePart.new(file, filename: "file") unless file.nil?
+      multipart_fields["column_schema_overrides"] = column_schema_overrides unless column_schema_overrides.nil?
+      body = Retab::Multipart.new(multipart_fields)
       response = @client.request(
         method: :put,
         path: "/v1/tables/#{Retab::Util.encode_path(table_id)}",

@@ -14,12 +14,14 @@ import com.retab.models.WorkflowTableSchemaResponse;
 import com.retab.models.WorkflowTableValidationColumnRule;
 import com.retab.models.WorkflowTableValidationRequest;
 import com.retab.models.WorkflowTableValidationResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,27 +69,34 @@ public final class TablesApi {
   }
 
   public WorkflowTableListResponse create(
-      String name, String file, String columnSchemaOverrides, String projectId)
+      String name, byte[] file, String columnSchemaOverrides, String projectId)
       throws IOException, InterruptedException {
     String path = "/v1/tables";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("name", name);
-    body.put("file", file);
+    List<FormField> formFields = new ArrayList<>();
+    List<FilePart> fileParts = new ArrayList<>();
+    if (name != null) {
+      formFields.add(new FormField("name", serializeParam(name)));
+    }
+    if (file != null) {
+      fileParts.add(new FilePart("file", "file", file));
+    }
     if (columnSchemaOverrides != null) {
-      body.put("column_schema_overrides", columnSchemaOverrides);
+      formFields.add(
+          new FormField("column_schema_overrides", serializeParam(columnSchemaOverrides)));
     }
     if (projectId != null) {
-      body.put("project_id", projectId);
+      formFields.add(new FormField("project_id", serializeParam(projectId)));
     }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    String multipartBoundary = "----oagenFormBoundary" + Long.toHexString(System.nanoTime());
+    HttpRequest.BodyPublisher publisher =
+        buildMultipartBody(multipartBoundary, formFields, fileParts);
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
             .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
+    requestBuilder.header("Content-Type", "multipart/form-data; boundary=" + multipartBoundary);
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -131,23 +140,28 @@ public final class TablesApi {
   }
 
   public WorkflowTableListResponse replace(
-      String tableId, String file, String columnSchemaOverrides)
+      String tableId, byte[] file, String columnSchemaOverrides)
       throws IOException, InterruptedException {
     String path = "/v1/tables/" + encodePathSegment(tableId);
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("file", file);
-    if (columnSchemaOverrides != null) {
-      body.put("column_schema_overrides", columnSchemaOverrides);
+    List<FormField> formFields = new ArrayList<>();
+    List<FilePart> fileParts = new ArrayList<>();
+    if (file != null) {
+      fileParts.add(new FilePart("file", "file", file));
     }
-    String requestBody = client.getObjectMapper().writeValueAsString(body);
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    if (columnSchemaOverrides != null) {
+      formFields.add(
+          new FormField("column_schema_overrides", serializeParam(columnSchemaOverrides)));
+    }
+    String multipartBoundary = "----oagenFormBoundary" + Long.toHexString(System.nanoTime());
+    HttpRequest.BodyPublisher publisher =
+        buildMultipartBody(multipartBoundary, formFields, fileParts);
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
             .header("Api-Key", client.getApiKey());
-    requestBuilder.header("Content-Type", "application/json");
+    requestBuilder.header("Content-Type", "multipart/form-data; boundary=" + multipartBoundary);
     HttpRequest httpRequest = requestBuilder.method("PUT", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -386,5 +400,56 @@ public final class TablesApi {
       }
     }
     return String.valueOf(value);
+  }
+
+  private record FormField(String name, String value) {}
+
+  private record FilePart(String name, String filename, byte[] content) {}
+
+  private static HttpRequest.BodyPublisher buildMultipartBody(
+      String boundary, List<FormField> formFields, List<FilePart> fileParts) {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      byte[] dash = "--".getBytes(StandardCharsets.UTF_8);
+      byte[] crlf = "\r\n".getBytes(StandardCharsets.UTF_8);
+      byte[] boundaryBytes = boundary.getBytes(StandardCharsets.UTF_8);
+      for (FormField field : formFields) {
+        out.write(dash);
+        out.write(boundaryBytes);
+        out.write(crlf);
+        out.write(
+            ("Content-Disposition: form-data; name=\"" + field.name() + "\"")
+                .getBytes(StandardCharsets.UTF_8));
+        out.write(crlf);
+        out.write(crlf);
+        out.write(field.value().getBytes(StandardCharsets.UTF_8));
+        out.write(crlf);
+      }
+      for (FilePart part : fileParts) {
+        out.write(dash);
+        out.write(boundaryBytes);
+        out.write(crlf);
+        out.write(
+            ("Content-Disposition: form-data; name=\""
+                    + part.name()
+                    + "\"; filename=\""
+                    + part.filename()
+                    + "\"")
+                .getBytes(StandardCharsets.UTF_8));
+        out.write(crlf);
+        out.write("Content-Type: application/octet-stream".getBytes(StandardCharsets.UTF_8));
+        out.write(crlf);
+        out.write(crlf);
+        out.write(part.content());
+        out.write(crlf);
+      }
+      out.write(dash);
+      out.write(boundaryBytes);
+      out.write(dash);
+      out.write(crlf);
+    } catch (java.io.IOException e) {
+      throw new RuntimeException("Failed to build multipart body", e);
+    }
+    return HttpRequest.BodyPublishers.ofByteArray(out.toByteArray());
   }
 }

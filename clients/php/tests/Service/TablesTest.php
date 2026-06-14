@@ -37,9 +37,10 @@ class TablesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
         $this->assertStringEndsWith('v1/tables', $request->getUri()->getPath());
-        $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('test_value', $body['name']);
-        $this->assertSame('test_value', $body['file']);
+        $rawBody = (string) $request->getBody();
+        $this->assertStringContainsString('multipart/form-data', $request->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('name="name"', $rawBody);
+        $this->assertStringContainsString('name="file"', $rawBody);
     }
 
     public function testGet(): void
@@ -64,8 +65,9 @@ class TablesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('PUT', $request->getMethod());
         $this->assertStringEndsWith('v1/tables/test_table_id', $request->getUri()->getPath());
-        $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('test_value', $body['file']);
+        $rawBody = (string) $request->getBody();
+        $this->assertStringContainsString('multipart/form-data', $request->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('name="file"', $rawBody);
     }
 
     public function testUpdateTable(): void

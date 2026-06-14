@@ -23,7 +23,7 @@ public final class CreateUploadResponse {
       @JsonProperty(value = "uploadUrl", required = true) String uploadUrl,
       @JsonProperty(value = "uploadMethod", required = false) String uploadMethod,
       @JsonProperty(value = "uploadHeaders", required = false) Map<String, String> uploadHeaders,
-      @JsonProperty(value = "mimeData", required = true) MimeData mimeData,
+      @JsonProperty(value = "mimeData", required = false) MimeData mimeData,
       @JsonProperty(value = "expiresAt", required = true) OffsetDateTime expiresAt) {
     this.fileId = fileId;
     this.uploadUrl = uploadUrl;

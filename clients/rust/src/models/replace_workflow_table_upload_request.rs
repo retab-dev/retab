@@ -7,16 +7,16 @@ use crate::enums::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplaceWorkflowTableUploadRequest {
-    pub file: String,
+    pub file: Vec<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub column_schema_overrides: Option<String>,
 }
 impl ReplaceWorkflowTableUploadRequest {
     /// Construct a new `ReplaceWorkflowTableUploadRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(file: impl Into<String>) -> Self {
+    pub fn new(file: Vec<u8>) -> Self {
         Self {
-            file: file.into(),
+            file,
             column_schema_overrides: Default::default(),
         }
     }

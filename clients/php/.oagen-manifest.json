@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-12T08:42:13.023Z",
+  "generatedAt": "2026-06-14T15:52:27.149Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -10,6 +10,7 @@
     "lib/Exception/RetabNotFoundException.php",
     "lib/Exception/RetabPermissionException.php",
     "lib/Exception/RetabRateLimitException.php",
+    "lib/HttpClient.php",
     "lib/Resource/Actor.php",
     "lib/Resource/ActorKind.php",
     "lib/Resource/AllItemsMatchCondition.php",

@@ -39,7 +39,27 @@ namespace Retab
         /// <returns>The <see cref="WorkflowTableListResponse"/> result.</returns>
         public virtual async Task<WorkflowTableListResponse> CreateAsync(TablesCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.PostAsync<WorkflowTableListResponse>("/v1/tables", options, requestOptions, cancellationToken);
+            var multipart = new System.Net.Http.MultipartFormDataContent();
+            multipart.Add(new System.Net.Http.StringContent(System.Convert.ToString(options.Name, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty), "name");
+            var __filePart = new System.Net.Http.ByteArrayContent(options.File);
+            __filePart.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            multipart.Add(__filePart, "file", "file");
+            if (options.ColumnSchemaOverrides != null)
+            {
+                multipart.Add(new System.Net.Http.StringContent(System.Convert.ToString(options.ColumnSchemaOverrides, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty), "column_schema_overrides");
+            }
+            if (options.ProjectId != null)
+            {
+                multipart.Add(new System.Net.Http.StringContent(System.Convert.ToString(options.ProjectId, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty), "project_id");
+            }
+            var request = new RetabRequest
+            {
+                Method = HttpMethod.Post,
+                Path = "/v1/tables",
+                MultipartBody = multipart,
+                RequestOptions = requestOptions,
+            };
+            return await this.Client.MakeAPIRequest<WorkflowTableListResponse>(request, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="CreateAsync"/>.</summary>
@@ -72,7 +92,22 @@ namespace Retab
         /// <returns>The <see cref="WorkflowTableListResponse"/> result.</returns>
         public virtual async Task<WorkflowTableListResponse> ReplaceAsync(string tableId, TablesReplaceOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.PutAsync<WorkflowTableListResponse>($"/v1/tables/{Uri.EscapeDataString(tableId)}", options, requestOptions, cancellationToken);
+            var multipart = new System.Net.Http.MultipartFormDataContent();
+            var __filePart = new System.Net.Http.ByteArrayContent(options.File);
+            __filePart.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            multipart.Add(__filePart, "file", "file");
+            if (options.ColumnSchemaOverrides != null)
+            {
+                multipart.Add(new System.Net.Http.StringContent(System.Convert.ToString(options.ColumnSchemaOverrides, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty), "column_schema_overrides");
+            }
+            var request = new RetabRequest
+            {
+                Method = HttpMethod.Put,
+                Path = $"/v1/tables/{Uri.EscapeDataString(tableId)}",
+                MultipartBody = multipart,
+                RequestOptions = requestOptions,
+            };
+            return await this.Client.MakeAPIRequest<WorkflowTableListResponse>(request, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ReplaceAsync"/>.</summary>

@@ -9,14 +9,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class CreateWorkflowTableUploadRequest {
   private final String name;
-  private final String file;
+  private final byte[] file;
   private final String columnSchemaOverrides;
   private final String projectId;
 
   @JsonCreator
   public CreateWorkflowTableUploadRequest(
       @JsonProperty(value = "name", required = true) String name,
-      @JsonProperty(value = "file", required = true) String file,
+      @JsonProperty(value = "file", required = true) byte[] file,
       @JsonProperty(value = "column_schema_overrides", required = false)
           String columnSchemaOverrides,
       @JsonProperty(value = "project_id", required = false) String projectId) {
@@ -32,7 +32,7 @@ public final class CreateWorkflowTableUploadRequest {
   }
 
   @JsonProperty("file")
-  public String getFile() {
+  public byte[] getFile() {
     return file;
   }
 

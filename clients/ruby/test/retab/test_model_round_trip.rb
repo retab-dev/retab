@@ -810,7 +810,7 @@ class ModelRoundTripTest < Minitest::Test
       "uploadUrl" => "stub",
       "uploadMethod" => "stub",
       "uploadHeaders" => {},
-      "mimeData" => {},
+      "mimeData" => nil,
       "expiresAt" => "stub"
     }
     model = Retab::CreateUploadResponse.new(fixture.to_json)

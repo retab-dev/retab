@@ -543,7 +543,7 @@ type CreateUploadResponse struct {
 	// UploadHeaders is headers required by the signed upload URL
 	UploadHeaders map[string]string `json:"uploadHeaders,omitempty"`
 	// MIMEData is durable Retab MIMEData reference
-	MIMEData MIMEData `json:"mimeData"`
+	MIMEData *MIMEData `json:"mimeData,omitempty"`
 	// ExpiresAt is upload URL expiration
 	ExpiresAt time.Time `json:"expiresAt"`
 }

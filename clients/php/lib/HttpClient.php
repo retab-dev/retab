@@ -38,6 +38,7 @@ class HttpClient
     /**
      * @param array<string, mixed> $query
      * @param array<string, mixed>|null $body
+     * @param list<array{name: string, contents: mixed, filename?: string, headers?: array<string, string>}>|null $multipart
      * @return array<string, mixed>
      */
     public function request(
@@ -46,9 +47,16 @@ class HttpClient
         ?array $body = null,
         array $query = [],
         ?RequestOptions $options = null,
+        ?array $multipart = null,
     ): array {
         $requestOptions = $this->requestOptions($query, $options);
-        if ($body !== null) {
+        if ($multipart !== null) {
+            // multipart/form-data body (e.g. table create/replace). Guzzle's
+            // `multipart` request option builds the body and sets the
+            // `Content-Type: multipart/form-data; boundary=...` header itself,
+            // so we must NOT also send a JSON body or a manual Content-Type.
+            $requestOptions['multipart'] = $multipart;
+        } elseif ($body !== null) {
             $requestOptions['json'] = $body;
         }
 

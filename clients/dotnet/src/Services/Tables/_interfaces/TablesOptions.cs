@@ -18,7 +18,7 @@ namespace Retab
     {
         public string Name { get; set; } = default!;
 
-        public string File { get; set; } = default!;
+        public byte[] File { get; set; } = default!;
 
         public string? ColumnSchemaOverrides { get; set; }
 
@@ -29,7 +29,7 @@ namespace Retab
     /// <summary>Request options for <see cref="TablesService.ReplaceAsync"/>: Table.Replace</summary>
     public class TablesReplaceOptions : BaseOptions
     {
-        public string File { get; set; } = default!;
+        public byte[] File { get; set; } = default!;
 
         public string? ColumnSchemaOverrides { get; set; }
 

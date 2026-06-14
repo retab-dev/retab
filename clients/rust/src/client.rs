@@ -184,6 +184,31 @@ impl Retab {
         Ok(())
     }
 
+    /// `multipart/form-data` request — used by upload endpoints whose request
+    /// body the gateway expects as a multipart form (e.g. table create/replace).
+    /// Each field is appended to a [`reqwest::multipart::Form`]; binary fields
+    /// become file parts and the rest become text parts. `reqwest` sets the
+    /// `Content-Type: multipart/form-data; boundary=...` header itself, so we
+    /// must NOT set it manually.
+    #[allow(dead_code)]
+    pub(crate) async fn request_multipart_opts<Q, R>(
+        &self,
+        method: Method,
+        path: &str,
+        query: &Q,
+        fields: Vec<MultipartField>,
+        options: Option<&RequestOptions>,
+    ) -> Result<R, Error>
+    where
+        Q: Serialize + ?Sized,
+        R: DeserializeOwned,
+    {
+        let bytes = self
+            .send_multipart(method, path, query, fields, options)
+            .await?;
+        serde_json::from_slice(&bytes).map_err(|e| Error::Deserialize(e.to_string()))
+    }
+
     /// Body-less request — used by every GET / DELETE-style endpoint.
     pub(crate) async fn request_with_query_opts<Q, R>(
         &self,
@@ -312,6 +337,86 @@ impl Retab {
         let _: StatusCode = status;
         Ok(bytes)
     }
+
+    async fn send_multipart<Q>(
+        &self,
+        method: Method,
+        path: &str,
+        query: &Q,
+        fields: Vec<MultipartField>,
+        options: Option<&RequestOptions>,
+    ) -> Result<Vec<u8>, Error>
+    where
+        Q: Serialize + ?Sized,
+    {
+        let qs = crate::query::encode_query(query)?;
+        let url = if qs.is_empty() {
+            format!("{}{}", self.inner.base_url, path)
+        } else {
+            format!("{}{}?{}", self.inner.base_url, path, qs)
+        };
+
+        // Build the multipart form. Binary fields become file parts (with the
+        // field name reused as the filename — the gateway keys off the part
+        // name, not the filename); every other field is a plain text part.
+        let mut form = reqwest::multipart::Form::new();
+        for field in fields {
+            match field {
+                MultipartField::Text { name, value } => {
+                    form = form.text(name, value);
+                }
+                MultipartField::File { name, bytes } => {
+                    let part = reqwest::multipart::Part::bytes(bytes).file_name(name.clone());
+                    form = form.part(name, part);
+                }
+            }
+        }
+
+        let mut req = self.inner.http.request(method, &url);
+        if !self.inner.api_key.is_empty() {
+            req = req.header("Api-Key", &self.inner.api_key);
+        }
+        if let Some(opts) = options {
+            for (k, v) in &opts.extra_headers {
+                req = req.header(k.clone(), v.clone());
+            }
+            if let Some(key) = &opts.idempotency_key {
+                req = req.header("Idempotency-Key", key);
+            }
+        }
+        // `.multipart(form)` sets the `Content-Type: multipart/form-data;
+        // boundary=...` header itself — do NOT set it manually.
+        req = req.multipart(form);
+
+        let resp = req.send().await?;
+        let status = resp.status();
+        let bytes = resp.bytes().await?.to_vec();
+        if !status.is_success() {
+            return Err(Error::Api {
+                status,
+                message: status
+                    .canonical_reason()
+                    .unwrap_or("HTTP error")
+                    .to_string(),
+                body: String::from_utf8(bytes).ok(),
+            });
+        }
+        let _: StatusCode = status;
+        Ok(bytes)
+    }
+}
+
+/// One field of a `multipart/form-data` request body. Generated upload
+/// methods build a `Vec<MultipartField>` and hand it to
+/// [`Retab::request_multipart_opts`]. Binary fields (the file
+/// bytes) map to [`MultipartField::File`]; all other scalar fields map to
+/// [`MultipartField::Text`].
+#[allow(dead_code)]
+pub(crate) enum MultipartField {
+    /// A plain text form field (`name=value`).
+    Text { name: String, value: String },
+    /// A file part carrying raw bytes; the field name is reused as the filename.
+    File { name: String, bytes: Vec<u8> },
 }
 
 /// Percent-encode a path segment for safe interpolation into a URL.

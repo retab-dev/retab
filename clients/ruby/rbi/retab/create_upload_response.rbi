@@ -33,10 +33,10 @@ module Retab
     sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
     def upload_headers=(value); end
 
-    sig { returns(Retab::MimeData) }
+    sig { returns(T.nilable(Retab::MimeData)) }
     def mime_data; end
 
-    sig { params(value: Retab::MimeData).returns(Retab::MimeData) }
+    sig { params(value: T.nilable(Retab::MimeData)).returns(T.nilable(Retab::MimeData)) }
     def mime_data=(value); end
 
     sig { returns(String) }

@@ -153,7 +153,16 @@ namespace Retab
                 httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.AccessToken);
             }
 
-            if (request.Body != null)
+            if (request.MultipartBody != null)
+            {
+                // multipart/form-data body (e.g. table create/replace). The
+                // MultipartFormDataContent sets its own Content-Type header,
+                // including the boundary, so we must NOT overwrite it with a
+                // JSON Content-Type. The gateway rejects a JSON `file` string
+                // with 400 "Expected a multipart/form-data file upload".
+                httpRequest.Content = request.MultipartBody;
+            }
+            else if (request.Body != null)
             {
                 var json = System.Text.Json.JsonSerializer.Serialize(request.Body, request.Body.GetType(), JsonOptions);
                 httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");

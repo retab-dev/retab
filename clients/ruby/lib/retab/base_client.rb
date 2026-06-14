@@ -86,8 +86,15 @@ module Retab
       extra_headers = request_options[:headers] || request_options["headers"] || {}
       extra_headers.each { |k, v| req[k.to_s] = v.to_s }
       if body && %i[post put patch].include?(method.to_sym)
-        req["Content-Type"] = "application/json"
-        req.body = body.is_a?(String) ? body : JSON.generate(body)
+        if body.is_a?(Retab::Multipart)
+          # multipart/form-data (e.g. table create/replace). Let net/http build
+          # the multipart body and set the `Content-Type:
+          # multipart/form-data; boundary=...` header itself — never JSON.
+          req.set_form(body.to_form_parts, "multipart/form-data")
+        else
+          req["Content-Type"] = "application/json"
+          req.body = body.is_a?(String) ? body : JSON.generate(body)
+        end
       end
 
       req
