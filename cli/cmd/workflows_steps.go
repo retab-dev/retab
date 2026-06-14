@@ -48,16 +48,20 @@ Paginate by passing the cursor from a previous response's
   # Find the first failed step
   retab workflows steps list run_xyz789 \
     | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
+		runID, err := scopedResourceID(args, "run id")
+		if err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
-		params, err := workflowStepsListParams(cmd, args[0])
+		params, err := workflowStepsListParams(cmd, runID)
 		if err != nil {
 			return err
 		}

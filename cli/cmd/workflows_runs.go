@@ -41,6 +41,26 @@ import (
 //
 // Each entry must be of the form `block-id=path`. Empty keys, empty values,
 // and entries without an `=` produce an error.
+// documentPathHint returns guidance when a `--document <block>=<value>` value
+// looks like a file id or a misplaced flag rather than a local path. `--document`
+// resolves a LOCAL FILE PATH; an already-uploaded file id belongs on
+// `--document-id`, a URL on `--document-url`. The common stumble is
+// `--document start=--file-id file_xxx` (or `--document start=file_xxx`), which
+// reaches the file resolver as a literal path and fails with "file not found".
+func documentPathHint(blockID, path string) string {
+	trimmed := strings.TrimSpace(path)
+	switch {
+	case strings.HasPrefix(trimmed, "file_"):
+		return fmt.Sprintf("hint: %q looks like a file id; use --document-id %s=%s for an already-uploaded file", trimmed, blockID, trimmed)
+	case strings.HasPrefix(trimmed, "--file-id"), strings.HasPrefix(trimmed, "-"):
+		return fmt.Sprintf("hint: --document takes a local file path; for an uploaded file id use --document-id %s=<file-id>, for a URL use --document-url %s=<url>", blockID, blockID)
+	case strings.HasPrefix(trimmed, "http://"), strings.HasPrefix(trimmed, "https://"):
+		return fmt.Sprintf("hint: %q looks like a URL; use --document-url %s=%s", trimmed, blockID, trimmed)
+	default:
+		return ""
+	}
+}
+
 func parseDocumentArgs(docs []string, docFiles []string, warnTo io.Writer) (map[string]string, error) {
 	out := map[string]string{}
 	// `source` tracks which flag claimed each block id so cross-flag
@@ -360,6 +380,9 @@ removed in a future release.`,
 				}
 				mime, err := inferFileMIMEData(path)
 				if err != nil {
+					if hint := documentPathHint(key, path); hint != "" {
+						return fmt.Errorf("--document %s=%s: %w\n%s", key, path, err, hint)
+					}
 					return fmt.Errorf("--document %s=%s: %w", key, path, err)
 				}
 				req.Documents[key] = mime

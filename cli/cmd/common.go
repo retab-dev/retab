@@ -1505,6 +1505,29 @@ func addDocumentFlags(cmd *cobra.Command) {
 	cmd.Flags().String("document-file", "", "path to a JSON file describing the document (or - for stdin)")
 }
 
+// scopedResourceID resolves the trailing resource id from args while tolerating
+// an optional leading workflow id (wrk_...). Run-, step-, and artifact-scoped
+// commands address their resource globally (the API routes don't carry a
+// workflow id), so they take a single id — unlike blocks/edges, which are
+// workflow-scoped and take `<workflow-id> <child-id>`. Users routinely carry
+// the blocks/edges habit over and type `<workflow-id> <run-id>`; rather than
+// failing with cobra's bare "accepts 1 arg(s), received 2", accept the extra
+// leading arg when it is unmistakably a workflow id and use the real id. A
+// second arg that is NOT a workflow id is a genuine mistake and still errors.
+func scopedResourceID(args []string, resourceLabel string) (string, error) {
+	switch len(args) {
+	case 1:
+		return args[0], nil
+	case 2:
+		if strings.HasPrefix(args[0], "wrk_") {
+			return args[1], nil
+		}
+		return "", fmt.Errorf("this command takes only the %s (no workflow id); got %q and %q", resourceLabel, args[0], args[1])
+	default:
+		return "", fmt.Errorf("expected the %s", resourceLabel)
+	}
+}
+
 // inferFileMIMEData turns a local file path into MIMEData, statting the
 // path upfront so a bad path surfaces as a clear "file not found" instead
 // of being routed through the SDK's MIME inference and resurfacing as the
