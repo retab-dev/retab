@@ -725,11 +725,12 @@ result records.`,
 }
 
 var workflowsTestsRunsCreateCmd = &cobra.Command{
-	Use:   "create <workflow-id> [flags]",
+	Use:   "create <workflow-id> [test-id] [flags]",
 	Short: "Create a workflow-test run",
-	Long: `Start a workflow-test run. The positional argument is the
-` + "`workflow-id`" + ` (NOT a test id) — by default the run executes
-every test attached to the workflow.
+	Long: `Start a workflow-test run. The first positional argument is the
+` + "`workflow-id`" + ` — by default the run executes every test attached to
+the workflow. Pass a second positional ` + "`test-id`" + ` (or ` + "`--test-id`" + `)
+to run just that one test.
 
 To run a single test pass ` + "`--test-id`" + `; to run every saved test
 for one block pass ` + "`--target-file`" + ` with a JSON target such as
@@ -759,12 +760,22 @@ per-test results with ` + "`workflows tests results list`" + `.`,
   # Tune the polling cadence and ceiling
   retab workflows tests runs create wf_abc123 \
     --wait --poll-interval-ms 1000 --timeout-seconds 1800`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := &retab.WorkflowTestRunsCreateParams{
 			WorkflowID: args[0],
 		}
 		testID, _ := cmd.Flags().GetString("test-id")
+		// Tolerate `tests runs create <workflow-id> <test-id>`: a second
+		// positional is a convenience alias for --test-id (run that one test),
+		// matching how users carry over the `blocks/edges <wf-id> <child-id>`
+		// shape. The flag and the positional are mutually exclusive.
+		if len(args) == 2 {
+			if testID != "" {
+				return fmt.Errorf("pass the test id once: either the second positional argument or --test-id, not both")
+			}
+			testID = args[1]
+		}
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
 			return err
