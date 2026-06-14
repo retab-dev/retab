@@ -163,8 +163,12 @@ def test_artifacts_get_run_scoped_discovered_id(sync_client: Retab) -> None:
             break
     if not target_artifact_id:
         pytest.skip("no workflow artifacts discoverable across recent staging runs")
+    # ``artifacts.get`` returns a concrete union member (e.g. ExtractionWorkflowArtifact)
+    # keyed off the id prefix — NOT the base ``WorkflowArtifact`` model that ``list``
+    # returns. Assert on the shared identity fields the concrete members carry.
     fetched = sync_client.workflows.artifacts.get(target_artifact_id)
-    assert isinstance(fetched, WorkflowArtifact)
+    assert getattr(fetched, "id", None) == target_artifact_id
+    assert getattr(fetched, "operation", None)
 
 
 def test_artifacts_get_bogus_id_404(sync_client: Retab) -> None:
