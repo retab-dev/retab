@@ -3,9 +3,46 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+// Invalid --column-schema-overrides must be rejected locally with a clear error
+// (mirroring --filters validation), before any upload, instead of surfacing as a
+// confusing server-side error. The local JSON check must fire before the network.
+func TestTablesCreateRejectsInvalidColumnSchemaOverrides(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	csvPath := filepath.Join(t.TempDir(), "data.csv")
+	if err := os.WriteFile(csvPath, []byte("name,amount\nAlpha,100\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// rootCmd is shared across tests and cobra retains parsed flag state; reset
+	// the overrides flag so this test is order-independent.
+	if f := tablesCreateCmd.Flags().Lookup("column-schema-overrides"); f != nil {
+		_ = f.Value.Set("")
+		f.Changed = false
+	}
+	t.Cleanup(func() {
+		if f := tablesCreateCmd.Flags().Lookup("column-schema-overrides"); f != nil {
+			_ = f.Value.Set("")
+			f.Changed = false
+		}
+	})
+
+	args := []string{"tables", "create", "--name", "demo", "--file", csvPath, "--project-id", "proj_abc123", "--column-schema-overrides", "not json"}
+	err := runRootForTest(t, args...)
+	if err == nil {
+		t.Fatalf("expected an error for invalid --column-schema-overrides")
+	}
+	if !strings.Contains(err.Error(), "column-schema-overrides") {
+		t.Fatalf("error = %q, want it to mention --column-schema-overrides", err.Error())
+	}
+}
 
 // The backend gates GET /v1/tables on FGA project_from_query_project_id, which
 // returns 400 "Project ID is required" without a project_id query param (listing
