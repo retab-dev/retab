@@ -82,6 +82,23 @@ func localGrepInputs(cmd *cobra.Command, args []string) (path string, pattern st
 	return args[0], args[1], nil
 }
 
+// explicitOutputJSON reports whether the user explicitly set the global
+// --output flag to json. Unlike ResolveOutputFormat it does NOT collapse the
+// "auto" default (which becomes json on a non-TTY) — only an explicit
+// `--output json` counts, so piping `files parse` doesn't silently flip to JSON.
+func explicitOutputJSON(cmd *cobra.Command) bool {
+	if cmd == nil {
+		return false
+	}
+	if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Changed {
+		return f.Value.String() == string(OutputJSON)
+	}
+	if f := rootCmd.PersistentFlags().Lookup("output"); f != nil && f.Changed {
+		return f.Value.String() == string(OutputJSON)
+	}
+	return false
+}
+
 // addParseOptionFlags attaches the LiteParse-tuning flags shared by parse,
 // grep, and inspect. Defaults mirror defaultParseOptions().
 func addParseOptionFlags(cmd *cobra.Command) {

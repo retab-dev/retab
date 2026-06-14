@@ -73,13 +73,13 @@ parse/grep calls with the same flags reuse the expensive text extraction/OCR.`,
 		default:
 			return fmt.Errorf("--format %q must be text or json", format)
 		}
-		// When --format is left at its default, honor the global --output flag so
-		// `files parse --output json` matches its siblings `files grep`/`files
-		// inspect` (which already route through --output). An explicit --format wins.
-		if !cmd.Flags().Changed("format") {
-			if global, gerr := ResolveOutputFormat(cmd, os.Stdout); gerr == nil && global == OutputJSON {
-				format = "json"
-			}
+		// When --format is left at its default, honor an EXPLICIT global
+		// `--output json` so `files parse --output json` matches its siblings
+		// `files grep`/`files inspect`. Only an explicit json counts — auto-detect
+		// resolves to json on a non-TTY, which must NOT override the text default.
+		// An explicit --format always wins.
+		if !cmd.Flags().Changed("format") && explicitOutputJSON(cmd) {
+			format = "json"
 		}
 		withBbox, _ := cmd.Flags().GetBool("bbox")
 
