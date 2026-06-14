@@ -206,7 +206,7 @@ func init() {
 	workflowsAccessListCmd.Flags().String("workflow-id", "", "workflow whose grants to list (alternative to the positional form)")
 
 	workflowsAccessGrantCmd.Flags().String("workflow-id", "", "workflow to grant access to (required)")
-	workflowsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via `retab members list`; alternative to --subject-id)")
+	workflowsAccessGrantCmd.Flags().String("email", "", "email of the user to grant (resolved via the org member list; alternative to --subject-id)")
 	workflowsAccessGrantCmd.Flags().String("subject-id", "", "explicit subject id, e.g. a user id (alternative to --email)")
 	workflowsAccessGrantCmd.Flags().String("subject-type", "user", "subject type: user, application, or organization_membership")
 	workflowsAccessGrantCmd.Flags().String("role", "", "role to grant: workflow-owner, workflow-editor, workflow-operator, or workflow-viewer (required)")

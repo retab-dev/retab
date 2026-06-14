@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 // TestProjectsAccessListHitsMembershipsEndpoint pins path/method + that the
@@ -99,6 +101,22 @@ func TestProjectsAccessListPositionalFlagConflict(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "conflicting project-id") {
 		t.Fatalf("expected conflict error, got %v", err)
+	}
+}
+
+func TestAccessGrantEmailFlagHelpUsesStringMetavar(t *testing.T) {
+	for name, cmd := range map[string]any{
+		"projects":  projectsAccessGrantCmd,
+		"workflows": workflowsAccessGrantCmd,
+	} {
+		cobraCmd := cmd.(*cobra.Command)
+		usage := cobraCmd.UsageString()
+		if strings.Contains(usage, "--email retab members list") {
+			t.Fatalf("%s access grant help uses command text as metavar:\n%s", name, usage)
+		}
+		if !strings.Contains(usage, "--email string") {
+			t.Fatalf("%s access grant help missing --email string metavar:\n%s", name, usage)
+		}
 	}
 }
 
