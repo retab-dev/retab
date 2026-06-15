@@ -324,7 +324,7 @@ def test_workflow_block_executions_create_uses_top_level_route() -> None:
     client._prepared_request.return_value = {
         "id": "sim_1",
         "workflow_id": "wf_1",
-        "run_id": "run_1",
+        "source_run_id": "run_1",
         "block_id": "block_1",
         "block_type": "extract",
         "lifecycle": {"status": "completed"},
@@ -360,7 +360,7 @@ def test_workflow_block_executions_list_uses_top_level_route() -> None:
             {
                 "id": "sim_1",
                 "workflow_id": "wf_1",
-                "run_id": "run_1",
+                "source_run_id": "run_1",
                 "block_id": "block_1",
                 "block_type": "extract",
                 "lifecycle": {"status": "completed"},
@@ -395,7 +395,7 @@ async def test_async_workflow_block_executions_create_uses_top_level_route() -> 
         return_value={
             "id": "sim_1",
             "workflow_id": "wf_1",
-            "run_id": "run_1",
+            "source_run_id": "run_1",
             "block_id": "block_1",
             "block_type": "extract",
             "lifecycle": {"status": "completed"},
@@ -897,7 +897,7 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
         {
             "id": "sim_1",
             "workflow_id": "wf_1",
-            "run_id": "run_1",
+            "source_run_id": "run_1",
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",

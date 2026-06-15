@@ -35,7 +35,7 @@ _PENDING = {"status": "pending"}
 _COMPLETED = {"status": "completed"}
 _TIMING = {"created_at": _NOW, "started_at": _NOW, "completed_at": _NOW}
 _MATERIALIZED_DOCUMENT = {
-    "original_id": "doc_1",
+    "id": "doc_1",
     "filename": "a.pdf",
     "mime_type": "application/pdf",
     "gcs_uri": "gs://retab-dev/doc_1.pdf",
@@ -277,7 +277,7 @@ def _experiment_run_response(**overrides: object) -> dict:
 
 _EXPERIMENT_RESULT = {
     "id": "expresult_1",
-    "run_id": "exprun_1",
+    "experiment_run_id": "exprun_1",
     "experiment_id": "exp_abc",
     "document_id": "expdoc_1",
     "lifecycle": _COMPLETED,
@@ -481,7 +481,7 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     assert page.data[0].document_id == "expdoc_1"
     handle_input = page.data[0].handle_inputs["input-file-0"]
     assert isinstance(handle_input, FileHandleInput)
-    assert handle_input.document.original_id == "doc_1"
+    assert handle_input.document.id == "doc_1"
 
 
 def test_experiments_runs_results_get_uses_flat_result_id_route() -> None:

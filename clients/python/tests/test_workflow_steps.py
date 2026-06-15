@@ -421,7 +421,7 @@ def test_step_execution_response_has_no_compatibility_error_field() -> None:
         {
             "id": "sim_1",
             "workflow_id": "wf_1",
-            "run_id": "run_1",
+            "source_run_id": "run_1",
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
