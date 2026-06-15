@@ -15,10 +15,10 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def type=(value); end
 
-    sig { returns(Retab::MaterializedDocument) }
+    sig { returns(Retab::FileRef) }
     def document; end
 
-    sig { params(value: Retab::MaterializedDocument).returns(Retab::MaterializedDocument) }
+    sig { params(value: Retab::FileRef).returns(Retab::FileRef) }
     def document=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }

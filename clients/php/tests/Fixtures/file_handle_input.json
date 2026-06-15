@@ -1,11 +1,8 @@
 {
   "type": "file",
   "document": {
-    "original_id": "original_id_01234",
+    "id": "01234",
     "filename": "Test",
-    "mime_type": "test_mime_type",
-    "gcs_uri": "https://example.com",
-    "size_bytes": 1,
-    "content_fingerprint": "test_content_fingerprint"
+    "mime_type": "test_mime_type"
   }
 }

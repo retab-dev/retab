@@ -2062,25 +2062,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_materialized_document_round_trip
-    fixture = {
-      "original_id" => "stub",
-      "filename" => "stub",
-      "mime_type" => "stub",
-      "gcs_uri" => "stub",
-      "size_bytes" => 1,
-      "content_fingerprint" => nil
-    }
-    model = Retab::MaterializedDocument.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["original_id"], json[:original_id])
-    assert_equal(fixture["filename"], json[:filename])
-    assert_equal(fixture["mime_type"], json[:mime_type])
-    assert_equal(fixture["gcs_uri"], json[:gcs_uri])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_metrics_stale_error_last_run_round_trip
     fixture = {
       "run_id" => "stub",

@@ -45,7 +45,7 @@ export class RetabBase {
       const stripped = baseUrl.replace(/\/v\d+\/?$/, '');
       // eslint-disable-next-line no-console
       console.warn(
-        `Retab: baseUrl "${baseUrl}" ends with a version segment; the SDK now keeps the version segment in request paths. Using "${stripped}" instead.`
+        `Retab: baseUrl "${baseUrl}" ends with a version segment; the SDK now keeps the version segment in request paths. Using "${stripped}" instead.`,
       );
       baseUrl = stripped;
     }
@@ -99,7 +99,7 @@ export class RetabBase {
   }
 
   async requestBlob(opts: RequestOptions): Promise<Blob> {
-    const url = new URL(this.baseUrl.replace(/\/$/, '') + opts.path);
+    const url = new URL(this.baseUrl.replace(//$/, '') + opts.path);
     if (opts.query) {
       for (const [k, v] of Object.entries(opts.query)) {
         if (v === undefined || v === null) continue;
@@ -146,7 +146,7 @@ export class RetabBase {
    */
   async _fetchPage<Wire, Item>(
     deserializeItem: (wire: Wire) => Item,
-    opts: RequestOptions
+    opts: RequestOptions,
   ): Promise<PaginatedList<Item>> {
     const envelope = await this.request<{ data: Wire[]; list_metadata: ListMetadata }>(opts);
     const items = envelope.data.map(deserializeItem);

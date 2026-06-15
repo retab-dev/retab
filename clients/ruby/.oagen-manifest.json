@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-14T15:58:06.382Z",
+  "generatedAt": "2026-06-15T16:29:36.091Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -312,7 +312,6 @@
     "lib/retab/workflow_experiments/explicit_experiment_document_request.rb",
     "lib/retab/workflow_experiments/file_handle_input.rb",
     "lib/retab/workflow_experiments/json_handle_input.rb",
-    "lib/retab/workflow_experiments/materialized_document.rb",
     "lib/retab/workflow_experiments/update_experiment_request.rb",
     "lib/retab/workflow_experiments/workflow_experiment.rb",
     "lib/retab/workflow_review_versions.rb",
@@ -582,7 +581,6 @@
     "rbi/retab/llm_not_judged_as_condition.rbi",
     "rbi/retab/manual_workflow_test_source.rbi",
     "rbi/retab/matche_regex_condition.rbi",
-    "rbi/retab/materialized_document.rbi",
     "rbi/retab/metrics_stale_error_last_run.rbi",
     "rbi/retab/not_contains_condition.rbi",
     "rbi/retab/not_equals_condition.rbi",

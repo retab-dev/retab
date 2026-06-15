@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-14T15:52:29.677Z",
+  "generatedAt": "2026-06-15T16:29:29.557Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -266,7 +266,6 @@
     "src/models/llm_not_judged_as_condition.rs",
     "src/models/manual_workflow_test_source.rs",
     "src/models/matche_regex_condition.rs",
-    "src/models/materialized_document.rs",
     "src/models/metrics_stale_error_last_run.rs",
     "src/models/mime_data.rs",
     "src/models/mod.rs",

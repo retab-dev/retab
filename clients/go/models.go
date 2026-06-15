@@ -1192,8 +1192,8 @@ type FileBlueprint struct {
 
 // FileHandleInput file reference for a handle input.
 type FileHandleInput struct {
-	Type     *string              `json:"type,omitempty"`
-	Document MaterializedDocument `json:"document"`
+	Type     *string `json:"type,omitempty"`
+	Document FileRef `json:"document"`
 }
 
 // FileLink a short-lived signed link to download a file, with its `filename` and expiry.
@@ -1308,16 +1308,6 @@ type ManualWorkflowTestSource struct {
 type MatcheRegexCondition struct {
 	Kind    *string `json:"kind,omitempty"`
 	Pattern string  `json:"pattern"`
-}
-
-// MaterializedDocument represents a materialized document.
-type MaterializedDocument struct {
-	OriginalID         string  `json:"original_id"`
-	Filename           string  `json:"filename"`
-	MIMEType           string  `json:"mime_type"`
-	GcsURI             string  `json:"gcs_uri"`
-	SizeBytes          *int    `json:"size_bytes,omitempty"`
-	ContentFingerprint *string `json:"content_fingerprint,omitempty"`
 }
 
 // MetricsStaleErrorLastRun represents a _metrics stale error last run.

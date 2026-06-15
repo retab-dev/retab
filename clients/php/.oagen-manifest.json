@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-14T16:01:11.431Z",
+  "generatedAt": "2026-06-15T16:29:33.451Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -165,7 +165,6 @@
     "lib/Resource/LlmNotJudgedAsCondition.php",
     "lib/Resource/ManualWorkflowTestSource.php",
     "lib/Resource/MatcheRegexCondition.php",
-    "lib/Resource/MaterializedDocument.php",
     "lib/Resource/MetricsStaleErrorLastRun.php",
     "lib/Resource/MimeData.php",
     "lib/Resource/MimeDataCoerce.php",
@@ -528,7 +527,6 @@
     "tests/Fixtures/llm_not_judged_as_condition.json",
     "tests/Fixtures/manual_workflow_test_source.json",
     "tests/Fixtures/matche_regex_condition.json",
-    "tests/Fixtures/materialized_document.json",
     "tests/Fixtures/metrics_stale_error_last_run.json",
     "tests/Fixtures/mime_data.json",
     "tests/Fixtures/not_contains_condition.json",

@@ -282,9 +282,7 @@ spec:
         let exported_plan = api!(
             client
                 .workflows()
-                .plan(resources::workflows::PlanParams::new(
-                    exported_body.clone(),
-                )),
+                .plan(resources::workflows::PlanParams::new(exported_body.clone(),)),
             "plan exported workflow spec"
         );
         if exported_plan.action != DeclarativePlanResponseAction::Noop {

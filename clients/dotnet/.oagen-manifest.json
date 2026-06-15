@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-14T15:58:11.676Z",
+  "generatedAt": "2026-06-15T16:29:31.165Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -133,7 +133,6 @@
     "src/Entities/LlmNotJudgedAsCondition.cs",
     "src/Entities/ManualWorkflowTestSource.cs",
     "src/Entities/MatcheRegexCondition.cs",
-    "src/Entities/MaterializedDocument.cs",
     "src/Entities/MetricsStaleErrorLastRun.cs",
     "src/Entities/NotContainsCondition.cs",
     "src/Entities/NotEqualsCondition.cs",

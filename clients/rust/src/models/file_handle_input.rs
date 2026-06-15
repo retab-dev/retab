@@ -12,12 +12,12 @@ pub struct FileHandleInput {
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub type_: Option<String>,
-    pub document: MaterializedDocument,
+    pub document: FileRef,
 }
 impl FileHandleInput {
     /// Construct a new `FileHandleInput` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(document: MaterializedDocument) -> Self {
+    pub fn new(document: FileRef) -> Self {
         Self {
             type_: Default::default(),
             document,

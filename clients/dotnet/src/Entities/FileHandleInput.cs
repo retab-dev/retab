@@ -5,7 +5,7 @@ namespace Retab
     public class FileHandleInput
     {
         public string? Type { get; set; } = "file";
-        public MaterializedDocument Document { get; set; } = default!;
+        public FileRef Document { get; set; } = default!;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-14T15:58:19.630Z",
+  "generatedAt": "2026-06-15T16:29:37.826Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -152,7 +152,6 @@
     "src/main/java/com/retab/models/LlmNotJudgedAsCondition.java",
     "src/main/java/com/retab/models/ManualWorkflowTestSource.java",
     "src/main/java/com/retab/models/MatcheRegexCondition.java",
-    "src/main/java/com/retab/models/MaterializedDocument.java",
     "src/main/java/com/retab/models/MetricsStaleErrorLastRun.java",
     "src/main/java/com/retab/models/MimeData.java",
     "src/main/java/com/retab/models/NotContainsCondition.java",
