@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -364,6 +365,132 @@ func TestSchemasGenerateInstructionsFileForwardedAndConflicts(t *testing.T) {
 	}
 	if hits.Load() != hitsBefore {
 		t.Fatalf("conflict path made a request (hits %d -> %d)", hitsBefore, hits.Load())
+	}
+}
+
+// TestSchemasGenerateRetriesTransientServerFailure pins that a --background
+// --wait generation whose first attempt fails with a transient server error
+// (the orchestrator "context deadline exceeded") is automatically resubmitted,
+// and the recovered schema is emitted.
+func TestSchemasGenerateRetriesTransientServerFailure(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posts atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			n := posts.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": fmt.Sprintf("sch_%d", n), "status": "queued"})
+			return
+		}
+		// GET poll: first job fails transiently, second completes.
+		if strings.HasSuffix(r.URL.Path, "sch_1") {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "sch_1", "status": "failed",
+				"error": map[string]any{"code": "deadline", "message": `Post "https://orchestrator/...": context deadline exceeded`},
+			})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id": "sch_2", "status": "completed",
+			"json_schema": map[string]any{"type": "object"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	set := func(name, val string) {
+		if err := schemasGenerateCmd.Flags().Set(name, val); err != nil {
+			t.Fatalf("set %s: %v", name, err)
+		}
+	}
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
+	set("url", "https://example.com/doc.pdf")
+	set("background", "true")
+	set("wait", "true")
+	set("max-retries", "2")
+	set("retry-delay-ms", "1")
+	set("poll-interval-ms", "1")
+	t.Cleanup(func() {
+		for name, def := range map[string]string{"background": "false", "wait": "false", "max-retries": "3", "retry-delay-ms": "3000", "poll-interval-ms": "2000"} {
+			_ = schemasGenerateCmd.Flags().Set(name, def)
+		}
+		if slice, ok := schemasGenerateCmd.Flags().Lookup("url").Value.(interface{ Replace([]string) error }); ok {
+			_ = slice.Replace(nil)
+		}
+	})
+
+	var err error
+	stdout, _ := captureStd(t, func() { err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil) })
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if posts.Load() != 2 {
+		t.Fatalf("expected 2 submissions (1 retry), got %d", posts.Load())
+	}
+	var got map[string]any
+	if jerr := json.Unmarshal([]byte(stdout), &got); jerr != nil {
+		t.Fatalf("stdout not schema JSON: %v\n%s", jerr, stdout)
+	}
+	if got["type"] != "object" {
+		t.Fatalf("final output should be the recovered schema, got:\n%s", stdout)
+	}
+}
+
+// TestSchemasGenerateDoesNotRetryNonTransientFailure pins that a terminal
+// failure that is NOT transient (e.g. a real document/schema error) is
+// surfaced immediately without resubmitting.
+func TestSchemasGenerateDoesNotRetryNonTransientFailure(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posts atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			posts.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "sch_x", "status": "queued"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id": "sch_x", "status": "failed",
+			"error": map[string]any{"code": "bad_document", "message": "document is not a supported type"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	set := func(name, val string) {
+		if err := schemasGenerateCmd.Flags().Set(name, val); err != nil {
+			t.Fatalf("set %s: %v", name, err)
+		}
+	}
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
+	set("url", "https://example.com/doc.pdf")
+	set("background", "true")
+	set("wait", "true")
+	set("max-retries", "3")
+	set("retry-delay-ms", "1")
+	set("poll-interval-ms", "1")
+	t.Cleanup(func() {
+		for name, def := range map[string]string{"background": "false", "wait": "false", "max-retries": "3", "retry-delay-ms": "3000", "poll-interval-ms": "2000"} {
+			_ = schemasGenerateCmd.Flags().Set(name, def)
+		}
+		if slice, ok := schemasGenerateCmd.Flags().Lookup("url").Value.(interface{ Replace([]string) error }); ok {
+			_ = slice.Replace(nil)
+		}
+	})
+
+	var err error
+	_, _ = captureStd(t, func() { err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil) })
+	if err == nil {
+		t.Fatal("expected a terminal-failure error, got nil")
+	}
+	if posts.Load() != 1 {
+		t.Fatalf("non-transient failure must not be retried; got %d submissions", posts.Load())
 	}
 }
 

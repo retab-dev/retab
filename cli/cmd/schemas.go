@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -57,6 +58,13 @@ Steer the result with ` + "`--instructions`" + ` (or ` + "`--instructions-file`"
 Lower ` + "`--image-resolution-dpi`" + ` to reduce per-page work — useful when a
 long or heavily-instructed generation would otherwise exceed the server's
 processing budget.
+
+Generation is served by an internal service that can intermittently exceed
+its own deadline (a transient "context deadline exceeded" failure). The CLI
+resubmits automatically — tune with ` + "`--max-retries`" + ` /
+` + "`--retry-delay-ms`" + `. Each attempt waits up to ` + "`--timeout-seconds`" + `,
+so pair a shorter timeout with more retries to abandon a stuck job and
+resubmit sooner.
 
 ` + "`--format`" + ` and ` + "`--output`" + ` look similar but control different things:
 
@@ -193,37 +201,136 @@ processing budget.
 		if background {
 			params.Background = ptr(true)
 		}
-		result, err := client.Schemas.Generate(ctx, params)
-		if err != nil {
-			return err
+		// Schema generation is served by an internal orchestrator that
+		// intermittently exceeds its own deadline (surfaced as a "context
+		// deadline exceeded" terminal failure) — especially for instructed or
+		// multi-page jobs. A resubmit usually lands, so retry the whole
+		// generation on transient server failures. Non-transient failures
+		// (validation, auth, a genuine schema error) are returned immediately.
+		maxRetries, _ := cmd.Flags().GetInt("max-retries")
+		if maxRetries < 0 {
+			maxRetries = 0
 		}
-
-		// Synchronous (default): the response already carries the inferred schema.
-		if !background {
-			return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+		retryDelay := 3 * time.Second
+		if ms, _ := cmd.Flags().GetInt("retry-delay-ms"); ms > 0 {
+			retryDelay = time.Duration(ms) * time.Millisecond
 		}
-		// Background without --wait: the server returns a queued envelope with no
-		// schema yet, so print the record (id + status) for the caller to poll.
 		wait, _ := cmd.Flags().GetBool("wait")
-		if !wait {
-			return printJSON(result)
-		}
-		// Background with --wait: poll the queued generation to a terminal status,
-		// then emit the schema (honouring --format) exactly like a sync run.
-		pollInterval, timeout := primitiveWaitDurations(cmd)
-		final, waitErr := waitForPrimitive(ctx, cmd, schemaGenerationWaitSpec, result.ID, pollInterval, timeout)
-		if waitErr != nil {
-			if final != nil {
-				_ = printJSON(final)
+
+		var lastErr error
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			if attempt > 0 {
+				fmt.Fprintf(cmd.ErrOrStderr(),
+					"schema generation: transient server failure, retrying (attempt %d/%d)...\n",
+					attempt+1, maxRetries+1)
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(retryDelay):
+				}
 			}
-			return waitErr
+
+			result, err := client.Schemas.Generate(ctx, params)
+			if err != nil {
+				lastErr = err
+				if isTransientGenFailure(err.Error()) {
+					continue
+				}
+				return err
+			}
+
+			// Synchronous (default): the response already carries the inferred
+			// schema — unless the server recorded a terminal failure inline.
+			if !background {
+				m, _ := primitiveMap(result)
+				if termErr := primitiveTerminalError(schemaGenerationWaitSpec, m); termErr != nil {
+					lastErr = termErr
+					if isTransientGenFailure(genFailureDetail(m)) {
+						continue
+					}
+					return termErr
+				}
+				return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+			}
+
+			// Background without --wait: nothing to retry on yet — the outcome
+			// is unknown. Print the queued record (id + status) for the caller
+			// to poll.
+			if !wait {
+				return printJSON(result)
+			}
+
+			// Background with --wait: poll to a terminal status, then resubmit
+			// the whole job if it failed transiently.
+			pollInterval, timeout := primitiveWaitDurations(cmd)
+			final, waitErr := waitForPrimitive(ctx, cmd, schemaGenerationWaitSpec, result.ID, pollInterval, timeout)
+			if waitErr != nil {
+				lastErr = waitErr
+				if isTransientGenFailure(waitErr.Error()) {
+					continue
+				}
+				if final != nil {
+					_ = printJSON(final)
+				}
+				return waitErr
+			}
+			if termErr := primitiveTerminalError(schemaGenerationWaitSpec, final); termErr != nil {
+				lastErr = termErr
+				if isTransientGenFailure(genFailureDetail(final)) {
+					continue
+				}
+				_ = printJSON(final)
+				return termErr
+			}
+			return writeSchemaFromMap(cmd.OutOrStdout(), final, format)
 		}
-		if termErr := primitiveTerminalError(schemaGenerationWaitSpec, final); termErr != nil {
-			_ = printJSON(final)
-			return termErr
-		}
-		return writeSchemaFromMap(cmd.OutOrStdout(), final, format)
+		return fmt.Errorf("schema generation failed after %d attempt(s); last error: %w", maxRetries+1, lastErr)
 	}),
+}
+
+// genFailureDetail pulls the server-recorded error.message out of a terminal
+// generation record, so transient-failure detection can inspect the real cause
+// (primitiveTerminalError only reports the status, not the detail).
+func genFailureDetail(rec map[string]any) string {
+	if rec == nil {
+		return ""
+	}
+	e, ok := rec["error"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	msg, _ := e["message"].(string)
+	return msg
+}
+
+// isTransientGenFailure reports whether a schema-generation failure looks
+// retryable. The dominant case is the backend's own "context deadline
+// exceeded" when its orchestrator service is slow; the rest are the usual
+// transient HTTP/network signals. These are resubmitted rather than surfaced
+// as a one-off hiccup. An empty detail is treated as non-transient so genuine
+// (undescribed) failures are not retried blindly.
+func isTransientGenFailure(detail string) bool {
+	d := strings.ToLower(detail)
+	if d == "" {
+		return false
+	}
+	for _, needle := range []string{
+		"context deadline exceeded",
+		"deadline exceeded",
+		"timeout",
+		"timed out",
+		"temporarily unavailable",
+		"service unavailable",
+		"connection reset",
+		"connection refused",
+		"502", "503", "504",
+		"eof",
+	} {
+		if strings.Contains(d, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 var schemasGetCmd = &cobra.Command{
@@ -312,6 +419,8 @@ func init() {
 	schemasGenerateCmd.Flags().String("instructions", "", "natural-language guidance for the generated schema")
 	schemasGenerateCmd.Flags().String("instructions-file", "", "read schema instructions from a file (or - for stdin)")
 	schemasGenerateCmd.Flags().Int("image-resolution-dpi", 0, "render DPI sent to the model (lower = less work per page; helps long/instructed generations finish in time)")
+	schemasGenerateCmd.Flags().Int("max-retries", 3, "resubmit the generation this many times on transient server failures (e.g. orchestrator deadline)")
+	schemasGenerateCmd.Flags().Int("retry-delay-ms", 3000, "delay between retries in milliseconds")
 	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")
 	// Async surface, matching `extractions create` / `edits create`: --background
 	// queues the generation server-side; --wait blocks until it finishes.
