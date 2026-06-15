@@ -144,10 +144,15 @@ def test_experiments_create_with_explicit_documents_serializes_handle_inputs() -
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/v1/workflows/experiments"
     assert request.data["workflow_id"] == "wf_abc123"
+    expected_document = {
+        "id": "doc_1",
+        "filename": "a.pdf",
+        "mime_type": "application/pdf",
+    }
     assert request.data["documents"] == [
         {
             "handle_inputs": {
-                "input-file-0": {"type": "file", "document": _MATERIALIZED_DOCUMENT},
+                "input-file-0": {"type": "file", "document": expected_document},
             },
         }
     ]
