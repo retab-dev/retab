@@ -1693,6 +1693,48 @@ func mimeDataFromDocument(doc any) (retab.MIMEData, error) {
 	return result, nil
 }
 
+// materializeInlineMIMEData ensures a document is carried as inline base64 bytes
+// rather than a remote URL reference. Routes that persist the document
+// server-side via the inline-only persist seam (edit templates, Excel sample
+// docs) cannot dereference a remote URL — a `--url` or a `--file-id` (which
+// resolves to a signed storage URL) would otherwise 500 with "failed to persist
+// document". An already-inline `data:` document (e.g. from `--file`) and a
+// content-only descriptor are returned unchanged; a remote-URL document is
+// downloaded once and re-inlined with the SDK's own MIME detection.
+func materializeInlineMIMEData(ctx context.Context, doc retab.MIMEData) (retab.MIMEData, error) {
+	if doc.URL == "" || strings.HasPrefix(doc.URL, "data:") {
+		return doc, nil
+	}
+	if !strings.HasPrefix(doc.URL, "http://") && !strings.HasPrefix(doc.URL, "https://") {
+		return doc, nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, doc.URL, nil)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
+	resp, err := fileDownloadClient.Do(req)
+	if err != nil {
+		return retab.MIMEData{}, fmt.Errorf("download document for inline upload: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return retab.MIMEData{}, fmt.Errorf("download document failed: %d %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
+	inline, err := retab.InferMIMEData(data)
+	if err != nil {
+		return retab.MIMEData{}, fmt.Errorf("inline document: %w", err)
+	}
+	if doc.Filename != "" {
+		inline.Filename = doc.Filename
+	}
+	return inline, nil
+}
+
 // resolveSchema reads a JSON schema from --json-schema (JSON literal) or
 // --json-schema-file (path to JSON file, or - for stdin).
 func resolveSchema(cmd *cobra.Command) (any, error) {

@@ -309,6 +309,15 @@ to ` + "`retab edits create`" + `.`,
 		if err != nil {
 			return err
 		}
+		// The template document is persisted server-side via the inline-only
+		// persist seam, which cannot dereference a remote URL. --file is already
+		// inline; --url and --file-id (a signed storage URL) must be downloaded
+		// and re-inlined here, else the server 500s on "failed to persist
+		// template document".
+		document, err = materializeInlineMIMEData(ctx, document)
+		if err != nil {
+			return err
+		}
 		result, err := client.Edits.Templates.Create(ctx, &retab.EditTemplatesCreateParams{
 			Name:       name,
 			Document:   document,

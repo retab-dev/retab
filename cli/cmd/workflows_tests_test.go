@@ -1244,10 +1244,15 @@ func TestWorkflowsTestsUpdateInlineAssertion(t *testing.T) {
 
 	var gotBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Inline update fetches the existing test first to merge overrides.
+		if r.Method == http.MethodGet {
+			_, _ = w.Write([]byte(`{"id":"wfnodetest_x","workflow_id":"wrk_1","target":{"type":"block","block_id":"blk_1"},"source":{"type":"run_step","run_id":"run_1"},"assertion":{"target":{"output_handle_id":"output-json-0","path":"old_path"},"condition":{"kind":"equals","expected":"Old"}}}`))
+			return
+		}
 		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
 			t.Fatalf("decode body: %v", err)
 		}
-		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"id":"wfnodetest_x"}`))
 	}))
 	defer server.Close()
@@ -2053,4 +2058,62 @@ func nonEmptyLines(s string) []string {
 		}
 	}
 	return out
+}
+
+// Regression: `tests update --equals X` (without --path) must NOT drop the
+// existing assertion path. A partial inline update should merge onto the
+// existing assertion (fetched first), changing only the expected value and
+// preserving target.path / target.output_handle_id. Previously the CLI rebuilt
+// a fresh assertion from inline flags alone and silently replaced the stored
+// one, turning "vendor_name equals X" into "whole handle equals X".
+func TestWorkflowsTestsUpdateEqualsPreservesExistingPath(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var patchAssertion map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/tests/wfnodetest_x":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":          "wfnodetest_x",
+				"workflow_id": "wrk_1",
+				"target":      map[string]any{"type": "block", "block_id": "blk_1"},
+				"source":      map[string]any{"type": "run_step", "run_id": "run_1", "step_id": "step_1"},
+				"assertion": map[string]any{
+					"target":    map[string]any{"output_handle_id": "output-json-0", "path": "vendor_name"},
+					"condition": map[string]any{"kind": "equals", "expected": "Old Vendor"},
+				},
+			})
+		case r.Method == http.MethodPatch && r.URL.Path == "/v1/workflows/tests/wfnodetest_x":
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if a, ok := body["assertion"].(map[string]any); ok {
+				patchAssertion = a
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wfnodetest_x", "workflow_id": "wrk_1",
+				"target": map[string]any{"type": "block", "block_id": "blk_1"},
+				"source": map[string]any{"type": "run_step", "run_id": "run_1"}})
+		default:
+			http.Error(w, "unexpected "+r.Method+" "+r.URL.Path, http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := runRootForTest(t, "workflows", "tests", "update", "wfnodetest_x", "--equals", "New Vendor"); err != nil {
+		t.Fatalf("tests update: %v", err)
+	}
+	if patchAssertion == nil {
+		t.Fatalf("no PATCH assertion captured")
+	}
+	target, _ := patchAssertion["target"].(map[string]any)
+	if target == nil || target["path"] != "vendor_name" {
+		t.Fatalf("update dropped the assertion path; target=%v", target)
+	}
+	cond, _ := patchAssertion["condition"].(map[string]any)
+	if cond == nil || cond["expected"] != "New Vendor" {
+		t.Fatalf("update did not apply new expected value; condition=%v", cond)
+	}
 }

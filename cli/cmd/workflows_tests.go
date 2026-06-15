@@ -197,6 +197,61 @@ func inlineTestAssertion(cmd *cobra.Command) (map[string]any, bool, error) {
 	}, true, nil
 }
 
+// assertionSpecToMap round-trips a typed AssertionSpec into a generic map so the
+// update path can merge inline overrides onto the existing assertion. A nil spec
+// yields an empty map.
+func assertionSpecToMap(spec *retab.AssertionSpec) (map[string]any, error) {
+	if spec == nil {
+		return map[string]any{}, nil
+	}
+	raw, err := json.Marshal(spec)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]any{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// applyInlineAssertionOverrides applies ONLY the explicitly-set inline assertion
+// flags onto an existing assertion map, preserving every field the user did not
+// touch — notably target.path. `tests update --equals X` is a partial re-pin of
+// the expected value, not a full assertion replacement; rebuilding the assertion
+// from inline flags alone silently dropped target.path, turning a field-scoped
+// assertion into a whole-handle one.
+func applyInlineAssertionOverrides(cmd *cobra.Command, base map[string]any) map[string]any {
+	merged := base
+	if merged == nil {
+		merged = map[string]any{}
+	}
+	target, _ := merged["target"].(map[string]any)
+	if target == nil {
+		target = map[string]any{}
+	}
+	if cmd.Flags().Changed("output-handle-id") {
+		handle, _ := cmd.Flags().GetString("output-handle-id")
+		if strings.TrimSpace(handle) == "" {
+			handle = "output-json-0"
+		}
+		target["output_handle_id"] = handle
+	}
+	if _, ok := target["output_handle_id"]; !ok {
+		target["output_handle_id"] = "output-json-0"
+	}
+	if cmd.Flags().Changed("path") {
+		path, _ := cmd.Flags().GetString("path")
+		target["path"] = path
+	}
+	merged["target"] = target
+	if cmd.Flags().Changed("equals") {
+		raw, _ := cmd.Flags().GetString("equals")
+		merged["condition"] = map[string]any{"kind": "equals", "expected": parseInlineExpected(raw)}
+	}
+	return merged
+}
+
 // parseInlineExpected interprets the --equals value as a JSON literal
 // (number, boolean, null, quoted string, array, object) when it parses, and
 // otherwise treats it as a bare string. This keeps the common
@@ -607,14 +662,26 @@ flaky runs.`,
 		// same inline flag form `tests create` accepts (mutually exclusive per
 		// component, enforced by resolveTestComponent).
 		inlineSource, inlineSourceSet := inlineTestSource(cmd)
-		inlineAssertion, inlineAssertionSet, err := inlineTestAssertion(cmd)
+		// Detect inline assertion flags and enforce --equals (the expected value)
+		// without building the full assertion here — the update path merges inline
+		// overrides onto the existing assertion below, so we must not synthesize a
+		// fresh assertion that drops untouched fields.
+		_, inlineAssertionSet, err := inlineTestAssertion(cmd)
 		if err != nil {
 			return err
+		}
+		// File presence is value-based (an empty path means "not supplied"),
+		// matching resolveJSONMap — Changed() would spuriously fire on a flag a
+		// prior call set back to "".
+		assertionFilePath, _ := cmd.Flags().GetString("assertion-file")
+		fileAssertionSet := strings.TrimSpace(assertionFilePath) != ""
+		if fileAssertionSet && inlineAssertionSet {
+			return fmt.Errorf("--assertion-file and --output-handle-id/--path/--equals are mutually exclusive")
 		}
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
 		if !cmd.Flags().Changed("name") &&
-			!cmd.Flags().Changed("assertion-file") && !inlineAssertionSet &&
+			!fileAssertionSet && !inlineAssertionSet &&
 			!cmd.Flags().Changed("source-file") && !inlineSourceSet {
 			return fmt.Errorf("nothing to update: pass at least one of --name, the assertion " +
 				"(--assertion-file or --output-handle-id/--path/--equals), or the source " +
@@ -629,13 +696,43 @@ flaky runs.`,
 			}
 			req.Name = &trimmed
 		}
-		assertion, err := resolveTestComponent(cmd, "assertion-file", "--output-handle-id/--path/--equals", inlineAssertion, inlineAssertionSet)
-		if err != nil {
-			return err
-		}
 		source, err := resolveTestComponent(cmd, "source-file", "--run-id/--step-id", inlineSource, inlineSourceSet)
 		if err != nil {
 			return err
+		}
+		// Read any local files (source-file above, assertion-file here) BEFORE
+		// touching credentials so a bad path fails with a file error, not a
+		// credentials error.
+		var fileAssertion map[string]any
+		if fileAssertionSet {
+			fileAssertion, err = resolveJSONMap(cmd, "assertion-file")
+			if err != nil {
+				return err
+			}
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		// Resolve the assertion: a --assertion-file fully replaces it, while inline
+		// flags merge onto the EXISTING assertion (fetched first) so a --equals-only
+		// re-pin preserves target.path / target.output_handle_id.
+		var assertion map[string]any
+		switch {
+		case fileAssertionSet:
+			assertion = fileAssertion
+		case inlineAssertionSet:
+			existing, gerr := client.Workflows.Tests.Get(ctx, args[0])
+			if gerr != nil {
+				return gerr
+			}
+			base, merr := assertionSpecToMap(existing.Assertion)
+			if merr != nil {
+				return merr
+			}
+			assertion = applyInlineAssertionOverrides(cmd, base)
 		}
 		if assertion != nil {
 			if err := validateWorkflowTestAssertion(assertion); err != nil {
@@ -655,12 +752,6 @@ flaky runs.`,
 				return err
 			}
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		result, err := client.Workflows.Tests.Update(ctx, args[0], &req)
 		if err != nil {
 			return err
