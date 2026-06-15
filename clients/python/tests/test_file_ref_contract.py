@@ -1,6 +1,11 @@
 from retab.types.mime import FileRef
 from retab.types.workflows import FileRef as WorkflowFileRef
 
+import pytest
+
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_file_ref_ignores_internal_storage_fields() -> None:
     file_ref = FileRef.model_validate(

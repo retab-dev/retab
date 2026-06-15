@@ -5,6 +5,11 @@ from retab.types.partitions import Partition
 from retab.types.parses import Parse
 from retab.types.splits import Split
 
+import pytest
+
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_classification_model_accepts_canonical_consensus_shape() -> None:
     classification = Classification.model_validate(

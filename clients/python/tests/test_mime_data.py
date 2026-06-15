@@ -5,6 +5,9 @@ import pytest
 from retab.types.mime import MIMEData
 from retab.utils.hashing import generate_blake2b_hash_from_base64
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_mime_data_id_hashes_inline_content() -> None:
     encoded = base64.b64encode(b"hello").decode("ascii")

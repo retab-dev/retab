@@ -13,6 +13,9 @@ from retab.types.partitions import Partition
 from retab.types.splits import Split
 from retab.types.standards import PreparedRequest
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_removed_surfaces_are_not_exposed() -> None:
     with Retab(api_key="test", base_url="http://example.com") as client:

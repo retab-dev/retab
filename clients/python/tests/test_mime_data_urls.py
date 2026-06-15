@@ -11,6 +11,11 @@ import base64
 from retab.types.mime import MIMEData
 from retab.utils.mime import prepare_mime_document
 
+import pytest
+
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_prepare_mime_document_handles_base64_text_data_url() -> None:
     encoded = base64.b64encode(b"Hello").decode("ascii")

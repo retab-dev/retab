@@ -17,6 +17,9 @@ from retab.exceptions import (
     ValidationError,
 )
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # APIError construction & fields

@@ -11,6 +11,9 @@ import pytest
 from retab import AsyncRetab, Retab
 from retab.utils.mime import assert_valid_file_type, prepare_mime_document
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def _sync() -> Retab:
     return Retab(api_key="sk_test_dummy", base_url="https://api.retab.com")

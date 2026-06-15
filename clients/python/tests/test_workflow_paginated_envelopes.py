@@ -23,6 +23,9 @@ from retab.resources.workflows.blocks import (
 from retab.resources.workflows.edges import WorkflowEdges
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def _envelope(*items: dict) -> dict:
     return {"data": list(items), "list_metadata": {"before": None, "after": None}}

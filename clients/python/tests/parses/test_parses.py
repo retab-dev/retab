@@ -4,6 +4,9 @@ from retab import Retab
 from retab.types.mime import MIMEData
 from retab.types.parses import Parse, ParseRequest
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def _sample_document() -> MIMEData:
     return MIMEData(

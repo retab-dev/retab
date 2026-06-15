@@ -43,6 +43,9 @@ from retab.types.parses import Parse
 from retab.types.partitions import Partition
 from retab.types.splits import Split
 
+# Whole module is creditless (live list/get/pagination only; no credits).
+pytestmark = pytest.mark.creditless
+
 
 def _mock_sync_client(envelope: dict[str, Any]) -> MagicMock:
     """The page helper now lives on `SyncAPIResource`/`AsyncAPIResource`

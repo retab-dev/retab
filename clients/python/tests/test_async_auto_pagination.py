@@ -25,6 +25,9 @@ from retab.resources.extractions import AsyncExtractions
 from retab.types.extractions import Extraction
 from retab.types.pagination import AsyncPaginatedList
 
+# Whole module is creditless (live list/get/pagination only; no credits).
+pytestmark = pytest.mark.creditless
+
 
 _FILE_REF = {"id": "file_abc", "filename": "doc.pdf", "mime_type": "application/pdf"}
 

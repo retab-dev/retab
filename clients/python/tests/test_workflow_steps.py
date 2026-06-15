@@ -10,6 +10,9 @@ from retab.resources.workflows.steps import AsyncWorkflowSteps, WorkflowSteps
 from retab.types.workflows import model as workflow_model
 from retab.types.workflows.model import StepExecutionResponse
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def _workflow_run_step_payload(**overrides) -> dict:
     payload = {

@@ -6,6 +6,11 @@ from pydantic import BaseModel
 
 import retab.types
 
+import pytest
+
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def _iter_sdk_pydantic_models() -> list[type[BaseModel]]:
     models: list[type[BaseModel]] = []

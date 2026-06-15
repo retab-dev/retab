@@ -18,6 +18,9 @@ import pytest
 
 from retab.resources.workflows import AsyncWorkflows, Workflows
 
+# Whole module is creditless (live list/get/pagination only; no credits).
+pytestmark = pytest.mark.creditless
+
 
 _EMPTY_PAGE = {"data": [], "list_metadata": {"before": None, "after": None}}
 

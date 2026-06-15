@@ -17,6 +17,9 @@ from retab.types.workflows import (
     SubmitDecisionResponse,
 )
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 _NOW = "2026-05-01T14:30:00Z"
 _REVIEW_ID = "rev_1"
 _VERSION_ID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"

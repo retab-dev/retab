@@ -21,6 +21,9 @@ from retab.resources.workflows.experiments import (
 )
 from retab.types.workflows.experiments import ExperimentByDocumentMetricsResponse, FileHandleInput
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 _NOW = "2026-05-01T14:30:00Z"
 _WORKFLOW_REF = {

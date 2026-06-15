@@ -31,6 +31,9 @@ from retab.types.workflows.model import (
 )
 from retab.types.workflows.steps import PublicHandlePayload
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 INVOICE_WORKFLOW_YAML = """apiVersion: workflows.retab.com/v1alpha2
 kind: Workflow
 metadata:

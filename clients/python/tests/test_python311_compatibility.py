@@ -3,6 +3,11 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 def test_sdk_sources_parse_with_python311_grammar():
     sdk_root = Path(__file__).resolve().parents[1] / "retab"

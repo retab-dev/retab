@@ -47,6 +47,7 @@ def pytest_configure(config: pytest.Config) -> None:
     """
     config.addinivalue_line("markers", "creditless: makes no billable/LLM/processing calls; safe to run anywhere")
     config.addinivalue_line("markers", "billable: creates primitives that consume credits (runs real inference)")
+    config.addinivalue_line("markers", "unit: pure offline test (mocked client / local logic); no server or credentials needed")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -63,7 +64,15 @@ def load_env(request: pytest.FixtureRequest) -> None:
     elif request.config.getoption("--staging"):
         env_path = os.path.join(os.path.dirname(TEST_DIR), "../../.env.staging")
     else:
-        raise ValueError("No environment specified. Please use --env-file, --production, --local, or --staging.")
+        # No environment specified -> offline mode. The unit suite (``-m unit``)
+        # needs no server or credentials, so this must NOT hard-fail; any live
+        # test (creditless/billable) that needs a key will fail clearly at the
+        # ``api_keys`` fixture instead.
+        warnings.warn(
+            "No environment specified (--env-file/--production/--local/--staging); running offline. Live tests will fail at the api_keys fixture.",
+            UserWarning,
+        )
+        return
 
     print("loading env file: ", env_path)
     if not os.path.exists(env_path):

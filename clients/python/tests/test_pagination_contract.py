@@ -54,6 +54,9 @@ from retab import AsyncRetab, Retab
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
 
+# Whole module is unit (pure offline; no server/credentials needed).
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Allowlist for legitimate bypasses
