@@ -61,6 +61,21 @@ func documentPathHint(blockID, path string) string {
 	}
 }
 
+// isExternalFetchDocumentURL reports whether rawURL is an external http(s) URL
+// that the workflow runs API refuses to fetch and that the CLI must therefore
+// download and inline itself. Retab storage URLs (which the server resolves)
+// and non-http schemes such as `data:` are left untouched for the server.
+func isExternalFetchDocumentURL(rawURL string) bool {
+	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+		return false
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	return !strings.EqualFold(parsed.Hostname(), "storage.retab.com")
+}
+
 func parseDocumentArgs(docs []string, docFiles []string, warnTo io.Writer) (map[string]string, error) {
 	out := map[string]string{}
 	// `source` tracks which flag claimed each block id so cross-flag
@@ -236,8 +251,11 @@ four ways to supply them, mix and match as needed:
   ` + "`--document BLOCK=PATH`" + ` — upload a local file. The MIME
   type is inferred from the file extension. Repeatable.
 
-  ` + "`--document-url BLOCK=URL`" + ` — pass a remote URL the server will
-  fetch. Repeatable.
+  ` + "`--document-url BLOCK=URL`" + ` — reference a document by URL. A
+  Retab storage URL (` + "`https://storage.retab.com/...`" + `) is passed
+  through for the server to resolve; any other external http(s) URL is
+  downloaded and inlined by the CLI before upload, since the server does
+  not fetch arbitrary external URLs. Repeatable.
 
   ` + "`--document-id BLOCK=FILE_ID`" + ` — reference a file you already
   uploaded (e.g. via ` + "`retab files upload`" + `) by its file id. The
@@ -385,6 +403,10 @@ removed in a future release.`,
 				)
 			}
 		}
+		// Created up front (before the document loops) so the --document-url
+		// loop can download + inline external URLs the server refuses to fetch.
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		if len(fileEntries) > 0 || len(urlFlags) > 0 {
 			if req.Documents == nil {
 				req.Documents = map[string]any{}
@@ -403,25 +425,38 @@ removed in a future release.`,
 				req.Documents[key] = mime
 			}
 			for _, raw := range urlFlags {
-				key, url, ok := splitKV(raw)
-				if !ok || strings.TrimSpace(key) == "" || url == "" {
+				key, rawURL, ok := splitKV(raw)
+				if !ok || strings.TrimSpace(key) == "" || rawURL == "" {
 					return fmt.Errorf("--document-url expects block-id=url, got %q", raw)
 				}
 				// Server requires `filename` on every document descriptor;
 				// derive from URL path's last segment (same rule applied
 				// across single-document commands in common.go).
-				req.Documents[key] = retab.MIMEData{
-					Filename: filenameFromURL(url),
-					URL:      url,
+				doc := retab.MIMEData{
+					Filename: filenameFromURL(rawURL),
+					URL:      rawURL,
 				}
+				// The workflow runs API refuses to fetch arbitrary external
+				// URLs (SSRF policy): it accepts only Retab storage URLs and
+				// inline data: content, otherwise it 422s. So an external URL
+				// like the `--document-url` help advertises must be downloaded
+				// and re-inlined client-side, mirroring the edit-template
+				// `--url` path. Retab storage and data: URLs pass through for
+				// the server to resolve.
+				if isExternalFetchDocumentURL(rawURL) {
+					inlined, err := materializeInlineMIMEData(ctx, doc)
+					if err != nil {
+						return fmt.Errorf("--document-url %s=%s: %w", key, rawURL, err)
+					}
+					doc = inlined
+				}
+				req.Documents[key] = doc
 			}
 		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		// Resolve each --document-id to a FileRef. The workflow runs API
 		// accepts `FileRef {id, filename, mime_type}` as a documents entry
 		// (the union is FileRef | MIMEData server-side). FileRef requires

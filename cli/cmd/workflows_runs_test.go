@@ -273,7 +273,9 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	cmd.Flags().StringArray("document-url", nil, "")
 	cmd.Flags().String("json-inputs-file", "", "")
 
-	if err := cmd.Flags().Set("document-url", "block_start=https://example.com/invoice.pdf"); err != nil {
+	// A Retab storage URL is resolvable server-side, so it must pass through
+	// untouched (not be downloaded + inlined client-side like an external URL).
+	if err := cmd.Flags().Set("document-url", "block_start=https://storage.retab.com/org_x/invoice.pdf"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -292,11 +294,81 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	if !ok {
 		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
 	}
-	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://example.com/invoice.pdf" {
+	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://storage.retab.com/org_x/invoice.pdf" {
 		t.Fatalf("start document = %#v", startDocument)
 	}
 	if _, ok := startDocument["content"]; ok {
-		t.Fatalf("document-url should send url-backed payload, got %#v", startDocument)
+		t.Fatalf("storage document-url should send url-backed payload, got %#v", startDocument)
+	}
+}
+
+// The workflow runs API refuses to fetch arbitrary external URLs (SSRF policy);
+// it accepts only Retab storage URLs and inline data: content. So a plain
+// `--document-url https://host/file.pdf` (exactly what the flag help advertises)
+// would 422 server-side. The CLI must download such a URL once and re-inline the
+// bytes, mirroring the edit-template `--url` path. This pins that behavior: the
+// posted document carries inline content, not a bare external url.
+func TestWorkflowsRunsCreateMaterializesExternalDocumentURL(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	pdfBytes := []byte("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n")
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/docs/invoice.pdf" {
+			w.Header().Set("Content-Type", "application/pdf")
+			_, _ = w.Write(pdfBytes)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		postedDocuments, _ = body["documents"].(map[string]any)
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "run_123", "status": "running"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document-url", "block_start="+server.URL+"/docs/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _ := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	// The inlined form is a data: URL (which the server accepts), not the
+	// original external http(s) URL (which it would 422 on).
+	gotURL, _ := startDocument["url"].(string)
+	if !strings.HasPrefix(gotURL, "data:") {
+		t.Fatalf("external document-url should be inlined as a data: URL, got %#v", startDocument)
+	}
+	if strings.HasPrefix(gotURL, "http://") || strings.HasPrefix(gotURL, "https://") {
+		t.Fatalf("external document-url leaked through unfetchable: %#v", startDocument)
+	}
+	if startDocument["filename"] != "invoice.pdf" {
+		t.Fatalf("inlined document should keep derived filename, got %#v", startDocument["filename"])
 	}
 }
 

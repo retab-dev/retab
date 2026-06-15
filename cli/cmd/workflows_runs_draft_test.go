@@ -45,7 +45,7 @@ func TestWorkflowsRunsCreateDraftFlagSendsDraftVersion(t *testing.T) {
 	if err := cmd.Flags().Set("draft", "true"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("document-url", "block_start=https://example.com/invoice.pdf"); err != nil {
+	if err := cmd.Flags().Set("document-url", "block_start=https://storage.retab.com/org_x/invoice.pdf"); err != nil {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
@@ -78,7 +78,7 @@ func TestWorkflowsRunsCreateDraftConflictsWithVersion(t *testing.T) {
 	cmd := newRunsCreateTestCmd()
 	_ = cmd.Flags().Set("draft", "true")
 	_ = cmd.Flags().Set("version", "production")
-	_ = cmd.Flags().Set("document-url", "block_start=https://example.com/invoice.pdf")
+	_ = cmd.Flags().Set("document-url", "block_start=https://storage.retab.com/org_x/invoice.pdf")
 
 	err := cmd.RunE(cmd, []string{"wf_123"})
 	if err == nil || !strings.Contains(err.Error(), "--draft conflicts with --version") {
