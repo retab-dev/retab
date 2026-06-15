@@ -16,8 +16,6 @@ filtering can be asserted independently of model validation.
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from pydantic import ValidationError as PydanticValidationError
@@ -220,15 +218,11 @@ def test_bad_from_date_format_raises_400(sync_client: Retab, resource_name: str,
         assert excinfo.value.status_code == 400
 
 
-def test_bad_api_key_raises_401(api_keys) -> None:
+def test_bad_api_key_raises_401(bad_key_client: Retab) -> None:
     """A junk API key yields a typed 401 AuthenticationError on a creditless list."""
-    client = Retab(api_key="sk_junk_invalid_creditless", base_url=api_keys.retab_api_base_url, max_retries=0)
-    try:
-        with pytest.raises(AuthenticationError) as excinfo:
-            client.extractions.list(limit=1)
-        assert excinfo.value.status_code == 401
-    finally:
-        client.close()
+    with pytest.raises(AuthenticationError) as excinfo:
+        bad_key_client.extractions.list(limit=1)
+    assert excinfo.value.status_code == 401
 
 
 # --------------------------------------------------------------------------- #
