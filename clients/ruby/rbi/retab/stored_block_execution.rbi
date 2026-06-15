@@ -22,10 +22,10 @@ module Retab
     def workflow_id=(value); end
 
     sig { returns(String) }
-    def run_id; end
+    def source_run_id; end
 
     sig { params(value: String).returns(String) }
-    def run_id=(value); end
+    def source_run_id=(value); end
 
     sig { returns(String) }
     def block_id; end
@@ -88,10 +88,10 @@ module Retab
     def block_config=(value); end
 
     sig { returns(T.nilable(String)) }
-    def step_id; end
+    def source_step_id; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def step_id=(value); end
+    def source_step_id=(value); end
 
     sig { returns(T.nilable(T::Array[T::Hash[String, T.untyped]])) }
     def available_iterations; end

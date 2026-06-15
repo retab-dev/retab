@@ -17,8 +17,8 @@ namespace Retab
         /// <summary>Workflow the block belongs to</summary>
         public string WorkflowId { get; set; } = default!;
 
-        /// <summary>Run whose inputs were used</summary>
-        public string RunId { get; set; } = default!;
+        /// <summary>Workflow run whose inputs were used</summary>
+        public string SourceRunId { get; set; } = default!;
 
         /// <summary>ID of the block that was executed</summary>
         public string BlockId { get; set; } = default!;
@@ -52,7 +52,7 @@ namespace Retab
         public Dictionary<string, object>? BlockConfig { get; set; }
 
         /// <summary>The step ID that was used for inputs (includes iteration prefix if applicable)</summary>
-        public string? StepId { get; set; }
+        public string? SourceStepId { get; set; }
 
         /// <summary>When the block has multiple iterations, lists all available ones</summary>
         public List<Dictionary<string, object>>? AvailableIterations { get; set; }

@@ -281,7 +281,7 @@ func init() {
 	tablesCreateCmd.Flags().String("project-id", "", "project-id value")
 	tablesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	addListFlags(tablesListCmd, false)
-	tablesListCmd.Flags().String("project-id", "", "Only return tables belonging to this project. Use the shared project's id to list the organization's shared tables.")
+	tablesListCmd.Flags().String("project-id", "", "Only return tables belonging to this project.")
 	tablesQueryCmd.Flags().String("filters", "", "JSON array of filter rules")
 	tablesQueryCmd.Flags().String("sort-column", "", "column to sort by")
 	tablesQueryCmd.Flags().Var(newEnumStringFlagValue("--sort-direction", "asc", "desc"), "sort-direction", "sort direction: asc | desc")

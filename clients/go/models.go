@@ -177,8 +177,8 @@ type StoredBlockExecution struct {
 	ID string `json:"id"`
 	// WorkflowID is workflow the block belongs to
 	WorkflowID string `json:"workflow_id"`
-	// RunID is run whose inputs were used
-	RunID string `json:"run_id"`
+	// SourceRunID is workflow run whose inputs were used
+	SourceRunID string `json:"source_run_id"`
 	// BlockID is id of the block that was executed
 	BlockID string `json:"block_id"`
 	// BlockType is type of the block
@@ -199,8 +199,8 @@ type StoredBlockExecution struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// BlockConfig is the draft block config used for this block execution
 	BlockConfig map[string]interface{} `json:"block_config,omitempty"`
-	// StepID is the step ID that was used for inputs (includes iteration prefix if applicable)
-	StepID *string `json:"step_id,omitempty"`
+	// SourceStepID is the step ID that was used for inputs (includes iteration prefix if applicable)
+	SourceStepID *string `json:"source_step_id,omitempty"`
 	// AvailableIterations is when the block has multiple iterations, lists all available ones
 	AvailableIterations []map[string]interface{} `json:"available_iterations,omitempty"`
 }
@@ -1192,8 +1192,8 @@ type FileBlueprint struct {
 
 // FileHandleInput file reference for a handle input.
 type FileHandleInput struct {
-	Type     *string              `json:"type,omitempty"`
-	Document MaterializedDocument `json:"document"`
+	Type     *string `json:"type,omitempty"`
+	Document FileRef `json:"document"`
 }
 
 // FileLink a short-lived signed link to download a file, with its `filename` and expiry.
@@ -1308,16 +1308,6 @@ type ManualWorkflowTestSource struct {
 type MatcheRegexCondition struct {
 	Kind    *string `json:"kind,omitempty"`
 	Pattern string  `json:"pattern"`
-}
-
-// MaterializedDocument represents a materialized document.
-type MaterializedDocument struct {
-	OriginalID         string  `json:"original_id"`
-	Filename           string  `json:"filename"`
-	MIMEType           string  `json:"mime_type"`
-	GcsURI             string  `json:"gcs_uri"`
-	SizeBytes          *int    `json:"size_bytes,omitempty"`
-	ContentFingerprint *string `json:"content_fingerprint,omitempty"`
 }
 
 // MetricsStaleErrorLastRun represents a _metrics stale error last run.
@@ -1816,7 +1806,7 @@ type Secret struct {
 
 // SecretListResponse represents a secret list response.
 type SecretListResponse struct {
-	Secrets []*Secret `json:"secrets"`
+	Secrets []*Secret `json:"secrets,omitempty"`
 }
 
 // SecretResponse represents a secret response.
@@ -2282,18 +2272,19 @@ type WorkflowExperiment struct {
 	Drift             *ArtifactDrift               `json:"drift,omitempty"`
 }
 
-// ExperimentResult one experiment result for a single document, addressed by `run_id` and `document_id`.
+// ExperimentResult one experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`.
 type ExperimentResult struct {
-	ID           string                    `json:"id"`
-	RunID        string                    `json:"run_id"`
-	ExperimentID string                    `json:"experiment_id"`
-	DocumentID   string                    `json:"document_id"`
-	Lifecycle    WorkflowExperimentResult  `json:"lifecycle"`
-	Timing       ExperimentResultTiming    `json:"timing"`
-	BlockType    ExperimentResultBlockType `json:"block_type"`
-	HandleInputs map[string]HandleInput    `json:"handle_inputs,omitempty"`
-	Artifact     *StepArtifactRef          `json:"artifact,omitempty"`
-	Attempt      *int                      `json:"attempt,omitempty"`
+	ID              string                    `json:"id"`
+	ExperimentRunID string                    `json:"experiment_run_id"`
+	ExperimentID    string                    `json:"experiment_id"`
+	DocumentID      string                    `json:"document_id"`
+	Lifecycle       WorkflowExperimentResult  `json:"lifecycle"`
+	Timing          ExperimentResultTiming    `json:"timing"`
+	BlockType       ExperimentResultBlockType `json:"block_type"`
+	HandleInputs    map[string]HandleInput    `json:"handle_inputs,omitempty"`
+	HandleOutputs   map[string]HandleInput    `json:"handle_outputs,omitempty"`
+	Artifact        *StepArtifactRef          `json:"artifact,omitempty"`
+	Attempt         *int                      `json:"attempt,omitempty"`
 }
 
 // ExperimentRun a single execution of an experiment, identified by `id`.
@@ -2520,7 +2511,7 @@ type WorkflowTableFilterRule struct {
 
 // WorkflowTableListResponse represents a workflow table list response.
 type WorkflowTableListResponse struct {
-	Tables []*WorkflowTable `json:"tables"`
+	Tables []*WorkflowTable `json:"tables,omitempty"`
 }
 
 // WorkflowTableProfileColumn represents a workflow table profile column.
@@ -2579,7 +2570,7 @@ type WorkflowTableSampleRequest struct {
 // WorkflowTableSchemaResponse represents a workflow table schema response.
 type WorkflowTableSchemaResponse struct {
 	TableID string                 `json:"table_id"`
-	Columns []*WorkflowTableColumn `json:"columns"`
+	Columns []*WorkflowTableColumn `json:"columns,omitempty"`
 }
 
 // WorkflowTableSearchRequest represents a workflow table search request.

@@ -31,7 +31,7 @@ class StoredBlockExecution(BaseModel):
 
     id: str = Field(..., description="Unique block execution ID")
     workflow_id: str = Field(..., description="Workflow the block belongs to")
-    run_id: str = Field(..., description="Run whose inputs were used")
+    source_run_id: str = Field(..., description="Workflow run whose inputs were used")
     block_id: str = Field(..., description="ID of the block that was executed")
     block_type: str = Field(..., description="Type of the block")
     lifecycle: CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle = Field(
@@ -46,7 +46,7 @@ class StoredBlockExecution(BaseModel):
     duration_ms: float | None = Field(default=None, description="Duration of the block execution in milliseconds")
     created_at: datetime.datetime | None = Field(default=None, description="When the block execution record was created")
     block_config: dict[str, Any] | None = Field(default=None, description="The draft block config used for this block execution")
-    step_id: str | None = Field(default=None, description="The step ID that was used for inputs (includes iteration prefix if applicable)")
+    source_step_id: str | None = Field(default=None, description="The step ID that was used for inputs (includes iteration prefix if applicable)")
     available_iterations: list[dict[str, Any]] | None = Field(default=None, description="When the block has multiple iterations, lists all available ones")
 
 

@@ -13,7 +13,7 @@ public final class SecretListResponse {
 
   @JsonCreator
   public SecretListResponse(
-      @JsonProperty(value = "secrets", required = true) List<Secret> secrets) {
+      @JsonProperty(value = "secrets", required = false) List<Secret> secrets) {
     this.secrets = secrets;
   }
 

@@ -78,12 +78,12 @@ class RunningWorkflowExperimentResult(BaseModel):
 
 
 class ExperimentResult(BaseModel):
-    """One experiment result for a single document, addressed by `run_id` and `document_id`."""
+    """One experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
-    run_id: str
+    experiment_run_id: str
     experiment_id: str
     document_id: str
     lifecycle: (
@@ -97,6 +97,7 @@ class ExperimentResult(BaseModel):
     timing: ExperimentResultTiming
     block_type: ExperimentResultBlockType
     handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
+    handle_outputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
     artifact: StepArtifactRef | None = None
     attempt: int | None = Field(default=0)
 

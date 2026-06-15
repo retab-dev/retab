@@ -9,10 +9,10 @@ module Retab
     sig { params(json: T.any(String, T::Hash[Symbol, T.untyped])).void }
     def initialize(json); end
 
-    sig { returns(T::Array[Retab::Secret]) }
+    sig { returns(T.nilable(T::Array[Retab::Secret])) }
     def secrets; end
 
-    sig { params(value: T::Array[Retab::Secret]).returns(T::Array[Retab::Secret]) }
+    sig { params(value: T.nilable(T::Array[Retab::Secret])).returns(T.nilable(T::Array[Retab::Secret])) }
     def secrets=(value); end
 
     sig { returns(T::Hash[Symbol, T.untyped]) }

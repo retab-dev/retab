@@ -4,11 +4,11 @@ namespace Retab
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
-    /// <summary>One experiment result for a single document, addressed by `run_id` and `document_id`.</summary>
+    /// <summary>One experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`.</summary>
     public class ExperimentResult
     {
         public string Id { get; set; } = default!;
-        public string RunId { get; set; } = default!;
+        public string ExperimentRunId { get; set; } = default!;
         public string ExperimentId { get; set; } = default!;
         public string DocumentId { get; set; } = default!;
         [Newtonsoft.Json.JsonConverter(typeof(PendingWorkflowExperimentResultDiscriminatorConverter))]
@@ -18,6 +18,7 @@ namespace Retab
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public ExperimentBlockType BlockType { get; set; }
         public Dictionary<string, object>? HandleInputs { get; set; }
+        public Dictionary<string, object>? HandleOutputs { get; set; }
         public StepArtifactRef? Artifact { get; set; }
         public long? Attempt { get; set; }
 
@@ -45,6 +46,43 @@ namespace Retab
             }
 
             if (!this.HandleInputs.TryGetValue(key, out var value))
+            {
+                return default;
+            }
+
+            if (value is T typed)
+            {
+                return typed;
+            }
+
+            if (value is Newtonsoft.Json.Linq.JToken token)
+            {
+                return token.ToObject<T>();
+            }
+
+            if (value is System.Text.Json.JsonElement element)
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<T>(element.GetRawText());
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// Typed accessor for <see cref="HandleOutputs"/>. Returns the value stored under
+        /// <paramref name="key"/> coerced to <typeparamref name="T"/>, or the default
+        /// value when the key is missing or the value is not convertible.
+        /// </summary>
+        /// <typeparam name="T">Expected value type.</typeparam>
+        /// <param name="key">The key to look up.</param>
+        public T? GetHandleOutputsAttribute<T>(string key)
+        {
+            if (this.HandleOutputs == null)
+            {
+                return default;
+            }
+
+            if (!this.HandleOutputs.TryGetValue(key, out var value))
             {
                 return default;
             }

@@ -7,26 +7,28 @@ module Retab
 
     HASH_ATTRS = {
       id: :id,
-      run_id: :run_id,
+      experiment_run_id: :experiment_run_id,
       experiment_id: :experiment_id,
       document_id: :document_id,
       lifecycle: :lifecycle,
       timing: :timing,
       block_type: :block_type,
       handle_inputs: :handle_inputs,
+      handle_outputs: :handle_outputs,
       artifact: :artifact,
       attempt: :attempt
     }.freeze
 
     attr_accessor(
       :id,
-      :run_id,
+      :experiment_run_id,
       :experiment_id,
       :document_id,
       :lifecycle,
       :timing,
       :block_type,
       :handle_inputs,
+      :handle_outputs,
       :artifact,
       :attempt
     )
@@ -35,7 +37,7 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @run_id = hash[:run_id]
+      @experiment_run_id = hash[:experiment_run_id]
       @experiment_id = hash[:experiment_id]
       @document_id = hash[:document_id]
       @lifecycle = hash[:lifecycle] ? (
@@ -59,6 +61,7 @@ module Retab
       @timing = hash[:timing] ? Retab::ExperimentResultTiming.new(hash[:timing]) : nil
       @block_type = hash[:block_type]
       @handle_inputs = hash[:handle_inputs] || {}
+      @handle_outputs = hash[:handle_outputs] || {}
       @artifact = hash[:artifact] ? Retab::StepArtifactRef.new(hash[:artifact]) : nil
       @attempt = hash[:attempt]
     end

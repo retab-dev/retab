@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-15T18:36:45.060Z",
+  "generatedAt": "2026-06-15T18:53:25.614Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -238,7 +238,6 @@
     "src/workflows/experiments/interfaces/file-handle-input.interface.ts",
     "src/workflows/experiments/interfaces/index.ts",
     "src/workflows/experiments/interfaces/json-handle-input.interface.ts",
-    "src/workflows/experiments/interfaces/materialized-document.interface.ts",
     "src/workflows/experiments/interfaces/n-consensus-value.interface.ts",
     "src/workflows/experiments/interfaces/update-experiment-request-n-consensus.interface.ts",
     "src/workflows/experiments/interfaces/update-experiment-request.interface.ts",

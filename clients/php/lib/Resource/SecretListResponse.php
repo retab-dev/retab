@@ -11,22 +11,15 @@ readonly class SecretListResponse implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        /** @var array<\Retab\Resource\Secret> */
-        public array $secrets,
+        /** @var array<\Retab\Resource\Secret>|null */
+        public ?array $secrets = null,
     ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
-        foreach ([
-            'secrets',
-        ] as $__required) {
-            if (!array_key_exists($__required, $data)) {
-                throw new \UnexpectedValueException("Missing required field '$__required' for SecretListResponse::fromArray()");
-            }
-        }
         return new self(
-            secrets: array_map(fn($item) => Secret::fromArray($item), $data['secrets']),
+            secrets: isset($data['secrets']) ? array_map(fn($item) => Secret::fromArray($item), $data['secrets']) : null,
         );
     }
 
@@ -34,7 +27,7 @@ readonly class SecretListResponse implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'secrets' => array_map(fn($item) => $item->toArray(), $this->secrets),
+            'secrets' => $this->secrets !== null ? array_map(fn($item) => $item->toArray(), $this->secrets) : null,
         ];
     }
 }

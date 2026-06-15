@@ -165,7 +165,7 @@ var filesCreateUploadCmd = &cobra.Command{
 		result, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
 			Filename:    filename,
 			ContentType: &contentType,
-			SizeBytes:   size,
+			SizeBytes:   int(size),
 			Sha256:      &sha256Hash,
 		})
 		if err != nil {

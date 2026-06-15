@@ -6,6 +6,7 @@ import datetime
 from enum import Enum
 from typing import Any, Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.mime import FileRef
 
 
 NConsensusValue: TypeAlias = Literal[3, 5, 7]
@@ -120,7 +121,7 @@ class FileHandleInput(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     type: Literal["file"] = Field(default="file")
-    document: MaterializedDocument
+    document: FileRef
 
 
 class JsonHandleInput(BaseModel):
@@ -130,17 +131,6 @@ class JsonHandleInput(BaseModel):
 
     type: Literal["json"] = Field(default="json")
     data: Any | None = Field(default=None)
-
-
-class MaterializedDocument(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    original_id: str
-    filename: str
-    mime_type: str
-    gcs_uri: str
-    size_bytes: int | None = Field(default=0)
-    content_fingerprint: str | None = None
 
 
 class UpdateExperimentRequest(BaseModel):
@@ -235,8 +225,8 @@ __all__ = [
     "ExperimentVotesMetricsResponse",
     "ExplicitExperimentDocumentRequest",
     "FileHandleInput",
+    "FileRef",
     "JsonHandleInput",
-    "MaterializedDocument",
     "NConsensusValue",
     "PendingWorkflowExperimentResult",
     "PendingWorkflowExperimentRun",
@@ -264,6 +254,5 @@ ExperimentDocumentProvenance.model_rebuild()
 ExplicitExperimentDocumentRequest.model_rebuild()
 FileHandleInput.model_rebuild()
 JsonHandleInput.model_rebuild()
-MaterializedDocument.model_rebuild()
 UpdateExperimentRequest.model_rebuild()
 WorkflowExperiment.model_rebuild()

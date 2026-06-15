@@ -8,15 +8,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowTableSchemaResponse {
     pub table_id: String,
-    pub columns: Vec<WorkflowTableColumn>,
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub columns: Option<Vec<WorkflowTableColumn>>,
 }
 impl WorkflowTableSchemaResponse {
     /// Construct a new `WorkflowTableSchemaResponse` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(table_id: impl Into<String>, columns: Vec<WorkflowTableColumn>) -> Self {
+    pub fn new(table_id: impl Into<String>) -> Self {
         Self {
             table_id: table_id.into(),
-            columns,
+            columns: Default::default(),
         }
     }
 }

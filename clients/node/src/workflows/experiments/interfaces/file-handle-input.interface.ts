@@ -2,42 +2,42 @@
 
 import { z } from 'zod';
 import type {
-  MaterializedDocument,
-  MaterializedDocumentResponse,
-} from './materialized-document.interface.js';
+  FileRef,
+  FileRefResponse,
+} from '../../../classifications/interfaces/file-ref.interface.js';
 import {
-  ZMaterializedDocument,
-  deserializeMaterializedDocument,
-  serializeMaterializedDocument,
-} from './materialized-document.interface.js';
+  ZFileRef,
+  deserializeFileRef,
+  serializeFileRef,
+} from '../../../classifications/interfaces/file-ref.interface.js';
 
 /** File reference for a handle input. */
 export interface FileHandleInput {
   /** @default "file" */
   type: 'file';
-  document: MaterializedDocument;
+  document: FileRef;
 }
 
 export interface FileHandleInputResponse {
   type: 'file';
-  document: MaterializedDocumentResponse;
+  document: FileRefResponse;
 }
 
 export const ZFileHandleInput = z.object({
   type: z.literal('file'),
-  document: ZMaterializedDocument,
+  document: ZFileRef,
 }) as z.ZodType<FileHandleInput>;
 
 export function deserializeFileHandleInput(wire: FileHandleInputResponse): FileHandleInput {
   return {
     type: wire['type'],
-    document: deserializeMaterializedDocument(wire['document']),
+    document: deserializeFileRef(wire['document']),
   };
 }
 
 export function serializeFileHandleInput(domain: FileHandleInput): FileHandleInputResponse {
   return {
     type: domain['type'],
-    document: serializeMaterializedDocument(domain['document']),
+    document: serializeFileRef(domain['document']),
   };
 }

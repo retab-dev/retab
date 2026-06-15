@@ -15,7 +15,6 @@ export * from './experiment-schema-drift-status.interface.js';
 export * from './explicit-experiment-document-request.interface.js';
 export * from './file-handle-input.interface.js';
 export * from './json-handle-input.interface.js';
-export * from './materialized-document.interface.js';
 export * from './n-consensus-value.interface.js';
 export * from './update-experiment-request.interface.js';
 export * from './update-experiment-request-n-consensus.interface.js';

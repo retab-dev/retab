@@ -13,7 +13,7 @@ public final class WorkflowTableListResponse {
 
   @JsonCreator
   public WorkflowTableListResponse(
-      @JsonProperty(value = "tables", required = true) List<WorkflowTable> tables) {
+      @JsonProperty(value = "tables", required = false) List<WorkflowTable> tables) {
     this.tables = tables;
   }
 

@@ -16,10 +16,10 @@ module Retab
     def id=(value); end
 
     sig { returns(String) }
-    def run_id; end
+    def experiment_run_id; end
 
     sig { params(value: String).returns(String) }
-    def run_id=(value); end
+    def experiment_run_id=(value); end
 
     sig { returns(String) }
     def experiment_id; end
@@ -56,6 +56,12 @@ module Retab
 
     sig { params(value: T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])).returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
     def handle_inputs=(value); end
+
+    sig { returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_outputs; end
+
+    sig { params(value: T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])).returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_outputs=(value); end
 
     sig { returns(T.nilable(Retab::StepArtifactRef)) }
     def artifact; end

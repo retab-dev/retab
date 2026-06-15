@@ -37,7 +37,7 @@ class ExperimentRunResultsTest extends TestCase
         $result = $client->workflows()->experiments()->results()->get('test_result_id');
         $this->assertInstanceOf(\Retab\Resource\ExperimentResult::class, $result);
         $this->assertSame($fixture['id'], $result->id);
-        $this->assertSame($fixture['run_id'], $result->runId);
+        $this->assertSame($fixture['experiment_run_id'], $result->experimentRunId);
         $this->assertIsArray($result->toArray());
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());

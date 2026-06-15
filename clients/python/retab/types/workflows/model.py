@@ -149,7 +149,6 @@ __all__ = [
     "MIMEData",
     "ManualWorkflowTestSource",
     "MatcheRegexCondition",
-    "MaterializedDocument",
     "NConsensusValue",
     "NotContainsCondition",
     "NotEqualsCondition",

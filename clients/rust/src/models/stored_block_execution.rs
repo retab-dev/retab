@@ -14,8 +14,8 @@ pub struct StoredBlockExecution {
     pub id: String,
     /// Workflow the block belongs to
     pub workflow_id: String,
-    /// Run whose inputs were used
-    pub run_id: String,
+    /// Workflow run whose inputs were used
+    pub source_run_id: String,
     /// ID of the block that was executed
     pub block_id: String,
     /// Type of the block
@@ -45,7 +45,7 @@ pub struct StoredBlockExecution {
     pub block_config: Option<std::collections::HashMap<String, serde_json::Value>>,
     /// The step ID that was used for inputs (includes iteration prefix if applicable)
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub step_id: Option<String>,
+    pub source_step_id: Option<String>,
     /// When the block has multiple iterations, lists all available ones
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub available_iterations: Option<Vec<std::collections::HashMap<String, serde_json::Value>>>,
@@ -56,7 +56,7 @@ impl StoredBlockExecution {
     pub fn new(
         id: impl Into<String>,
         workflow_id: impl Into<String>,
-        run_id: impl Into<String>,
+        source_run_id: impl Into<String>,
         block_id: impl Into<String>,
         block_type: impl Into<String>,
         lifecycle: StoredBlockExecutionLifecycleOneOf,
@@ -64,7 +64,7 @@ impl StoredBlockExecution {
         Self {
             id: id.into(),
             workflow_id: workflow_id.into(),
-            run_id: run_id.into(),
+            source_run_id: source_run_id.into(),
             block_id: block_id.into(),
             block_type: block_type.into(),
             lifecycle,
@@ -75,7 +75,7 @@ impl StoredBlockExecution {
             duration_ms: Default::default(),
             created_at: Default::default(),
             block_config: Default::default(),
-            step_id: Default::default(),
+            source_step_id: Default::default(),
             available_iterations: Default::default(),
         }
     }

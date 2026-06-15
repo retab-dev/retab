@@ -21,8 +21,8 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public string $id,
         /** Workflow the block belongs to */
         public string $workflowId,
-        /** Run whose inputs were used */
-        public string $runId,
+        /** Workflow run whose inputs were used */
+        public string $sourceRunId,
         /** ID of the block that was executed */
         public string $blockId,
         /** Type of the block */
@@ -56,7 +56,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
          */
         public ?array $blockConfig = null,
         /** The step ID that was used for inputs (includes iteration prefix if applicable) */
-        public ?string $stepId = null,
+        public ?string $sourceStepId = null,
         /**
          * When the block has multiple iterations, lists all available ones
          * @var array<array<string, mixed>>|null
@@ -70,7 +70,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
         foreach ([
             'id',
             'workflow_id',
-            'run_id',
+            'source_run_id',
             'block_id',
             'block_type',
             'lifecycle',
@@ -82,7 +82,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
         return new self(
             id: $data['id'],
             workflowId: $data['workflow_id'],
-            runId: $data['run_id'],
+            sourceRunId: $data['source_run_id'],
             blockId: $data['block_id'],
             blockType: $data['block_type'],
             lifecycle: match ($data['lifecycle']['status'] ?? null) {
@@ -95,7 +95,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             durationMs: $data['duration_ms'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             blockConfig: $data['block_config'] ?? null,
-            stepId: $data['step_id'] ?? null,
+            sourceStepId: $data['source_step_id'] ?? null,
             availableIterations: $data['available_iterations'] ?? null,
         );
     }
@@ -106,7 +106,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
         return [
             'id' => $this->id,
             'workflow_id' => $this->workflowId,
-            'run_id' => $this->runId,
+            'source_run_id' => $this->sourceRunId,
             'block_id' => $this->blockId,
             'block_type' => $this->blockType,
             'lifecycle' => $this->lifecycle->toArray(),
@@ -117,7 +117,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'duration_ms' => $this->durationMs,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'block_config' => $this->blockConfig,
-            'step_id' => $this->stepId,
+            'source_step_id' => $this->sourceStepId,
             'available_iterations' => $this->availableIterations,
         ];
     }

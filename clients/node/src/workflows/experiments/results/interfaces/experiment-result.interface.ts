@@ -94,10 +94,10 @@ import {
 import type { ExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 import { ZExperimentResultBlockType } from './experiment-result-block-type.interface.js';
 
-/** One experiment result for a single document, addressed by `run_id` and `document_id`. */
+/** One experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`. */
 export interface ExperimentResult {
   id: string;
-  runId: string;
+  experimentRunId: string;
   experimentId: string;
   documentId: string;
   lifecycle:
@@ -111,6 +111,8 @@ export interface ExperimentResult {
   blockType: ExperimentResultBlockType;
   /** @default {} */
   handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
+  /** @default {} */
+  handleOutputs?: Record<string, JsonHandleInput | FileHandleInput>;
   artifact?: StepArtifactRef | null;
   /** @default 0 */
   attempt?: number;
@@ -118,7 +120,7 @@ export interface ExperimentResult {
 
 export interface ExperimentResultResponse {
   id: string;
-  run_id: string;
+  experiment_run_id: string;
   experiment_id: string;
   document_id: string;
   lifecycle:
@@ -131,13 +133,14 @@ export interface ExperimentResultResponse {
   timing: ExperimentResultTimingResponse;
   block_type: ExperimentResultBlockType;
   handle_inputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
+  handle_outputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
   artifact?: StepArtifactRefResponse | null;
   attempt?: number;
 }
 
 export const ZExperimentResult = z.object({
   id: z.string(),
-  runId: z.string(),
+  experimentRunId: z.string(),
   experimentId: z.string(),
   documentId: z.string(),
   lifecycle: z.union([
@@ -151,6 +154,7 @@ export const ZExperimentResult = z.object({
   timing: ZExperimentResultTiming,
   blockType: ZExperimentResultBlockType,
   handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
+  handleOutputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
   attempt: z.number().int().optional(),
 }) as z.ZodType<ExperimentResult>;
@@ -158,7 +162,7 @@ export const ZExperimentResult = z.object({
 export function deserializeExperimentResult(wire: ExperimentResultResponse): ExperimentResult {
   return {
     id: wire['id'],
-    runId: wire['run_id'],
+    experimentRunId: wire['experiment_run_id'],
     experimentId: wire['experiment_id'],
     documentId: wire['document_id'],
     lifecycle:
@@ -223,6 +227,21 @@ export function deserializeExperimentResult(wire: ExperimentResultResponse): Exp
                 (__v as unknown as JsonHandleInput | FileHandleInput),
             ])
           ),
+    handleOutputs:
+      wire['handle_outputs'] == null
+        ? (wire['handle_outputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(wire['handle_outputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => deserializeFileHandleInput(__v as FileHandleInputResponse),
+                  json: () => deserializeJsonHandleInput(__v as JsonHandleInputResponse),
+                } as Record<string, () => JsonHandleInput | FileHandleInput>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInput | FileHandleInput),
+            ])
+          ),
     artifact:
       wire['artifact'] == null
         ? (wire['artifact'] as undefined)
@@ -236,7 +255,7 @@ export function deserializeExperimentResult(wire: ExperimentResultResponse): Exp
 export function serializeExperimentResult(domain: ExperimentResult): ExperimentResultResponse {
   return {
     id: domain['id'],
-    run_id: domain['runId'],
+    experiment_run_id: domain['experimentRunId'],
     experiment_id: domain['experimentId'],
     document_id: domain['documentId'],
     lifecycle:
@@ -291,6 +310,21 @@ export function serializeExperimentResult(domain: ExperimentResult): ExperimentR
         ? (domain['handleInputs'] as undefined)
         : Object.fromEntries(
             Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => serializeFileHandleInput(__v as FileHandleInput),
+                  json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+                } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
+            ])
+          ),
+    handle_outputs:
+      domain['handleOutputs'] == null
+        ? (domain['handleOutputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleOutputs']).map(([__k, __v]) => [
               __k,
               (
                 {

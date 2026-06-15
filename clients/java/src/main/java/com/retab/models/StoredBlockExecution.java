@@ -13,7 +13,7 @@ import java.util.Map;
 public final class StoredBlockExecution {
   private final String id;
   private final String workflowId;
-  private final String runId;
+  private final String sourceRunId;
   private final String blockId;
   private final String blockType;
   private final BlockExecutionLifecycle lifecycle;
@@ -24,14 +24,14 @@ public final class StoredBlockExecution {
   private final Double durationMs;
   private final OffsetDateTime createdAt;
   private final Map<String, Object> blockConfig;
-  private final String stepId;
+  private final String sourceStepId;
   private final List<Map<String, Object>> availableIterations;
 
   @JsonCreator
   public StoredBlockExecution(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "run_id", required = true) String runId,
+      @JsonProperty(value = "source_run_id", required = true) String sourceRunId,
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "block_type", required = true) String blockType,
       @JsonProperty(value = "lifecycle", required = true) BlockExecutionLifecycle lifecycle,
@@ -42,12 +42,12 @@ public final class StoredBlockExecution {
       @JsonProperty(value = "duration_ms", required = false) Double durationMs,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
-      @JsonProperty(value = "step_id", required = false) String stepId,
+      @JsonProperty(value = "source_step_id", required = false) String sourceStepId,
       @JsonProperty(value = "available_iterations", required = false)
           List<Map<String, Object>> availableIterations) {
     this.id = id;
     this.workflowId = workflowId;
-    this.runId = runId;
+    this.sourceRunId = sourceRunId;
     this.blockId = blockId;
     this.blockType = blockType;
     this.lifecycle = lifecycle;
@@ -58,7 +58,7 @@ public final class StoredBlockExecution {
     this.durationMs = durationMs;
     this.createdAt = createdAt;
     this.blockConfig = blockConfig;
-    this.stepId = stepId;
+    this.sourceStepId = sourceStepId;
     this.availableIterations = availableIterations;
   }
 
@@ -72,9 +72,9 @@ public final class StoredBlockExecution {
     return workflowId;
   }
 
-  @JsonProperty("run_id")
-  public String getRunId() {
-    return runId;
+  @JsonProperty("source_run_id")
+  public String getSourceRunId() {
+    return sourceRunId;
   }
 
   @JsonProperty("block_id")
@@ -127,9 +127,9 @@ public final class StoredBlockExecution {
     return blockConfig;
   }
 
-  @JsonProperty("step_id")
-  public String getStepId() {
-    return stepId;
+  @JsonProperty("source_step_id")
+  public String getSourceStepId() {
+    return sourceStepId;
   }
 
   @JsonProperty("available_iterations")

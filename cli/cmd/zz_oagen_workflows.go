@@ -253,6 +253,25 @@ var workflowsPublishCmd = &cobra.Command{
 	}),
 }
 
+var workflowsApplyCmd = &cobra.Command{
+	Use:   "apply",
+	Short: "Apply Workflow Spec",
+	Args:  cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Apply(ctx)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
 var workflowsDiscardDraftCmd = &cobra.Command{
 	Use:   "discard-draft <workflow-id>",
 	Short: "Discard Draft Workflow",
@@ -265,6 +284,25 @@ var workflowsDiscardDraftCmd = &cobra.Command{
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		result, err := client.Workflows.DiscardDraft(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsPlanCmd = &cobra.Command{
+	Use:   "plan",
+	Short: "Plan Workflow Spec",
+	Args:  cobra.NoArgs,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Plan(ctx)
 		if err != nil {
 			return err
 		}
@@ -286,6 +324,6 @@ func init() {
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
 	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
-	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDiscardDraftCmd)
+	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsApplyCmd, workflowsDiscardDraftCmd, workflowsPlanCmd)
 	rootCmd.AddCommand(workflowsCmd)
 }

@@ -12,7 +12,7 @@ readonly class FileHandleInput implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        public MaterializedDocument $document,
+        public FileRef $document,
         public string $type = 'file',
     ) {}
 
@@ -27,7 +27,7 @@ readonly class FileHandleInput implements \JsonSerializable
             }
         }
         return new self(
-            document: MaterializedDocument::fromArray($data['document']),
+            document: FileRef::fromArray($data['document']),
             type: $data['type'] ?? 'file',
         );
     }

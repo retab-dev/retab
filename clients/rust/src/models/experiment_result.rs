@@ -5,11 +5,11 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// One experiment result for a single document, addressed by `run_id` and `document_id`.
+/// One experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentResult {
     pub id: String,
-    pub run_id: String,
+    pub experiment_run_id: String,
     pub experiment_id: String,
     pub document_id: String,
     pub lifecycle: ExperimentResultLifecycleOneOf,
@@ -18,6 +18,11 @@ pub struct ExperimentResult {
     /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub handle_inputs: Option<
+        std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,
+    >,
+    /// Defaults to `{}`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub handle_outputs: Option<
         std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,
     >,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -31,7 +36,7 @@ impl ExperimentResult {
     #[allow(deprecated)]
     pub fn new(
         id: impl Into<String>,
-        run_id: impl Into<String>,
+        experiment_run_id: impl Into<String>,
         experiment_id: impl Into<String>,
         document_id: impl Into<String>,
         lifecycle: ExperimentResultLifecycleOneOf,
@@ -40,13 +45,14 @@ impl ExperimentResult {
     ) -> Self {
         Self {
             id: id.into(),
-            run_id: run_id.into(),
+            experiment_run_id: experiment_run_id.into(),
             experiment_id: experiment_id.into(),
             document_id: document_id.into(),
             lifecycle,
             timing,
             block_type,
             handle_inputs: Default::default(),
+            handle_outputs: Default::default(),
             artifact: Default::default(),
             attempt: Default::default(),
         }

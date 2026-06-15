@@ -41,8 +41,8 @@ export interface StoredBlockExecution {
   id: string;
   /** Workflow the block belongs to */
   workflowId: string;
-  /** Run whose inputs were used */
-  runId: string;
+  /** Workflow run whose inputs were used */
+  sourceRunId: string;
   /** ID of the block that was executed */
   blockId: string;
   /** Type of the block */
@@ -67,7 +67,7 @@ export interface StoredBlockExecution {
   /** The draft block config used for this block execution */
   blockConfig?: Record<string, unknown> | null;
   /** The step ID that was used for inputs (includes iteration prefix if applicable) */
-  stepId?: string | null;
+  sourceStepId?: string | null;
   /** When the block has multiple iterations, lists all available ones */
   availableIterations?: Record<string, unknown>[] | null;
 }
@@ -75,7 +75,7 @@ export interface StoredBlockExecution {
 export interface StoredBlockExecutionResponse {
   id: string;
   workflow_id: string;
-  run_id: string;
+  source_run_id: string;
   block_id: string;
   block_type: string;
   lifecycle:
@@ -89,14 +89,14 @@ export interface StoredBlockExecutionResponse {
   duration_ms?: number | null;
   created_at?: string;
   block_config?: Record<string, unknown> | null;
-  step_id?: string | null;
+  source_step_id?: string | null;
   available_iterations?: Record<string, unknown>[] | null;
 }
 
 export const ZStoredBlockExecution = z.object({
   id: z.string(),
   workflowId: z.string(),
-  runId: z.string(),
+  sourceRunId: z.string(),
   blockId: z.string(),
   blockType: z.string(),
   lifecycle: z.union([
@@ -111,7 +111,7 @@ export const ZStoredBlockExecution = z.object({
   durationMs: z.number().nullable().optional(),
   createdAt: z.coerce.date().optional(),
   blockConfig: z.record(z.string(), z.unknown()).nullable().optional(),
-  stepId: z.string().nullable().optional(),
+  sourceStepId: z.string().nullable().optional(),
   availableIterations: z.record(z.string(), z.unknown()).array().nullable().optional(),
 }) as z.ZodType<StoredBlockExecution>;
 
@@ -121,7 +121,7 @@ export function deserializeStoredBlockExecution(
   return {
     id: wire['id'],
     workflowId: wire['workflow_id'],
-    runId: wire['run_id'],
+    sourceRunId: wire['source_run_id'],
     blockId: wire['block_id'],
     blockType: wire['block_type'],
     lifecycle:
@@ -164,7 +164,7 @@ export function deserializeStoredBlockExecution(
     createdAt:
       wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
     blockConfig: wire['block_config'],
-    stepId: wire['step_id'],
+    sourceStepId: wire['source_step_id'],
     availableIterations: wire['available_iterations'],
   };
 }
@@ -175,7 +175,7 @@ export function serializeStoredBlockExecution(
   return {
     id: domain['id'],
     workflow_id: domain['workflowId'],
-    run_id: domain['runId'],
+    source_run_id: domain['sourceRunId'],
     block_id: domain['blockId'],
     block_type: domain['blockType'],
     lifecycle:
@@ -220,7 +220,7 @@ export function serializeStoredBlockExecution(
         ? (domain['createdAt'] as undefined)
         : domain['createdAt'].toISOString(),
     block_config: domain['blockConfig'],
-    step_id: domain['stepId'],
+    source_step_id: domain['sourceStepId'],
     available_iterations: domain['availableIterations'],
   };
 }

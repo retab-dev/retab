@@ -11,20 +11,21 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ExperimentResult {
   private final String id;
-  private final String runId;
+  private final String experimentRunId;
   private final String experimentId;
   private final String documentId;
   private final WorkflowExperimentResult lifecycle;
   private final ExperimentResultTiming timing;
   private final ExperimentResultBlockType blockType;
   private final Map<String, HandleInput> handleInputs;
+  private final Map<String, HandleInput> handleOutputs;
   private final StepArtifactRef artifact;
   private final Long attempt;
 
   @JsonCreator
   public ExperimentResult(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "run_id", required = true) String runId,
+      @JsonProperty(value = "experiment_run_id", required = true) String experimentRunId,
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
       @JsonProperty(value = "document_id", required = true) String documentId,
       @JsonProperty(value = "lifecycle", required = true) WorkflowExperimentResult lifecycle,
@@ -32,16 +33,19 @@ public final class ExperimentResult {
       @JsonProperty(value = "block_type", required = true) ExperimentResultBlockType blockType,
       @JsonProperty(value = "handle_inputs", required = false)
           Map<String, HandleInput> handleInputs,
+      @JsonProperty(value = "handle_outputs", required = false)
+          Map<String, HandleInput> handleOutputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "attempt", required = false) Long attempt) {
     this.id = id;
-    this.runId = runId;
+    this.experimentRunId = experimentRunId;
     this.experimentId = experimentId;
     this.documentId = documentId;
     this.lifecycle = lifecycle;
     this.timing = timing;
     this.blockType = blockType;
     this.handleInputs = handleInputs;
+    this.handleOutputs = handleOutputs;
     this.artifact = artifact;
     this.attempt = attempt;
   }
@@ -51,9 +55,9 @@ public final class ExperimentResult {
     return id;
   }
 
-  @JsonProperty("run_id")
-  public String getRunId() {
-    return runId;
+  @JsonProperty("experiment_run_id")
+  public String getExperimentRunId() {
+    return experimentRunId;
   }
 
   @JsonProperty("experiment_id")
@@ -84,6 +88,11 @@ public final class ExperimentResult {
   @JsonProperty("handle_inputs")
   public Map<String, HandleInput> getHandleInputs() {
     return handleInputs;
+  }
+
+  @JsonProperty("handle_outputs")
+  public Map<String, HandleInput> getHandleOutputs() {
+    return handleOutputs;
   }
 
   @JsonProperty("artifact")

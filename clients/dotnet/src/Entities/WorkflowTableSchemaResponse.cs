@@ -6,7 +6,7 @@ namespace Retab
     public class WorkflowTableSchemaResponse
     {
         public string TableId { get; set; } = default!;
-        public List<WorkflowTableColumn> Columns { get; set; } = default!;
+        public List<WorkflowTableColumn>? Columns { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

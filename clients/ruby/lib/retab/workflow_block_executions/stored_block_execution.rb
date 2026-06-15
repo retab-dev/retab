@@ -8,7 +8,7 @@ module Retab
     HASH_ATTRS = {
       id: :id,
       workflow_id: :workflow_id,
-      run_id: :run_id,
+      source_run_id: :source_run_id,
       block_id: :block_id,
       block_type: :block_type,
       lifecycle: :lifecycle,
@@ -19,14 +19,14 @@ module Retab
       duration_ms: :duration_ms,
       created_at: :created_at,
       block_config: :block_config,
-      step_id: :step_id,
+      source_step_id: :source_step_id,
       available_iterations: :available_iterations
     }.freeze
 
     attr_accessor(
       :id,
       :workflow_id,
-      :run_id,
+      :source_run_id,
       :block_id,
       :block_type,
       :lifecycle,
@@ -37,7 +37,7 @@ module Retab
       :duration_ms,
       :created_at,
       :block_config,
-      :step_id,
+      :source_step_id,
       :available_iterations
     )
 
@@ -46,7 +46,7 @@ module Retab
       hash = self.class.normalize(json)
       @id = hash[:id]
       @workflow_id = hash[:workflow_id]
-      @run_id = hash[:run_id]
+      @source_run_id = hash[:source_run_id]
       @block_id = hash[:block_id]
       @block_type = hash[:block_type]
       @lifecycle = hash[:lifecycle] ? (
@@ -68,7 +68,7 @@ module Retab
       @duration_ms = hash[:duration_ms]
       @created_at = hash[:created_at]
       @block_config = hash[:block_config] || {}
-      @step_id = hash[:step_id]
+      @source_step_id = hash[:source_step_id]
       @available_iterations = (hash[:available_iterations] || []).map { |item| item || {} }
     end
   end
