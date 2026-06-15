@@ -554,7 +554,7 @@ timeout.
 
 Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
 handles the interval and timeout, prints the final run, and exits non-zero
-if the run ends in ` + "`error`" + ` or the timeout elapses. Pair with
+if the run ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses. Pair with
 ` + "`runs create --wait`" + ` to create and block in a single step.`,
 	Example: `  # Wait with defaults (2s polls, 600s timeout)
   retab workflows runs wait run_abc123
