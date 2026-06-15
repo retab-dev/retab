@@ -22,9 +22,10 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import uuid
-from typing import AsyncIterator, Iterator
+from typing import Any, AsyncIterator, Iterator
 
 import httpx
+from pydantic import ValidationError as PydanticValidationError
 
 from retab import AsyncRetab, Retab
 from retab.types.files import CreateUploadResponse, File
@@ -259,3 +260,77 @@ def temporary_table(
     finally:
         with contextlib.suppress(Exception):
             client.tables.delete(table.id)
+
+
+# --------------------------------------------------------------------------- #
+# List inspection — read the raw envelope / validate tolerantly
+# --------------------------------------------------------------------------- #
+
+
+def raw_list(client: Retab, resource_name: str, **list_params: Any) -> dict[str, Any]:
+    """Return a list resource's raw envelope, bypassing per-item model validation.
+
+    Lets pagination / filtering be asserted even when legacy staging rows would
+    fail typed validation. Use the model-validating SDK ``list`` when you want
+    typed items; use this when you want the wire shape.
+    """
+    resource = getattr(client, resource_name)
+    prepared = resource.prepare_list(**list_params)
+    return resource._client._prepared_request(prepared)
+
+
+async def raw_list_async(client: AsyncRetab, resource_name: str, **list_params: Any) -> dict[str, Any]:
+    """Async counterpart of :func:`raw_list`."""
+    resource = getattr(client, resource_name)
+    prepared = resource.prepare_list(**list_params)
+    return await resource._client._prepared_request(prepared)
+
+
+def raw_ids(envelope: dict[str, Any]) -> list[str]:
+    """Extract the string ``id`` of every row in a raw list envelope."""
+    out: list[str] = []
+    for item in envelope.get("data") or []:
+        if isinstance(item, dict) and isinstance(item.get("id"), str):
+            out.append(item["id"])
+    return out
+
+
+def validate_tolerant(envelope: dict[str, Any], model: type) -> tuple[list[Any], int]:
+    """Validate page items one at a time; return ``(validated, skipped_legacy)``.
+
+    Staging holds legacy rows that violate the current public contract; validating
+    per-item lets a test assert the happy path while skipping (and counting) the
+    rows that fail typed validation instead of failing the whole page.
+    """
+    validated: list[Any] = []
+    skipped = 0
+    for item in envelope.get("data") or []:
+        if not isinstance(item, dict):
+            continue
+        try:
+            validated.append(model.model_validate(item))
+        except PydanticValidationError:
+            skipped += 1
+    return validated, skipped
+
+
+# --------------------------------------------------------------------------- #
+# Auth-failure clients — a junk API key for 401/permission assertions
+# --------------------------------------------------------------------------- #
+
+# A clearly-invalid key shared by every auth-failure test.
+JUNK_API_KEY = "sk_junk_invalid_creditless"
+
+
+def junk_key_client(base_url: str, *, key: str = JUNK_API_KEY) -> Retab:
+    """A sync client with an invalid key (no retries) for 401/permission tests.
+
+    The caller owns closing it; prefer the ``bad_key_client`` conftest fixture,
+    which handles teardown.
+    """
+    return Retab(api_key=key, base_url=base_url, max_retries=0)
+
+
+def junk_key_async_client(base_url: str, *, key: str = JUNK_API_KEY) -> AsyncRetab:
+    """Async counterpart of :func:`junk_key_client`."""
+    return AsyncRetab(api_key=key, base_url=base_url, max_retries=0)

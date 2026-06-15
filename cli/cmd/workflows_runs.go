@@ -283,6 +283,15 @@ removed in a future release.`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		req := workflowRunCreateParams{WorkflowID: args[0]}
 		req.Version, _ = cmd.Flags().GetString("version")
+		// --draft is a convenience alias for --version draft (run the editable
+		// draft without publishing). It conflicts with an explicit --version that
+		// names something other than the draft.
+		if draft, _ := cmd.Flags().GetBool("draft"); draft {
+			if req.Version != "" && req.Version != "draft" {
+				return fmt.Errorf("--draft conflicts with --version %q (use one)", req.Version)
+			}
+			req.Version = "draft"
+		}
 		docsFile, _ := cmd.Flags().GetString("documents-file")
 		if docsFile != "" {
 			docs, err := readJSONMap(docsFile)
@@ -1318,6 +1327,7 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 
 func init() {
 	workflowsRunsCreateCmd.Flags().String("version", "", "workflow version (defaults to production)")
+	workflowsRunsCreateCmd.Flags().Bool("draft", false, "run the editable draft without publishing (alias for --version draft)")
 	workflowsRunsCreateCmd.Flags().String("documents-file", "", "JSON object {block-id: document} (or - for stdin)")
 	workflowsRunsCreateCmd.Flags().StringArray("document", nil, "document file as block-id=path (repeatable)")
 	// `--document-file` collided with the `--document-file <json-path>` flag
