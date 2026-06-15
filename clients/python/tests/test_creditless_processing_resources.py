@@ -28,6 +28,7 @@ from retab.types.classifications import Classification
 from retab.types.extractions import Extraction
 from retab.types.parses import Parse
 from retab.types.splits import Split
+from factories import raw_ids, raw_list, validate_tolerant
 
 # Whole module is creditless (storage/config/list/get/error paths only).
 pytestmark = pytest.mark.creditless
@@ -44,39 +45,6 @@ _RESOURCES: list[tuple[str, type, str]] = [
 _RESOURCE_IDS = [name for name, _model, _bogus in _RESOURCES]
 
 
-def _raw_list(client: Retab, resource_name: str, **list_params: Any) -> dict[str, Any]:
-    """Return the raw list envelope, bypassing per-item model validation.
-
-    Lets pagination / filtering be asserted even when legacy staging rows would
-    fail typed validation.
-    """
-    resource = getattr(client, resource_name)
-    prepared = resource.prepare_list(**list_params)
-    return resource._client._prepared_request(prepared)
-
-
-def _raw_ids(envelope: dict[str, Any]) -> list[str]:
-    out: list[str] = []
-    for item in envelope.get("data") or []:
-        if isinstance(item, dict) and isinstance(item.get("id"), str):
-            out.append(item["id"])
-    return out
-
-
-def _validate_tolerant(envelope: dict[str, Any], model: type) -> tuple[list[Any], int]:
-    """Validate page items one at a time; return (validated, skipped_legacy_count)."""
-    validated: list[Any] = []
-    skipped = 0
-    for item in envelope.get("data") or []:
-        if not isinstance(item, dict):
-            continue
-        try:
-            validated.append(model.model_validate(item))
-        except PydanticValidationError:
-            skipped += 1
-    return validated, skipped
-
-
 # --------------------------------------------------------------------------- #
 # List + typed-shape assertions
 # --------------------------------------------------------------------------- #
@@ -85,13 +53,13 @@ def _validate_tolerant(envelope: dict[str, Any], model: type) -> tuple[list[Any]
 @pytest.mark.parametrize(("resource_name", "model", "_bogus"), _RESOURCES, ids=_RESOURCE_IDS)
 def test_list_default_returns_typed_page(sync_client: Retab, resource_name: str, model: type, _bogus: str) -> None:
     with sync_client as client:
-        envelope = _raw_list(client, resource_name, limit=5)
+        envelope = raw_list(client, resource_name, limit=5)
         assert isinstance(envelope, dict)
         assert "data" in envelope
         assert isinstance(envelope["data"], list)
         assert "list_metadata" in envelope
 
-        validated, _skipped = _validate_tolerant(envelope, model)
+        validated, _skipped = validate_tolerant(envelope, model)
         for item in validated:
             assert isinstance(item, model)
             assert isinstance(item.id, str) and item.id
@@ -101,7 +69,7 @@ def test_list_default_returns_typed_page(sync_client: Retab, resource_name: str,
 def test_list_required_fields_present(sync_client: Retab, resource_name: str, model: type, _bogus: str) -> None:
     """Every validated row carries the contract's required identity fields."""
     with sync_client as client:
-        validated, _skipped = _validate_tolerant(_raw_list(client, resource_name, limit=5), model)
+        validated, _skipped = validate_tolerant(raw_list(client, resource_name, limit=5), model)
         if not validated:
             pytest.skip(f"no validatable {resource_name} rows on staging")
         for item in validated:
@@ -117,20 +85,20 @@ def test_list_required_fields_present(sync_client: Retab, resource_name: str, mo
 @pytest.mark.parametrize(("resource_name", "_model", "_bogus"), _RESOURCES, ids=_RESOURCE_IDS)
 def test_pagination_limit_respected(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
-        envelope = _raw_list(client, resource_name, limit=2)
+        envelope = raw_list(client, resource_name, limit=2)
         assert len(envelope.get("data") or []) <= 2
 
 
 @pytest.mark.parametrize(("resource_name", "_model", "_bogus"), _RESOURCES, ids=_RESOURCE_IDS)
 def test_pagination_after_cursor_round_trip(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
-        page1 = _raw_list(client, resource_name, limit=2, order="desc")
+        page1 = raw_list(client, resource_name, limit=2, order="desc")
         after = (page1.get("list_metadata") or {}).get("after")
-        ids1 = _raw_ids(page1)
+        ids1 = raw_ids(page1)
         if after is None or len(ids1) < 2:
             pytest.skip(f"not enough {resource_name} rows to page")
-        page2 = _raw_list(client, resource_name, limit=2, order="desc", after=after)
-        ids2 = _raw_ids(page2)
+        page2 = raw_list(client, resource_name, limit=2, order="desc", after=after)
+        ids2 = raw_ids(page2)
         assert set(ids1).isdisjoint(set(ids2)), f"{resource_name} cursor returned overlapping rows"
 
 
@@ -138,8 +106,8 @@ def test_pagination_after_cursor_round_trip(sync_client: Retab, resource_name: s
 def test_pagination_order_asc_desc_differ(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
         try:
-            desc_ids = _raw_ids(_raw_list(client, resource_name, limit=5, order="desc"))
-            asc_ids = _raw_ids(_raw_list(client, resource_name, limit=5, order="asc"))
+            desc_ids = raw_ids(raw_list(client, resource_name, limit=5, order="desc"))
+            asc_ids = raw_ids(raw_list(client, resource_name, limit=5, order="asc"))
         except APIError as exc:
             # Some legacy staging rows can 5xx on a full-window ordered scan; that is a
             # backend/data issue, not an SDK contract issue. Skip rather than create data.
@@ -153,17 +121,17 @@ def test_pagination_order_asc_desc_differ(sync_client: Retab, resource_name: str
 @pytest.mark.parametrize(("resource_name", "_model", "_bogus"), _RESOURCES, ids=_RESOURCE_IDS)
 def test_before_cursor_round_trip(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
-        page1 = _raw_list(client, resource_name, limit=2, order="desc")
+        page1 = raw_list(client, resource_name, limit=2, order="desc")
         after = (page1.get("list_metadata") or {}).get("after")
         if after is None:
             pytest.skip(f"not enough {resource_name} rows to page with before/after")
-        page2 = _raw_list(client, resource_name, limit=2, order="desc", after=after)
+        page2 = raw_list(client, resource_name, limit=2, order="desc", after=after)
         before = (page2.get("list_metadata") or {}).get("before")
         if before is None:
             pytest.skip(f"{resource_name} did not return a before cursor")
-        back = _raw_list(client, resource_name, limit=2, order="desc", before=before)
+        back = raw_list(client, resource_name, limit=2, order="desc", before=before)
         # Paging back should return rows from the first page's neighborhood, not page2's rows.
-        assert set(_raw_ids(back)).isdisjoint(set(_raw_ids(page2)))
+        assert set(raw_ids(back)).isdisjoint(set(raw_ids(page2)))
 
 
 # --------------------------------------------------------------------------- #
@@ -175,14 +143,14 @@ def test_before_cursor_round_trip(sync_client: Retab, resource_name: str, _model
 def test_from_date_yyyy_mm_dd_accepted(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     """A well-formed YYYY-MM-DD from_date is accepted and returns a typed envelope."""
     with sync_client as client:
-        envelope = _raw_list(client, resource_name, limit=3, from_date="2020-01-01")
+        envelope = raw_list(client, resource_name, limit=3, from_date="2020-01-01")
         assert isinstance(envelope.get("data"), list)
 
 
 @pytest.mark.parametrize(("resource_name", "_model", "_bogus"), _RESOURCES, ids=_RESOURCE_IDS)
 def test_to_date_yyyy_mm_dd_accepted(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
-        envelope = _raw_list(client, resource_name, limit=3, to_date="2999-01-01")
+        envelope = raw_list(client, resource_name, limit=3, to_date="2999-01-01")
         assert isinstance(envelope.get("data"), list)
 
 
@@ -190,7 +158,7 @@ def test_to_date_yyyy_mm_dd_accepted(sync_client: Retab, resource_name: str, _mo
 def test_filename_filter_shape(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     """A filename filter returns a well-shaped (possibly empty) envelope."""
     with sync_client as client:
-        envelope = _raw_list(
+        envelope = raw_list(
             client,
             resource_name,
             limit=5,
@@ -202,9 +170,9 @@ def test_filename_filter_shape(sync_client: Retab, resource_name: str, _model: t
 def test_extractions_status_filter_shape(sync_client: Retab) -> None:
     """Extractions list accepts a status filter and returns matching-or-empty typed rows."""
     with sync_client as client:
-        envelope = _raw_list(client, "extractions", limit=5, status="completed")
+        envelope = raw_list(client, "extractions", limit=5, status="completed")
         assert isinstance(envelope.get("data"), list)
-        validated, _skipped = _validate_tolerant(envelope, Extraction)
+        validated, _skipped = validate_tolerant(envelope, Extraction)
         for item in validated:
             assert item.status is None or str(item.status) == "completed" or item.status == "completed"
 
@@ -218,8 +186,8 @@ def test_extractions_status_filter_shape(sync_client: Retab) -> None:
 def test_get_by_discovered_id(sync_client: Retab, resource_name: str, model: type, _bogus: str) -> None:
     with sync_client as client:
         # Discover an id whose row also validates, so the typed get() round-trips cleanly.
-        envelope = _raw_list(client, resource_name, limit=20)
-        validated, _skipped = _validate_tolerant(envelope, model)
+        envelope = raw_list(client, resource_name, limit=20)
+        validated, _skipped = validate_tolerant(envelope, model)
         if not validated:
             pytest.skip(f"no validatable {resource_name} rows to get-by-id")
         target_id = validated[0].id
@@ -248,7 +216,7 @@ def test_get_bogus_id_raises_not_found(sync_client: Retab, resource_name: str, _
 def test_bad_from_date_format_raises_400(sync_client: Retab, resource_name: str, _model: type, _bogus: str) -> None:
     with sync_client as client:
         with pytest.raises(APIError) as excinfo:
-            _raw_list(client, resource_name, limit=1, from_date="not-a-date")
+            raw_list(client, resource_name, limit=1, from_date="not-a-date")
         assert excinfo.value.status_code == 400
 
 
@@ -276,7 +244,7 @@ async def test_async_list_typed_page(async_client: AsyncRetab, resource_name: st
         prepared = resource.prepare_list(limit=3)
         envelope = await resource._client._prepared_request(prepared)
         assert isinstance(envelope.get("data"), list)
-        validated, _skipped = _validate_tolerant(envelope, model)
+        validated, _skipped = validate_tolerant(envelope, model)
         for item in validated:
             assert isinstance(item, model)
             assert item.id
