@@ -13,6 +13,7 @@ from retab.types.partitions import Partition
 from retab.types.splits import Split
 from retab.types.standards import PreparedRequest
 from mocks import mock_retab
+from samples import sample_document
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
@@ -48,13 +49,6 @@ def test_projects_and_evals_modules_are_removed(module_name: str) -> None:
         importlib.import_module(module_name)
 
 
-def _sample_document() -> MIMEData:
-    return MIMEData(
-        filename="invoice.txt",
-        url="data:text/plain;base64,aW52b2ljZQ==",
-    )
-
-
 def _request_params(request: PreparedRequest) -> dict[str, object]:
     assert request.params is not None
     return cast(dict[str, object], request.params)
@@ -78,7 +72,7 @@ def test_extractions_create_exposes_stream_argument() -> None:
     assert "stream" in ExtractionRequest.model_fields
 
     request = Extractions(object()).prepare_create(
-        document=_sample_document(),
+        document=sample_document(),
         json_schema={"type": "object"},
         stream=True,
     )
@@ -464,7 +458,7 @@ def test_splits_create_uses_new_resource_route() -> None:
     client, rec = mock_retab(fake_prepared_request)
     with client:
         result = client.splits.create(
-            document=_sample_document(),
+            document=sample_document(),
             model="retab-small",
             subdocuments=[
                 {
@@ -522,7 +516,7 @@ def test_partitions_create_uses_new_resource_route() -> None:
     client, rec = mock_retab(fake_prepared_request)
     with client:
         result = client.partitions.create(
-            document=_sample_document(),
+            document=sample_document(),
             key="invoice_number",
             instructions="Split the document into one chunk per invoice number.",
             model="retab-small",
@@ -578,7 +572,7 @@ def test_partitions_create_defaults_allow_overlap_to_true() -> None:
     client, rec = mock_retab(fake_prepared_request)
     with client:
         result = client.partitions.create(
-            document=_sample_document(),
+            document=sample_document(),
             key="invoice_number",
             instructions="Split the document into one chunk per invoice number.",
             model="retab-small",

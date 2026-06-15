@@ -1,19 +1,12 @@
 import pytest
 
-from retab.types.mime import MIMEData
 from retab.types.parses import Parse, ParseRequest
 
 from mocks import mock_retab
+from samples import sample_document
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
-
-
-def _sample_document() -> MIMEData:
-    return MIMEData(
-        filename="invoice.txt",
-        url="data:text/plain;base64,aW52b2ljZQ==",
-    )
 
 
 def test_parses_create_uses_new_resource_route() -> None:
@@ -40,7 +33,7 @@ def test_parses_create_uses_new_resource_route() -> None:
     )
     with client:
         result = client.parses.create(
-            document=_sample_document(),
+            document=sample_document(),
             model="retab-small",
         )
 
@@ -57,7 +50,7 @@ def test_parse_request_ignores_benchmark_model_policy_fields() -> None:
     # they must never surface on the validated public model.
     request = ParseRequest.model_validate(
         {
-            "document": _sample_document().model_dump(mode="json"),
+            "document": sample_document().model_dump(mode="json"),
             "candidate_scope": "exact_model",
             "capacity_retry_owner": "caller",
         }

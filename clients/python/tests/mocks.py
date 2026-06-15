@@ -33,6 +33,7 @@ Usage::
 from __future__ import annotations
 
 from typing import Any, Callable, Union
+from unittest.mock import AsyncMock, MagicMock
 
 from retab import AsyncRetab, Retab
 from retab.types.standards import PreparedRequest
@@ -94,3 +95,33 @@ def mock_async_retab(
 
     client._prepared_request = _async_transport  # type: ignore[method-assign]
     return client, recorder
+
+
+# --------------------------------------------------------------------------- #
+# Bare resource clients — a MagicMock with only the wire primitive stubbed,
+# for injecting straight into a resource (``Resource(client=...)``) so the
+# resource's own page helper runs against a canned envelope.
+# --------------------------------------------------------------------------- #
+
+
+def mock_sync_client(envelope: Any = None, *, prepared_request: Any = None) -> MagicMock:
+    """A MagicMock client whose sync ``_prepared_request`` returns ``envelope``.
+
+    Pass ``prepared_request`` to supply your own mock instead of a canned return.
+    """
+    client = MagicMock()
+    if prepared_request is not None:
+        client._prepared_request = prepared_request
+    else:
+        client._prepared_request.return_value = envelope
+    return client
+
+
+def mock_async_client(envelope: Any = None, *, prepared_request: AsyncMock | None = None) -> MagicMock:
+    """Async counterpart of :func:`mock_sync_client` (stubs an ``AsyncMock``)."""
+    client = MagicMock()
+    if prepared_request is not None:
+        client._prepared_request = prepared_request
+    else:
+        client._prepared_request = AsyncMock(return_value=envelope)
+    return client
