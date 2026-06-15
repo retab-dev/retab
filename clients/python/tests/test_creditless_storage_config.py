@@ -157,7 +157,9 @@ def test_secret_list_envelope(sync_client: Retab) -> None:
 
 def test_secret_create_appears_in_list(sync_client: Retab) -> None:
     with temporary_secret(sync_client) as secret:
-        names = {s.name for s in sync_client.secrets.list_secrets().secrets}
+        listed_secrets = sync_client.secrets.list_secrets().secrets
+        assert listed_secrets is not None
+        names = {s.name for s in listed_secrets}
         assert secret.name in names
 
 
