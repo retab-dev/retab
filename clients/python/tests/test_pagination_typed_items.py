@@ -18,7 +18,6 @@ These tests pin that contract across all seven resources, sync and async.
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -42,27 +41,11 @@ from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.parses import Parse
 from retab.types.partitions import Partition
 from retab.types.splits import Split
+from samples import list_envelope
+from mocks import mock_async_client, mock_sync_client
 
 # Whole module is creditless (live list/get/pagination only; no credits).
 pytestmark = pytest.mark.creditless
-
-
-def _mock_sync_client(envelope: dict[str, Any]) -> MagicMock:
-    """The page helper now lives on `SyncAPIResource`/`AsyncAPIResource`
-    (i.e. on the resource itself, not the client), so the test only has
-    to stub the wire primitive `_prepared_request`. The real
-    `request_page` running on the resource then walks the envelope and
-    validates items against the model.
-    """
-    client = MagicMock()
-    client._prepared_request.return_value = envelope
-    return client
-
-
-def _mock_async_client(envelope: dict[str, Any]) -> MagicMock:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(return_value=envelope)
-    return client
 
 
 # ---------------------------------------------------------------------------
@@ -153,10 +136,6 @@ def _edit_template_item() -> dict[str, Any]:
     }
 
 
-def _envelope(*items: dict[str, Any]) -> dict[str, Any]:
-    return {"data": list(items), "list_metadata": {"before": None, "after": None}}
-
-
 # ---------------------------------------------------------------------------
 # Parametrized cases — one row per (sync resource, expected model) pair
 # ---------------------------------------------------------------------------
@@ -196,7 +175,7 @@ def test_sync_list_returns_typed_items(
     expected_model: type,
 ) -> None:
     item = item_factory()
-    client = _mock_sync_client(_envelope(item, item))
+    client = mock_sync_client(list_envelope(item, item))
 
     result = resource_cls(client=client).list()
 
@@ -221,7 +200,7 @@ async def test_async_list_returns_typed_items(
     expected_model: type,
 ) -> None:
     item = item_factory()
-    client = _mock_async_client(_envelope(item, item))
+    client = mock_async_client(list_envelope(item, item))
 
     result = await resource_cls(client=client).list()
 

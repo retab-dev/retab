@@ -22,18 +22,15 @@ from retab.resources.workflows.blocks import (
 )
 from retab.resources.workflows.edges import WorkflowEdges
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
+from samples import list_envelope
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
 
 
-def _envelope(*items: dict) -> dict:
-    return {"data": list(items), "list_metadata": {"before": None, "after": None}}
-
-
-def test_workflow_blocks_list_returns_paginated_envelope() -> None:
+def test_workflow_blocks_list_returns_paginatedlist_envelope() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _envelope(
+    client._prepared_request.return_value = list_envelope(
         {
             "id": "extract-1",
             "workflow_id": "wf_aaa",
@@ -58,9 +55,9 @@ def test_workflow_blocks_list_returns_paginated_envelope() -> None:
     assert result.list_metadata.after is None
 
 
-def test_workflow_edges_list_returns_paginated_envelope() -> None:
+def test_workflow_edges_list_returns_paginatedlist_envelope() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _envelope(
+    client._prepared_request.return_value = list_envelope(
         {
             "id": "edge-1",
             "workflow_id": "wf_aaa",
@@ -86,9 +83,9 @@ def test_workflow_edges_list_returns_paginated_envelope() -> None:
     assert result.list_metadata.after is None
 
 
-def test_workflow_artifacts_list_returns_paginated_envelope() -> None:
+def test_workflow_artifacts_list_returns_paginatedlist_envelope() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _envelope(
+    client._prepared_request.return_value = list_envelope(
         {"operation": "extraction", "id": "ext_123"},
         {"operation": "parse", "id": "parse_456"},
     )
@@ -106,10 +103,10 @@ def test_workflow_artifacts_list_returns_paginated_envelope() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_workflow_blocks_list_returns_paginated_envelope() -> None:
+async def test_async_workflow_blocks_list_returns_paginatedlist_envelope() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(
-        return_value=_envelope(
+        return_value=list_envelope(
             {
                 "id": "extract-1",
                 "workflow_id": "wf_aaa",

@@ -53,6 +53,7 @@ import pytest
 from retab import AsyncRetab, Retab
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
+from samples import list_envelope
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
@@ -179,17 +180,6 @@ def _build_kwargs_for_required_params(method: Callable[..., Any]) -> dict[str, A
     return kwargs
 
 
-def _envelope() -> dict[str, Any]:
-    """Canonical wire envelope with ``after`` set so the closure must wire up.
-
-    A page coming back with ``after = None`` (i.e. "no more pages") is allowed
-    to skip the closure check — ``auto_paging_iter`` stops naturally. By
-    forcing ``after = "cursor-2"`` we make the closure presence the only thing
-    that determines whether a caller could continue paging.
-    """
-    return {"data": [], "list_metadata": {"before": None, "after": "cursor-2"}}
-
-
 def _discover_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
     """Walk ``RESOURCE_PATHS`` and collect ``(full_path, bound_method)`` for
     every ``.list`` method whose return annotation is a paginated envelope.
@@ -265,7 +255,7 @@ def test_sync_list_method_wires_closure(
     # the resource itself) calls ``self._client._prepared_request(request)``;
     # mocking that one method is enough to short-circuit the whole HTTP path.
     resource = list_method.__self__  # type: ignore[attr-defined]
-    resource._client._prepared_request = MagicMock(return_value=_envelope())
+    resource._client._prepared_request = MagicMock(return_value=list_envelope(after="cursor-2"))
 
     kwargs = _build_kwargs_for_required_params(list_method)
     page = list_method(**kwargs)
@@ -294,7 +284,7 @@ def test_async_list_method_wires_closure(
     breaks ``async for item in page:`` the same way.
     """
     resource = list_method.__self__  # type: ignore[attr-defined]
-    resource._client._prepared_request = AsyncMock(return_value=_envelope())
+    resource._client._prepared_request = AsyncMock(return_value=list_envelope(after="cursor-2"))
 
     kwargs = _build_kwargs_for_required_params(list_method)
     page = asyncio.run(list_method(**kwargs))

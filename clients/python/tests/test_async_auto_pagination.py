@@ -24,6 +24,7 @@ import pytest
 from retab.resources.extractions import AsyncExtractions
 from retab.types.extractions import Extraction
 from retab.types.pagination import AsyncPaginatedList
+from mocks import mock_async_client
 
 # Whole module is creditless (live list/get/pagination only; no credits).
 pytestmark = pytest.mark.creditless
@@ -46,23 +47,13 @@ def _page(items: list[dict[str, Any]], *, after: str | None) -> dict[str, Any]:
     return {"data": items, "list_metadata": {"before": None, "after": after}}
 
 
-def _mock_async_client(*, prepared_request: AsyncMock) -> MagicMock:
-    """Mock only the network primitive (``_prepared_request``) on the
-    client. The page helper now lives on ``AsyncAPIResource`` itself,
-    so the resource → page-helper → network chain stays end-to-end.
-    """
-    client = MagicMock()
-    client._prepared_request = prepared_request
-    return client
-
-
 @pytest.mark.asyncio
 async def test_async_list_returns_async_paginated_list() -> None:
     """The async resource must return an `AsyncPaginatedList`, distinct
     from the sync `PaginatedList`. This is the type-level signal that the
     fetch closure is awaitable.
     """
-    client = _mock_async_client(
+    client = mock_async_client(
         prepared_request=AsyncMock(
             return_value=_page([_extraction("ext_1")], after=None),
         ),
@@ -82,7 +73,7 @@ async def test_async_auto_pagination_walks_to_second_page() -> None:
     before the fix, the closure simply wasn't wired on the async side.
     """
     # Page 1 ends with after=ext_2; page 2 ends with after=None.
-    client = _mock_async_client(
+    client = mock_async_client(
         prepared_request=AsyncMock(
             side_effect=[
                 _page(
@@ -114,7 +105,7 @@ async def test_async_auto_paging_iter_explicit_helper() -> None:
     """`page.auto_paging_iter()` should be callable explicitly (mirrors
     the sync helper) and yield items the same way as `__aiter__`.
     """
-    client = _mock_async_client(
+    client = mock_async_client(
         prepared_request=AsyncMock(
             side_effect=[
                 _page([_extraction("ext_1")], after="ext_1"),
