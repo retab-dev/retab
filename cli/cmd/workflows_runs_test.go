@@ -2448,3 +2448,10 @@ func TestWorkflowsRunsWaitCancelledStatusExitsNonZero(t *testing.T) {
 		t.Fatalf("expected the cancelled run record on stdout, got:\n%s", stdout)
 	}
 }
+
+func TestWorkflowsRunsWaitHelpMentionsCancelledNonZeroExit(t *testing.T) {
+	help := workflowsRunsWaitCmd.Long
+	if !strings.Contains(help, "`error`/`cancelled` or the timeout") {
+		t.Fatalf("wait help should mention cancelled runs exit non-zero:\n%s", help)
+	}
+}
