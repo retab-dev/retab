@@ -1,8 +1,9 @@
 import pytest
 
-from retab import Retab
 from retab.types.mime import MIMEData
 from retab.types.parses import Parse, ParseRequest
+
+from mocks import mock_retab
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
@@ -15,12 +16,9 @@ def _sample_document() -> MIMEData:
     )
 
 
-def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
-    def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
-        return {
+def test_parses_create_uses_new_resource_route() -> None:
+    client, rec = mock_retab(
+        {
             "id": "parse_123",
             "file": {
                 "id": "file_123",
@@ -39,9 +37,8 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
                 "credits": 1.0,
             },
         }
-
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    )
+    with client:
         result = client.parses.create(
             document=_sample_document(),
             model="retab-small",
@@ -51,7 +48,7 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     assert result.id == "parse_123"
     assert result.output is not None
     assert result.output.text == "invoice"
-    assert getattr(captured["request"], "url") == "/v1/parses"
+    assert rec.request.url == "/v1/parses"
 
 
 def test_parse_request_ignores_benchmark_model_policy_fields() -> None:

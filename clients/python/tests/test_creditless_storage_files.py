@@ -168,17 +168,12 @@ def test_complete_upload_unknown_session_errors(sync_client: Retab) -> None:
         sync_client.files.complete_upload("file_never_reserved_" + uuid.uuid4().hex)
 
 
-def test_list_with_junk_api_key_401() -> None:
-    bad = Retab(api_key="sk_totally_invalid_key", base_url="https://staging-api.retab.com", max_retries=0)
-    try:
-        with pytest.raises(Exception) as exc_info:
-            bad.files.list(limit=1)
-        # Junk key must be rejected with an auth/permission failure, not data.
-        from retab.exceptions import AuthenticationError, PermissionDeniedError
+def test_list_with_junk_api_key_401(bad_key_client: Retab) -> None:
+    from retab.exceptions import AuthenticationError, PermissionDeniedError
 
-        assert isinstance(exc_info.value, (AuthenticationError, PermissionDeniedError))
-    finally:
-        bad.close()
+    # Junk key must be rejected with an auth/permission failure, not data.
+    with pytest.raises((AuthenticationError, PermissionDeniedError)):
+        bad_key_client.files.list(limit=1)
 
 
 # --------------------------------------------------------------------------- #

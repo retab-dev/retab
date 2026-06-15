@@ -131,15 +131,11 @@ async def test_async_tables_download_returns_bytes_without_text_decoding() -> No
 # --------------------------------------------------------------------------- #
 
 
-def test_junk_api_key_rejected_across_resources() -> None:
-    bad = Retab(api_key="sk_definitely_not_valid", base_url="https://staging-api.retab.com", max_retries=0)
-    try:
-        with pytest.raises((AuthenticationError, PermissionDeniedError)):
-            bad.workflows.list(limit=1)
-        with pytest.raises((AuthenticationError, PermissionDeniedError)):
-            bad.secrets.list_secrets()
-    finally:
-        bad.close()
+def test_junk_api_key_rejected_across_resources(bad_key_client: Retab) -> None:
+    with pytest.raises((AuthenticationError, PermissionDeniedError)):
+        bad_key_client.workflows.list(limit=1)
+    with pytest.raises((AuthenticationError, PermissionDeniedError)):
+        bad_key_client.secrets.list_secrets()
 
 
 def test_files_list_malformed_order_param(sync_client: Retab) -> None:

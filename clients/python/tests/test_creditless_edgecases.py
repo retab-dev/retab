@@ -48,6 +48,7 @@ from retab.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
+from factories import raw_list
 
 # Whole module is creditless (storage/config/list/get/error paths only).
 pytestmark = pytest.mark.creditless
@@ -73,17 +74,6 @@ _GET_404_CASES: list[tuple[str, str]] = [
     ("tables", "tbl_creditless_bogus_id"),
 ]
 _GET_404_IDS = [name for name, _ in _GET_404_CASES]
-
-
-def _raw_list(client: Retab, resource_name: str, **list_params: Any) -> dict[str, Any]:
-    """Return the raw list envelope, bypassing per-item model validation.
-
-    Lets pagination / filtering be asserted even when legacy staging rows would
-    fail typed validation.
-    """
-    resource = getattr(client, resource_name)
-    prepared = resource.prepare_list(**list_params)
-    return resource._client._prepared_request(prepared)
 
 
 def _list_metadata(envelope: dict[str, Any]) -> dict[str, Any]:
@@ -118,7 +108,7 @@ def test_invalid_order_value_raises_422(sync_client: Retab, resource_name: str) 
     """
     with sync_client as client:
         with pytest.raises(APIError) as excinfo:
-            _raw_list(client, resource_name, limit=2, order="sideways")
+            raw_list(client, resource_name, limit=2, order="sideways")
         assert excinfo.value.status_code == 422
         assert isinstance(excinfo.value, ValidationError)
 
@@ -128,7 +118,7 @@ def test_malformed_to_date_raises_400(sync_client: Retab, resource_name: str) ->
     """A malformed ``to_date`` is rejected with a typed 400 and a useful message."""
     with sync_client as client:
         with pytest.raises(APIError) as excinfo:
-            _raw_list(client, resource_name, limit=1, to_date="garbage")
+            raw_list(client, resource_name, limit=1, to_date="garbage")
         assert excinfo.value.status_code == 400
         assert excinfo.value.message  # non-empty, human-readable
 
@@ -136,7 +126,7 @@ def test_malformed_to_date_raises_400(sync_client: Retab, resource_name: str) ->
 def test_malformed_from_date_raises_400(sync_client: Retab) -> None:
     with sync_client as client:
         with pytest.raises(APIError) as excinfo:
-            _raw_list(client, "files", limit=1, from_date="2020-13-45")
+            raw_list(client, "files", limit=1, from_date="2020-13-45")
         assert excinfo.value.status_code == 400
 
 
@@ -154,7 +144,7 @@ def test_nonpositive_limit_is_coerced_not_rejected(sync_client: Retab, bad_limit
     rejecting it, this test flags the contract change.
     """
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=bad_limit))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=bad_limit))
         # Coerced to the default page (10) rather than 0 / a negative page.
         assert len(envelope["data"]) >= 0
 
@@ -163,7 +153,7 @@ def test_limit_far_above_max_is_tolerated(sync_client: Retab) -> None:
     """A limit far above any documented max returns a well-shaped page (capped to
     available rows, no 4xx)."""
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=100000))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=100000))
         # The page is bounded by the collection; the terminal page has after=None.
         assert isinstance(envelope["data"], list)
 
@@ -176,7 +166,7 @@ def test_garbage_cursor_is_tolerated(sync_client: Retab, cursor_field: str) -> N
     well-shaped first-page-style envelope rather than an error.
     """
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=2, **{cursor_field: "garbage_cursor_creditless"}))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=2, **{cursor_field: "garbage_cursor_creditless"}))
         assert len(envelope["data"]) <= 2
 
 
@@ -188,7 +178,7 @@ def test_garbage_cursor_is_tolerated(sync_client: Retab, cursor_field: str) -> N
 def test_to_date_before_from_date_returns_empty(sync_client: Retab) -> None:
     """An inverted window (``to_date`` < ``from_date``) yields an empty list, not an error."""
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=5, from_date="2999-01-01", to_date="2000-01-01"))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=5, from_date="2999-01-01", to_date="2000-01-01"))
         assert envelope["data"] == []
         meta = _list_metadata(envelope)
         assert meta.get("after") is None and meta.get("before") is None
@@ -196,14 +186,14 @@ def test_to_date_before_from_date_returns_empty(sync_client: Retab) -> None:
 
 def test_from_date_far_future_returns_empty(sync_client: Retab) -> None:
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=5, from_date="2999-01-01"))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=5, from_date="2999-01-01"))
         assert envelope["data"] == []
 
 
 def test_from_date_equals_to_date_accepted(sync_client: Retab) -> None:
     """``from_date == to_date`` is a valid (degenerate) window, accepted and well shaped."""
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=5, from_date="2024-01-01", to_date="2024-01-01"))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=5, from_date="2024-01-01", to_date="2024-01-01"))
         assert isinstance(envelope["data"], list)
 
 
@@ -215,19 +205,19 @@ def test_from_date_equals_to_date_accepted(sync_client: Retab) -> None:
 def test_unicode_filename_filter_accepted(sync_client: Retab) -> None:
     """A unicode filename filter is accepted and returns a well-shaped envelope."""
     with sync_client as client:
-        _assert_well_shaped(_raw_list(client, "files", limit=5, filename="façtüre_é_中文_📄.pdf"))
+        _assert_well_shaped(raw_list(client, "files", limit=5, filename="façtüre_é_中文_📄.pdf"))
 
 
 def test_very_long_filename_filter_accepted(sync_client: Retab) -> None:
     with sync_client as client:
-        _assert_well_shaped(_raw_list(client, "files", limit=5, filename="x" * 1000))
+        _assert_well_shaped(raw_list(client, "files", limit=5, filename="x" * 1000))
 
 
 def test_empty_result_filter_is_well_shaped(sync_client: Retab) -> None:
     """A filter that matches nothing returns a well-shaped empty envelope with
     null after/before cursors."""
     with sync_client as client:
-        envelope = _assert_well_shaped(_raw_list(client, "files", limit=5, filename="no_such_file_creditless_xyzzy.pdf"))
+        envelope = _assert_well_shaped(raw_list(client, "files", limit=5, filename="no_such_file_creditless_xyzzy.pdf"))
         assert envelope["data"] == []
         meta = _list_metadata(envelope)
         assert meta.get("after") is None
@@ -291,22 +281,18 @@ def test_distinct_requests_get_distinct_request_ids(sync_client: Retab) -> None:
 
 
 @pytest.mark.parametrize("resource_name", ["files", "extractions", "parses", "classifications", "splits", "tables"])
-def test_junk_key_raises_401_across_resources(api_keys: Any, resource_name: str) -> None:
+def test_junk_key_raises_401_across_resources(bad_key_client: Retab, resource_name: str) -> None:
     """A junk API key yields a typed 401 AuthenticationError on every list resource."""
-    client = Retab(api_key="sk_junk_invalid_creditless", base_url=api_keys.retab_api_base_url, max_retries=0)
-    try:
-        resource = getattr(client, resource_name)
-        with pytest.raises(AuthenticationError) as excinfo:
-            # tables.list takes no required args; the others accept limit.
-            if resource_name == "tables":
-                resource.list()
-            else:
-                resource.list(limit=1)
-        exc = excinfo.value
-        assert exc.status_code == 401
-        assert isinstance(exc, APIError)
-    finally:
-        client.close()
+    resource = getattr(bad_key_client, resource_name)
+    with pytest.raises(AuthenticationError) as excinfo:
+        # tables.list takes no required args; the others accept limit.
+        if resource_name == "tables":
+            resource.list()
+        else:
+            resource.list(limit=1)
+    exc = excinfo.value
+    assert exc.status_code == 401
+    assert isinstance(exc, APIError)
 
 
 def test_empty_string_key_is_rejected(api_keys: Any) -> None:
@@ -364,14 +350,10 @@ def test_4xx_carries_method_and_url(sync_client: Retab) -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_junk_key_raises_401(api_keys: Any) -> None:
-    client = AsyncRetab(api_key="sk_junk_invalid_creditless", base_url=api_keys.retab_api_base_url, max_retries=0)
-    try:
-        with pytest.raises(AuthenticationError) as excinfo:
-            await client.files.list(limit=1)
-        assert excinfo.value.status_code == 401
-    finally:
-        await client.close()
+async def test_async_junk_key_raises_401(bad_key_async_client: AsyncRetab) -> None:
+    with pytest.raises(AuthenticationError) as excinfo:
+        await bad_key_async_client.files.list(limit=1)
+    assert excinfo.value.status_code == 401
 
 
 @pytest.mark.asyncio

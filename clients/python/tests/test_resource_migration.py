@@ -12,6 +12,7 @@ from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
 from retab.types.splits import Split
 from retab.types.standards import PreparedRequest
+from mocks import mock_retab
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
@@ -54,27 +55,20 @@ def _sample_document() -> MIMEData:
     )
 
 
-def _captured_requests(captured: dict[str, object]) -> list[PreparedRequest]:
-    return cast(list[PreparedRequest], captured["requests"])
-
-
 def _request_params(request: PreparedRequest) -> dict[str, object]:
     assert request.params is not None
     return cast(dict[str, object], request.params)
 
 
-def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
+def test_extractions_delete_uses_new_resource_route() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
         return {}
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         client.extractions.delete("extr_123")
 
-    assert getattr(captured["request"], "url") == "/v1/extractions/extr_123"
+    assert getattr(rec.request, "url") == "/v1/extractions/extr_123"
 
 
 def test_extractions_create_exposes_stream_argument() -> None:
@@ -93,11 +87,8 @@ def test_extractions_create_exposes_stream_argument() -> None:
     assert request.data["stream"] is True
 
 
-def test_files_resource_exposes_generated_upload_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
+def test_files_resource_exposes_generated_upload_endpoints() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
         if getattr(request, "url") == "/v1/files/upload":
             return {
                 "fileId": "file_123",
@@ -112,8 +103,8 @@ def test_files_resource_exposes_generated_upload_endpoints(monkeypatch: pytest.M
             "url": "https://storage.retab.com/org_1/file_123.pdf",
         }
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         upload = client.files.create_upload(
             filename="invoice.pdf",
             content_type="application/pdf",
@@ -127,7 +118,7 @@ def test_files_resource_exposes_generated_upload_endpoints(monkeypatch: pytest.M
 
     assert upload.file_id == "file_123"
     assert completed.filename == "invoice.pdf"
-    requests = _captured_requests(captured)
+    requests = rec.requests
     assert [getattr(request, "url") for request in requests] == [
         "/v1/files/upload",
         "/v1/files/upload/file_123/complete",
@@ -143,12 +134,10 @@ def test_files_resource_exposes_generated_upload_endpoints(monkeypatch: pytest.M
     }
 
 
-def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
+def test_extractions_create_accepts_signed_bucket_url() -> None:
     signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
 
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
         return {
             "id": "extr_123",
             "file": {
@@ -165,8 +154,8 @@ def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.Monkey
             "metadata": {},
         }
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         result = client.extractions.create(
             document=signed_url,
             json_schema={"type": "object"},
@@ -174,8 +163,8 @@ def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.Monkey
         )
 
     assert result.id == "extr_123"
-    assert getattr(captured["request"], "url") == "/v1/extractions"
-    assert getattr(captured["request"], "data")["document"] == {
+    assert getattr(rec.request, "url") == "/v1/extractions"
+    assert getattr(rec.request, "data")["document"] == {
         "filename": "invoice.pdf",
         "url": signed_url,
     }
@@ -424,36 +413,30 @@ def test_resource_list_builders_include_filename_filters() -> None:
         assert _request_params(client.extractions.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
 
 
-def test_partitions_list_and_delete_use_resource_routes(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: list[object] = []
-
+def test_partitions_list_and_delete_use_resource_routes() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured.append(request)
         if getattr(request, "method") == "GET":
             return {"data": [], "list_metadata": {"before": None, "after": None}}
         return {}
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         page = client.partitions.list(limit=5, filename="invoice.pdf")
         client.partitions.delete("prtn_123")
 
     assert len(page.data) == 0
-    assert getattr(captured[0], "url") == "/v1/partitions"
-    assert getattr(captured[0], "params") == {
+    assert getattr(rec.requests[0], "url") == "/v1/partitions"
+    assert getattr(rec.requests[0], "params") == {
         "limit": 5,
         "order": "desc",
         "filename": "invoice.pdf",
     }
-    assert getattr(captured[1], "url") == "/v1/partitions/prtn_123"
-    assert getattr(captured[1], "method") == "DELETE"
+    assert getattr(rec.requests[1], "url") == "/v1/partitions/prtn_123"
+    assert getattr(rec.requests[1], "method") == "DELETE"
 
 
-def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
+def test_splits_create_uses_new_resource_route() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
         return {
             "id": "split_123",
             "file": {
@@ -478,8 +461,8 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
             },
         }
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         result = client.splits.create(
             document=_sample_document(),
             model="retab-small",
@@ -494,12 +477,12 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
 
     assert isinstance(result, Split)
     assert result.id == "split_123"
-    assert getattr(captured["request"], "url") == "/v1/splits"
+    assert getattr(rec.request, "url") == "/v1/splits"
     # Subdocument's canonical schema is {name, description, allow_multiple_instances}.
     # The route rejects legacy ``partition_key`` outright
     # (see backend/main_server/.../splits/unit_tests/test_splits_routes.py::
     # test_create_split_route_rejects_partition_key_subdocuments).
-    assert getattr(captured["request"], "data")["subdocuments"] == [
+    assert getattr(rec.request, "data")["subdocuments"] == [
         {
             "name": "invoice",
             "description": "Invoice documents",
@@ -508,11 +491,8 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     ]
 
 
-def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
+def test_partitions_create_uses_new_resource_route() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
         return {
             "id": "prtn_123",
             "file": {
@@ -539,8 +519,8 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
             },
         }
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         result = client.partitions.create(
             document=_sample_document(),
             key="invoice_number",
@@ -558,8 +538,8 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
     assert result.consensus.choices == []
     assert result.usage is not None
     assert result.usage.credits == 1.0
-    assert getattr(captured["request"], "url") == "/v1/partitions"
-    assert getattr(captured["request"], "data") == {
+    assert getattr(rec.request, "url") == "/v1/partitions"
+    assert getattr(rec.request, "data") == {
         "document": {
             "filename": "invoice.txt",
             "url": "data:text/plain;base64,aW52b2ljZQ==",
@@ -574,13 +554,8 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
     }
 
 
-def test_partitions_create_defaults_allow_overlap_to_true(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    captured: dict[str, object] = {}
-
+def test_partitions_create_defaults_allow_overlap_to_true() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
         return {
             "id": "prtn_123",
             "file": {
@@ -600,8 +575,8 @@ def test_partitions_create_defaults_allow_overlap_to_true(
             "usage": None,
         }
 
-    with Retab(api_key="test", base_url="http://example.com") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+    client, rec = mock_retab(fake_prepared_request)
+    with client:
         result = client.partitions.create(
             document=_sample_document(),
             key="invoice_number",
@@ -611,4 +586,4 @@ def test_partitions_create_defaults_allow_overlap_to_true(
         )
 
     assert result.allow_overlap is True
-    assert getattr(captured["request"], "data")["allow_overlap"] is True
+    assert getattr(rec.request, "data")["allow_overlap"] is True

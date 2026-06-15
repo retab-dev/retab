@@ -124,14 +124,10 @@ def test_templates_get_bogus_id_404(sync_client: Retab) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_edits_list_bad_api_key_401(api_keys) -> None:
-    client = Retab(api_key="sk_junk_invalid_creditless", base_url=api_keys.retab_api_base_url, max_retries=0)
-    try:
-        with pytest.raises(AuthenticationError) as excinfo:
-            client.edits.list(limit=1)
-        assert excinfo.value.status_code == 401
-    finally:
-        client.close()
+def test_edits_list_bad_api_key_401(bad_key_client: Retab) -> None:
+    with pytest.raises(AuthenticationError) as excinfo:
+        bad_key_client.edits.list(limit=1)
+    assert excinfo.value.status_code == 401
 
 
 @pytest.mark.asyncio
