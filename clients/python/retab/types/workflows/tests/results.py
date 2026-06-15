@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.artifacts import ErrorDetails
-from retab.types.workflows.tests import ManualWorkflowTestSource, RunStepWorkflowTestSource, WorkflowTestBlockTarget
+from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
 
 
 AssertionOutcome: TypeAlias = Literal["passed", "failed", "blocked"]
@@ -151,14 +151,15 @@ class WorkflowTestResult(BaseModel):
         description="Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.",
     )
     workflow_id: str
-    target: WorkflowTestBlockTarget
+    block_id: str
+    block_type: str
     execution_fingerprint: str | None = None
     handle_inputs_fingerprint: str | None = None
     workflow_draft_fingerprint: str | None = None
     block_config_fingerprint: str | None = None
     artifact: WorkflowTestArtifactRef | None = None
-    source: ManualWorkflowTestSource | RunStepWorkflowTestSource = Field(..., discriminator="type")
-    outputs: dict[str, Any] | None = None
+    handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
+    handle_outputs: dict[str, JsonHandleInput | FileHandleInput] | None = None
     routing_decisions: list[str] | None = None
     warnings: list[str] | None = Field(default=[])
     error: ErrorDetails | None = None

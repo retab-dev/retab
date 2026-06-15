@@ -2699,14 +2699,15 @@ type WorkflowTestResult struct {
 	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.
 	Verdict                  *WorkflowTestResultVerdict `json:"verdict,omitempty"`
 	WorkflowID               string                     `json:"workflow_id"`
-	Target                   WorkflowTestBlockTarget    `json:"target"`
+	BlockID                  string                     `json:"block_id"`
+	BlockType                string                     `json:"block_type"`
 	ExecutionFingerprint     *string                    `json:"execution_fingerprint,omitempty"`
 	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
 	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
 	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
 	Artifact                 *WorkflowTestArtifactRef   `json:"artifact,omitempty"`
-	Source                   WorkflowTestSource         `json:"source"`
-	Outputs                  map[string]interface{}     `json:"outputs,omitempty"`
+	HandleInputs             map[string]HandleInput     `json:"handle_inputs,omitempty"`
+	HandleOutputs            map[string]HandleInput     `json:"handle_outputs,omitempty"`
 	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
 	Warnings                 []string                   `json:"warnings,omitempty"`
 	Error                    *ErrorDetails              `json:"error,omitempty"`

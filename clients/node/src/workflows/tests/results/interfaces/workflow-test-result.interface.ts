@@ -44,14 +44,23 @@ import {
   serializeErrorWorkflowTestRun,
 } from './error-workflow-test-run.interface.js';
 import type {
-  ManualWorkflowTestSource,
-  ManualWorkflowTestSourceResponse,
-} from '../../../../workflows/tests/interfaces/manual-workflow-test-source.interface.js';
+  FileHandleInput,
+  FileHandleInputResponse,
+} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
 import {
-  ZManualWorkflowTestSource,
-  deserializeManualWorkflowTestSource,
-  serializeManualWorkflowTestSource,
-} from '../../../../workflows/tests/interfaces/manual-workflow-test-source.interface.js';
+  ZFileHandleInput,
+  deserializeFileHandleInput,
+  serializeFileHandleInput,
+} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
+import type {
+  JsonHandleInput,
+  JsonHandleInputResponse,
+} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
+import {
+  ZJsonHandleInput,
+  deserializeJsonHandleInput,
+  serializeJsonHandleInput,
+} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
 import type {
   PendingWorkflowTestRun,
   PendingWorkflowTestRunResponse,
@@ -79,15 +88,6 @@ import {
   deserializeRunningWorkflowTestRun,
   serializeRunningWorkflowTestRun,
 } from './running-workflow-test-run.interface.js';
-import type {
-  RunStepWorkflowTestSource,
-  RunStepWorkflowTestSourceResponse,
-} from '../../../../workflows/tests/interfaces/run-step-workflow-test-source.interface.js';
-import {
-  ZRunStepWorkflowTestSource,
-  deserializeRunStepWorkflowTestSource,
-  serializeRunStepWorkflowTestSource,
-} from '../../../../workflows/tests/interfaces/run-step-workflow-test-source.interface.js';
 import type { VerdictSummary, VerdictSummaryResponse } from './verdict-summary.interface.js';
 import {
   ZVerdictSummary,
@@ -103,15 +103,6 @@ import {
   deserializeWorkflowTestArtifactRef,
   serializeWorkflowTestArtifactRef,
 } from './workflow-test-artifact-ref.interface.js';
-import type {
-  WorkflowTestBlockTarget,
-  WorkflowTestBlockTargetResponse,
-} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
-import {
-  ZWorkflowTestBlockTarget,
-  deserializeWorkflowTestBlockTarget,
-  serializeWorkflowTestBlockTarget,
-} from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
 import type {
   WorkflowTestRunTiming,
   WorkflowTestRunTimingResponse,
@@ -143,14 +134,16 @@ export interface WorkflowTestResult {
   /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum. */
   verdict?: WorkflowTestResultVerdict | null;
   workflowId: string;
-  target: WorkflowTestBlockTarget;
+  blockId: string;
+  blockType: string;
   executionFingerprint?: string | null;
   handleInputsFingerprint?: string | null;
   workflowDraftFingerprint?: string | null;
   blockConfigFingerprint?: string | null;
   artifact?: WorkflowTestArtifactRef | null;
-  source: ManualWorkflowTestSource | RunStepWorkflowTestSource;
-  outputs?: Record<string, unknown> | null;
+  /** @default {} */
+  handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
+  handleOutputs?: Record<string, JsonHandleInput | FileHandleInput> | null;
   routingDecisions?: string[] | null;
   /** @default [] */
   warnings?: string[];
@@ -178,14 +171,15 @@ export interface WorkflowTestResultResponse {
   timing?: WorkflowTestRunTimingResponse | null;
   verdict?: WorkflowTestResultVerdict | null;
   workflow_id: string;
-  target: WorkflowTestBlockTargetResponse;
+  block_id: string;
+  block_type: string;
   execution_fingerprint?: string | null;
   handle_inputs_fingerprint?: string | null;
   workflow_draft_fingerprint?: string | null;
   block_config_fingerprint?: string | null;
   artifact?: WorkflowTestArtifactRefResponse | null;
-  source: ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse;
-  outputs?: Record<string, unknown> | null;
+  handle_inputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
+  handle_outputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse> | null;
   routing_decisions?: string[] | null;
   warnings?: string[];
   error?: ErrorDetailsResponse | null;
@@ -212,14 +206,18 @@ export const ZWorkflowTestResult = z.object({
   timing: ZWorkflowTestRunTiming.nullable().optional(),
   verdict: ZWorkflowTestResultVerdict.nullable().optional(),
   workflowId: z.string(),
-  target: ZWorkflowTestBlockTarget,
+  blockId: z.string(),
+  blockType: z.string(),
   executionFingerprint: z.string().nullable().optional(),
   handleInputsFingerprint: z.string().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
   blockConfigFingerprint: z.string().nullable().optional(),
   artifact: ZWorkflowTestArtifactRef.nullable().optional(),
-  source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
-  outputs: z.record(z.string(), z.unknown()).nullable().optional(),
+  handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
+  handleOutputs: z
+    .record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput]))
+    .nullable()
+    .optional(),
   routingDecisions: z.string().array().nullable().optional(),
   warnings: z.string().array().optional(),
   error: ZErrorDetails.nullable().optional(),
@@ -292,7 +290,8 @@ export function deserializeWorkflowTestResult(
           : deserializeWorkflowTestRunTiming(wire['timing']),
     verdict: wire['verdict'],
     workflowId: wire['workflow_id'],
-    target: deserializeWorkflowTestBlockTarget(wire['target']),
+    blockId: wire['block_id'],
+    blockType: wire['block_type'],
     executionFingerprint: wire['execution_fingerprint'],
     handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
@@ -303,19 +302,38 @@ export function deserializeWorkflowTestResult(
         : wire['artifact'] == null
           ? wire['artifact']
           : deserializeWorkflowTestArtifactRef(wire['artifact']),
-    source:
-      (
-        {
-          manual: () =>
-            deserializeManualWorkflowTestSource(wire['source'] as ManualWorkflowTestSourceResponse),
-          run_step: () =>
-            deserializeRunStepWorkflowTestSource(
-              wire['source'] as RunStepWorkflowTestSourceResponse
+    handleInputs:
+      wire['handle_inputs'] == null
+        ? (wire['handle_inputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(wire['handle_inputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => deserializeFileHandleInput(__v as FileHandleInputResponse),
+                  json: () => deserializeJsonHandleInput(__v as JsonHandleInputResponse),
+                } as Record<string, () => JsonHandleInput | FileHandleInput>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInput | FileHandleInput),
+            ])
+          ),
+    handleOutputs:
+      wire['handle_outputs'] == null
+        ? (wire['handle_outputs'] as undefined)
+        : wire['handle_outputs'] == null
+          ? wire['handle_outputs']
+          : Object.fromEntries(
+              Object.entries(wire['handle_outputs']).map(([__k, __v]) => [
+                __k,
+                (
+                  {
+                    file: () => deserializeFileHandleInput(__v as FileHandleInputResponse),
+                    json: () => deserializeJsonHandleInput(__v as JsonHandleInputResponse),
+                  } as Record<string, () => JsonHandleInput | FileHandleInput>
+                )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                  (__v as unknown as JsonHandleInput | FileHandleInput),
+              ])
             ),
-        } as Record<string, () => ManualWorkflowTestSource | RunStepWorkflowTestSource>
-      )[(wire['source'] as unknown as Record<string, string>)['type']]?.() ??
-      (wire['source'] as unknown as ManualWorkflowTestSource | RunStepWorkflowTestSource),
-    outputs: wire['outputs'],
     routingDecisions: wire['routing_decisions'],
     warnings: wire['warnings'],
     error:
@@ -396,7 +414,8 @@ export function serializeWorkflowTestResult(
           : serializeWorkflowTestRunTiming(domain['timing']),
     verdict: domain['verdict'],
     workflow_id: domain['workflowId'],
-    target: serializeWorkflowTestBlockTarget(domain['target']),
+    block_id: domain['blockId'],
+    block_type: domain['blockType'],
     execution_fingerprint: domain['executionFingerprint'],
     handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
@@ -407,22 +426,38 @@ export function serializeWorkflowTestResult(
         : domain['artifact'] == null
           ? domain['artifact']
           : serializeWorkflowTestArtifactRef(domain['artifact']),
-    source:
-      (
-        {
-          manual: () =>
-            serializeManualWorkflowTestSource(domain['source'] as ManualWorkflowTestSource),
-          run_step: () =>
-            serializeRunStepWorkflowTestSource(domain['source'] as RunStepWorkflowTestSource),
-        } as Record<
-          string,
-          () => ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse
-        >
-      )[(domain['source'] as unknown as Record<string, string>)['type']]?.() ??
-      (domain['source'] as unknown as
-        | ManualWorkflowTestSourceResponse
-        | RunStepWorkflowTestSourceResponse),
-    outputs: domain['outputs'],
+    handle_inputs:
+      domain['handleInputs'] == null
+        ? (domain['handleInputs'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+              __k,
+              (
+                {
+                  file: () => serializeFileHandleInput(__v as FileHandleInput),
+                  json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+                } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+              )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
+            ])
+          ),
+    handle_outputs:
+      domain['handleOutputs'] == null
+        ? (domain['handleOutputs'] as undefined)
+        : domain['handleOutputs'] == null
+          ? domain['handleOutputs']
+          : Object.fromEntries(
+              Object.entries(domain['handleOutputs']).map(([__k, __v]) => [
+                __k,
+                (
+                  {
+                    file: () => serializeFileHandleInput(__v as FileHandleInput),
+                    json: () => serializeJsonHandleInput(__v as JsonHandleInput),
+                  } as Record<string, () => JsonHandleInputResponse | FileHandleInputResponse>
+                )[(__v as unknown as Record<string, string>)['type']]?.() ??
+                  (__v as unknown as JsonHandleInputResponse | FileHandleInputResponse),
+              ])
+            ),
     routing_decisions: domain['routingDecisions'],
     warnings: domain['warnings'],
     error:
