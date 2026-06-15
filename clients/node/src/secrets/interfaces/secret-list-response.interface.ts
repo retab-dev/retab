@@ -5,22 +5,26 @@ import type { Secret, SecretWire } from './secret.interface.js';
 import { ZSecret, deserializeSecret, serializeSecret } from './secret.interface.js';
 
 export interface SecretListResponse {
-  secrets: Secret[];
+  /** @default [] */
+  secrets?: Secret[];
 }
 
 export interface SecretListResponseResponse {
-  secrets: SecretWire[];
+  secrets?: SecretWire[];
 }
 
 export const ZSecretListResponse = z.object({
-  secrets: ZSecret.array(),
+  secrets: ZSecret.array().optional(),
 }) as z.ZodType<SecretListResponse>;
 
 export function deserializeSecretListResponse(
   wire: SecretListResponseResponse
 ): SecretListResponse {
   return {
-    secrets: wire['secrets'].map((__i) => deserializeSecret(__i)),
+    secrets:
+      wire['secrets'] == null
+        ? (wire['secrets'] as undefined)
+        : wire['secrets'].map((__i) => deserializeSecret(__i)),
   };
 }
 
@@ -28,6 +32,9 @@ export function serializeSecretListResponse(
   domain: SecretListResponse
 ): SecretListResponseResponse {
   return {
-    secrets: domain['secrets'].map((__i) => serializeSecret(__i)),
+    secrets:
+      domain['secrets'] == null
+        ? (domain['secrets'] as undefined)
+        : domain['secrets'].map((__i) => serializeSecret(__i)),
   };
 }

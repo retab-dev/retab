@@ -9,22 +9,26 @@ import {
 } from './workflow-table.interface.js';
 
 export interface WorkflowTableListResponse {
-  tables: WorkflowTable[];
+  /** @default [] */
+  tables?: WorkflowTable[];
 }
 
 export interface WorkflowTableListResponseResponse {
-  tables: WorkflowTableWire[];
+  tables?: WorkflowTableWire[];
 }
 
 export const ZWorkflowTableListResponse = z.object({
-  tables: ZWorkflowTable.array(),
+  tables: ZWorkflowTable.array().optional(),
 }) as z.ZodType<WorkflowTableListResponse>;
 
 export function deserializeWorkflowTableListResponse(
   wire: WorkflowTableListResponseResponse
 ): WorkflowTableListResponse {
   return {
-    tables: wire['tables'].map((__i) => deserializeWorkflowTable(__i)),
+    tables:
+      wire['tables'] == null
+        ? (wire['tables'] as undefined)
+        : wire['tables'].map((__i) => deserializeWorkflowTable(__i)),
   };
 }
 
@@ -32,6 +36,9 @@ export function serializeWorkflowTableListResponse(
   domain: WorkflowTableListResponse
 ): WorkflowTableListResponseResponse {
   return {
-    tables: domain['tables'].map((__i) => serializeWorkflowTable(__i)),
+    tables:
+      domain['tables'] == null
+        ? (domain['tables'] as undefined)
+        : domain['tables'].map((__i) => serializeWorkflowTable(__i)),
   };
 }
