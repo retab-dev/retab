@@ -319,6 +319,62 @@ class Retab(BaseRetab):
         else:
             return wrapped_request()
 
+    def _request_bytes(
+        self,
+        method: str,
+        endpoint: str,
+        data: Any = None,
+        params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
+    ) -> bytes:
+        """Makes a synchronous HTTP request and returns the raw response body."""
+
+        def raw_request() -> bytes:
+            url = self._prepare_url(endpoint)
+            logger.debug("Bytes request: %s %s", method, url)
+
+            request_kwargs = {
+                "method": method,
+                "url": url,
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            request_kwargs["headers"]["Accept"] = "*/*"
+
+            if files or form_data:
+                if form_data:
+                    request_kwargs["data"] = form_data
+                if files:
+                    request_kwargs["files"] = files
+                headers = request_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                request_kwargs["headers"] = headers
+            elif data is not None:
+                request_kwargs["json"] = data
+
+            try:
+                response = self.client.request(**request_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            logger.debug("Response: %s (request_id=%s)", response.status_code, response.headers.get("x-request-id"))
+            self._validate_response(response)
+            return response.content
+
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        def wrapped_request() -> bytes:
+            return raw_request()
+
+        if raise_for_status:
+            return raw_request()
+        else:
+            return wrapped_request()
+
     def _request_stream(
         self,
         method: str,
@@ -420,6 +476,18 @@ class Retab(BaseRetab):
     # Simplified request methods using standard PreparedRequest object
     def _prepared_request(self, request: PreparedRequest) -> Any:
         return self._request(
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status,
+        )
+
+    def _prepared_request_bytes(self, request: PreparedRequest) -> bytes:
+        return self._request_bytes(
             method=request.method,
             endpoint=request.url,
             data=request.data,
@@ -587,6 +655,62 @@ class AsyncRetab(BaseRetab):
         else:
             return await wrapped_request()
 
+    async def _request_bytes(
+        self,
+        method: str,
+        endpoint: str,
+        data: Any = None,
+        params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
+    ) -> bytes:
+        """Makes an asynchronous HTTP request and returns the raw response body."""
+
+        async def raw_request() -> bytes:
+            url = self._prepare_url(endpoint)
+            logger.debug("Bytes request: %s %s", method, url)
+
+            request_kwargs = {
+                "method": method,
+                "url": url,
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            request_kwargs["headers"]["Accept"] = "*/*"
+
+            if files or form_data:
+                if form_data:
+                    request_kwargs["data"] = form_data
+                if files:
+                    request_kwargs["files"] = files
+                headers = request_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                request_kwargs["headers"] = headers
+            elif data is not None:
+                request_kwargs["json"] = data
+
+            try:
+                response = await self.client.request(**request_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            logger.debug("Response: %s (request_id=%s)", response.status_code, response.headers.get("x-request-id"))
+            self._validate_response(response)
+            return response.content
+
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        async def wrapped_request() -> bytes:
+            return await raw_request()
+
+        if raise_for_status:
+            return await raw_request()
+        else:
+            return await wrapped_request()
+
     async def _request_stream(
         self,
         method: str,
@@ -687,6 +811,18 @@ class AsyncRetab(BaseRetab):
 
     async def _prepared_request(self, request: PreparedRequest) -> Any:
         return await self._request(
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status,
+        )
+
+    async def _prepared_request_bytes(self, request: PreparedRequest) -> bytes:
+        return await self._request_bytes(
             method=request.method,
             endpoint=request.url,
             data=request.data,

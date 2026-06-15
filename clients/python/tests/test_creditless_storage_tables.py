@@ -13,21 +13,18 @@ import uuid
 
 import pytest
 
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
+
 from retab import Retab
 from retab.exceptions import APIError, AuthenticationError, NotFoundError, PermissionDeniedError
+from retab.resources.tables import AsyncTables, Tables
 from retab.types.tables import WorkflowTableListResponse, WorkflowTableResponse
 
+from factories import TINY_CSV, temporary_table
 
-def _discover_project_id(client: Retab) -> str | None:
-    page = client.workflows.list(limit=25)
-    for wf in page.data:
-        pid = getattr(wf, "project_id", None)
-        if pid:
-            return pid
-    return None
-
-
-_TINY_CSV = b"name,amount\nalice,10\nbob,20\n"
+# Project discovery, the tiny CSV, and table create/cleanup live in factories.py;
+# the ``project_id`` fixture (conftest) supplies an existing project or skips.
 
 
 # --------------------------------------------------------------------------- #
@@ -42,7 +39,7 @@ def test_tables_list_requires_project_id(sync_client: Retab) -> None:
     assert exc_info.value.status_code == 400
 
 
-def test_tables_list_empty_response_sdk_contract_bug(sync_client: Retab) -> None:
+def test_tables_list_empty_response_sdk_contract_bug(sync_client: Retab, project_id: str) -> None:
     """KNOWN SDK BUG (reported): staging returns ``{}`` for an empty table list,
     but ``WorkflowTableListResponse.tables`` is a *required* field with no
     default, so ``tables.list(project_id=...)`` raises a pydantic ValidationError
@@ -52,10 +49,6 @@ def test_tables_list_empty_response_sdk_contract_bug(sync_client: Retab) -> None
     the model, or the API always emitting the key) flips it to xpass.
     """
     from pydantic import ValidationError as PydanticValidationError
-
-    project_id = _discover_project_id(sync_client)
-    if not project_id:
-        pytest.skip("no existing project on staging")
 
     try:
         resp = sync_client.tables.list(project_id=project_id)
@@ -72,18 +65,10 @@ def test_tables_get_bogus_id_404(sync_client: Retab) -> None:
         sync_client.tables.get("tbl_does_not_exist_" + uuid.uuid4().hex)
 
 
-def test_tables_create_get_delete_roundtrip(sync_client: Retab) -> None:
-    project_id = _discover_project_id(sync_client)
-    if not project_id:
-        pytest.skip("no existing project on staging")
-
+def test_tables_create_get_delete_roundtrip(sync_client: Retab, project_id: str) -> None:
     name = f"creditless-table-{uuid.uuid4().hex[:8]}"
-    created = sync_client.tables.create(name=name, file=_TINY_CSV, project_id=project_id)
-    assert isinstance(created, WorkflowTableListResponse)
-    assert created.tables, "create should return at least the new table"
-    table = created.tables[0]
-    table_id = table.id
-    try:
+    with temporary_table(sync_client, project_id, name=name, file=TINY_CSV) as table:
+        table_id = table.id
         assert table.name == name
         assert table.row_count == 2
 
@@ -91,11 +76,53 @@ def test_tables_create_get_delete_roundtrip(sync_client: Retab) -> None:
         assert isinstance(got, WorkflowTableResponse)
         assert got.table.id == table_id
         assert got.table.row_count == 2
-    finally:
-        sync_client.tables.delete(table_id)
 
+    # The context manager deleted the table on exit -> now gone.
     with pytest.raises(NotFoundError):
         sync_client.tables.get(table_id)
+
+
+def test_tables_download_returns_bytes_without_text_decoding() -> None:
+    class FakeClient:
+        def __init__(self) -> None:
+            self.seen_url: str | None = None
+
+        def _prepared_request_bytes(self, request: object) -> bytes:
+            self.seen_url = getattr(request, "url")
+            return b"name,amount\nalice,10\n"
+
+        def _prepared_request(self, request: object) -> str:
+            raise AssertionError("download must use the raw bytes request path")
+
+    fake = FakeClient()
+    resource = Tables(client=fake)  # type: ignore[arg-type]
+
+    downloaded = resource.download("tbl_test")
+
+    assert downloaded == b"name,amount\nalice,10\n"
+    assert fake.seen_url == "/v1/tables/tbl_test/download"
+
+
+@pytest.mark.asyncio
+async def test_async_tables_download_returns_bytes_without_text_decoding() -> None:
+    class FakeClient:
+        def __init__(self) -> None:
+            self.seen_url: str | None = None
+
+        async def _prepared_request_bytes(self, request: object) -> bytes:
+            self.seen_url = getattr(request, "url")
+            return b"name,amount\nalice,10\n"
+
+        async def _prepared_request(self, request: object) -> str:
+            raise AssertionError("download must use the raw bytes request path")
+
+    fake = FakeClient()
+    resource = AsyncTables(client=fake)  # type: ignore[arg-type]
+
+    downloaded = await resource.download("tbl_test")
+
+    assert downloaded == b"name,amount\nalice,10\n"
+    assert fake.seen_url == "/v1/tables/tbl_test/download"
 
 
 # --------------------------------------------------------------------------- #

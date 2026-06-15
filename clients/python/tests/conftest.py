@@ -32,6 +32,23 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--env-file", type=str, help="path to the .env file to use")
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Register the credit-cost markers so the suite can be sliced safely.
+
+    ``creditless`` — exercises only storage / config CRUD / list / get / error
+    paths; never runs a model or document-processing primitive, so it is safe to
+    run against any environment (including production) without consuming credits.
+
+    ``billable`` — creates extractions/parses/splits/classifications/edits (the
+    ``created_*`` fixtures), which run real inference and DO consume credits.
+
+    Run the safe subset with ``pytest -m creditless`` (or exclude the costly one
+    with ``-m "not billable"``).
+    """
+    config.addinivalue_line("markers", "creditless: makes no billable/LLM/processing calls; safe to run anywhere")
+    config.addinivalue_line("markers", "billable: creates primitives that consume credits (runs real inference)")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def load_env(request: pytest.FixtureRequest) -> None:
     """Load the appropriate .env file based on the environment flag"""

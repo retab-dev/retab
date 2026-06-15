@@ -221,8 +221,12 @@ def temporary_secret(
     name: str | None = None,
     value: str = "initial-value",
 ) -> Iterator[Secret]:
-    """Create a secret and delete it on exit; yields the created ``Secret``."""
-    name = name or unique_name("creditless_secret")
+    """Create a secret and delete it on exit; yields the created ``Secret``.
+
+    Secret names are restricted to ``^[A-Za-z_][A-Za-z0-9_]*$`` (no dashes), so
+    the default name is underscore-only rather than the dashed ``unique_name``.
+    """
+    name = name or f"creditless_secret_{uuid.uuid4().hex[:12]}"
     created = client.secrets.create_secret(name=name, value=value)
     try:
         yield created.secret

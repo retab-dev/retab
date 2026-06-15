@@ -13,25 +13,24 @@ import uuid
 
 import pytest
 
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
+
 from retab import AsyncRetab, Retab
 from retab.exceptions import NotFoundError
 from retab.types.secrets import Secret, SecretListResponse, SecretResponse, SecretValueResponse
 from retab.types.workflows import Workflow
 
+from factories import (
+    create_workflow,
+    discover_project_id_async,
+    temporary_secret,
+    temporary_workflow,
+    temporary_workflow_async,
+)
 
-def _discover_project_id(client: Retab) -> str | None:
-    """Find an existing project id by listing existing workflows.
-
-    The Python SDK has no projects resource, but every workflow carries its
-    owning ``project_id``; reusing an existing project keeps this creditless and
-    avoids creating org-level data we cannot clean up.
-    """
-    page = client.workflows.list(limit=25)
-    for wf in page.data:
-        pid = getattr(wf, "project_id", None)
-        if pid:
-            return pid
-    return None
+# Project discovery + create/cleanup live in factories.py; the ``project_id``
+# fixture (conftest) yields an existing project and skips when none exists.
 
 
 # --------------------------------------------------------------------------- #
@@ -39,13 +38,9 @@ def _discover_project_id(client: Retab) -> str | None:
 # --------------------------------------------------------------------------- #
 
 
-def test_workflow_create_get_update_delete(sync_client: Retab) -> None:
-    project_id = _discover_project_id(sync_client)
-    if not project_id:
-        pytest.skip("no existing project on staging to attach a workflow to")
-
+def test_workflow_create_get_update_delete(sync_client: Retab, project_id: str) -> None:
     name = f"creditless-cfg-{uuid.uuid4().hex[:8]}"
-    wf = sync_client.workflows.create(project_id=project_id, name=name, description="creditless config test")
+    wf = create_workflow(sync_client, project_id, name=name, description="creditless config test")
     assert isinstance(wf, Workflow)
     created_id = wf.id
     try:
@@ -70,19 +65,10 @@ def test_workflow_create_get_update_delete(sync_client: Retab) -> None:
         sync_client.workflows.get(created_id)
 
 
-def test_workflow_create_appears_in_list_then_gone_after_delete(sync_client: Retab) -> None:
-    project_id = _discover_project_id(sync_client)
-    if not project_id:
-        pytest.skip("no existing project on staging to attach a workflow to")
-
-    name = f"creditless-list-{uuid.uuid4().hex[:8]}"
-    wf = sync_client.workflows.create(project_id=project_id, name=name)
-    created_id = wf.id
-    try:
+def test_workflow_create_appears_in_list_then_gone_after_delete(sync_client: Retab, project_id: str) -> None:
+    with temporary_workflow(sync_client, project_id, name=f"creditless-list-{uuid.uuid4().hex[:8]}") as wf:
         listed = sync_client.workflows.list(limit=50, project_id=project_id)
-        assert created_id in {w.id for w in listed.data}
-    finally:
-        sync_client.workflows.delete(created_id)
+        assert wf.id in {w.id for w in listed.data}
 
 
 def test_workflow_list_envelope_and_pagination(sync_client: Retab) -> None:
@@ -116,16 +102,12 @@ def test_workflow_create_missing_project_rejected(sync_client: Retab) -> None:
 
 @pytest.mark.asyncio
 async def test_async_workflow_create_delete(async_client: AsyncRetab) -> None:
-    page = await async_client.workflows.list(limit=25)
-    project_id = next((getattr(w, "project_id", None) for w in page.data if getattr(w, "project_id", None)), None)
+    project_id = await discover_project_id_async(async_client)
     if not project_id:
         pytest.skip("no existing project on staging to attach a workflow to")
-    wf = await async_client.workflows.create(project_id=project_id, name=f"creditless-async-{uuid.uuid4().hex[:8]}")
-    try:
+    async with temporary_workflow_async(async_client, project_id, name=f"creditless-async-{uuid.uuid4().hex[:8]}") as wf:
         got = await async_client.workflows.get(wf.id)
         assert got.id == wf.id
-    finally:
-        await async_client.workflows.delete(wf.id)
 
 
 # --------------------------------------------------------------------------- #
@@ -173,13 +155,9 @@ def test_secret_list_envelope(sync_client: Retab) -> None:
 
 
 def test_secret_create_appears_in_list(sync_client: Retab) -> None:
-    name = f"creditless_secret_{uuid.uuid4().hex[:10]}"
-    sync_client.secrets.create_secret(name=name, value="v")
-    try:
+    with temporary_secret(sync_client) as secret:
         names = {s.name for s in sync_client.secrets.list_secrets().secrets}
-        assert name in names
-    finally:
-        sync_client.secrets.delete_secret(name)
+        assert secret.name in names
 
 
 def test_secret_get_bogus_name_404(sync_client: Retab) -> None:

@@ -140,13 +140,12 @@ export class Tables {
 
   /** Table.Download */
   async download(tableId: string): Promise<Blob> {
-    const __wire = await this.client.request<Blob>({
+    return this.client.requestBlob({
       method: 'GET',
       path: `/v1/tables/${tableId}/download`,
       query: undefined,
       body: undefined,
     });
-    return __wire as unknown as Blob;
   }
 
   /** Table.Get Profile */

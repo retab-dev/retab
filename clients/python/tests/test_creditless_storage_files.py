@@ -19,48 +19,19 @@ import uuid
 import httpx
 import pytest
 
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
+
 from retab import AsyncRetab, Retab
 from retab.exceptions import NotFoundError, ValidationError
 from retab.types.files import CreateUploadResponse, File, FileLink
 from retab.types.mime import MIMEData
 
-# A tiny text payload — uploading it is pure storage, never processed.
-_TINY_CONTENT = b"creditless storage test fixture\n"
+from factories import TINY_FILE_CONTENT, unique_name, upload_file
 
-
-def _unique_filename(suffix: str = "txt") -> str:
-    return f"creditless_storage_{uuid.uuid4().hex[:12]}.{suffix}"
-
-
-def _upload_tiny_file(client: Retab, content: bytes = _TINY_CONTENT) -> File:
-    """Run the full create_upload -> PUT bytes -> complete_upload flow.
-
-    Returns the stored File metadata. This is storage-only and creditless.
-    """
-    filename = _unique_filename()
-    sha = hashlib.sha256(content).hexdigest()
-
-    session = client.files.create_upload(
-        filename=filename,
-        size_bytes=len(content),
-        content_type="text/plain",
-        sha256=sha,
-    )
-    assert isinstance(session, CreateUploadResponse)
-    assert session.file_id
-    assert session.upload_url
-
-    put = httpx.request(
-        session.upload_method or "PUT",
-        session.upload_url,
-        content=content,
-        headers=session.upload_headers or {},
-    )
-    assert put.status_code in (200, 201), f"signed PUT failed: {put.status_code} {put.text}"
-
-    mime = client.files.complete_upload(session.file_id, sha256=sha)
-    assert isinstance(mime, MIMEData)
-    return client.files.get(session.file_id)
+# The full create_upload -> signed PUT -> complete_upload flow, the tiny payload,
+# and filename generation all live in factories.py so every suite shares one
+# storage-upload path.
 
 
 # --------------------------------------------------------------------------- #
@@ -69,10 +40,10 @@ def _upload_tiny_file(client: Retab, content: bytes = _TINY_CONTENT) -> File:
 
 
 def test_create_upload_returns_signed_session(sync_client: Retab) -> None:
-    content = _TINY_CONTENT
+    content = TINY_FILE_CONTENT
     sha = hashlib.sha256(content).hexdigest()
     session = sync_client.files.create_upload(
-        filename=_unique_filename(),
+        filename=unique_name("creditless_storage", "txt"),
         size_bytes=len(content),
         content_type="text/plain",
         sha256=sha,
@@ -86,11 +57,11 @@ def test_create_upload_returns_signed_session(sync_client: Retab) -> None:
 
 
 def test_upload_complete_get_roundtrip_is_creditless(sync_client: Retab) -> None:
-    stored = _upload_tiny_file(sync_client)
+    stored = upload_file(sync_client)
     assert isinstance(stored, File)
     assert stored.object == "file"
     assert stored.id.startswith("file_")
-    assert stored.filename.startswith("creditless_storage_")
+    assert stored.filename.startswith("creditless_storage")
     assert stored.mime_type == "text/plain"
     assert stored.created_at is not None
     # Uploading bytes must NOT have triggered processing: a tiny text blob has
@@ -99,7 +70,7 @@ def test_upload_complete_get_roundtrip_is_creditless(sync_client: Retab) -> None
 
 
 def test_get_download_link_shape(sync_client: Retab) -> None:
-    stored = _upload_tiny_file(sync_client)
+    stored = upload_file(sync_client)
     link = sync_client.files.get_download_link(stored.id)
     assert isinstance(link, FileLink)
     assert link.download_url.startswith("http")
@@ -113,7 +84,7 @@ def test_downloaded_bytes_match_uploaded(sync_client: Retab) -> None:
     Downloading via a signed link is a plain GCS read, not a Retab compute path.
     """
     content = b"creditless-roundtrip-" + uuid.uuid4().hex.encode() + b"\n"
-    stored = _upload_tiny_file(sync_client, content=content)
+    stored = upload_file(sync_client, content=content)
     link = sync_client.files.get_download_link(stored.id)
     got = httpx.get(link.download_url)
     assert got.status_code == 200
@@ -136,8 +107,8 @@ def test_list_default_envelope(sync_client: Retab) -> None:
 
 def test_list_limit_one_then_paginate(sync_client: Retab) -> None:
     # Ensure there are at least two files to page over.
-    _upload_tiny_file(sync_client)
-    _upload_tiny_file(sync_client)
+    upload_file(sync_client)
+    upload_file(sync_client)
 
     first = sync_client.files.list(limit=1)
     assert len(first.data) <= 1
@@ -156,7 +127,7 @@ def test_list_order_desc_is_newest_first(sync_client: Retab) -> None:
 
 
 def test_list_filter_by_mime_type(sync_client: Retab) -> None:
-    _upload_tiny_file(sync_client)
+    upload_file(sync_client)
     page = sync_client.files.list(limit=10, mime_type="text/plain")
     # Every returned record must honor the filter.
     for f in page.data:
@@ -165,7 +136,7 @@ def test_list_filter_by_mime_type(sync_client: Retab) -> None:
 
 
 def test_list_filter_by_filename(sync_client: Retab) -> None:
-    stored = _upload_tiny_file(sync_client)
+    stored = upload_file(sync_client)
     page = sync_client.files.list(limit=25, filename=stored.filename)
     # The exact filename filter should surface our just-uploaded file.
     ids = {f.id for f in page.data}
@@ -225,7 +196,7 @@ async def test_async_list_files(async_client: AsyncRetab) -> None:
 @pytest.mark.asyncio
 async def test_async_upload_roundtrip(async_client: AsyncRetab) -> None:
     content = b"async-creditless-" + str(time.time()).encode() + b"\n"
-    filename = _unique_filename()
+    filename = unique_name("creditless_storage", "txt")
     sha = hashlib.sha256(content).hexdigest()
     session = await async_client.files.create_upload(filename=filename, size_bytes=len(content), content_type="text/plain", sha256=sha)
     async with httpx.AsyncClient() as h:

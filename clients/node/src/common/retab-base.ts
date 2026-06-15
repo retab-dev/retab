@@ -98,6 +98,41 @@ export class RetabBase {
     return (await res.text()) as unknown as T;
   }
 
+  async requestBlob(opts: RequestOptions): Promise<Blob> {
+    const url = new URL(this.baseUrl.replace(/\/$/, '') + opts.path);
+    if (opts.query) {
+      for (const [k, v] of Object.entries(opts.query)) {
+        if (v === undefined || v === null) continue;
+        if (Array.isArray(v)) {
+          for (const item of v) {
+            if (item === undefined || item === null) continue;
+            url.searchParams.append(k, serializeQueryValue(item));
+          }
+        } else {
+          url.searchParams.set(k, serializeQueryValue(v));
+        }
+      }
+    }
+    const headers: Record<string, string> = {
+      'Api-Key': this.apiKey,
+      Accept: '*/*',
+      ...opts.headers,
+    };
+    let bodyInit: string | FormData | undefined;
+    if (opts.body instanceof FormData) {
+      bodyInit = opts.body;
+    } else if (opts.body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      bodyInit = JSON.stringify(opts.body);
+    }
+    const res = await this.fetchImpl(url, { method: opts.method, headers, body: bodyInit });
+    if (!res.ok) {
+      const text = await res.text();
+      throw parseRetabError(res.status, text);
+    }
+    return await res.blob();
+  }
+
   /**
    * Fetch one page of a `{data, list_metadata}` list endpoint and return a
    * typed `PaginatedList<T>` with a wired-up next-page closure so callers

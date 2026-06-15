@@ -19,6 +19,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 from pydantic import ValidationError as PydanticValidationError
 
 from retab import AsyncRetab, Retab

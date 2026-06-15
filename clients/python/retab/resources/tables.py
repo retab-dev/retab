@@ -239,7 +239,7 @@ class Tables(SyncAPIResource, TablesMixin):
     def download(self, table_id: str, **extra_params: Any) -> bytes:
         """Table.Download"""
         prepared_request = self.prepare_download(table_id, **extra_params)
-        response = self._client._prepared_request(prepared_request)
+        response = self._client._prepared_request_bytes(prepared_request)
         return response
 
     def profile(self, table_id: str, select: list[str] | None = None, **extra_params: Any) -> WorkflowTableProfileResponse:
@@ -357,7 +357,7 @@ class AsyncTables(AsyncAPIResource, TablesMixin):
     async def download(self, table_id: str, **extra_params: Any) -> bytes:
         """Table.Download"""
         prepared_request = self.prepare_download(table_id, **extra_params)
-        response = await self._client._prepared_request(prepared_request)
+        response = await self._client._prepared_request_bytes(prepared_request)
         return response
 
     async def profile(self, table_id: str, select: list[str] | None = None, **extra_params: Any) -> WorkflowTableProfileResponse:
