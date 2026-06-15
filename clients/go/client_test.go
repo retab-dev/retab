@@ -462,15 +462,15 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 			})
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/experiments/results/expresult_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":            "expresult_123",
-				"run_id":        "exprun_123",
-				"experiment_id": "exp_123",
-				"document_id":   "expdoc_123",
-				"lifecycle":     map[string]any{"status": "completed"},
-				"timing":        map[string]any{},
-				"block_kind":    "extract",
-				"handle_inputs": map[string]any{},
-				"attempt":       1,
+				"id":                "expresult_123",
+				"experiment_run_id": "exprun_123",
+				"experiment_id":     "exp_123",
+				"document_id":       "expdoc_123",
+				"lifecycle":         map[string]any{"status": "completed"},
+				"timing":            map[string]any{},
+				"block_type":        "extract",
+				"handle_inputs":     map[string]any{},
+				"attempt":           1,
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/experiments/runs/exprun_123/cancel":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -513,7 +513,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if runResult.ID != "expresult_123" || runResult.RunID != "exprun_123" {
+	if runResult.ID != "expresult_123" || runResult.ExperimentRunID != "exprun_123" {
 		t.Fatalf("runResult = %#v", runResult)
 	}
 	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
