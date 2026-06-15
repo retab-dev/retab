@@ -1126,6 +1126,11 @@ func init() {
 	workflowsExperimentsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	workflowsExperimentsCreateCmd.Flags().Bool("run", false, "create a run immediately after the experiment is created")
 	workflowsExperimentsCreateCmd.Flags().Bool("wait", false, "with --run, block until the run reaches a terminal status, then print the final run")
+	// The --run --wait path reuses runs-create's wait machinery
+	// (experimentWaitDurations), so expose the same cadence/timeout knobs here
+	// — otherwise `create --run --wait --timeout-seconds N` errored "unknown flag".
+	workflowsExperimentsCreateCmd.Flags().Int("poll-interval-ms", 2000, "poll cadence in milliseconds while --run --wait is set")
+	workflowsExperimentsCreateCmd.Flags().Int("timeout-seconds", 600, "max seconds to wait while --run --wait is set")
 	addExperimentDocFlags(workflowsExperimentsCreateCmd)
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.

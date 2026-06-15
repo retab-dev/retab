@@ -73,6 +73,19 @@ func resolveWorkflowIDArgTo(cmd *cobra.Command, args []string, warnTo io.Writer)
 	return "", fmt.Errorf("workflow id required")
 }
 
+// testIDArg resolves the test id from a command that optionally accepts a
+// leading <workflow-id>. `tests get`/`update`/`delete` are test-scoped — the
+// test id (wfnodetest_…) is globally unique, so the workflow id is not
+// required — but users coming from `tests create <workflow-id>` and
+// `tests runs create <workflow-id> [test-id]` habitually prefix the workflow
+// id and used to hit a cryptic "accepts 1 arg(s), received 2". Accept it
+// forgivingly: with two args the first is the (ignored) workflow id and the
+// last is the test id; with one arg the lone arg is the test id. Pairs with
+// cobra.RangeArgs(1, 2).
+func testIDArg(args []string) string {
+	return strings.TrimSpace(args[len(args)-1])
+}
+
 var workflowsTestsCmd = &cobra.Command{
 	Use:   "tests",
 	Short: "Manage workflow tests",
@@ -489,13 +502,14 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 }
 
 var workflowsTestsGetCmd = &cobra.Command{
-	Use:   "get <test-id>",
+	Use:   "get [workflow-id] <test-id>",
 	Short: "Get a test",
 	Long: `Fetch a test's definition: target block, source input, assertion
-output, name, timestamps.`,
+output, name, timestamps. The test id is sufficient; a leading workflow id is
+accepted (and ignored) so the call mirrors 'tests create <workflow-id>'.`,
 	Example: `  # Inspect a test
   retab workflows tests get wfnodetest_jkl012`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -503,7 +517,7 @@ output, name, timestamps.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Get(ctx, args[0])
+		result, err := client.Workflows.Tests.Get(ctx, testIDArg(args))
 		if err != nil {
 			return err
 		}
@@ -636,7 +650,7 @@ func printWorkflowTestResultsListResult(cmd *cobra.Command, result *retab.Pagina
 }
 
 var workflowsTestsUpdateCmd = &cobra.Command{
-	Use:   "update <test-id>",
+	Use:   "update [workflow-id] <test-id>",
 	Short: "Update a test",
 	Long: `Re-pin a test's expected output or source input. Use this when
 a deliberate schema or prompt change makes the old assertion stale — the
@@ -656,8 +670,9 @@ flaky runs.`,
   # Rename a test
   retab workflows tests update wfnodetest_jkl012 \
     --name "Invoice 17 baseline (v2 schema)"`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		testID := testIDArg(args)
 		// The assertion and source may each be supplied as a JSON file OR via the
 		// same inline flag form `tests create` accepts (mutually exclusive per
 		// component, enforced by resolveTestComponent).
@@ -724,7 +739,7 @@ flaky runs.`,
 		case fileAssertionSet:
 			assertion = fileAssertion
 		case inlineAssertionSet:
-			existing, gerr := client.Workflows.Tests.Get(ctx, args[0])
+			existing, gerr := client.Workflows.Tests.Get(ctx, testID)
 			if gerr != nil {
 				return gerr
 			}
@@ -752,7 +767,7 @@ flaky runs.`,
 				return err
 			}
 		}
-		result, err := client.Workflows.Tests.Update(ctx, args[0], &req)
+		result, err := client.Workflows.Tests.Update(ctx, testID, &req)
 		if err != nil {
 			return err
 		}
@@ -761,21 +776,23 @@ flaky runs.`,
 }
 
 var workflowsTestsDeleteCmd = &cobra.Command{
-	Use:   "delete <test-id>",
+	Use:   "delete [workflow-id] <test-id>",
 	Short: "Delete a test",
 	Long: `Permanently delete a regression test and its run history.
 
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
-is not a terminal. Run history is removed alongside the test definition.`,
+is not a terminal. Run history is removed alongside the test definition. The
+test id is sufficient; a leading workflow id is accepted (and ignored).`,
 	Example: `  # Drop a stale test (interactive, asks to confirm)
   retab workflows tests delete wfnodetest_jkl012
 
   # Skip the prompt in scripts
   retab workflows tests delete wfnodetest_jkl012 --yes`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "test", args[0]); err != nil {
+		testID := testIDArg(args)
+		if err := confirmDestructive(cmd, "test", testID); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -784,10 +801,10 @@ is not a terminal. Run history is removed alongside the test definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Tests.Delete(ctx, args[0]); err != nil {
+		if err := client.Workflows.Tests.Delete(ctx, testID); err != nil {
 			return err
 		}
-		confirmDeleted("test", args[0])
+		confirmDeleted("test", testID)
 		return nil
 	}),
 }

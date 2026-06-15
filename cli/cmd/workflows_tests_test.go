@@ -49,6 +49,56 @@ func TestResolveWorkflowIDArg_PositionalAlone(t *testing.T) {
 	}
 }
 
+// tests get/update/delete are test-scoped (the wfnodetest_… id is globally
+// unique), but users coming from `tests create <workflow-id>` habitually prefix
+// the workflow id. The commands accept an optional leading workflow id and use
+// the LAST positional as the test id, so both `get <test-id>` and
+// `get <workflow-id> <test-id>` hit the same flat /v1/workflows/tests/<test-id>
+// route instead of erroring "accepts 1 arg(s), received 2".
+func TestWorkflowsTestsGetAcceptsOptionalWorkflowIDPrefix(t *testing.T) {
+	for _, args := range [][]string{
+		{"wfnodetest_123"},
+		{"wrk_456", "wfnodetest_123"},
+	} {
+		t.Run(strings.Join(args, "_"), func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			var requests []string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests = append(requests, r.Method+" "+r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{"id": "wfnodetest_123"})
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			if err := workflowsTestsGetCmd.Args(workflowsTestsGetCmd, args); err != nil {
+				t.Fatalf("arg validation rejected %v: %v", args, err)
+			}
+			_, _ = captureStd(t, func() {
+				if err := workflowsTestsGetCmd.RunE(workflowsTestsGetCmd, args); err != nil {
+					t.Fatalf("tests get %v: %v", args, err)
+				}
+			})
+			if strings.Join(requests, ",") != "GET /v1/workflows/tests/wfnodetest_123" {
+				t.Fatalf("args %v → requests %v, want the flat test-id route", args, requests)
+			}
+		})
+	}
+}
+
+// `experiments create --run --wait` reuses runs-create's wait machinery, so it
+// must expose the same cadence/timeout knobs — otherwise the flags error
+// "unknown flag" on the create command.
+func TestWorkflowsExperimentsCreateExposesWaitFlags(t *testing.T) {
+	for _, name := range []string{"poll-interval-ms", "timeout-seconds"} {
+		if workflowsExperimentsCreateCmd.Flags().Lookup(name) == nil {
+			t.Fatalf("experiments create is missing --%s (needed for --run --wait)", name)
+		}
+	}
+}
+
 func TestWorkflowsTestsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
