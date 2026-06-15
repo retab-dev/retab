@@ -19,8 +19,6 @@ import uuid
 import httpx
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import NotFoundError, ValidationError
@@ -28,6 +26,9 @@ from retab.types.files import CreateUploadResponse, File, FileLink
 from retab.types.mime import MIMEData
 
 from factories import TINY_FILE_CONTENT, unique_name, upload_file
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 # The full create_upload -> signed PUT -> complete_upload flow, the tiny payload,
 # and filename generation all live in factories.py so every suite shares one

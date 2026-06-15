@@ -20,8 +20,6 @@ from typing import Any
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 from pydantic import ValidationError as PydanticValidationError
 
 from retab import AsyncRetab, Retab
@@ -30,6 +28,9 @@ from retab.types.classifications import Classification
 from retab.types.extractions import Extraction
 from retab.types.parses import Parse
 from retab.types.splits import Split
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 
 # (resource attribute name, model class, bogus-id prefix) for every processing list resource.

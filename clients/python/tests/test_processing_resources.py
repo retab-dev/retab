@@ -10,8 +10,6 @@ from typing import NoReturn
 
 import pytest
 
-# Whole module is billable (creates primitives that consume credits).
-pytestmark = pytest.mark.billable
 from pydantic import ValidationError as PydanticValidationError
 
 from retab import AsyncRetab, Retab
@@ -23,6 +21,9 @@ from retab.types.mime import MIMEData
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.parses import Parse
 from retab.types.splits import Split, Subdocument
+
+# Whole module is billable (creates primitives that consume credits).
+pytestmark = pytest.mark.billable
 
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -18,13 +18,14 @@ import uuid
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import AuthenticationError, NotFoundError
 from retab.types.edits import Edit
 from retab.types.edits.templates import EditTemplate
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 
 # --------------------------------------------------------------------------- #

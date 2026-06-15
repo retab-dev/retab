@@ -39,8 +39,6 @@ from typing import Any
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import (
@@ -50,6 +48,9 @@ from retab.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 
 # (resource attribute name, bogus-id) for resources that expose list + get-by-id.

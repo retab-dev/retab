@@ -13,8 +13,6 @@ import uuid
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import Retab
 from retab.exceptions import APIError, AuthenticationError, NotFoundError, PermissionDeniedError
@@ -22,6 +20,9 @@ from retab.resources.tables import AsyncTables, Tables
 from retab.types.tables import WorkflowTableListResponse, WorkflowTableResponse
 
 from factories import TINY_CSV, temporary_table
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 # Project discovery, the tiny CSV, and table create/cleanup live in factories.py;
 # the ``project_id`` fixture (conftest) supplies an existing project or skips.

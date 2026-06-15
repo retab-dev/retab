@@ -13,8 +13,6 @@ import uuid
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import NotFoundError
@@ -28,6 +26,9 @@ from factories import (
     temporary_workflow,
     temporary_workflow_async,
 )
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 # Project discovery + create/cleanup live in factories.py; the ``project_id``
 # fixture (conftest) yields an existing project and skips when none exists.

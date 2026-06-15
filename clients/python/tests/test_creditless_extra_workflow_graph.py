@@ -20,8 +20,6 @@ import uuid
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import APIError, NotFoundError
@@ -29,6 +27,9 @@ from retab.types.workflows.blocks import WorkflowBlock
 from retab.types.workflows.edges import WorkflowEdgeDoc
 from retab.types.workflows.experiments import WorkflowExperiment
 from retab.types.workflows.tests import WorkflowTest
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 
 def _discover_workflow_id(client: Retab) -> str | None:

@@ -19,8 +19,6 @@ import uuid
 
 import pytest
 
-# Whole module is creditless (storage/config/list/get/error paths only).
-pytestmark = pytest.mark.creditless
 
 from retab import AsyncRetab, Retab
 from retab.exceptions import APIError, AuthenticationError, NotFoundError
@@ -29,6 +27,9 @@ from retab.types.workflows.artifacts import WorkflowArtifact
 from retab.types.workflows.reviews import Review
 from retab.types.workflows.runs import WorkflowRun
 from retab.types.workflows.steps import WorkflowRunStep
+
+# Whole module is creditless (storage/config/list/get/error paths only).
+pytestmark = pytest.mark.creditless
 
 
 # --------------------------------------------------------------------------- #
