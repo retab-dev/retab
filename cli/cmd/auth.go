@@ -24,15 +24,18 @@ var authCmd = &cobra.Command{
 	Short: "Manage Retab authentication",
 	Long: `Manage credentials the CLI uses to talk to the Retab API.
 
-Covers interactive OAuth login, headless API-key login, inspecting the
+Covers interactive OAuth login, headless API-key/access-token login, inspecting the
 currently active credential, and clearing local state. Credentials are
-resolved with --api-key flag > RETAB_API_KEY env > ~/.retab/config.json
+resolved with command/env API keys first, then ~/.retab/config.json
 (mode 0600, parent dir 0700).`,
 	Example: `  # Interactive login (browser OAuth by default)
   retab auth login
 
-  # Headless / CI login with a long-lived key
+  # Headless / CI login with an organization API key
   retab auth login --api-key=sk_live_abc123
+
+  # Headless / agent login with a scoped access token
+  retab auth login --access-token="$RETAB_ACCESS_TOKEN"
 
   # Show which credential the CLI would use right now
   retab auth status
@@ -51,9 +54,10 @@ resulting tokens are saved to ~/.retab/config.json (mode 0600) and
 refreshed transparently when needed.
 
 For headless setups (CI, servers, scripts) skip the browser flow and
-store a long-lived API key instead with --api-key. Re-running login is
+store a long-lived organization API key instead with --api-key, or a scoped
+access token with --access-token. Re-running login is
 always safe: it overwrites the saved credential in place, which is also
-how key rotation works. RETAB_API_KEY remains honored as a process-wide
+how credential rotation works. RETAB_API_KEY remains honored as a process-wide
 override and takes precedence over anything written to disk.`,
 	Example: `  # Interactive OAuth flow (opens a browser)
   retab auth login
@@ -64,12 +68,23 @@ override and takes precedence over anything written to disk.`,
   # Headless without echoing the key to history
   retab auth login --api-key="$RETAB_API_KEY"
 
+  # Headless / agent: store a scoped access token
+  retab auth login --access-token="$RETAB_ACCESS_TOKEN"
+
   # Prompt for an API key without opening a browser
   retab auth login --browser=false`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		apiKey, _ := cmd.Flags().GetString("api-key")
+		accessToken, _ := cmd.Flags().GetString("access-token")
 		baseURL, _ := cmd.Flags().GetString("base-url")
 		useBrowser, _ := cmd.Flags().GetBool("browser")
+
+		if cmd.Flags().Changed("api-key") && cmd.Flags().Changed("access-token") {
+			return fmt.Errorf("--api-key cannot be combined with --access-token")
+		}
+		if cmd.Flags().Changed("access-token") {
+			return runAccessTokenLogin(accessToken, baseURL)
+		}
 
 		// Explicit API-key path. Direct, no browser. Backward compatible
 		// with the original login UX.
@@ -108,9 +123,11 @@ override and takes precedence over anything written to disk.`,
 
 		cfg, _ := loadConfig()
 		cfg.OAuth = tokens
-		// Switching to OAuth wipes the legacy API key; users who want
-		// both can re-run `retab auth login --api-key …` afterward.
+		// Switching to OAuth wipes the static credentials; users who want a
+		// different mode can re-run `retab auth login --api-key ...` or
+		// `retab auth login --access-token ...` afterward.
 		cfg.APIKey = ""
+		cfg.AccessToken = ""
 		cfg.BaseURL = stripLegacyV1Suffix(loginBaseURL)
 		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, cfg.EnvironmentID)
 		if environment != nil {
@@ -208,8 +225,8 @@ func chooseLoginEnvironment(currentEnvironmentID string, list *cliPaginatedList[
 	return nil
 }
 
-// runAPIKeyLogin persists an API key — the legacy auth path. Kept first-
-// class so anyone scripting `retab auth login --api-key …` keeps working.
+// runAPIKeyLogin persists an organization API key. Access tokens must use
+// runAccessTokenLogin so they are stored separately and sent as Bearer.
 func runAPIKeyLogin(apiKey, baseURL string) error {
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
@@ -224,10 +241,14 @@ func runAPIKeyLogin(apiKey, baseURL string) error {
 	if apiKey == "" {
 		return fmt.Errorf("api key is required")
 	}
+	if strings.HasPrefix(apiKey, "acctk_") {
+		return fmt.Errorf("access tokens must be passed with --access-token, not --api-key")
+	}
 	cfg, _ := loadConfig()
 	cfg.APIKey = apiKey
-	// Wipe stale OAuth state — explicit key login is the user's intent.
+	// Wipe stale bearer state — explicit API-key login is the user's intent.
 	cfg.OAuth = nil
+	cfg.AccessToken = ""
 	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err
@@ -237,12 +258,33 @@ func runAPIKeyLogin(apiKey, baseURL string) error {
 	return nil
 }
 
+func runAccessTokenLogin(accessToken, baseURL string) error {
+	accessToken = strings.TrimSpace(accessToken)
+	if accessToken == "" {
+		return fmt.Errorf("access token is required")
+	}
+	if !strings.HasPrefix(accessToken, "acctk_") {
+		return fmt.Errorf("access token must start with acctk_")
+	}
+	cfg, _ := loadConfig()
+	cfg.AccessToken = accessToken
+	cfg.APIKey = ""
+	cfg.OAuth = nil
+	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
+	if err := saveConfig(cfg); err != nil {
+		return err
+	}
+	path, _ := configPath()
+	fmt.Fprintf(os.Stderr, "Saved access token to %s\n", path)
+	return nil
+}
+
 var authLogoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Remove ~/.retab/config.json",
 	Long: `Delete the local credential file at ~/.retab/config.json.
 
-Only clears LOCAL state — the API key (or OAuth refresh token) is not
+Only clears LOCAL state — the API key, access token, or OAuth refresh token is not
 revoked on the server. To revoke a key for real, rotate it in the Retab
 dashboard. After logout, commands that need authentication will fail
 until ` + "`retab auth login`" + ` runs again or RETAB_API_KEY is set in
@@ -297,6 +339,8 @@ compact human block for interactive terminals).`,
 			source = "--api-key flag"
 		case envKey != "":
 			source = "RETAB_API_KEY env"
+		case cfg.AccessToken != "":
+			source = "~/.retab/config.json (access_token)"
 		case cfg.OAuth != nil && cfg.OAuth.AccessToken != "":
 			source = "~/.retab/config.json (oauth)"
 		case cfg.APIKey != "":
@@ -322,6 +366,9 @@ compact human block for interactive terminals).`,
 		}
 		if source == "~/.retab/config.json (oauth)" {
 			addSelectedEnvironmentStatus(cmd, cfg, baseURL, out)
+		}
+		if source == "~/.retab/config.json (access_token)" {
+			out["access_token_preview"] = redactKey(cfg.AccessToken)
 		}
 		if flagKey != "" || envKey != "" || cfg.APIKey != "" {
 			key := flagKey
@@ -604,10 +651,16 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	source, _ := out["source"].(string)
 	authenticated, _ := out["authenticated"].(bool)
 
-	// First line — API keys have a redacted preview; OAuth credentials do
-	// not, so fall back to the explicit authenticated/source fields.
+	accessTokenPreview, _ := out["access_token_preview"].(string)
+
+	// First line — static credentials have a redacted preview; OAuth credentials
+	// do not, so fall back to the explicit authenticated/source fields.
 	if preview != "" {
 		if _, err := fmt.Fprintf(w, "Logged in as %s%s%s\n", s.brand, preview, s.reset); err != nil {
+			return err
+		}
+	} else if accessTokenPreview != "" {
+		if _, err := fmt.Fprintf(w, "Logged in with access token %s%s%s\n", s.brand, accessTokenPreview, s.reset); err != nil {
 			return err
 		}
 	} else if authenticated && source != "" {
@@ -727,10 +780,10 @@ func authStatusEnvironmentDisplay(out map[string]any) string {
 //
 // Row order is fixed (not map iteration order) so the output is
 // deterministic across runs and easy to scan visually. Optional rows
-// (BASE_URL, WORKOS_API_BASE_URL, ORGANIZATION_ID, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
-// ORGANIZATION, ENVIRONMENT, ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID,
-// ERROR, HINT) are only emitted when present in the payload — rendering an
-// empty value would just be noise.
+// (BASE_URL, WORKOS_API_BASE_URL, ORGANIZATION_ID, EXPIRES_AT, HAS_REFRESH,
+// API_KEY_PREVIEW, ACCESS_TOKEN_PREVIEW, ORGANIZATION, ENVIRONMENT,
+// ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID, ERROR, HINT) are only emitted
+// when present in the payload — rendering an empty value would just be noise.
 func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
@@ -760,6 +813,11 @@ func writeAuthStatusTable(w io.Writer, out map[string]any) error {
 	if v, ok := out["api_key_preview"]; ok {
 		if s, _ := v.(string); s != "" {
 			row("API_KEY_PREVIEW", s)
+		}
+	}
+	if v, ok := out["access_token_preview"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("ACCESS_TOKEN_PREVIEW", s)
 		}
 	}
 	if oauthAny, ok := out["oauth"]; ok {
@@ -906,6 +964,7 @@ func promptSecret(prompt string) (string, error) {
 
 func init() {
 	authLoginCmd.Flags().String("api-key", "", "skip the browser flow and store this API key (also reads RETAB_API_KEY)")
+	authLoginCmd.Flags().String("access-token", "", "skip the browser flow and store this scoped access token")
 	authLoginCmd.Flags().String("base-url", "", "override the default API base URL")
 	authLoginCmd.Flags().Bool("browser", true, "open a browser for OAuth login (set --browser=false to prompt for an API key)")
 

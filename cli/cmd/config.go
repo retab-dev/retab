@@ -23,9 +23,14 @@ type retabConfig struct {
 	// stamp configVersion so future migrations can branch on it.
 	Version int `json:"version,omitempty"`
 
-	// APIKey is the legacy auth path. Still fully supported — treated as
-	// a production-scoped credential during the environments rollout.
+	// APIKey is the organization API-key auth path. Still fully supported —
+	// treated as a production-scoped credential during the environments rollout.
 	APIKey string `json:"api_key,omitempty"`
+
+	// AccessToken is a scoped user access token created for automation/agents.
+	// It authenticates with Authorization: Bearer and is intentionally stored
+	// separately from API keys so the CLI never sends it as an Api-Key header.
+	AccessToken string `json:"access_token,omitempty"`
 
 	// BaseURL overrides the default API endpoint. This selects a Retab
 	// *deployment* (local dev, staging API host); it is NOT the customer

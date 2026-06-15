@@ -272,7 +272,35 @@ func TestResolveCredential_DefaultEnvironment(t *testing.T) {
 	}
 }
 
-// 6. stored OAuth session, when no API-key profile is selected.
+func TestResolveCredential_StoredAccessToken(t *testing.T) {
+	isolateHome(t)
+	if err := saveConfig(retabConfig{
+		AccessToken: "acctk_production_stored",
+		OAuth:       &oauthTokens{AccessToken: "oauth-access-token"},
+		APIKey:      "sk_retab_legacy",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newTestRootCmd()
+	cred, err := resolveCredential(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cred.Source != sourceAccessToken {
+		t.Errorf("source = %q, want %q", cred.Source, sourceAccessToken)
+	}
+	if cred.AccessToken != "acctk_production_stored" {
+		t.Errorf("AccessToken = %q, want acctk_production_stored", cred.AccessToken)
+	}
+	if cred.APIKey != "" || cred.OAuth != nil {
+		t.Errorf("stored access token must not resolve APIKey/OAuth: %+v", cred)
+	}
+	if preview := cred.KeyPreview(); preview == "" || strings.Contains(preview, cred.AccessToken) {
+		t.Errorf("access token preview = %q, want redacted non-empty preview", preview)
+	}
+}
+
+// 7. stored OAuth session, when no API-key profile or access token is selected.
 func TestResolveCredential_OAuth(t *testing.T) {
 	isolateHome(t)
 	if err := saveConfig(retabConfig{

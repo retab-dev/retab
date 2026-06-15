@@ -543,6 +543,86 @@ func TestAPIKeyLoginDefaultsToProductionInsteadOfStoredLocalhost(t *testing.T) {
 	}
 }
 
+func TestAccessTokenLoginStoresBearerCredential(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := saveConfig(retabConfig{APIKey: "sk_live_old", OAuth: &oauthTokens{AccessToken: "oauth_old"}}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	if err := runAccessTokenLogin("acctk_production_secret", ""); err != nil {
+		t.Fatalf("runAccessTokenLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.AccessToken != "acctk_production_secret" {
+		t.Fatalf("AccessToken = %q, want acctk_production_secret", cfg.AccessToken)
+	}
+	if cfg.APIKey != "" {
+		t.Fatalf("APIKey should be cleared, got %q", cfg.APIKey)
+	}
+	if cfg.OAuth != nil {
+		t.Fatalf("OAuth should be cleared, got %+v", cfg.OAuth)
+	}
+}
+
+func TestAPIKeyLoginRejectsAccessTokenPrefix(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+
+	err := runAPIKeyLogin("acctk_production_secret", "")
+	if err == nil || !strings.Contains(err.Error(), "--access-token") {
+		t.Fatalf("expected --access-token guidance, got %v", err)
+	}
+}
+
+func TestProbeAuthStatus_UsesBearerForStoredAccessToken(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	var seenAuth string
+	var seenAPIKey string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenAuth = r.Header.Get("Authorization")
+		seenAPIKey = r.Header.Get("Api-Key")
+		if r.URL.Path != "/v1/auth/status" {
+			t.Errorf("probe path = %q, want /v1/auth/status", r.URL.Path)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"authenticated": true}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL:     server.URL,
+		AccessToken: "acctk_production_probe",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	cmd.PersistentFlags().Bool("debug", false, "")
+
+	if err := probeAuthStatus(cmd); err != nil {
+		t.Fatalf("probeAuthStatus: %v", err)
+	}
+	if seenAuth != "Bearer acctk_production_probe" {
+		t.Fatalf("Authorization header = %q, want Bearer acctk_production_probe", seenAuth)
+	}
+	if seenAPIKey != "" {
+		t.Fatalf("Api-Key header should be empty for access-token probe, got %q", seenAPIKey)
+	}
+}
+
 func TestResolvedAuthStatusBaseURLDefaultsToProduction(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")

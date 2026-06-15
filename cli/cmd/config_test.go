@@ -113,6 +113,7 @@ func TestSaveConfig_PreservesAllFields(t *testing.T) {
 	isolateHome(t)
 	in := retabConfig{
 		APIKey:             "sk_retab_legacy",
+		AccessToken:        "acctk_production_saved",
 		BaseURL:            "https://api.test/v1",
 		OAuth:              &oauthTokens{AccessToken: "tok", WorkosAPIBaseURL: "https://api.workos.com"},
 		DefaultEnvironment: "test",
@@ -132,6 +133,9 @@ func TestSaveConfig_PreservesAllFields(t *testing.T) {
 	}
 	if got.APIKey != "sk_retab_legacy" {
 		t.Errorf("APIKey = %q", got.APIKey)
+	}
+	if got.AccessToken != "acctk_production_saved" {
+		t.Errorf("AccessToken = %q", got.AccessToken)
 	}
 	if got.OAuth == nil || got.OAuth.AccessToken != "tok" {
 		t.Errorf("OAuth not preserved: %+v", got.OAuth)

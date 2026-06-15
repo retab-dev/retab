@@ -242,9 +242,10 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	//   1. `--api-key` flag                       -> Api-Key header
 	//   2. `RETAB_API_KEY` env                    -> Api-Key header
 	//   3. `--env` / `--live` / default profile   -> Api-Key header
-	//   4. Stored OAuth tokens                     -> Bearer, transparent refresh
-	//   5. Stored legacy api_key                   -> Api-Key header
-	//   6. nothing                                 -> error
+	//   4. Stored access token                     -> Bearer
+	//   5. Stored OAuth tokens                     -> Bearer, transparent refresh
+	//   6. Stored legacy api_key                   -> Api-Key header
+	//   7. nothing                                 -> error
 	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
 	if err != nil {
 		return nil, err
@@ -274,6 +275,11 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 		return retab.NewClient(cred.APIKey, opts...)
 	}
 
+	if cred.AccessToken != "" {
+		opts = append(opts, retab.WithBearerToken(cred.AccessToken))
+		return retab.NewClient("", opts...)
+	}
+
 	// OAuth path. WithBearerTokenProvider is invoked on every request, so
 	// a command that straddles token expiry still gets a fresh token
 	// without rebuilding the Client.
@@ -286,6 +292,24 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	}
 
 	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+}
+
+func bearerTokenForCredential(
+	ctx context.Context,
+	cmd *cobra.Command,
+	cfg retabConfig,
+	baseURL string,
+	cred resolvedCredential,
+	httpClient *http.Client,
+) (string, error) {
+	if cred.AccessToken != "" {
+		return cred.AccessToken, nil
+	}
+	if cred.OAuth != nil && cred.OAuth.AccessToken != "" {
+		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
+		return makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+	}
+	return "", nil
 }
 
 func selectedEnvironmentID(cmd *cobra.Command, cfg retabConfig) string {
@@ -505,9 +529,8 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 
 	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
-		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
-		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+	if apiKey == "" {
+		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
 		if err != nil {
 			return err
 		}
@@ -549,9 +572,8 @@ func cliRawRequestBytes(
 
 	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
-		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
-		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+	if apiKey == "" {
+		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
 		if err != nil {
 			return nil, err
 		}
@@ -595,9 +617,8 @@ func cliMultipartRequestInto(
 
 	apiKey := cred.APIKey
 	var bearerToken string
-	if apiKey == "" && cred.OAuth != nil && cred.OAuth.AccessToken != "" {
-		rawOAuthProvider := makeOAuthTokenProvider(cred.OAuth)
-		token, err := makeCLIAuthTokenProvider(cmd, cfg, baseURL, rawOAuthProvider, httpClient)(ctx)
+	if apiKey == "" {
+		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
 		if err != nil {
 			return err
 		}

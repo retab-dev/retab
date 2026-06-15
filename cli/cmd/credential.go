@@ -55,17 +55,18 @@ func validateSlug(raw string) (string, error) {
 type credentialSource string
 
 const (
-	sourceFlagKey    credentialSource = "--api-key flag"
-	sourceEnvKey     credentialSource = "RETAB_API_KEY env"
-	sourceEnvFlag    credentialSource = "--env profile"
-	sourceLiveFlag   credentialSource = "--live profile"
-	sourceDefaultEnv credentialSource = "default environment profile"
-	sourceOAuth      credentialSource = "stored OAuth session"
-	sourceLegacyKey  credentialSource = "legacy stored api_key"
+	sourceFlagKey     credentialSource = "--api-key flag"
+	sourceEnvKey      credentialSource = "RETAB_API_KEY env"
+	sourceEnvFlag     credentialSource = "--env profile"
+	sourceLiveFlag    credentialSource = "--live profile"
+	sourceDefaultEnv  credentialSource = "default environment profile"
+	sourceOAuth       credentialSource = "stored OAuth session"
+	sourceAccessToken credentialSource = "stored access_token"
+	sourceLegacyKey   credentialSource = "legacy stored api_key"
 )
 
 // resolvedCredential is the structured output of the shared credential
-// resolver. Exactly one of APIKey / OAuth is populated.
+// resolver. Exactly one of APIKey / OAuth / AccessToken is populated.
 type resolvedCredential struct {
 	// Source records which precedence branch won.
 	Source credentialSource
@@ -81,6 +82,9 @@ type resolvedCredential struct {
 	// OAuth is set only for the stored-OAuth-session branch.
 	OAuth *oauthTokens
 
+	// AccessToken is set only for stored scoped access-token auth.
+	AccessToken string
+
 	// BaseURL is the resolved Retab deployment URL ("" means SDK default).
 	BaseURL string
 
@@ -93,13 +97,17 @@ type resolvedCredential struct {
 	ExpectedEnvironment string
 }
 
-// KeyPreview returns a redacted preview of the resolved API key, or "" for
-// OAuth credentials. Never returns the full key.
+// KeyPreview returns a redacted preview of the resolved static credential, or
+// "" for OAuth credentials. Never returns the full key/token.
 func (r resolvedCredential) KeyPreview() string {
-	if r.APIKey == "" {
+	switch {
+	case r.APIKey != "":
+		return redactKey(r.APIKey)
+	case r.AccessToken != "":
+		return redactKey(r.AccessToken)
+	default:
 		return ""
 	}
-	return redactKey(r.APIKey)
 }
 
 // environmentFromKeyPrefix maps an API key prefix to the customer
@@ -171,9 +179,10 @@ func resolveBaseURL(cmd *cobra.Command, cfg retabConfig, profile *environmentPro
 //  3. --env <slug> stored environment profile
 //  4. --live stored production profile
 //  5. stored default_environment profile
-//  6. stored OAuth session
-//  7. legacy stored api_key
-//  8. unauthenticated error
+//  6. stored access_token
+//  7. stored OAuth session
+//  8. legacy stored api_key
+//  9. unauthenticated error
 //
 // Conflicting selectors are rejected up front (see the blueprint's
 // "Conflict rules"): an explicit key already selects the environment, so
@@ -266,7 +275,17 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 		}
 	}
 
-	// --- 6. stored OAuth session -------------------------------------------
+	// --- 6. stored access_token --------------------------------------------
+	if cfg.AccessToken != "" {
+		return resolvedCredential{
+			Source:              sourceAccessToken,
+			AccessToken:         cfg.AccessToken,
+			BaseURL:             resolveBaseURL(cmd, cfg, nil),
+			ExpectedEnvironment: slugProduction,
+		}, nil
+	}
+
+	// --- 7. stored OAuth session -------------------------------------------
 	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
 		return resolvedCredential{
 			Source:              sourceOAuth,
@@ -276,7 +295,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 		}, nil
 	}
 
-	// --- 7. legacy stored api_key ------------------------------------------
+	// --- 8. legacy stored api_key ------------------------------------------
 	if cfg.APIKey != "" {
 		return resolvedCredential{
 			Source:              sourceLegacyKey,
@@ -286,7 +305,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 		}, nil
 	}
 
-	// --- 8. unauthenticated -------------------------------------------------
+	// --- 9. unauthenticated -------------------------------------------------
 	return resolvedCredential{}, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
 }
 
