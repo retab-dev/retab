@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -950,5 +951,33 @@ func TestDocumentPathHint(t *testing.T) {
 		if !strings.Contains(got, c.want) {
 			t.Fatalf("documentPathHint(%q) = %q; want substring %q", c.path, got, c.want)
 		}
+	}
+}
+
+func TestMaterializeInlineMIMEData(t *testing.T) {
+	ctx := context.Background()
+	// Already-inline data: documents pass through untouched.
+	inline := retab.MIMEData{Filename: "a.pdf", URL: "data:application/pdf;base64,JVBERg=="}
+	if got, err := materializeInlineMIMEData(ctx, inline); err != nil || got.URL != inline.URL {
+		t.Fatalf("inline passthrough = %q, %v; want unchanged", got.URL, err)
+	}
+	// Content-only (no URL) descriptors pass through.
+	if got, err := materializeInlineMIMEData(ctx, retab.MIMEData{Filename: "a.pdf"}); err != nil || got.URL != "" {
+		t.Fatalf("content-only passthrough = %q, %v", got.URL, err)
+	}
+	// A remote URL document is downloaded and re-inlined as a data: URL.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("%PDF-1.4\n%%EOF\n"))
+	}))
+	defer srv.Close()
+	got, err := materializeInlineMIMEData(ctx, retab.MIMEData{Filename: "invoice.pdf", URL: srv.URL + "/file.pdf"})
+	if err != nil {
+		t.Fatalf("remote materialize error: %v", err)
+	}
+	if !strings.HasPrefix(got.URL, "data:application/pdf;base64,") {
+		t.Fatalf("materialized URL = %q; want inline data:application/pdf", got.URL)
+	}
+	if got.Filename != "invoice.pdf" {
+		t.Fatalf("filename = %q; want invoice.pdf preserved", got.Filename)
 	}
 }
