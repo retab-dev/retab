@@ -264,7 +264,10 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	authHTTPClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		authHTTPClient = &http.Client{
-			Timeout:   60 * time.Second,
+			// Match the SDK's default client timeout (clients/go/retab.go)
+			// instead of an arbitrary 60s — otherwise long-running calls
+			// (e.g. schema generation) are silently killed only under --debug.
+			Timeout:   30 * time.Minute,
 			Transport: &debugTransport{wrapped: http.DefaultTransport},
 		}
 		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
@@ -519,7 +522,10 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
+			// Match the SDK's default client timeout (clients/go/retab.go)
+			// instead of an arbitrary 60s — otherwise long-running calls
+			// (e.g. schema generation) are silently killed only under --debug.
+			Timeout:   30 * time.Minute,
 			Transport: &debugTransport{wrapped: http.DefaultTransport},
 		}
 	}
@@ -562,7 +568,10 @@ func cliRawRequestBytes(
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
+			// Match the SDK's default client timeout (clients/go/retab.go)
+			// instead of an arbitrary 60s — otherwise long-running calls
+			// (e.g. schema generation) are silently killed only under --debug.
+			Timeout:   30 * time.Minute,
 			Transport: &debugTransport{wrapped: http.DefaultTransport},
 		}
 	}
@@ -607,7 +616,10 @@ func cliMultipartRequestInto(
 	httpClient := http.DefaultClient
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
+			// Match the SDK's default client timeout (clients/go/retab.go)
+			// instead of an arbitrary 60s — otherwise long-running calls
+			// (e.g. schema generation) are silently killed only under --debug.
+			Timeout:   30 * time.Minute,
 			Transport: &debugTransport{wrapped: http.DefaultTransport},
 		}
 	}
@@ -959,6 +971,29 @@ func printNDJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
 	return enc.Encode(v)
+}
+
+// readTextFileOrStdin reads raw UTF-8 text from path, or stdin when path is
+// "-". Trailing whitespace/newlines are trimmed so a file authored in an
+// editor (which appends a final newline) and an inline flag behave the same.
+// Unlike readJSON it does not parse the content — it's for free-text inputs
+// such as schema-generation instructions.
+func readTextFileOrStdin(path string) (string, error) {
+	var raw []byte
+	var err error
+	if path == "-" {
+		raw, err = io.ReadAll(os.Stdin)
+	} else {
+		raw, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return "", err
+	}
+	text := strings.TrimSpace(string(raw))
+	if text == "" {
+		return "", fmt.Errorf("empty text input")
+	}
+	return text, nil
 }
 
 // readJSON reads JSON from path, or stdin when path is "-" or empty.

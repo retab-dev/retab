@@ -52,6 +52,12 @@ suitable for ` + "`retab extractions create --json-schema-file`" + ` — save it
 review it, edit it by hand if you want tighter typing, and commit it
 alongside your code.
 
+Steer the result with ` + "`--instructions`" + ` (or ` + "`--instructions-file`" + ` /
+` + "`-`" + ` for stdin) to constrain scope, nullability, naming, types, etc.
+Lower ` + "`--image-resolution-dpi`" + ` to reduce per-page work — useful when a
+long or heavily-instructed generation would otherwise exceed the server's
+processing budget.
+
 ` + "`--format`" + ` and ` + "`--output`" + ` look similar but control different things:
 
   --format chooses WHICH payload to return.
@@ -157,6 +163,31 @@ alongside your code.
 		}
 		if model, _ := cmd.Flags().GetString("model"); model != "" {
 			params.Model = ptr(model)
+		}
+		// Natural-language guidance for the generator. Accept it inline
+		// (--instructions) or from a file/stdin (--instructions-file), since
+		// useful prompts are often long and awkward as a shell argument. The
+		// two are mutually exclusive to avoid an ambiguous precedence rule.
+		instr, _ := cmd.Flags().GetString("instructions")
+		instrFile, _ := cmd.Flags().GetString("instructions-file")
+		if instr != "" && instrFile != "" {
+			return fmt.Errorf("--instructions and --instructions-file are mutually exclusive")
+		}
+		if instrFile != "" {
+			text, err := readTextFileOrStdin(instrFile)
+			if err != nil {
+				return fmt.Errorf("--instructions-file: %w", err)
+			}
+			instr = text
+		}
+		if instr != "" {
+			params.Instructions = ptr(instr)
+		}
+		// Render DPI sent to the model. Lower values reduce the work the
+		// generator does per page, which is the practical lever for keeping a
+		// long/instructed generation within the server's processing budget.
+		if dpi, _ := cmd.Flags().GetInt("image-resolution-dpi"); dpi > 0 {
+			params.ImageResolutionDpi = ptr(dpi)
 		}
 		background, _ := cmd.Flags().GetBool("background")
 		if background {
@@ -278,6 +309,9 @@ func init() {
 	schemasGenerateCmd.Flags().StringArray("file-id", nil, "Retab file id (repeatable)")
 	schemasGenerateCmd.Flags().String("documents-file", "", "JSON array of documents (or - for stdin)")
 	schemasGenerateCmd.Flags().String("model", "", "model identifier")
+	schemasGenerateCmd.Flags().String("instructions", "", "natural-language guidance for the generated schema")
+	schemasGenerateCmd.Flags().String("instructions-file", "", "read schema instructions from a file (or - for stdin)")
+	schemasGenerateCmd.Flags().Int("image-resolution-dpi", 0, "render DPI sent to the model (lower = less work per page; helps long/instructed generations finish in time)")
 	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")
 	// Async surface, matching `extractions create` / `edits create`: --background
 	// queues the generation server-side; --wait blocks until it finishes.
