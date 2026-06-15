@@ -254,3 +254,23 @@ def temp_workflow(sync_client: Retab, project_id: str) -> Generator[Workflow, No
     """A freshly-created workflow definition, deleted after the test."""
     with factories.temporary_workflow(sync_client, project_id) as workflow:
         yield workflow
+
+
+@pytest.fixture
+def bad_key_client(api_keys: EnvConfig) -> Generator[Retab, None, None]:
+    """A sync client with an invalid API key, for 401/permission assertions."""
+    client = factories.junk_key_client(api_keys.retab_api_base_url)
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@pytest_asyncio.fixture
+async def bad_key_async_client(api_keys: EnvConfig) -> AsyncGenerator[AsyncRetab, None]:
+    """Async counterpart of :func:`bad_key_client`."""
+    client = factories.junk_key_async_client(api_keys.retab_api_base_url)
+    try:
+        yield client
+    finally:
+        await client.close()

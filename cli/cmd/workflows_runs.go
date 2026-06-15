@@ -253,7 +253,9 @@ Add ` + "`--json-inputs-file PATH`" + ` for blocks that accept structured
 JSON instead of (or alongside) documents.
 
 By default the workflow's latest published version runs; pin a specific
-version with ` + "`--version`" + `. Inspect the resulting run with
+version with ` + "`--version`" + `, or pass ` + "`--draft`" + ` to run the
+editable draft without publishing it first (handy for iterating on a
+workflow before it has a published version). Inspect the resulting run with
 ` + "`workflows runs get`" + ` or ` + "`workflows steps list`" + `.
 
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
@@ -278,7 +280,11 @@ removed in a future release.`,
 
   # Pin to a specific published version (production, draft, or a ver_... id)
   retab workflows runs create wf_abc123 \
-    --version ver_xxx --document start=./invoice.pdf`,
+    --version ver_xxx --document start=./invoice.pdf
+
+  # Run the editable draft without publishing (alias for --version draft)
+  retab workflows runs create wf_abc123 \
+    --draft --document start=./invoice.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		req := workflowRunCreateParams{WorkflowID: args[0]}
