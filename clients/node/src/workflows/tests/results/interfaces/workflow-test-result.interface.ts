@@ -95,6 +95,15 @@ import {
   serializeVerdictSummary,
 } from './verdict-summary.interface.js';
 import type {
+  WorkflowTestArtifactRef,
+  WorkflowTestArtifactRefResponse,
+} from './workflow-test-artifact-ref.interface.js';
+import {
+  ZWorkflowTestArtifactRef,
+  deserializeWorkflowTestArtifactRef,
+  serializeWorkflowTestArtifactRef,
+} from './workflow-test-artifact-ref.interface.js';
+import type {
   WorkflowTestBlockTarget,
   WorkflowTestBlockTargetResponse,
 } from '../../../../workflows/tests/interfaces/workflow-test-block-target.interface.js';
@@ -118,7 +127,7 @@ import { ZWorkflowTestResultVerdict } from './workflow-test-result-verdict.inter
 /** The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`. */
 export interface WorkflowTestResult {
   id: string;
-  runId?: string | null;
+  workflowTestRunId?: string | null;
   testId: string;
   lifecycle?:
     | (
@@ -139,6 +148,7 @@ export interface WorkflowTestResult {
   handleInputsFingerprint?: string | null;
   workflowDraftFingerprint?: string | null;
   blockConfigFingerprint?: string | null;
+  artifact?: WorkflowTestArtifactRef | null;
   source: ManualWorkflowTestSource | RunStepWorkflowTestSource;
   outputs?: Record<string, unknown> | null;
   routingDecisions?: string[] | null;
@@ -153,7 +163,7 @@ export interface WorkflowTestResult {
 
 export interface WorkflowTestResultResponse {
   id: string;
-  run_id?: string | null;
+  workflow_test_run_id?: string | null;
   test_id: string;
   lifecycle?:
     | (
@@ -173,6 +183,7 @@ export interface WorkflowTestResultResponse {
   handle_inputs_fingerprint?: string | null;
   workflow_draft_fingerprint?: string | null;
   block_config_fingerprint?: string | null;
+  artifact?: WorkflowTestArtifactRefResponse | null;
   source: ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse;
   outputs?: Record<string, unknown> | null;
   routing_decisions?: string[] | null;
@@ -185,7 +196,7 @@ export interface WorkflowTestResultResponse {
 
 export const ZWorkflowTestResult = z.object({
   id: z.string(),
-  runId: z.string().nullable().optional(),
+  workflowTestRunId: z.string().nullable().optional(),
   testId: z.string(),
   lifecycle: z
     .union([
@@ -206,6 +217,7 @@ export const ZWorkflowTestResult = z.object({
   handleInputsFingerprint: z.string().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
   blockConfigFingerprint: z.string().nullable().optional(),
+  artifact: ZWorkflowTestArtifactRef.nullable().optional(),
   source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
   outputs: z.record(z.string(), z.unknown()).nullable().optional(),
   routingDecisions: z.string().array().nullable().optional(),
@@ -221,7 +233,7 @@ export function deserializeWorkflowTestResult(
 ): WorkflowTestResult {
   return {
     id: wire['id'],
-    runId: wire['run_id'],
+    workflowTestRunId: wire['workflow_test_run_id'],
     testId: wire['test_id'],
     lifecycle:
       wire['lifecycle'] == null
@@ -285,6 +297,12 @@ export function deserializeWorkflowTestResult(
     handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
     blockConfigFingerprint: wire['block_config_fingerprint'],
+    artifact:
+      wire['artifact'] == null
+        ? (wire['artifact'] as undefined)
+        : wire['artifact'] == null
+          ? wire['artifact']
+          : deserializeWorkflowTestArtifactRef(wire['artifact']),
     source:
       (
         {
@@ -327,7 +345,7 @@ export function serializeWorkflowTestResult(
 ): WorkflowTestResultResponse {
   return {
     id: domain['id'],
-    run_id: domain['runId'],
+    workflow_test_run_id: domain['workflowTestRunId'],
     test_id: domain['testId'],
     lifecycle:
       domain['lifecycle'] == null
@@ -383,6 +401,12 @@ export function serializeWorkflowTestResult(
     handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
     block_config_fingerprint: domain['blockConfigFingerprint'],
+    artifact:
+      domain['artifact'] == null
+        ? (domain['artifact'] as undefined)
+        : domain['artifact'] == null
+          ? domain['artifact']
+          : serializeWorkflowTestArtifactRef(domain['artifact']),
     source:
       (
         {

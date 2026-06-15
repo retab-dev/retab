@@ -10,6 +10,8 @@ export * from './pending-workflow-test-run.interface.js';
 export * from './queued-workflow-test-run.interface.js';
 export * from './running-workflow-test-run.interface.js';
 export * from './verdict-summary.interface.js';
+export * from './workflow-test-artifact-ref.interface.js';
+export * from './workflow-test-artifact-ref-operation.interface.js';
 export * from './workflow-test-result.interface.js';
 export * from './workflow-test-result-verdict.interface.js';
 export * from './workflow-test-run-timing.interface.js';

@@ -169,21 +169,44 @@ func (r *BetweenCondition) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
+// BlockExecFileHandleInput represents a block exec file handle input.
+type BlockExecFileHandleInput struct {
+	Document BlockExecFileRef `json:"document"`
+	Type     *string          `json:"type,omitempty"`
+}
+
+// BlockExecFileRef public/shared file reference used across SDK and customer-facing APIs.
+type BlockExecFileRef struct {
+	// ID is id of the file
+	ID string `json:"id"`
+	// Filename is filename of the file
+	Filename string `json:"filename"`
+	// MIMEType is mime type of the file
+	MIMEType string `json:"mime_type"`
+}
+
+// BlockExecJSONHandleInput represents a block exec json handle input.
+type BlockExecJSONHandleInput struct {
+	Data *interface{} `json:"data,omitempty"`
+	Type *string      `json:"type,omitempty"`
+}
+
 // StoredBlockExecution the result of executing a single workflow block.
-// The terminal state is carried by the `lifecycle` field, which is one of
-// completed, error, or skipped.
+// The execution state is carried by the `lifecycle` field.
 type StoredBlockExecution struct {
 	// ID is unique block execution ID
 	ID string `json:"id"`
 	// WorkflowID is workflow the block belongs to
 	WorkflowID string `json:"workflow_id"`
+	// WorkflowVersionID is workflow version whose source run supplied inputs
+	WorkflowVersionID *string `json:"workflow_version_id,omitempty"`
 	// SourceRunID is workflow run whose inputs were used
 	SourceRunID string `json:"source_run_id"`
 	// BlockID is id of the block that was executed
 	BlockID string `json:"block_id"`
 	// BlockType is type of the block
 	BlockType string `json:"block_type"`
-	// Lifecycle is terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.
+	// Lifecycle is lifecycle state for this block execution.
 	Lifecycle BlockExecutionLifecycle `json:"lifecycle"`
 	// HandleInputs is input payloads keyed by handle ID (file metadata for files, data for json)
 	HandleInputs map[string]interface{} `json:"handle_inputs,omitempty"`
@@ -197,6 +220,14 @@ type StoredBlockExecution struct {
 	DurationMs *float64 `json:"duration_ms,omitempty"`
 	// CreatedAt is when the block execution record was created
 	CreatedAt *time.Time `json:"created_at,omitempty"`
+	// StartedAt is when the block execution started
+	StartedAt *time.Time `json:"started_at,omitempty"`
+	// CompletedAt is when the block execution completed
+	CompletedAt              *time.Time `json:"completed_at,omitempty"`
+	HandleInputsFingerprint  *string    `json:"handle_inputs_fingerprint,omitempty"`
+	WorkflowDraftFingerprint *string    `json:"workflow_draft_fingerprint,omitempty"`
+	BlockConfigFingerprint   *string    `json:"block_config_fingerprint,omitempty"`
+	ExecutionFingerprint     *string    `json:"execution_fingerprint,omitempty"`
 	// BlockConfig is the draft block config used for this block execution
 	BlockConfig map[string]interface{} `json:"block_config,omitempty"`
 	// SourceStepID is the step ID that was used for inputs (includes iteration prefix if applicable)
@@ -259,6 +290,12 @@ func (r *CancelWorkflowResponse) UnmarshalJSON(data []byte) error {
 	r.RedisAvailable = true
 	type alias CancelWorkflowResponse
 	return json.Unmarshal(data, (*alias)(r))
+}
+
+// CancelledBlockExecutionLifecycle the execution was intentionally stopped before completion.
+type CancelledBlockExecutionLifecycle struct {
+	Status *string      `json:"status,omitempty"`
+	Reason *interface{} `json:"reason,omitempty"`
 }
 
 // CancelledStepLifecycle the step was cancelled.
@@ -1244,11 +1281,8 @@ type HTTPValidationError struct {
 	Detail []*ValidationError `json:"detail,omitempty"`
 }
 
-// JSONHandleInput json payload for a handle input. `data` is the raw JSON value.
-type JSONHandleInput struct {
-	Type *string      `json:"type,omitempty"`
-	Data *interface{} `json:"data,omitempty"`
-}
+// JSONHandleInput is an alias for BlockExecJSONHandleInput.
+type JSONHandleInput = BlockExecJSONHandleInput
 
 // JSONSchemaValidCondition represents a json schema valid condition.
 type JSONSchemaValidCondition struct {
@@ -1520,22 +1554,19 @@ func (r *PartitionWorkflowArtifact) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// PendingRun the run has been created but execution has not started.
-type PendingRun struct {
+// PendingBlockExecutionLifecycle the execution row exists but has not been dispatched.
+type PendingBlockExecutionLifecycle struct {
 	Status *string `json:"status,omitempty"`
 }
 
-// PendingStepLifecycle is an alias for PendingRun.
-type PendingStepLifecycle = PendingRun
-
-// PendingWorkflowExperimentResult is an alias for PendingRun.
-type PendingWorkflowExperimentResult = PendingRun
-
-// PendingWorkflowExperimentRun is an alias for PendingRun.
-type PendingWorkflowExperimentRun = PendingRun
-
-// PendingWorkflowTestRun is an alias for PendingRun.
-type PendingWorkflowTestRun = PendingRun
+// The following types are structurally identical to PendingBlockExecutionLifecycle.
+type (
+	PendingRun                      = PendingBlockExecutionLifecycle
+	PendingStepLifecycle            = PendingBlockExecutionLifecycle
+	PendingWorkflowExperimentResult = PendingBlockExecutionLifecycle
+	PendingWorkflowExperimentRun    = PendingBlockExecutionLifecycle
+	PendingWorkflowTestRun          = PendingBlockExecutionLifecycle
+)
 
 // PrimitiveError represents a primitive error.
 type PrimitiveError struct {
@@ -1584,19 +1615,22 @@ type QueryWorkflowTableRequest struct {
 	Limit          *int                               `json:"limit,omitempty"`
 }
 
-// QueuedStepLifecycle the step is queued for execution.
-type QueuedStepLifecycle struct {
+// QueuedBlockExecutionLifecycle dispatch has been requested for this execution.
+type QueuedBlockExecutionLifecycle struct {
 	Status *string `json:"status,omitempty"`
 }
 
-// QueuedWorkflowExperimentResult is an alias for QueuedStepLifecycle.
-type QueuedWorkflowExperimentResult = QueuedStepLifecycle
+// QueuedStepLifecycle is an alias for QueuedBlockExecutionLifecycle.
+type QueuedStepLifecycle = QueuedBlockExecutionLifecycle
 
-// QueuedWorkflowExperimentRun is an alias for QueuedStepLifecycle.
-type QueuedWorkflowExperimentRun = QueuedStepLifecycle
+// QueuedWorkflowExperimentResult is an alias for QueuedBlockExecutionLifecycle.
+type QueuedWorkflowExperimentResult = QueuedBlockExecutionLifecycle
 
-// QueuedWorkflowTestRun is an alias for QueuedStepLifecycle.
-type QueuedWorkflowTestRun = QueuedStepLifecycle
+// QueuedWorkflowExperimentRun is an alias for QueuedBlockExecutionLifecycle.
+type QueuedWorkflowExperimentRun = QueuedBlockExecutionLifecycle
+
+// QueuedWorkflowTestRun is an alias for QueuedBlockExecutionLifecycle.
+type QueuedWorkflowTestRun = QueuedBlockExecutionLifecycle
 
 // RetabUsage usage information for document processing.
 type RetabUsage struct {
@@ -1752,22 +1786,19 @@ type RunTiming struct {
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 }
 
-// RunningRun the run is currently executing.
-type RunningRun struct {
+// RunningBlockExecutionLifecycle the executor has started this block execution.
+type RunningBlockExecutionLifecycle struct {
 	Status *string `json:"status,omitempty"`
 }
 
-// RunningStepLifecycle is an alias for RunningRun.
-type RunningStepLifecycle = RunningRun
-
-// RunningWorkflowExperimentResult is an alias for RunningRun.
-type RunningWorkflowExperimentResult = RunningRun
-
-// RunningWorkflowExperimentRun is an alias for RunningRun.
-type RunningWorkflowExperimentRun = RunningRun
-
-// RunningWorkflowTestRun is an alias for RunningRun.
-type RunningWorkflowTestRun = RunningRun
+// The following types are structurally identical to RunningBlockExecutionLifecycle.
+type (
+	RunningRun                      = RunningBlockExecutionLifecycle
+	RunningStepLifecycle            = RunningBlockExecutionLifecycle
+	RunningWorkflowExperimentResult = RunningBlockExecutionLifecycle
+	RunningWorkflowExperimentRun    = RunningBlockExecutionLifecycle
+	RunningWorkflowTestRun          = RunningBlockExecutionLifecycle
+)
 
 // SchemaGeneration public generated schema response.
 type SchemaGeneration struct {
@@ -2644,6 +2675,12 @@ func (r *WorkflowTest) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
+// WorkflowTestArtifactRef represents a workflow test artifact ref.
+type WorkflowTestArtifactRef struct {
+	ID        string                           `json:"id"`
+	Operation WorkflowTestArtifactRefOperation `json:"operation"`
+}
+
 // WorkflowTestBlockTarget public workflow-test target.
 // The storage layer remains block-scoped today, but the API shape names the
 // tested entity explicitly so workflow-level targets can be added later.
@@ -2654,11 +2691,11 @@ type WorkflowTestBlockTarget struct {
 
 // WorkflowTestResult the outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`.
 type WorkflowTestResult struct {
-	ID        string                 `json:"id"`
-	RunID     *string                `json:"run_id,omitempty"`
-	TestID    string                 `json:"test_id"`
-	Lifecycle *WorkflowTestRunStatus `json:"lifecycle,omitempty"`
-	Timing    *WorkflowTestRunTiming `json:"timing,omitempty"`
+	ID                string                 `json:"id"`
+	WorkflowTestRunID *string                `json:"workflow_test_run_id,omitempty"`
+	TestID            string                 `json:"test_id"`
+	Lifecycle         *WorkflowTestRunStatus `json:"lifecycle,omitempty"`
+	Timing            *WorkflowTestRunTiming `json:"timing,omitempty"`
 	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.
 	Verdict                  *WorkflowTestResultVerdict `json:"verdict,omitempty"`
 	WorkflowID               string                     `json:"workflow_id"`
@@ -2667,6 +2704,7 @@ type WorkflowTestResult struct {
 	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
 	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
 	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
+	Artifact                 *WorkflowTestArtifactRef   `json:"artifact,omitempty"`
 	Source                   WorkflowTestSource         `json:"source"`
 	Outputs                  map[string]interface{}     `json:"outputs,omitempty"`
 	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
@@ -2776,7 +2814,7 @@ func withUnionDiscriminator(raw []byte, prop string, value string) []byte {
 // BlockExecutionLifecycle is a discriminated union keyed by the "status" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Status()/As*() and build one with BlockExecutionLifecycleFrom*().
-// Variants: CompletedBlockExecutionLifecycle, ErrorBlockExecutionLifecycle, SkippedBlockExecutionLifecycle.
+// Variants: CancelledBlockExecutionLifecycle, CompletedBlockExecutionLifecycle, ErrorBlockExecutionLifecycle, PendingBlockExecutionLifecycle, QueuedBlockExecutionLifecycle, RunningBlockExecutionLifecycle, SkippedBlockExecutionLifecycle.
 type BlockExecutionLifecycle struct {
 	raw json.RawMessage
 }
@@ -2803,6 +2841,25 @@ func (u BlockExecutionLifecycle) Raw() json.RawMessage {
 // Status returns the discriminator value, or "" when the union is unset.
 func (u BlockExecutionLifecycle) Status() string {
 	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCancelledBlockExecutionLifecycle decodes the union payload as CancelledBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsCancelledBlockExecutionLifecycle() (*CancelledBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromCancelledBlockExecutionLifecycle builds a BlockExecutionLifecycle from a CancelledBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromCancelledBlockExecutionLifecycle(v CancelledBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
+	return BlockExecutionLifecycle{raw: data}
 }
 
 // AsCompletedBlockExecutionLifecycle decodes the union payload as CompletedBlockExecutionLifecycle.
@@ -2840,6 +2897,63 @@ func (u BlockExecutionLifecycle) AsErrorBlockExecutionLifecycle() (*ErrorBlockEx
 func BlockExecutionLifecycleFromErrorBlockExecutionLifecycle(v ErrorBlockExecutionLifecycle) BlockExecutionLifecycle {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "status", "error")
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// AsPendingBlockExecutionLifecycle decodes the union payload as PendingBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsPendingBlockExecutionLifecycle() (*PendingBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromPendingBlockExecutionLifecycle builds a BlockExecutionLifecycle from a PendingBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromPendingBlockExecutionLifecycle(v PendingBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// AsQueuedBlockExecutionLifecycle decodes the union payload as QueuedBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsQueuedBlockExecutionLifecycle() (*QueuedBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromQueuedBlockExecutionLifecycle builds a BlockExecutionLifecycle from a QueuedBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromQueuedBlockExecutionLifecycle(v QueuedBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
+	return BlockExecutionLifecycle{raw: data}
+}
+
+// AsRunningBlockExecutionLifecycle decodes the union payload as RunningBlockExecutionLifecycle.
+func (u BlockExecutionLifecycle) AsRunningBlockExecutionLifecycle() (*RunningBlockExecutionLifecycle, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningBlockExecutionLifecycle
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// BlockExecutionLifecycleFromRunningBlockExecutionLifecycle builds a BlockExecutionLifecycle from a RunningBlockExecutionLifecycle.
+func BlockExecutionLifecycleFromRunningBlockExecutionLifecycle(v RunningBlockExecutionLifecycle) BlockExecutionLifecycle {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
 	return BlockExecutionLifecycle{raw: data}
 }
 

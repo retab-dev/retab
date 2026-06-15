@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.artifacts import ErrorDetails
@@ -9,6 +10,20 @@ from retab.types.workflows.tests import ManualWorkflowTestSource, RunStepWorkflo
 
 
 AssertionOutcome: TypeAlias = Literal["passed", "failed", "blocked"]
+
+
+class WorkflowTestArtifactRefOperation(str, Enum):
+    EXTRACTION = "extraction"
+    SPLIT = "split"
+    CLASSIFICATION = "classification"
+    PARSE = "parse"
+    EDIT = "edit"
+    PARTITION = "partition"
+    CONDITIONAL_EVALUATION = "conditional_evaluation"
+    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
+    WHILE_LOOP_TERMINATION = "while_loop_termination"
+    API_CALL_INVOCATION = "api_call_invocation"
+    FUNCTION_INVOCATION = "function_invocation"
 
 
 WorkflowTestResultVerdict = AssertionOutcome
@@ -112,13 +127,20 @@ class VerdictSummary(BaseModel):
     failed_assertion_ids: list[str] | None = Field(default=[])
 
 
+class WorkflowTestArtifactRef(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    id: str
+    operation: WorkflowTestArtifactRefOperation
+
+
 class WorkflowTestResult(BaseModel):
     """The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str
-    run_id: str | None = None
+    workflow_test_run_id: str | None = None
     test_id: str
     lifecycle: PendingWorkflowTestRun | QueuedWorkflowTestRun | RunningWorkflowTestRun | CompletedWorkflowTestRun | ErrorWorkflowTestRun | CancelledWorkflowTestRun | None = Field(
         default=None, discriminator="status"
@@ -134,6 +156,7 @@ class WorkflowTestResult(BaseModel):
     handle_inputs_fingerprint: str | None = None
     workflow_draft_fingerprint: str | None = None
     block_config_fingerprint: str | None = None
+    artifact: WorkflowTestArtifactRef | None = None
     source: ManualWorkflowTestSource | RunStepWorkflowTestSource = Field(..., discriminator="type")
     outputs: dict[str, Any] | None = None
     routing_decisions: list[str] | None = None
@@ -167,5 +190,6 @@ PendingWorkflowTestRun.model_rebuild()
 QueuedWorkflowTestRun.model_rebuild()
 RunningWorkflowTestRun.model_rebuild()
 VerdictSummary.model_rebuild()
+WorkflowTestArtifactRef.model_rebuild()
 WorkflowTestResult.model_rebuild()
 WorkflowTestRunTiming.model_rebuild()

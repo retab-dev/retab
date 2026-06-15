@@ -2,6 +2,25 @@
 
 import { z } from 'zod';
 import type {
+  BlockExecFileHandleInput,
+  BlockExecFileHandleInputResponse,
+} from './block-exec-file-handle-input.interface.js';
+import { ZBlockExecFileHandleInput } from './block-exec-file-handle-input.interface.js';
+import type {
+  BlockExecJsonHandleInput,
+  BlockExecJsonHandleInputResponse,
+} from './block-exec-json-handle-input.interface.js';
+import { ZBlockExecJsonHandleInput } from './block-exec-json-handle-input.interface.js';
+import type {
+  CancelledBlockExecutionLifecycle,
+  CancelledBlockExecutionLifecycleResponse,
+} from './cancelled-block-execution-lifecycle.interface.js';
+import {
+  ZCancelledBlockExecutionLifecycle,
+  deserializeCancelledBlockExecutionLifecycle,
+  serializeCancelledBlockExecutionLifecycle,
+} from './cancelled-block-execution-lifecycle.interface.js';
+import type {
   CompletedBlockExecutionLifecycle,
   CompletedBlockExecutionLifecycleResponse,
 } from './completed-block-execution-lifecycle.interface.js';
@@ -19,6 +38,33 @@ import {
   deserializeErrorBlockExecutionLifecycle,
   serializeErrorBlockExecutionLifecycle,
 } from './error-block-execution-lifecycle.interface.js';
+import type {
+  PendingBlockExecutionLifecycle,
+  PendingBlockExecutionLifecycleResponse,
+} from './pending-block-execution-lifecycle.interface.js';
+import {
+  ZPendingBlockExecutionLifecycle,
+  deserializePendingBlockExecutionLifecycle,
+  serializePendingBlockExecutionLifecycle,
+} from './pending-block-execution-lifecycle.interface.js';
+import type {
+  QueuedBlockExecutionLifecycle,
+  QueuedBlockExecutionLifecycleResponse,
+} from './queued-block-execution-lifecycle.interface.js';
+import {
+  ZQueuedBlockExecutionLifecycle,
+  deserializeQueuedBlockExecutionLifecycle,
+  serializeQueuedBlockExecutionLifecycle,
+} from './queued-block-execution-lifecycle.interface.js';
+import type {
+  RunningBlockExecutionLifecycle,
+  RunningBlockExecutionLifecycleResponse,
+} from './running-block-execution-lifecycle.interface.js';
+import {
+  ZRunningBlockExecutionLifecycle,
+  deserializeRunningBlockExecutionLifecycle,
+  serializeRunningBlockExecutionLifecycle,
+} from './running-block-execution-lifecycle.interface.js';
 import type {
   SkippedBlockExecutionLifecycle,
   SkippedBlockExecutionLifecycleResponse,
@@ -41,29 +87,47 @@ export interface StoredBlockExecution {
   id: string;
   /** Workflow the block belongs to */
   workflowId: string;
+  /** Workflow version whose source run supplied inputs */
+  workflowVersionId?: string;
   /** Workflow run whose inputs were used */
   sourceRunId: string;
   /** ID of the block that was executed */
   blockId: string;
   /** Type of the block */
   blockType: string;
-  /** Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`. */
+  /** Lifecycle state for this block execution. */
   lifecycle:
+    | PendingBlockExecutionLifecycle
+    | QueuedBlockExecutionLifecycle
+    | RunningBlockExecutionLifecycle
     | CompletedBlockExecutionLifecycle
     | ErrorBlockExecutionLifecycle
+    | CancelledBlockExecutionLifecycle
     | SkippedBlockExecutionLifecycle;
   /** Input payloads keyed by handle ID (file metadata for files, data for json) */
-  handleInputs?: Record<string, unknown> | null;
+  handleInputs?:
+    | (Record<string, BlockExecJsonHandleInput | BlockExecFileHandleInput> | null)
+    | null;
   /** Reference to the artifact produced by this block execution, if any. */
   artifact?: StepArtifactRef | null;
   /** Output payloads keyed by handle ID */
-  handleOutputs?: Record<string, unknown> | null;
+  handleOutputs?:
+    | (Record<string, BlockExecJsonHandleInput | BlockExecFileHandleInput> | null)
+    | null;
   /** Active output handles for routing decisions */
   routingDecisions?: string[] | null;
   /** Duration of the block execution in milliseconds */
   durationMs?: number | null;
   /** When the block execution record was created */
   createdAt?: Date;
+  /** When the block execution started */
+  startedAt?: Date;
+  /** When the block execution completed */
+  completedAt?: Date;
+  handleInputsFingerprint?: string;
+  workflowDraftFingerprint?: string;
+  blockConfigFingerprint?: string;
+  executionFingerprint?: string;
   /** The draft block config used for this block execution */
   blockConfig?: Record<string, unknown> | null;
   /** The step ID that was used for inputs (includes iteration prefix if applicable) */
@@ -75,19 +139,34 @@ export interface StoredBlockExecution {
 export interface StoredBlockExecutionResponse {
   id: string;
   workflow_id: string;
+  workflow_version_id?: string;
   source_run_id: string;
   block_id: string;
   block_type: string;
   lifecycle:
+    | PendingBlockExecutionLifecycleResponse
+    | QueuedBlockExecutionLifecycleResponse
+    | RunningBlockExecutionLifecycleResponse
     | CompletedBlockExecutionLifecycleResponse
     | ErrorBlockExecutionLifecycleResponse
+    | CancelledBlockExecutionLifecycleResponse
     | SkippedBlockExecutionLifecycleResponse;
-  handle_inputs?: Record<string, unknown> | null;
+  handle_inputs?:
+    | (Record<string, BlockExecJsonHandleInputResponse | BlockExecFileHandleInputResponse> | null)
+    | null;
   artifact?: StepArtifactRefResponse | null;
-  handle_outputs?: Record<string, unknown> | null;
+  handle_outputs?:
+    | (Record<string, BlockExecJsonHandleInputResponse | BlockExecFileHandleInputResponse> | null)
+    | null;
   routing_decisions?: string[] | null;
   duration_ms?: number | null;
   created_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  handle_inputs_fingerprint?: string;
+  workflow_draft_fingerprint?: string;
+  block_config_fingerprint?: string;
+  execution_fingerprint?: string;
   block_config?: Record<string, unknown> | null;
   source_step_id?: string | null;
   available_iterations?: Record<string, unknown>[] | null;
@@ -96,20 +175,39 @@ export interface StoredBlockExecutionResponse {
 export const ZStoredBlockExecution = z.object({
   id: z.string(),
   workflowId: z.string(),
+  workflowVersionId: z.string().optional(),
   sourceRunId: z.string(),
   blockId: z.string(),
   blockType: z.string(),
   lifecycle: z.union([
+    ZPendingBlockExecutionLifecycle,
+    ZQueuedBlockExecutionLifecycle,
+    ZRunningBlockExecutionLifecycle,
     ZCompletedBlockExecutionLifecycle,
     ZErrorBlockExecutionLifecycle,
+    ZCancelledBlockExecutionLifecycle,
     ZSkippedBlockExecutionLifecycle,
   ]),
-  handleInputs: z.record(z.string(), z.unknown()).nullable().optional(),
+  handleInputs: z
+    .record(z.string(), z.union([ZBlockExecJsonHandleInput, ZBlockExecFileHandleInput]))
+    .nullable()
+    .nullable()
+    .optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
-  handleOutputs: z.record(z.string(), z.unknown()).nullable().optional(),
+  handleOutputs: z
+    .record(z.string(), z.union([ZBlockExecJsonHandleInput, ZBlockExecFileHandleInput]))
+    .nullable()
+    .nullable()
+    .optional(),
   routingDecisions: z.string().array().nullable().optional(),
   durationMs: z.number().nullable().optional(),
   createdAt: z.coerce.date().optional(),
+  startedAt: z.coerce.date().optional(),
+  completedAt: z.coerce.date().optional(),
+  handleInputsFingerprint: z.string().optional(),
+  workflowDraftFingerprint: z.string().optional(),
+  blockConfigFingerprint: z.string().optional(),
+  executionFingerprint: z.string().optional(),
   blockConfig: z.record(z.string(), z.unknown()).nullable().optional(),
   sourceStepId: z.string().nullable().optional(),
   availableIterations: z.record(z.string(), z.unknown()).array().nullable().optional(),
@@ -121,12 +219,17 @@ export function deserializeStoredBlockExecution(
   return {
     id: wire['id'],
     workflowId: wire['workflow_id'],
+    workflowVersionId: wire['workflow_version_id'],
     sourceRunId: wire['source_run_id'],
     blockId: wire['block_id'],
     blockType: wire['block_type'],
     lifecycle:
       (
         {
+          cancelled: () =>
+            deserializeCancelledBlockExecutionLifecycle(
+              wire['lifecycle'] as CancelledBlockExecutionLifecycleResponse
+            ),
           completed: () =>
             deserializeCompletedBlockExecutionLifecycle(
               wire['lifecycle'] as CompletedBlockExecutionLifecycleResponse
@@ -135,6 +238,18 @@ export function deserializeStoredBlockExecution(
             deserializeErrorBlockExecutionLifecycle(
               wire['lifecycle'] as ErrorBlockExecutionLifecycleResponse
             ),
+          pending: () =>
+            deserializePendingBlockExecutionLifecycle(
+              wire['lifecycle'] as PendingBlockExecutionLifecycleResponse
+            ),
+          queued: () =>
+            deserializeQueuedBlockExecutionLifecycle(
+              wire['lifecycle'] as QueuedBlockExecutionLifecycleResponse
+            ),
+          running: () =>
+            deserializeRunningBlockExecutionLifecycle(
+              wire['lifecycle'] as RunningBlockExecutionLifecycleResponse
+            ),
           skipped: () =>
             deserializeSkippedBlockExecutionLifecycle(
               wire['lifecycle'] as SkippedBlockExecutionLifecycleResponse
@@ -142,27 +257,69 @@ export function deserializeStoredBlockExecution(
         } as Record<
           string,
           () =>
+            | PendingBlockExecutionLifecycle
+            | QueuedBlockExecutionLifecycle
+            | RunningBlockExecutionLifecycle
             | CompletedBlockExecutionLifecycle
             | ErrorBlockExecutionLifecycle
+            | CancelledBlockExecutionLifecycle
             | SkippedBlockExecutionLifecycle
         >
       )[(wire['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
       (wire['lifecycle'] as unknown as
+        | PendingBlockExecutionLifecycle
+        | QueuedBlockExecutionLifecycle
+        | RunningBlockExecutionLifecycle
         | CompletedBlockExecutionLifecycle
         | ErrorBlockExecutionLifecycle
+        | CancelledBlockExecutionLifecycle
         | SkippedBlockExecutionLifecycle),
-    handleInputs: wire['handle_inputs'],
+    handleInputs:
+      wire['handle_inputs'] == null
+        ? (wire['handle_inputs'] as undefined)
+        : wire['handle_inputs'] == null
+          ? wire['handle_inputs']
+          : wire['handle_inputs'] == null
+            ? wire['handle_inputs']
+            : Object.fromEntries(
+                Object.entries(wire['handle_inputs']).map(([__k, __v]) => [
+                  __k,
+                  __v as unknown as BlockExecJsonHandleInput | BlockExecFileHandleInput,
+                ])
+              ),
     artifact:
       wire['artifact'] == null
         ? (wire['artifact'] as undefined)
         : wire['artifact'] == null
           ? wire['artifact']
           : deserializeStepArtifactRef(wire['artifact']),
-    handleOutputs: wire['handle_outputs'],
+    handleOutputs:
+      wire['handle_outputs'] == null
+        ? (wire['handle_outputs'] as undefined)
+        : wire['handle_outputs'] == null
+          ? wire['handle_outputs']
+          : wire['handle_outputs'] == null
+            ? wire['handle_outputs']
+            : Object.fromEntries(
+                Object.entries(wire['handle_outputs']).map(([__k, __v]) => [
+                  __k,
+                  __v as unknown as BlockExecJsonHandleInput | BlockExecFileHandleInput,
+                ])
+              ),
     routingDecisions: wire['routing_decisions'],
     durationMs: wire['duration_ms'],
     createdAt:
       wire['created_at'] == null ? (wire['created_at'] as undefined) : new Date(wire['created_at']),
+    startedAt:
+      wire['started_at'] == null ? (wire['started_at'] as undefined) : new Date(wire['started_at']),
+    completedAt:
+      wire['completed_at'] == null
+        ? (wire['completed_at'] as undefined)
+        : new Date(wire['completed_at']),
+    handleInputsFingerprint: wire['handle_inputs_fingerprint'],
+    workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
+    blockConfigFingerprint: wire['block_config_fingerprint'],
+    executionFingerprint: wire['execution_fingerprint'],
     blockConfig: wire['block_config'],
     sourceStepId: wire['source_step_id'],
     availableIterations: wire['available_iterations'],
@@ -175,12 +332,17 @@ export function serializeStoredBlockExecution(
   return {
     id: domain['id'],
     workflow_id: domain['workflowId'],
+    workflow_version_id: domain['workflowVersionId'],
     source_run_id: domain['sourceRunId'],
     block_id: domain['blockId'],
     block_type: domain['blockType'],
     lifecycle:
       (
         {
+          cancelled: () =>
+            serializeCancelledBlockExecutionLifecycle(
+              domain['lifecycle'] as CancelledBlockExecutionLifecycle
+            ),
           completed: () =>
             serializeCompletedBlockExecutionLifecycle(
               domain['lifecycle'] as CompletedBlockExecutionLifecycle
@@ -189,6 +351,18 @@ export function serializeStoredBlockExecution(
             serializeErrorBlockExecutionLifecycle(
               domain['lifecycle'] as ErrorBlockExecutionLifecycle
             ),
+          pending: () =>
+            serializePendingBlockExecutionLifecycle(
+              domain['lifecycle'] as PendingBlockExecutionLifecycle
+            ),
+          queued: () =>
+            serializeQueuedBlockExecutionLifecycle(
+              domain['lifecycle'] as QueuedBlockExecutionLifecycle
+            ),
+          running: () =>
+            serializeRunningBlockExecutionLifecycle(
+              domain['lifecycle'] as RunningBlockExecutionLifecycle
+            ),
           skipped: () =>
             serializeSkippedBlockExecutionLifecycle(
               domain['lifecycle'] as SkippedBlockExecutionLifecycle
@@ -196,29 +370,77 @@ export function serializeStoredBlockExecution(
         } as Record<
           string,
           () =>
+            | PendingBlockExecutionLifecycleResponse
+            | QueuedBlockExecutionLifecycleResponse
+            | RunningBlockExecutionLifecycleResponse
             | CompletedBlockExecutionLifecycleResponse
             | ErrorBlockExecutionLifecycleResponse
+            | CancelledBlockExecutionLifecycleResponse
             | SkippedBlockExecutionLifecycleResponse
         >
       )[(domain['lifecycle'] as unknown as Record<string, string>)['status']]?.() ??
       (domain['lifecycle'] as unknown as
+        | PendingBlockExecutionLifecycleResponse
+        | QueuedBlockExecutionLifecycleResponse
+        | RunningBlockExecutionLifecycleResponse
         | CompletedBlockExecutionLifecycleResponse
         | ErrorBlockExecutionLifecycleResponse
+        | CancelledBlockExecutionLifecycleResponse
         | SkippedBlockExecutionLifecycleResponse),
-    handle_inputs: domain['handleInputs'],
+    handle_inputs:
+      domain['handleInputs'] == null
+        ? (domain['handleInputs'] as undefined)
+        : domain['handleInputs'] == null
+          ? domain['handleInputs']
+          : domain['handleInputs'] == null
+            ? domain['handleInputs']
+            : Object.fromEntries(
+                Object.entries(domain['handleInputs']).map(([__k, __v]) => [
+                  __k,
+                  __v as unknown as
+                    | BlockExecJsonHandleInputResponse
+                    | BlockExecFileHandleInputResponse,
+                ])
+              ),
     artifact:
       domain['artifact'] == null
         ? (domain['artifact'] as undefined)
         : domain['artifact'] == null
           ? domain['artifact']
           : serializeStepArtifactRef(domain['artifact']),
-    handle_outputs: domain['handleOutputs'],
+    handle_outputs:
+      domain['handleOutputs'] == null
+        ? (domain['handleOutputs'] as undefined)
+        : domain['handleOutputs'] == null
+          ? domain['handleOutputs']
+          : domain['handleOutputs'] == null
+            ? domain['handleOutputs']
+            : Object.fromEntries(
+                Object.entries(domain['handleOutputs']).map(([__k, __v]) => [
+                  __k,
+                  __v as unknown as
+                    | BlockExecJsonHandleInputResponse
+                    | BlockExecFileHandleInputResponse,
+                ])
+              ),
     routing_decisions: domain['routingDecisions'],
     duration_ms: domain['durationMs'],
     created_at:
       domain['createdAt'] == null
         ? (domain['createdAt'] as undefined)
         : domain['createdAt'].toISOString(),
+    started_at:
+      domain['startedAt'] == null
+        ? (domain['startedAt'] as undefined)
+        : domain['startedAt'].toISOString(),
+    completed_at:
+      domain['completedAt'] == null
+        ? (domain['completedAt'] as undefined)
+        : domain['completedAt'].toISOString(),
+    handle_inputs_fingerprint: domain['handleInputsFingerprint'],
+    workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
+    block_config_fingerprint: domain['blockConfigFingerprint'],
+    execution_fingerprint: domain['executionFingerprint'],
     block_config: domain['blockConfig'],
     source_step_id: domain['sourceStepId'],
     available_iterations: domain['availableIterations'],

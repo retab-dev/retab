@@ -21,33 +21,78 @@ class StepArtifactRefOperation(str, Enum):
     FUNCTION_INVOCATION = "function_invocation"
 
 
+class BlockExecFileHandleInput(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    document: BlockExecFileRef
+    type: Literal["file"] = Field(default="file")
+
+
+class BlockExecFileRef(BaseModel):
+    """Public/shared file reference used across SDK and customer-facing APIs."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    id: str = Field(..., description="ID of the file")
+    filename: str = Field(..., description="Filename of the file")
+    mime_type: str = Field(..., description="MIME type of the file")
+
+
+class BlockExecJsonHandleInput(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    data: Any | None = Field(default=None)
+    type: Literal["json"] = Field(default="json")
+
+
 class StoredBlockExecution(BaseModel):
     """The result of executing a single workflow block.
 
-    The terminal state is carried by the `lifecycle` field, which is one of
-    completed, error, or skipped."""
+    The execution state is carried by the `lifecycle` field."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     id: str = Field(..., description="Unique block execution ID")
     workflow_id: str = Field(..., description="Workflow the block belongs to")
+    workflow_version_id: str | None = Field(default=None, description="Workflow version whose source run supplied inputs")
     source_run_id: str = Field(..., description="Workflow run whose inputs were used")
     block_id: str = Field(..., description="ID of the block that was executed")
     block_type: str = Field(..., description="Type of the block")
-    lifecycle: CompletedBlockExecutionLifecycle | ErrorBlockExecutionLifecycle | SkippedBlockExecutionLifecycle = Field(
-        ...,
-        description="Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.",
-        discriminator="status",
+    lifecycle: (
+        PendingBlockExecutionLifecycle
+        | QueuedBlockExecutionLifecycle
+        | RunningBlockExecutionLifecycle
+        | CompletedBlockExecutionLifecycle
+        | ErrorBlockExecutionLifecycle
+        | CancelledBlockExecutionLifecycle
+        | SkippedBlockExecutionLifecycle
+    ) = Field(..., description="Lifecycle state for this block execution.", discriminator="status")
+    handle_inputs: dict[str, BlockExecJsonHandleInput | BlockExecFileHandleInput] | None | None = Field(
+        default=None, description="Input payloads keyed by handle ID (file metadata for files, data for json)"
     )
-    handle_inputs: dict[str, Any] | None = Field(default=None, description="Input payloads keyed by handle ID (file metadata for files, data for json)")
     artifact: StepArtifactRef | None = Field(default=None, description="Reference to the artifact produced by this block execution, if any.")
-    handle_outputs: dict[str, Any] | None = Field(default=None, description="Output payloads keyed by handle ID")
+    handle_outputs: dict[str, BlockExecJsonHandleInput | BlockExecFileHandleInput] | None | None = Field(default=None, description="Output payloads keyed by handle ID")
     routing_decisions: list[str] | None = Field(default=None, description="Active output handles for routing decisions")
     duration_ms: float | None = Field(default=None, description="Duration of the block execution in milliseconds")
     created_at: datetime.datetime | None = Field(default=None, description="When the block execution record was created")
+    started_at: datetime.datetime | None = Field(default=None, description="When the block execution started")
+    completed_at: datetime.datetime | None = Field(default=None, description="When the block execution completed")
+    handle_inputs_fingerprint: str | None = None
+    workflow_draft_fingerprint: str | None = None
+    block_config_fingerprint: str | None = None
+    execution_fingerprint: str | None = None
     block_config: dict[str, Any] | None = Field(default=None, description="The draft block config used for this block execution")
     source_step_id: str | None = Field(default=None, description="The step ID that was used for inputs (includes iteration prefix if applicable)")
     available_iterations: list[dict[str, Any]] | None = Field(default=None, description="When the block has multiple iterations, lists all available ones")
+
+
+class CancelledBlockExecutionLifecycle(BaseModel):
+    """The execution was intentionally stopped before completion."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: Literal["cancelled"] = Field(default="cancelled")
+    reason: Any | None = Field(default=None)
 
 
 class CompletedBlockExecutionLifecycle(BaseModel):
@@ -87,6 +132,30 @@ class ErrorBlockExecutionLifecycle(BaseModel):
     message: str = Field(..., description="Human-readable error message")
 
 
+class PendingBlockExecutionLifecycle(BaseModel):
+    """The execution row exists but has not been dispatched."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: Literal["pending"] = Field(default="pending")
+
+
+class QueuedBlockExecutionLifecycle(BaseModel):
+    """Dispatch has been requested for this execution."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: Literal["queued"] = Field(default="queued")
+
+
+class RunningBlockExecutionLifecycle(BaseModel):
+    """The executor has started this block execution."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    status: Literal["running"] = Field(default="running")
+
+
 class SkippedBlockExecutionLifecycle(BaseModel):
     """Terminal: the block declared its inputs unsatisfied via
     `should_skip_block` and was skipped. `reason` is the skip rationale
@@ -115,9 +184,16 @@ class StepArtifactRef(BaseModel):
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
+BlockExecFileHandleInput.model_rebuild()
+BlockExecFileRef.model_rebuild()
+BlockExecJsonHandleInput.model_rebuild()
 StoredBlockExecution.model_rebuild()
+CancelledBlockExecutionLifecycle.model_rebuild()
 CompletedBlockExecutionLifecycle.model_rebuild()
 CreateBlockExecutionRequest.model_rebuild()
 ErrorBlockExecutionLifecycle.model_rebuild()
+PendingBlockExecutionLifecycle.model_rebuild()
+QueuedBlockExecutionLifecycle.model_rebuild()
+RunningBlockExecutionLifecycle.model_rebuild()
 SkippedBlockExecutionLifecycle.model_rebuild()
 StepArtifactRef.model_rebuild()

@@ -198,9 +198,16 @@ class WorkflowVersionFieldDiff(BaseModel):
 from .executions import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 __all__ = [
+    "BlockExecFileHandleInput",
+    "BlockExecFileRef",
+    "BlockExecJsonHandleInput",
+    "CancelledBlockExecutionLifecycle",
     "CompletedBlockExecutionLifecycle",
     "CreateBlockExecutionRequest",
     "ErrorBlockExecutionLifecycle",
+    "PendingBlockExecutionLifecycle",
+    "QueuedBlockExecutionLifecycle",
+    "RunningBlockExecutionLifecycle",
     "SkippedBlockExecutionLifecycle",
     "StepArtifactRef",
     "StepArtifactRefOperation",
