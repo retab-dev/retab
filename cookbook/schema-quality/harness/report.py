@@ -45,7 +45,7 @@ def render(results: dict, threshold: float) -> str:
         "compared, each adding one lever:\n"
     )
     L.append("- **baseline** — produced by `retab schemas generate` from one invoice; every field `required`, no nullable types, no reasoning prompts.")
-    L.append("- **nullable** — baseline with the optional fields retyped `[\"<type>\", \"null\"]` and removed from `required`.")
+    L.append("- **nullable** — baseline with the optional fields retyped `[\"<type>\", \"null\"]`; they stay `required` (optionality is carried by the null type, the right shape for strict structured output).")
     L.append("- **reasoning** — nullable plus an `X-ReasoningPrompt` on each optional field (and an `X-SystemPrompt`) telling the model to return null when a field is absent.\n")
     L.append(f"Each variant runs every invoice at `n_consensus=5`. Likelihood = mean per-field consensus confidence; weak = below {threshold:.2f}.\n")
 

@@ -6,8 +6,10 @@ null. We derive two upgrades from it, changing one lever at a time so the
 comparison is controlled:
 
   nullable   : the optional fields (the ones that are genuinely absent on some
-               invoices) are retyped as ["<type>", "null"] and removed from
-               `required`. Nothing else changes.
+               invoices) are retyped as ["<type>", "null"]. They stay in
+               `required` — under strict structured output every property is
+               emitted anyway, so optionality is expressed through the null
+               type, not by dropping the key. Nothing else changes.
 
   reasoning  : the nullable schema PLUS an X-ReasoningPrompt on each optional
                field and an X-SystemPrompt on the whole schema.
@@ -99,8 +101,9 @@ def make_nullable(schema: dict, optional_fields=OPTIONAL_FIELDS) -> dict:
             prop["type"] = [t, "null"]
         elif isinstance(t, list) and "null" not in t:
             prop["type"] = t + ["null"]
-    if isinstance(out.get("required"), list):
-        out["required"] = [r for r in out["required"] if r not in set(optional_fields)]
+    # NB: optional fields stay in `required`. Strict structured output emits
+    # every declared property regardless, so optionality is carried by the null
+    # type; keeping the field required is the recommended strict-mode shape.
     return out
 
 

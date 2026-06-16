@@ -30,7 +30,9 @@ previous, so every difference is attributable:
    invoice. The agent marks **every field `required`** with **no nullable
    types** and **no reasoning prompts** (see `schemas/baseline.json`).
 2. **nullable** — the baseline with the five optional fields retyped
-   `["<type>", "null"]` and removed from `required`.
+   `["<type>", "null"]`. They stay `required`: under strict structured output
+   every property is emitted anyway, so optionality is carried by the null type,
+   not by dropping the key from `required`.
 3. **reasoning** — the nullable schema plus an **`X-ReasoningPrompt`** on each
    optional field (and an `X-SystemPrompt`).
 
@@ -65,7 +67,9 @@ Three findings, one per lever — including one honest null result:
   because a `required` non-nullable number has no way to say "not present."
   Making those fields nullable fixed it (`null`). This is the absent-field
   accuracy jump: **73% → 100%**. *Lesson: mark genuinely-optional fields
-  nullable; a required field forces a fabricated value.*
+  nullable; a required, non-nullable field forces a fabricated value. Keeping
+  the field required but nullable is enough — and is the right shape for strict
+  structured output.*
   - Note: the baseline returned `null` correctly for the absent *string* fields
     (customer_name, code, PO) even though they were required — modern models
     often leave absent strings empty. The reliable failure was on *numbers*,

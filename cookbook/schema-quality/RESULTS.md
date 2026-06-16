@@ -3,7 +3,7 @@
 Five invoices of the same type, processed by one schema. They differ only in which optional fields are present (customer name, customer code, purchase order, discount, due date). Three schema variants are compared, each adding one lever:
 
 - **baseline** — produced by `retab schemas generate` from one invoice; every field `required`, no nullable types, no reasoning prompts.
-- **nullable** — baseline with the optional fields retyped `["<type>", "null"]` and removed from `required`.
+- **nullable** — baseline with the optional fields retyped `["<type>", "null"]`; they stay `required` (optionality is carried by the null type, the right shape for strict structured output).
 - **reasoning** — nullable plus an `X-ReasoningPrompt` on each optional field (and an `X-SystemPrompt`) telling the model to return null when a field is absent.
 
 Each variant runs every invoice at `n_consensus=5`. Likelihood = mean per-field consensus confidence; weak = below 0.90.
