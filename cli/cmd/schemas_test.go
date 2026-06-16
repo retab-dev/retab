@@ -595,3 +595,42 @@ func TestSchemasGetAndCancelHitGenerationSubpaths(t *testing.T) {
 		t.Fatalf("cancel hit %v %v, want POST /v1/schemas/generate/sch_x/cancel", gotMethod.Load(), gotPath.Load())
 	}
 }
+
+func TestIsTransientGenFailure(t *testing.T) {
+	transient := []string{
+		"context deadline exceeded",
+		"upstream deadline exceeded",
+		"request timed out",
+		"gateway timeout",
+		"read tcp: connection reset by peer",
+		"dial: connection refused",
+		"service unavailable",
+		"backend temporarily unavailable",
+		"HTTP 503 from orchestrator",
+		"received status 502",
+		"unexpected EOF",
+	}
+	for _, d := range transient {
+		if !isTransientGenFailure(d) {
+			t.Errorf("expected transient: %q", d)
+		}
+	}
+
+	// Genuine terminal failures whose message merely contains the characters of
+	// a transient token must NOT be retried.
+	terminal := []string{
+		"",
+		"   ",
+		"invalid schema: value 1503 is out of range",
+		"validation failed on field neofield",
+		"field amount_503 is required",
+		"unauthorized: invalid api key",
+		"document 5040 not found",
+		"unsupported file type",
+	}
+	for _, d := range terminal {
+		if isTransientGenFailure(d) {
+			t.Errorf("expected non-transient: %q", d)
+		}
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -317,34 +318,40 @@ func genFailureDetail(rec map[string]any) string {
 	return msg
 }
 
+// transientGenTokenRE matches short or numeric transient-failure signals that
+// must stand alone to count. Word boundaries keep them from false-positiving on
+// substrings of an arbitrary server message — e.g. "value 1503" must not match
+// the HTTP 503 signal, and an id/word containing "eof" must not match EOF — which
+// would otherwise trigger a wasteful resubmit of a genuinely terminal failure.
+var transientGenTokenRE = regexp.MustCompile(`\b(50[234]|eof|timeouts?)\b`)
+
 // isTransientGenFailure reports whether a schema-generation failure looks
 // retryable. The dominant case is the backend's own "context deadline
 // exceeded" when its orchestrator service is slow; the rest are the usual
 // transient HTTP/network signals. These are resubmitted rather than surfaced
 // as a one-off hiccup. An empty detail is treated as non-transient so genuine
-// (undescribed) failures are not retried blindly.
+// (undescribed) failures are not retried blindly. Multi-word phrases are
+// specific enough to match anywhere; short/numeric tokens must match on a word
+// boundary so they don't fire on coincidental substrings of a server message.
 func isTransientGenFailure(detail string) bool {
 	d := strings.ToLower(detail)
-	if d == "" {
+	if strings.TrimSpace(d) == "" {
 		return false
 	}
-	for _, needle := range []string{
+	for _, phrase := range []string{
 		"context deadline exceeded",
 		"deadline exceeded",
-		"timeout",
 		"timed out",
 		"temporarily unavailable",
 		"service unavailable",
 		"connection reset",
 		"connection refused",
-		"502", "503", "504",
-		"eof",
 	} {
-		if strings.Contains(d, needle) {
+		if strings.Contains(d, phrase) {
 			return true
 		}
 	}
-	return false
+	return transientGenTokenRE.MatchString(d)
 }
 
 var schemasGetCmd = &cobra.Command{
