@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-16T00:21:24.977Z",
+  "generatedAt": "2026-06-16T00:36:24.880Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -295,6 +295,7 @@
     "src/Enums/WorkflowTableFilterOperator.cs",
     "src/Enums/WorkflowTableValidationColumnRuleType.cs",
     "src/Enums/WorkflowTableValidationSeverity.cs",
+    "src/FileRef.cs",
     "src/MimeData.cs",
     "src/Retab.Generated.cs",
     "src/Retab.cs",
