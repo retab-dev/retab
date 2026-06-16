@@ -36,12 +36,12 @@ Join our [Discord](https://discord.com/invite/vc5tWRPqag) and share your feedbac
 
 ---
 
-## API Key
+## Bearer Authentication
 
-To use the API, you need to sign up on [Retab](https://www.retab.com/).
+To use the API, sign up on [Retab](https://www.retab.com/) and authenticate requests with `Authorization: Bearer <api-key>`.
 
 <p align="center">
-  <img src="./assets/visuals/API-key.png" alt="API Key" width="800">
+  <img src="./assets/visuals/API-key.png" alt="Bearer authentication setup" width="800">
 </p>
 
 ---

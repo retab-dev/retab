@@ -72,11 +72,7 @@ module Retab
       req["User-Agent"] = @configuration.user_agent
       if auth
         key = (request_options[:api_key] || request_options["api_key"] || api_key)
-        # Retab's API expects the raw key in `Api-Key` (not `Authorization: Bearer ...`).
-        # Confirmed against the Python SDK's `client.py` and the server response on
-        # /v1/files: "Provide a valid Bearer token, API Key, ..." — the API Key path
-        # is the `Api-Key` header.
-        req["Api-Key"] = key if key
+        req["Authorization"] = "Bearer #{key}" if key
       end
 
       if (idem = request_options[:idempotency_key] || request_options["idempotency_key"])

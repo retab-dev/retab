@@ -155,11 +155,7 @@ class HttpClient
         );
 
         $headers = array_filter([
-            // The Retab backend expects an `Api-Key` header.
-            // `Authorization: Bearer ...` is rejected with 401 (verified
-            // against both `sk_retab_*` and `sk_production_*` keys). The
-            // Node and Java SDKs both send `Api-Key`; PHP matches them.
-            'Api-Key' => $this->apiKey !== '' ? $this->apiKey : null,
+            'Authorization' => $this->apiKey !== '' ? 'Bearer ' . $this->apiKey : null,
             'X-Retab-Client-Id' => $this->clientId,
             'User-Agent' => $this->userAgent,
             'Accept' => 'application/json',

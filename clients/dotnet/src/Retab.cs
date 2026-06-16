@@ -31,7 +31,7 @@ namespace Retab
         /// <summary>The configured HTTP client.</summary>
         public HttpClient HttpClient { get; }
 
-        /// <summary>The configured API key (sent with the Api-Key header).</summary>
+        /// <summary>The configured API key (sent with the Authorization Bearer header).</summary>
         public string ApiKey { get; }
 
         /// <summary>The configured client-id, if any. Optional for Retab; required for some integrations.</summary>
@@ -143,9 +143,9 @@ namespace Retab
             var httpRequest = new HttpRequestMessage(request.Method ?? HttpMethod.Get, uri);
             var requestApiKey = request.RequestOptions?.ApiKey ?? this.ApiKey;
 
-            if (!string.IsNullOrWhiteSpace(requestApiKey) && !HasHeader(request.RequestOptions?.Headers, "Api-Key"))
+            if (!string.IsNullOrWhiteSpace(requestApiKey) && !HasHeader(request.RequestOptions?.Headers, "Authorization"))
             {
-                httpRequest.Headers.TryAddWithoutValidation("Api-Key", requestApiKey);
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", requestApiKey);
             }
 
             if (!string.IsNullOrEmpty(request.AccessToken))

@@ -38,7 +38,7 @@ func TestRunSetupInstallsSkillMCPAndRegistry(t *testing.T) {
 
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `[mcp_servers.retab]`)
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `type = "streamable-http"`)
-	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `Api-Key = "rtb_test"`)
+	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `Authorization = "Bearer rtb_test"`)
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `[mcp_servers.retab-docs]`)
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), retabDocsMCPURL)
 
@@ -115,19 +115,19 @@ func TestRunSyncRefreshesUniversalSkillAndMCP(t *testing.T) {
 		t.Fatalf("len(results) = %d, want 3", len(results))
 	}
 	assertFileContains(t, filepath.Join(universalSkill, "SKILL.md"), "Six document primitives")
-	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `Api-Key = "rtb_fresh"`)
+	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), `Authorization = "Bearer rtb_fresh"`)
 }
 
 func TestUpsertTomlMCPConfigReplacesExistingSection(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.toml")
-	if err := os.WriteFile(path, []byte("[mcp_servers.old]\nurl = \"old\"\n\n[mcp_servers.retab]\nurl = \"stale\"\n\n[mcp_servers.retab.headers]\nApi-Key = \"stale\"\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("[mcp_servers.old]\nurl = \"old\"\n\n[mcp_servers.retab]\nurl = \"stale\"\n\n[mcp_servers.retab.headers]\nAuthorization = \"Bearer stale\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	err := upsertTomlMCPConfig(path, "retab", mcpServerConfig{
 		Type:    "streamable-http",
 		URL:     retabMCPURL,
-		Headers: map[string]string{"Api-Key": "fresh"},
+		Headers: map[string]string{"Authorization": "Bearer fresh"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +140,7 @@ func TestUpsertTomlMCPConfigReplacesExistingSection(t *testing.T) {
 	if strings.Count(text, "[mcp_servers.retab]") != 1 {
 		t.Fatalf("retab section count = %d, want 1\n%s", strings.Count(text, "[mcp_servers.retab]"), text)
 	}
-	if !strings.Contains(text, `Api-Key = "fresh"`) || strings.Contains(text, "stale") {
+	if !strings.Contains(text, `Authorization = "Bearer fresh"`) || strings.Contains(text, "stale") {
 		t.Fatalf("toml was not replaced correctly:\n%s", text)
 	}
 }

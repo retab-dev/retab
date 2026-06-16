@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+const legacyAPIKeyHeader = "Api" + "-Key"
+
 // TestNewClientStillRequiresCredentials guards the no-creds regression: when
 // neither an API key nor a bearer token is supplied the constructor must fail
 // fast with a clear message rather than silently authenticate as nobody.
@@ -24,12 +26,12 @@ func TestNewClientStillRequiresCredentials(t *testing.T) {
 	}
 }
 
-// TestApiKeyAuthSendsApiKeyHeader is the baseline: the legacy API-key path
-// must continue to send `Api-Key` and must NOT send `Authorization`.
-func TestApiKeyAuthSendsApiKeyHeader(t *testing.T) {
+// TestApiKeyAuthSendsAuthorizationHeader is the baseline: API keys use the
+// same Authorization Bearer transport as access tokens.
+func TestApiKeyAuthSendsAuthorizationHeader(t *testing.T) {
 	var gotApiKey, gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotApiKey = r.Header.Get("Api-Key")
+		gotApiKey = r.Header.Get(legacyAPIKeyHeader)
 		gotAuth = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"data":[]}`))
@@ -44,22 +46,20 @@ func TestApiKeyAuthSendsApiKeyHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if gotApiKey != "sk_test_abc" {
-		t.Errorf("Api-Key header: got %q, want %q", gotApiKey, "sk_test_abc")
+	if gotAuth != "Bearer sk_test_abc" {
+		t.Errorf("Authorization header: got %q, want %q", gotAuth, "Bearer sk_test_abc")
 	}
-	if gotAuth != "" {
-		t.Errorf("Authorization header should be empty for API-key auth, got %q", gotAuth)
+	if gotApiKey != "" {
+		t.Errorf("legacy credential header should be empty for API-key auth, got %q", gotApiKey)
 	}
 }
 
 // TestBearerTokenAuthSendsAuthorizationHeader exercises the new OAuth path.
-// Critically, the Api-Key header must NOT be sent — otherwise the backend's
-// auth cascade gets two credentials and the unused one shows up in audit
-// logs as a 'failed' attempt.
+// Critically, the legacy API-key header must NOT be sent.
 func TestBearerTokenAuthSendsAuthorizationHeader(t *testing.T) {
 	var gotApiKey, gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotApiKey = r.Header.Get("Api-Key")
+		gotApiKey = r.Header.Get(legacyAPIKeyHeader)
 		gotAuth = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"data":[]}`))
@@ -81,7 +81,7 @@ func TestBearerTokenAuthSendsAuthorizationHeader(t *testing.T) {
 		t.Errorf("Authorization header: got %q, want %q", gotAuth, "Bearer workos_at_xyz")
 	}
 	if gotApiKey != "" {
-		t.Errorf("Api-Key header should be empty for Bearer auth, got %q", gotApiKey)
+		t.Errorf("legacy credential header should be empty for Bearer auth, got %q", gotApiKey)
 	}
 }
 

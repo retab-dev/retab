@@ -29,7 +29,7 @@ type retabConfig struct {
 
 	// AccessToken is a scoped user access token created for automation/agents.
 	// It authenticates with Authorization: Bearer and is intentionally stored
-	// separately from API keys so the CLI never sends it as an Api-Key header.
+	// separately from API keys so the CLI never mixes the credential types.
 	AccessToken string `json:"access_token,omitempty"`
 
 	// BaseURL overrides the default API endpoint. This selects a Retab

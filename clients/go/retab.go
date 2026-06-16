@@ -23,8 +23,8 @@ type Client struct {
 	headers    map[string]string
 
 	// tokenProvider, when set, returns a Bearer token at request time.
-	// Takes precedence over apiKey: requests use the `Authorization` header
-	// and `Api-Key` is omitted. Called on every request so callers can
+	// Takes precedence over apiKey: requests use this Bearer token instead
+	// of the API key. Called on every request so callers can
 	// implement transparent refresh without rebuilding the Client.
 	tokenProvider func(context.Context) (string, error)
 
@@ -85,7 +85,7 @@ func WithHeader(key string, value string) Option {
 }
 
 // WithBearerToken authenticates as the given Bearer token. The Client will
-// send `Authorization: Bearer <token>` on every request and omit `Api-Key`.
+// send `Authorization: Bearer <token>` on every request.
 // For tokens that need to be refreshed transparently, use
 // WithBearerTokenProvider instead.
 func WithBearerToken(token string) Option {

@@ -239,12 +239,12 @@ func resolveCLIRequest(cmd *cobra.Command) (resolvedCredential, string, retabCon
 func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	// Resolution order (first match wins), shared with the safety gate via
 	// resolveCLIRequest -> resolveCredential:
-	//   1. `--api-key` flag                       -> Api-Key header
-	//   2. `RETAB_API_KEY` env                    -> Api-Key header
-	//   3. `--env` / `--live` / default profile   -> Api-Key header
+	//   1. `--api-key` flag                       -> Bearer
+	//   2. `RETAB_API_KEY` env                    -> Bearer
+	//   3. `--env` / `--live` / default profile   -> Bearer
 	//   4. Stored access token                     -> Bearer
 	//   5. Stored OAuth tokens                     -> Bearer, transparent refresh
-	//   6. Stored legacy api_key                   -> Api-Key header
+	//   6. Stored legacy api_key                   -> Bearer
 	//   7. nothing                                 -> error
 	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
 	if err != nil {
@@ -728,7 +728,7 @@ func doCLIRawRequest(
 	if bearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	} else {
-		req.Header.Set("Api-Key", apiKey)
+		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -777,7 +777,7 @@ func doCLIBodyRequest(
 	if bearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	} else {
-		req.Header.Set("Api-Key", apiKey)
+		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -1792,7 +1792,7 @@ func addSchemaFlags(cmd *cobra.Command) {
 // is in HTTP wire format so it's pasteable into other tools (httpie,
 // requestbin, etc.) without translation.
 //
-// Sensitive headers — `Api-Key`, `Authorization` — are redacted in the
+// Sensitive auth headers are redacted in the
 // dump. Without this guard, sharing a `--debug` log with another engineer
 // for a bug report would leak the user's full API key, which is the exact
 // scenario where the redaction matters.

@@ -148,7 +148,7 @@ func (c *Client) newMultipartRequest(ctx context.Context, method string, path st
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 	} else {
-		req.Header.Set("Api-Key", c.apiKey)
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 	req.Header.Set("Accept", "application/json")
 	for key, value := range c.headers {

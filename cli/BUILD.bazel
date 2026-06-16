@@ -20,12 +20,12 @@ sh_test(
     srcs = ["//tools/bazel:run_api_surface_check.sh"],
     args = [
         "cli-overlay",
-        "open-source/docs/api-reference/openapi.json",
+        "$(location //open-source/docs/api-reference:openapi_json)",
         "open-source/sdk/cli/api-overlay-inventory.json",
     ],
     data = [
         ":sources",
-        "//open-source/docs/api-reference:checked_openapi_json",
+        "//open-source/docs/api-reference:openapi_json",
         "//tools/bazel:api_surface.py",
     ],
     tags = [

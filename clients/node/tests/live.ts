@@ -42,7 +42,7 @@ async function probeServer(): Promise<boolean> {
     const t = setTimeout(() => ctrl.abort(), 4000);
     const res = await fetch(`${BASE_URL}/v1/files?limit=1`, {
       method: 'GET',
-      headers: { 'Api-Key': API_KEY as string, Accept: 'application/json' },
+      headers: { Authorization: `Bearer ${API_KEY}`, Accept: 'application/json' },
       signal: ctrl.signal,
     });
     clearTimeout(t);

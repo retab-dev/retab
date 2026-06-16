@@ -194,7 +194,7 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, que
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 	} else {
-		req.Header.Set("Api-Key", c.apiKey)
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {

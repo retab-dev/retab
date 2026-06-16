@@ -63,7 +63,7 @@ cat <<'JSON'
   "retab": {
     "type": "streamable-http",
     "url": "https://mcp.retab.com/mcp",
-    "headers": { "Api-Key": "YOUR_API_KEY" }
+    "headers": { "Authorization": "Bearer YOUR_API_KEY" }
   }
 }
 JSON

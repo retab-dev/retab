@@ -143,7 +143,7 @@ project-local config where supported.`,
 			}
 		}
 		if apiKey == "" {
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "note: no API key was available, so MCP entries were written without an Api-Key header"); err != nil {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "note: no API key was available, so MCP entries were written without an Authorization header"); err != nil {
 				return err
 			}
 		}
@@ -177,8 +177,8 @@ var syncCmd = &cobra.Command{
 func init() {
 	setupCmd.Flags().Bool("local", false, "install into the current project instead of global agent config")
 	setupCmd.Flags().StringArray("agent", nil, "target agent: claude-code, codex, cursor, opencode, windsurf (repeatable)")
-	setupCmd.Flags().String("mcp-api-key", "", "Api-Key header value to write into MCP config (env: RETAB_API_KEY)")
-	syncCmd.Flags().String("mcp-api-key", "", "Api-Key header value to write into MCP config (env: RETAB_API_KEY)")
+	setupCmd.Flags().String("mcp-api-key", "", "API key value to write as Authorization: Bearer in MCP config (env: RETAB_API_KEY)")
+	syncCmd.Flags().String("mcp-api-key", "", "API key value to write as Authorization: Bearer in MCP config (env: RETAB_API_KEY)")
 	rootCmd.AddCommand(setupCmd, syncCmd)
 }
 
@@ -498,7 +498,7 @@ func setupMCPForAgent(agent setupAgent, scope installScope, cwd string, apiKey s
 	}
 	retabConfig := mcpServerConfig{Type: "streamable-http", URL: retabMCPURL}
 	if apiKey != "" {
-		retabConfig.Headers = map[string]string{"Api-Key": apiKey}
+		retabConfig.Headers = map[string]string{"Authorization": "Bearer " + apiKey}
 	}
 	if err := writeMCPServer(agent, path, retabMCPServerName, retabConfig); err != nil {
 		return "", err

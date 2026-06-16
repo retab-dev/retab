@@ -72,7 +72,7 @@ export class RetabBase {
       }
     }
     const headers: Record<string, string> = {
-      'Api-Key': this.apiKey,
+      Authorization: 'Bearer ' + this.apiKey,
       Accept: 'application/json',
       ...opts.headers,
     };
@@ -114,7 +114,7 @@ export class RetabBase {
       }
     }
     const headers: Record<string, string> = {
-      'Api-Key': this.apiKey,
+      Authorization: 'Bearer ' + this.apiKey,
       Accept: '*/*',
       ...opts.headers,
     };

@@ -201,8 +201,7 @@ spec:
         );
 
         Assert.NotNull(handler.Request);
-        Assert.Equal("test-api-key", handler.Request!.Headers.GetValues("Api-Key").Single());
-        Assert.False(handler.Request.Headers.Contains("Authorization"));
+        Assert.Equal("Bearer test-api-key", handler.Request!.Headers.Authorization!.ToString());
     }
 
     [Fact]
@@ -227,7 +226,7 @@ spec:
         );
 
         Assert.NotNull(handler.Request);
-        Assert.Equal("override-api-key", handler.Request!.Headers.GetValues("Api-Key").Single());
+        Assert.Equal("Bearer override-api-key", handler.Request!.Headers.Authorization!.ToString());
     }
 
     [Fact]

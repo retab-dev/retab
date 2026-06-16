@@ -90,11 +90,11 @@ describe('RetabBase.request query serialization', () => {
 });
 
 describe('RetabBase.request headers and body framing', () => {
-  test('Api-Key header is injected from apiKey', async () => {
+  test('Authorization header is injected from apiKey', async () => {
     const { probe, captured } = probeCapturing(() => jsonResponse({}));
     await probe.call({ method: 'GET', path: '/v1/items' });
     const headers = captured().init.headers as Record<string, string>;
-    expect(headers['Api-Key']).toBe('secret_key');
+    expect(headers['Authorization']).toBe('Bearer secret_key');
     expect(headers['Accept']).toBe('application/json');
   });
 
@@ -124,7 +124,7 @@ describe('RetabBase.request headers and body framing', () => {
     });
     const headers = captured().init.headers as Record<string, string>;
     expect(headers['X-Trace']).toBe('abc');
-    expect(headers['Api-Key']).toBe('secret_key');
+    expect(headers['Authorization']).toBe('Bearer secret_key');
   });
 });
 

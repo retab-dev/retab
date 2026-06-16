@@ -15,7 +15,7 @@ import (
 // token) MUST be redacted. The unredacted version is a leak — bug reports
 // get pasted into chat, GitHub issues, screenshots.
 
-func TestDebugTransport_RedactsApiKey(t *testing.T) {
+func TestDebugTransport_RedactsAuthorizationAPIKey(t *testing.T) {
 	// Stand up a noop upstream that just answers 200.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -28,7 +28,7 @@ func TestDebugTransport_RedactsApiKey(t *testing.T) {
 
 	tr := &debugTransport{wrapped: http.DefaultTransport}
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/v1/files/x", nil)
-	req.Header.Set("Api-Key", "sk_retab_VERYSECRETVALUE_dont_leak_me")
+	req.Header.Set("Authorization", "Bearer sk_retab_VERYSECRETVALUE_dont_leak_me")
 	resp, err := tr.RoundTrip(req)
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
@@ -38,16 +38,16 @@ func TestDebugTransport_RedactsApiKey(t *testing.T) {
 
 	got := stderr.read()
 	if strings.Contains(got, "sk_retab_VERYSECRETVALUE_dont_leak_me") {
-		t.Errorf("Api-Key value leaked into --debug output:\n%s", got)
+		t.Errorf("API key value leaked into --debug output:\n%s", got)
 	}
 	// The redacted form must STILL appear so the user can confirm WHICH
 	// key got used. redactKey reveals the first 4 + last 4 chars; the
 	// rest is asterisks. For our input "...dont_leak_me", that's "k_me".
 	if !strings.Contains(got, "sk_r") || !strings.Contains(got, "k_me") {
-		t.Errorf("redacted Api-Key preview missing — user can't disambiguate keys:\n%s", got)
+		t.Errorf("redacted API key preview missing; user can't disambiguate keys:\n%s", got)
 	}
-	if !strings.Contains(got, "Api-Key: ") {
-		t.Errorf("Api-Key header missing entirely (over-redaction):\n%s", got)
+	if !strings.Contains(got, "Authorization: Bearer ") {
+		t.Errorf("Authorization header missing entirely (over-redaction):\n%s", got)
 	}
 }
 
@@ -73,8 +73,7 @@ func TestDebugTransport_RedactsBearerTokenButKeepsScheme(t *testing.T) {
 	if strings.Contains(got, "VERYSECRETACCESSTOKEN") {
 		t.Errorf("Bearer token leaked:\n%s", got)
 	}
-	// Scheme is preserved — useful for diagnosing "why is the CLI sending
-	// Bearer instead of Api-Key?" auth flow questions.
+	// Scheme is preserved, which is useful when diagnosing auth flow questions.
 	if !strings.Contains(got, "Authorization: Bearer ") {
 		t.Errorf("expected scheme preserved (`Authorization: Bearer ...`):\n%s", got)
 	}
@@ -163,7 +162,7 @@ func TestDebugTransport_NonSensitiveHeadersUnchanged(t *testing.T) {
 
 	tr := &debugTransport{wrapped: http.DefaultTransport}
 	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
-	req.Header.Set("Api-Key", "sk_retab_secret123456789012")
+	req.Header.Set("Authorization", "Bearer sk_retab_secret123456789012")
 	req.Header.Set("X-Request-Id", "req_safe_to_show")
 	req.Header.Set("User-Agent", "retab-cli/test")
 	resp, err := tr.RoundTrip(req)
@@ -183,13 +182,13 @@ func TestDebugTransport_NonSensitiveHeadersUnchanged(t *testing.T) {
 	}
 }
 
-// The clone-before-mutate property: the outgoing wire request must NOT
-// have its Api-Key header redacted by the dump. A regression here would
-// silently break every authenticated request when --debug is on.
+// The clone-before-mutate property: the outgoing wire request must NOT have its
+// Authorization header redacted by the dump. A regression here would silently
+// break every authenticated request when --debug is on.
 func TestDebugTransport_OutgoingRequestStillAuthenticated(t *testing.T) {
-	var sawAPIKey string
+	var sawAuthorization string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sawAPIKey = r.Header.Get("Api-Key")
+		sawAuthorization = r.Header.Get("Authorization")
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
@@ -199,15 +198,15 @@ func TestDebugTransport_OutgoingRequestStillAuthenticated(t *testing.T) {
 
 	tr := &debugTransport{wrapped: http.DefaultTransport}
 	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
-	req.Header.Set("Api-Key", "sk_retab_real_token_should_reach_server_abc123")
+	req.Header.Set("Authorization", "Bearer sk_retab_real_token_should_reach_server_abc123")
 	resp, err := tr.RoundTrip(req)
 	if err != nil {
 		t.Fatalf("roundtrip: %v", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if sawAPIKey != "sk_retab_real_token_should_reach_server_abc123" {
-		t.Errorf("server received redacted Api-Key %q — CLI broke auth while trying to redact debug output", sawAPIKey)
+	if sawAuthorization != "Bearer sk_retab_real_token_should_reach_server_abc123" {
+		t.Errorf("server received redacted Authorization %q; CLI broke auth while trying to redact debug output", sawAuthorization)
 	}
 }
 

@@ -1056,13 +1056,13 @@ func TestWorkflowStepsGet(t *testing.T) {
 	var seenMethod string
 	var seenPath string
 	var seenQuery url.Values
-	var seenAPIKey string
+	var seenAuth string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod = r.Method
 		seenPath = r.URL.Path
 		seenQuery = r.URL.Query()
-		seenAPIKey = r.Header.Get("Api-Key")
+		seenAuth = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"step_id":     "step_123",
@@ -1097,8 +1097,8 @@ func TestWorkflowStepsGet(t *testing.T) {
 	if seenPath != "/v1/workflows/steps/step_123" || seenQuery.Encode() != "" {
 		t.Fatalf("path = %s?%s", seenPath, seenQuery.Encode())
 	}
-	if seenAPIKey != "test-key" {
-		t.Fatalf("api key = %s", seenAPIKey)
+	if seenAuth != "Bearer test-key" {
+		t.Fatalf("authorization = %s", seenAuth)
 	}
 	if step.StepID != "step_123" || step.RunID != "run_123" {
 		t.Fatalf("step ids = %#v", step)

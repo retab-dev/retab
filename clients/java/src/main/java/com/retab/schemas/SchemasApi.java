@@ -66,7 +66,7 @@ public final class SchemasApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     requestBuilder.header("Content-Type", "application/json");
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =

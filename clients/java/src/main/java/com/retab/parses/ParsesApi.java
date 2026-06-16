@@ -53,7 +53,7 @@ public final class ParsesApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -121,7 +121,7 @@ public final class ParsesApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     requestBuilder.header("Content-Type", "application/json");
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
@@ -144,7 +144,7 @@ public final class ParsesApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -165,7 +165,7 @@ public final class ParsesApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("DELETE", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -186,7 +186,7 @@ public final class ParsesApi {
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
-            .header("Api-Key", client.getApiKey());
+            .header("Authorization", "Bearer " + client.getApiKey());
     HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());

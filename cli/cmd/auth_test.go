@@ -330,7 +330,7 @@ func TestProbeAuthStatus_UsesAuthStatusEndpointForOAuth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenPath = r.URL.Path
 		seenAuth = r.Header.Get("Authorization")
-		seenAPIKey = r.Header.Get("Api-Key")
+		seenAPIKey = r.Header.Get(legacyCredentialHeaderNameForTest())
 		if r.URL.Path != "/v1/auth/status" {
 			t.Errorf("probe path = %q, want /v1/auth/status", r.URL.Path)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -375,7 +375,7 @@ func TestProbeAuthStatus_UsesAuthStatusEndpointForOAuth(t *testing.T) {
 		t.Fatalf("Authorization header = %q, want Bearer at_probe", seenAuth)
 	}
 	if seenAPIKey != "" {
-		t.Fatalf("Api-Key header should be empty for OAuth probe, got %q", seenAPIKey)
+		t.Fatalf("legacy credential header should be empty for OAuth probe, got %q", seenAPIKey)
 	}
 }
 
@@ -390,7 +390,7 @@ func TestAddSelectedEnvironmentStatusIncludesSelectedEnvironment(t *testing.T) {
 	var seenEnvironmentHeader string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenAuth = r.Header.Get("Authorization")
-		seenAPIKey = r.Header.Get("Api-Key")
+		seenAPIKey = r.Header.Get(legacyCredentialHeaderNameForTest())
 		seenEnvironmentHeader = r.Header.Get(legacyEnvironmentHeaderNameForTest())
 		if r.URL.Path != "/v1/environments/env_prod" {
 			t.Fatalf("path = %q, want /v1/environments/env_prod", r.URL.Path)
@@ -425,7 +425,7 @@ func TestAddSelectedEnvironmentStatusIncludesSelectedEnvironment(t *testing.T) {
 		t.Fatalf("Authorization = %q, want raw OAuth bearer", seenAuth)
 	}
 	if seenAPIKey != "" {
-		t.Fatalf("Api-Key should be empty for OAuth environment lookup, got %q", seenAPIKey)
+		t.Fatalf("legacy credential header should be empty for OAuth environment lookup, got %q", seenAPIKey)
 	}
 	if seenEnvironmentHeader != "" {
 		t.Fatalf("environment lookup sent forbidden environment header %q", seenEnvironmentHeader)
@@ -589,7 +589,7 @@ func TestProbeAuthStatus_UsesBearerForStoredAccessToken(t *testing.T) {
 	var seenAPIKey string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenAuth = r.Header.Get("Authorization")
-		seenAPIKey = r.Header.Get("Api-Key")
+		seenAPIKey = r.Header.Get(legacyCredentialHeaderNameForTest())
 		if r.URL.Path != "/v1/auth/status" {
 			t.Errorf("probe path = %q, want /v1/auth/status", r.URL.Path)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -619,7 +619,7 @@ func TestProbeAuthStatus_UsesBearerForStoredAccessToken(t *testing.T) {
 		t.Fatalf("Authorization header = %q, want Bearer acctk_production_probe", seenAuth)
 	}
 	if seenAPIKey != "" {
-		t.Fatalf("Api-Key header should be empty for access-token probe, got %q", seenAPIKey)
+		t.Fatalf("legacy credential header should be empty for access-token probe, got %q", seenAPIKey)
 	}
 }
 

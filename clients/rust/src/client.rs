@@ -302,12 +302,7 @@ impl Retab {
 
         let mut req = self.inner.http.request(method, &url);
         if !self.inner.api_key.is_empty() {
-            // `Api-Key` is the Retab default header. We deliberately do NOT
-            // also set `Authorization: Bearer <api_key>` — the server treats
-            // those as distinct auth modes and rejects the api-key in the
-            // bearer slot. Customers who want bearer auth can pass an
-            // Authorization header via [`RequestOptions::extra_headers`].
-            req = req.header("Api-Key", &self.inner.api_key);
+            req = req.header("Authorization", format!("Bearer {}", self.inner.api_key));
         }
         if let Some(opts) = options {
             for (k, v) in &opts.extra_headers {
@@ -374,7 +369,7 @@ impl Retab {
 
         let mut req = self.inner.http.request(method, &url);
         if !self.inner.api_key.is_empty() {
-            req = req.header("Api-Key", &self.inner.api_key);
+            req = req.header("Authorization", format!("Bearer {}", self.inner.api_key));
         }
         if let Some(opts) = options {
             for (k, v) in &opts.extra_headers {

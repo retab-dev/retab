@@ -114,7 +114,7 @@ class BaseRetab:
         self.timeout = timeout
         self.max_retries = max_retries
         self.headers = {
-            "Api-Key": self.api_key,
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
 

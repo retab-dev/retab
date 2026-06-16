@@ -160,7 +160,7 @@ func TestNewClientDoesNotUseSelectedEnvironmentForAPIKeyAuth(t *testing.T) {
 			t.Fatalf("API-key auth must not mint dashboard context tokens")
 		}
 		seenEnvironmentHeader = r.Header.Get(legacyEnvironmentHeaderNameForTest())
-		seenAPIKey = r.Header.Get("Api-Key")
+		seenAPIKey = r.Header.Get(legacyCredentialHeaderNameForTest())
 		seenAuth = r.Header.Get("Authorization")
 		if r.URL.Path != "/v1/workflows" {
 			t.Fatalf("path = %q, want /v1/workflows", r.URL.Path)
@@ -181,11 +181,11 @@ func TestNewClientDoesNotUseSelectedEnvironmentForAPIKeyAuth(t *testing.T) {
 	if seenEnvironmentHeader != "" {
 		t.Fatalf("environment header = %q, want empty", seenEnvironmentHeader)
 	}
-	if seenAPIKey != "test-key" {
-		t.Fatalf("Api-Key = %q, want test-key", seenAPIKey)
+	if seenAPIKey != "" {
+		t.Fatalf("legacy credential header = %q, want empty", seenAPIKey)
 	}
-	if seenAuth != "" {
-		t.Fatalf("Authorization = %q, want empty", seenAuth)
+	if seenAuth != "Bearer test-key" {
+		t.Fatalf("Authorization = %q, want Bearer test-key", seenAuth)
 	}
 }
 
@@ -230,8 +230,8 @@ func TestNewClientUsesDashboardContextTokenForSelectedOAuthEnvironment(t *testin
 			if r.Header.Get("Authorization") != "Bearer ctx_cli" {
 				t.Fatalf("workflow auth = %q, want dashboard context bearer", r.Header.Get("Authorization"))
 			}
-			if r.Header.Get("Api-Key") != "" {
-				t.Fatalf("Api-Key should be empty for dashboard context auth, got %q", r.Header.Get("Api-Key"))
+			if r.Header.Get(legacyCredentialHeaderNameForTest()) != "" {
+				t.Fatalf("legacy credential header should be empty for dashboard context auth, got %q", r.Header.Get(legacyCredentialHeaderNameForTest()))
 			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"data":[]}`))
@@ -312,8 +312,8 @@ func TestCLIJSONRequestUsesDashboardContextTokenForSelectedOAuthEnvironment(t *t
 			if r.Header.Get("Authorization") != "Bearer ctx_raw_json" {
 				t.Fatalf("probe auth = %q, want dashboard context bearer", r.Header.Get("Authorization"))
 			}
-			if r.Header.Get("Api-Key") != "" {
-				t.Fatalf("Api-Key should be empty for dashboard context auth, got %q", r.Header.Get("Api-Key"))
+			if r.Header.Get(legacyCredentialHeaderNameForTest()) != "" {
+				t.Fatalf("legacy credential header should be empty for dashboard context auth, got %q", r.Header.Get(legacyCredentialHeaderNameForTest()))
 			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"ok":true}`))
@@ -419,8 +419,11 @@ func TestEnvWhichShowsSelectedEnvironment(t *testing.T) {
 		if r.URL.Path != "/v1/environments/env_prod" {
 			t.Fatalf("path = %q, want /v1/environments/env_prod", r.URL.Path)
 		}
-		if r.Header.Get("Api-Key") != "test-key" {
-			t.Fatalf("Api-Key = %q, want test-key", r.Header.Get("Api-Key"))
+		if r.Header.Get(legacyCredentialHeaderNameForTest()) != "" {
+			t.Fatalf("legacy credential header = %q, want empty", r.Header.Get(legacyCredentialHeaderNameForTest()))
+		}
+		if r.Header.Get("Authorization") != "Bearer test-key" {
+			t.Fatalf("Authorization = %q, want Bearer test-key", r.Header.Get("Authorization"))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(cliEnvironment{
@@ -515,4 +518,8 @@ func resetEnvironmentCommandPersistentFlags(t *testing.T) {
 
 func legacyEnvironmentHeaderNameForTest() string {
 	return strings.Join([]string{"X", "Retab", "Environment", "Id"}, "-")
+}
+
+func legacyCredentialHeaderNameForTest() string {
+	return "Api" + "-Key"
 }
