@@ -2715,3 +2715,28 @@ func TestWorkflowsRunsWaitHelpMentionsCancelledNonZeroExit(t *testing.T) {
 		t.Fatalf("wait help should mention cancelled runs exit non-zero:\n%s", help)
 	}
 }
+
+func TestShouldDumpRawExportCSV(t *testing.T) {
+	cases := []struct {
+		name   string
+		raw    bool
+		format string
+		isTTY  bool
+		want   bool
+	}{
+		{"default on TTY -> raw CSV", false, "", true, true},
+		{"explicit auto on TTY -> raw CSV (regression)", false, "auto", true, true},
+		{"auto when piped -> JSON envelope", false, "auto", false, false},
+		{"default when piped -> JSON envelope", false, "", false, false},
+		{"explicit json on TTY -> JSON envelope", false, "json", true, false},
+		{"explicit csv when piped -> raw CSV", false, "csv", false, true},
+		{"explicit table -> raw CSV", false, "table", false, true},
+		{"--raw forces raw CSV", true, "json", false, true},
+	}
+	for _, c := range cases {
+		if got := shouldDumpRawExportCSV(c.raw, c.format, c.isTTY); got != c.want {
+			t.Errorf("%s: shouldDumpRawExportCSV(%v,%q,%v)=%v want %v",
+				c.name, c.raw, c.format, c.isTTY, got, c.want)
+		}
+	}
+}

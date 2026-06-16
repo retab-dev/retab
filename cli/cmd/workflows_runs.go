@@ -1458,7 +1458,7 @@ also configurable.`,
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
 			outFormat = f.Value.String()
 		}
-		if raw || outFormat == "table" || outFormat == string(OutputCSV) || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
+		if shouldDumpRawExportCSV(raw, outFormat, term.IsTerminal(int(os.Stdout.Fd()))) {
 			if result != nil {
 				_, err := os.Stdout.WriteString(result.CsvData)
 				if err == nil && !strings.HasSuffix(result.CsvData, "\n") {
@@ -1469,6 +1469,23 @@ also configurable.`,
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// shouldDumpRawExportCSV reports whether `runs export` should emit the raw CSV
+// bytes instead of the JSON envelope. Raw output is chosen for --raw, an
+// explicit table/csv format, or the auto-detect default on a TTY. Both "" and
+// "auto" mean auto-detect (--output accepts "auto" as an explicit synonym for
+// the default), so both must consult the TTY — checking only "" let an explicit
+// `--output auto` fall through to the JSON envelope.
+func shouldDumpRawExportCSV(raw bool, outFormat string, isTTY bool) bool {
+	switch outFormat {
+	case "table", string(OutputCSV):
+		return true
+	}
+	if raw {
+		return true
+	}
+	return (outFormat == "" || outFormat == "auto") && isTTY
 }
 
 func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, error) {

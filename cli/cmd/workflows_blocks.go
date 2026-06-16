@@ -104,6 +104,11 @@ func mergeWorkflowBlockConfig(existing map[string]any, patch map[string]any) map
 	merged := make(map[string]any, len(existing)+len(patch))
 	maps.Copy(merged, existing)
 	for key, patchValue := range patch {
+		// RFC 7396: a null patch value deletes the key.
+		if patchValue == nil {
+			delete(merged, key)
+			continue
+		}
 		existingChild, existingIsMap := merged[key].(map[string]any)
 		patchChild, patchIsMap := patchValue.(map[string]any)
 		if existingIsMap && patchIsMap {
