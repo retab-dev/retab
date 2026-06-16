@@ -8,7 +8,6 @@ filegroup(
     srcs = [
         "//.scripts:sdk_generation_scripts",
         "//:oagen_generation_inputs",
-        "//open-source/docs/api-reference:checked_openapi_json",
     ],
 )
 
@@ -139,12 +138,12 @@ sh_test(
     srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "node",
-        "$(location //open-source/sdk/clients/node:generated_node_sdk_formatted)",
+        "$(location :generated_node_sdk)",
         "$(location //open-source/sdk/clients/node:committed_node_sdk_tree)",
     ],
     data = [
         "//open-source/sdk/clients/node:committed_node_sdk_tree",
-        "//open-source/sdk/clients/node:generated_node_sdk_formatted",
+        ":generated_node_sdk",
     ],
     tags = ["generated-check"],
 )
@@ -157,13 +156,10 @@ sdk_generation_tree(
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
 
-# Generate from the committed OpenAPI contract (checked_openapi_json), not the
-# live-backend genrule, so SDK drift is decoupled from backend regeneration and
-# the check is hermetic. Pinned Node toolchain is threaded in by the rule.
 sdk_generation_tree(
     name = "generated_node_sdk",
     language = "node",
-    openapi = "//open-source/docs/api-reference:checked_openapi_json",
+    openapi = "//open-source/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = LOCAL_TAGS + ["generated-artifact"],
 )
@@ -186,12 +182,12 @@ sh_test(
     srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "go",
-        "$(location //open-source/sdk/clients/go:generated_go_sdk_formatted)",
+        "$(location :generated_go_sdk)",
         "$(location //open-source/sdk/clients/go:committed_go_sdk_tree)",
     ],
     data = [
         "//open-source/sdk/clients/go:committed_go_sdk_tree",
-        "//open-source/sdk/clients/go:generated_go_sdk_formatted",
+        ":generated_go_sdk",
     ],
     tags = ["generated-check"],
 )
@@ -279,12 +275,12 @@ sh_test(
     srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "php",
-        "$(location //open-source/sdk/clients/php:generated_php_sdk_formatted)",
+        "$(location :generated_php_sdk)",
         "$(location //open-source/sdk/clients/php:committed_php_sdk_tree)",
     ],
     data = [
         "//open-source/sdk/clients/php:committed_php_sdk_tree",
-        "//open-source/sdk/clients/php:generated_php_sdk_formatted",
+        ":generated_php_sdk",
     ],
     tags = ["generated-check"],
 )
@@ -399,9 +395,10 @@ sdk_generation_tree(
     sdk_generation_tree(
         name = spec["target"],
         language = spec["language"],
-        # Snippet lint is downstream of the checked generated artifact. The
-        # dedicated openapi_check target owns backend -> openapi freshness.
-        openapi = "//open-source/docs/api-reference:checked_openapi_json",
+        # Snippet lint is downstream of SDK trees generated from the same public
+        # OpenAPI artifact as the checked SDKs. This keeps docs examples on the
+        # Go routes -> public OpenAPI -> SDK -> snippet-lint chain.
+        openapi = "//open-source/docs/api-reference:openapi_json",
         srcs = [
             ":sdk_generation_common_inputs",
             ":%s_sdk_seed_inputs" % spec["language"],
