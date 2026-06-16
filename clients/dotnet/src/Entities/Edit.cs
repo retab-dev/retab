@@ -10,7 +10,7 @@ namespace Retab
         public string Id { get; set; } = default!;
 
         /// <summary>Information about the source file (input document or template PDF).</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Model used for the edit operation.</summary>
         public string Model { get; set; } = default!;
@@ -34,7 +34,7 @@ namespace Retab
         public PrimitiveError? Error { get; set; }
 
         /// <summary>Durable file reference for the filled document, when materialized.</summary>
-        public FileRef? FilledDocumentRef { get; set; }
+        public BlockExecFileRef? FilledDocumentRef { get; set; }
 
         /// <summary>Usage information for the edit operation.</summary>
         public RetabUsage? Usage { get; set; }

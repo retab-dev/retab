@@ -2675,12 +2675,6 @@ func (r *WorkflowTest) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// WorkflowTestArtifactRef represents a workflow test artifact ref.
-type WorkflowTestArtifactRef struct {
-	ID        string                           `json:"id"`
-	Operation WorkflowTestArtifactRefOperation `json:"operation"`
-}
-
 // WorkflowTestBlockTarget public workflow-test target.
 // The storage layer remains block-scoped today, but the API shape names the
 // tested entity explicitly so workflow-level targets can be added later.
@@ -2696,7 +2690,7 @@ type WorkflowTestResult struct {
 	TestID            string                 `json:"test_id"`
 	Lifecycle         *WorkflowTestRunStatus `json:"lifecycle,omitempty"`
 	Timing            *WorkflowTestRunTiming `json:"timing,omitempty"`
-	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.
+	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.
 	Verdict                  *WorkflowTestResultVerdict `json:"verdict,omitempty"`
 	WorkflowID               string                     `json:"workflow_id"`
 	BlockID                  string                     `json:"block_id"`
@@ -2705,13 +2699,11 @@ type WorkflowTestResult struct {
 	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
 	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
 	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
-	Artifact                 *WorkflowTestArtifactRef   `json:"artifact,omitempty"`
+	Artifact                 *StepArtifactRef           `json:"artifact,omitempty"`
 	HandleInputs             map[string]HandleInput     `json:"handle_inputs,omitempty"`
 	HandleOutputs            map[string]HandleInput     `json:"handle_outputs,omitempty"`
 	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
 	Warnings                 []string                   `json:"warnings,omitempty"`
-	Error                    *ErrorDetails              `json:"error,omitempty"`
-	Skipped                  *bool                      `json:"skipped,omitempty"`
 	AssertionResult          *AssertionResult           `json:"assertion_result,omitempty"`
 	VerdictSummary           *VerdictSummary            `json:"verdict_summary,omitempty"`
 }

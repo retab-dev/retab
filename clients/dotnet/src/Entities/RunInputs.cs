@@ -7,7 +7,7 @@ namespace Retab
     {
 
         /// <summary>start_document block ID -&gt; input document reference</summary>
-        public Dictionary<string, FileRef>? Documents { get; set; }
+        public Dictionary<string, BlockExecFileRef>? Documents { get; set; }
 
         /// <summary>start-json block ID -&gt; input JSON data</summary>
         public Dictionary<string, object>? JsonData { get; set; }

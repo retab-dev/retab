@@ -10,7 +10,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = 'retab'
-  spec.version = '0.1.7'
+  spec.version = '0.1.9'
   spec.authors = ['Retab']
   spec.email = ['support@retab.com']
 

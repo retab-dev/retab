@@ -249,10 +249,48 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_block_exec_file_handle_input_round_trip
+    fixture = {
+      "document" => {},
+      "type" => "file"
+    }
+    model = Retab::BlockExecFileHandleInput.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_block_exec_file_ref_round_trip
+    fixture = {
+      "id" => "stub",
+      "filename" => "stub",
+      "mime_type" => "stub"
+    }
+    model = Retab::BlockExecFileRef.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["filename"], json[:filename])
+    assert_equal(fixture["mime_type"], json[:mime_type])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_block_exec_json_handle_input_round_trip
+    fixture = {
+      "data" => nil,
+      "type" => "json"
+    }
+    model = Retab::BlockExecJsonHandleInput.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_stored_block_execution_round_trip
     fixture = {
       "id" => "stub",
       "workflow_id" => "stub",
+      "workflow_version_id" => "stub",
       "source_run_id" => "stub",
       "block_id" => "stub",
       "block_type" => "stub",
@@ -263,6 +301,12 @@ class ModelRoundTripTest < Minitest::Test
       "routing_decisions" => nil,
       "duration_ms" => nil,
       "created_at" => "stub",
+      "started_at" => "stub",
+      "completed_at" => "stub",
+      "handle_inputs_fingerprint" => "stub",
+      "workflow_draft_fingerprint" => "stub",
+      "block_config_fingerprint" => "stub",
+      "execution_fingerprint" => "stub",
       "block_config" => nil,
       "source_step_id" => nil,
       "available_iterations" => nil
@@ -345,6 +389,17 @@ class ModelRoundTripTest < Minitest::Test
       "cancellation_status" => "stub"
     }
     model = Retab::CancelWorkflowResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_cancelled_block_execution_lifecycle_round_trip
+    fixture = {
+      "status" => "cancelled",
+      "reason" => nil
+    }
+    model = Retab::CancelledBlockExecutionLifecycle.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -2290,6 +2345,16 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_pending_block_execution_lifecycle_round_trip
+    fixture = {
+      "status" => "pending"
+    }
+    model = Retab::PendingBlockExecutionLifecycle.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_pending_run_round_trip
     fixture = {
       "status" => "pending"
@@ -2397,6 +2462,16 @@ class ModelRoundTripTest < Minitest::Test
       "limit" => nil
     }
     model = Retab::QueryWorkflowTableRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_queued_block_execution_lifecycle_round_trip
+    fixture = {
+      "status" => "queued"
+    }
+    model = Retab::QueuedBlockExecutionLifecycle.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -2696,6 +2771,16 @@ class ModelRoundTripTest < Minitest::Test
       "completed_at" => nil
     }
     model = Retab::RunTiming.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_running_block_execution_lifecycle_round_trip
+    fixture = {
+      "status" => "running"
+    }
+    model = Retab::RunningBlockExecutionLifecycle.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
@@ -4042,23 +4127,23 @@ class ModelRoundTripTest < Minitest::Test
   def test_workflow_test_result_round_trip
     fixture = {
       "id" => "stub",
-      "run_id" => nil,
+      "workflow_test_run_id" => nil,
       "test_id" => "stub",
       "lifecycle" => nil,
       "timing" => nil,
       "verdict" => nil,
       "workflow_id" => "stub",
-      "target" => {},
+      "block_id" => "stub",
+      "block_type" => "stub",
       "execution_fingerprint" => nil,
       "handle_inputs_fingerprint" => nil,
       "workflow_draft_fingerprint" => nil,
       "block_config_fingerprint" => nil,
-      "source" => {},
-      "outputs" => nil,
+      "artifact" => nil,
+      "handle_inputs" => {},
+      "handle_outputs" => nil,
       "routing_decisions" => nil,
       "warnings" => [],
-      "error" => nil,
-      "skipped" => true,
       "assertion_result" => nil,
       "verdict_summary" => nil
     }
@@ -4068,6 +4153,8 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["id"], json[:id])
     assert_equal(fixture["test_id"], json[:test_id])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
+    assert_equal(fixture["block_id"], json[:block_id])
+    assert_equal(fixture["block_type"], json[:block_type])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

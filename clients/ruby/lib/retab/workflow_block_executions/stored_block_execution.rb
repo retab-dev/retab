@@ -8,6 +8,7 @@ module Retab
     HASH_ATTRS = {
       id: :id,
       workflow_id: :workflow_id,
+      workflow_version_id: :workflow_version_id,
       source_run_id: :source_run_id,
       block_id: :block_id,
       block_type: :block_type,
@@ -18,6 +19,12 @@ module Retab
       routing_decisions: :routing_decisions,
       duration_ms: :duration_ms,
       created_at: :created_at,
+      started_at: :started_at,
+      completed_at: :completed_at,
+      handle_inputs_fingerprint: :handle_inputs_fingerprint,
+      workflow_draft_fingerprint: :workflow_draft_fingerprint,
+      block_config_fingerprint: :block_config_fingerprint,
+      execution_fingerprint: :execution_fingerprint,
       block_config: :block_config,
       source_step_id: :source_step_id,
       available_iterations: :available_iterations
@@ -26,6 +33,7 @@ module Retab
     attr_accessor(
       :id,
       :workflow_id,
+      :workflow_version_id,
       :source_run_id,
       :block_id,
       :block_type,
@@ -36,6 +44,12 @@ module Retab
       :routing_decisions,
       :duration_ms,
       :created_at,
+      :started_at,
+      :completed_at,
+      :handle_inputs_fingerprint,
+      :workflow_draft_fingerprint,
+      :block_config_fingerprint,
+      :execution_fingerprint,
       :block_config,
       :source_step_id,
       :available_iterations
@@ -46,15 +60,24 @@ module Retab
       hash = self.class.normalize(json)
       @id = hash[:id]
       @workflow_id = hash[:workflow_id]
+      @workflow_version_id = hash[:workflow_version_id]
       @source_run_id = hash[:source_run_id]
       @block_id = hash[:block_id]
       @block_type = hash[:block_type]
       @lifecycle = hash[:lifecycle] ? (
         case hash[:lifecycle][:status]
+        when "cancelled"
+          Retab::CancelledBlockExecutionLifecycle.new(hash[:lifecycle])
         when "completed"
           Retab::CompletedBlockExecutionLifecycle.new(hash[:lifecycle])
         when "error"
           Retab::ErrorBlockExecutionLifecycle.new(hash[:lifecycle])
+        when "pending"
+          Retab::PendingBlockExecutionLifecycle.new(hash[:lifecycle])
+        when "queued"
+          Retab::QueuedBlockExecutionLifecycle.new(hash[:lifecycle])
+        when "running"
+          Retab::RunningBlockExecutionLifecycle.new(hash[:lifecycle])
         when "skipped"
           Retab::SkippedBlockExecutionLifecycle.new(hash[:lifecycle])
         else
@@ -67,6 +90,12 @@ module Retab
       @routing_decisions = (hash[:routing_decisions] || [])
       @duration_ms = hash[:duration_ms]
       @created_at = hash[:created_at]
+      @started_at = hash[:started_at]
+      @completed_at = hash[:completed_at]
+      @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
+      @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
+      @block_config_fingerprint = hash[:block_config_fingerprint]
+      @execution_fingerprint = hash[:execution_fingerprint]
       @block_config = hash[:block_config] || {}
       @source_step_id = hash[:source_step_id]
       @available_iterations = (hash[:available_iterations] || []).map { |item| item || {} }

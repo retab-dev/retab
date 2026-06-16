@@ -6,31 +6,35 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// The result of executing a single workflow block.
-/// The terminal state is carried by the `lifecycle` field, which is one of
-/// completed, error, or skipped.
+/// The execution state is carried by the `lifecycle` field.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredBlockExecution {
     /// Unique block execution ID
     pub id: String,
     /// Workflow the block belongs to
     pub workflow_id: String,
+    /// Workflow version whose source run supplied inputs
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub workflow_version_id: Option<String>,
     /// Workflow run whose inputs were used
     pub source_run_id: String,
     /// ID of the block that was executed
     pub block_id: String,
     /// Type of the block
     pub block_type: String,
-    /// Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.
+    /// Lifecycle state for this block execution.
     pub lifecycle: StoredBlockExecutionLifecycleOneOf,
     /// Input payloads keyed by handle ID (file metadata for files, data for json)
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub handle_inputs: Option<std::collections::HashMap<String, serde_json::Value>>,
+    pub handle_inputs:
+        Option<Option<std::collections::HashMap<String, StoredBlockExecutionHandleInputsOneOf>>>,
     /// Reference to the artifact produced by this block execution, if any.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub artifact: Option<StepArtifactRef>,
     /// Output payloads keyed by handle ID
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub handle_outputs: Option<std::collections::HashMap<String, serde_json::Value>>,
+    pub handle_outputs:
+        Option<Option<std::collections::HashMap<String, StoredBlockExecutionHandleInputsOneOf>>>,
     /// Active output handles for routing decisions
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub routing_decisions: Option<Vec<String>>,
@@ -40,6 +44,20 @@ pub struct StoredBlockExecution {
     /// When the block execution record was created
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub created_at: Option<String>,
+    /// When the block execution started
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub started_at: Option<String>,
+    /// When the block execution completed
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub completed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub handle_inputs_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub workflow_draft_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub block_config_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub execution_fingerprint: Option<String>,
     /// The draft block config used for this block execution
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config: Option<std::collections::HashMap<String, serde_json::Value>>,
@@ -64,6 +82,7 @@ impl StoredBlockExecution {
         Self {
             id: id.into(),
             workflow_id: workflow_id.into(),
+            workflow_version_id: Default::default(),
             source_run_id: source_run_id.into(),
             block_id: block_id.into(),
             block_type: block_type.into(),
@@ -74,6 +93,12 @@ impl StoredBlockExecution {
             routing_decisions: Default::default(),
             duration_ms: Default::default(),
             created_at: Default::default(),
+            started_at: Default::default(),
+            completed_at: Default::default(),
+            handle_inputs_fingerprint: Default::default(),
+            workflow_draft_fingerprint: Default::default(),
+            block_config_fingerprint: Default::default(),
+            execution_fingerprint: Default::default(),
             block_config: Default::default(),
             source_step_id: Default::default(),
             available_iterations: Default::default(),

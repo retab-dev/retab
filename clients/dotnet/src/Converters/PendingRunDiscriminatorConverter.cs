@@ -22,8 +22,8 @@ namespace Retab
                 case "cancelled": return jObject.ToObject<CancelledTerminal>(serializer);
                 case "completed": return jObject.ToObject<CompletedBlockExecutionLifecycle>(serializer);
                 case "error": return jObject.ToObject<ErrorTerminal>(serializer);
-                case "pending": return jObject.ToObject<PendingRun>(serializer);
-                case "running": return jObject.ToObject<RunningRun>(serializer);
+                case "pending": return jObject.ToObject<PendingBlockExecutionLifecycle>(serializer);
+                case "running": return jObject.ToObject<RunningBlockExecutionLifecycle>(serializer);
                 default: return jObject.ToObject<object>(serializer);
             }
         }

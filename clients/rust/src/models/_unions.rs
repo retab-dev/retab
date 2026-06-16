@@ -189,12 +189,38 @@ pub enum BetweenConditionLowerOneOf {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "status")]
 pub enum StoredBlockExecutionLifecycleOneOf {
+    #[serde(rename = "pending")]
+    PendingBlockExecutionLifecycle(Box<PendingBlockExecutionLifecycle>),
+    #[serde(rename = "queued")]
+    QueuedBlockExecutionLifecycle(Box<QueuedBlockExecutionLifecycle>),
+    #[serde(rename = "running")]
+    RunningBlockExecutionLifecycle(Box<RunningBlockExecutionLifecycle>),
     #[serde(rename = "completed")]
     CompletedBlockExecutionLifecycle(Box<CompletedBlockExecutionLifecycle>),
     #[serde(rename = "error")]
     ErrorBlockExecutionLifecycle(Box<ErrorBlockExecutionLifecycle>),
+    #[serde(rename = "cancelled")]
+    CancelledBlockExecutionLifecycle(Box<CancelledBlockExecutionLifecycle>),
     #[serde(rename = "skipped")]
     SkippedBlockExecutionLifecycle(Box<SkippedBlockExecutionLifecycle>),
+}
+
+impl From<PendingBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: PendingBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::PendingBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
+impl From<QueuedBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: QueuedBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::QueuedBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
+impl From<RunningBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: RunningBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::RunningBlockExecutionLifecycle(Box::new(v))
+    }
 }
 
 impl From<CompletedBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
@@ -209,9 +235,34 @@ impl From<ErrorBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
     }
 }
 
+impl From<CancelledBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
+    fn from(v: CancelledBlockExecutionLifecycle) -> Self {
+        StoredBlockExecutionLifecycleOneOf::CancelledBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
 impl From<SkippedBlockExecutionLifecycle> for StoredBlockExecutionLifecycleOneOf {
     fn from(v: SkippedBlockExecutionLifecycle) -> Self {
         StoredBlockExecutionLifecycleOneOf::SkippedBlockExecutionLifecycle(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StoredBlockExecutionHandleInputsOneOf {
+    BlockExecJsonHandleInput(Box<BlockExecJsonHandleInput>),
+    BlockExecFileHandleInput(Box<BlockExecFileHandleInput>),
+}
+
+impl From<BlockExecJsonHandleInput> for StoredBlockExecutionHandleInputsOneOf {
+    fn from(v: BlockExecJsonHandleInput) -> Self {
+        StoredBlockExecutionHandleInputsOneOf::BlockExecJsonHandleInput(Box::new(v))
+    }
+}
+
+impl From<BlockExecFileHandleInput> for StoredBlockExecutionHandleInputsOneOf {
+    fn from(v: BlockExecFileHandleInput) -> Self {
+        StoredBlockExecutionHandleInputsOneOf::BlockExecFileHandleInput(Box::new(v))
     }
 }
 

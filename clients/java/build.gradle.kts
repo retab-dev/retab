@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.retab"
-version = "0.0.11"
+version = "0.0.1"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17

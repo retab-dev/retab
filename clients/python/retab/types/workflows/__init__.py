@@ -586,8 +586,6 @@ __all__ = [
     "WorkflowRunStep",
     "WorkflowRunStepBlockType",
     "WorkflowTest",
-    "WorkflowTestArtifactRef",
-    "WorkflowTestArtifactRefOperation",
     "WorkflowTestBlockTarget",
     "WorkflowTestResult",
     "WorkflowTestResultVerdict",

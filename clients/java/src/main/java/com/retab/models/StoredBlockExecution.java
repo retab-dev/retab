@@ -13,6 +13,7 @@ import java.util.Map;
 public final class StoredBlockExecution {
   private final String id;
   private final String workflowId;
+  private final String workflowVersionId;
   private final String sourceRunId;
   private final String blockId;
   private final String blockType;
@@ -23,6 +24,12 @@ public final class StoredBlockExecution {
   private final List<String> routingDecisions;
   private final Double durationMs;
   private final OffsetDateTime createdAt;
+  private final OffsetDateTime startedAt;
+  private final OffsetDateTime completedAt;
+  private final String handleInputsFingerprint;
+  private final String workflowDraftFingerprint;
+  private final String blockConfigFingerprint;
+  private final String executionFingerprint;
   private final Map<String, Object> blockConfig;
   private final String sourceStepId;
   private final List<Map<String, Object>> availableIterations;
@@ -31,6 +38,7 @@ public final class StoredBlockExecution {
   public StoredBlockExecution(
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
+      @JsonProperty(value = "workflow_version_id", required = false) String workflowVersionId,
       @JsonProperty(value = "source_run_id", required = true) String sourceRunId,
       @JsonProperty(value = "block_id", required = true) String blockId,
       @JsonProperty(value = "block_type", required = true) String blockType,
@@ -41,12 +49,22 @@ public final class StoredBlockExecution {
       @JsonProperty(value = "routing_decisions", required = false) List<String> routingDecisions,
       @JsonProperty(value = "duration_ms", required = false) Double durationMs,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
+      @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
+      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
+      @JsonProperty(value = "handle_inputs_fingerprint", required = false)
+          String handleInputsFingerprint,
+      @JsonProperty(value = "workflow_draft_fingerprint", required = false)
+          String workflowDraftFingerprint,
+      @JsonProperty(value = "block_config_fingerprint", required = false)
+          String blockConfigFingerprint,
+      @JsonProperty(value = "execution_fingerprint", required = false) String executionFingerprint,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
       @JsonProperty(value = "source_step_id", required = false) String sourceStepId,
       @JsonProperty(value = "available_iterations", required = false)
           List<Map<String, Object>> availableIterations) {
     this.id = id;
     this.workflowId = workflowId;
+    this.workflowVersionId = workflowVersionId;
     this.sourceRunId = sourceRunId;
     this.blockId = blockId;
     this.blockType = blockType;
@@ -57,6 +75,12 @@ public final class StoredBlockExecution {
     this.routingDecisions = routingDecisions;
     this.durationMs = durationMs;
     this.createdAt = createdAt;
+    this.startedAt = startedAt;
+    this.completedAt = completedAt;
+    this.handleInputsFingerprint = handleInputsFingerprint;
+    this.workflowDraftFingerprint = workflowDraftFingerprint;
+    this.blockConfigFingerprint = blockConfigFingerprint;
+    this.executionFingerprint = executionFingerprint;
     this.blockConfig = blockConfig;
     this.sourceStepId = sourceStepId;
     this.availableIterations = availableIterations;
@@ -70,6 +94,11 @@ public final class StoredBlockExecution {
   @JsonProperty("workflow_id")
   public String getWorkflowId() {
     return workflowId;
+  }
+
+  @JsonProperty("workflow_version_id")
+  public String getWorkflowVersionId() {
+    return workflowVersionId;
   }
 
   @JsonProperty("source_run_id")
@@ -120,6 +149,36 @@ public final class StoredBlockExecution {
   @JsonProperty("created_at")
   public OffsetDateTime getCreatedAt() {
     return createdAt;
+  }
+
+  @JsonProperty("started_at")
+  public OffsetDateTime getStartedAt() {
+    return startedAt;
+  }
+
+  @JsonProperty("completed_at")
+  public OffsetDateTime getCompletedAt() {
+    return completedAt;
+  }
+
+  @JsonProperty("handle_inputs_fingerprint")
+  public String getHandleInputsFingerprint() {
+    return handleInputsFingerprint;
+  }
+
+  @JsonProperty("workflow_draft_fingerprint")
+  public String getWorkflowDraftFingerprint() {
+    return workflowDraftFingerprint;
+  }
+
+  @JsonProperty("block_config_fingerprint")
+  public String getBlockConfigFingerprint() {
+    return blockConfigFingerprint;
+  }
+
+  @JsonProperty("execution_fingerprint")
+  public String getExecutionFingerprint() {
+    return executionFingerprint;
   }
 
   @JsonProperty("block_config")

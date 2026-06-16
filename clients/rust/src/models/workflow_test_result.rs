@@ -10,17 +10,18 @@ use serde::{Deserialize, Serialize};
 pub struct WorkflowTestResult {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub run_id: Option<String>,
+    pub workflow_test_run_id: Option<String>,
     pub test_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub lifecycle: Option<WorkflowTestResultLifecycleOneOf>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub timing: Option<WorkflowTestRunTiming>,
-    /// Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.
+    /// Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub verdict: Option<WorkflowTestResultVerdict>,
     pub workflow_id: String,
-    pub target: WorkflowTestBlockTarget,
+    pub block_id: String,
+    pub block_type: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub execution_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -29,19 +30,22 @@ pub struct WorkflowTestResult {
     pub workflow_draft_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub block_config_fingerprint: Option<String>,
-    pub source: CreateWorkflowTestRequestSourceOneOf,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub outputs: Option<std::collections::HashMap<String, serde_json::Value>>,
+    pub artifact: Option<StepArtifactRef>,
+    /// Defaults to `{}`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub handle_inputs: Option<
+        std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,
+    >,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub handle_outputs: Option<
+        std::collections::HashMap<String, ExplicitExperimentDocumentRequestHandleInputsOneOf>,
+    >,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub routing_decisions: Option<Vec<String>>,
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub warnings: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub error: Option<ErrorDetails>,
-    /// Defaults to `false`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub skipped: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub assertion_result: Option<AssertionResult>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -54,28 +58,28 @@ impl WorkflowTestResult {
         id: impl Into<String>,
         test_id: impl Into<String>,
         workflow_id: impl Into<String>,
-        target: WorkflowTestBlockTarget,
-        source: CreateWorkflowTestRequestSourceOneOf,
+        block_id: impl Into<String>,
+        block_type: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
-            run_id: Default::default(),
+            workflow_test_run_id: Default::default(),
             test_id: test_id.into(),
             lifecycle: Default::default(),
             timing: Default::default(),
             verdict: Default::default(),
             workflow_id: workflow_id.into(),
-            target,
+            block_id: block_id.into(),
+            block_type: block_type.into(),
             execution_fingerprint: Default::default(),
             handle_inputs_fingerprint: Default::default(),
             workflow_draft_fingerprint: Default::default(),
             block_config_fingerprint: Default::default(),
-            source,
-            outputs: Default::default(),
+            artifact: Default::default(),
+            handle_inputs: Default::default(),
+            handle_outputs: Default::default(),
             routing_decisions: Default::default(),
             warnings: Default::default(),
-            error: Default::default(),
-            skipped: Default::default(),
             assertion_result: Default::default(),
             verdict_summary: Default::default(),
         }

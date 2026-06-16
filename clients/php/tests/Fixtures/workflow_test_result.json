@@ -1,6 +1,6 @@
 {
   "id": "01234",
-  "run_id": "run_id_01234",
+  "workflow_test_run_id": "workflow_test_run_id_01234",
   "test_id": "test_id_01234",
   "lifecycle": {
     "status": "pending"
@@ -13,25 +13,27 @@
   },
   "verdict": "passed",
   "workflow_id": "workflow_id_01234",
-  "target": {
-    "type": "block",
-    "block_id": "block_id_01234"
-  },
+  "block_id": "block_id_01234",
+  "block_type": "test_block_type",
   "execution_fingerprint": "test_execution_fingerprint",
   "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
   "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
   "block_config_fingerprint": "test_block_config_fingerprint",
-  "source": {
-    "type": "manual",
-    "handle_inputs": {
-      "key": {
-        "type": "json",
-        "data": {}
-      }
+  "artifact": {
+    "operation": "extraction",
+    "id": "01234"
+  },
+  "handle_inputs": {
+    "key": {
+      "type": "json",
+      "data": {}
     }
   },
-  "outputs": {
-    "key": {}
+  "handle_outputs": {
+    "key": {
+      "type": "json",
+      "data": {}
+    }
   },
   "routing_decisions": [
     "test_routing_decisions"
@@ -39,17 +41,6 @@
   "warnings": [
     "test_warnings"
   ],
-  "error": {
-    "message": "test_message",
-    "stack_trace": "test_stack_trace",
-    "block_id": "block_id_01234",
-    "block_name": "Test",
-    "error_code": "test_error_code",
-    "context": {
-      "key": {}
-    }
-  },
-  "skipped": true,
   "assertion_result": {
     "assertion_id": "assertion_id_01234",
     "condition_kind": "test_condition_kind",

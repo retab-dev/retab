@@ -5,8 +5,7 @@ namespace Retab
 
     /// <summary>The result of executing a single workflow block.</summary>
     /// <remarks>
-    /// The terminal state is carried by the `lifecycle` field, which is one of
-    /// completed, error, or skipped.
+    /// The execution state is carried by the `lifecycle` field.
     /// </remarks>
     public class StoredBlockExecution
     {
@@ -17,6 +16,9 @@ namespace Retab
         /// <summary>Workflow the block belongs to</summary>
         public string WorkflowId { get; set; } = default!;
 
+        /// <summary>Workflow version whose source run supplied inputs</summary>
+        public string? WorkflowVersionId { get; set; }
+
         /// <summary>Workflow run whose inputs were used</summary>
         public string SourceRunId { get; set; } = default!;
 
@@ -26,18 +28,18 @@ namespace Retab
         /// <summary>Type of the block</summary>
         public string BlockType { get; set; } = default!;
 
-        /// <summary>Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`.</summary>
-        [Newtonsoft.Json.JsonConverter(typeof(CompletedBlockExecutionLifecycleDiscriminatorConverter))]
+        /// <summary>Lifecycle state for this block execution.</summary>
+        [Newtonsoft.Json.JsonConverter(typeof(PendingBlockExecutionLifecycleDiscriminatorConverter))]
         public object Lifecycle { get; set; } = default!;
 
         /// <summary>Input payloads keyed by handle ID (file metadata for files, data for json)</summary>
-        public Dictionary<string, object>? HandleInputs { get; set; }
+        public Dictionary<string, OneOf.OneOf<BlockExecJsonHandleInput, BlockExecFileHandleInput>>? HandleInputs { get; set; }
 
         /// <summary>Reference to the artifact produced by this block execution, if any.</summary>
         public StepArtifactRef? Artifact { get; set; }
 
         /// <summary>Output payloads keyed by handle ID</summary>
-        public Dictionary<string, object>? HandleOutputs { get; set; }
+        public Dictionary<string, OneOf.OneOf<BlockExecJsonHandleInput, BlockExecFileHandleInput>>? HandleOutputs { get; set; }
 
         /// <summary>Active output handles for routing decisions</summary>
         public List<string>? RoutingDecisions { get; set; }
@@ -47,6 +49,16 @@ namespace Retab
 
         /// <summary>When the block execution record was created</summary>
         public DateTimeOffset? CreatedAt { get; set; }
+
+        /// <summary>When the block execution started</summary>
+        public DateTimeOffset? StartedAt { get; set; }
+
+        /// <summary>When the block execution completed</summary>
+        public DateTimeOffset? CompletedAt { get; set; }
+        public string? HandleInputsFingerprint { get; set; }
+        public string? WorkflowDraftFingerprint { get; set; }
+        public string? BlockConfigFingerprint { get; set; }
+        public string? ExecutionFingerprint { get; set; }
 
         /// <summary>The draft block config used for this block execution</summary>
         public Dictionary<string, object>? BlockConfig { get; set; }
@@ -65,80 +77,6 @@ namespace Retab
         [Newtonsoft.Json.JsonExtensionData]
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalData { get; set; } = new System.Collections.Generic.Dictionary<string, object>();
-
-        /// <summary>
-        /// Typed accessor for <see cref="HandleInputs"/>. Returns the value stored under
-        /// <paramref name="key"/> coerced to <typeparamref name="T"/>, or the default
-        /// value when the key is missing or the value is not convertible.
-        /// </summary>
-        /// <typeparam name="T">Expected value type.</typeparam>
-        /// <param name="key">The key to look up.</param>
-        public T? GetHandleInputsAttribute<T>(string key)
-        {
-            if (this.HandleInputs == null)
-            {
-                return default;
-            }
-
-            if (!this.HandleInputs.TryGetValue(key, out var value))
-            {
-                return default;
-            }
-
-            if (value is T typed)
-            {
-                return typed;
-            }
-
-            if (value is Newtonsoft.Json.Linq.JToken token)
-            {
-                return token.ToObject<T>();
-            }
-
-            if (value is System.Text.Json.JsonElement element)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<T>(element.GetRawText());
-            }
-
-            return default;
-        }
-
-        /// <summary>
-        /// Typed accessor for <see cref="HandleOutputs"/>. Returns the value stored under
-        /// <paramref name="key"/> coerced to <typeparamref name="T"/>, or the default
-        /// value when the key is missing or the value is not convertible.
-        /// </summary>
-        /// <typeparam name="T">Expected value type.</typeparam>
-        /// <param name="key">The key to look up.</param>
-        public T? GetHandleOutputsAttribute<T>(string key)
-        {
-            if (this.HandleOutputs == null)
-            {
-                return default;
-            }
-
-            if (!this.HandleOutputs.TryGetValue(key, out var value))
-            {
-                return default;
-            }
-
-            if (value is T typed)
-            {
-                return typed;
-            }
-
-            if (value is Newtonsoft.Json.Linq.JToken token)
-            {
-                return token.ToObject<T>();
-            }
-
-            if (value is System.Text.Json.JsonElement element)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<T>(element.GetRawText());
-            }
-
-            return default;
-        }
 
         /// <summary>
         /// Typed accessor for <see cref="BlockConfig"/>. Returns the value stored under

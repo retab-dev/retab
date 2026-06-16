@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-15T23:00:42.810Z",
+  "generatedAt": "2026-06-16T00:16:02.688Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -451,8 +451,6 @@
     "src/workflows/tests/results/interfaces/queued-workflow-test-run.interface.ts",
     "src/workflows/tests/results/interfaces/running-workflow-test-run.interface.ts",
     "src/workflows/tests/results/interfaces/verdict-summary.interface.ts",
-    "src/workflows/tests/results/interfaces/workflow-test-artifact-ref-operation.interface.ts",
-    "src/workflows/tests/results/interfaces/workflow-test-artifact-ref.interface.ts",
     "src/workflows/tests/results/interfaces/workflow-test-result-verdict.interface.ts",
     "src/workflows/tests/results/interfaces/workflow-test-result.interface.ts",
     "src/workflows/tests/results/interfaces/workflow-test-run-timing.interface.ts",

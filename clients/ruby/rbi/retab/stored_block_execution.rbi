@@ -21,6 +21,12 @@ module Retab
     sig { params(value: String).returns(String) }
     def workflow_id=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def workflow_version_id; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def workflow_version_id=(value); end
+
     sig { returns(String) }
     def source_run_id; end
 
@@ -39,16 +45,16 @@ module Retab
     sig { params(value: String).returns(String) }
     def block_type=(value); end
 
-    sig { returns(T.any(Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)) }
+    sig { returns(T.any(Retab::PendingBlockExecutionLifecycle, Retab::QueuedBlockExecutionLifecycle, Retab::RunningBlockExecutionLifecycle, Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::CancelledBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)) }
     def lifecycle; end
 
-    sig { params(value: T.any(Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)).returns(T.any(Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)) }
+    sig { params(value: T.any(Retab::PendingBlockExecutionLifecycle, Retab::QueuedBlockExecutionLifecycle, Retab::RunningBlockExecutionLifecycle, Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::CancelledBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)).returns(T.any(Retab::PendingBlockExecutionLifecycle, Retab::QueuedBlockExecutionLifecycle, Retab::RunningBlockExecutionLifecycle, Retab::CompletedBlockExecutionLifecycle, Retab::ErrorBlockExecutionLifecycle, Retab::CancelledBlockExecutionLifecycle, Retab::SkippedBlockExecutionLifecycle)) }
     def lifecycle=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
+    sig { returns(T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))) }
     def handle_inputs; end
 
-    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
+    sig { params(value: T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))).returns(T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))) }
     def handle_inputs=(value); end
 
     sig { returns(T.nilable(Retab::StepArtifactRef)) }
@@ -57,10 +63,10 @@ module Retab
     sig { params(value: T.nilable(Retab::StepArtifactRef)).returns(T.nilable(Retab::StepArtifactRef)) }
     def artifact=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
+    sig { returns(T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))) }
     def handle_outputs; end
 
-    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
+    sig { params(value: T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))).returns(T.nilable(T.nilable(T::Hash[String, T.any(Retab::BlockExecJsonHandleInput, Retab::BlockExecFileHandleInput)]))) }
     def handle_outputs=(value); end
 
     sig { returns(T.nilable(T::Array[String])) }
@@ -80,6 +86,42 @@ module Retab
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def created_at=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def started_at; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def started_at=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def completed_at; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def completed_at=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def handle_inputs_fingerprint; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def handle_inputs_fingerprint=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def workflow_draft_fingerprint; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def workflow_draft_fingerprint=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def block_config_fingerprint; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def block_config_fingerprint=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def execution_fingerprint; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def execution_fingerprint=(value); end
 
     sig { returns(T.nilable(T::Hash[String, T.untyped])) }
     def block_config; end

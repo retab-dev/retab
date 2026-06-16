@@ -18,8 +18,8 @@ namespace Retab
             var discriminatorValue = jObject["type"]?.ToString();
             switch (discriminatorValue)
             {
-                case "file": return jObject.ToObject<FileHandleInput>(serializer);
-                case "json": return jObject.ToObject<JsonHandleInput>(serializer);
+                case "file": return jObject.ToObject<BlockExecFileHandleInput>(serializer);
+                case "json": return jObject.ToObject<BlockExecJsonHandleInput>(serializer);
                 default: return jObject.ToObject<object>(serializer);
             }
         }

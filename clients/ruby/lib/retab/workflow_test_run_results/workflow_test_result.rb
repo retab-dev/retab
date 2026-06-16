@@ -7,46 +7,46 @@ module Retab
 
     HASH_ATTRS = {
       id: :id,
-      run_id: :run_id,
+      workflow_test_run_id: :workflow_test_run_id,
       test_id: :test_id,
       lifecycle: :lifecycle,
       timing: :timing,
       verdict: :verdict,
       workflow_id: :workflow_id,
-      target: :target,
+      block_id: :block_id,
+      block_type: :block_type,
       execution_fingerprint: :execution_fingerprint,
       handle_inputs_fingerprint: :handle_inputs_fingerprint,
       workflow_draft_fingerprint: :workflow_draft_fingerprint,
       block_config_fingerprint: :block_config_fingerprint,
-      source: :source,
-      outputs: :outputs,
+      artifact: :artifact,
+      handle_inputs: :handle_inputs,
+      handle_outputs: :handle_outputs,
       routing_decisions: :routing_decisions,
       warnings: :warnings,
-      error: :error,
-      skipped: :skipped,
       assertion_result: :assertion_result,
       verdict_summary: :verdict_summary
     }.freeze
 
     attr_accessor(
       :id,
-      :run_id,
+      :workflow_test_run_id,
       :test_id,
       :lifecycle,
       :timing,
       :verdict,
       :workflow_id,
-      :target,
+      :block_id,
+      :block_type,
       :execution_fingerprint,
       :handle_inputs_fingerprint,
       :workflow_draft_fingerprint,
       :block_config_fingerprint,
-      :source,
-      :outputs,
+      :artifact,
+      :handle_inputs,
+      :handle_outputs,
       :routing_decisions,
       :warnings,
-      :error,
-      :skipped,
       :assertion_result,
       :verdict_summary
     )
@@ -55,7 +55,7 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @id = hash[:id]
-      @run_id = hash[:run_id]
+      @workflow_test_run_id = hash[:workflow_test_run_id]
       @test_id = hash[:test_id]
       @lifecycle = hash[:lifecycle] ? (
         case hash[:lifecycle][:status]
@@ -78,26 +78,17 @@ module Retab
       @timing = hash[:timing] ? Retab::WorkflowTestRunTiming.new(hash[:timing]) : nil
       @verdict = hash[:verdict]
       @workflow_id = hash[:workflow_id]
-      @target = hash[:target] ? Retab::WorkflowTestBlockTarget.new(hash[:target]) : nil
+      @block_id = hash[:block_id]
+      @block_type = hash[:block_type]
       @execution_fingerprint = hash[:execution_fingerprint]
       @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
       @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
       @block_config_fingerprint = hash[:block_config_fingerprint]
-      @source = hash[:source] ? (
-        case hash[:source][:type]
-        when "manual"
-          Retab::ManualWorkflowTestSource.new(hash[:source])
-        when "run_step"
-          Retab::RunStepWorkflowTestSource.new(hash[:source])
-        else
-          hash[:source]
-        end
-      ) : nil
-      @outputs = hash[:outputs] || {}
+      @artifact = hash[:artifact] ? Retab::StepArtifactRef.new(hash[:artifact]) : nil
+      @handle_inputs = hash[:handle_inputs] || {}
+      @handle_outputs = hash[:handle_outputs] || {}
       @routing_decisions = (hash[:routing_decisions] || [])
       @warnings = (hash[:warnings] || [])
-      @error = hash[:error] ? Retab::ErrorDetails.new(hash[:error]) : nil
-      @skipped = hash[:skipped].nil? ? false : hash[:skipped]
       @assertion_result = hash[:assertion_result] ? Retab::AssertionResult.new(hash[:assertion_result]) : nil
       @verdict_summary = hash[:verdict_summary] ? Retab::VerdictSummary.new(hash[:verdict_summary]) : nil
     end

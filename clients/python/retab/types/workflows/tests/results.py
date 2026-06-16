@@ -2,28 +2,14 @@
 from __future__ import annotations
 
 import datetime
-from enum import Enum
 from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.artifacts import ErrorDetails
+from retab.types.workflows.blocks.executions import StepArtifactRef
 from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
 
 
 AssertionOutcome: TypeAlias = Literal["passed", "failed", "blocked"]
-
-
-class WorkflowTestArtifactRefOperation(str, Enum):
-    EXTRACTION = "extraction"
-    SPLIT = "split"
-    CLASSIFICATION = "classification"
-    PARSE = "parse"
-    EDIT = "edit"
-    PARTITION = "partition"
-    CONDITIONAL_EVALUATION = "conditional_evaluation"
-    REVIEW_TRIGGER_EVALUATION = "review_trigger_evaluation"
-    WHILE_LOOP_TERMINATION = "while_loop_termination"
-    API_CALL_INVOCATION = "api_call_invocation"
-    FUNCTION_INVOCATION = "function_invocation"
 
 
 WorkflowTestResultVerdict = AssertionOutcome
@@ -127,13 +113,6 @@ class VerdictSummary(BaseModel):
     failed_assertion_ids: list[str] | None = Field(default=[])
 
 
-class WorkflowTestArtifactRef(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    id: str
-    operation: WorkflowTestArtifactRefOperation
-
-
 class WorkflowTestResult(BaseModel):
     """The outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`."""
 
@@ -148,7 +127,7 @@ class WorkflowTestResult(BaseModel):
     timing: WorkflowTestRunTiming | None = None
     verdict: AssertionOutcome | None = Field(
         default=None,
-        description="Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum.",
+        description="Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.",
     )
     workflow_id: str
     block_id: str
@@ -157,13 +136,11 @@ class WorkflowTestResult(BaseModel):
     handle_inputs_fingerprint: str | None = None
     workflow_draft_fingerprint: str | None = None
     block_config_fingerprint: str | None = None
-    artifact: WorkflowTestArtifactRef | None = None
+    artifact: StepArtifactRef | None = None
     handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
     handle_outputs: dict[str, JsonHandleInput | FileHandleInput] | None = None
     routing_decisions: list[str] | None = None
     warnings: list[str] | None = Field(default=[])
-    error: ErrorDetails | None = None
-    skipped: bool | None = Field(default=False)
     assertion_result: AssertionResult | None = None
     verdict_summary: VerdictSummary | None = None
 
@@ -191,6 +168,5 @@ PendingWorkflowTestRun.model_rebuild()
 QueuedWorkflowTestRun.model_rebuild()
 RunningWorkflowTestRun.model_rebuild()
 VerdictSummary.model_rebuild()
-WorkflowTestArtifactRef.model_rebuild()
 WorkflowTestResult.model_rebuild()
 WorkflowTestRunTiming.model_rebuild()

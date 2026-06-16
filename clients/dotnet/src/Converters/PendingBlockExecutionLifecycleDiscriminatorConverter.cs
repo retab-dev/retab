@@ -8,7 +8,7 @@ namespace Retab
     /// JSON converter that deserializes discriminated union variants
     /// based on the "status" property.
     /// </summary>
-    public class CompletedBlockExecutionLifecycleDiscriminatorConverter : Newtonsoft.Json.JsonConverter
+    public class PendingBlockExecutionLifecycleDiscriminatorConverter : Newtonsoft.Json.JsonConverter
     {
         public override bool CanConvert(Type objectType) => objectType == typeof(object);
 
@@ -18,8 +18,12 @@ namespace Retab
             var discriminatorValue = jObject["status"]?.ToString();
             switch (discriminatorValue)
             {
+                case "cancelled": return jObject.ToObject<CancelledBlockExecutionLifecycle>(serializer);
                 case "completed": return jObject.ToObject<CompletedBlockExecutionLifecycle>(serializer);
                 case "error": return jObject.ToObject<ErrorBlockExecutionLifecycle>(serializer);
+                case "pending": return jObject.ToObject<PendingBlockExecutionLifecycle>(serializer);
+                case "queued": return jObject.ToObject<QueuedBlockExecutionLifecycle>(serializer);
+                case "running": return jObject.ToObject<RunningBlockExecutionLifecycle>(serializer);
                 case "skipped": return jObject.ToObject<SkippedBlockExecutionLifecycle>(serializer);
                 default: return jObject.ToObject<object>(serializer);
             }

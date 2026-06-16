@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *
  * <pre>{@code
  * BlockExecutionLifecycle value = api.get(...);
- * if (value instanceof CompletedBlockExecutionLifecycle v) {
+ * if (value instanceof CancelledBlockExecutionLifecycle v) {
  *     handle(v);
  * }
  * }</pre>
@@ -25,11 +25,19 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     property = "status",
     visible = true)
 @JsonSubTypes({
+  @JsonSubTypes.Type(value = CancelledBlockExecutionLifecycle.class, name = "cancelled"),
   @JsonSubTypes.Type(value = CompletedBlockExecutionLifecycle.class, name = "completed"),
   @JsonSubTypes.Type(value = ErrorBlockExecutionLifecycle.class, name = "error"),
+  @JsonSubTypes.Type(value = PendingBlockExecutionLifecycle.class, name = "pending"),
+  @JsonSubTypes.Type(value = QueuedBlockExecutionLifecycle.class, name = "queued"),
+  @JsonSubTypes.Type(value = RunningBlockExecutionLifecycle.class, name = "running"),
   @JsonSubTypes.Type(value = SkippedBlockExecutionLifecycle.class, name = "skipped")
 })
 public sealed interface BlockExecutionLifecycle
-    permits CompletedBlockExecutionLifecycle,
+    permits CancelledBlockExecutionLifecycle,
+        CompletedBlockExecutionLifecycle,
         ErrorBlockExecutionLifecycle,
+        PendingBlockExecutionLifecycle,
+        QueuedBlockExecutionLifecycle,
+        RunningBlockExecutionLifecycle,
         SkippedBlockExecutionLifecycle {}

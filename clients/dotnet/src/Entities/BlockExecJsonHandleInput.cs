@@ -1,11 +1,11 @@
 namespace Retab
 {
 
-    /// <summary>File reference for a handle input.</summary>
-    public class FileHandleInput
+    /// <summary>Represents a block exec json handle input.</summary>
+    public class BlockExecJsonHandleInput
     {
-        public string? Type { get; set; } = "file";
-        public FileRef Document { get; set; } = default!;
+        public object? Data { get; set; }
+        public string? Type { get; set; } = "json";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

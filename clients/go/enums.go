@@ -630,9 +630,6 @@ const (
 // WorkflowTestSchemaDrift is an alias for ExperimentSchemaDriftStatus.
 type WorkflowTestSchemaDrift = ExperimentSchemaDriftStatus
 
-// WorkflowTestArtifactRefOperation is an alias for StepArtifactRefOperation.
-type WorkflowTestArtifactRefOperation = StepArtifactRefOperation
-
 // WorkflowTestResultVerdict is an alias for AssertionOutcome.
 type WorkflowTestResultVerdict = AssertionOutcome
 

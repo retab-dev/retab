@@ -1,18 +1,10 @@
 namespace Retab
 {
 
-    /// <summary>Public/shared file reference used across SDK and customer-facing APIs.</summary>
-    public class FileRef
+    /// <summary>The executor has started this block execution.</summary>
+    public class RunningBlockExecutionLifecycle
     {
-
-        /// <summary>ID of the file</summary>
-        public string Id { get; set; } = default!;
-
-        /// <summary>Filename of the file</summary>
-        public string Filename { get; set; } = default!;
-
-        /// <summary>MIME type of the file</summary>
-        public string MimeType { get; set; } = default!;
+        public string? Status { get; set; } = "running";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

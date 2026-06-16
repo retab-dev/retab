@@ -12,36 +12,37 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowTestResult {
   private final String id;
-  private final String runId;
+  private final String workflowTestRunId;
   private final String testId;
   private final WorkflowTestRunStatus lifecycle;
   private final WorkflowTestRunTiming timing;
   private final WorkflowTestResultVerdict verdict;
   private final String workflowId;
-  private final WorkflowTestBlockTarget target;
+  private final String blockId;
+  private final String blockType;
   private final String executionFingerprint;
   private final String handleInputsFingerprint;
   private final String workflowDraftFingerprint;
   private final String blockConfigFingerprint;
-  private final WorkflowTestSource source;
-  private final Map<String, Object> outputs;
+  private final StepArtifactRef artifact;
+  private final Map<String, HandleInput> handleInputs;
+  private final Map<String, HandleInput> handleOutputs;
   private final List<String> routingDecisions;
   private final List<String> warnings;
-  private final ErrorDetails error;
-  private final Boolean skipped;
   private final AssertionResult assertionResult;
   private final VerdictSummary verdictSummary;
 
   @JsonCreator
   public WorkflowTestResult(
       @JsonProperty(value = "id", required = true) String id,
-      @JsonProperty(value = "run_id", required = false) String runId,
+      @JsonProperty(value = "workflow_test_run_id", required = false) String workflowTestRunId,
       @JsonProperty(value = "test_id", required = true) String testId,
       @JsonProperty(value = "lifecycle", required = false) WorkflowTestRunStatus lifecycle,
       @JsonProperty(value = "timing", required = false) WorkflowTestRunTiming timing,
       @JsonProperty(value = "verdict", required = false) WorkflowTestResultVerdict verdict,
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "target", required = true) WorkflowTestBlockTarget target,
+      @JsonProperty(value = "block_id", required = true) String blockId,
+      @JsonProperty(value = "block_type", required = true) String blockType,
       @JsonProperty(value = "execution_fingerprint", required = false) String executionFingerprint,
       @JsonProperty(value = "handle_inputs_fingerprint", required = false)
           String handleInputsFingerprint,
@@ -49,32 +50,33 @@ public final class WorkflowTestResult {
           String workflowDraftFingerprint,
       @JsonProperty(value = "block_config_fingerprint", required = false)
           String blockConfigFingerprint,
-      @JsonProperty(value = "source", required = true) WorkflowTestSource source,
-      @JsonProperty(value = "outputs", required = false) Map<String, Object> outputs,
+      @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
+      @JsonProperty(value = "handle_inputs", required = false)
+          Map<String, HandleInput> handleInputs,
+      @JsonProperty(value = "handle_outputs", required = false)
+          Map<String, HandleInput> handleOutputs,
       @JsonProperty(value = "routing_decisions", required = false) List<String> routingDecisions,
       @JsonProperty(value = "warnings", required = false) List<String> warnings,
-      @JsonProperty(value = "error", required = false) ErrorDetails error,
-      @JsonProperty(value = "skipped", required = false) Boolean skipped,
       @JsonProperty(value = "assertion_result", required = false) AssertionResult assertionResult,
       @JsonProperty(value = "verdict_summary", required = false) VerdictSummary verdictSummary) {
     this.id = id;
-    this.runId = runId;
+    this.workflowTestRunId = workflowTestRunId;
     this.testId = testId;
     this.lifecycle = lifecycle;
     this.timing = timing;
     this.verdict = verdict;
     this.workflowId = workflowId;
-    this.target = target;
+    this.blockId = blockId;
+    this.blockType = blockType;
     this.executionFingerprint = executionFingerprint;
     this.handleInputsFingerprint = handleInputsFingerprint;
     this.workflowDraftFingerprint = workflowDraftFingerprint;
     this.blockConfigFingerprint = blockConfigFingerprint;
-    this.source = source;
-    this.outputs = outputs;
+    this.artifact = artifact;
+    this.handleInputs = handleInputs;
+    this.handleOutputs = handleOutputs;
     this.routingDecisions = routingDecisions;
     this.warnings = warnings;
-    this.error = error;
-    this.skipped = skipped != null ? skipped : false;
     this.assertionResult = assertionResult;
     this.verdictSummary = verdictSummary;
   }
@@ -84,9 +86,9 @@ public final class WorkflowTestResult {
     return id;
   }
 
-  @JsonProperty("run_id")
-  public String getRunId() {
-    return runId;
+  @JsonProperty("workflow_test_run_id")
+  public String getWorkflowTestRunId() {
+    return workflowTestRunId;
   }
 
   @JsonProperty("test_id")
@@ -114,9 +116,14 @@ public final class WorkflowTestResult {
     return workflowId;
   }
 
-  @JsonProperty("target")
-  public WorkflowTestBlockTarget getTarget() {
-    return target;
+  @JsonProperty("block_id")
+  public String getBlockId() {
+    return blockId;
+  }
+
+  @JsonProperty("block_type")
+  public String getBlockType() {
+    return blockType;
   }
 
   @JsonProperty("execution_fingerprint")
@@ -139,14 +146,19 @@ public final class WorkflowTestResult {
     return blockConfigFingerprint;
   }
 
-  @JsonProperty("source")
-  public WorkflowTestSource getSource() {
-    return source;
+  @JsonProperty("artifact")
+  public StepArtifactRef getArtifact() {
+    return artifact;
   }
 
-  @JsonProperty("outputs")
-  public Map<String, Object> getOutputs() {
-    return outputs;
+  @JsonProperty("handle_inputs")
+  public Map<String, HandleInput> getHandleInputs() {
+    return handleInputs;
+  }
+
+  @JsonProperty("handle_outputs")
+  public Map<String, HandleInput> getHandleOutputs() {
+    return handleOutputs;
   }
 
   @JsonProperty("routing_decisions")
@@ -157,16 +169,6 @@ public final class WorkflowTestResult {
   @JsonProperty("warnings")
   public List<String> getWarnings() {
     return warnings;
-  }
-
-  @JsonProperty("error")
-  public ErrorDetails getError() {
-    return error;
-  }
-
-  @JsonProperty("skipped")
-  public Boolean isSkipped() {
-    return skipped;
   }
 
   @JsonProperty("assertion_result")

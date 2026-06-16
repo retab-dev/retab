@@ -1,11 +1,11 @@
 namespace Retab
 {
 
-    /// <summary>JSON payload for a handle input. `data` is the raw JSON value.</summary>
-    public class JsonHandleInput
+    /// <summary>Represents a block exec file handle input.</summary>
+    public class BlockExecFileHandleInput
     {
-        public string? Type { get; set; } = "json";
-        public object? Data { get; set; }
+        public BlockExecFileRef Document { get; set; } = default!;
+        public string? Type { get; set; } = "file";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

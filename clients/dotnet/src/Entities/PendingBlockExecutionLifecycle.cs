@@ -1,10 +1,10 @@
 namespace Retab
 {
 
-    /// <summary>The run is currently executing.</summary>
-    public class RunningRun
+    /// <summary>The execution row exists but has not been dispatched.</summary>
+    public class PendingBlockExecutionLifecycle
     {
-        public string? Status { get; set; } = "running";
+        public string? Status { get; set; } = "pending";
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

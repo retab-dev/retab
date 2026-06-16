@@ -1,10 +1,11 @@
 namespace Retab
 {
 
-    /// <summary>The run has been created but execution has not started.</summary>
-    public class PendingRun
+    /// <summary>The execution was intentionally stopped before completion.</summary>
+    public class CancelledBlockExecutionLifecycle
     {
-        public string? Status { get; set; } = "pending";
+        public string? Status { get; set; } = "cancelled";
+        public object? Reason { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

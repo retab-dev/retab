@@ -11,7 +11,7 @@ namespace Retab
         public string Id { get; set; } = default!;
 
         /// <summary>Information about the classified file</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Model used for classification</summary>
         public string Model { get; set; } = default!;

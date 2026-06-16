@@ -105,7 +105,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
 		Filename:    filename,
 		ContentType: &contentType,
-		SizeBytes:   int64(len(data)),
+		SizeBytes:   len(data),
 		Sha256:      &sha256Hash,
 	})
 	if err != nil {

@@ -15,25 +15,26 @@ readonly class WorkflowTestResult implements \JsonSerializable
         public string $id,
         public string $testId,
         public string $workflowId,
-        public WorkflowTestBlockTarget $target,
-        public ManualWorkflowTestSource|RunStepWorkflowTestSource $source,
-        public ?string $runId = null,
+        public string $blockId,
+        public string $blockType,
+        public ?string $workflowTestRunId = null,
         public PendingWorkflowTestRun|QueuedWorkflowTestRun|RunningWorkflowTestRun|CompletedWorkflowTestRun|ErrorWorkflowTestRun|CancelledWorkflowTestRun|null $lifecycle = null,
         public ?WorkflowTestRunTiming $timing = null,
-        /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum. */
+        /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum. */
         public ?AssertionOutcome $verdict = null,
         public ?string $executionFingerprint = null,
         public ?string $handleInputsFingerprint = null,
         public ?string $workflowDraftFingerprint = null,
         public ?string $blockConfigFingerprint = null,
-        /** @var array<string, mixed>|null */
-        public ?array $outputs = null,
+        public ?StepArtifactRef $artifact = null,
+        /** @var array<string, \Retab\Resource\JsonHandleInput|\Retab\Resource\FileHandleInput>|null */
+        public ?array $handleInputs = null,
+        /** @var array<string, \Retab\Resource\JsonHandleInput|\Retab\Resource\FileHandleInput>|null */
+        public ?array $handleOutputs = null,
         /** @var array<string>|null */
         public ?array $routingDecisions = null,
         /** @var array<string>|null */
         public ?array $warnings = null,
-        public ?ErrorDetails $error = null,
-        public ?bool $skipped = null,
         public ?AssertionResult $assertionResult = null,
         public ?VerdictSummary $verdictSummary = null,
     ) {}
@@ -45,8 +46,8 @@ readonly class WorkflowTestResult implements \JsonSerializable
             'id',
             'test_id',
             'workflow_id',
-            'target',
-            'source',
+            'block_id',
+            'block_type',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowTestResult::fromArray()");
@@ -56,11 +57,9 @@ readonly class WorkflowTestResult implements \JsonSerializable
             id: $data['id'],
             testId: $data['test_id'],
             workflowId: $data['workflow_id'],
-            target: WorkflowTestBlockTarget::fromArray($data['target']),
-            source: match ($data['source']['type'] ?? null) {
-                'manual' => ManualWorkflowTestSource::fromArray($data['source']), 'run_step' => RunStepWorkflowTestSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
-            },
-            runId: $data['run_id'] ?? null,
+            blockId: $data['block_id'],
+            blockType: $data['block_type'],
+            workflowTestRunId: $data['workflow_test_run_id'] ?? null,
             lifecycle: isset($data['lifecycle']) ? match ($data['lifecycle']['status'] ?? null) {
                 'cancelled' => CancelledWorkflowTestRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowTestRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowTestRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowTestRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowTestRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowTestRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
             } : null,
@@ -70,11 +69,11 @@ readonly class WorkflowTestResult implements \JsonSerializable
             handleInputsFingerprint: $data['handle_inputs_fingerprint'] ?? null,
             workflowDraftFingerprint: $data['workflow_draft_fingerprint'] ?? null,
             blockConfigFingerprint: $data['block_config_fingerprint'] ?? null,
-            outputs: $data['outputs'] ?? null,
+            artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,
+            handleInputs: $data['handle_inputs'] ?? null,
+            handleOutputs: $data['handle_outputs'] ?? null,
             routingDecisions: $data['routing_decisions'] ?? null,
             warnings: $data['warnings'] ?? null,
-            error: isset($data['error']) ? ErrorDetails::fromArray($data['error']) : null,
-            skipped: $data['skipped'] ?? null,
             assertionResult: isset($data['assertion_result']) ? AssertionResult::fromArray($data['assertion_result']) : null,
             verdictSummary: isset($data['verdict_summary']) ? VerdictSummary::fromArray($data['verdict_summary']) : null,
         );
@@ -87,9 +86,9 @@ readonly class WorkflowTestResult implements \JsonSerializable
             'id' => $this->id,
             'test_id' => $this->testId,
             'workflow_id' => $this->workflowId,
-            'target' => $this->target->toArray(),
-            'source' => $this->source->toArray(),
-            'run_id' => $this->runId,
+            'block_id' => $this->blockId,
+            'block_type' => $this->blockType,
+            'workflow_test_run_id' => $this->workflowTestRunId,
             'lifecycle' => $this->lifecycle?->toArray(),
             'timing' => $this->timing?->toArray(),
             'verdict' => $this->verdict?->value,
@@ -97,11 +96,11 @@ readonly class WorkflowTestResult implements \JsonSerializable
             'handle_inputs_fingerprint' => $this->handleInputsFingerprint,
             'workflow_draft_fingerprint' => $this->workflowDraftFingerprint,
             'block_config_fingerprint' => $this->blockConfigFingerprint,
-            'outputs' => $this->outputs,
+            'artifact' => $this->artifact?->toArray(),
+            'handle_inputs' => $this->handleInputs,
+            'handle_outputs' => $this->handleOutputs,
             'routing_decisions' => $this->routingDecisions,
             'warnings' => $this->warnings,
-            'error' => $this->error?->toArray(),
-            'skipped' => $this->skipped,
             'assertion_result' => $this->assertionResult?->toArray(),
             'verdict_summary' => $this->verdictSummary?->toArray(),
         ];

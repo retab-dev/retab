@@ -1,27 +1,40 @@
 {
   "id": "01234",
   "workflow_id": "workflow_id_01234",
+  "workflow_version_id": "workflow_version_id_01234",
   "source_run_id": "source_run_id_01234",
   "block_id": "block_id_01234",
   "block_type": "test_block_type",
   "lifecycle": {
-    "status": "completed"
+    "status": "pending"
   },
   "handle_inputs": {
-    "key": {}
+    "key": {
+      "data": {},
+      "type": "json"
+    }
   },
   "artifact": {
     "operation": "extraction",
     "id": "01234"
   },
   "handle_outputs": {
-    "key": {}
+    "key": {
+      "data": {},
+      "type": "json"
+    }
   },
   "routing_decisions": [
     "test_routing_decisions"
   ],
   "duration_ms": 1,
   "created_at": "2023-01-01T00:00:00.000Z",
+  "started_at": "2023-01-01T00:00:00.000Z",
+  "completed_at": "2023-01-01T00:00:00.000Z",
+  "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
+  "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
+  "block_config_fingerprint": "test_block_config_fingerprint",
+  "execution_fingerprint": "test_execution_fingerprint",
   "block_config": {
     "key": {}
   },

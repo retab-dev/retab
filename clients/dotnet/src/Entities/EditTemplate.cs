@@ -14,7 +14,7 @@ namespace Retab
         public string Name { get; set; } = default!;
 
         /// <summary>File information for the empty PDF template.</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Form fields attached to the template.</summary>
         public List<FormField>? FormFields { get; set; }

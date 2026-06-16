@@ -12,7 +12,7 @@ namespace Retab
         public string Id { get; set; } = default!;
 
         /// <summary>Information about the analyzed file.</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Analysis depth used or requested.</summary>
         public CreateFileBlueprintRequestMode? Mode { get; set; }

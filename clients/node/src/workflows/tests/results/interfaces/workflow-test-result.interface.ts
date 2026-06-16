@@ -26,15 +26,6 @@ import {
   serializeCompletedWorkflowTestRun,
 } from './completed-workflow-test-run.interface.js';
 import type {
-  ErrorDetails,
-  ErrorDetailsResponse,
-} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
-import {
-  ZErrorDetails,
-  deserializeErrorDetails,
-  serializeErrorDetails,
-} from '../../../../workflows/artifacts/interfaces/error-details.interface.js';
-import type {
   ErrorWorkflowTestRun,
   ErrorWorkflowTestRunResponse,
 } from './error-workflow-test-run.interface.js';
@@ -88,21 +79,21 @@ import {
   deserializeRunningWorkflowTestRun,
   serializeRunningWorkflowTestRun,
 } from './running-workflow-test-run.interface.js';
+import type {
+  StepArtifactRef,
+  StepArtifactRefResponse,
+} from '../../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
+import {
+  ZStepArtifactRef,
+  deserializeStepArtifactRef,
+  serializeStepArtifactRef,
+} from '../../../../workflows/blocks/executions/interfaces/step-artifact-ref.interface.js';
 import type { VerdictSummary, VerdictSummaryResponse } from './verdict-summary.interface.js';
 import {
   ZVerdictSummary,
   deserializeVerdictSummary,
   serializeVerdictSummary,
 } from './verdict-summary.interface.js';
-import type {
-  WorkflowTestArtifactRef,
-  WorkflowTestArtifactRefResponse,
-} from './workflow-test-artifact-ref.interface.js';
-import {
-  ZWorkflowTestArtifactRef,
-  deserializeWorkflowTestArtifactRef,
-  serializeWorkflowTestArtifactRef,
-} from './workflow-test-artifact-ref.interface.js';
 import type {
   WorkflowTestRunTiming,
   WorkflowTestRunTimingResponse,
@@ -131,7 +122,7 @@ export interface WorkflowTestResult {
       )
     | null;
   timing?: WorkflowTestRunTiming | null;
-  /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `error` (an `ErrorDetails` envelope), not through this enum. */
+  /** Verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum. */
   verdict?: WorkflowTestResultVerdict | null;
   workflowId: string;
   blockId: string;
@@ -140,16 +131,13 @@ export interface WorkflowTestResult {
   handleInputsFingerprint?: string | null;
   workflowDraftFingerprint?: string | null;
   blockConfigFingerprint?: string | null;
-  artifact?: WorkflowTestArtifactRef | null;
+  artifact?: StepArtifactRef | null;
   /** @default {} */
   handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
   handleOutputs?: Record<string, JsonHandleInput | FileHandleInput> | null;
   routingDecisions?: string[] | null;
   /** @default [] */
   warnings?: string[];
-  error?: ErrorDetails | null;
-  /** @default false */
-  skipped?: boolean;
   assertionResult?: AssertionResult | null;
   verdictSummary?: VerdictSummary | null;
 }
@@ -177,13 +165,11 @@ export interface WorkflowTestResultResponse {
   handle_inputs_fingerprint?: string | null;
   workflow_draft_fingerprint?: string | null;
   block_config_fingerprint?: string | null;
-  artifact?: WorkflowTestArtifactRefResponse | null;
+  artifact?: StepArtifactRefResponse | null;
   handle_inputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
   handle_outputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse> | null;
   routing_decisions?: string[] | null;
   warnings?: string[];
-  error?: ErrorDetailsResponse | null;
-  skipped?: boolean;
   assertion_result?: AssertionResultResponse | null;
   verdict_summary?: VerdictSummaryResponse | null;
 }
@@ -212,7 +198,7 @@ export const ZWorkflowTestResult = z.object({
   handleInputsFingerprint: z.string().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
   blockConfigFingerprint: z.string().nullable().optional(),
-  artifact: ZWorkflowTestArtifactRef.nullable().optional(),
+  artifact: ZStepArtifactRef.nullable().optional(),
   handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
   handleOutputs: z
     .record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput]))
@@ -220,8 +206,6 @@ export const ZWorkflowTestResult = z.object({
     .optional(),
   routingDecisions: z.string().array().nullable().optional(),
   warnings: z.string().array().optional(),
-  error: ZErrorDetails.nullable().optional(),
-  skipped: z.boolean().optional(),
   assertionResult: ZAssertionResult.nullable().optional(),
   verdictSummary: ZVerdictSummary.nullable().optional(),
 }) as z.ZodType<WorkflowTestResult>;
@@ -301,7 +285,7 @@ export function deserializeWorkflowTestResult(
         ? (wire['artifact'] as undefined)
         : wire['artifact'] == null
           ? wire['artifact']
-          : deserializeWorkflowTestArtifactRef(wire['artifact']),
+          : deserializeStepArtifactRef(wire['artifact']),
     handleInputs:
       wire['handle_inputs'] == null
         ? (wire['handle_inputs'] as undefined)
@@ -336,13 +320,6 @@ export function deserializeWorkflowTestResult(
             ),
     routingDecisions: wire['routing_decisions'],
     warnings: wire['warnings'],
-    error:
-      wire['error'] == null
-        ? (wire['error'] as undefined)
-        : wire['error'] == null
-          ? wire['error']
-          : deserializeErrorDetails(wire['error']),
-    skipped: wire['skipped'],
     assertionResult:
       wire['assertion_result'] == null
         ? (wire['assertion_result'] as undefined)
@@ -425,7 +402,7 @@ export function serializeWorkflowTestResult(
         ? (domain['artifact'] as undefined)
         : domain['artifact'] == null
           ? domain['artifact']
-          : serializeWorkflowTestArtifactRef(domain['artifact']),
+          : serializeStepArtifactRef(domain['artifact']),
     handle_inputs:
       domain['handleInputs'] == null
         ? (domain['handleInputs'] as undefined)
@@ -460,13 +437,6 @@ export function serializeWorkflowTestResult(
             ),
     routing_decisions: domain['routingDecisions'],
     warnings: domain['warnings'],
-    error:
-      domain['error'] == null
-        ? (domain['error'] as undefined)
-        : domain['error'] == null
-          ? domain['error']
-          : serializeErrorDetails(domain['error']),
-    skipped: domain['skipped'],
     assertion_result:
       domain['assertionResult'] == null
         ? (domain['assertionResult'] as undefined)

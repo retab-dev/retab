@@ -16,10 +16,10 @@ module Retab
     def id=(value); end
 
     sig { returns(T.nilable(String)) }
-    def run_id; end
+    def workflow_test_run_id; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def run_id=(value); end
+    def workflow_test_run_id=(value); end
 
     sig { returns(String) }
     def test_id; end
@@ -51,11 +51,17 @@ module Retab
     sig { params(value: String).returns(String) }
     def workflow_id=(value); end
 
-    sig { returns(Retab::WorkflowTestBlockTarget) }
-    def target; end
+    sig { returns(String) }
+    def block_id; end
 
-    sig { params(value: Retab::WorkflowTestBlockTarget).returns(Retab::WorkflowTestBlockTarget) }
-    def target=(value); end
+    sig { params(value: String).returns(String) }
+    def block_id=(value); end
+
+    sig { returns(String) }
+    def block_type; end
+
+    sig { params(value: String).returns(String) }
+    def block_type=(value); end
 
     sig { returns(T.nilable(String)) }
     def execution_fingerprint; end
@@ -81,17 +87,23 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def block_config_fingerprint=(value); end
 
-    sig { returns(T.any(Retab::ManualWorkflowTestSource, Retab::RunStepWorkflowTestSource)) }
-    def source; end
+    sig { returns(T.nilable(Retab::StepArtifactRef)) }
+    def artifact; end
 
-    sig { params(value: T.any(Retab::ManualWorkflowTestSource, Retab::RunStepWorkflowTestSource)).returns(T.any(Retab::ManualWorkflowTestSource, Retab::RunStepWorkflowTestSource)) }
-    def source=(value); end
+    sig { params(value: T.nilable(Retab::StepArtifactRef)).returns(T.nilable(Retab::StepArtifactRef)) }
+    def artifact=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
-    def outputs; end
+    sig { returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_inputs; end
 
-    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
-    def outputs=(value); end
+    sig { params(value: T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])).returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_inputs=(value); end
+
+    sig { returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_outputs; end
+
+    sig { params(value: T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])).returns(T.nilable(T::Hash[String, T.any(Retab::JsonHandleInput, Retab::FileHandleInput)])) }
+    def handle_outputs=(value); end
 
     sig { returns(T.nilable(T::Array[String])) }
     def routing_decisions; end
@@ -104,18 +116,6 @@ module Retab
 
     sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
     def warnings=(value); end
-
-    sig { returns(T.nilable(Retab::ErrorDetails)) }
-    def error; end
-
-    sig { params(value: T.nilable(Retab::ErrorDetails)).returns(T.nilable(Retab::ErrorDetails)) }
-    def error=(value); end
-
-    sig { returns(T.nilable(T::Boolean)) }
-    def skipped; end
-
-    sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
-    def skipped=(value); end
 
     sig { returns(T.nilable(Retab::AssertionResult)) }
     def assertion_result; end

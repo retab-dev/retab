@@ -1,10 +1,18 @@
 namespace Retab
 {
 
-    /// <summary>The step is queued for execution.</summary>
-    public class QueuedStepLifecycle
+    /// <summary>Public/shared file reference used across SDK and customer-facing APIs.</summary>
+    public class BlockExecFileRef
     {
-        public string? Status { get; set; } = "queued";
+
+        /// <summary>ID of the file</summary>
+        public string Id { get; set; } = default!;
+
+        /// <summary>Filename of the file</summary>
+        public string Filename { get; set; } = default!;
+
+        /// <summary>MIME type of the file</summary>
+        public string MimeType { get; set; } = default!;
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

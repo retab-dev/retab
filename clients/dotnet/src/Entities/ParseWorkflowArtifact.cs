@@ -12,7 +12,7 @@ namespace Retab
         public string Id { get; set; } = default!;
 
         /// <summary>Information about the parsed file</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Model used for parsing</summary>
         public string Model { get; set; } = default!;

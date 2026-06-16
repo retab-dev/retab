@@ -9,8 +9,7 @@ namespace Retab\Resource;
 /**
  * The result of executing a single workflow block.
  *
- * The terminal state is carried by the `lifecycle` field, which is one of
- * completed, error, or skipped.
+ * The execution state is carried by the `lifecycle` field.
  */
 readonly class StoredBlockExecution implements \JsonSerializable
 {
@@ -27,18 +26,20 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public string $blockId,
         /** Type of the block */
         public string $blockType,
-        /** Terminal lifecycle state for this block execution. One of `{status: 'completed'}`, `{status: 'error', message: ...}`, or `{status: 'skipped', reason: ...}`. */
-        public CompletedBlockExecutionLifecycle|ErrorBlockExecutionLifecycle|SkippedBlockExecutionLifecycle $lifecycle,
+        /** Lifecycle state for this block execution. */
+        public PendingBlockExecutionLifecycle|QueuedBlockExecutionLifecycle|RunningBlockExecutionLifecycle|CompletedBlockExecutionLifecycle|ErrorBlockExecutionLifecycle|CancelledBlockExecutionLifecycle|SkippedBlockExecutionLifecycle $lifecycle,
+        /** Workflow version whose source run supplied inputs */
+        public ?string $workflowVersionId = null,
         /**
          * Input payloads keyed by handle ID (file metadata for files, data for json)
-         * @var array<string, mixed>|null
+         * @var array<string, \Retab\Resource\BlockExecJsonHandleInput|\Retab\Resource\BlockExecFileHandleInput>|null|null
          */
         public ?array $handleInputs = null,
         /** Reference to the artifact produced by this block execution, if any. */
         public ?StepArtifactRef $artifact = null,
         /**
          * Output payloads keyed by handle ID
-         * @var array<string, mixed>|null
+         * @var array<string, \Retab\Resource\BlockExecJsonHandleInput|\Retab\Resource\BlockExecFileHandleInput>|null|null
          */
         public ?array $handleOutputs = null,
         /**
@@ -50,6 +51,14 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public ?float $durationMs = null,
         /** When the block execution record was created */
         public ?\DateTimeImmutable $createdAt = null,
+        /** When the block execution started */
+        public ?\DateTimeImmutable $startedAt = null,
+        /** When the block execution completed */
+        public ?\DateTimeImmutable $completedAt = null,
+        public ?string $handleInputsFingerprint = null,
+        public ?string $workflowDraftFingerprint = null,
+        public ?string $blockConfigFingerprint = null,
+        public ?string $executionFingerprint = null,
         /**
          * The draft block config used for this block execution
          * @var array<string, mixed>|null
@@ -86,14 +95,21 @@ readonly class StoredBlockExecution implements \JsonSerializable
             blockId: $data['block_id'],
             blockType: $data['block_type'],
             lifecycle: match ($data['lifecycle']['status'] ?? null) {
-                'completed' => CompletedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'error' => ErrorBlockExecutionLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedBlockExecutionLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+                'cancelled' => CancelledBlockExecutionLifecycle::fromArray($data['lifecycle']), 'completed' => CompletedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'error' => ErrorBlockExecutionLifecycle::fromArray($data['lifecycle']), 'pending' => PendingBlockExecutionLifecycle::fromArray($data['lifecycle']), 'queued' => QueuedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'running' => RunningBlockExecutionLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedBlockExecutionLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
             },
+            workflowVersionId: $data['workflow_version_id'] ?? null,
             handleInputs: $data['handle_inputs'] ?? null,
             artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,
             handleOutputs: $data['handle_outputs'] ?? null,
             routingDecisions: $data['routing_decisions'] ?? null,
             durationMs: $data['duration_ms'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
+            startedAt: isset($data['started_at']) ? new \DateTimeImmutable($data['started_at']) : null,
+            completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
+            handleInputsFingerprint: $data['handle_inputs_fingerprint'] ?? null,
+            workflowDraftFingerprint: $data['workflow_draft_fingerprint'] ?? null,
+            blockConfigFingerprint: $data['block_config_fingerprint'] ?? null,
+            executionFingerprint: $data['execution_fingerprint'] ?? null,
             blockConfig: $data['block_config'] ?? null,
             sourceStepId: $data['source_step_id'] ?? null,
             availableIterations: $data['available_iterations'] ?? null,
@@ -110,12 +126,19 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'block_id' => $this->blockId,
             'block_type' => $this->blockType,
             'lifecycle' => $this->lifecycle->toArray(),
+            'workflow_version_id' => $this->workflowVersionId,
             'handle_inputs' => $this->handleInputs,
             'artifact' => $this->artifact?->toArray(),
             'handle_outputs' => $this->handleOutputs,
             'routing_decisions' => $this->routingDecisions,
             'duration_ms' => $this->durationMs,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'started_at' => $this->startedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'handle_inputs_fingerprint' => $this->handleInputsFingerprint,
+            'workflow_draft_fingerprint' => $this->workflowDraftFingerprint,
+            'block_config_fingerprint' => $this->blockConfigFingerprint,
+            'execution_fingerprint' => $this->executionFingerprint,
             'block_config' => $this->blockConfig,
             'source_step_id' => $this->sourceStepId,
             'available_iterations' => $this->availableIterations,

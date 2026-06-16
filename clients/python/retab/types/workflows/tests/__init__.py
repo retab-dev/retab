@@ -465,8 +465,6 @@ __all__ = [
     "UpdateWorkflowTestRequest",
     "VerdictSummary",
     "WorkflowTest",
-    "WorkflowTestArtifactRef",
-    "WorkflowTestArtifactRefOperation",
     "WorkflowTestBlockTarget",
     "WorkflowTestResult",
     "WorkflowTestResultVerdict",

@@ -25,7 +25,7 @@ namespace Retab
         public SourcesResponseDocumentType DocumentType { get; set; }
 
         /// <summary>File metadata (id, filename, mime_type)</summary>
-        public FileRef File { get; set; } = default!;
+        public BlockExecFileRef File { get; set; } = default!;
 
         /// <summary>Original extraction output</summary>
         public Dictionary<string, object> Extraction { get; set; } = default!;
