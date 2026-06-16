@@ -16,6 +16,7 @@ func TestPrimitiveListCommandsForwardFilterFlags(t *testing.T) {
 		cmd  *cobra.Command
 		path string
 	}{
+		{name: "extractions", cmd: extractionsListCmd, path: "/v1/extractions"},
 		{name: "parses", cmd: parsesListCmd, path: "/v1/parses"},
 		{name: "edits", cmd: editsListCmd, path: "/v1/edits"},
 		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications"},
