@@ -1,0 +1,4 @@
+# Cached raw extraction records (contain run-specific ids; re-creatable)
+results/
+__pycache__/
+*.pyc

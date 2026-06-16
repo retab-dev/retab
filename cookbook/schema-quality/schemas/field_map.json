@@ -1,0 +1,15 @@
+{
+  "_comment": "Maps canonical ground-truth field names (documents/manifest.json) to the property paths used by the schemas. The agent-generated baseline chose its own names; the nullable and reasoning variants keep those same names, so one map serves all three variants.",
+  "invoice_number": "invoice_number",
+  "invoice_date": "invoice_date",
+  "due_date": "due_date",
+  "currency": "currency",
+  "customer_company": "buyer_company",
+  "customer_name": "buyer_name",
+  "customer_code": "customer_code",
+  "purchase_order": "purchase_order_number",
+  "subtotal": "subtotal_amount",
+  "discount": "discount_amount",
+  "tax": "tax_amount",
+  "total": "total_amount"
+}

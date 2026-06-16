@@ -1,0 +1,169 @@
+{
+  "description": "Invoice corpus for the schema-quality cookbook. All documents are invoices processed by one schema; they differ only in which optional fields are present. ground_truth holds the correct value of each field (null = absent on that invoice). Field names are canonical; schemas/field_map.json maps them to each schema's paths.",
+  "documents": [
+    {
+      "file": "invoice_full.pdf",
+      "present": [
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "currency",
+        "customer_company",
+        "customer_name",
+        "customer_code",
+        "purchase_order",
+        "subtotal",
+        "discount",
+        "tax",
+        "total"
+      ],
+      "absent": [],
+      "ground_truth": {
+        "invoice_number": "INV-1001",
+        "invoice_date": "2024-01-15",
+        "due_date": "2024-02-14",
+        "currency": "EUR",
+        "customer_company": "Lumiere Studios SARL",
+        "customer_name": "Claire Fontaine",
+        "customer_code": "CUST-4471",
+        "purchase_order": "PO-22910",
+        "subtotal": 1500.0,
+        "discount": -150.0,
+        "tax": 270.0,
+        "total": 1620.0
+      }
+    },
+    {
+      "file": "invoice_no_name.pdf",
+      "present": [
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "currency",
+        "customer_company",
+        "customer_code",
+        "purchase_order",
+        "subtotal",
+        "discount",
+        "tax",
+        "total"
+      ],
+      "absent": [
+        "customer_name"
+      ],
+      "ground_truth": {
+        "invoice_number": "INV-1002",
+        "invoice_date": "2024-02-07",
+        "due_date": "2024-02-21",
+        "currency": "EUR",
+        "customer_company": "Atelier Bois & Co",
+        "customer_name": null,
+        "customer_code": "CUST-3320",
+        "purchase_order": "PO-22955",
+        "subtotal": 960.0,
+        "discount": -48.0,
+        "tax": 182.4,
+        "total": 1094.4
+      }
+    },
+    {
+      "file": "invoice_no_code.pdf",
+      "present": [
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "currency",
+        "customer_company",
+        "customer_name",
+        "subtotal",
+        "discount",
+        "tax",
+        "total"
+      ],
+      "absent": [
+        "customer_code",
+        "purchase_order"
+      ],
+      "ground_truth": {
+        "invoice_number": "INV-1003",
+        "invoice_date": "2024-02-03",
+        "due_date": "2024-03-04",
+        "currency": "EUR",
+        "customer_company": "Cafe Central GmbH",
+        "customer_name": "Markus Weber",
+        "customer_code": null,
+        "purchase_order": null,
+        "subtotal": 645.0,
+        "discount": -32.25,
+        "tax": 122.55,
+        "total": 735.3
+      }
+    },
+    {
+      "file": "invoice_minimal.pdf",
+      "present": [
+        "invoice_number",
+        "invoice_date",
+        "currency",
+        "customer_company",
+        "subtotal",
+        "total"
+      ],
+      "absent": [
+        "due_date",
+        "customer_name",
+        "customer_code",
+        "purchase_order",
+        "discount",
+        "tax"
+      ],
+      "ground_truth": {
+        "invoice_number": "INV-1004",
+        "invoice_date": "2024-02-10",
+        "due_date": null,
+        "currency": "EUR",
+        "customer_company": "Nordic Print AB",
+        "customer_name": null,
+        "customer_code": null,
+        "purchase_order": null,
+        "subtotal": 420.0,
+        "discount": null,
+        "tax": null,
+        "total": 420.0
+      }
+    },
+    {
+      "file": "invoice_mixed.pdf",
+      "present": [
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "currency",
+        "customer_company",
+        "customer_name",
+        "customer_code",
+        "subtotal",
+        "tax",
+        "total"
+      ],
+      "absent": [
+        "purchase_order",
+        "discount"
+      ],
+      "ground_truth": {
+        "invoice_number": "INV-1005",
+        "invoice_date": "2024-03-05",
+        "due_date": "2024-04-04",
+        "currency": "EUR",
+        "customer_company": "Verde Landscaping SL",
+        "customer_name": "Lucia Ramirez",
+        "customer_code": "CUST-7782",
+        "purchase_order": null,
+        "subtotal": 1015.0,
+        "discount": null,
+        "tax": 203.0,
+        "total": 1218.0
+      }
+    }
+  ]
+}

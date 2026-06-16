@@ -1,0 +1,154 @@
+{
+  "X-SchemaType": "generic",
+  "additionalProperties": false,
+  "description": "Schema for structured extraction of key fields from business invoices, including parties, dates, line items, and totals.",
+  "properties": {
+    "buyer_company": {
+      "description": "Customer company or organization name (free-text).",
+      "type": "string"
+    },
+    "buyer_name": {
+      "description": "Billed-to contact name (free-text).",
+      "type": [
+        "string",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the billed-to contact person's name. If the invoice is billed to a company with no named contact, return null. Do not use the company name as the contact name."
+    },
+    "currency": {
+      "description": "Currency code used on the invoice (free-text, e.g. EUR).",
+      "type": "string"
+    },
+    "customer_code": {
+      "description": "Customer reference or account code (free-text).",
+      "type": [
+        "string",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the customer or account code only if one is explicitly printed (e.g. a 'Customer code' line). If none is shown, return null; do not guess or reuse the invoice number."
+    },
+    "discount_amount": {
+      "description": "Discount amount applied to the invoice.",
+      "type": [
+        "number",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the discount only if a discount line is present (use the printed value, typically negative). If there is no discount line, return null rather than 0."
+    },
+    "due_date": {
+      "description": "Payment due date in ISO-8601 format.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the payment due date only if it is printed. If the invoice shows no due date, return null; do not derive one from the invoice date."
+    },
+    "invoice_date": {
+      "description": "Invoice date in ISO-8601 format.",
+      "type": "string",
+      "X-ReasoningPrompt": "The invoice date is printed in European day/month/year order (e.g. 07/02/2024 means 7 February 2024). Return it in ISO 8601 (YYYY-MM-DD)."
+    },
+    "invoice_number": {
+      "description": "Invoice reference number (free-text).",
+      "type": "string"
+    },
+    "line_items": {
+      "description": "Invoice line items.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "description": "Line total amount.",
+            "type": "number"
+          },
+          "description": {
+            "description": "Item or service description (free-text).",
+            "type": "string"
+          },
+          "line_number": {
+            "description": "Line number unique within the invoice, used to align item rows.",
+            "type": "integer"
+          },
+          "quantity": {
+            "description": "Quantity billed.",
+            "type": "number"
+          },
+          "unit_price": {
+            "description": "Unit price for the line item.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "line_number",
+          "description",
+          "quantity",
+          "unit_price",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "purchase_order_number": {
+      "description": "Purchase order reference number (free-text).",
+      "type": [
+        "string",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the purchase order number only if a PO is explicitly printed. If no purchase order appears on the invoice, return null."
+    },
+    "seller_address": {
+      "description": "Supplier postal address (free-text).",
+      "type": "string"
+    },
+    "seller_name": {
+      "description": "Supplier or issuer name (free-text).",
+      "type": "string"
+    },
+    "seller_vat_number": {
+      "description": "Supplier VAT or tax registration number (free-text).",
+      "type": "string"
+    },
+    "subtotal_amount": {
+      "description": "Subtotal before discounts and taxes.",
+      "type": "number"
+    },
+    "tax_amount": {
+      "description": "Tax amount charged.",
+      "type": [
+        "number",
+        "null"
+      ],
+      "X-ReasoningPrompt": "Return the tax/VAT amount only if a tax line is present. If the invoice shows no tax, return null rather than 0."
+    },
+    "tax_name": {
+      "description": "Tax label as shown on the invoice (free-text).",
+      "type": "string"
+    },
+    "tax_rate": {
+      "description": "Tax rate or percentage applied.",
+      "type": "number"
+    },
+    "total_amount": {
+      "description": "Final total amount due.",
+      "type": "number"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "invoice_date",
+    "currency",
+    "seller_name",
+    "seller_address",
+    "seller_vat_number",
+    "buyer_company",
+    "line_items",
+    "subtotal_amount",
+    "tax_name",
+    "tax_rate",
+    "total_amount"
+  ],
+  "title": "Invoice Extraction Schema",
+  "type": "object",
+  "X-SystemPrompt": "You are extracting fields from an invoice. Invoices often omit optional fields. Only return a value that is actually printed on this invoice; when a field is absent, return null. Never copy a value from a different field to fill a gap. Dates are European day/month/year and must be returned in ISO 8601 (YYYY-MM-DD)."
+}
