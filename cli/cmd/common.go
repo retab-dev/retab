@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"unicode/utf16"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -973,6 +975,40 @@ func printNDJSON(v any) error {
 	return enc.Encode(v)
 }
 
+// normalizeInputBytes converts raw bytes read from a file or stdin into clean
+// UTF-8. It transparently strips a leading byte-order mark and decodes UTF-16
+// content — the two encodings Windows tooling silently produces. PowerShell's
+// `Out-File -Encoding utf8` prepends a UTF-8 BOM, and its default `>` redirection
+// writes UTF-16 LE; without this normalization a perfectly valid JSON file fails
+// to parse with "invalid character 'ï'", and free-text inputs keep stray BOM
+// bytes. Content without a recognized BOM is returned unchanged.
+func normalizeInputBytes(raw []byte) []byte {
+	switch {
+	case len(raw) >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF:
+		return raw[3:] // UTF-8 BOM
+	case len(raw) >= 2 && raw[0] == 0xFF && raw[1] == 0xFE:
+		return decodeUTF16(raw[2:], binary.LittleEndian)
+	case len(raw) >= 2 && raw[0] == 0xFE && raw[1] == 0xFF:
+		return decodeUTF16(raw[2:], binary.BigEndian)
+	default:
+		return raw
+	}
+}
+
+// decodeUTF16 decodes BOM-stripped UTF-16 bytes (in the given byte order) to
+// UTF-8. A stray trailing byte from a truncated code unit is dropped rather than
+// failing the read.
+func decodeUTF16(b []byte, order binary.ByteOrder) []byte {
+	if len(b)%2 != 0 {
+		b = b[:len(b)-1]
+	}
+	u16 := make([]uint16, len(b)/2)
+	for i := range u16 {
+		u16[i] = order.Uint16(b[i*2:])
+	}
+	return []byte(string(utf16.Decode(u16)))
+}
+
 // readTextFileOrStdin reads raw UTF-8 text from path, or stdin when path is
 // "-". Trailing whitespace/newlines are trimmed so a file authored in an
 // editor (which appends a final newline) and an inline flag behave the same.
@@ -989,6 +1025,7 @@ func readTextFileOrStdin(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	raw = normalizeInputBytes(raw)
 	text := strings.TrimSpace(string(raw))
 	if text == "" {
 		return "", fmt.Errorf("empty text input")
@@ -1008,6 +1045,7 @@ func readJSON(path string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	raw = normalizeInputBytes(raw)
 	if len(strings.TrimSpace(string(raw))) == 0 {
 		return nil, fmt.Errorf("empty JSON input")
 	}

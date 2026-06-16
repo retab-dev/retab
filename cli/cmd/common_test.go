@@ -380,6 +380,41 @@ func TestReadJSONMapAndArray(t *testing.T) {
 	}
 }
 
+func TestReadInputNormalizesBOMAndUTF16(t *testing.T) {
+	dir := t.TempDir()
+
+	// UTF-8 BOM + JSON object (as written by PowerShell `Out-File -Encoding utf8`).
+	u8 := filepath.Join(dir, "u8bom.json")
+	if err := os.WriteFile(u8, append([]byte{0xEF, 0xBB, 0xBF}, []byte(`{"x":1}`)...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if m, err := readJSONMap(u8); err != nil || m["x"].(float64) != 1 {
+		t.Fatalf("utf-8 BOM: m=%#v err=%v", m, err)
+	}
+
+	// UTF-16 LE BOM + JSON object (as written by PowerShell's default `>` redirect).
+	u16 := []byte{0xFF, 0xFE}
+	for _, c := range []byte(`{"x":1}`) {
+		u16 = append(u16, c, 0x00)
+	}
+	u16Path := filepath.Join(dir, "u16le.json")
+	if err := os.WriteFile(u16Path, u16, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if m, err := readJSONMap(u16Path); err != nil || m["x"].(float64) != 1 {
+		t.Fatalf("utf-16 LE: m=%#v err=%v", m, err)
+	}
+
+	// The free-text reader strips the BOM too (e.g. --instructions-file).
+	txt := filepath.Join(dir, "instr.txt")
+	if err := os.WriteFile(txt, append([]byte{0xEF, 0xBB, 0xBF}, []byte("be concise\n")...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := readTextFileOrStdin(txt); err != nil || got != "be concise" {
+		t.Fatalf("text BOM: got=%q err=%v", got, err)
+	}
+}
+
 func TestResolveDocumentURL(t *testing.T) {
 	cmd := &cobra.Command{}
 	addDocumentFlags(cmd)
