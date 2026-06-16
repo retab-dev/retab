@@ -2,15 +2,14 @@
 
 import { z } from 'zod';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../../classifications/interfaces/mime-data.interface.js';
 
 /** Create a new workflow run from a workflow id, an optional version selector, and optional inputs. */
 export interface CreateWorkflowRunRequest {
@@ -20,7 +19,7 @@ export interface CreateWorkflowRunRequest {
    * Mapping of start_document block IDs to their input documents.
    * @default {}
    */
-  documents?: Record<string, FileRef | MIMEData>;
+  documents?: Record<string, MIMEData>;
   /**
    * Mapping of start-json block IDs to their input JSON data.
    * @default {}
@@ -35,14 +34,14 @@ export interface CreateWorkflowRunRequest {
 
 export interface CreateWorkflowRunRequestResponse {
   workflow_id: string;
-  documents?: Record<string, FileRefResponse | MIMEDataResponse>;
+  documents?: Record<string, MIMEDataResponse>;
   json_inputs?: Record<string, unknown>;
   version?: string;
 }
 
 export const ZCreateWorkflowRunRequest = z.object({
   workflowId: z.string(),
-  documents: z.record(z.string(), z.union([ZFileRef, ZMIMEData])).optional(),
+  documents: z.record(z.string(), ZMIMEData).optional(),
   jsonInputs: z.record(z.string(), z.unknown()).optional(),
   version: z.string().optional(),
 }) as z.ZodType<CreateWorkflowRunRequest>;
@@ -56,10 +55,7 @@ export function deserializeCreateWorkflowRunRequest(
       wire['documents'] == null
         ? (wire['documents'] as undefined)
         : Object.fromEntries(
-            Object.entries(wire['documents']).map(([__k, __v]) => [
-              __k,
-              __v as unknown as FileRef | MIMEData,
-            ])
+            Object.entries(wire['documents']).map(([__k, __v]) => [__k, deserializeMIMEData(__v)])
           ),
     jsonInputs: wire['json_inputs'],
     version: wire['version'],
@@ -75,10 +71,7 @@ export function serializeCreateWorkflowRunRequest(
       domain['documents'] == null
         ? (domain['documents'] as undefined)
         : Object.fromEntries(
-            Object.entries(domain['documents']).map(([__k, __v]) => [
-              __k,
-              __v as unknown as FileRefResponse | MIMEDataResponse,
-            ])
+            Object.entries(domain['documents']).map(([__k, __v]) => [__k, serializeMIMEData(__v)])
           ),
     json_inputs: domain['jsonInputs'],
     version: domain['version'],

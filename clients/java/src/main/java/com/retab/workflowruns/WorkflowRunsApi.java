@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.CancelWorkflowResponse;
 import com.retab.models.CreateWorkflowRunRequest;
+import com.retab.models.MimeData;
 import com.retab.models.WorkflowExportPayloadRequest;
 import com.retab.models.WorkflowExportPayloadResponse;
 import com.retab.models.WorkflowRun;
@@ -107,7 +108,10 @@ public final class WorkflowRunsApi {
   }
 
   public WorkflowRun create(
-      String workflowId, Map<String, ?> documents, Map<String, Object> jsonInputs, String version)
+      String workflowId,
+      Map<String, MimeData> documents,
+      Map<String, Object> jsonInputs,
+      String version)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/runs";
     StringBuilder query = new StringBuilder();

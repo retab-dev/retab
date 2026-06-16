@@ -15,10 +15,10 @@ module Retab
     sig { params(value: String).returns(String) }
     def workflow_id=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeData)])) }
+    sig { returns(T.nilable(T::Hash[String, Retab::MimeData])) }
     def documents; end
 
-    sig { params(value: T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeData)])).returns(T.nilable(T::Hash[String, T.any(Retab::FileRef, Retab::MimeData)])) }
+    sig { params(value: T.nilable(T::Hash[String, Retab::MimeData])).returns(T.nilable(T::Hash[String, Retab::MimeData])) }
     def documents=(value); end
 
     sig { returns(T.nilable(T::Hash[String, T.untyped])) }

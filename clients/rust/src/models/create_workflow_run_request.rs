@@ -14,8 +14,7 @@ pub struct CreateWorkflowRunRequest {
     ///
     /// Defaults to `{}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub documents:
-        Option<std::collections::HashMap<String, CreateWorkflowRunRequestDocumentsOneOf>>,
+    pub documents: Option<std::collections::HashMap<String, MimeData>>,
     /// Mapping of start-json block IDs to their input JSON data.
     ///
     /// Defaults to `{}`.

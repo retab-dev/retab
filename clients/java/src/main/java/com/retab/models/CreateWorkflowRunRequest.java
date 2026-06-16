@@ -10,14 +10,14 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class CreateWorkflowRunRequest {
   private final String workflowId;
-  private final Map<String, ?> documents;
+  private final Map<String, MimeData> documents;
   private final Map<String, Object> jsonInputs;
   private final String version;
 
   @JsonCreator
   public CreateWorkflowRunRequest(
       @JsonProperty(value = "workflow_id", required = true) String workflowId,
-      @JsonProperty(value = "documents", required = false) Map<String, ?> documents,
+      @JsonProperty(value = "documents", required = false) Map<String, MimeData> documents,
       @JsonProperty(value = "json_inputs", required = false) Map<String, Object> jsonInputs,
       @JsonProperty(value = "version", required = false) String version) {
     this.workflowId = workflowId;
@@ -32,7 +32,7 @@ public final class CreateWorkflowRunRequest {
   }
 
   @JsonProperty("documents")
-  public Map<String, ?> getDocuments() {
+  public Map<String, MimeData> getDocuments() {
     return documents;
   }
 

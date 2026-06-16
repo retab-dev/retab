@@ -343,25 +343,6 @@ impl From<FileRef> for ClassificationRequestDocumentOneOf {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum CreateWorkflowRunRequestDocumentsOneOf {
-    FileRef(Box<FileRef>),
-    MimeData(Box<MimeData>),
-}
-
-impl From<FileRef> for CreateWorkflowRunRequestDocumentsOneOf {
-    fn from(v: FileRef) -> Self {
-        CreateWorkflowRunRequestDocumentsOneOf::FileRef(Box::new(v))
-    }
-}
-
-impl From<MimeData> for CreateWorkflowRunRequestDocumentsOneOf {
-    fn from(v: MimeData) -> Self {
-        CreateWorkflowRunRequestDocumentsOneOf::MimeData(Box::new(v))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CreateWorkflowTestRequestSourceOneOf {
     #[serde(rename = "manual")]

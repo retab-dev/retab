@@ -16,7 +16,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
         public string $workflowId,
         /**
          * Mapping of start_document block IDs to their input documents.
-         * @var array<string, \Retab\Resource\FileRef|\Retab\Resource\MimeData>|null
+         * @var array<string, \Retab\Resource\MimeData>|null
          */
         public ?array $documents = null,
         /**
