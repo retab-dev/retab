@@ -109,7 +109,8 @@ class WorkflowRunsTest extends TestCase
     public function testCreateCoercesDocumentInputsPerStartBlock(): void
     {
         $fixture = $this->loadFixture('workflow_run');
-        $fileRef = new \Retab\Resource\FileRef(id: 'fil_123', filename: 'stored.pdf', mimeType: 'application/pdf');
+        // The canonical POST /v1/workflows/runs route accepts MimeData
+        // ({filename, url}) documents only; ergonomic inputs coerce to MimeData.
         $mimeData = new \Retab\Resource\MimeData(filename: 'ready.txt', url: 'data:text/plain;base64,cmVhZHk=');
         $path = tempnam(sys_get_temp_dir(), 'retab-php-doc-');
         $this->assertIsString($path);
@@ -124,7 +125,6 @@ class WorkflowRunsTest extends TestCase
             $client->workflows()->runs()->create(
                 workflowId: 'test_value',
                 documents: [
-                    'start_file' => $fileRef,
                     'start_mime' => $mimeData,
                     'start_path' => $path,
                     'start_string' => 'raw text',
@@ -137,11 +137,7 @@ class WorkflowRunsTest extends TestCase
         }
 
         $body = json_decode((string) $this->getLastRequest()->getBody(), true);
-        $this->assertSame([
-            'id' => 'fil_123',
-            'filename' => 'stored.pdf',
-            'mime_type' => 'application/pdf',
-        ], $body['documents']['start_file']);
+        $this->assertArrayNotHasKey('start_file', $body['documents']);
         $this->assertSame([
             'filename' => 'ready.txt',
             'url' => 'data:text/plain;base64,cmVhZHk=',

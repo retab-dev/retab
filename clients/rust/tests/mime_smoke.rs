@@ -9,7 +9,7 @@
 
 use std::path::PathBuf;
 
-use retab::models::{CreateWorkflowRunRequest, FileRef};
+use retab::models::CreateWorkflowRunRequest;
 use retab::{MimeData, Retab};
 
 fn _build_mime_from_pathbuf() {
@@ -31,6 +31,9 @@ fn _client_builds() {
 
 #[test]
 fn workflow_run_request_inserts_mime_documents() {
+    // The canonical POST /v1/workflows/runs route accepts MimeData
+    // ({filename, url}) documents only; ergonomic inputs coerce through
+    // Into<MimeData> and serialize to the {filename, url} shape.
     let request = CreateWorkflowRunRequest::new("wf_123")
         .with_document("start_doc", "https://example.com/invoice.pdf");
 
@@ -43,27 +46,5 @@ fn workflow_run_request_inserts_mime_documents() {
         json["documents"]["start_doc"]["url"],
         serde_json::json!("https://example.com/invoice.pdf")
     );
-}
-
-#[test]
-fn workflow_run_request_preserves_file_refs() {
-    let mut request = CreateWorkflowRunRequest::new("wf_123");
-    request.insert_file_ref(
-        "start_doc",
-        FileRef::new("file_123", "stored.pdf", "application/pdf"),
-    );
-
-    let json = serde_json::to_value(&request).unwrap();
-    assert_eq!(
-        json["documents"]["start_doc"]["id"],
-        serde_json::json!("file_123")
-    );
-    assert_eq!(
-        json["documents"]["start_doc"]["filename"],
-        serde_json::json!("stored.pdf")
-    );
-    assert_eq!(
-        json["documents"]["start_doc"]["mime_type"],
-        serde_json::json!("application/pdf")
-    );
+    assert!(json["documents"]["start_doc"]["id"].is_null());
 }
