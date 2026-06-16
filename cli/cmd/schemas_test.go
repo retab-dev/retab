@@ -494,6 +494,72 @@ func TestSchemasGenerateDoesNotRetryNonTransientFailure(t *testing.T) {
 	}
 }
 
+// TestSchemasGenerateSyncTimesOutAttemptAndRetries pins that --timeout-seconds
+// actually bounds a *synchronous* (default, non-background) attempt: when the
+// first submission stalls past the per-attempt deadline the CLI abandons it and
+// resubmits, rather than blocking on the SDK client's long default timeout. This
+// is the behaviour the help text promises ("Each attempt waits up to
+// --timeout-seconds ... to abandon a stuck job and resubmit sooner").
+func TestSchemasGenerateSyncTimesOutAttemptAndRetries(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posts atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := posts.Add(1)
+		if n == 1 {
+			// First attempt: stall past --timeout-seconds so the per-attempt
+			// deadline fires. Honour cancellation so the handler unblocks as
+			// soon as the client gives up.
+			select {
+			case <-r.Context().Done():
+			case <-time.After(2 * time.Second):
+			}
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"json_schema": map[string]any{"type": "object"}})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	set := func(name, val string) {
+		if err := schemasGenerateCmd.Flags().Set(name, val); err != nil {
+			t.Fatalf("set %s: %v", name, err)
+		}
+	}
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
+	set("url", "https://example.com/doc.pdf")
+	set("timeout-seconds", "1")
+	set("max-retries", "1")
+	set("retry-delay-ms", "1")
+	t.Cleanup(func() {
+		for name, def := range map[string]string{"timeout-seconds": "600", "max-retries": "3", "retry-delay-ms": "3000"} {
+			_ = schemasGenerateCmd.Flags().Set(name, def)
+		}
+		if slice, ok := schemasGenerateCmd.Flags().Lookup("url").Value.(interface{ Replace([]string) error }); ok {
+			_ = slice.Replace(nil)
+		}
+	})
+
+	var err error
+	stdout, _ := captureStd(t, func() { err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil) })
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if posts.Load() != 2 {
+		t.Fatalf("expected the stalled first attempt to be abandoned and resubmitted (2 posts), got %d", posts.Load())
+	}
+	var got map[string]any
+	if jerr := json.Unmarshal([]byte(stdout), &got); jerr != nil {
+		t.Fatalf("stdout not schema JSON: %v\n%s", jerr, stdout)
+	}
+	if got["type"] != "object" {
+		t.Fatalf("final output should be the recovered schema, got:\n%s", stdout)
+	}
+}
+
 // TestSchemasGetAndCancelHitGenerationSubpaths pins that the new get/cancel
 // commands target /v1/schemas/generate/{id}[/cancel] (the background-primitive
 // routes), not /v1/schemas/{id}.

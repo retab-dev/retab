@@ -1458,7 +1458,7 @@ also configurable.`,
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
 			outFormat = f.Value.String()
 		}
-		if raw || outFormat == "table" || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
+		if raw || outFormat == "table" || outFormat == string(OutputCSV) || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
 			if result != nil {
 				_, err := os.Stdout.WriteString(result.CsvData)
 				if err == nil && !strings.HasSuffix(result.CsvData, "\n") {

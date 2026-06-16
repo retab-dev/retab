@@ -1908,6 +1908,58 @@ func TestWorkflowsRunsExportRawFlagWritesPlainCSVToStdout(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsExportOutputCSVWritesPlainCSVToStdout(t *testing.T) {
+	// Regression: ``runs export --output csv`` (an explicit, valid global
+	// output value) fell through to printResult and emitted the JSON envelope
+	// instead of the CSV the user asked for — only --raw / table / a TTY
+	// triggered the raw dump. ``--output csv`` must behave like --raw here.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id;name\nrun_123;Alice\nrun_456;Bob",
+			"rows":     2,
+			"columns":  2,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "csv"); err != nil {
+		t.Fatalf("set --output csv: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	flags := map[string]string{
+		"workflow-id": "wf_123",
+		"block-id":    "blk_123",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+	}
+
+	var runErr error
+	stdout, stderr := captureStd(t, func() {
+		runErr = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("runs export --output csv: %v\nstderr:\n%s", runErr, stderr)
+	}
+	if !strings.HasPrefix(stdout, "id;name\nrun_123;Alice\nrun_456;Bob") {
+		t.Fatalf("--output csv stdout should be the unwrapped CSV body, got:\n%q", stdout)
+	}
+	for _, leak := range []string{`"csv_data"`, `"rows"`, `"columns"`} {
+		if strings.Contains(stdout, leak) {
+			t.Fatalf("--output csv stdout leaked JSON envelope key %q:\n%s", leak, stdout)
+		}
+	}
+}
+
 func TestWorkflowsRunsListRejectsReversedDateRange(t *testing.T) {
 	// Regression: ``runs list --from-date 2026-05-01 --to-date 2026-04-01``
 	// used to silently return an empty data array — indistinguishable

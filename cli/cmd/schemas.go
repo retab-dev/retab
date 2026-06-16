@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -216,6 +217,14 @@ resubmit sooner.
 			retryDelay = time.Duration(ms) * time.Millisecond
 		}
 		wait, _ := cmd.Flags().GetBool("wait")
+		// Bound each attempt's submission by --timeout-seconds so a stuck
+		// synchronous generation is abandoned and resubmitted (the behaviour
+		// the help text promises) instead of blocking on the SDK client's long
+		// default timeout — otherwise the retry logic above never engages for
+		// the common, non-background case. The --background enqueue returns
+		// well within this budget; the --wait poll is bounded separately by
+		// primitiveWaitDurations below.
+		_, attemptTimeout := primitiveWaitDurations(cmd)
 
 		var lastErr error
 		for attempt := 0; attempt <= maxRetries; attempt++ {
@@ -230,10 +239,15 @@ resubmit sooner.
 				}
 			}
 
-			result, err := client.Schemas.Generate(ctx, params)
+			genCtx, genCancel := context.WithTimeout(ctx, attemptTimeout)
+			result, err := client.Schemas.Generate(genCtx, params)
+			genCancel()
 			if err != nil {
 				lastErr = err
-				if isTransientGenFailure(err.Error()) {
+				// Don't resubmit once the user interrupts (parent ctx done);
+				// only our per-attempt deadline or a transient server failure
+				// should trigger a retry.
+				if ctx.Err() == nil && isTransientGenFailure(err.Error()) {
 					continue
 				}
 				return err
