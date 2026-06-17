@@ -390,7 +390,7 @@ class WorkflowTest(BaseModel):
     freshness: ArtifactFreshness | None = None
     drift: ArtifactDrift | None = None
     validation_status: str | None = Field(default="valid")
-    validation_issues: list[Any] = Field(default=[])
+    validation_issues: list[Any] | None = Field(default=[])
     latest_run_summary: LatestBlockTestRunSummary | None = None
     latest_passing_run_summary: LatestBlockTestRunSummary | None = None
     latest_failing_run_summary: LatestBlockTestRunSummary | None = None

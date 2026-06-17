@@ -93,7 +93,7 @@ export interface WorkflowTest {
   /** @default "valid" */
   validationStatus?: string;
   /** @default [] */
-  validationIssues: unknown[];
+  validationIssues?: unknown[];
   latestRunSummary?: LatestBlockTestRunSummary | null;
   latestPassingRunSummary?: LatestBlockTestRunSummary | null;
   latestFailingRunSummary?: LatestBlockTestRunSummary | null;
@@ -117,7 +117,7 @@ export interface WorkflowTestResponse {
   freshness?: ArtifactFreshnessResponse;
   drift?: ArtifactDriftResponse;
   validation_status?: string;
-  validation_issues: unknown[];
+  validation_issues?: unknown[];
   latest_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_passing_run_summary?: LatestBlockTestRunSummaryResponse | null;
   latest_failing_run_summary?: LatestBlockTestRunSummaryResponse | null;
@@ -139,7 +139,7 @@ export const ZWorkflowTest = z.object({
   freshness: ZArtifactFreshness.optional(),
   drift: ZArtifactDrift.optional(),
   validationStatus: z.string().optional(),
-  validationIssues: z.unknown().array(),
+  validationIssues: z.unknown().array().optional(),
   latestRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestPassingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
   latestFailingRunSummary: ZLatestBlockTestRunSummary.nullable().optional(),
