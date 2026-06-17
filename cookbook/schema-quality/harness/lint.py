@@ -1,9 +1,9 @@
 """A static linter for Retab extraction schemas.
 
 It reads a JSON schema and flags patterns that hurt extraction quality. It makes
-NO API calls and reads no documents — it only inspects the schema, so it is
-free, instant, and fully deterministic (no AI/LLM in the loop). Like any linter,
-the findings are *risks* to judge, not certain bugs.
+no API calls and reads no documents — it only inspects the schema, so it is
+deterministic: the same schema always produces the same findings. Like any
+linter, the findings are risks to judge, not certain bugs.
 
 The linter is GENERAL: it runs on any Retab / JSON schema, not just invoices.
 Its rules come in two kinds:

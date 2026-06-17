@@ -3,9 +3,9 @@
 `harness/lint.py` is a **static linter for Retab extraction schemas**. It reads a
 JSON Schema and flags design patterns that hurt extraction quality.
 
-- **No AI, no network, no documents.** It is a plain, deterministic algorithm
-  over the schema's JSON — given the same schema it always returns the same
-  findings, instantly and for free. (An AI *wrote* it; what *runs* is pure code.)
+- **No API calls, no documents.** It is a deterministic analysis of the
+  schema's JSON: the same schema always produces the same findings, with no
+  network access and no per-run cost.
 - **General.** It runs on any Retab / JSON schema, not just the invoice schemas
   in this folder.
 - **Findings are risks, not verdicts.** Like any linter, a finding is a pattern
@@ -213,14 +213,13 @@ Everything else (rules 1–6) is structural and needs no configuration.
 
 ## What the linter cannot do
 
-Because detection is structural + name-based, it is fast and explainable but
-**heuristic**:
-- It cannot know a field's *semantics* from structure — e.g. that a string named
-  `disposition` is categorical, or that `net_change` can be negative — unless the
-  name is in the (configurable) term lists. A semantic/LLM checker could, but it
-  would be non-deterministic, cost tokens, and need a network call; this linter
-  deliberately trades that away for being free and CI-safe.
-- It flags *risks*, not certainties. Confirm with the measured harness
+Detection is structural and name-based, which keeps it fast and deterministic
+but inherently heuristic:
+- It cannot infer a field's semantics from structure alone — for example, that a
+  string named `disposition` is categorical, or that `net_change` can be
+  negative — unless the name appears in the configurable term lists. Extend the
+  lexical vocabularies to cover such fields in your domain.
+- Findings are risks, not certainties. Confirm against the measured harness
   (`python -m harness.experiment`) when in doubt.
 
 ## How the rules map to the measurements
