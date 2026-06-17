@@ -989,11 +989,16 @@ positional, filters are flags — same convention as the rest of the
 		if value, _ := cmd.Flags().GetString("trigger-type"); value != "" {
 			params.TriggerType = &value
 		}
-		if value, _ := cmd.Flags().GetString("from-date"); value != "" {
-			params.FromDate = &value
+		fromDate, _ := cmd.Flags().GetString("from-date")
+		if fromDate != "" {
+			params.FromDate = &fromDate
 		}
-		if value, _ := cmd.Flags().GetString("to-date"); value != "" {
-			params.ToDate = &value
+		toDate, _ := cmd.Flags().GetString("to-date")
+		if toDate != "" {
+			params.ToDate = &toDate
+		}
+		if err := validateDateRange("from-date", "to-date", fromDate, toDate); err != nil {
+			return err
 		}
 		if value, _ := cmd.Flags().GetString("sort-by"); value != "" {
 			params.SortBy = &value
@@ -1233,12 +1238,12 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
 	workflowsExperimentsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
 	workflowsExperimentsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
-	workflowsExperimentsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
-	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
+	workflowsExperimentsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "created on or after this date (YYYY-MM-DD or RFC3339)")
+	workflowsExperimentsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "created on or before this date (YYYY-MM-DD or RFC3339)")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
-	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
+	workflowsExperimentsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsExperimentsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view: summary | by_document (needs --document-id) | by_target (needs --target-path) | votes (needs both)")
 	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id (required for by_document and votes views)")

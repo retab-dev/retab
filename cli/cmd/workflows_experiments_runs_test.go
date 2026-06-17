@@ -487,3 +487,62 @@ func TestWorkflowsExperimentsMetricsGetRequiresDependentFlags(t *testing.T) {
 		})
 	}
 }
+
+// TestWorkflowsExperimentsRunsListValidatesFlags pins the client-side guards
+// that bring `workflows experiments runs list` in line with its sibling
+// `workflows runs list`: --order and --from-date/--to-date are validated at
+// flag-parse time, and a reversed --from-date/--to-date range is rejected in
+// RunE before any HTTP request is issued (a swapped pair otherwise returns the
+// empty set, indistinguishable from "nothing matched").
+func TestWorkflowsExperimentsRunsListValidatesFlags(t *testing.T) {
+	cmd := workflowsExperimentsRunsListCmd
+
+	t.Run("rejects invalid --order at parse time", func(t *testing.T) {
+		t.Cleanup(func() { _ = cmd.Flags().Set("order", "") })
+		if err := cmd.Flags().Set("order", "sideways"); err == nil {
+			t.Fatal("expected --order=sideways to be rejected at parse time")
+		}
+	})
+
+	t.Run("rejects malformed --from-date at parse time", func(t *testing.T) {
+		t.Cleanup(func() { _ = cmd.Flags().Set("from-date", "") })
+		if err := cmd.Flags().Set("from-date", "not-a-date"); err == nil {
+			t.Fatal("expected --from-date=not-a-date to be rejected at parse time")
+		}
+	})
+
+	t.Run("rejects reversed date range before any request", func(t *testing.T) {
+		t.Setenv("RETAB_API_KEY", "test-key")
+		t.Setenv("HOME", t.TempDir())
+
+		var hits atomic.Int32
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hits.Add(1)
+			t.Fatalf("server should not be reached for a reversed date range, got %s %s", r.Method, r.URL.Path)
+		}))
+		defer server.Close()
+		t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+		if err := cmd.Flags().Set("from-date", "2026-06-10"); err != nil {
+			t.Fatalf("set --from-date: %v", err)
+		}
+		if err := cmd.Flags().Set("to-date", "2026-06-01"); err != nil {
+			t.Fatalf("set --to-date: %v", err)
+		}
+		t.Cleanup(func() {
+			_ = cmd.Flags().Set("from-date", "")
+			_ = cmd.Flags().Set("to-date", "")
+		})
+
+		err := cmd.RunE(cmd, nil)
+		if err == nil {
+			t.Fatal("expected an error for a reversed --from-date/--to-date range")
+		}
+		if !strings.Contains(err.Error(), "from-date") {
+			t.Fatalf("error %q should name --from-date", err.Error())
+		}
+		if got := hits.Load(); got != 0 {
+			t.Fatalf("server was hit %d time(s), want 0", got)
+		}
+	})
+}

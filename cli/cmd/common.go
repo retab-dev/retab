@@ -263,15 +263,8 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	// uses httputil so headers + body land in a copy-pasteable format
 	// (curl-equivalent). Bodies stay in memory; for large uploads this
 	// adds RAM pressure — that's fine for a debugging flag.
-	authHTTPClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		authHTTPClient = &http.Client{
-			// Match the SDK's default client timeout (clients/go/retab.go)
-			// instead of an arbitrary 60s — otherwise long-running calls
-			// (e.g. schema generation) are silently killed only under --debug.
-			Timeout:   30 * time.Minute,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
+	authHTTPClient := debugHTTPClient(cmd)
+	if authHTTPClient != http.DefaultClient {
 		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
 	}
 
@@ -504,6 +497,48 @@ func buildCLIRequestURL(baseURL string, requestPath string, query url.Values) (*
 	return requestURL, nil
 }
 
+// debugHTTPClient returns an *http.Client that dumps wire-level request and
+// response traffic to stderr when --debug is set, or http.DefaultClient
+// otherwise. The 30-minute timeout matches the SDK's default client
+// (clients/go/retab.go) so long-running calls (e.g. schema generation) aren't
+// silently killed only under --debug. Centralizing this here keeps newClient
+// and the raw cli*Request helpers from each re-deriving the same block.
+func debugHTTPClient(cmd *cobra.Command) *http.Client {
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		return &http.Client{
+			Timeout:   30 * time.Minute,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+	return http.DefaultClient
+}
+
+// resolveCLIRequestAuth resolves the API key / bearer token pair for the raw
+// cli*Request helpers and enforces the shared "no credentials configured"
+// guard. Exactly one of apiKey / bearerToken is non-empty on success, matching
+// the precedence newClient documents. Folding the three identical credential
+// preambles into one resolver guarantees they can't drift apart.
+func resolveCLIRequestAuth(
+	ctx context.Context,
+	cmd *cobra.Command,
+	cred resolvedCredential,
+	cfg retabConfig,
+	baseURL string,
+	httpClient *http.Client,
+) (apiKey string, bearerToken string, err error) {
+	apiKey = cred.APIKey
+	if apiKey == "" {
+		bearerToken, err = bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	if apiKey == "" && bearerToken == "" {
+		return "", "", fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	}
+	return apiKey, bearerToken, nil
+}
+
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
 	var result any
 	if err := cliJSONRequestInto(cmd, method, requestPath, query, body, &result); err != nil {
@@ -520,32 +555,14 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			// Match the SDK's default client timeout (clients/go/retab.go)
-			// instead of an arbitrary 60s — otherwise long-running calls
-			// (e.g. schema generation) are silently killed only under --debug.
-			Timeout:   30 * time.Minute,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return err
 	}
 
 	return doCLIJSONRequest(ctx, httpClient, baseURL, method, requestPath, query, body, apiKey, bearerToken, result)
@@ -566,32 +583,14 @@ func cliRawRequestBytes(
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			// Match the SDK's default client timeout (clients/go/retab.go)
-			// instead of an arbitrary 60s — otherwise long-running calls
-			// (e.g. schema generation) are silently killed only under --debug.
-			Timeout:   30 * time.Minute,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return nil, err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return nil, err
 	}
 
 	return doCLIRawRequest(ctx, httpClient, baseURL, method, requestPath, query, body, accept, apiKey, bearerToken)
@@ -614,32 +613,14 @@ func cliMultipartRequestInto(
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			// Match the SDK's default client timeout (clients/go/retab.go)
-			// instead of an arbitrary 60s — otherwise long-running calls
-			// (e.g. schema generation) are silently killed only under --debug.
-			Timeout:   30 * time.Minute,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return err
 	}
 
 	var body bytes.Buffer
@@ -1577,6 +1558,18 @@ func collectFileDateListFilters(cmd *cobra.Command) (filename, fromDate, toDate 
 		toDate = ptr(v)
 	}
 	return filename, fromDate, toDate
+}
+
+// validateListDateRange rejects a reversed --from-date / --to-date pair on the
+// file-shaped list commands, matching the check `workflows runs list` already
+// performs. Without it a swapped pair silently returns the empty set —
+// indistinguishable from "nothing matched", a common "where did my items go?"
+// trap. Safe to call unconditionally: validateDateRange returns nil when either
+// bound is empty or not a plain date (e.g. an RFC3339 timestamp).
+func validateListDateRange(cmd *cobra.Command) error {
+	fromDate, _ := cmd.Flags().GetString("from-date")
+	toDate, _ := cmd.Flags().GetString("to-date")
+	return validateDateRange("from-date", "to-date", fromDate, toDate)
 }
 
 func getIntFlagOrDefault(cmd *cobra.Command, name string, defaultValue int) int {
