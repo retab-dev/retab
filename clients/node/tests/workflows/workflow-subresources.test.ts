@@ -156,10 +156,7 @@ describe('workflow sub-resource list envelopes', () => {
 
   test('artifacts.list filters by run_id and deserializes WorkflowArtifact items', async () => {
     const { client, calls } = clientCapturing(
-      envelope(
-        { operation: 'extraction', id: 'ext_123' },
-        { operation: 'parse', id: 'parse_456' }
-      )
+      envelope({ operation: 'extraction', id: 'ext_123' }, { operation: 'parse', id: 'parse_456' })
     );
 
     const result = await client.workflows.artifacts.list({ runId: 'run_aaa' });

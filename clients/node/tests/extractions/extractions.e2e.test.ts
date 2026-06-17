@@ -31,14 +31,7 @@ function isKnownJsonSchemaDecode500(err: unknown): boolean {
   );
 }
 
-const STATUSES = new Set([
-  'pending',
-  'queued',
-  'in_progress',
-  'completed',
-  'failed',
-  'cancelled',
-]);
+const STATUSES = new Set(['pending', 'queued', 'in_progress', 'completed', 'failed', 'cancelled']);
 
 if (!LIVE) {
   describe('extractions e2e', () => {

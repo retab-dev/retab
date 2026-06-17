@@ -138,7 +138,10 @@ describe('files upload lifecycle', () => {
 
 describe('files blueprint paths', () => {
   test('create_blueprint posts file_id/mode/intent to /v1/files/blueprints', async () => {
-    const { client, calls } = clientCapturing({ id: 'bp_1', file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' } });
+    const { client, calls } = clientCapturing({
+      id: 'bp_1',
+      file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' },
+    });
 
     await client.files.create_blueprint('file_1', 'full', 'extract invoices', false);
 
@@ -154,7 +157,10 @@ describe('files blueprint paths', () => {
   });
 
   test('get_blueprint targets /v1/files/blueprints/{id} with include_output query', async () => {
-    const { client, calls } = clientCapturing({ id: 'bp_1', file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' } });
+    const { client, calls } = clientCapturing({
+      id: 'bp_1',
+      file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' },
+    });
 
     await client.files.get_blueprint('bp_1', { includeOutput: true });
 
@@ -165,7 +171,10 @@ describe('files blueprint paths', () => {
   });
 
   test('create_blueprint_cancel targets /v1/files/blueprints/{id}/cancel', async () => {
-    const { client, calls } = clientCapturing({ id: 'bp_1', file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' } });
+    const { client, calls } = clientCapturing({
+      id: 'bp_1',
+      file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' },
+    });
 
     await client.files.create_blueprint_cancel('bp_1');
 
@@ -182,7 +191,10 @@ describe('files blueprint paths', () => {
     expect(getCall.method).toBe('GET');
     expect(getCall.path).toBe('/v1/files/file_1');
 
-    const c2 = clientCapturing({ url: 'https://signed.example/x', expires_at: '2026-01-01T00:00:00Z' });
+    const c2 = clientCapturing({
+      url: 'https://signed.example/x',
+      expires_at: '2026-01-01T00:00:00Z',
+    });
     await c2.client.files.get_download_link('file_1');
     const linkCall = lastCall(c2.calls);
     expect(linkCall.method).toBe('GET');

@@ -15,14 +15,7 @@ import { LIVE, LIVE_SKIP_REASON, liveClient } from '../live.js';
 
 const d = describe.skipIf(!LIVE);
 
-const STATUSES = new Set([
-  'pending',
-  'queued',
-  'in_progress',
-  'completed',
-  'failed',
-  'cancelled',
-]);
+const STATUSES = new Set(['pending', 'queued', 'in_progress', 'completed', 'failed', 'cancelled']);
 
 if (!LIVE) {
   describe('classifications e2e', () => {

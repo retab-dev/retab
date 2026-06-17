@@ -114,11 +114,11 @@ describe('RetabBase.request surfaces parseRetabError for non-ok responses', () =
 
   test('error body is read verbatim (not parsed) and preserved on responseBody', async () => {
     const probe = probeWithStatus(403, 'plain text rejection');
-    await expect(probe.call({ method: 'POST', path: '/v1/x', body: { a: 1 } })).rejects.toMatchObject(
-      {
-        status: 403,
-        responseBody: 'plain text rejection',
-      }
-    );
+    await expect(
+      probe.call({ method: 'POST', path: '/v1/x', body: { a: 1 } })
+    ).rejects.toMatchObject({
+      status: 403,
+      responseBody: 'plain text rejection',
+    });
   });
 });

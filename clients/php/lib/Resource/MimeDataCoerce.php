@@ -77,15 +77,20 @@ final class MimeDataCoerce
             return self::fromBytes((string) $bytes, 'document');
         }
         if (is_array($input)) {
-            // Already-built wire shape: `{filename?, url}`.
-            if (isset($input['url']) && is_string($input['url'])) {
+            // Already-built wire shape: `{filename?, url}`. The `url` element is
+            // typed `string` by this method's `@param` shape, so `isset()` is the
+            // meaningful guard; the `MimeData` constructor's typed `string` params
+            // enforce the type at runtime for callers passing untyped arrays.
+            if (isset($input['url'])) {
                 return new MimeData(
                     filename: is_string($input['filename'] ?? null) ? $input['filename'] : 'document',
                     url: $input['url'],
                 );
             }
-            // Durable file reference: `{id, filename?, mime_type?}`.
-            if (isset($input['id']) && is_string($input['id'])) {
+            // Durable file reference: `{id, filename?, mime_type?}`. As above, the
+            // `id` element is typed `string`; `resolveFileId()`'s `string` param
+            // enforces it at runtime.
+            if (isset($input['id'])) {
                 $filename = is_string($input['filename'] ?? null) ? $input['filename'] : '';
                 return self::resolveFileId($input['id'], $filename, $client);
             }

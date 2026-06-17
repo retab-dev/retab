@@ -130,7 +130,11 @@ describe('document resources — create wire contract', () => {
   });
 
   test('parses.create maps tableParsingFormat/imageResolutionDpi/bustCache', async () => {
-    const { client, calls } = clientCapturing({ id: 'parse_1', file: FILE_REF, output: { text: 'hi' } });
+    const { client, calls } = clientCapturing({
+      id: 'parse_1',
+      file: FILE_REF,
+      output: { text: 'hi' },
+    });
 
     await client.parses.create(TEXT_DATA_URI, 'retab-micro', 'html', 96, 'go', true, false);
 
@@ -371,7 +375,10 @@ describe('document resources — list query mapping', () => {
 
     await checks[0][0]();
     expect(lastCall(c1.calls).path).toBe('/v1/classifications');
-    expect(lastCall(c1.calls).query).toMatchObject({ status: 'completed', from_date: '2026-01-01' });
+    expect(lastCall(c1.calls).query).toMatchObject({
+      status: 'completed',
+      from_date: '2026-01-01',
+    });
 
     await checks[1][0]();
     expect(lastCall(c2.calls).path).toBe('/v1/splits');
@@ -379,6 +386,9 @@ describe('document resources — list query mapping', () => {
 
     await checks[2][0]();
     expect(lastCall(c3.calls).path).toBe('/v1/partitions');
-    expect(lastCall(c3.calls).query).toMatchObject({ status: 'completed', from_date: '2026-01-01' });
+    expect(lastCall(c3.calls).query).toMatchObject({
+      status: 'completed',
+      from_date: '2026-01-01',
+    });
   });
 });

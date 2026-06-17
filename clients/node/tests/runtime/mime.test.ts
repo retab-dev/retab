@@ -129,14 +129,20 @@ describe('coerceMimeData FileRefDocumentInput -> resolved URL-backed MIMEData', 
   });
 
   test('a file-id document without a resolver throws (requires a client)', async () => {
-    const input: FileRefDocumentInput = { id: 'file_dup', filename: 'stored.bin', mime_type: 'application/json' };
+    const input: FileRefDocumentInput = {
+      id: 'file_dup',
+      filename: 'stored.bin',
+      mime_type: 'application/json',
+    };
     await expect(coerceMimeData(input)).rejects.toThrow(/requires a Retab client/);
   });
 });
 
 describe('coerceMimeData https:// passthrough + filename derivation', () => {
   test('https URL passthrough derives filename from last path segment', async () => {
-    const result = (await coerceMimeData('https://example.com/files/remote.pdf?download=1')) as MIMEData;
+    const result = (await coerceMimeData(
+      'https://example.com/files/remote.pdf?download=1'
+    )) as MIMEData;
     expect(result.url).toBe('https://example.com/files/remote.pdf?download=1');
     expect(result.filename).toBe('remote.pdf');
   });
@@ -148,7 +154,9 @@ describe('coerceMimeData https:// passthrough + filename derivation', () => {
   });
 
   test('URL instance is stringified then passthrough', async () => {
-    const result = (await coerceMimeData(new URL('https://cdn.example.com/a/b/photo.jpg'))) as MIMEData;
+    const result = (await coerceMimeData(
+      new URL('https://cdn.example.com/a/b/photo.jpg')
+    )) as MIMEData;
     expect(result.filename).toBe('photo.jpg');
     expect(result.url).toBe('https://cdn.example.com/a/b/photo.jpg');
   });
@@ -171,7 +179,9 @@ describe('retabStorageFileIdFromUrl parsing', () => {
   });
 
   test('rejects non-https schemes', () => {
-    expect(retabStorageFileIdFromUrl('http://storage.retab.com/org_1/file_123.pdf')).toBeUndefined();
+    expect(
+      retabStorageFileIdFromUrl('http://storage.retab.com/org_1/file_123.pdf')
+    ).toBeUndefined();
   });
 
   test('rejects a non-storage host', () => {
@@ -189,9 +199,7 @@ describe('retabStorageFileIdFromUrl parsing', () => {
 
   test('rejects wrong path-part counts', () => {
     expect(retabStorageFileIdFromUrl('https://storage.retab.com/file_123.pdf')).toBeUndefined();
-    expect(
-      retabStorageFileIdFromUrl('https://storage.retab.com/a/b/file_123.pdf')
-    ).toBeUndefined();
+    expect(retabStorageFileIdFromUrl('https://storage.retab.com/a/b/file_123.pdf')).toBeUndefined();
   });
 
   test('rejects names with no extension or a leading/trailing dot', () => {
