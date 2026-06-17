@@ -1,15 +1,13 @@
 """Build the nullable and reasoning schema variants from the agent baseline.
 
 The baseline (schemas/baseline.json) is what `retab schemas generate` produced
-from one representative invoice: every field is `required` and no field may be
-null. We derive two upgrades from it, changing one lever at a time so the
-comparison is controlled:
+from one representative invoice: no field may be null. We derive upgrades from
+it, changing one lever at a time so the comparison is controlled:
 
   nullable   : the optional fields (the ones that are genuinely absent on some
-               invoices) are retyped as ["<type>", "null"]. They stay in
-               `required` — under strict structured output every property is
-               emitted anyway, so optionality is expressed through the null
-               type, not by dropping the key. Nothing else changes.
+               invoices) are retyped as ["<type>", "null"], so the model can
+               report "absent" instead of fabricating a value. Nothing else
+               changes.
 
   reasoning  : the nullable schema PLUS an X-ReasoningPrompt on each optional
                field and an X-SystemPrompt on the whole schema.
@@ -106,9 +104,9 @@ def make_nullable(schema: dict, optional_fields=OPTIONAL_FIELDS) -> dict:
             prop["type"] = [t, "null"]
         elif isinstance(t, list) and "null" not in t:
             prop["type"] = t + ["null"]
-    # NB: optional fields stay in `required`. Strict structured output emits
-    # every declared property regardless, so optionality is carried by the null
-    # type; keeping the field required is the recommended strict-mode shape.
+    # Only the type changes: a present field is extracted regardless of
+    # `required`, so nullability is the only lever that lets the model report
+    # "absent" instead of fabricating a value.
     return out
 
 

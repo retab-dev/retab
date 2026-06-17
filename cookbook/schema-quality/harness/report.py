@@ -2,7 +2,7 @@
 
 results is a dict: {doc_stem: {variant: DocScore}}.
 The headline metric is accuracy on *absent* fields (ground truth = null), because
-that is where a "everything required" baseline is forced to hallucinate.
+that is where a baseline with no nullable types is forced to hallucinate.
 """
 
 from __future__ import annotations
@@ -49,8 +49,8 @@ def render(results: dict, threshold: float) -> str:
         "Sterling`, `€`) while ground truth is the ISO-4217 code. Four schema "
         "variants are compared, each adding one lever:\n"
     )
-    L.append("- **baseline** — produced by `retab schemas generate` from one invoice; every field `required`, no nullable types, no reasoning prompts.")
-    L.append("- **nullable** — baseline with the optional fields retyped `[\"<type>\", \"null\"]`; they stay `required` (optionality is carried by the null type, the right shape for strict structured output).")
+    L.append("- **baseline** — produced by `retab schemas generate` from one invoice; no nullable types, no reasoning prompts.")
+    L.append("- **nullable** — baseline with the optional fields retyped `[\"<type>\", \"null\"]`, so the model can report \"absent\" instead of fabricating a value.")
     L.append("- **reasoning** — nullable plus an `X-ReasoningPrompt` on each optional field (and an `X-SystemPrompt`) telling the model to return null when a field is absent.")
     L.append("- **enum** — reasoning plus an `enum` of ISO-4217 codes on `currency`, normalizing the printed vocabulary to a canonical code.\n")
     L.append(f"Each variant runs every invoice at `n_consensus=5`. Likelihood = mean per-field consensus confidence (shown as a percentage); weak = below {threshold:.0%}.\n")
@@ -74,7 +74,7 @@ def render(results: dict, threshold: float) -> str:
     L.append(
         "The **absent-field** column is the headline: it measures how each "
         "variant handles fields that are genuinely missing on an invoice — "
-        "exactly where a required-everything schema must invent a value.\n"
+        "exactly where a schema with no nullable types must invent a value.\n"
     )
 
     # 2. Per-document accuracy
