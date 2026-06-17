@@ -72,6 +72,31 @@ on apply, exactly as ` + "`workflows edges create`" + ` does. ` + "`spec get`" +
 always emits the canonical ` + "`source`" + `/` + "`target`" + ` form with
 exact handle ids.
 
+Container blocks (` + "`for_each`" + `, ` + "`while_loop`" + `) hold their
+child blocks under a nested ` + "`children`" + ` map keyed by block id —
+NOT a flat ` + "`parent_id`" + ` field (a child placed with ` + "`parent_id`" + `
+is treated as outside the container and apply fails with "has no
+connections"). Nest the children, wire only the external edge into the
+container's input handle, and the internal boundary edges are generated
+automatically:
+
+  blocks:
+    loop:
+      type: for_each
+      config: {map_method: iterate_array, map_source_path: items}
+      children:                # child blocks live here, not at top level
+        per_item:
+          type: function
+          config: {language: python, code: "...", output_schema: {...}}
+  edges:
+    - source: {block: extract, handle: output-json-0}
+      target: {block: loop,    handle: fe-left-in}   # external edge only
+
+The ` + "`fe-left-out → child`" + ` and ` + "`child → fe-right-in`" + ` boundary
+edges (` + "`loop-left-out`" + `/` + "`loop-right-in`" + ` for ` + "`while_loop`" + `)
+are added on apply; multiple children still need explicit sibling edges
+between them. ` + "`spec get`" + ` emits children nested the same way.
+
 ` + "`apiVersion`" + ` is required and currently pinned at
 ` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.
 ` + "`metadata.id`" + ` is treated as source context. Use

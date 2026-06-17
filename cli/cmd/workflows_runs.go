@@ -6,11 +6,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -457,28 +455,31 @@ removed in a future release.`,
 		if err != nil {
 			return err
 		}
-		// Resolve each --document-id to a FileRef. The workflow runs API
-		// accepts `FileRef {id, filename, mime_type}` as a documents entry
-		// (the union is FileRef | MIMEData server-side). FileRef requires
-		// filename and mime_type, so look the file up to populate them
-		// rather than forcing the user to repeat metadata they already
-		// uploaded. Done after client/ctx creation since it needs a round
-		// trip; alias resolution below then handles the `start` shorthand.
+		// Record each --document-id as a by-id FileRef; the reference
+		// resolution pass below turns it into the durable storage.retab.com
+		// URL the canonical create route accepts (alias resolution first
+		// handles the `start` shorthand).
 		if len(docIDs) > 0 {
 			if req.Documents == nil {
 				req.Documents = map[string]any{}
 			}
 			for key, fileID := range docIDs {
-				ref, err := resolveFileRef(ctx, client, fileID)
-				if err != nil {
-					return fmt.Errorf("--document-id %s=%s: %w", key, fileID, err)
-				}
-				req.Documents[key] = ref
+				req.Documents[key] = retab.FileRef{ID: fileID}
 			}
 		}
 		if req.Documents != nil {
 			req.Documents, err = resolveWorkflowRunDocumentAliases(ctx, client, args[0], req.Documents)
 			if err != nil {
+				return err
+			}
+			// Convert by-reference inputs (a stored file id, or inline base64
+			// content) into url-backed MIMEData. The canonical
+			// POST /v1/workflows/runs route accepts only url-backed documents;
+			// file ids resolve to the durable storage.retab.com URL (the server
+			// short-circuits it back to the stored object — no re-download), so
+			// runs stay on the public route instead of the legacy per-workflow
+			// run endpoint.
+			if err := resolveWorkflowRunDocumentReferences(cmd, req.Documents); err != nil {
 				return err
 			}
 		}
@@ -642,6 +643,84 @@ func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]a
 	return body, nil
 }
 
+// resolveWorkflowRunDocumentReferences rewrites by-reference document inputs
+// into the url-backed MIMEData the canonical POST /v1/workflows/runs route
+// accepts. A stored file id resolves to the durable storage.retab.com URL via
+// the Files download-link endpoint (the server short-circuits that URL back to
+// the stored object, so it remains a reference — no re-download). Inline base64
+// content folds into a data: URL. Inputs that already carry a url are left
+// untouched.
+func resolveWorkflowRunDocumentReferences(cmd *cobra.Command, documents map[string]any) error {
+	for blockID, document := range documents {
+		resolved, changed, err := resolveWorkflowRunDocumentReference(cmd, document)
+		if err != nil {
+			return fmt.Errorf("document %q: %w", blockID, err)
+		}
+		if changed {
+			documents[blockID] = resolved
+		}
+	}
+	return nil
+}
+
+func resolveWorkflowRunDocumentReference(cmd *cobra.Command, document any) (any, bool, error) {
+	id, content, mimeType, filename, hasURL := workflowRunDocumentReferenceParts(document)
+	if hasURL {
+		return document, false, nil
+	}
+	switch {
+	case id != "":
+		mime, err := resolveFileIDToMIMEData(cmd, id)
+		if err != nil {
+			return nil, false, err
+		}
+		return mime, true, nil
+	case content != "" && mimeType != "":
+		if filename == "" {
+			filename = "document"
+		}
+		return retab.MIMEData{Filename: filename, URL: "data:" + mimeType + ";base64," + content}, true, nil
+	default:
+		return document, false, nil
+	}
+}
+
+// workflowRunDocumentReferenceParts extracts the by-reference fields from any
+// supported document input shape (MIMEData, FileRef, or a raw map descriptor).
+func workflowRunDocumentReferenceParts(document any) (id, content, mimeType, filename string, hasURL bool) {
+	switch value := document.(type) {
+	case retab.MIMEData:
+		return "", value.Content, value.MIMEType, value.Filename, value.URL != ""
+	case *retab.MIMEData:
+		if value == nil {
+			return "", "", "", "", false
+		}
+		return "", value.Content, value.MIMEType, value.Filename, value.URL != ""
+	case retab.FileRef:
+		return value.ID, value.Content, value.MIMEType, value.Filename, false
+	case *retab.FileRef:
+		if value == nil {
+			return "", "", "", "", false
+		}
+		return value.ID, value.Content, value.MIMEType, value.Filename, false
+	case map[string]any:
+		return stringFromAnyMap(value, "id"), stringFromAnyMap(value, "content"), stringFromAnyMap(value, "mime_type"), stringFromAnyMap(value, "filename"), stringFromAnyMap(value, "url") != ""
+	case map[string]string:
+		return value["id"], value["content"], value["mime_type"], value["filename"], value["url"] != ""
+	default:
+		return "", "", "", "", false
+	}
+}
+
+func stringFromAnyMap(m map[string]any, key string) string {
+	if raw, ok := m[key]; ok {
+		if s, ok := raw.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
 func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[string]string, error) {
 	body := map[string]map[string]string{}
 	for blockID, document := range documents {
@@ -652,32 +731,6 @@ func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[s
 		body[blockID] = descriptor
 	}
 	return body, nil
-}
-
-// resolveFileRef fetches metadata for fileID and builds a FileRef suitable
-// for a workflow run documents entry. FileRef requires filename and
-// mime_type server-side; we source them from the stored file, guessing the
-// MIME type from the filename extension when the server didn't record one.
-func resolveFileRef(ctx context.Context, client *retab.Client, fileID string) (retab.FileRef, error) {
-	file, err := client.Files.Get(ctx, fileID)
-	if err != nil {
-		return retab.FileRef{}, err
-	}
-	filename := file.Filename
-	if filename == "" {
-		filename = "document"
-	}
-	mimeType := ""
-	if file.MIMEType != nil {
-		mimeType = *file.MIMEType
-	}
-	if mimeType == "" {
-		mimeType = mime.TypeByExtension(filepath.Ext(filename))
-	}
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
-	return retab.FileRef{ID: file.ID, Filename: filename, MIMEType: mimeType}, nil
 }
 
 func workflowRunDocumentRequestBody(blockID string, document any) (map[string]string, error) {
@@ -1189,6 +1242,9 @@ Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
 		if err != nil {
 			return err
 		}
+		if sourceRun.WorkflowID == "" {
+			return fmt.Errorf("source run %s does not include workflow_id", args[0])
+		}
 		version := "production"
 		if configSource == "draft" {
 			version = "draft"
@@ -1197,9 +1253,12 @@ Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
 			WorkflowID: sourceRun.WorkflowID,
 			Version:    ptr(version),
 		}
-		if params.WorkflowID == "" {
-			return fmt.Errorf("source run %s does not include workflow_id", args[0])
-		}
+		// Reuse the source run's stored inputs verbatim. Document inputs are
+		// stored as FileRefs ({id, filename, mime_type}); Runs.Create resolves
+		// each one into a durable storage.retab.com MIMEData URL (via the Files
+		// download-link endpoint) before posting to the canonical create route,
+		// which only accepts url-backed MIMEData. This keeps restart on the
+		// public route — no legacy /v1/workflows/{id}/run fallback.
 		if sourceRun.Inputs != nil {
 			if sourceRun.Inputs.Documents != nil {
 				documents := map[string]interface{}{}

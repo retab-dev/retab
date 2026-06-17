@@ -440,7 +440,7 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	}
 }
 
-func TestWorkflowsRunsCreateResolvesDocumentIDToFileRef(t *testing.T) {
+func TestWorkflowsRunsCreateResolvesDocumentIDToStorageURL(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -448,12 +448,19 @@ func TestWorkflowsRunsCreateResolvesDocumentIDToFileRef(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc":
-			// Resolve file metadata for the FileRef.
+		// A --document-id is resolved into the durable storage.retab.com URL
+		// the canonical create route accepts (the server short-circuits it back
+		// to the stored object — no re-download), not sent as a by-id FileRef
+		// to the legacy per-workflow run route.
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc/download-link":
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":        "file_abc",
-				"filename":  "deed.tiff",
-				"mime_type": "image/tiff",
+				"download_url": "https://storage.googleapis.com/bucket/file_abc.tiff?X-Goog-Signature=abc",
+				"expires_in":   "2026-05-15T01:00:00Z",
+				"filename":     "deed.tiff",
+				"mime_data": map[string]any{
+					"filename": "deed.tiff",
+					"url":      "https://storage.retab.com/org_1/file_abc.tiff",
+				},
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
 			var body map[string]any
@@ -503,39 +510,50 @@ func TestWorkflowsRunsCreateResolvesDocumentIDToFileRef(t *testing.T) {
 	if !ok {
 		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
 	}
-	if startDocument["id"] != "file_abc" {
-		t.Fatalf("expected FileRef id file_abc, got %#v", startDocument)
+	if startDocument["filename"] != "deed.tiff" || startDocument["url"] != "https://storage.retab.com/org_1/file_abc.tiff" {
+		t.Fatalf("--document-id must resolve to the durable storage URL, got %#v", startDocument)
 	}
-	if startDocument["filename"] != "deed.tiff" || startDocument["mime_type"] != "image/tiff" {
-		t.Fatalf("FileRef should carry resolved filename/mime_type, got %#v", startDocument)
-	}
-	if _, ok := startDocument["url"]; ok {
-		t.Fatalf("FileRef should reference by id, not send a url; got %#v", startDocument)
+	if _, ok := startDocument["id"]; ok {
+		t.Fatalf("unresolved FileRef id leaked to the create body: %#v", startDocument)
 	}
 	if _, ok := startDocument["content"]; ok {
-		t.Fatalf("FileRef should not inline content; got %#v", startDocument)
+		t.Fatalf("--document-id should not inline content; got %#v", startDocument)
 	}
 }
 
-func TestWorkflowsRunsCreatePreservesFileRefIDFromDocumentsFile(t *testing.T) {
+func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+		switch {
+		// A by-id file reference in --documents-file resolves to the durable
+		// storage.retab.com URL the canonical create route accepts.
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc/download-link":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"download_url": "https://storage.googleapis.com/bucket/file_abc.tiff?X-Goog-Signature=abc",
+				"expires_in":   "2026-05-15T01:00:00Z",
+				"filename":     "deed.tiff",
+				"mime_data": map[string]any{
+					"filename": "deed.tiff",
+					"url":      "https://storage.retab.com/org_1/file_abc.tiff",
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":     "run_123",
+				"status": "running",
+			})
+		default:
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		var body map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatalf("decode request body: %v", err)
-		}
-		postedDocuments, _ = body["documents"].(map[string]any)
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id":     "run_123",
-			"status": "running",
-		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -575,13 +593,13 @@ func TestWorkflowsRunsCreatePreservesFileRefIDFromDocumentsFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
 	}
-	// The id key must survive the --documents-file passthrough (regression:
-	// it used to be silently dropped, making file references impossible).
-	if startDocument["id"] != "file_abc" {
-		t.Fatalf("expected documents-file id to be preserved, got %#v", startDocument)
+	// The by-id file reference must resolve to the durable storage URL the
+	// canonical route accepts — the raw id must not reach the wire.
+	if startDocument["filename"] != "deed.tiff" || startDocument["url"] != "https://storage.retab.com/org_1/file_abc.tiff" {
+		t.Fatalf("documents-file id must resolve to the durable storage URL, got %#v", startDocument)
 	}
-	if startDocument["filename"] != "deed.tiff" || startDocument["mime_type"] != "image/tiff" {
-		t.Fatalf("FileRef descriptor = %#v", startDocument)
+	if _, ok := startDocument["id"]; ok {
+		t.Fatalf("unresolved file id leaked to the create body: %#v", startDocument)
 	}
 }
 
@@ -1215,6 +1233,19 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 					},
 				},
 			})
+		// Stored document inputs are FileRefs; Runs.Create resolves each via the
+		// Files download-link endpoint into the durable storage.retab.com URL
+		// that mime_data carries, then posts that to the canonical create route.
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"download_url": "https://storage.googleapis.com/bucket/file_123.pdf?X-Goog-Signature=abc",
+				"expires_in":   "2026-05-15T01:00:00Z",
+				"filename":     "invoice.pdf",
+				"mime_data": map[string]any{
+					"filename": "invoice.pdf",
+					"url":      "https://storage.retab.com/org_1/file_123.pdf",
+				},
+			})
 		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode request body: %v", err)
@@ -1274,8 +1305,14 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	if !ok {
 		t.Fatalf("start_doc = %#v", documents["start_doc"])
 	}
-	if startDoc["id"] != "file_123" || startDoc["filename"] != "invoice.pdf" || startDoc["mime_type"] != "application/pdf" {
+	// The stored FileRef is resolved (via download-link) into the durable
+	// storage.retab.com MIMEData URL the canonical create route accepts — the
+	// raw {id, mime_type} FileRef must NOT reach the wire.
+	if startDoc["filename"] != "invoice.pdf" || startDoc["url"] != "https://storage.retab.com/org_1/file_123.pdf" {
 		t.Fatalf("start_doc = %#v", startDoc)
+	}
+	if _, leaked := startDoc["id"]; leaked {
+		t.Fatalf("unresolved FileRef id leaked to the create body: %#v", startDoc)
 	}
 	jsonInputs, ok := body["json_inputs"].(map[string]any)
 	if !ok {
