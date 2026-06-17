@@ -769,6 +769,43 @@ func TestWriteAuthStatus_OutputTableRoutesToTable(t *testing.T) {
 	}
 }
 
+// Regression: `--output csv` is a globally-valid value, but auth status used
+// to hard-error on it ("invalid --output value") because its resolver only
+// knew json/table/auto. csv must resolve and render the same fields as the
+// table, comma-separated, rather than erroring or silently downgrading to JSON.
+func TestResolveAuthOutputFormat_AcceptsCSV(t *testing.T) {
+	root := &cobra.Command{Use: "retab"}
+	root.PersistentFlags().String("output", "csv", "")
+	child := &cobra.Command{Use: "status"}
+	root.AddCommand(child)
+
+	format, err := resolveAuthOutputFormat(child)
+	if err != nil {
+		t.Fatalf("resolveAuthOutputFormat(csv): unexpected error %v", err)
+	}
+	if format != OutputCSV {
+		t.Fatalf("resolveAuthOutputFormat(csv) = %q, want csv", format)
+	}
+}
+
+func TestWriteAuthStatus_OutputCSVRoutesToCSV(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	if err := writeAuthStatusWithFormat(&buf, payload, false, OutputCSV); err != nil {
+		t.Fatalf("writeAuthStatusWithFormat: %v", err)
+	}
+	out := buf.String()
+	if !strings.HasPrefix(out, "FIELD,VALUE") {
+		t.Errorf("--output csv should start with a FIELD,VALUE header, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AUTHENTICATED,true") {
+		t.Errorf("--output csv should emit the AUTHENTICATED row, got:\n%s", out)
+	}
+	if strings.Contains(out, "{") {
+		t.Errorf("--output csv should not fall back to JSON, got:\n%s", out)
+	}
+}
+
 // --output json overrides TTY auto-detect — even on a TTY writer, json
 // wins. Non-TTY here (bytes.Buffer) plus OutputJSON is the trivial case
 // but confirms the routing.

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -573,8 +574,10 @@ func resolveAuthOutputFormat(cmd *cobra.Command) (OutputFormat, error) {
 		return OutputJSON, nil
 	case string(OutputTable):
 		return OutputTable, nil
+	case string(OutputCSV):
+		return OutputCSV, nil
 	default:
-		return "", fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
+		return "", fmt.Errorf("invalid --output value %q (want: json | table | csv | auto)", raw)
 	}
 }
 
@@ -611,6 +614,8 @@ func writeAuthStatusWithFormat(w io.Writer, out map[string]any, jsonOnly bool, f
 		return writeAuthStatusJSON(w, out)
 	case OutputTable:
 		return writeAuthStatusTable(w, out)
+	case OutputCSV:
+		return writeAuthStatusCSV(w, out)
 	}
 	// OutputAuto (or unset) — preserve the historical behaviour.
 	if jsonOnly || !isTerminalWriter(w) {
@@ -784,95 +789,82 @@ func authStatusEnvironmentDisplay(out map[string]any) string {
 // API_KEY_PREVIEW, ACCESS_TOKEN_PREVIEW, ORGANIZATION, ENVIRONMENT,
 // ENVIRONMENT_SOURCE, ENVIRONMENT_ERROR, VALID, ERROR, HINT) are only emitted
 // when present in the payload — rendering an empty value would just be noise.
-func writeAuthStatusTable(w io.Writer, out map[string]any) error {
-	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-
-	var writeErr error
-	row := func(key string, value any) {
-		if writeErr != nil {
-			return
+// authStatusRows collects the auth-status fields as ordered (label, value)
+// pairs. The table and CSV renderers share it so both surface the same data in
+// the same order; only the framing (tab-aligned vs comma-separated) differs.
+func authStatusRows(out map[string]any) [][2]string {
+	var rows [][2]string
+	add := func(key string, value any) {
+		rows = append(rows, [2]string{key, fmt.Sprintf("%v", value)})
+	}
+	addStr := func(key, value string) {
+		if value != "" {
+			rows = append(rows, [2]string{key, value})
 		}
-		_, writeErr = fmt.Fprintf(tw, "%s\t%v\n", key, value)
+	}
+	str := func(v any) string {
+		s, _ := v.(string)
+		return s
 	}
 
 	// AUTHENTICATED is always present — the rest are optional and
 	// emitted only when set.
 	if v, ok := out["authenticated"]; ok {
-		row("AUTHENTICATED", v)
+		add("AUTHENTICATED", v)
 	}
-	if v, ok := out["source"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("SOURCE", s)
+	addStr("SOURCE", str(out["source"]))
+	addStr("BASE_URL", str(out["base_url"]))
+	addStr("API_KEY_PREVIEW", str(out["api_key_preview"]))
+	addStr("ACCESS_TOKEN_PREVIEW", str(out["access_token_preview"]))
+	if oauth, ok := out["oauth"].(map[string]any); ok {
+		addStr("WORKOS_API_BASE_URL", str(oauth["workos_api_base_url"]))
+		addStr("ORGANIZATION_ID", str(oauth["organization_id"]))
+		// ExpiresAt arrives here as a time.Time (the in-memory config shape)
+		// rather than a JSON string. Stringify both representations.
+		addStr("EXPIRES_AT", stringifyExpiresAt(oauth["expires_at"]))
+		if hr, ok := oauth["has_refresh"]; ok {
+			add("HAS_REFRESH", hr)
 		}
 	}
-	if v, ok := out["base_url"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("BASE_URL", s)
-		}
-	}
-	if v, ok := out["api_key_preview"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("API_KEY_PREVIEW", s)
-		}
-	}
-	if v, ok := out["access_token_preview"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("ACCESS_TOKEN_PREVIEW", s)
-		}
-	}
-	if oauthAny, ok := out["oauth"]; ok {
-		if oauth, ok := oauthAny.(map[string]any); ok {
-			if d, _ := oauth["workos_api_base_url"].(string); d != "" {
-				row("WORKOS_API_BASE_URL", d)
-			}
-			if o, _ := oauth["organization_id"].(string); o != "" {
-				row("ORGANIZATION_ID", o)
-			}
-			// ExpiresAt arrives here as a time.Time (the in-memory
-			// config shape) rather than a JSON string. Stringify both
-			// representations so the row prints either way.
-			if e := stringifyExpiresAt(oauth["expires_at"]); e != "" {
-				row("EXPIRES_AT", e)
-			}
-			if hr, ok := oauth["has_refresh"]; ok {
-				row("HAS_REFRESH", hr)
-			}
-		}
-	}
-	if organizationLine := authStatusOrganizationDisplay(out); organizationLine != "" {
-		row("ORGANIZATION", organizationLine)
-	}
-	if environmentLine := authStatusEnvironmentDisplay(out); environmentLine != "" {
-		row("ENVIRONMENT", environmentLine)
-	}
-	if environmentAny, ok := out["environment"]; ok && environmentAny != nil {
-		if environment, ok := environmentAny.(map[string]any); ok {
-			if s, _ := environment["source"].(string); s != "" {
-				row("ENVIRONMENT_SOURCE", s)
-			}
-			if s, _ := environment["error"].(string); s != "" {
-				row("ENVIRONMENT_ERROR", s)
-			}
-		}
+	addStr("ORGANIZATION", authStatusOrganizationDisplay(out))
+	addStr("ENVIRONMENT", authStatusEnvironmentDisplay(out))
+	if environment, ok := out["environment"].(map[string]any); ok {
+		addStr("ENVIRONMENT_SOURCE", str(environment["source"]))
+		addStr("ENVIRONMENT_ERROR", str(environment["error"]))
 	}
 	if v, ok := out["valid"]; ok {
-		row("VALID", v)
+		add("VALID", v)
 	}
-	if v, ok := out["error"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("ERROR", s)
-		}
-	}
-	if v, ok := out["hint"]; ok {
-		if s, _ := v.(string); s != "" {
-			row("HINT", s)
-		}
-	}
+	addStr("ERROR", str(out["error"]))
+	addStr("HINT", str(out["hint"]))
+	return rows
+}
 
-	if writeErr != nil {
-		return writeErr
+func writeAuthStatusTable(w io.Writer, out map[string]any) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	for _, r := range authStatusRows(out) {
+		if _, err := fmt.Fprintf(tw, "%s\t%s\n", r[0], r[1]); err != nil {
+			return err
+		}
 	}
 	return tw.Flush()
+}
+
+// writeAuthStatusCSV renders the same fields as the table, comma-separated, so
+// `--output csv auth status` is honored rather than rejected. A FIELD,VALUE
+// header keeps it self-describing for downstream parsers.
+func writeAuthStatusCSV(w io.Writer, out map[string]any) error {
+	cw := csv.NewWriter(w)
+	if err := cw.Write([]string{"FIELD", "VALUE"}); err != nil {
+		return err
+	}
+	for _, r := range authStatusRows(out) {
+		if err := cw.Write([]string{r[0], r[1]}); err != nil {
+			return err
+		}
+	}
+	cw.Flush()
+	return cw.Error()
 }
 
 // stringifyExpiresAt renders an OAuth expiry to RFC3339. The in-memory
