@@ -84,7 +84,7 @@ Three clean lever wins, plus one honest caveat about run-to-run variance:
   `X-ReasoningPrompt` stating the printed value is negative flipped the sign on
   all three. Present-field accuracy **88% → 94%**. *Lesson: a reasoning prompt
   encodes a convention a bare type cannot — but watch the likelihood: in the
-  enum run one discount came back positive at confidence `0.60` (not `1.00`),
+  enum run one discount came back positive at confidence `60%` (not `100%`),
   the model's own "I'm unsure" signal, a reminder that a small model mitigates
   rather than guarantees.*
 - **enum → vocabulary normalization.** `currency` is printed verbosely (`Euros`,
@@ -106,10 +106,10 @@ Three clean lever wins, plus one honest caveat about run-to-run variance:
 So the levers are complementary and stack cleanly: **nullable** fixes *absence*,
 **reasoning** fixes the *sign convention*, **enum** fixes *vocabulary* — overall
 accuracy climbs **83% → 90% → 95% → 98%**. Likelihood (consensus agreement)
-stayed high throughout — often `1.00` even when the baseline was confidently
+stayed high throughout — often `100%` even when the baseline was confidently
 wrong about the discount sign: **high confidence does not imply correctness.**
-Only a handful of fields fell below `0.90` (mostly the verbose currency forms,
-plus the enum-run discount at `0.60`; full list in [`RESULTS.md`](RESULTS.md)
+Only a handful of fields fell below `90%` (mostly the verbose currency forms,
+plus the enum-run discount at `60%`; full list in [`RESULTS.md`](RESULTS.md)
 §5), and likelihood barely moved while accuracy climbed 15 points — so it could
 not have ranked the schemas. Accuracy against ground truth is the metric that
 matters.

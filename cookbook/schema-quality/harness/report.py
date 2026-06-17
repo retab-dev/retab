@@ -17,7 +17,9 @@ def _pct(num, den):
 
 
 def _lik(x: Optional[float]):
-    return "n/a" if x is None else f"{x:.2f}"
+    # Likelihood as a precise percentage (e.g. 0.976 -> 97.6%), not rounded to
+    # two decimals where 0.976 would collapse to 0.98.
+    return "n/a" if x is None else f"{x * 100:.1f}%"
 
 
 def _agg(scores):
@@ -51,7 +53,7 @@ def render(results: dict, threshold: float) -> str:
     L.append("- **nullable** — baseline with the optional fields retyped `[\"<type>\", \"null\"]`; they stay `required` (optionality is carried by the null type, the right shape for strict structured output).")
     L.append("- **reasoning** — nullable plus an `X-ReasoningPrompt` on each optional field (and an `X-SystemPrompt`) telling the model to return null when a field is absent.")
     L.append("- **enum** — reasoning plus an `enum` of ISO-4217 codes on `currency`, normalizing the printed vocabulary to a canonical code.\n")
-    L.append(f"Each variant runs every invoice at `n_consensus=5`. Likelihood = mean per-field consensus confidence; weak = below {threshold:.2f}.\n")
+    L.append(f"Each variant runs every invoice at `n_consensus=5`. Likelihood = mean per-field consensus confidence (shown as a percentage); weak = below {threshold:.0%}.\n")
 
     # 1. Corpus summary
     L.append("## 1. Corpus summary\n")
@@ -136,7 +138,7 @@ def render(results: dict, threshold: float) -> str:
     L.append(
         "Likelihood measures how strongly the consensus runs **agreed** on a "
         "field, not whether the value was right. A field below the threshold "
-        f"({threshold:.2f}) is **weak** — the runs split. The interesting case "
+        f"({threshold:.0%}) is **weak** — the runs split. The interesting case "
         "is high likelihood on a *wrong* value: the model is confidently wrong, "
         "so likelihood cannot be used to rank schemas — only accuracy can.\n"
     )
@@ -158,11 +160,11 @@ def render(results: dict, threshold: float) -> str:
         L.append("| Variant | Invoice · field | Likelihood | Returned | Correct |")
         L.append("|---|---|---:|---|:--:|")
         for v, d, field, lk, got, correct in weak_rows:
-            L.append(f"| {v} | {d} · {field} | {lk:.2f} | `{got!r}` | {'✓' if correct else '✗'} |")
+            L.append(f"| {v} | {d} · {field} | {lk * 100:.1f}% | `{got!r}` | {'✓' if correct else '✗'} |")
         L.append("")
         L.append(
             "Note how few fields are weak even though accuracy varies widely: "
-            "likelihood stayed near `1.00` across variants while accuracy moved "
+            "likelihood stayed near `100%` across variants while accuracy moved "
             "**83% → 98%**. A confident value is not a correct one.\n"
         )
     else:
@@ -180,15 +182,15 @@ def render(results: dict, threshold: float) -> str:
         L.append("| " + " | ".join(_lik(means[v]) for v in VARIANTS) + " |")
         L.append("")
         L.append(
-            "Agreement climbs from `{:.2f}` to a perfect `1.00`. The reason is "
+            "Agreement climbs from `{:.1%}` to a perfect `100%`. The reason is "
             "instructive: `currency` is an **identical free-text field** in "
             "baseline, nullable and reasoning — so the wobble between those three "
-            "(`0.65`–`1.00`, depending on the document and the run) is pure "
+            "(`65%`–`100%`, depending on the document and the run) is pure "
             "consensus sampling noise. A free-text field lets each of the five "
             "runs choose a different surface form (`€`, `EUR`, `Euros`); when "
             "they disagree, likelihood drops. The **enum** is the one change that "
             "constrains the decode to a fixed set of codes, so all five runs land "
-            "on the same token and likelihood locks to `1.00` on every invoice. "
+            "on the same token and likelihood locks to `100%` on every invoice. "
             "Constraining the output space removes the degrees of freedom the "
             "runs were splitting over — the enum raised accuracy **and** stability "
             "at once.".format(means[VARIANTS[0]])
