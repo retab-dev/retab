@@ -104,9 +104,8 @@ def make_nullable(schema: dict, optional_fields=OPTIONAL_FIELDS) -> dict:
             prop["type"] = [t, "null"]
         elif isinstance(t, list) and "null" not in t:
             prop["type"] = t + ["null"]
-    # Only the type changes: a present field is extracted regardless of
-    # `required`, so nullability is the only lever that lets the model report
-    # "absent" instead of fabricating a value.
+    # Only the type changes: making the field nullable lets the model return
+    # null for an absent field instead of fabricating a value.
     return out
 
 

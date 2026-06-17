@@ -19,11 +19,6 @@ Its rules come in two kinds:
   pass your own to fit your domain (or use --sign-terms / --enum-terms on the CLI):
     sign-convention-no-reason, enum-candidate
 
-No rule ever looks at whether a field is in `required`: a present field is
-extracted regardless of `required`, and under strict structured output every
-property is emitted anyway — so nullability (the type), not `required`, is what
-lets the model report "absent".
-
 See ../LINTER.md for a full, per-rule explanation, and ../RESULTS.md for the
 measurements behind the rules that are backed by the experiment.
 
@@ -86,8 +81,7 @@ def _has_any_type(prop):
 
 def _walk_objects(obj_schema, path=""):
     """Yield (path, name, prop) for every property, recursing into nested
-    objects, array items, and $defs. `required` is intentionally ignored — the
-    rules judge a field by its type, not its membership in `required`."""
+    objects, array items, and $defs."""
     props = obj_schema.get("properties", {})
     for name, prop in props.items():
         fp = f"{path}.{name}" if path else name

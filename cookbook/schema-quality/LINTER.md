@@ -11,12 +11,6 @@ JSON Schema and flags design patterns that hurt extraction quality.
 - **Findings are risks, not verdicts.** Like any linter, a finding is a pattern
   worth a look, not a guaranteed bug.
 
-It never inspects whether a field is in `required`. A present field is extracted
-regardless of `required`, and under strict structured output every declared
-property is emitted anyway — so **nullability (the type), not `required`, is the
-lever** that lets the model report "absent". Every rule judges a field by its
-type/shape (and, for two rules, its name), never its `required` membership.
-
 ---
 
 ## Running it
@@ -156,8 +150,8 @@ not prop.get("description") and not ({"object","array"} & set(types))
 ```
 **Why:** descriptions are generally believed to help extraction, but this was
 **not** measured in this folder (the agent baseline already described every
-scalar field, so the rule never fired on our corpus). It is labelled advisory
-precisely to stay honest about what is and isn't proven here.
+scalar field, so the rule never fired on the corpus). It is labelled advisory
+because it has not been validated against these results.
 
 ### 7. `sign-convention-no-reason` — `warn` · lexical (configurable) · **measured**
 **Detects:** a numeric field whose name suggests a sign-ambiguous amount, with no
