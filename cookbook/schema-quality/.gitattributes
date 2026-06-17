@@ -1,0 +1,4 @@
+# The corpus PDFs are binary. reportlab emits them without NUL bytes, so git's
+# auto-detection would treat them as text and inject CRLF on checkout (with
+# core.autocrlf=true), corrupting the byte offsets. Pin them as binary.
+documents/*.pdf binary
