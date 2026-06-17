@@ -85,3 +85,13 @@ Every field that fell below the threshold, with the value returned and whether i
 | enum | invoice_no_code · discount | 0.60 | `32.25` | ✗ |
 
 Note how few fields are weak even though accuracy varies widely: likelihood stayed near `1.00` across variants while accuracy moved **83% → 98%**. A confident value is not a correct one.
+
+### Where stability rose: `currency`
+
+Mean consensus likelihood on the `currency` field, by variant:
+
+| baseline | nullable | reasoning | enum |
+|---:|---:|---:|---:|
+| 0.87 | 0.97 | 0.93 | 1.00 |
+
+Agreement climbs from `0.87` to a perfect `1.00`. The reason is instructive: `currency` is an **identical free-text field** in baseline, nullable and reasoning — so the wobble between those three (`0.65`–`1.00`, depending on the document and the run) is pure consensus sampling noise. A free-text field lets each of the five runs choose a different surface form (`€`, `EUR`, `Euros`); when they disagree, likelihood drops. The **enum** is the one change that constrains the decode to a fixed set of codes, so all five runs land on the same token and likelihood locks to `1.00` on every invoice. Constraining the output space removes the degrees of freedom the runs were splitting over — the enum raised accuracy **and** stability at once.
