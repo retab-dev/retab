@@ -15,9 +15,16 @@ Each rule traces to a measured failure (see RESULTS.md):
   sign-convention-no-reason  A discount/credit/adjustment field with no
                              X-ReasoningPrompt: the baseline returned +150 for a
                              -150 discount. A bare type cannot encode the sign.
-  enum-candidate             A categorical-looking string with no enum; an enum
-                             normalizes output to a known vocabulary.
+  enum-candidate             A categorical-looking string with no enum. Measured:
+                             where `currency` was printed verbosely ("Euros", "US
+                             Dollars", "€") a free-text field echoed that form;
+                             adding an enum of ISO codes normalized it to the
+                             canonical value (present-field accuracy 94% -> 98%).
   missing-description        Fields without a description extract less reliably.
+                             HEURISTIC ONLY — not measured on this corpus: the
+                             agent baseline already described every scalar field,
+                             so the rule never fired here. Advisory, not yet
+                             backed by a result in these experiments.
 
 Usage:
     python -m harness.lint schemas/baseline.json
@@ -115,15 +122,17 @@ def lint_schema(schema: dict):
 
         if "string" in types and "enum" not in prop and low in ENUMISH:
             findings.append(Finding(
-                "info", fp, "enum-candidate",
-                f'string "{name}" looks categorical but has no enum - an enum '
-                f"normalizes output to a fixed vocabulary.",
+                "warn", fp, "enum-candidate",
+                f'string "{name}" looks categorical but has no enum - a free-text '
+                f"field echoes whatever is printed; an enum normalizes output to a "
+                f"fixed vocabulary (measured: currency 94% -> 98% present-field).",
             ))
 
         if not prop.get("description") and not ({"object", "array"} & set(types)):
             findings.append(Finding(
                 "info", fp, "missing-description",
-                "no description - descriptions measurably improve extraction.",
+                "no description - descriptions are generally recommended "
+                "(heuristic; not measured in this folder's experiments).",
             ))
 
     findings.sort(key=lambda f: (_SEV_ORDER.get(f.severity, 9), f.path))

@@ -20,6 +20,10 @@ not just presence:
   - `invoice_date` is printed in European DD/MM/YYYY on several invoices
     (e.g. "07/02/2024" = 7 February), which a day/month-agnostic reader can
     misinterpret. Ground truth is always ISO 8601.
+  - `currency` is printed in verbose, un-normalized forms ("Euros", "US Dollars",
+    "Pounds Sterling", "€") while ground truth is the canonical ISO-4217 code
+    (EUR/USD/GBP). A free-text field echoes the printed form; an `enum`
+    normalizes it to the code. This is the shape for testing enum normalization.
 
 This is the right shape for testing nullable types: the same field is present
 on some invoices and genuinely absent on others. A schema that marks such a
@@ -93,7 +97,7 @@ INVOICES = [
         "invoice_number": "INV-1001",
         "invoice_date": "2024-01-15",
         "due_date": "2024-02-14",
-        "currency": "EUR",
+        "currency": "EUR", "currency_printed": "EUR",
         "customer_company": "Lumiere Studios SARL",
         "customer_name": "Claire Fontaine",
         "customer_code": "CUST-4471",
@@ -110,7 +114,7 @@ INVOICES = [
         "invoice_date": "2024-02-07",
         "invoice_date_printed": "07/02/2024",
         "due_date": "2024-02-21",
-        "currency": "EUR",
+        "currency": "EUR", "currency_printed": "Euros",
         "customer_company": "Atelier Bois & Co",
         "customer_name": None,
         "customer_code": "CUST-3320",
@@ -127,7 +131,7 @@ INVOICES = [
         "invoice_date": "2024-02-03",
         "invoice_date_printed": "03/02/2024",
         "due_date": "2024-03-04",
-        "currency": "EUR",
+        "currency": "USD", "currency_printed": "US Dollars",
         "customer_company": "Cafe Central GmbH",
         "customer_name": "Markus Weber",
         "customer_code": None,
@@ -144,7 +148,7 @@ INVOICES = [
         "invoice_date": "2024-02-10",
         "invoice_date_printed": "10/02/2024",
         "due_date": None,
-        "currency": "EUR",
+        "currency": "GBP", "currency_printed": "Pounds Sterling",
         "customer_company": "Nordic Print AB",
         "customer_name": None,
         "customer_code": None,
@@ -160,7 +164,7 @@ INVOICES = [
         "invoice_date": "2024-03-05",
         "invoice_date_printed": "05/03/2024",
         "due_date": "2024-04-04",
-        "currency": "EUR",
+        "currency": "EUR", "currency_printed": "€",
         "customer_company": "Verde Landscaping SL",
         "customer_name": "Lucia Ramirez",
         "customer_code": "CUST-7782",
@@ -186,7 +190,7 @@ def build_invoice(inv):
             ["Invoice date", inv.get("invoice_date_printed", inv["invoice_date"])]]
     if inv["due_date"]:
         meta.append(["Date due", inv["due_date"]])
-    meta.append(["Currency", inv["currency"]])
+    meta.append(["Currency", inv.get("currency_printed", inv["currency"])])
     s.append(_kv_table(meta))
     s.append(Spacer(1, 12))
 

@@ -14,6 +14,11 @@ comparison is controlled:
   reasoning  : the nullable schema PLUS an X-ReasoningPrompt on each optional
                field and an X-SystemPrompt on the whole schema.
 
+  enum       : the reasoning schema PLUS an `enum` on `currency`. The corpus
+               prints currency in verbose forms ("Euros", "US Dollars", "Pounds
+               Sterling", "€"); a free-text field echoes those, while the enum
+               normalizes the value to the canonical ISO-4217 code.
+
 What is a reasoning prompt?
   X-ReasoningPrompt is a Retab schema extension. The text is given to the model
   as a private, per-field instruction telling it HOW to decide the value before
@@ -23,7 +28,7 @@ What is a reasoning prompt?
   value from another field." X-SystemPrompt is the same idea at the whole-schema
   level.
 
-Run:  python -m harness.variants     # writes schemas/nullable.json + reasoning.json
+Run:  python -m harness.variants     # writes nullable.json + reasoning.json + enum.json
 """
 
 from __future__ import annotations
@@ -118,12 +123,26 @@ def add_reasoning(schema: dict, prompts=REASONING_PROMPTS, system_prompt=SYSTEM_
     return out
 
 
+# ISO-4217 codes the corpus uses, plus a couple of common distractors so the
+# enum constrains the vocabulary without giving the answer away.
+CURRENCY_ENUM = ["EUR", "USD", "GBP", "CHF", "JPY"]
+
+
+def add_currency_enum(schema: dict, codes=CURRENCY_ENUM) -> dict:
+    out = copy.deepcopy(schema)
+    prop = out.get("properties", {}).get("currency")
+    if prop is not None:
+        prop["enum"] = list(codes)
+    return out
+
+
 def build_all():
     with open(os.path.join(SCHEMAS_DIR, "baseline.json"), encoding="utf-8") as f:
         baseline = json.load(f)
     nullable = make_nullable(baseline)
     reasoning = add_reasoning(nullable)
-    for name, sch in (("nullable", nullable), ("reasoning", reasoning)):
+    enum = add_currency_enum(reasoning)
+    for name, sch in (("nullable", nullable), ("reasoning", reasoning), ("enum", enum)):
         path = os.path.join(SCHEMAS_DIR, f"{name}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(sch, f, indent=2, ensure_ascii=False)

@@ -85,15 +85,23 @@ def run_extraction(
         schema_file = tf.name
 
     try:
+        # Use --background --wait so the CLI queues the job and polls for the
+        # result instead of holding one long HTTP request open. A synchronous
+        # create can exceed the orchestrator's deadline on multi-way consensus
+        # (n_consensus > 1); the poll loop avoids that client-side timeout.
         cmd = [
             cli, "extractions", "create",
             "--file", doc_path,
             "--json-schema-file", schema_file,
             "--model", model,
             "--n-consensus", str(n_consensus),
+            "--background", "--wait", "--timeout-seconds", "600",
             "--output", "json",
         ]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        # encoding="utf-8" is required: the CLI emits UTF-8, but text=True would
+        # otherwise decode with the platform locale (cp1252 on Windows), which
+        # mojibakes non-ASCII output such as the "€" currency symbol.
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
         if proc.returncode != 0:
             raise RuntimeError(
                 f"retab CLI failed (exit {proc.returncode}):\n{proc.stderr.strip()}"
