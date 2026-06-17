@@ -49,7 +49,7 @@ public final class WorkflowTest {
       @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness,
       @JsonProperty(value = "drift", required = false) ArtifactDrift drift,
       @JsonProperty(value = "validation_status", required = false) String validationStatus,
-      @JsonProperty(value = "validation_issues", required = false) List<String> validationIssues,
+      @JsonProperty(value = "validation_issues", required = true) List<String> validationIssues,
       @JsonProperty(value = "latest_run_summary", required = false)
           LatestBlockTestRunSummary latestRunSummary,
       @JsonProperty(value = "latest_passing_run_summary", required = false)

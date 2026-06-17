@@ -33,8 +33,7 @@ pub struct WorkflowTest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub validation_status: Option<String>,
     /// Defaults to `[]`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub validation_issues: Option<Vec<String>>,
+    pub validation_issues: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub latest_run_summary: Option<LatestBlockTestRunSummary>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -56,6 +55,7 @@ impl WorkflowTest {
         workflow_id: impl Into<String>,
         target: WorkflowTestBlockTarget,
         source: CreateWorkflowTestRequestSourceOneOf,
+        validation_issues: Vec<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -71,7 +71,7 @@ impl WorkflowTest {
             freshness: Default::default(),
             drift: Default::default(),
             validation_status: Default::default(),
-            validation_issues: Default::default(),
+            validation_issues,
             latest_run_summary: Default::default(),
             latest_passing_run_summary: Default::default(),
             latest_failing_run_summary: Default::default(),

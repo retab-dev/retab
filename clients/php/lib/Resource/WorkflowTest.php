@@ -16,6 +16,8 @@ readonly class WorkflowTest implements \JsonSerializable
         public string $workflowId,
         public WorkflowTestBlockTarget $target,
         public ManualWorkflowTestSource|RunStepWorkflowTestSource $source,
+        /** @var array<string> */
+        public array $validationIssues,
         public ?string $name = null,
         public ?AssertionSpec $assertion = null,
         public ?AssertionSchemaDep $assertionSchemaDep = null,
@@ -25,8 +27,6 @@ readonly class WorkflowTest implements \JsonSerializable
         public ?ArtifactFreshness $freshness = null,
         public ?ArtifactDrift $drift = null,
         public ?string $validationStatus = null,
-        /** @var array<string>|null */
-        public ?array $validationIssues = null,
         public ?LatestBlockTestRunSummary $latestRunSummary = null,
         public ?LatestBlockTestRunSummary $latestPassingRunSummary = null,
         public ?LatestBlockTestRunSummary $latestFailingRunSummary = null,
@@ -44,6 +44,7 @@ readonly class WorkflowTest implements \JsonSerializable
             'workflow_id',
             'target',
             'source',
+            'validation_issues',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowTest::fromArray()");
@@ -56,6 +57,7 @@ readonly class WorkflowTest implements \JsonSerializable
             source: match ($data['source']['type'] ?? null) {
                 'manual' => ManualWorkflowTestSource::fromArray($data['source']), 'run_step' => RunStepWorkflowTestSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
             },
+            validationIssues: $data['validation_issues'],
             name: $data['name'] ?? null,
             assertion: isset($data['assertion']) ? AssertionSpec::fromArray($data['assertion']) : null,
             assertionSchemaDep: isset($data['assertion_schema_dep']) ? AssertionSchemaDep::fromArray($data['assertion_schema_dep']) : null,
@@ -65,7 +67,6 @@ readonly class WorkflowTest implements \JsonSerializable
             freshness: isset($data['freshness']) ? ArtifactFreshness::fromArray($data['freshness']) : null,
             drift: isset($data['drift']) ? ArtifactDrift::fromArray($data['drift']) : null,
             validationStatus: $data['validation_status'] ?? null,
-            validationIssues: $data['validation_issues'] ?? null,
             latestRunSummary: isset($data['latest_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_run_summary']) : null,
             latestPassingRunSummary: isset($data['latest_passing_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_passing_run_summary']) : null,
             latestFailingRunSummary: isset($data['latest_failing_run_summary']) ? LatestBlockTestRunSummary::fromArray($data['latest_failing_run_summary']) : null,
@@ -82,6 +83,7 @@ readonly class WorkflowTest implements \JsonSerializable
             'workflow_id' => $this->workflowId,
             'target' => $this->target->toArray(),
             'source' => $this->source->toArray(),
+            'validation_issues' => $this->validationIssues,
             'name' => $this->name,
             'assertion' => $this->assertion?->toArray(),
             'assertion_schema_dep' => $this->assertionSchemaDep?->toArray(),
@@ -91,7 +93,6 @@ readonly class WorkflowTest implements \JsonSerializable
             'freshness' => $this->freshness?->toArray(),
             'drift' => $this->drift?->toArray(),
             'validation_status' => $this->validationStatus,
-            'validation_issues' => $this->validationIssues,
             'latest_run_summary' => $this->latestRunSummary?->toArray(),
             'latest_passing_run_summary' => $this->latestPassingRunSummary?->toArray(),
             'latest_failing_run_summary' => $this->latestFailingRunSummary?->toArray(),

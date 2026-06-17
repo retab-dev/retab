@@ -87,10 +87,10 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def validation_status=(value); end
 
-    sig { returns(T.nilable(T::Array[T.untyped])) }
+    sig { returns(T::Array[T.untyped]) }
     def validation_issues; end
 
-    sig { params(value: T.nilable(T::Array[T.untyped])).returns(T.nilable(T::Array[T.untyped])) }
+    sig { params(value: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
     def validation_issues=(value); end
 
     sig { returns(T.nilable(Retab::LatestBlockTestRunSummary)) }

@@ -20,7 +20,7 @@ namespace Retab
         public ArtifactFreshness? Freshness { get; set; }
         public ArtifactDrift? Drift { get; set; }
         public string? ValidationStatus { get; set; } = "valid";
-        public List<string>? ValidationIssues { get; set; }
+        public List<string> ValidationIssues { get; set; } = default!;
         public LatestBlockTestRunSummary? LatestRunSummary { get; set; }
         public LatestBlockTestRunSummary? LatestPassingRunSummary { get; set; }
         public LatestBlockTestRunSummary? LatestFailingRunSummary { get; set; }

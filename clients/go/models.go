@@ -2656,7 +2656,7 @@ type WorkflowTest struct {
 	Freshness               *ArtifactFreshness         `json:"freshness,omitempty"`
 	Drift                   *ArtifactDrift             `json:"drift,omitempty"`
 	ValidationStatus        string                     `json:"validation_status,omitempty"`
-	ValidationIssues        []string                   `json:"validation_issues,omitempty"`
+	ValidationIssues        []string                   `json:"validation_issues"`
 	LatestRunSummary        *LatestBlockTestRunSummary `json:"latest_run_summary,omitempty"`
 	LatestPassingRunSummary *LatestBlockTestRunSummary `json:"latest_passing_run_summary,omitempty"`
 	LatestFailingRunSummary *LatestBlockTestRunSummary `json:"latest_failing_run_summary,omitempty"`
