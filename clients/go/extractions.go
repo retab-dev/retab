@@ -128,6 +128,77 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 	return &result, nil
 }
 
+// ExtractionsCreateStreamParams contains the parameters for CreateStream.
+type ExtractionsCreateStreamParams struct {
+	Document any `json:"document" url:"-"`
+	// JSONSchema is json schema describing the structured output
+	JSONSchema map[string]interface{} `json:"json_schema" url:"-"`
+	// Model is the model to use for the extraction
+	Model *string `json:"model,omitempty" url:"-"`
+	// ImageResolutionDpi is resolution of the image sent to the LLM
+	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
+	// Instructions is free-form instructions appended to the system prompt to steer the extraction.
+	Instructions *string `json:"instructions,omitempty" url:"-"`
+	// NConsensus is number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
+	NConsensus *int `json:"n_consensus,omitempty" url:"-"`
+	// Metadata is user-defined metadata to associate with this extraction
+	Metadata *map[string]string `json:"metadata,omitempty" url:"-"`
+	// AdditionalMessages is additional chat messages forwarded to the extraction model.
+	AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty" url:"-"`
+	// BustCache is if true, skip the LLM cache and force a fresh completion
+	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
+	Stream    *bool `json:"stream,omitempty" url:"-"`
+	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+	Background   *bool              `json:"background,omitempty" url:"-"`
+	ChunkingKeys *map[string]string `json:"chunking_keys,omitempty" url:"-"`
+}
+
+// CreateStream create Extraction Stream
+// Run a structured extraction on a document and stream partial results as they are produced.
+func (s *ExtractionService) CreateStream(ctx context.Context, params *ExtractionsCreateStreamParams, opts ...RequestOption) error {
+	type createStreamWireBody struct {
+		Document           *MIMEData                `json:"document"`
+		JSONSchema         map[string]interface{}   `json:"json_schema"`
+		Model              *string                  `json:"model,omitempty"`
+		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
+		Instructions       *string                  `json:"instructions,omitempty"`
+		NConsensus         *int                     `json:"n_consensus,omitempty"`
+		Metadata           *map[string]string       `json:"metadata,omitempty"`
+		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
+		BustCache          *bool                    `json:"bust_cache,omitempty"`
+		Stream             *bool                    `json:"stream,omitempty"`
+		Background         *bool                    `json:"background,omitempty"`
+		ChunkingKeys       *map[string]string       `json:"chunking_keys,omitempty"`
+	}
+	if params == nil {
+		return fmt.Errorf("retab: params is required")
+	}
+	var coercedDocument *MIMEData
+	if params.Document != nil {
+		mime, err := InferMIMEData(params.Document)
+		if err != nil {
+			return fmt.Errorf("retab: invalid document: %w", err)
+		}
+		coercedDocument = &mime
+	}
+	body := createStreamWireBody{
+		Document:           coercedDocument,
+		JSONSchema:         params.JSONSchema,
+		Model:              params.Model,
+		ImageResolutionDpi: params.ImageResolutionDpi,
+		Instructions:       params.Instructions,
+		NConsensus:         params.NConsensus,
+		Metadata:           params.Metadata,
+		AdditionalMessages: params.AdditionalMessages,
+		BustCache:          params.BustCache,
+		Stream:             params.Stream,
+		Background:         params.Background,
+		ChunkingKeys:       params.ChunkingKeys,
+	}
+	_, err := s.client.request(ctx, "POST", "/v1/extractions/stream", nil, body, nil, opts)
+	return err
+}
+
 // ExtractionsGetParams contains the parameters for Get.
 type ExtractionsGetParams struct {
 	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.

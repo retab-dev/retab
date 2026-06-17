@@ -107,6 +107,47 @@ class ExtractionsMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
 
+    def prepare_create_stream(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
+        """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        document_payload: Any = document
+        if document_payload is not None:
+            document_payload = _coerce_mime_document_input(document_payload)
+        payload = ExtractionRequest(
+            document=cast(Any, document_payload),
+            json_schema=cast(Any, json_schema),
+            model=cast(Any, model),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
+            instructions=cast(Any, instructions),
+            n_consensus=cast(Any, n_consensus),
+            metadata=cast(Any, metadata),
+            additional_messages=cast(Any, additional_messages),
+            bust_cache=cast(Any, bust_cache),
+            stream=cast(Any, stream),
+            background=cast(Any, background),
+            chunking_keys=cast(Any, chunking_keys),
+        )
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url="/v1/extractions/stream", params=params or None, data=data)
+
     def prepare_get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
         params: dict[str, Any] = {
@@ -218,6 +259,41 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
+    def create_stream(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> Any:
+        """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
+        prepared_request = self.prepare_create_stream(
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+            stream=stream,
+            background=background,
+            chunking_keys=chunking_keys,
+            **extra_params,
+        )
+        response = self._client._prepared_request(prepared_request)
+        return response
+
     def get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> Extraction:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""
         prepared_request = self.prepare_get(extraction_id, include_output=include_output, **extra_params)
@@ -314,6 +390,41 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         )
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
+
+    async def create_stream(
+        self,
+        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+        stream: bool = False,
+        background: bool = False,
+        chunking_keys: dict[str, str] | None = None,
+        **extra_params: Any,
+    ) -> Any:
+        """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
+        prepared_request = self.prepare_create_stream(
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+            stream=stream,
+            background=background,
+            chunking_keys=chunking_keys,
+            **extra_params,
+        )
+        response = await self._client._prepared_request(prepared_request)
+        return response
 
     async def get(self, extraction_id: str, include_output: bool | None = True, **extra_params: Any) -> Extraction:
         """Get Extraction Retrieve an extraction. Returns the extraction identified by `extraction_id`, including its source file, schema, `output`, and consensus details. Responds with `404` if no matching extraction exists."""

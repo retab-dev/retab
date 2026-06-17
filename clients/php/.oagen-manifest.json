@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-16T22:15:48.720Z",
+  "generatedAt": "2026-06-17T06:51:13.914Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -784,6 +784,10 @@
     },
     "POST /v1/extractions": {
       "sdkMethod": "create",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/stream": {
+      "sdkMethod": "createStream",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}": {

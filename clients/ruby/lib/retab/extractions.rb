@@ -159,6 +159,61 @@ module Retab
       result
     end
 
+    # Create Extraction Stream
+    # @param document [Retab::MimeData, Pathname, IO, String, Hash]
+    # @param json_schema [Hash{String => Object}] JSON schema describing the structured output
+    # @param model [String, nil] The model to use for the extraction
+    # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
+    # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the extraction.
+    # @param n_consensus [Integer, nil] Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
+    # @param metadata [Hash{String => String}, nil] User-defined metadata to associate with this extraction
+    # @param additional_messages [Array<Hash{String => Object}>, nil] Additional chat messages forwarded to the extraction model.
+    # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
+    # @param stream [Boolean, nil]
+    # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    # @param chunking_keys [Hash{String => String}, nil]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [void]
+    def create_stream(
+      document:,
+      json_schema:,
+      model: nil,
+      image_resolution_dpi: nil,
+      instructions: nil,
+      n_consensus: nil,
+      metadata: nil,
+      additional_messages: nil,
+      bust_cache: nil,
+      stream: nil,
+      background: nil,
+      chunking_keys: nil,
+      request_options: {}
+    )
+      document = Retab::MimeData.coerce(document) unless document.nil?
+      body = {
+        "document" => document,
+        "json_schema" => json_schema,
+        "model" => model,
+        "image_resolution_dpi" => image_resolution_dpi,
+        "instructions" => instructions,
+        "n_consensus" => n_consensus,
+        "metadata" => metadata,
+        "additional_messages" => additional_messages,
+        "bust_cache" => bust_cache,
+        "stream" => stream,
+        "background" => background,
+        "chunking_keys" => chunking_keys
+      }.compact
+      @client.request(
+        method: :post,
+        path: "/v1/extractions/stream",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      nil
+    end
+
     # Get Extraction
     # @param extraction_id [String]
     # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.

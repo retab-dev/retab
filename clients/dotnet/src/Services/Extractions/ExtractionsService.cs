@@ -71,6 +71,24 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Create Extraction Stream</summary>
+        /// <remarks>
+        /// Run a structured extraction on a document and stream partial results as they are produced.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public virtual async Task CreateStreamAsync(ExtractionsCreateStreamOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            await this.PostAsync<object>("/v1/extractions/stream", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateStreamAsync"/>.</summary>
+        public virtual Task CreateStream(ExtractionsCreateStreamOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateStreamAsync(options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Get Extraction</summary>
         /// <remarks>
         /// Retrieve an extraction.

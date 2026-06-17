@@ -67,6 +67,44 @@ namespace Retab
 
     }
 
+    /// <summary>Request options for <see cref="ExtractionsService.CreateStreamAsync"/>: Create Extraction Stream</summary>
+    public class ExtractionsCreateStreamOptions : BaseOptions
+    {
+        public MimeData Document { get; set; } = default!;
+
+        /// <summary>JSON schema describing the structured output</summary>
+        public Dictionary<string, object> JsonSchema { get; set; } = default!;
+
+        /// <summary>The model to use for the extraction</summary>
+        public string? Model { get; set; }
+
+        /// <summary>Resolution of the image sent to the LLM</summary>
+        public long? ImageResolutionDpi { get; set; }
+
+        /// <summary>Free-form instructions appended to the system prompt to steer the extraction.</summary>
+        public string? Instructions { get; set; }
+
+        /// <summary>Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.</summary>
+        public long? NConsensus { get; set; }
+
+        /// <summary>User-defined metadata to associate with this extraction</summary>
+        public Dictionary<string, string>? Metadata { get; set; }
+
+        /// <summary>Additional chat messages forwarded to the extraction model.</summary>
+        public List<Dictionary<string, object>>? AdditionalMessages { get; set; }
+
+        /// <summary>If true, skip the LLM cache and force a fresh completion</summary>
+        public bool? BustCache { get; set; }
+
+        public bool? Stream { get; set; }
+
+        /// <summary>If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/&lt;primitive&gt;/{id} until status is terminal. Mutually exclusive with stream.</summary>
+        public bool? Background { get; set; }
+
+        public Dictionary<string, string>? ChunkingKeys { get; set; }
+
+    }
+
     /// <summary>Request options for <see cref="ExtractionsService.GetAsync"/>: Get Extraction</summary>
     public class ExtractionsGetOptions : BaseOptions
     {

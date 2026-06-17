@@ -27,6 +27,15 @@ class ExtractionsTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_create_stream_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/extractions/stream(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client
+      .extractions
+      .create_stream(document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, json_schema: {})
+    assert_nil(result)
+  end
+
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/extractions/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -62,6 +71,12 @@ class ExtractionsTest < Minitest::Test
       name: :create,
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/extractions(\?|\z)},
+      args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, json_schema: {}}
+    },
+    {
+      name: :create_stream,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/extractions/stream(\?|\z)},
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, json_schema: {}}
     },
     {

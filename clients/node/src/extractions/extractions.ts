@@ -93,6 +93,45 @@ export class Extractions {
     return deserializeExtraction(__wire);
   }
 
+  /** Create Extraction Stream */
+  async create_stream(
+    document: DocumentInput,
+    jsonSchema: Record<string, unknown>,
+    model?: string,
+    imageResolutionDpi?: number,
+    instructions?: string | null,
+    nConsensus?: number,
+    metadata?: Record<string, string> | null,
+    additionalMessages?: Record<string, unknown>[] | null,
+    bustCache?: boolean,
+    stream?: boolean,
+    background?: boolean,
+    chunkingKeys?: Record<string, string> | null
+  ): Promise<unknown> {
+    const documentCoerced = await coerceMimeData(document);
+    const body = {
+      document: documentCoerced,
+      json_schema: jsonSchema,
+      model: model,
+      image_resolution_dpi: imageResolutionDpi,
+      instructions: instructions,
+      n_consensus: nConsensus,
+      metadata: metadata,
+      additional_messages: additionalMessages,
+      bust_cache: bustCache,
+      stream: stream,
+      background: background,
+      chunking_keys: chunkingKeys,
+    };
+    const __wire = await this.client.request<unknown>({
+      method: 'POST',
+      path: '/v1/extractions/stream',
+      query: undefined,
+      body: body,
+    });
+    return __wire as unknown as unknown;
+  }
+
   /** Get Extraction */
   async get(
     extractionId: string,

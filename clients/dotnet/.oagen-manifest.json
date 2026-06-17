@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-16T22:15:46.975Z",
+  "generatedAt": "2026-06-17T06:51:12.457Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -427,6 +427,10 @@
     },
     "POST /v1/extractions": {
       "sdkMethod": "CreateAsync",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/stream": {
+      "sdkMethod": "CreateStreamAsync",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}": {

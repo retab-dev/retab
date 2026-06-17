@@ -50,6 +50,15 @@ class ExtractionsTest extends TestCase
         $this->assertStringEndsWith('v1/extractions', $request->getUri()->getPath());
     }
 
+    public function testCreateStream(): void
+    {
+        $client = $this->createMockClient([['status' => 200, 'body' => []]]);
+        $client->extractions()->createStream(document: \Retab\Resource\MimeData::fromArray($this->loadFixture('mime_data')), jsonSchema: []);
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/extractions/stream', $request->getUri()->getPath());
+    }
+
     public function testGet(): void
     {
         $fixture = $this->loadFixture('extraction');

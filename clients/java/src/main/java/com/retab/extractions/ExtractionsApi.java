@@ -170,6 +170,91 @@ public final class ExtractionsApi {
     return client.getObjectMapper().readValue(response.body(), Extraction.class);
   }
 
+  public Object createStream(ExtractionRequest request) throws IOException, InterruptedException {
+    return createStream(
+        request == null ? null : request.getDocument(),
+        request == null ? null : request.getJsonSchema(),
+        request == null ? null : request.getModel(),
+        request == null ? null : request.getImageResolutionDpi(),
+        request == null ? null : request.getInstructions(),
+        request == null ? null : request.getNConsensus(),
+        request == null ? null : request.getMetadata(),
+        request == null ? null : request.getAdditionalMessages(),
+        request == null ? null : request.isBustCache(),
+        request == null ? null : request.isStream(),
+        request == null ? null : request.isBackground(),
+        request == null ? null : request.getChunkingKeys());
+  }
+
+  public Object createStream(
+      Object document,
+      Map<String, Object> jsonSchema,
+      String model,
+      Long imageResolutionDpi,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Map<String, String> chunkingKeys)
+      throws IOException, InterruptedException {
+    String path = "/v1/extractions/stream";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("document", document);
+    body.put("json_schema", jsonSchema);
+    if (model != null) {
+      body.put("model", model);
+    }
+    if (imageResolutionDpi != null) {
+      body.put("image_resolution_dpi", imageResolutionDpi);
+    }
+    if (instructions != null) {
+      body.put("instructions", instructions);
+    }
+    if (nConsensus != null) {
+      body.put("n_consensus", nConsensus);
+    }
+    if (metadata != null) {
+      body.put("metadata", metadata);
+    }
+    if (additionalMessages != null) {
+      body.put("additional_messages", additionalMessages);
+    }
+    if (bustCache != null) {
+      body.put("bust_cache", bustCache);
+    }
+    if (stream != null) {
+      body.put("stream", stream);
+    }
+    if (background != null) {
+      body.put("background", background);
+    }
+    if (chunkingKeys != null) {
+      body.put("chunking_keys", chunkingKeys);
+    }
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer " + client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
   public Extraction get(String extractionId, Boolean includeOutput)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/" + encodePathSegment(extractionId);

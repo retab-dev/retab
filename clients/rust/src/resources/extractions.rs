@@ -106,6 +106,45 @@ impl CreateParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct CreateStreamParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: ExtractionRequest,
+}
+
+impl CreateStreamParams {
+    /// Construct a new `CreateStreamParams` with the required fields set.
+    ///
+    /// Accepts ergonomic input for MimeData-typed fields via
+    /// [`Into<MimeData>`](crate::MimeData) — pass a `PathBuf`,
+    /// `Vec<u8>`, `&str` URL, or pre-built `MimeData`.
+    #[allow(deprecated)]
+    pub fn new<D: Into<crate::MimeData>>(
+        document: D,
+        json_schema: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            body: ExtractionRequest {
+                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                json_schema,
+                model: Default::default(),
+                image_resolution_dpi: Default::default(),
+                instructions: Default::default(),
+                n_consensus: Default::default(),
+                metadata: Default::default(),
+                additional_messages: Default::default(),
+                bust_cache: Default::default(),
+                stream: Default::default(),
+                background: Default::default(),
+                chunking_keys: Default::default(),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct GetParams {
     /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     ///
@@ -170,6 +209,26 @@ impl<'a> ExtractionsApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// Create Extraction Stream
+    ///
+    /// Run a structured extraction on a document and stream partial results as they are produced.
+    pub async fn create_stream(&self, params: CreateStreamParams) -> Result<(), Error> {
+        self.create_stream_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::create_stream`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_stream_with_options(
+        &self,
+        params: CreateStreamParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<(), Error> {
+        let path = "/v1/extractions/stream".to_string();
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts_empty(method, &path, &params, Some(&params.body), options)
             .await
     }
 

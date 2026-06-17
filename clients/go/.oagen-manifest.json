@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-16T22:15:41.733Z",
+  "generatedAt": "2026-06-17T06:51:06.122Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -110,6 +110,10 @@
     },
     "POST /v1/extractions": {
       "sdkMethod": "Create",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/stream": {
+      "sdkMethod": "CreateStream",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}": {

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-16T22:15:33.461Z",
+  "generatedAt": "2026-06-17T06:50:27.714Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -503,6 +503,10 @@
     },
     "POST /v1/extractions": {
       "sdkMethod": "create",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/stream": {
+      "sdkMethod": "createStream",
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}": {
