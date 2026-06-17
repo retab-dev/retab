@@ -8,6 +8,7 @@ import com.retab.RetabClient;
 import com.retab.models.Category;
 import com.retab.models.Classification;
 import com.retab.models.ClassificationRequest;
+import com.retab.models.MimeData;
 import com.retab.types.ClassificationsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
@@ -91,7 +92,7 @@ public final class ClassificationsApi {
   }
 
   public Classification create(
-      Object document,
+      MimeData document,
       List<Category> categories,
       String model,
       Long firstNPages,

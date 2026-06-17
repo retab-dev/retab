@@ -13,7 +13,7 @@ import {
   retabStorageFileIdFromUrl,
   type FileRefDocumentInput,
   type MIMEData,
-  type FileRefDocumentWire,
+  type FileDownloadLinkLike,
 } from '../../src/runtime/mime.js';
 
 // Minimal valid 1x1 PNG bytes (magic header 0x89 0x50 0x4e 0x47).
@@ -93,42 +93,44 @@ describe('coerceMimeData buffer / base64 / stream coercion', () => {
   });
 });
 
-describe('coerceMimeData FileRefDocumentInput camelCase -> wire', () => {
-  test('mimeType (camelCase) is mapped to mime_type on the wire', async () => {
+describe('coerceMimeData FileRefDocumentInput -> resolved URL-backed MIMEData', () => {
+  test('a file id is resolved into MIMEData via the download-link resolver', async () => {
+    const calls: string[] = [];
+    const resolver = async (id: string): Promise<FileDownloadLinkLike> => {
+      calls.push(id);
+      return { downloadUrl: 'https://storage.retab.com/org/file_abc.pdf', filename: 'link.pdf' };
+    };
     const input: FileRefDocumentInput = {
       id: 'file_abc',
       filename: 'stored.pdf',
       mimeType: 'application/pdf',
     };
-    const result = (await coerceMimeData(input)) as FileRefDocumentWire;
+    const result = (await coerceMimeData(input, resolver)) as MIMEData;
+    expect(calls).toEqual(['file_abc']);
+    // The caller-provided filename wins; the url comes from the download link.
     expect(result).toEqual({
-      id: 'file_abc',
       filename: 'stored.pdf',
-      mime_type: 'application/pdf',
+      url: 'https://storage.retab.com/org/file_abc.pdf',
     });
-    expect('mimeType' in result).toBe(false);
+    expect('id' in result).toBe(false);
   });
 
-  test('snake_case mime_type input is preserved on the wire', async () => {
-    const input: FileRefDocumentInput = {
-      id: 'file_xyz',
-      filename: 'stored.png',
-      mime_type: 'image/png',
-    };
-    const result = (await coerceMimeData(input)) as FileRefDocumentWire;
-    expect(result.mime_type).toBe('image/png');
-    expect(result.id).toBe('file_xyz');
+  test('a durable MIMEData on the link is preferred over the raw download url', async () => {
+    const resolver = async (): Promise<FileDownloadLinkLike> => ({
+      downloadUrl: 'https://storage.retab.com/org/file_xyz.png',
+      filename: 'link.png',
+      mimeData: { filename: 'durable.png', url: 'data:image/png;base64,QQ==' },
+    });
+    const input: FileRefDocumentInput = { id: 'file_xyz', filename: '', mime_type: 'image/png' };
+    const result = (await coerceMimeData(input, resolver)) as MIMEData;
+    expect(result.url).toBe('data:image/png;base64,QQ==');
+    // Falls back to the durable filename when the input did not supply one.
+    expect(result.filename).toBe('durable.png');
   });
 
-  test('snake_case wins over camelCase when both are present', async () => {
-    const input: FileRefDocumentInput = {
-      id: 'file_dup',
-      filename: 'stored.bin',
-      mime_type: 'application/json',
-      mimeType: 'text/plain',
-    };
-    const result = (await coerceMimeData(input)) as FileRefDocumentWire;
-    expect(result.mime_type).toBe('application/json');
+  test('a file-id document without a resolver throws (requires a client)', async () => {
+    const input: FileRefDocumentInput = { id: 'file_dup', filename: 'stored.bin', mime_type: 'application/json' };
+    await expect(coerceMimeData(input)).rejects.toThrow(/requires a Retab client/);
   });
 });
 

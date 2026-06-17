@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class EditRequest {
   private final String instructions;
-  private final Object document;
+  private final MimeData document;
   private final String templateId;
   private final String model;
   private final EditConfig config;
@@ -19,7 +19,7 @@ public final class EditRequest {
   @JsonCreator
   public EditRequest(
       @JsonProperty(value = "instructions", required = true) String instructions,
-      @JsonProperty(value = "document", required = false) Object document,
+      @JsonProperty(value = "document", required = false) MimeData document,
       @JsonProperty(value = "template_id", required = false) String templateId,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "config", required = false) EditConfig config,
@@ -40,7 +40,7 @@ public final class EditRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

@@ -13,7 +13,7 @@ readonly class ClassificationRequest implements \JsonSerializable
 
     public function __construct(
         /** The document to classify */
-        public MimeData|FileRef $document,
+        public MimeData $document,
         /**
          * The categories to classify the document into
          * @var array<\Retab\Resource\Category>
@@ -45,11 +45,7 @@ readonly class ClassificationRequest implements \JsonSerializable
             }
         }
         return new self(
-            document: (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']),
+            document: MimeData::fromArray($data['document']),
             categories: array_map(fn($item) => Category::fromArray($item), $data['categories']),
             model: $data['model'] ?? null,
             firstNPages: $data['first_n_pages'] ?? null,

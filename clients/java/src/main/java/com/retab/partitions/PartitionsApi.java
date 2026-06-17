@@ -5,6 +5,7 @@ package com.retab.partitions;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.models.MimeData;
 import com.retab.models.Partition;
 import com.retab.models.PartitionRequest;
 import com.retab.types.PartitionsStatus;
@@ -89,7 +90,7 @@ public final class PartitionsApi {
   }
 
   public Partition create(
-      Object document,
+      MimeData document,
       String key,
       String instructions,
       String model,

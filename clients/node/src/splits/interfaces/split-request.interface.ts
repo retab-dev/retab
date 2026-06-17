@@ -2,15 +2,14 @@
 
 import { z } from 'zod';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../classifications/interfaces/mime-data.interface.js';
 import type { Subdocument, SubdocumentResponse } from './subdocument.interface.js';
 import {
   ZSubdocument,
@@ -21,7 +20,7 @@ import {
 /** Request body to create a split. */
 export interface SplitRequest {
   /** The document to split */
-  document: MIMEData | FileRef;
+  document: MIMEData;
   /** The subdocuments to split the document into */
   subdocuments: Subdocument[];
   /**
@@ -49,7 +48,7 @@ export interface SplitRequest {
 }
 
 export interface SplitRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MIMEDataResponse;
   subdocuments: SubdocumentResponse[];
   model?: string;
   instructions?: string | null;
@@ -59,7 +58,7 @@ export interface SplitRequestResponse {
 }
 
 export const ZSplitRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: ZMIMEData,
   subdocuments: ZSubdocument.array(),
   model: z.string().optional(),
   instructions: z.string().nullable().optional(),
@@ -70,7 +69,7 @@ export const ZSplitRequest = z.object({
 
 export function deserializeSplitRequest(wire: SplitRequestResponse): SplitRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: deserializeMIMEData(wire['document']),
     subdocuments: wire['subdocuments'].map((__i) => deserializeSubdocument(__i)),
     model: wire['model'],
     instructions: wire['instructions'],
@@ -82,7 +81,7 @@ export function deserializeSplitRequest(wire: SplitRequestResponse): SplitReques
 
 export function serializeSplitRequest(domain: SplitRequest): SplitRequestResponse {
   return {
-    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    document: serializeMIMEData(domain['document']),
     subdocuments: domain['subdocuments'].map((__i) => serializeSubdocument(__i)),
     model: domain['model'],
     instructions: domain['instructions'],

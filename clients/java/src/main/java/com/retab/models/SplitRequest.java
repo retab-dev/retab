@@ -9,7 +9,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class SplitRequest {
-  private final Object document;
+  private final MimeData document;
   private final List<Subdocument> subdocuments;
   private final String model;
   private final String instructions;
@@ -19,7 +19,7 @@ public final class SplitRequest {
 
   @JsonCreator
   public SplitRequest(
-      @JsonProperty(value = "document", required = true) Object document,
+      @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "subdocuments", required = true) List<Subdocument> subdocuments,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "instructions", required = false) String instructions,
@@ -36,7 +36,7 @@ public final class SplitRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

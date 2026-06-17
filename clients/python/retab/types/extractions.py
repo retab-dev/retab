@@ -37,7 +37,7 @@ class ExtractionRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef
+    document: MIMEData
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
     model: str | None = Field(default="retab-small", description="The model to use for the extraction")
     image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")

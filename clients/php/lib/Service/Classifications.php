@@ -72,7 +72,7 @@ class Classifications
      * (limit to the first pages), and `n_consensus` (number of votes to combine).
      * Returns the created classification with the chosen category and reasoning;
      * responds with `201`.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to classify
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The document to classify
      * @param array<\Retab\Resource\Category> $categories The categories to classify the document into
      * @param string|null $model The model to use for classification
      * @param int|null $firstNPages Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.
@@ -94,7 +94,7 @@ class Classifications
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Classification {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'categories' => $categories,

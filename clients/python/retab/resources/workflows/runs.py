@@ -2,7 +2,7 @@
 from __future__ import annotations
 # ruff: noqa: F401
 
-from typing import Any, cast
+from typing import Any, Callable, cast
 from io import IOBase
 from pathlib import Path
 import PIL.Image
@@ -28,15 +28,50 @@ from retab.types.workflows.runs import (
 )
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
-    if isinstance(document, FileRef):
-        return document
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
         "url": mime_data.url,
-        "mime_type": mime_data.mime_type,
     }
+
+
+def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[str, Any]:
+    mime_data = getattr(link, "mime_data", None)
+    link_filename = getattr(link, "filename", None)
+    download_url = getattr(link, "download_url", None)
+    if mime_data is not None and getattr(mime_data, "url", None):
+        url = mime_data.url
+        mime_filename = getattr(mime_data, "filename", None)
+    else:
+        url = download_url
+        mime_filename = None
+    if not url:
+        raise ValueError("download link did not include a usable URL for the file")
+    filename = fallback_filename or mime_filename or link_filename or "document"
+    return {"filename": filename, "url": url}
+
+
+def _resolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
+
+
+async def _aresolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = await resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
 
 
 class WorkflowRunsMixin:
@@ -96,7 +131,7 @@ class WorkflowRunsMixin:
         params = {k: v for k, v in params.items() if v is not None}
         documents_payload: Any = documents
         if documents_payload is not None:
-            documents_payload = {__k: _coerce_mime_document_input(__v) for __k, __v in documents_payload.items()}
+            documents_payload = {__k: _resolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_payload.items()}
         payload = CreateWorkflowRunRequest(
             workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version)
         )
@@ -224,7 +259,10 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         **extra_params: Any,
     ) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
-        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
+        documents_coerced: Any = documents
+        if documents_coerced is not None:
+            documents_coerced = {__k: _resolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_coerced.items()}
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
@@ -336,7 +374,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         **extra_params: Any,
     ) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
-        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents, json_inputs=json_inputs, version=version, **extra_params)
+        documents_coerced: Any = documents
+        if documents_coerced is not None:
+            documents_coerced = {
+                __k: await _aresolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_coerced.items()
+            }
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 

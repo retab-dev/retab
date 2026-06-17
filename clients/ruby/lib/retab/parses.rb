@@ -93,7 +93,7 @@ module Retab
       background: nil,
       request_options: {}
     )
-      document = Retab::MimeData.coerce(document) unless document.nil?
+      document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
       body = {
         "document" => document,
         "model" => model,

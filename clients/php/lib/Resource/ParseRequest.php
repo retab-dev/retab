@@ -13,7 +13,7 @@ readonly class ParseRequest implements \JsonSerializable
 
     public function __construct(
         /** The document to parse */
-        public MimeData|FileRef $document,
+        public MimeData $document,
         /** The model to use for parsing */
         public ?string $model = null,
         /** Format used to render tables extracted from the document */
@@ -39,11 +39,7 @@ readonly class ParseRequest implements \JsonSerializable
             }
         }
         return new self(
-            document: (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']),
+            document: MimeData::fromArray($data['document']),
             model: $data['model'] ?? null,
             tableParsingFormat: isset($data['table_parsing_format']) ? TableParsingFormat::from($data['table_parsing_format']) : null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,

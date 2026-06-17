@@ -5,6 +5,7 @@ package com.retab.splits;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.models.MimeData;
 import com.retab.models.Split;
 import com.retab.models.SplitRequest;
 import com.retab.models.Subdocument;
@@ -88,7 +89,7 @@ public final class SplitsApi {
   }
 
   public Split create(
-      Object document,
+      MimeData document,
       List<Subdocument> subdocuments,
       String model,
       String instructions,

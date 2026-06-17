@@ -26,7 +26,7 @@ module Retab
       background: nil,
       request_options: {}
     )
-      documents = documents.map { |d| Retab::MimeData.coerce(d) } unless documents.nil?
+      documents = documents.map { |d| Retab::MimeData.coerce(d, client: @client) } unless documents.nil?
       body = {
         "documents" => documents,
         "model" => model,

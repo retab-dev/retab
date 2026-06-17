@@ -73,7 +73,7 @@ class Splits
      * using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to
      * run multiple votes and consolidate them. Returns the stored `Split` with its `output`
      * page assignments, and responds with `201`.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to split
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The document to split
      * @param array<\Retab\Resource\Subdocument> $subdocuments The subdocuments to split the document into
      * @param string|null $model The model to use to split the document
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the split.
@@ -93,7 +93,7 @@ class Splits
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Split {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'subdocuments' => $subdocuments,

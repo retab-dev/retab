@@ -9,7 +9,7 @@ import com.retab.types.ParseRequestTableParsingFormat;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ParseRequest {
-  private final Object document;
+  private final MimeData document;
   private final String model;
   private final ParseRequestTableParsingFormat tableParsingFormat;
   private final Long imageResolutionDpi;
@@ -19,7 +19,7 @@ public final class ParseRequest {
 
   @JsonCreator
   public ParseRequest(
-      @JsonProperty(value = "document", required = true) Object document,
+      @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "table_parsing_format", required = false)
           ParseRequestTableParsingFormat tableParsingFormat,
@@ -37,7 +37,7 @@ public final class ParseRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

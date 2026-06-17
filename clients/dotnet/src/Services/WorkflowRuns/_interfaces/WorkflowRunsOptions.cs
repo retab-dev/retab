@@ -46,7 +46,7 @@ namespace Retab
         public string WorkflowId { get; set; } = default!;
 
         /// <summary>Mapping of start_document block IDs to their input documents.</summary>
-        public Dictionary<string, MimeData>? Documents { get; set; }
+        public Dictionary<string, WorkflowRunDocumentInput>? Documents { get; set; }
 
         /// <summary>Mapping of start-json block IDs to their input JSON data.</summary>
         public Dictionary<string, object>? JsonInputs { get; set; }

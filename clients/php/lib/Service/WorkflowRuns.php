@@ -84,7 +84,7 @@ class WorkflowRuns
      *
      * Create a fresh workflow run.
      * @param string $workflowId Workflow id for the fresh run.
-     * @param array<string, \Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}>|null $documents Mapping of start_document block IDs to their input documents.
+     * @param array<string, \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string}>|null $documents Mapping of start_document block IDs to their input documents.
      * @param array<string, mixed>|null $jsonInputs Mapping of start-json block IDs to their input JSON data.
      * @param string|null $version Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
      * @return \Retab\Resource\WorkflowRun
@@ -98,7 +98,7 @@ class WorkflowRuns
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowRun {
         if ($documents !== null) {
-            $documents = array_map([\Retab\Resource\MimeDataCoerce::class, 'coerce'], $documents);
+            $documents = array_map(fn($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
         }
         $body = array_filter([
             'workflow_id' => $workflowId,

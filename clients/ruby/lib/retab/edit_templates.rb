@@ -74,7 +74,7 @@ module Retab
       form_fields:,
       request_options: {}
     )
-      document = Retab::MimeData.coerce(document) unless document.nil?
+      document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
       body = {
         "name" => name,
         "document" => document,

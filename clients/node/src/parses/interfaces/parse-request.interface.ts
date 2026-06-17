@@ -2,22 +2,21 @@
 
 import { z } from 'zod';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../classifications/interfaces/mime-data.interface.js';
 import type { ParseRequestTableParsingFormat } from './parse-request-table-parsing-format.interface.js';
 import { ZParseRequestTableParsingFormat } from './parse-request-table-parsing-format.interface.js';
 
 /** Public create-parse request body. */
 export interface ParseRequest {
   /** The document to parse */
-  document: MIMEData | FileRef;
+  document: MIMEData;
   /**
    * The model to use for parsing
    * @default "retab-small"
@@ -48,7 +47,7 @@ export interface ParseRequest {
 }
 
 export interface ParseRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MIMEDataResponse;
   model?: string;
   table_parsing_format?: ParseRequestTableParsingFormat;
   image_resolution_dpi?: number;
@@ -58,7 +57,7 @@ export interface ParseRequestResponse {
 }
 
 export const ZParseRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: ZMIMEData,
   model: z.string().optional(),
   tableParsingFormat: ZParseRequestTableParsingFormat.optional(),
   imageResolutionDpi: z.number().int().optional(),
@@ -69,7 +68,7 @@ export const ZParseRequest = z.object({
 
 export function deserializeParseRequest(wire: ParseRequestResponse): ParseRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: deserializeMIMEData(wire['document']),
     model: wire['model'],
     tableParsingFormat: wire['table_parsing_format'],
     imageResolutionDpi: wire['image_resolution_dpi'],
@@ -81,7 +80,7 @@ export function deserializeParseRequest(wire: ParseRequestResponse): ParseReques
 
 export function serializeParseRequest(domain: ParseRequest): ParseRequestResponse {
   return {
-    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    document: serializeMIMEData(domain['document']),
     model: domain['model'],
     table_parsing_format: domain['tableParsingFormat'],
     image_resolution_dpi: domain['imageResolutionDpi'],

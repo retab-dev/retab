@@ -1052,8 +1052,22 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
     }
 
 
-def test_workflow_runs_create_passes_file_refs_without_content() -> None:
-    request = WorkflowRuns(client=MagicMock()).prepare_create(
+def test_workflow_runs_create_resolves_file_ref_to_mime_data() -> None:
+    # The document routes accept URL-backed MIMEData only, so a stored file id
+    # (FileRef) must be resolved client-side into MIMEData via the Files
+    # download-link endpoint before the wire body is built. The resolver prefers
+    # the durable `mime_data` reference returned by the download link.
+    client = MagicMock()
+    link = MagicMock()
+    link.download_url = "https://storage.googleapis.com/signed/file_existing.pdf?sig=abc"
+    link.filename = "server-name.pdf"
+    link.mime_data = MIMEData(
+        filename="durable.pdf",
+        url="https://storage.retab.com/org_1/file_existing.pdf",
+    )
+    client.files.get_download_link.return_value = link
+
+    request = WorkflowRuns(client=client).prepare_create(
         workflow_id="wf_1",
         documents={
             "start_1": FileRef(
@@ -1064,14 +1078,39 @@ def test_workflow_runs_create_passes_file_refs_without_content() -> None:
         },
     )
 
+    client.files.get_download_link.assert_called_once_with("file_existing")
+    # Caller-supplied filename wins; url comes from the durable mime_data ref.
     assert request.data["documents"] == {
         "start_1": {
-            "id": "file_existing",
             "filename": "invoice.pdf",
-            "mime_type": "application/pdf",
+            "url": "https://storage.retab.com/org_1/file_existing.pdf",
         }
     }
-    assert "content" not in request.data["documents"]["start_1"]
+    assert "id" not in request.data["documents"]["start_1"]
+    assert "mime_type" not in request.data["documents"]["start_1"]
+
+
+def test_workflow_runs_create_file_ref_falls_back_to_download_url() -> None:
+    # When the download link has no durable mime_data, the signed download_url
+    # and the link's filename are used (mirrors the CLI / Node mapping).
+    client = MagicMock()
+    link = MagicMock()
+    link.download_url = "https://storage.googleapis.com/signed/file_existing.pdf?sig=abc"
+    link.filename = "server-name.pdf"
+    link.mime_data = None
+    client.files.get_download_link.return_value = link
+
+    request = WorkflowRuns(client=client).prepare_create(
+        workflow_id="wf_1",
+        documents={"start_1": FileRef(id="file_existing", filename="", mime_type="application/pdf")},
+    )
+
+    assert request.data["documents"] == {
+        "start_1": {
+            "filename": "server-name.pdf",
+            "url": "https://storage.googleapis.com/signed/file_existing.pdf?sig=abc",
+        }
+    }
 
 
 def test_workflow_runs_create_keeps_mime_data_url_for_new_documents() -> None:
@@ -1089,6 +1128,43 @@ def test_workflow_runs_create_keeps_mime_data_url_for_new_documents() -> None:
         "start_1": {
             "filename": "note.txt",
             "url": "data:text/plain;base64,aGVsbG8=",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_runs_create_resolves_file_ref_via_download_link() -> None:
+    # The async resource method must await the (async) Files download-link
+    # endpoint to turn a stored file id into URL-backed MIMEData before the wire
+    # body is built — the document routes accept MIMEData only.
+    client = MagicMock()
+    link = MagicMock()
+    link.download_url = "https://storage.googleapis.com/signed/file_existing.pdf?sig=abc"
+    link.filename = "server-name.pdf"
+    link.mime_data = MIMEData(
+        filename="durable.pdf",
+        url="https://storage.retab.com/org_1/file_existing.pdf",
+    )
+    client.files.get_download_link = AsyncMock(return_value=link)
+    client._prepared_request = AsyncMock(return_value=_v2_run_payload())
+
+    await AsyncWorkflowRuns(client=client).create(
+        workflow_id="wf_1",
+        documents={
+            "start_1": FileRef(
+                id="file_existing",
+                filename="invoice.pdf",
+                mime_type="application/pdf",
+            )
+        },
+    )
+
+    client.files.get_download_link.assert_awaited_once_with("file_existing")
+    request = client._prepared_request.call_args.args[0]
+    assert request.data["documents"] == {
+        "start_1": {
+            "filename": "invoice.pdf",
+            "url": "https://storage.retab.com/org_1/file_existing.pdf",
         }
     }
 

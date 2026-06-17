@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 /// flag that controls whether results are returned incrementally.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtractionRequest {
-    pub document: ClassificationRequestDocumentOneOf,
+    pub document: MimeData,
     /// JSON schema describing the structured output
     pub json_schema: std::collections::HashMap<String, serde_json::Value>,
     /// The model to use for the extraction
@@ -57,12 +57,12 @@ pub struct ExtractionRequest {
 impl ExtractionRequest {
     /// Construct a new `ExtractionRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        document: ClassificationRequestDocumentOneOf,
+    pub fn new<D: Into<crate::MimeData>>(
+        document: D,
         json_schema: std::collections::HashMap<String, serde_json::Value>,
     ) -> Self {
         Self {
-            document,
+            document: document.into(),
             json_schema,
             model: Default::default(),
             image_resolution_dpi: Default::default(),

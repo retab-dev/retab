@@ -36,6 +36,16 @@ class WorkflowRunsTest < Minitest::Test
       "start_file_ref" => file_ref
     }
 
+    stub_request(:get, "https://api.retab.com/v1/files/file_123/download-link")
+      .to_return(
+        body: {
+          "download_url" => "https://storage.retab.com/file_123.pdf",
+          "filename" => "invoice.pdf",
+          "mime_data" => {"filename" => "invoice.pdf", "url" => "https://storage.retab.com/file_123.pdf"}
+        }.to_json,
+        status: 200
+      )
+
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/workflows/runs(\?|\z)})
       .with do |request|
         body = JSON.parse(request.body)
@@ -45,10 +55,10 @@ class WorkflowRunsTest < Minitest::Test
         assert_equal("https://example.com/remote.pdf", sent_documents.fetch("start_url").fetch("url"))
         assert_match(%r{\Adata:application/octet-stream;base64,}, sent_documents.fetch("start_io").fetch("url"))
         assert_equal("data:application/pdf;base64,ZXhwbGljaXQ=", sent_documents.fetch("start_mime").fetch("url"))
-        assert_equal(
-          {"id" => "file_123", "filename" => "invoice.pdf", "mime_type" => "application/pdf"},
-          sent_documents.fetch("start_file_ref")
-        )
+        resolved = sent_documents.fetch("start_file_ref")
+        assert_equal("invoice.pdf", resolved.fetch("filename"))
+        assert_equal("https://storage.retab.com/file_123.pdf", resolved.fetch("url"))
+        refute(resolved.key?("id"), "file-id document must be resolved, not sent as a FileRef wire body")
       end
       .to_return(body: "{}", status: 200)
 

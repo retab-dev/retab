@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class PartitionRequest {
-  private final Object document;
+  private final MimeData document;
   private final String key;
   private final String instructions;
   private final String model;
@@ -19,7 +19,7 @@ public final class PartitionRequest {
 
   @JsonCreator
   public PartitionRequest(
-      @JsonProperty(value = "document", required = true) Object document,
+      @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "key", required = true) String key,
       @JsonProperty(value = "instructions", required = true) String instructions,
       @JsonProperty(value = "model", required = false) String model,
@@ -38,7 +38,7 @@ public final class PartitionRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

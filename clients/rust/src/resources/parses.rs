@@ -67,7 +67,7 @@ impl CreateParams {
     pub fn new<D: Into<crate::MimeData>>(document: D) -> Self {
         Self {
             body: ParseRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 model: Default::default(),
                 table_parsing_format: Default::default(),
                 image_resolution_dpi: Default::default(),

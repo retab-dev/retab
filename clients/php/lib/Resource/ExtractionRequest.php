@@ -18,7 +18,7 @@ readonly class ExtractionRequest implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        public MimeData|FileRef $document,
+        public MimeData $document,
         /**
          * JSON schema describing the structured output
          * @var array<string, mixed>
@@ -63,11 +63,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             }
         }
         return new self(
-            document: (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']),
+            document: MimeData::fromArray($data['document']),
             jsonSchema: $data['json_schema'],
             model: $data['model'] ?? null,
             imageResolutionDpi: $data['image_resolution_dpi'] ?? null,

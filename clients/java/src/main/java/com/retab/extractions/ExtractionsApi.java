@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.Extraction;
 import com.retab.models.ExtractionRequest;
+import com.retab.models.MimeData;
 import com.retab.models.SourcesResponse;
 import com.retab.types.ExtractionsStatus;
 import com.retab.types.SortOrder;
@@ -102,7 +103,7 @@ public final class ExtractionsApi {
   }
 
   public Extraction create(
-      Object document,
+      MimeData document,
       Map<String, Object> jsonSchema,
       String model,
       Long imageResolutionDpi,
@@ -187,7 +188,7 @@ public final class ExtractionsApi {
   }
 
   public Object createStream(
-      Object document,
+      MimeData document,
       Map<String, Object> jsonSchema,
       String model,
       Long imageResolutionDpi,

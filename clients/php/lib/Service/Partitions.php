@@ -73,7 +73,7 @@ class Partitions
      * `instructions` and the chosen `model`. Set `n_consensus` above `1` to run multiple
      * votes and consolidate them, and `allow_overlap` to let a page belong to more than one
      * chunk. Returns the stored `Partition` with its `output` chunks, and responds with `201`.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to partition
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The document to partition
      * @param string $key The key to partition the document by
      * @param string $instructions Instructions describing how the document should be partitioned
      * @param string|null $model The model to use for partitioning
@@ -95,7 +95,7 @@ class Partitions
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Partition {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'key' => $key,

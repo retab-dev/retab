@@ -18,7 +18,7 @@ class Schemas
      * Generate Schema From Examples
      *
      * Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
-     * @param array<\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}> $documents
+     * @param array<\Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string}> $documents
      * @param string|null $model
      * @param string|null $instructions
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
@@ -34,7 +34,7 @@ class Schemas
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SchemaGeneration {
-        $documents = array_map([\Retab\Resource\MimeDataCoerce::class, 'coerce'], $documents);
+        $documents = array_map(fn($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
         $body = array_filter([
             'documents' => $documents,
             'model' => $model,

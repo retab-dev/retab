@@ -30,7 +30,7 @@ class ParseRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to parse")
+    document: MIMEData = Field(..., description="The document to parse")
     model: str | None = Field(default="retab-small", description="The model to use for parsing")
     table_parsing_format: TableParsingFormat | None = Field(
         default=cast(TableParsingFormat, "html"), validate_default=True, description="Format used to render tables extracted from the document"

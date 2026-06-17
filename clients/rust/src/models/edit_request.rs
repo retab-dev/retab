@@ -12,7 +12,7 @@ pub struct EditRequest {
     pub instructions: String,
     /// Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub document: Option<ClassificationRequestDocumentOneOf>,
+    pub document: Option<MimeData>,
     /// EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub template_id: Option<String>,

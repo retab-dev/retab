@@ -74,7 +74,7 @@ impl CreateParams {
     ) -> Self {
         Self {
             body: PartitionRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 key: key.into(),
                 instructions: instructions.into(),
                 model: Default::default(),

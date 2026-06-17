@@ -15,7 +15,7 @@ readonly class EditRequest implements \JsonSerializable
         /** Instructions describing how to fill the form fields. */
         public string $instructions,
         /** Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id. */
-        public MimeData|FileRef|null $document = null,
+        public ?MimeData $document = null,
         /** EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document. */
         public ?string $templateId = null,
         /** The model to use for edit inference. */
@@ -40,11 +40,7 @@ readonly class EditRequest implements \JsonSerializable
         }
         return new self(
             instructions: $data['instructions'],
-            document: isset($data['document']) ? (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']) : null,
+            document: isset($data['document']) ? MimeData::fromArray($data['document']) : null,
             templateId: $data['template_id'] ?? null,
             model: $data['model'] ?? null,
             config: isset($data['config']) ? EditConfig::fromArray($data['config']) : null,

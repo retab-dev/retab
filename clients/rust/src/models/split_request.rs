@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SplitRequest {
     /// The document to split
-    pub document: ClassificationRequestDocumentOneOf,
+    pub document: MimeData,
     /// The subdocuments to split the document into
     pub subdocuments: Vec<Subdocument>,
     /// The model to use to split the document
@@ -39,12 +39,9 @@ pub struct SplitRequest {
 impl SplitRequest {
     /// Construct a new `SplitRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        document: ClassificationRequestDocumentOneOf,
-        subdocuments: Vec<Subdocument>,
-    ) -> Self {
+    pub fn new<D: Into<crate::MimeData>>(document: D, subdocuments: Vec<Subdocument>) -> Self {
         Self {
-            document,
+            document: document.into(),
             subdocuments,
             model: Default::default(),
             instructions: Default::default(),

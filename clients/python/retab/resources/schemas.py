@@ -2,7 +2,7 @@
 from __future__ import annotations
 # ruff: noqa: F401
 
-from typing import Any, cast
+from typing import Any, Callable, cast
 from io import IOBase
 from pathlib import Path
 import PIL.Image
@@ -15,15 +15,50 @@ from retab.types.mime import FileRef, MIMEData
 from retab.types.schemas import GenerateSchemaRequest, SchemaGeneration
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
-    if isinstance(document, FileRef):
-        return document
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
         "url": mime_data.url,
-        "mime_type": mime_data.mime_type,
     }
+
+
+def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[str, Any]:
+    mime_data = getattr(link, "mime_data", None)
+    link_filename = getattr(link, "filename", None)
+    download_url = getattr(link, "download_url", None)
+    if mime_data is not None and getattr(mime_data, "url", None):
+        url = mime_data.url
+        mime_filename = getattr(mime_data, "filename", None)
+    else:
+        url = download_url
+        mime_filename = None
+    if not url:
+        raise ValueError("download link did not include a usable URL for the file")
+    filename = fallback_filename or mime_filename or link_filename or "document"
+    return {"filename": filename, "url": url}
+
+
+def _resolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
+
+
+async def _aresolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = await resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
 
 
 class SchemasMixin:
@@ -43,7 +78,7 @@ class SchemasMixin:
         params = {k: v for k, v in params.items() if v is not None}
         documents_payload: Any = documents
         if documents_payload is not None:
-            documents_payload = [_coerce_mime_document_input(__x) for __x in documents_payload]
+            documents_payload = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_payload]
         payload = GenerateSchemaRequest(
             documents=cast(Any, documents_payload),
             model=cast(Any, model),
@@ -68,8 +103,11 @@ class Schemas(SyncAPIResource, SchemasMixin):
         **extra_params: Any,
     ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
+        documents_coerced: Any = documents
+        if documents_coerced is not None:
+            documents_coerced = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
+            documents=documents_coerced, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
         )
         response = self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
@@ -88,8 +126,11 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         **extra_params: Any,
     ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
+        documents_coerced: Any = documents
+        if documents_coerced is not None:
+            documents_coerced = [await _aresolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
         prepared_request = self.prepare_generate(
-            documents=documents, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
+            documents=documents_coerced, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
         )
         response = await self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)

@@ -70,7 +70,7 @@ impl CreateParams {
     pub fn new<D: Into<crate::MimeData>>(document: D, subdocuments: Vec<Subdocument>) -> Self {
         Self {
             body: SplitRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 subdocuments,
                 model: Default::default(),
                 instructions: Default::default(),

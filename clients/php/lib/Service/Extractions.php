@@ -85,7 +85,7 @@ class Extractions
      * `json_schema`, using the requested `model`. Returns the extraction
      * with its `output`, consensus details, and usage on `201`. When
      * `stream` is `true`, partial results are streamed back as they are produced.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document
      * @param array<string, mixed> $jsonSchema JSON schema describing the structured output
      * @param string|null $model The model to use for the extraction
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
@@ -115,7 +115,7 @@ class Extractions
         ?array $chunkingKeys = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'json_schema' => $jsonSchema,
@@ -143,7 +143,7 @@ class Extractions
      * Create Extraction Stream
      *
      * Run a structured extraction on a document and stream partial results as they are produced.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document
      * @param array<string, mixed> $jsonSchema JSON schema describing the structured output
      * @param string|null $model The model to use for the extraction
      * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
@@ -173,7 +173,7 @@ class Extractions
         ?array $chunkingKeys = null,
         ?\Retab\RequestOptions $options = null,
     ): mixed {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'json_schema' => $jsonSchema,

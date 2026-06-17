@@ -5,6 +5,7 @@ package com.retab.parses;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.models.MimeData;
 import com.retab.models.Parse;
 import com.retab.models.ParseRequest;
 import com.retab.types.ParseRequestTableParsingFormat;
@@ -85,7 +86,7 @@ public final class ParsesApi {
   }
 
   public Parse create(
-      Object document,
+      MimeData document,
       String model,
       ParseRequestTableParsingFormat tableParsingFormat,
       Long imageResolutionDpi,

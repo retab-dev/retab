@@ -150,6 +150,52 @@ class WorkflowRunsTest extends TestCase
         $this->assertSame('data:application/octet-stream;base64,ZnJvbSBzdHJlYW0=', $body['documents']['start_stream']['url']);
     }
 
+    public function testCreateResolvesFileIdDocumentsViaDownloadLink(): void
+    {
+        $fixture = $this->loadFixture('workflow_run');
+        // The document routes accept MimeData ({filename, url}) only, so a
+        // durable file reference (FileRef instance or {id, filename, mime_type}
+        // array) is resolved client-side via GET /v1/files/{id}/download-link.
+        $fileRef = new \Retab\Resource\FileRef(id: 'file_abc', filename: 'ref.pdf', mimeType: 'application/pdf');
+        $client = $this->createMockClient([
+            // 1st request: download-link for the FileRef instance.
+            ['status' => 200, 'body' => [
+                'download_url' => 'https://storage.retab.com/org/file_abc.pdf',
+                'expires_in' => '3600',
+                'filename' => 'ref.pdf',
+                'mime_data' => ['filename' => 'ref.pdf', 'url' => 'https://storage.retab.com/durable/file_abc.pdf'],
+            ]],
+            // 2nd request: download-link for the file-id array shape.
+            ['status' => 200, 'body' => [
+                'download_url' => 'https://storage.retab.com/org/file_xyz.pdf',
+                'expires_in' => '3600',
+                'filename' => 'array-ref.pdf',
+                'mime_data' => null,
+            ]],
+            // 3rd request: the actual workflow run create.
+            ['status' => 200, 'body' => $fixture],
+        ]);
+        $client->workflows()->runs()->create(
+            workflowId: 'test_value',
+            documents: [
+                'start_ref' => $fileRef,
+                'start_file_id' => ['id' => 'file_xyz', 'filename' => 'array-ref.pdf', 'mime_type' => 'application/pdf'],
+            ],
+        );
+
+        $body = json_decode((string) $this->getLastRequest()->getBody(), true);
+        // FileRef instance: durable mime_data.url preferred over the signed download_url.
+        $this->assertSame([
+            'filename' => 'ref.pdf',
+            'url' => 'https://storage.retab.com/durable/file_abc.pdf',
+        ], $body['documents']['start_ref']);
+        // file-id array: no durable mime_data, falls back to the signed download_url.
+        $this->assertSame([
+            'filename' => 'array-ref.pdf',
+            'url' => 'https://storage.retab.com/org/file_xyz.pdf',
+        ], $body['documents']['start_file_id']);
+    }
+
     public function testPaginationBoundary(): void
     {
         $fixture = $this->loadFixture('list_workflow_run');

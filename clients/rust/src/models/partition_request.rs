@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartitionRequest {
     /// The document to partition
-    pub document: ClassificationRequestDocumentOneOf,
+    pub document: MimeData,
     /// The key to partition the document by
     pub key: String,
     /// Instructions describing how the document should be partitioned
@@ -43,13 +43,13 @@ pub struct PartitionRequest {
 impl PartitionRequest {
     /// Construct a new `PartitionRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(
-        document: ClassificationRequestDocumentOneOf,
+    pub fn new<D: Into<crate::MimeData>>(
+        document: D,
         key: impl Into<String>,
         instructions: impl Into<String>,
     ) -> Self {
         Self {
-            document,
+            document: document.into(),
             key: key.into(),
             instructions: instructions.into(),
             model: Default::default(),

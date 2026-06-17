@@ -362,6 +362,51 @@ def test_resource_create_builders_accept_uploaded_mime_ref(
     }
 
 
+@pytest.mark.parametrize(
+    "resource_name, prepare_name, kwargs",
+    [
+        ("splits", "prepare_create", {"subdocuments": [{"name": "invoice", "description": "Invoice documents"}]}),
+        ("parses", "prepare_create", {}),
+        ("classifications", "prepare_create", {"categories": [{"name": "invoice", "description": "Invoice documents"}]}),
+        ("extractions", "prepare_create", {"json_schema": {"type": "object"}}),
+    ],
+)
+def test_resource_create_builders_resolve_file_ref_to_mime_data(
+    resource_name: str,
+    prepare_name: str,
+    kwargs: dict[str, object],
+) -> None:
+    # A stored file id (FileRef) is no longer serialized to the wire — the
+    # document routes accept URL-backed MIMEData only, so it is resolved
+    # client-side via the Files download-link endpoint before the body is built.
+    from unittest.mock import MagicMock
+
+    from retab.types.mime import FileRef
+
+    client = MagicMock()
+    link = MagicMock()
+    link.download_url = "https://storage.googleapis.com/signed/file_123.pdf?sig=abc"
+    link.filename = "server-name.pdf"
+    link.mime_data = MIMEData(
+        filename="durable.pdf",
+        url="https://storage.retab.com/org_1/file_123.pdf",
+    )
+    client.files.get_download_link.return_value = link
+
+    resource_cls = type(getattr(Retab(api_key="test", base_url="http://example.com"), resource_name))
+    resource = resource_cls(client=client)
+    request = getattr(resource, prepare_name)(
+        document=FileRef(id="file_123", filename="invoice.pdf", mime_type="application/pdf"),
+        **kwargs,
+    )
+
+    client.files.get_download_link.assert_called_once_with("file_123")
+    assert request.data["document"] == {
+        "filename": "invoice.pdf",
+        "url": "https://storage.retab.com/org_1/file_123.pdf",
+    }
+
+
 def test_resource_create_builders_include_supported_route_fields() -> None:
     signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
 

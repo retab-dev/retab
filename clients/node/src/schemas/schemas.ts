@@ -16,7 +16,11 @@ export class Schemas {
     imageResolutionDpi?: number,
     background?: boolean
   ): Promise<SchemaGeneration> {
-    const documentsCoerced = await Promise.all(documents.map(coerceMimeData));
+    const documentsCoerced = await Promise.all(
+      documents.map((__d) =>
+        coerceMimeData(__d, (__id) => this.client.files.get_download_link(__id))
+      )
+    );
     const body = {
       documents: documentsCoerced,
       model: model,

@@ -8,22 +8,21 @@ import {
   serializeEditConfig,
 } from './edit-config.interface.js';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../classifications/interfaces/mime-data.interface.js';
 
 /** Public create-edit request body. */
 export interface EditRequest {
   /** Instructions describing how to fill the form fields. */
   instructions: string;
   /** Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id. */
-  document?: (MIMEData | FileRef) | null;
+  document?: MIMEData | null;
   /** EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document. */
   templateId?: string | null;
   /**
@@ -50,7 +49,7 @@ export interface EditRequest {
 
 export interface EditRequestResponse {
   instructions: string;
-  document?: (MIMEDataResponse | FileRefResponse) | null;
+  document?: MIMEDataResponse | null;
   template_id?: string | null;
   model?: string;
   config?: EditConfigResponse;
@@ -60,7 +59,7 @@ export interface EditRequestResponse {
 
 export const ZEditRequest = z.object({
   instructions: z.string(),
-  document: z.union([ZMIMEData, ZFileRef]).nullable().optional(),
+  document: ZMIMEData.nullable().optional(),
   templateId: z.string().nullable().optional(),
   model: z.string().optional(),
   config: ZEditConfig.optional(),
@@ -76,7 +75,7 @@ export function deserializeEditRequest(wire: EditRequestResponse): EditRequest {
         ? (wire['document'] as undefined)
         : wire['document'] == null
           ? wire['document']
-          : (wire['document'] as unknown as MIMEData | FileRef),
+          : deserializeMIMEData(wire['document']),
     templateId: wire['template_id'],
     model: wire['model'],
     config:
@@ -96,7 +95,7 @@ export function serializeEditRequest(domain: EditRequest): EditRequestResponse {
         ? (domain['document'] as undefined)
         : domain['document'] == null
           ? domain['document']
-          : (domain['document'] as unknown as MIMEDataResponse | FileRefResponse),
+          : serializeMIMEData(domain['document']),
     template_id: domain['templateId'],
     model: domain['model'],
     config:

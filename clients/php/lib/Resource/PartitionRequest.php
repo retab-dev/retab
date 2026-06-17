@@ -13,7 +13,7 @@ readonly class PartitionRequest implements \JsonSerializable
 
     public function __construct(
         /** The document to partition */
-        public MimeData|FileRef $document,
+        public MimeData $document,
         /** The key to partition the document by */
         public string $key,
         /** Instructions describing how the document should be partitioned */
@@ -43,11 +43,7 @@ readonly class PartitionRequest implements \JsonSerializable
             }
         }
         return new self(
-            document: (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']),
+            document: MimeData::fromArray($data['document']),
             key: $data['key'],
             instructions: $data['instructions'],
             model: $data['model'] ?? null,

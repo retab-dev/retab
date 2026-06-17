@@ -85,7 +85,7 @@ class Edits
      * neither responds with `400`. Returns the created edit with the filled form
      * data and rendered document; responds with `201`.
      * @param string $instructions Instructions describing how to fill the form fields.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|null $document Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string}|null $document Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.
      * @param string|null $templateId EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document.
      * @param string|null $model The model to use for edit inference.
      * @param \Retab\Resource\EditConfig|null $config Edit configuration (rendering options).
@@ -105,7 +105,7 @@ class Edits
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Edit {
         if ($document !== null) {
-            $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+            $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         }
         $body = array_filter([
             'instructions' => $instructions,

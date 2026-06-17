@@ -69,7 +69,9 @@ export class Extractions {
     background?: boolean,
     chunkingKeys?: Record<string, string> | null
   ): Promise<Extraction> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       document: documentCoerced,
       json_schema: jsonSchema,
@@ -108,7 +110,9 @@ export class Extractions {
     background?: boolean,
     chunkingKeys?: Record<string, string> | null
   ): Promise<unknown> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       document: documentCoerced,
       json_schema: jsonSchema,

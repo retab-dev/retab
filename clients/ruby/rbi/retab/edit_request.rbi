@@ -15,10 +15,10 @@ module Retab
     sig { params(value: String).returns(String) }
     def instructions=(value); end
 
-    sig { returns(T.nilable(T.any(Retab::MimeData, Retab::FileRef))) }
+    sig { returns(T.nilable(Retab::MimeData)) }
     def document; end
 
-    sig { params(value: T.nilable(T.any(Retab::MimeData, Retab::FileRef))).returns(T.nilable(T.any(Retab::MimeData, Retab::FileRef))) }
+    sig { params(value: T.nilable(Retab::MimeData)).returns(T.nilable(Retab::MimeData)) }
     def document=(value); end
 
     sig { returns(T.nilable(String)) }

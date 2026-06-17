@@ -24,7 +24,7 @@ class SplitRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to split")
+    document: MIMEData = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(..., description="The subdocuments to split the document into")
     model: str | None = Field(default="retab-small", description="The model to use to split the document")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the split.")

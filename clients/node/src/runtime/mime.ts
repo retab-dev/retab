@@ -25,10 +25,12 @@ export interface FileRefDocumentInput {
   mime_type?: string;
 }
 
-export interface FileRefDocumentWire {
-  id: string;
-  filename: string;
-  mime_type: string;
+// Minimal structural shape of the Files download-link response used to resolve a
+// stored file id into URL-backed MIMEData. The generated FileLink is compatible.
+export interface FileDownloadLinkLike {
+  downloadUrl: string;
+  filename?: string;
+  mimeData?: { filename?: string; url: string } | null;
 }
 
 export type DocumentInput =
@@ -106,12 +108,17 @@ function isFileRefDocumentInput(input: unknown): input is FileRefDocumentInput {
   );
 }
 
-function serializeFileRefDocument(input: FileRefDocumentInput): FileRefDocumentWire {
-  return {
-    id: input.id,
-    filename: input.filename,
-    mime_type: input.mime_type ?? input.mimeType ?? 'application/octet-stream',
-  };
+async function resolveFileRefDocument(
+  input: FileRefDocumentInput,
+  getDownloadLink: (id: string) => Promise<FileDownloadLinkLike>
+): Promise<MIMEData> {
+  // The document routes accept URL-backed MIMEData only, so a stored file id is
+  // resolved client-side into a fresh download link (mirrors the CLI).
+  const link = await getDownloadLink(input.id);
+  const fromMime = link.mimeData;
+  const url = fromMime && fromMime.url ? fromMime.url : link.downloadUrl;
+  const filename = input.filename || (fromMime && fromMime.filename) || link.filename || 'document';
+  return { filename, url };
 }
 
 function detectMimeFromBuffer(buf: Buffer): string {
@@ -145,15 +152,22 @@ function extFromMime(mime: string): string {
 }
 
 export async function coerceMimeData(
-  input: DocumentInput
-): Promise<MIMEData | FileRefDocumentWire> {
+  input: DocumentInput,
+  getDownloadLink?: (id: string) => Promise<FileDownloadLinkLike>
+): Promise<MIMEData> {
   // Already shaped — pass through.
   if (typeof input === 'object' && input !== null && 'filename' in input && 'url' in input) {
     return input as MIMEData;
   }
-  // Stored file reference — normalize SDK camelCase input to backend wire shape.
+  // Stored file reference — resolve the file id into URL-backed MIMEData via the
+  // Files download-link endpoint (the document routes accept MIMEData only).
   if (isFileRefDocumentInput(input)) {
-    return serializeFileRefDocument(input);
+    if (!getDownloadLink) {
+      throw new Error(
+        'coerceMimeData: a file-id document requires a Retab client to resolve a download link; call the resource method on a client instance.'
+      );
+    }
+    return resolveFileRefDocument(input, getDownloadLink);
   }
   // FileRefInput — backend resolves a remote URL.
   if (

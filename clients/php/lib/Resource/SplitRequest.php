@@ -13,7 +13,7 @@ readonly class SplitRequest implements \JsonSerializable
 
     public function __construct(
         /** The document to split */
-        public MimeData|FileRef $document,
+        public MimeData $document,
         /**
          * The subdocuments to split the document into
          * @var array<\Retab\Resource\Subdocument>
@@ -43,11 +43,7 @@ readonly class SplitRequest implements \JsonSerializable
             }
         }
         return new self(
-            document: (static function (array $__value) {
-                return match (true) {
-                    array_intersect_key($__value, ['filename' => true, 'url' => true]) !== [] => MimeData::fromArray($__value), array_intersect_key($__value, ['id' => true, 'filename' => true, 'mime_type' => true]) !== [] => FileRef::fromArray($__value), default => MimeData::fromArray($__value),
-                };
-            })($data['document']),
+            document: MimeData::fromArray($data['document']),
             subdocuments: array_map(fn($item) => Subdocument::fromArray($item), $data['subdocuments']),
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,

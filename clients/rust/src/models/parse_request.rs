@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParseRequest {
     /// The document to parse
-    pub document: ClassificationRequestDocumentOneOf,
+    pub document: MimeData,
     /// The model to use for parsing
     ///
     /// Defaults to `retab-small`.
@@ -42,9 +42,9 @@ pub struct ParseRequest {
 impl ParseRequest {
     /// Construct a new `ParseRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(document: ClassificationRequestDocumentOneOf) -> Self {
+    pub fn new<D: Into<crate::MimeData>>(document: D) -> Self {
         Self {
-            document,
+            document: document.into(),
             model: Default::default(),
             table_parsing_format: Default::default(),
             image_resolution_dpi: Default::default(),

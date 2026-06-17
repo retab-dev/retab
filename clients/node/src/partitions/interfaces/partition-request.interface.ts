@@ -2,20 +2,19 @@
 
 import { z } from 'zod';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../classifications/interfaces/mime-data.interface.js';
 
 /** Public create-partition request body. */
 export interface PartitionRequest {
   /** The document to partition */
-  document: MIMEData | FileRef;
+  document: MIMEData;
   /** The key to partition the document by */
   key: string;
   /** Instructions describing how the document should be partitioned */
@@ -48,7 +47,7 @@ export interface PartitionRequest {
 }
 
 export interface PartitionRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MIMEDataResponse;
   key: string;
   instructions: string;
   model?: string;
@@ -59,7 +58,7 @@ export interface PartitionRequestResponse {
 }
 
 export const ZPartitionRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: ZMIMEData,
   key: z.string(),
   instructions: z.string(),
   model: z.string().optional(),
@@ -71,7 +70,7 @@ export const ZPartitionRequest = z.object({
 
 export function deserializePartitionRequest(wire: PartitionRequestResponse): PartitionRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: deserializeMIMEData(wire['document']),
     key: wire['key'],
     instructions: wire['instructions'],
     model: wire['model'],
@@ -84,7 +83,7 @@ export function deserializePartitionRequest(wire: PartitionRequestResponse): Par
 
 export function serializePartitionRequest(domain: PartitionRequest): PartitionRequestResponse {
   return {
-    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    document: serializeMIMEData(domain['document']),
     key: domain['key'],
     instructions: domain['instructions'],
     model: domain['model'],

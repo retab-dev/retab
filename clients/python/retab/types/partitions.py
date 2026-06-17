@@ -24,7 +24,7 @@ class PartitionRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to partition")
+    document: MIMEData = Field(..., description="The document to partition")
     key: str = Field(..., description="The key to partition the document by")
     instructions: str = Field(..., description="Instructions describing how the document should be partitioned")
     model: str | None = Field(default="retab-small", description="The model to use for partitioning")

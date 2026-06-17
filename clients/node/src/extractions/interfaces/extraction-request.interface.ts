@@ -2,19 +2,18 @@
 
 import { z } from 'zod';
 import type {
-  FileRef,
-  FileRefResponse,
-} from '../../classifications/interfaces/file-ref.interface.js';
-import { ZFileRef } from '../../classifications/interfaces/file-ref.interface.js';
-import type {
   MIMEData,
   MIMEDataResponse,
 } from '../../classifications/interfaces/mime-data.interface.js';
-import { ZMIMEData } from '../../classifications/interfaces/mime-data.interface.js';
+import {
+  ZMIMEData,
+  deserializeMIMEData,
+  serializeMIMEData,
+} from '../../classifications/interfaces/mime-data.interface.js';
 
 /** Request to run a structured extraction on a single document. */
 export interface ExtractionRequest {
-  document: MIMEData | FileRef;
+  document: MIMEData;
   /** JSON schema describing the structured output */
   jsonSchema: Record<string, unknown>;
   /**
@@ -54,7 +53,7 @@ export interface ExtractionRequest {
 }
 
 export interface ExtractionRequestResponse {
-  document: MIMEDataResponse | FileRefResponse;
+  document: MIMEDataResponse;
   json_schema: Record<string, unknown>;
   model?: string;
   image_resolution_dpi?: number;
@@ -69,7 +68,7 @@ export interface ExtractionRequestResponse {
 }
 
 export const ZExtractionRequest = z.object({
-  document: z.union([ZMIMEData, ZFileRef]),
+  document: ZMIMEData,
   jsonSchema: z.record(z.string(), z.unknown()),
   model: z.string().optional(),
   imageResolutionDpi: z.number().int().optional(),
@@ -85,7 +84,7 @@ export const ZExtractionRequest = z.object({
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
   return {
-    document: wire['document'] as unknown as MIMEData | FileRef,
+    document: deserializeMIMEData(wire['document']),
     jsonSchema: wire['json_schema'],
     model: wire['model'],
     imageResolutionDpi: wire['image_resolution_dpi'],
@@ -102,7 +101,7 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
 
 export function serializeExtractionRequest(domain: ExtractionRequest): ExtractionRequestResponse {
   return {
-    document: domain['document'] as unknown as MIMEDataResponse | FileRefResponse,
+    document: serializeMIMEData(domain['document']),
     json_schema: domain['jsonSchema'],
     model: domain['model'],
     image_resolution_dpi: domain['imageResolutionDpi'],

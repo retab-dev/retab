@@ -10,7 +10,7 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ExtractionRequest {
-  private final Object document;
+  private final MimeData document;
   private final Map<String, Object> jsonSchema;
   private final String model;
   private final Long imageResolutionDpi;
@@ -25,7 +25,7 @@ public final class ExtractionRequest {
 
   @JsonCreator
   public ExtractionRequest(
-      @JsonProperty(value = "document", required = true) Object document,
+      @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "json_schema", required = true) Map<String, Object> jsonSchema,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
@@ -53,7 +53,7 @@ public final class ExtractionRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

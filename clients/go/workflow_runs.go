@@ -59,6 +59,11 @@ type WorkflowRunsCreateParams struct {
 // Create workflow Run
 // Create a fresh workflow run.
 func (s *WorkflowRunService) Create(ctx context.Context, params *WorkflowRunsCreateParams, opts ...RequestOption) (*WorkflowRun, error) {
+	if err := params.resolveDocuments(ctx, func(ctx context.Context, fileID string) (*FileLink, error) {
+		return s.client.Files.GetDownloadLink(ctx, fileID, opts...)
+	}); err != nil {
+		return nil, err
+	}
 	var result WorkflowRun
 	_, err := s.client.request(ctx, "POST", "/v1/workflows/runs", nil, params, &result, opts)
 	if err != nil {

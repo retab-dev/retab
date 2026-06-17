@@ -136,7 +136,7 @@ class ClassificationRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
-    document: MIMEData | FileRef = Field(..., description="The document to classify")
+    document: MIMEData = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str | None = Field(default="retab-small", description="The model to use for classification")
     first_n_pages: int | None = Field(

@@ -55,7 +55,10 @@ export class Edits {
     bustCache?: boolean,
     background?: boolean
   ): Promise<Edit> {
-    const documentCoerced = document === undefined ? undefined : await coerceMimeData(document);
+    const documentCoerced =
+      document === undefined
+        ? undefined
+        : await coerceMimeData(document, (__id) => this.client.files.get_download_link(__id));
     const body = {
       instructions: instructions,
       document: documentCoerced,

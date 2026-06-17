@@ -56,7 +56,9 @@ export class Classifications {
     bustCache?: boolean,
     background?: boolean
   ): Promise<Classification> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       document: documentCoerced,
       categories: categories.map((__i) => serializeCategory(__i)),

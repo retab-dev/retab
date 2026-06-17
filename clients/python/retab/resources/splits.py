@@ -2,7 +2,7 @@
 from __future__ import annotations
 # ruff: noqa: F401
 
-from typing import Any, cast
+from typing import Any, Callable, cast
 from io import IOBase
 from pathlib import Path
 import PIL.Image
@@ -17,15 +17,50 @@ from retab.types.mime import FileRef, MIMEData
 from retab.types.splits import Split, SplitRequest, Subdocument
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> FileRef | dict[str, Any]:
-    if isinstance(document, FileRef):
-        return document
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
         "url": mime_data.url,
-        "mime_type": mime_data.mime_type,
     }
+
+
+def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[str, Any]:
+    mime_data = getattr(link, "mime_data", None)
+    link_filename = getattr(link, "filename", None)
+    download_url = getattr(link, "download_url", None)
+    if mime_data is not None and getattr(mime_data, "url", None):
+        url = mime_data.url
+        mime_filename = getattr(mime_data, "filename", None)
+    else:
+        url = download_url
+        mime_filename = None
+    if not url:
+        raise ValueError("download link did not include a usable URL for the file")
+    filename = fallback_filename or mime_filename or link_filename or "document"
+    return {"filename": filename, "url": url}
+
+
+def _resolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
+
+
+async def _aresolve_mime_document_input(
+    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+) -> dict[str, Any]:
+    if isinstance(document, dict):
+        return document
+    if isinstance(document, FileRef):
+        link = await resolve_file_id(document.id)
+        return _file_link_to_mime_dict(link, document.filename)
+    return _coerce_mime_document_input(document)
 
 
 class SplitsMixin:
@@ -76,7 +111,7 @@ class SplitsMixin:
         params = {k: v for k, v in params.items() if v is not None}
         document_payload: Any = document
         if document_payload is not None:
-            document_payload = _coerce_mime_document_input(document_payload)
+            document_payload = _resolve_mime_document_input(document_payload, (lambda __fid: self._client.files.get_download_link(__fid)))
         payload = SplitRequest(
             document=cast(Any, document_payload),
             subdocuments=cast(Any, subdocuments),
@@ -152,8 +187,11 @@ class Splits(SyncAPIResource, SplitsMixin):
         **extra_params: Any,
     ) -> Split:
         """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
+        document_coerced: Any = document
+        if document_coerced is not None:
+            document_coerced = _resolve_mime_document_input(document_coerced, (lambda __fid: self._client.files.get_download_link(__fid)))
         prepared_request = self.prepare_create(
-            document=document,
+            document=document_coerced,
             subdocuments=subdocuments,
             model=model,
             instructions=instructions,
@@ -217,8 +255,11 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         **extra_params: Any,
     ) -> Split:
         """Create Split Create a split. Divides a `document` into the named `subdocuments`, assigning each its set of pages, using the chosen `model` and optional `instructions`. Set `n_consensus` above `1` to run multiple votes and consolidate them. Returns the stored `Split` with its `output` page assignments, and responds with `201`."""
+        document_coerced: Any = document
+        if document_coerced is not None:
+            document_coerced = await _aresolve_mime_document_input(document_coerced, (lambda __fid: self._client.files.get_download_link(__fid)))
         prepared_request = self.prepare_create(
-            document=document,
+            document=document_coerced,
             subdocuments=subdocuments,
             model=model,
             instructions=instructions,

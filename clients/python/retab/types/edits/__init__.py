@@ -41,7 +41,7 @@ class EditRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     instructions: str = Field(..., description="Instructions describing how to fill the form fields.")
-    document: MIMEData | FileRef | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
+    document: MIMEData | None = Field(default=None, description="Input document (PDF, DOCX, XLSX, or PPTX). Mutually exclusive with template_id.")
     template_id: str | None = Field(
         default=None, description="EditTemplate id to fill. When provided, uses the template's pre-defined form fields and empty PDF. Mutually exclusive with document."
     )

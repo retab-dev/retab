@@ -128,7 +128,7 @@ module Retab
       chunking_keys: nil,
       request_options: {}
     )
-      document = Retab::MimeData.coerce(document) unless document.nil?
+      document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
       body = {
         "document" => document,
         "json_schema" => json_schema,
@@ -189,7 +189,7 @@ module Retab
       chunking_keys: nil,
       request_options: {}
     )
-      document = Retab::MimeData.coerce(document) unless document.nil?
+      document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
       body = {
         "document" => document,
         "json_schema" => json_schema,

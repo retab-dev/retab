@@ -9,7 +9,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ClassificationRequest {
-  private final Object document;
+  private final MimeData document;
   private final List<Category> categories;
   private final String model;
   private final Long firstNPages;
@@ -20,7 +20,7 @@ public final class ClassificationRequest {
 
   @JsonCreator
   public ClassificationRequest(
-      @JsonProperty(value = "document", required = true) Object document,
+      @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "categories", required = true) List<Category> categories,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "first_n_pages", required = false) Long firstNPages,
@@ -39,7 +39,7 @@ public final class ClassificationRequest {
   }
 
   @JsonProperty("document")
-  public Object getDocument() {
+  public MimeData getDocument() {
     return document;
   }
 

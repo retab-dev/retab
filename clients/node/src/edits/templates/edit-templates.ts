@@ -41,7 +41,9 @@ export class EditTemplates {
     document: DocumentInput,
     formFields: FormField[]
   ): Promise<EditTemplate> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       name: name,
       document: documentCoerced,

@@ -784,17 +784,39 @@ func TestWorkflowRunsListDeleteCancelCreateAndExport(t *testing.T) {
 	}
 }
 
-func TestWorkflowRunsCreateCoercesDocuments(t *testing.T) {
+func TestWorkflowRunsCreateResolvesFileIDDocuments(t *testing.T) {
+	// File-id document inputs (FileRef / a map with an "id" key) must be
+	// resolved client-side into URL-backed MIMEData via the Files
+	// download-link endpoint before the run body is serialized — the document
+	// routes now accept MIMEData only and 422 a {id, filename, mime_type} body.
 	var createBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_123/download-link":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"download_url": "https://signed.example.com/file_123?sig=abc",
+				"expires_in":   "3600",
+				"filename":     "server_stored.pdf",
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_456/download-link":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"download_url": "https://signed.example.com/file_456?sig=def",
+				"expires_in":   "3600",
+				"filename":     "ignored.pdf",
+				"mime_data": map[string]any{
+					"filename": "durable.pdf",
+					"url":      "https://storage.retab.com/org/file_456.pdf",
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
+				t.Fatal(err)
+			}
+			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_456", "wf_123", "running"))
+		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
-			t.Fatal(err)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(workflowRunResponse("run_456", "wf_123", "running"))
 	}))
 	defer server.Close()
 
@@ -805,8 +827,8 @@ func TestWorkflowRunsCreateCoercesDocuments(t *testing.T) {
 
 	documentsInput := map[string]interface{}{
 		"remote":   "https://example.com/invoice.pdf",
-		"uploaded": FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"},
-		"raw_ref":  map[string]any{"id": "file_456", "filename": "raw.pdf"},
+		"uploaded": FileRef{ID: "file_123", Filename: "caller.pdf", MIMEType: "application/pdf"},
+		"raw_ref":  map[string]any{"id": "file_456"},
 	}
 	_, err = client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
 		WorkflowID: "wf_123",
@@ -827,18 +849,27 @@ func TestWorkflowRunsCreateCoercesDocuments(t *testing.T) {
 	if remote["filename"] != "invoice.pdf" || remote["url"] != "https://example.com/invoice.pdf" {
 		t.Fatalf("documents.remote = %#v", remote)
 	}
+	// FileRef → MIMEData. Caller's filename wins; URL is the signed download URL.
 	uploaded, ok := documents["uploaded"].(map[string]any)
 	if !ok {
 		t.Fatalf("documents.uploaded = %#v", documents["uploaded"])
 	}
-	if uploaded["id"] != "file_123" || uploaded["filename"] != "stored.pdf" || uploaded["mime_type"] != "application/pdf" {
+	if _, hasID := uploaded["id"]; hasID {
+		t.Fatalf("documents.uploaded must not carry a file id on the wire: %#v", uploaded)
+	}
+	if uploaded["filename"] != "caller.pdf" || uploaded["url"] != "https://signed.example.com/file_123?sig=abc" {
 		t.Fatalf("documents.uploaded = %#v", uploaded)
 	}
+	// Map{"id"} → MIMEData. No caller filename, so the durable mime_data wins
+	// for both filename and URL.
 	rawRef, ok := documents["raw_ref"].(map[string]any)
 	if !ok {
 		t.Fatalf("documents.raw_ref = %#v", documents["raw_ref"])
 	}
-	if rawRef["id"] != "file_456" || rawRef["filename"] != "raw.pdf" {
+	if _, hasID := rawRef["id"]; hasID {
+		t.Fatalf("documents.raw_ref must not carry a file id on the wire: %#v", rawRef)
+	}
+	if rawRef["filename"] != "durable.pdf" || rawRef["url"] != "https://storage.retab.com/org/file_456.pdf" {
 		t.Fatalf("documents.raw_ref = %#v", rawRef)
 	}
 }
@@ -848,6 +879,8 @@ func TestWorkflowRunDocumentsSetCoercesDocuments(t *testing.T) {
 	if err := params.SetDocument("remote", "https://example.com/invoice.pdf"); err != nil {
 		t.Fatal(err)
 	}
+	// Set defers file-id resolution (it has no client); the FileRef is kept
+	// verbatim until Create resolves it.
 	if err := params.SetDocument("uploaded", FileRef{ID: "file_123", Filename: "stored.pdf", MIMEType: "application/pdf"}); err != nil {
 		t.Fatal(err)
 	}
@@ -865,6 +898,18 @@ func TestWorkflowRunDocumentsSetCoercesDocuments(t *testing.T) {
 	}
 	if uploaded.ID != "file_123" {
 		t.Fatalf("uploaded = %#v", uploaded)
+	}
+}
+
+func TestWorkflowRunDocumentsMarshalRejectsUnresolvedFileID(t *testing.T) {
+	// A file-id input that reaches MarshalJSON unresolved would serialize a
+	// {id, ...} body the document routes reject; MarshalJSON must fail loudly
+	// instead, pointing the caller at Create.
+	docs := WorkflowRunDocuments{
+		"uploaded": FileRef{ID: "file_123", Filename: "stored.pdf"},
+	}
+	if _, err := json.Marshal(docs); err == nil {
+		t.Fatal("expected MarshalJSON to reject an unresolved file-id document")
 	}
 }
 

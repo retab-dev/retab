@@ -9,6 +9,7 @@ import com.retab.edittemplates.EditTemplatesApi;
 import com.retab.models.Edit;
 import com.retab.models.EditConfig;
 import com.retab.models.EditRequest;
+import com.retab.models.MimeData;
 import com.retab.types.EditsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
@@ -96,7 +97,7 @@ public final class EditsApi {
 
   public Edit create(
       String instructions,
-      Object document,
+      MimeData document,
       String templateId,
       String model,
       EditConfig config,

@@ -122,7 +122,7 @@ module Retab
       version: nil,
       request_options: {}
     )
-      documents = Retab::MimeData.coerce_document_map(documents) unless documents.nil?
+      documents = Retab::MimeData.coerce_document_map(documents, client: @client) unless documents.nil?
       body = {
         "workflow_id" => workflow_id,
         "documents" => documents,

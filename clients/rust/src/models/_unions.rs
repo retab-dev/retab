@@ -324,25 +324,6 @@ impl From<CancelledWorkflowExperimentRun> for CancelWorkflowExperimentRunRespons
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ClassificationRequestDocumentOneOf {
-    MimeData(Box<MimeData>),
-    FileRef(Box<FileRef>),
-}
-
-impl From<MimeData> for ClassificationRequestDocumentOneOf {
-    fn from(v: MimeData) -> Self {
-        ClassificationRequestDocumentOneOf::MimeData(Box::new(v))
-    }
-}
-
-impl From<FileRef> for ClassificationRequestDocumentOneOf {
-    fn from(v: FileRef) -> Self {
-        ClassificationRequestDocumentOneOf::FileRef(Box::new(v))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CreateWorkflowTestRequestSourceOneOf {
     #[serde(rename = "manual")]

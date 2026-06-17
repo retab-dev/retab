@@ -69,7 +69,7 @@ class EditTemplates
      * returned template id instead of re-uploading the document. An unsupported
      * document format responds with `400`; on success responds with `201`.
      * @param string $name Name of the template.
-     * @param \Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The PDF document to use as the empty template.
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The PDF document to use as the empty template.
      * @param array<\Retab\Resource\FormField> $formFields Form fields to attach to the template.
      * @return \Retab\Resource\EditTemplate
      * @throws \Retab\Exception\RetabException
@@ -80,7 +80,7 @@ class EditTemplates
         array $formFields,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\EditTemplate {
-        $document = \Retab\Resource\MimeDataCoerce::coerce($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = [
             'name' => $name,
             'document' => $document,

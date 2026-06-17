@@ -70,7 +70,7 @@ impl CreateParams {
     pub fn new<D: Into<crate::MimeData>>(document: D, categories: Vec<Category>) -> Self {
         Self {
             body: ClassificationRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 categories,
                 model: Default::default(),
                 first_n_pages: Default::default(),

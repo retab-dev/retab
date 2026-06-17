@@ -69,7 +69,22 @@ module Retab
     end
 
     # Single entry point used by every generator-emitted resource method.
-    def self.coerce(input)
+    #
+    # A file-id document input (a `Retab::FileRef` object, or a Hash
+    # carrying an `:id` key) is resolved CLIENT-SIDE into URL-backed
+    # MimeData by calling the Files download-link endpoint — the document
+    # routes now accept only URL-backed MimeData `{filename, url}` and 422
+    # a file-id wire body. Mirrors the Node SDK and Go CLI
+    # (`resolveFileIDToMIMEData`). `client:` is the `Retab::Client`
+    # threaded through from the resource method body; it must be present to
+    # resolve a file-id input.
+    def self.coerce(input = nil, client: nil, **rest)
+      # Backward-compatible bare-keyword form: `coerce(filename: ..., url: ...)`
+      # slurps the keywords (minus `client:`) into the Hash input shape.
+      input = rest if input.nil? && !rest.empty?
+
+      return resolve_file_ref(input, client: client) if file_ref_like?(input)
+
       case input
       when MimeData
         input
@@ -89,14 +104,12 @@ module Retab
       end
     end
 
-    def self.coerce_document_map(input)
+    def self.coerce_document_map(input, client: nil)
       unless input.respond_to?(:transform_values)
         raise ArgumentError, "cannot coerce #{input.class} to a Retab::MimeData document map"
       end
 
-      input.transform_values do |document|
-        file_ref_like?(document) ? document : coerce(document)
-      end
+      input.transform_values { |document| coerce(document, client: client) }
     end
 
     def to_h
@@ -140,11 +153,69 @@ module Retab
       )
     end
 
+    # A file-id document input: either a spec-derived FileRef-like model
+    # exposing `#id`, or a Hash carrying an `:id` / `'id'` key. These no
+    # longer serialize over the wire — `coerce` resolves them into
+    # URL-backed MimeData via the Files download-link endpoint.
     private_class_method def self.file_ref_like?(input)
-      return true if defined?(Retab::FileRef) && input.is_a?(Retab::FileRef)
+      return false if input.is_a?(MimeData)
+      return true if input.respond_to?(:id) && !input.is_a?(Hash) && !input.is_a?(String)
       return false unless input.is_a?(Hash)
 
       input.key?(:id) || input.key?("id")
+    end
+
+    private_class_method def self.file_ref_id(input)
+      if input.is_a?(Hash)
+        sym = input.transform_keys { |k| k.respond_to?(:to_sym) ? k.to_sym : k }
+        sym[:id]
+      elsif input.respond_to?(:id)
+        input.id
+      end
+    end
+
+    private_class_method def self.file_ref_filename(input)
+      if input.is_a?(Hash)
+        sym = input.transform_keys { |k| k.respond_to?(:to_sym) ? k.to_sym : k }
+        sym[:filename]
+      elsif input.respond_to?(:filename)
+        input.filename
+      end
+    end
+
+    # Resolve a file-id document input into URL-backed MimeData by calling
+    # the Files download-link endpoint. Mirrors the Node SDK and the Go CLI
+    # `resolveFileIDToMIMEData`: prefer the link's durable `mime_data`, then
+    # fall back to its `download_url`; filename precedence is
+    # input.filename → mime_data.filename → link.filename → 'document'.
+    private_class_method def self.resolve_file_ref(input, client:)
+      file_id = file_ref_id(input)
+      if file_id.nil? || file_id.to_s.empty?
+        raise ArgumentError, "file-id document input is missing an id"
+      end
+
+      if client.nil?
+        raise(
+          ArgumentError,
+          "cannot resolve file-id #{file_id} document input without a client; " \
+            "pass URL-backed MimeData instead"
+        )
+      end
+
+      link = client.files.get_download_link(file_id: file_id)
+      mime_data = link.mime_data
+      input_filename = file_ref_filename(input)
+
+      filename = input_filename ||
+        (mime_data && mime_data.filename) ||
+        link.filename ||
+        "document"
+      url = (mime_data && mime_data.url) || link.download_url
+      if url.nil? || url.to_s.empty?
+        raise ArgumentError, "file-id #{file_id}: server returned no download URL"
+      end
+
+      new(filename: filename, url: url)
     end
 
     private_class_method def self.from_string(str)

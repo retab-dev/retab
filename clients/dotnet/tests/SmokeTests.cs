@@ -118,6 +118,33 @@ spec:
         }
     }
 
+    // Path-aware stub: returns a per-path canned response and records the request
+    // body sent to each path. Used to verify multi-call flows (e.g. a download-link
+    // resolve followed by a runs create) and the exact wire body that is sent.
+    private sealed class RoutingHandler : HttpMessageHandler
+    {
+        private readonly Dictionary<string, string> responses = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> bodies = new Dictionary<string, string>();
+
+        public void Map(string path, string responseBody) => this.responses[path] = responseBody;
+
+        public string? BodyFor(string path) => this.bodies.TryGetValue(path, out var b) ? b : null;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (request.Content != null)
+            {
+                this.bodies[path] = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
+            var body = this.responses.TryGetValue(path, out var r) ? r : "{}";
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            };
+        }
+    }
+
     [Fact]
     public void ClientConstructs()
     {
@@ -161,27 +188,60 @@ spec:
     }
 
     [Fact]
-    public void WorkflowRunDocumentsAcceptMimeDataAndFileRefPerBlock()
+    public void WorkflowRunDocumentMimeDataSerializesAsUrlBackedShape()
     {
-        var options = new WorkflowRunsCreateOptions
+        // A MimeData document serializes as the URL-backed wire shape.
+        WorkflowRunDocumentInput doc = MimeData.FromDataUrl("data:application/pdf;base64,JVBERi0=", "passport.pdf");
+        var json = JsonSerializer.Serialize(doc, Retab.Retab.JsonOptions);
+        Assert.Equal("{\"filename\":\"passport.pdf\",\"url\":\"data:application/pdf;base64,JVBERi0=\"}", json);
+    }
+
+    [Fact]
+    public void WorkflowRunDocumentUnresolvedFileRefThrowsOnSerialize()
+    {
+        // The document routes accept URL-backed MIMEData only; serializing an
+        // unresolved file-id input must fail loudly instead of sending a 422 body.
+        WorkflowRunDocumentInput doc = new FileRef { Id = "file_123", Filename = "stored.pdf", MimeType = "application/pdf" };
+        Assert.Throws<InvalidOperationException>(() => JsonSerializer.Serialize(doc, Retab.Retab.JsonOptions));
+    }
+
+    [Fact]
+    public async Task WorkflowRunCreateResolvesFileIdDocumentsToMimeData()
+    {
+        // A file-id document input is resolved client-side into URL-backed
+        // MIMEData via the Files download-link endpoint before the create body
+        // is sent — mirroring the Node SDK and the Go CLI.
+        var handler = new RoutingHandler();
+        handler.Map("/v1/files/file_123/download-link",
+            "{\"download_url\":\"https://signed.example/dl\",\"filename\":\"link.pdf\",\"mime_data\":{\"filename\":\"durable.pdf\",\"url\":\"https://storage.retab.com/o/file_123.pdf\"}}");
+        handler.Map("/v1/workflows/runs", "{\"id\":\"run_1\"}");
+
+        var client = new global::Retab.Retab(new RetabOptions
+        {
+            ApiKey = "test-api-key",
+            BaseUrl = new Uri("http://stub.local"),
+            HttpClient = new HttpClient(handler),
+        });
+
+        await client.Workflows.Runs.CreateAsync(new WorkflowRunsCreateOptions
         {
             WorkflowId = "wrk_123",
             Documents = new Dictionary<string, WorkflowRunDocumentInput>
             {
                 ["start_pdf"] = MimeData.FromDataUrl("data:application/pdf;base64,JVBERi0=", "passport.pdf"),
-                ["start_existing"] = new FileRef
-                {
-                    Id = "file_123",
-                    Filename = "stored.pdf",
-                    MimeType = "application/pdf",
-                },
+                ["start_existing"] = new FileRef { Id = "file_123", Filename = "caller.pdf", MimeType = "application/pdf" },
             },
-        };
+        });
 
-        var json = JsonSerializer.Serialize(options, Retab.Retab.JsonOptions);
-
-        Assert.Contains("\"start_pdf\":{\"filename\":\"passport.pdf\",\"url\":\"data:application/pdf;base64,JVBERi0=\"}", json);
-        Assert.Contains("\"start_existing\":{\"id\":\"file_123\",\"filename\":\"stored.pdf\",\"mime_type\":\"application/pdf\"}", json);
+        var body = handler.BodyFor("/v1/workflows/runs");
+        Assert.NotNull(body);
+        // The MimeData passthrough is unchanged.
+        Assert.Contains("\"start_pdf\":{\"filename\":\"passport.pdf\",\"url\":\"data:application/pdf;base64,JVBERi0=\"}", body);
+        // The file-id resolved to MIMEData: durable mime_data.url wins; the
+        // caller-supplied filename wins over the link's filenames.
+        Assert.Contains("\"start_existing\":{\"filename\":\"caller.pdf\",\"url\":\"https://storage.retab.com/o/file_123.pdf\"}", body);
+        // No file-id wire body is ever sent.
+        Assert.DoesNotContain("\"id\":\"file_123\"", body);
     }
 
     [Fact]

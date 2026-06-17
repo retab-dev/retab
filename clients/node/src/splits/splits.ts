@@ -48,7 +48,9 @@ export class Splits {
     bustCache?: boolean,
     background?: boolean
   ): Promise<Split> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       document: documentCoerced,
       subdocuments: subdocuments.map((__i) => serializeSubdocument(__i)),

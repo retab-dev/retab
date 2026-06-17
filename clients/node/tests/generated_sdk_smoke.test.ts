@@ -44,7 +44,20 @@ describe('generated SDK smoke coverage', () => {
     };
     const client = new Retab({
       apiKey: 'test_key',
-      fetch: async (_input, init) => {
+      fetch: async (input, init) => {
+        // A file-id document resolves client-side through the Files
+        // download-link endpoint before the run body is built.
+        if (String(input).includes('/download-link')) {
+          return new Response(
+            JSON.stringify({
+              download_url: 'https://storage.retab.com/org/file_existing.pdf',
+              expires_in: '3600',
+              filename: 'stored.pdf',
+              mime_data: null,
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          );
+        }
         capturedBody = JSON.parse(String(init?.body));
         return new Response(
           JSON.stringify({
@@ -88,9 +101,8 @@ describe('generated SDK smoke coverage', () => {
           url: 'https://example.com/remote.pdf?download=1',
         },
         start_document_2: {
-          id: 'file_existing',
           filename: 'stored.pdf',
-          mime_type: 'application/pdf',
+          url: 'https://storage.retab.com/org/file_existing.pdf',
         },
       },
       json_inputs: {

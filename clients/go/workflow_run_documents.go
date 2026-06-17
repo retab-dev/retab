@@ -4,6 +4,7 @@
 package retab
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,9 @@ import (
 
 // WorkflowRunDocuments is a helper map for workflow run document inputs.
 // Values may be FileRef, MIMEData, or any input accepted by InferMIMEData.
+// File-id inputs (FileRef / a map with an "id" key) are resolved client-side
+// into URL-backed MIMEData via the Files download-link endpoint when the run is
+// created — the document routes accept MIMEData only.
 type WorkflowRunDocuments map[string]any
 
 // NewWorkflowRunDocuments builds a workflow-run documents map and applies the
@@ -26,7 +30,8 @@ func NewWorkflowRunDocuments(documents map[string]any) (WorkflowRunDocuments, er
 }
 
 // Set inserts one workflow start_document input after coercing ergonomic MIME
-// inputs. FileRef and MIMEData values are preserved.
+// inputs. File-id inputs (FileRef / a map with an "id" key) are preserved as-is
+// and resolved into MIMEData when Create runs (resolution needs a client).
 func (d WorkflowRunDocuments) Set(blockID string, document any) error {
 	coerced, err := CoerceWorkflowRunDocument(document)
 	if err != nil {
@@ -50,7 +55,11 @@ func (p *WorkflowRunsCreateParams) SetDocument(blockID string, document any) err
 }
 
 // CoerceWorkflowRunDocument converts ergonomic MIME inputs for workflow run
-// documents while preserving FileRef, MIMEData, and explicit raw FileRef maps.
+// documents. File-id inputs (FileRef, *FileRef, or a map carrying an "id" key)
+// are preserved verbatim; they are resolved into URL-backed MIMEData via the
+// Files download-link endpoint when the run is created (resolution requires a
+// client + context, so it cannot happen here). Everything else is coerced into
+// MIMEData immediately via InferMIMEData.
 func CoerceWorkflowRunDocument(document any) (any, error) {
 	switch value := document.(type) {
 	case FileRef, MIMEData:
@@ -82,6 +91,113 @@ func CoerceWorkflowRunDocument(document any) (any, error) {
 	}
 }
 
+// downloadLinkResolver resolves a Retab file id into a signed download link.
+// It mirrors the closure the resource methods pass so resolution can be tested
+// without a live client.
+type downloadLinkResolver func(ctx context.Context, fileID string) (*FileLink, error)
+
+// fileIDFromWorkflowRunDocument returns the Retab file id carried by a file-id
+// document input (FileRef / *FileRef / a map with an "id" key) plus an optional
+// caller-supplied filename override. ok is false for non-file-id inputs.
+func fileIDFromWorkflowRunDocument(document any) (fileID string, filename string, ok bool) {
+	switch value := document.(type) {
+	case FileRef:
+		return value.ID, value.Filename, true
+	case *FileRef:
+		if value == nil {
+			return "", "", false
+		}
+		return value.ID, value.Filename, true
+	case map[string]any:
+		raw, present := value["id"]
+		if !present {
+			return "", "", false
+		}
+		id, _ := raw.(string)
+		name, _ := value["filename"].(string)
+		return id, name, true
+	case map[string]string:
+		id, present := value["id"]
+		if !present {
+			return "", "", false
+		}
+		return id, value["filename"], true
+	default:
+		return "", "", false
+	}
+}
+
+// resolveWorkflowRunDocument resolves a single workflow-run document input into
+// the URL-backed MIMEData the wire expects. File-id inputs are resolved via the
+// Files download-link endpoint (mirrors the CLI's resolveFileIDToMIMEData and
+// the Node SDK's coerceMimeData); every other input has already been coerced to
+// MIMEData by CoerceWorkflowRunDocument and is returned unchanged.
+func resolveWorkflowRunDocument(ctx context.Context, getDownloadLink downloadLinkResolver, document any) (any, error) {
+	fileID, filenameOverride, isFileID := fileIDFromWorkflowRunDocument(document)
+	if !isFileID {
+		return document, nil
+	}
+	if fileID == "" {
+		return nil, fmt.Errorf("retab: file-id document is missing its id")
+	}
+	if getDownloadLink == nil {
+		return nil, fmt.Errorf("retab: resolving a file-id document requires a Retab client; create the run with client.Workflows.Runs.Create")
+	}
+	link, err := getDownloadLink(ctx, fileID)
+	if err != nil {
+		return nil, fmt.Errorf("retab: resolving file id %s: %w", fileID, err)
+	}
+	if link == nil {
+		return nil, fmt.Errorf("retab: file id %s: server returned no download link", fileID)
+	}
+	// Prefer the durable MIMEData reference when present, then the signed
+	// download URL — mirrors the CLI mapping.
+	resolvedURL := link.DownloadURL
+	resolvedFilename := ""
+	if link.MIMEData != nil {
+		if link.MIMEData.URL != "" {
+			resolvedURL = link.MIMEData.URL
+		}
+		resolvedFilename = link.MIMEData.Filename
+	}
+	if resolvedURL == "" {
+		return nil, fmt.Errorf("retab: file id %s: server returned no download URL", fileID)
+	}
+	filename := filenameOverride
+	if filename == "" {
+		filename = resolvedFilename
+	}
+	if filename == "" {
+		filename = link.Filename
+	}
+	if filename == "" {
+		filename = "document"
+	}
+	return MIMEData{Filename: filename, URL: resolvedURL}, nil
+}
+
+// resolveDocuments rewrites p.Documents in place, resolving any file-id inputs
+// into URL-backed MIMEData via the supplied download-link resolver. It is a
+// no-op when there are no documents. Called by WorkflowRunService.Create before
+// the request is serialized.
+func (p *WorkflowRunsCreateParams) resolveDocuments(ctx context.Context, getDownloadLink downloadLinkResolver) error {
+	if p == nil || p.Documents == nil {
+		return nil
+	}
+	for blockID, document := range *p.Documents {
+		coerced, err := CoerceWorkflowRunDocument(document)
+		if err != nil {
+			return fmt.Errorf("retab: invalid documents[%q]: %w", blockID, err)
+		}
+		resolved, err := resolveWorkflowRunDocument(ctx, getDownloadLink, coerced)
+		if err != nil {
+			return fmt.Errorf("retab: invalid documents[%q]: %w", blockID, err)
+		}
+		(*p.Documents)[blockID] = resolved
+	}
+	return nil
+}
+
 func (d WorkflowRunDocuments) MarshalJSON() ([]byte, error) {
 	if d == nil {
 		return []byte("null"), nil
@@ -91,6 +207,12 @@ func (d WorkflowRunDocuments) MarshalJSON() ([]byte, error) {
 		value, err := CoerceWorkflowRunDocument(document)
 		if err != nil {
 			return nil, fmt.Errorf("retab: invalid documents[%q]: %w", blockID, err)
+		}
+		// A file-id input that reaches MarshalJSON unresolved would serialize a
+		// {id, filename, mime_type} body the document routes now reject (422).
+		// Resolution happens in Create; fail loudly if it was bypassed.
+		if _, _, isFileID := fileIDFromWorkflowRunDocument(value); isFileID {
+			return nil, fmt.Errorf("retab: documents[%q] is a file-id reference; create the run with client.Workflows.Runs.Create so it resolves into a download URL", blockID)
 		}
 		coerced[blockID] = value
 	}

@@ -39,4 +39,16 @@ class MimeSmokeTest < Minitest::Test
     assert_equal("x.pdf", md.filename)
     assert_equal("data:foo", md.url)
   end
+
+  # A file-id document input (Hash with :id) is no longer serialized as a
+  # FileRef wire body — it must be resolved client-side via the Files
+  # download-link endpoint, which needs a client. Without one, coerce raises
+  # a clear error rather than silently shipping a now-422'ing wire body.
+  def test_coerce_file_ref_hash_without_client_raises
+    err = assert_raises(ArgumentError) do
+      Retab::MimeData.coerce({id: "file_123", filename: "x.pdf"})
+    end
+
+    assert_match(/file_123/, err.message)
+  end
 end

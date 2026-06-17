@@ -49,7 +49,9 @@ export class Parses {
     bustCache?: boolean,
     background?: boolean
   ): Promise<Parse> {
-    const documentCoerced = await coerceMimeData(document);
+    const documentCoerced = await coerceMimeData(document, (__id) =>
+      this.client.files.get_download_link(__id)
+    );
     const body = {
       document: documentCoerced,
       model: model,

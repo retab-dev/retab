@@ -70,7 +70,7 @@ class Parses
      * the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and
      * optional `instructions` steer the parse. Returns the stored `Parse` with its `output`
      * and `usage`, and responds with `201`.
-     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $document The document to parse
+     * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The document to parse
      * @param string|null $model The model to use for parsing
      * @param \Retab\Resource\TableParsingFormat|null $tableParsingFormat Format used to render tables extracted from the document
      * @param int|null $imageResolutionDpi DPI used when rasterizing pages for the parser
@@ -90,7 +90,7 @@ class Parses
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Parse {
-        $document = \Retab\Resource\MimeDataCoerce::coerceDocument($document);
+        $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
         $body = array_filter([
             'document' => $document,
             'model' => $model,

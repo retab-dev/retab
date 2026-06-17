@@ -56,6 +56,15 @@ namespace Retab
         /// <returns>The <see cref="WorkflowRun"/> result.</returns>
         public virtual async Task<WorkflowRun> CreateAsync(WorkflowRunsCreateOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
+            if (options.Documents != null)
+            {
+                var __resolved = new Dictionary<string, WorkflowRunDocumentInput>();
+                foreach (var __kv in options.Documents)
+                {
+                    __resolved[__kv.Key] = await __kv.Value.ResolveAsync(this.Client, cancellationToken).ConfigureAwait(false);
+                }
+                options.Documents = __resolved;
+            }
             return await this.PostAsync<WorkflowRun>("/v1/workflows/runs", options, requestOptions, cancellationToken);
         }
 

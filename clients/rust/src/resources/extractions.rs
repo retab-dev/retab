@@ -88,7 +88,7 @@ impl CreateParams {
     ) -> Self {
         Self {
             body: ExtractionRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 json_schema,
                 model: Default::default(),
                 image_resolution_dpi: Default::default(),
@@ -127,7 +127,7 @@ impl CreateStreamParams {
     ) -> Self {
         Self {
             body: ExtractionRequest {
-                document: ClassificationRequestDocumentOneOf::MimeData(Box::new(document.into())),
+                document: document.into(),
                 json_schema,
                 model: Default::default(),
                 image_resolution_dpi: Default::default(),

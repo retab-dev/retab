@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClassificationRequest {
     /// The document to classify
-    pub document: ClassificationRequestDocumentOneOf,
+    pub document: MimeData,
     /// The categories to classify the document into
     pub categories: Vec<Category>,
     /// The model to use for classification
@@ -42,9 +42,9 @@ pub struct ClassificationRequest {
 impl ClassificationRequest {
     /// Construct a new `ClassificationRequest` with the required fields set.
     #[allow(deprecated)]
-    pub fn new(document: ClassificationRequestDocumentOneOf, categories: Vec<Category>) -> Self {
+    pub fn new<D: Into<crate::MimeData>>(document: D, categories: Vec<Category>) -> Self {
         Self {
-            document,
+            document: document.into(),
             categories,
             model: Default::default(),
             first_n_pages: Default::default(),

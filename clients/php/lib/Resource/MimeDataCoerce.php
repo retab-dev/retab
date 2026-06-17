@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+use Retab\HttpClient;
+
 /**
  * Static helpers for building `MimeData` instances from ergonomic input.
  *
@@ -23,16 +25,21 @@ namespace Retab\Resource;
 final class MimeDataCoerce
 {
     /**
-     * Coerce a workflow/document endpoint input while preserving durable file references.
+     * Coerce a document endpoint input into URL-backed `MimeData`.
      *
-     * @param FileRef|MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $input
+     * The document-create routes (extractions, parses, partitions, splits,
+     * classifications, edits) and workflow runs accept URL-backed MimeData
+     * (`{filename, url}`) only. A durable file reference — a `FileRef`
+     * instance or a `{id, filename, mime_type}` array — is resolved
+     * client-side into a fresh download link via `GET
+     * /v1/files/{id}/download-link` (mirrors the Node/CLI SDKs). Everything
+     * else flows through `coerce()` unchanged.
+     *
+     * @param FileRef|MimeData|\SplFileInfo|string|resource|array{id?: string, filename?: string, mime_type?: string, url?: string} $input
      */
-    public static function coerceDocument(mixed $input): FileRef|MimeData
+    public static function coerceDocument(mixed $input, ?HttpClient $client = null): MimeData
     {
-        if ($input instanceof FileRef) {
-            return $input;
-        }
-        return self::coerce($input);
+        return self::coerce($input, $client);
     }
 
     /**
@@ -40,18 +47,27 @@ final class MimeDataCoerce
      *
      * Supported inputs:
      *   - `Retab\Resource\MimeData`        (passthrough)
+     *   - `Retab\Resource\FileRef`         (resolved via download-link endpoint)
      *   - `SplFileInfo`                     (reads file, base64-encodes into data URL)
      *   - `string` (URL: http://, https://, data:, gs://)  — wrapped as-is
      *   - `string` (path on disk)            — read + base64-encoded
      *   - `resource` (open stream)           — read + base64-encoded
      *   - `array{filename?: string, url: string}` — already-built wire shape
+     *   - `array{id: string, filename?: string, mime_type?: string}` — file-id ref
      *
-     * @param MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string} $input
+     * The optional `$client` is only consulted when `$input` is a durable
+     * file reference (`FileRef` or a `{id: ...}` array); resource methods
+     * thread their HTTP client in so the file id can be resolved.
+     *
+     * @param FileRef|MimeData|\SplFileInfo|string|resource|array{id?: string, filename?: string, mime_type?: string, url?: string} $input
      */
-    public static function coerce(mixed $input): MimeData
+    public static function coerce(mixed $input, ?HttpClient $client = null): MimeData
     {
         if ($input instanceof MimeData) {
             return $input;
+        }
+        if ($input instanceof FileRef) {
+            return self::resolveFileId($input->id, $input->filename, $client);
         }
         if ($input instanceof \SplFileInfo) {
             return self::fromFile($input->getPathname(), $input->getFilename());
@@ -61,9 +77,21 @@ final class MimeDataCoerce
             return self::fromBytes((string) $bytes, 'document');
         }
         if (is_array($input)) {
-            return new MimeData(
-                filename: $input['filename'] ?? 'document',
-                url: $input['url'],
+            // Already-built wire shape: `{filename?, url}`.
+            if (isset($input['url']) && is_string($input['url'])) {
+                return new MimeData(
+                    filename: is_string($input['filename'] ?? null) ? $input['filename'] : 'document',
+                    url: $input['url'],
+                );
+            }
+            // Durable file reference: `{id, filename?, mime_type?}`.
+            if (isset($input['id']) && is_string($input['id'])) {
+                $filename = is_string($input['filename'] ?? null) ? $input['filename'] : '';
+                return self::resolveFileId($input['id'], $filename, $client);
+            }
+            throw new \InvalidArgumentException(
+                'Cannot coerce array to Retab\\Resource\\MimeData; supply '
+                . 'either {filename?, url} (wire shape) or {id, filename?, mime_type?} (file reference).',
             );
         }
         if (is_string($input)) {
@@ -80,8 +108,56 @@ final class MimeDataCoerce
         }
         throw new \InvalidArgumentException(
             'Cannot coerce ' . get_debug_type($input) . ' to Retab\\Resource\\MimeData; '
-            . 'supply a MimeData, SplFileInfo, path string, URL string, stream resource, or array.',
+            . 'supply a MimeData, FileRef, SplFileInfo, path string, URL string, stream resource, or array.',
         );
+    }
+
+    /**
+     * Resolve a durable file id into URL-backed `MimeData` via the Files
+     * download-link endpoint (`GET /v1/files/{id}/download-link`). The
+     * document routes accept MimeData only, so a stored file id is resolved
+     * into a fresh signed download URL (mirrors the Node SDK and the CLI's
+     * `resolveFileIDToMIMEData`).
+     *
+     * Prefers the durable `mime_data` reference returned by the endpoint when
+     * present, falling back to the signed `download_url`.
+     */
+    private static function resolveFileId(string $fileId, string $filename, ?HttpClient $client): MimeData
+    {
+        if ($client === null) {
+            throw new \InvalidArgumentException(
+                'A file-id document requires a Retab client to resolve a download link; '
+                . 'call the resource method on a client instance.',
+            );
+        }
+        $link = $client->request(
+            method: 'GET',
+            path: '/v1/files/' . rawurlencode($fileId) . '/download-link',
+        );
+
+        $mimeData = is_array($link['mime_data'] ?? null) ? $link['mime_data'] : null;
+        $downloadUrl = is_string($link['download_url'] ?? null) ? $link['download_url'] : '';
+        $url = $mimeData !== null && is_string($mimeData['url'] ?? null) && $mimeData['url'] !== ''
+            ? $mimeData['url']
+            : $downloadUrl;
+        if ($url === '') {
+            throw new \InvalidArgumentException(
+                "Resolving file id '$fileId': server returned no download URL.",
+            );
+        }
+
+        $resolvedName = $filename;
+        if ($resolvedName === '' && $mimeData !== null && is_string($mimeData['filename'] ?? null)) {
+            $resolvedName = $mimeData['filename'];
+        }
+        if ($resolvedName === '' && is_string($link['filename'] ?? null)) {
+            $resolvedName = $link['filename'];
+        }
+        if ($resolvedName === '') {
+            $resolvedName = 'document';
+        }
+
+        return new MimeData(filename: $resolvedName, url: $url);
     }
 
     private static function fromFile(string $path, string $filename): MimeData

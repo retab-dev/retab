@@ -81,7 +81,10 @@ export class WorkflowRuns {
         ? undefined
         : Object.fromEntries(
             await Promise.all(
-              Object.entries(documents).map(async ([__k, __v]) => [__k, await coerceMimeData(__v)])
+              Object.entries(documents).map(async ([__k, __v]) => [
+                __k,
+                await coerceMimeData(__v, (__id) => this.client.files.get_download_link(__id)),
+              ])
             )
           );
     const body = {
