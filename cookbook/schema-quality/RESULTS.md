@@ -59,3 +59,29 @@ For every field that is *absent* on an invoice, the correct answer is `null`. He
 | invoice_no_code (→ `USD`) | ✗ `'US Dollars'` | ✗ `'US Dollars'` | ✗ `'US Dollars'` | ✓ `'USD'` |
 | invoice_minimal (→ `GBP`) | ✓ `'GBP'` | ✗ `'Pounds Sterling'` | ✓ `'GBP'` | ✓ `'GBP'` |
 | invoice_mixed (→ `EUR`) | ✓ `'EUR'` | ✓ `'EUR'` | ✗ `'€'` | ✓ `'EUR'` |
+
+## 5. Stability — consensus agreement
+
+Likelihood measures how strongly the consensus runs **agreed** on a field, not whether the value was right. A field below the threshold (0.90) is **weak** — the runs split. The interesting case is high likelihood on a *wrong* value: the model is confidently wrong, so likelihood cannot be used to rank schemas — only accuracy can.
+
+| Variant | Mean likelihood | Weak fields (< threshold) |
+|---|---:|---:|
+| baseline | 0.98 | 5 |
+| nullable | 1.00 | 1 |
+| reasoning | 0.99 | 1 |
+| enum | 0.99 | 1 |
+
+Every field that fell below the threshold, with the value returned and whether it was correct:
+
+| Variant | Invoice · field | Likelihood | Returned | Correct |
+|---|---|---:|---|:--:|
+| baseline | invoice_no_name · customer_name | 0.60 | `None` | ✓ |
+| baseline | invoice_no_code · currency | 0.86 | `'US Dollars'` | ✗ |
+| baseline | invoice_minimal · due_date | 0.60 | `None` | ✓ |
+| baseline | invoice_minimal · currency | 0.86 | `'GBP'` | ✓ |
+| baseline | invoice_mixed · currency | 0.65 | `'EUR'` | ✓ |
+| nullable | invoice_no_code · currency | 0.86 | `'US Dollars'` | ✗ |
+| reasoning | invoice_mixed · currency | 0.65 | `'€'` | ✗ |
+| enum | invoice_no_code · discount | 0.60 | `32.25` | ✗ |
+
+Note how few fields are weak even though accuracy varies widely: likelihood stayed near `1.00` across variants while accuracy moved **83% → 98%**. A confident value is not a correct one.

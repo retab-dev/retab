@@ -131,4 +131,41 @@ def render(results: dict, threshold: float) -> str:
         L.append(f"| {d} (→ `{cf.expected}`) | " + " | ".join(cells) + " |")
     L.append("")
 
+    # 5. Stability — consensus agreement (likelihood), not correctness
+    L.append("## 5. Stability — consensus agreement\n")
+    L.append(
+        "Likelihood measures how strongly the consensus runs **agreed** on a "
+        "field, not whether the value was right. A field below the threshold "
+        f"({threshold:.2f}) is **weak** — the runs split. The interesting case "
+        "is high likelihood on a *wrong* value: the model is confidently wrong, "
+        "so likelihood cannot be used to rank schemas — only accuracy can.\n"
+    )
+    L.append("| Variant | Mean likelihood | Weak fields (< threshold) |")
+    L.append("|---|---:|---:|")
+    weak_rows = []
+    for v in VARIANTS:
+        scores = [results[d][v] for d in docs if v in results[d]]
+        n_weak = 0
+        for ds in scores:
+            for f in ds.fields:
+                if f.likelihood is not None and f.likelihood < threshold:
+                    n_weak += 1
+                    weak_rows.append((v, ds.doc, f.field, f.likelihood, f.got, f.correct))
+        L.append(f"| {v} | {_lik(aggs[v]['mean_lik'])} | {n_weak} |")
+    L.append("")
+    if weak_rows:
+        L.append("Every field that fell below the threshold, with the value returned and whether it was correct:\n")
+        L.append("| Variant | Invoice · field | Likelihood | Returned | Correct |")
+        L.append("|---|---|---:|---|:--:|")
+        for v, d, field, lk, got, correct in weak_rows:
+            L.append(f"| {v} | {d} · {field} | {lk:.2f} | `{got!r}` | {'✓' if correct else '✗'} |")
+        L.append("")
+        L.append(
+            "Note how few fields are weak even though accuracy varies widely: "
+            "likelihood stayed near `1.00` across variants while accuracy moved "
+            "**83% → 98%**. A confident value is not a correct one.\n"
+        )
+    else:
+        L.append("No field fell below the threshold in this run — likelihood was uniformly high, *including on the values the baseline got wrong*. Confidence did not track correctness.\n")
+
     return "\n".join(L)

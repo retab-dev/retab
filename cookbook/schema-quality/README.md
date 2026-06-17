@@ -105,10 +105,14 @@ Three clean lever wins, plus one honest caveat about run-to-run variance:
 
 So the levers are complementary and stack cleanly: **nullable** fixes *absence*,
 **reasoning** fixes the *sign convention*, **enum** fixes *vocabulary* — overall
-accuracy climbs **83% → 90% → 95% → 98%**. Likelihood (consensus confidence)
+accuracy climbs **83% → 90% → 95% → 98%**. Likelihood (consensus agreement)
 stayed high throughout — often `1.00` even when the baseline was confidently
 wrong about the discount sign: **high confidence does not imply correctness.**
-Accuracy against ground truth is the metric that matters.
+Only a handful of fields fell below `0.90` (mostly the verbose currency forms,
+plus the enum-run discount at `0.60`; full list in [`RESULTS.md`](RESULTS.md)
+§5), and likelihood barely moved while accuracy climbed 15 points — so it could
+not have ranked the schemas. Accuracy against ground truth is the metric that
+matters.
 
 ## How to run
 
