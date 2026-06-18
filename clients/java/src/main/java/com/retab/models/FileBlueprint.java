@@ -5,7 +5,6 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.FileBlueprintMode;
 import com.retab.types.FileBlueprintStatus;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -16,7 +15,6 @@ public final class FileBlueprint {
   private final String id;
   private final FileRef file;
   private final String intent;
-  private final FileBlueprintMode mode;
   private final Map<String, Object> output;
   private final FileBlueprintStatus status;
   private final PrimitiveError error;
@@ -30,7 +28,6 @@ public final class FileBlueprint {
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "file", required = true) FileRef file,
       @JsonProperty(value = "intent", required = false) String intent,
-      @JsonProperty(value = "mode", required = false) FileBlueprintMode mode,
       @JsonProperty(value = "output", required = false) Map<String, Object> output,
       @JsonProperty(value = "status", required = false) FileBlueprintStatus status,
       @JsonProperty(value = "error", required = false) PrimitiveError error,
@@ -41,7 +38,6 @@ public final class FileBlueprint {
     this.id = id;
     this.file = file;
     this.intent = intent;
-    this.mode = mode;
     this.output = output;
     this.status = status;
     this.error = error;
@@ -68,11 +64,6 @@ public final class FileBlueprint {
   @JsonProperty("intent")
   public String getIntent() {
     return intent;
-  }
-
-  @JsonProperty("mode")
-  public FileBlueprintMode getMode() {
-    return mode;
   }
 
   @JsonProperty("output")

@@ -32,9 +32,6 @@ namespace Retab
         /// <summary>Optional user intent used to guide the blueprint analysis.</summary>
         public string? Intent { get; set; }
 
-        /// <summary>Compatibility-only analysis mode. The service currently runs a single instant pass.</summary>
-        public CreateFileBlueprintRequestMode? Mode { get; set; }
-
         /// <summary>If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/&lt;primitive&gt;/{id} until status is terminal. Mutually exclusive with stream.</summary>
         public bool? Background { get; set; }
 

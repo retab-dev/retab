@@ -21,12 +21,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def intent=(value); end
 
-    sig { returns(T.nilable(String)) }
-    def mode; end
-
-    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def mode=(value); end
-
     sig { returns(T.nilable(T::Boolean)) }
     def background; end
 

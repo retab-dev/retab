@@ -10,7 +10,6 @@ module Retab
       id: :id,
       file: :file,
       intent: :intent,
-      mode: :mode,
       output: :output,
       status: :status,
       error: :error,
@@ -24,7 +23,6 @@ module Retab
       :id,
       :file,
       :intent,
-      :mode,
       :output,
       :status,
       :error,
@@ -40,7 +38,6 @@ module Retab
       @id = hash[:id]
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil
       @intent = hash[:intent]
-      @mode = hash[:mode]
       @output = hash[:output] || {}
       @status = hash[:status].nil? ? "pending" : hash[:status]
       @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil

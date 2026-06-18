@@ -19,8 +19,6 @@ import {
   deserializePrimitiveError,
   serializePrimitiveError,
 } from '../../classifications/interfaces/primitive-error.interface.js';
-import type { FileBlueprintMode } from './file-blueprint-mode.interface.js';
-import { ZFileBlueprintMode } from './file-blueprint-mode.interface.js';
 import type { FileBlueprintStatus } from './file-blueprint-status.interface.js';
 import { ZFileBlueprintStatus } from './file-blueprint-status.interface.js';
 
@@ -34,8 +32,6 @@ export interface FileBlueprint {
   file: FileRef;
   /** User intent supplied with the blueprint request. */
   intent?: string | null;
-  /** Compatibility-only analysis mode. The service currently runs a single instant pass. */
-  mode?: FileBlueprintMode | null;
   /**
    * The generated Document Blueprint payload.
    * @default {}
@@ -58,7 +54,6 @@ export interface FileBlueprintResponse {
   id: string;
   file: FileRefResponse;
   intent?: string | null;
-  mode?: FileBlueprintMode | null;
   output?: Record<string, unknown>;
   status?: FileBlueprintStatus;
   error?: PrimitiveErrorResponse | null;
@@ -72,7 +67,6 @@ export const ZFileBlueprint = z.object({
   id: z.string(),
   file: ZFileRef,
   intent: z.string().nullable().optional(),
-  mode: ZFileBlueprintMode.nullable().optional(),
   output: z.record(z.string(), z.unknown()).optional(),
   status: ZFileBlueprintStatus.optional(),
   error: ZPrimitiveError.nullable().optional(),
@@ -87,7 +81,6 @@ export function deserializeFileBlueprint(wire: FileBlueprintResponse): FileBluep
     id: wire['id'],
     file: deserializeFileRef(wire['file']),
     intent: wire['intent'],
-    mode: wire['mode'],
     output: wire['output'],
     status: wire['status'],
     error:
@@ -123,7 +116,6 @@ export function serializeFileBlueprint(domain: FileBlueprint): FileBlueprintResp
     id: domain['id'],
     file: serializeFileRef(domain['file']),
     intent: domain['intent'],
-    mode: domain['mode'],
     output: domain['output'],
     status: domain['status'],
     error:

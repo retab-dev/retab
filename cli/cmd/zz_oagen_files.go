@@ -227,10 +227,6 @@ var filesBlueprintsCreateCmd = &cobra.Command{
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.FilesCreateBlueprintParams{}
 		params.FileID = args[0]
-		if v, _ := cmd.Flags().GetString("mode"); v != "" {
-			typed := retab.CreateFileBlueprintRequestMode(v)
-			params.Mode = &typed
-		}
 		if v, _ := cmd.Flags().GetString("intent"); v != "" || cmd.Flags().Changed("intent") {
 			params.Intent = ptr(v)
 		}
@@ -290,7 +286,6 @@ func init() {
 	_ = filesCreateUploadCmd.MarkFlagRequired("content-type")
 	_ = filesCreateUploadCmd.MarkFlagRequired("size-bytes")
 	filesCompleteUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
-	filesBlueprintsCreateCmd.Flags().String("mode", "", "Optional analysis depth override. Omit to let Retab choose.")
 	filesBlueprintsCreateCmd.Flags().String("intent", "", "Optional user intent used to guide the blueprint analysis.")
 	filesBlueprintsCreateCmd.Flags().Bool("background", true, "If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
 

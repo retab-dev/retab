@@ -9,11 +9,6 @@ from retab.types.classifications import PrimitiveError
 from retab.types.mime import FileRef, MIMEData
 
 
-class FileBlueprintMode(str, Enum):
-    INSTANT = "instant"
-    REASONING = "reasoning"
-
-
 class FileBlueprintStatus(str, Enum):
     PENDING = "pending"
     QUEUED = "queued"
@@ -21,9 +16,6 @@ class FileBlueprintStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
-
-
-CreateFileBlueprintRequestMode = FileBlueprintMode
 
 
 class CompleteFileUploadRequest(BaseModel):
@@ -41,7 +33,6 @@ class CreateFileBlueprintRequest(BaseModel):
 
     file_id: str = Field(..., description="File id to analyze.")
     intent: str | None = Field(default=None, description="Optional user intent used to guide the blueprint analysis.")
-    mode: FileBlueprintMode | None = Field(default=None, description="Compatibility-only analysis mode. The service currently runs a single instant pass.")
     background: bool | None = Field(
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
@@ -88,7 +79,6 @@ class FileBlueprint(BaseModel):
     id: str = Field(..., description="Unique identifier of the file blueprint.")
     file: FileRef = Field(..., description="Information about the analyzed file.")
     intent: str | None = Field(default=None, description="User intent supplied with the blueprint request.")
-    mode: FileBlueprintMode | None = Field(default=None, description="Compatibility-only analysis mode. The service currently runs a single instant pass.")
     output: dict[str, Any] | None = Field(default={}, description="The generated Document Blueprint payload.")
     status: FileBlueprintStatus | None = Field(
         default=cast(FileBlueprintStatus, "pending"),

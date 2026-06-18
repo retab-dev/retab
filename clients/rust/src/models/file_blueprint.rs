@@ -18,9 +18,6 @@ pub struct FileBlueprint {
     /// User intent supplied with the blueprint request.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub intent: Option<String>,
-    /// Compatibility-only analysis mode. The service currently runs a single instant pass.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub mode: Option<FileBlueprintMode>,
     /// The generated Document Blueprint payload.
     ///
     /// Defaults to `{}`.
@@ -50,7 +47,6 @@ impl FileBlueprint {
             id: id.into(),
             file,
             intent: Default::default(),
-            mode: Default::default(),
             output: Default::default(),
             status: Default::default(),
             error: Default::default(),

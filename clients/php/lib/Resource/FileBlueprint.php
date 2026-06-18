@@ -18,8 +18,6 @@ readonly class FileBlueprint implements \JsonSerializable
         public FileRef $file,
         /** User intent supplied with the blueprint request. */
         public ?string $intent = null,
-        /** Compatibility-only analysis mode. The service currently runs a single instant pass. */
-        public ?FileBlueprintMode $mode = null,
         /**
          * The generated Document Blueprint payload.
          * @var array<string, mixed>|null
@@ -50,7 +48,6 @@ readonly class FileBlueprint implements \JsonSerializable
             id: $data['id'],
             file: FileRef::fromArray($data['file']),
             intent: $data['intent'] ?? null,
-            mode: isset($data['mode']) ? FileBlueprintMode::from($data['mode']) : null,
             output: $data['output'] ?? null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
             error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
@@ -68,7 +65,6 @@ readonly class FileBlueprint implements \JsonSerializable
             'id' => $this->id,
             'file' => $this->file->toArray(),
             'intent' => $this->intent,
-            'mode' => $this->mode?->value,
             'output' => $this->output,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),

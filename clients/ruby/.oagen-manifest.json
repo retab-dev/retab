@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-18T10:35:32.664Z",
+  "generatedAt": "2026-06-18T12:25:08.126Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -158,7 +158,6 @@
     "lib/retab/types/condition_evaluation_details_logical_operator.rb",
     "lib/retab/types/condition_evaluation_result_logical_operator.rb",
     "lib/retab/types/create_experiment_request_n_consensus.rb",
-    "lib/retab/types/create_file_blueprint_request_mode.rb",
     "lib/retab/types/declarative_apply_response_action.rb",
     "lib/retab/types/declarative_plan_field_change_action.rb",
     "lib/retab/types/declarative_plan_resource_change_actions.rb",
@@ -189,7 +188,6 @@
     "lib/retab/types/extractions_order.rb",
     "lib/retab/types/extractions_status.rb",
     "lib/retab/types/field_type.rb",
-    "lib/retab/types/file_blueprint_mode.rb",
     "lib/retab/types/file_blueprint_status.rb",
     "lib/retab/types/files_order.rb",
     "lib/retab/types/latest_block_test_run_summary_outcome.rb",

@@ -7,7 +7,6 @@
     "mime_type": "test_mime_type"
   },
   "intent": "test_intent",
-  "mode": "instant",
   "output": {
     "key": {}
   },

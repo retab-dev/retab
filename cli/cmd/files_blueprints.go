@@ -27,23 +27,17 @@ background by default so it returns immediately with a queued blueprint. Use
 ` + "`--background=false`" + ` for synchronous creation.`,
 	Example: `  # Create a blueprint for an uploaded statement
   retab files blueprints create file_abc123 \
-    --mode reasoning \
     --intent "Identify account fields and the transaction table"
 
   # Start in the background and wait for the final record
   retab files blueprints create file_abc123 --wait`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		mode, _ := cmd.Flags().GetString("mode")
 		intent, _ := cmd.Flags().GetString("intent")
 		background, _ := cmd.Flags().GetBool("background")
 		params := retab.FilesCreateBlueprintParams{
 			FileID:     args[0],
 			Background: ptr(background),
-		}
-		if mode != "" {
-			typed := retab.CreateFileBlueprintRequestMode(mode)
-			params.Mode = &typed
 		}
 		if intent != "" {
 			params.Intent = &intent
@@ -115,7 +109,6 @@ var filesBlueprintsCancelCmd = &cobra.Command{
 }
 
 func init() {
-	filesBlueprintsCreateCmd.Flags().Var(newEnumStringFlagValue("--mode", "instant", "reasoning"), "mode", "analysis mode: instant | reasoning")
 	filesBlueprintsCreateCmd.Flags().String("intent", "", "optional blueprint intent")
 	filesBlueprintsCreateCmd.Flags().Bool("background", true, "run asynchronously and return a queued blueprint")
 	addPrimitiveCreateWaitFlags(filesBlueprintsCreateCmd)

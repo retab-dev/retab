@@ -5,24 +5,20 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.CreateFileBlueprintRequestMode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class CreateFileBlueprintRequest {
   private final String fileId;
   private final String intent;
-  private final CreateFileBlueprintRequestMode mode;
   private final Boolean background;
 
   @JsonCreator
   public CreateFileBlueprintRequest(
       @JsonProperty(value = "file_id", required = true) String fileId,
       @JsonProperty(value = "intent", required = false) String intent,
-      @JsonProperty(value = "mode", required = false) CreateFileBlueprintRequestMode mode,
       @JsonProperty(value = "background", required = false) Boolean background) {
     this.fileId = fileId;
     this.intent = intent;
-    this.mode = mode;
     this.background = background != null ? background : false;
   }
 
@@ -34,11 +30,6 @@ public final class CreateFileBlueprintRequest {
   @JsonProperty("intent")
   public String getIntent() {
     return intent;
-  }
-
-  @JsonProperty("mode")
-  public CreateFileBlueprintRequestMode getMode() {
-    return mode;
   }
 
   @JsonProperty("background")

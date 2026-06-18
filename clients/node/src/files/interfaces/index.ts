@@ -2,11 +2,9 @@
 
 export * from './complete-file-upload-request.interface.js';
 export * from './create-file-blueprint-request.interface.js';
-export * from './create-file-blueprint-request-mode.interface.js';
 export * from './create-upload-response.interface.js';
 export * from './file.interface.js';
 export * from './file-blueprint.interface.js';
-export * from './file-blueprint-mode.interface.js';
 export * from './file-blueprint-status.interface.js';
 export * from './file-link.interface.js';
 export * from './upload-file-request.interface.js';

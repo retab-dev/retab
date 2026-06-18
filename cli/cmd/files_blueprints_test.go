@@ -43,8 +43,6 @@ func TestFilesBlueprintsCreatePostsPublicBlueprintEndpoint(t *testing.T) {
 			"blueprints",
 			"create",
 			"file_1",
-			"--mode",
-			"instant",
 			"--intent",
 			"Find invoice fields",
 		); err != nil {
@@ -59,9 +57,6 @@ func TestFilesBlueprintsCreatePostsPublicBlueprintEndpoint(t *testing.T) {
 	}
 	if body["file_id"] != "file_1" {
 		t.Fatalf("file_id = %#v, want file_1", body["file_id"])
-	}
-	if body["mode"] != "instant" {
-		t.Fatalf("mode = %#v, want instant", body["mode"])
 	}
 	if body["intent"] != "Find invoice fields" {
 		t.Fatalf("intent = %#v, want Find invoice fields", body["intent"])
