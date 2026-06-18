@@ -346,12 +346,23 @@ func parseXLSXFile(path string) (*ParseResult, error) {
 // an unbounded per-row slice allocation.
 const maxExcelColumns = 16384
 
+// maxExcelRows is Excel's hard row limit (1,048,576). Rows whose r attribute
+// exceeds it are dropped so a crafted/garbage .xlsx (e.g. a single row at
+// r="999999999") cannot drive an unbounded padding allocation.
+const maxExcelRows = 1048576
+
 func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) {
 	var sx xlsxSheetXML
 	if err := unmarshalZip(f, &sx); err != nil {
 		return nil, err
 	}
-	var rows [][]string
+	// Place rows by their r attribute so omitted (empty) rows keep their
+	// spreadsheet position, mirroring the per-column gap handling below.
+	// Sparse sheets routinely skip empty rows in sheetData, so honoring r is
+	// what keeps reported coordinates (e.g. "B5") aligned with the UI.
+	rowByNum := map[int][]string{}
+	maxRow := 0
+	implicit := 0 // last assigned row number, for rows missing the r attribute
 	for _, row := range sx.Rows {
 		// Place cells by their column ref so gaps stay aligned.
 		maxCol := 0
@@ -386,7 +397,22 @@ func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) 
 		for col, v := range cells {
 			rowSlice[col-1] = v
 		}
-		rows = append(rows, rowSlice)
+		rowNum := row.R
+		if rowNum <= 0 {
+			rowNum = implicit + 1
+		}
+		if rowNum > maxExcelRows {
+			continue
+		}
+		implicit = rowNum
+		rowByNum[rowNum] = rowSlice
+		if rowNum > maxRow {
+			maxRow = rowNum
+		}
+	}
+	rows := make([][]string, maxRow)
+	for n, rowSlice := range rowByNum {
+		rows[n-1] = rowSlice
 	}
 	return rows, nil
 }

@@ -980,7 +980,11 @@ func workflowTableCellNeedsJSON(value any) bool {
 
 func cleanWorkflowTableCell(value string, options tableQueryRenderOptions) string {
 	cleaned := strings.Join(strings.Fields(value), " ")
-	if options.NoTruncate {
+	// CSV output must be a faithful, re-importable table (see
+	// workflowTableCellText): truncating a long cell to "<prefix>..." would
+	// silently corrupt the value on round-trip, so width limits apply only to
+	// the human-readable table grid.
+	if options.NoTruncate || options.CSV {
 		return cleaned
 	}
 	maxCellWidth := options.MaxWidth

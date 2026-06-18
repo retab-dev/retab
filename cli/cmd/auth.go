@@ -332,7 +332,15 @@ compact human block for interactive terminals).`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 		envKey := os.Getenv("RETAB_API_KEY")
+		liveFlag, _ := cmd.Root().PersistentFlags().GetBool("live")
+		envFlag, _ := cmd.Root().PersistentFlags().GetString("env")
 		cfg, _ := loadConfig()
+
+		// Stored environment profiles (selected via --env, --live, or the
+		// configured default_environment) authenticate the CLI just like a
+		// top-level api_key/access_token/oauth credential. They rank above
+		// access_token/oauth/legacy in resolveCredential, so mirror that here.
+		profileSlug, profileCred := authStatusSelectedProfile(envFlag, liveFlag, cfg)
 
 		var source string
 		switch {
@@ -340,6 +348,8 @@ compact human block for interactive terminals).`,
 			source = "--api-key flag"
 		case envKey != "":
 			source = "RETAB_API_KEY env"
+		case profileCred != nil:
+			source = fmt.Sprintf("~/.retab/config.json (env: %s)", profileSlug)
 		case cfg.AccessToken != "":
 			source = "~/.retab/config.json (access_token)"
 		case cfg.OAuth != nil && cfg.OAuth.AccessToken != "":
@@ -387,6 +397,12 @@ compact human block for interactive terminals).`,
 				key = cfg.APIKey
 			}
 			out["api_key_preview"] = redactKey(key)
+		default:
+			// A stored environment profile is an API-key credential too;
+			// preview it when it is the resolved source.
+			if profileCred != nil && source == fmt.Sprintf("~/.retab/config.json (env: %s)", profileSlug) {
+				out["api_key_preview"] = redactKey(profileCred.APIKey)
+			}
 		}
 
 		jsonOnly, _ := cmd.Flags().GetBool("json")
@@ -426,6 +442,35 @@ compact human block for interactive terminals).`,
 		addAuthOrganizationStatus(cmd, out)
 		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
+}
+
+// authStatusSelectedProfile returns the stored environment profile (and its
+// slug) that resolveCredential would select from --env, --live, or the
+// configured default_environment, or ("", nil) when none applies. It mirrors
+// branches 3–5 of resolveCredential so `auth status` recognizes a CLI that is
+// authenticated purely through a stored profile instead of reporting it as
+// unauthenticated. Like the rest of `auth status`, it is lenient: a selector
+// that names a missing profile simply yields no match rather than an error.
+func authStatusSelectedProfile(envFlag string, live bool, cfg retabConfig) (string, *environmentProfile) {
+	switch {
+	case envFlag != "":
+		slug, err := validateSlug(envFlag)
+		if err != nil {
+			return "", nil
+		}
+		if p := cfg.Environments[slug]; p != nil && p.APIKey != "" {
+			return slug, p
+		}
+	case live:
+		if p := cfg.Environments[slugProduction]; p != nil && p.APIKey != "" {
+			return slugProduction, p
+		}
+	case cfg.DefaultEnvironment != "":
+		if p := cfg.Environments[cfg.DefaultEnvironment]; p != nil && p.APIKey != "" {
+			return cfg.DefaultEnvironment, p
+		}
+	}
+	return "", nil
 }
 
 func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig) (string, error) {

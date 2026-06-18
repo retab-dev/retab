@@ -753,6 +753,50 @@ func TestTablesQueryCSVOutputAndRowMetadata(t *testing.T) {
 	}
 }
 
+// Regression: CSV is meant to be a faithful, re-importable table, but the
+// cell renderer applied the table grid's --max-width truncation (default 96)
+// to CSV too — silently rewriting any long cell to "<prefix>..." and breaking
+// round-trips. CSV must emit the full value regardless of --max-width.
+func TestTablesQueryCSVDoesNotTruncateLongCells(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	longNote := strings.Repeat("abcd ", 40) // 200 chars, well past the 96 default
+	longNote = strings.TrimSpace(longNote)
+	expected := strings.Join(strings.Fields(longNote), " ")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"table_id": "tbl_long",
+			"columns":  []map[string]any{{"name": "note"}},
+			"rows": []map[string]any{
+				{"id": "r0", "position": 0, "data": map[string]any{"note": longNote}},
+			},
+			"row_count":          1,
+			"filtered_row_count": 1,
+			"offset":             0,
+			"limit":              1,
+			"has_more":           false,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t, "tables", "query", "tbl_long", "--output", "csv"); err != nil {
+			t.Fatalf("tables query: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, expected) {
+		t.Fatalf("CSV cell should be the full untruncated value, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "...") {
+		t.Fatalf("CSV must not truncate long cells with an ellipsis, got:\n%s", stdout)
+	}
+}
+
 func TestTablesQueryCSVRendersNullAsEmptyCell(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

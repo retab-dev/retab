@@ -122,6 +122,54 @@ func TestParseXLSXFile(t *testing.T) {
 	}
 }
 
+// Sparse sheets omit empty rows in sheetData (e.g. r="1" then r="4"). The
+// parser must honor the row's r attribute so reported coordinates stay aligned
+// with the spreadsheet UI — mirroring the per-column gap handling. Before the
+// fix, rows were appended in document order and a value physically in row 4 was
+// reported as row 2.
+func TestParseXLSXFileHonorsSparseRowNumbers(t *testing.T) {
+	path := writeSparseTestXLSX(t)
+	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if len(res.Sheets) != 1 {
+		t.Fatalf("want 1 sheet, got %d", len(res.Sheets))
+	}
+	rows := res.Sheets[0].Rows
+	// A1=Item B1=Cost ; rows 2 and 3 are absent; A4=Rent B4=1200.
+	if len(rows) != 4 {
+		t.Fatalf("want 4 rows (positions preserved through the gap), got %d: %v", len(rows), rows)
+	}
+	if rows[0][0] != "Item" || rows[0][1] != "Cost" {
+		t.Errorf("row 1 = %v, want [Item Cost]", rows[0])
+	}
+	if len(rows[1]) != 0 || len(rows[2]) != 0 {
+		t.Errorf("rows 2-3 should be empty, got %v / %v", rows[1], rows[2])
+	}
+	if len(rows[3]) < 2 || rows[3][0] != "Rent" || rows[3][1] != "1200" {
+		t.Fatalf("row 4 = %v, want [Rent 1200]", rows[3])
+	}
+
+	// The grep anchor must report the spreadsheet row (4), not the dense index.
+	matcher, err := buildMatcher("Rent", false, false)
+	if err != nil {
+		t.Fatalf("buildMatcher: %v", err)
+	}
+	var got *Anchor
+	grepSheets(res, kindSpreadsheet, matcher, 0, func(m grepMatch) bool {
+		a := m.Anchor
+		got = &a
+		return false
+	})
+	if got == nil {
+		t.Fatal("expected a grep match for Rent")
+	}
+	if got.Row != 4 || got.Coordinate != "A4" {
+		t.Errorf("anchor = row %d coord %q, want row 4 coord A4", got.Row, got.Coordinate)
+	}
+}
+
 func TestParseDocxFile(t *testing.T) {
 	path := writeTestDOCX(t)
 	res, err := loadParse(context.Background(), path, kindDocx, "", defaultParseOptions(), false)
@@ -725,6 +773,50 @@ func writeTestXLSX(t *testing.T) string {
   <sheetData>
     <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
     <row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>1200</v></c></row>
+  </sheetData>
+</worksheet>`)
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func writeSparseTestXLSX(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sparse.xlsx")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	add := func(name, content string) {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("xl/workbook.xml", `<?xml version="1.0"?>
+<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`)
+	add("xl/_rels/workbook.xml.rels", `<?xml version="1.0"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Target="worksheets/sheet1.xml"/>
+</Relationships>`)
+	add("xl/sharedStrings.xml", `<?xml version="1.0"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si><t>Item</t></si><si><t>Cost</t></si><si><t>Rent</t></si>
+</sst>`)
+	// Rows 2 and 3 are omitted, as real spreadsheets do for empty rows.
+	add("xl/worksheets/sheet1.xml", `<?xml version="1.0"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
+    <row r="4"><c r="A4" t="s"><v>2</v></c><c r="B4"><v>1200</v></c></row>
   </sheetData>
 </worksheet>`)
 	if err := zw.Close(); err != nil {
