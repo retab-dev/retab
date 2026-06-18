@@ -18,13 +18,10 @@
 import { createHash } from 'crypto';
 
 import { Retab } from '../src/index.js';
+import { probeLiveServer } from './live-preflight';
 
 const API_KEY = process.env.RETAB_API_KEY;
 const BASE_URL = process.env.RETAB_API_BASE_URL;
-
-const HAVE_CREDS = Boolean(API_KEY && BASE_URL);
-
-type ProbeResult = { live: true; reason: '' } | { live: false; reason: string; fatal: boolean };
 
 /**
  * Probe the configured server once at module load. The e2e suites only run when
@@ -37,49 +34,7 @@ type ProbeResult = { live: true; reason: '' } | { live: false; reason: string; f
  *
  * Top-level await is supported by Bun's test module loader.
  */
-async function probeServer(): Promise<ProbeResult> {
-  if (!HAVE_CREDS) {
-    return {
-      live: false,
-      fatal: false,
-      reason: 'live e2e skipped: set RETAB_API_KEY and RETAB_API_BASE_URL to run against a server',
-    };
-  }
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 4000);
-    const res = await fetch(`${BASE_URL}/v1/files?limit=1`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${API_KEY}`, Accept: 'application/json' },
-      signal: ctrl.signal,
-    });
-    clearTimeout(t);
-    if (res.status >= 200 && res.status < 300) {
-      return { live: true, reason: '' };
-    }
-    if (res.status === 401) {
-      return {
-        live: false,
-        fatal: true,
-        reason: 'live e2e preflight failed: RETAB_API_KEY was rejected by the configured server',
-      };
-    }
-    return {
-      live: false,
-      fatal: true,
-      reason: `live e2e preflight failed: ${BASE_URL}/v1/files?limit=1 returned HTTP ${res.status}: ${(await res.text()).slice(0, 240)}`,
-    };
-  } catch {
-    return {
-      live: false,
-      fatal: false,
-      reason:
-        'live e2e skipped: configured server is unreachable (start the server or point RETAB_API_BASE_URL at one)',
-    };
-  }
-}
-
-const PROBE = await probeServer();
+const PROBE = await probeLiveServer(API_KEY, BASE_URL);
 if (!PROBE.live && PROBE.fatal) {
   throw new Error(PROBE.reason);
 }
