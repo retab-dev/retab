@@ -1538,10 +1538,18 @@ func addDocumentFlags(cmd *cobra.Command) {
 func scopedResourceID(args []string, resourceLabel string) (string, error) {
 	switch len(args) {
 	case 1:
-		return args[0], nil
+		id := strings.TrimSpace(args[0])
+		if id == "" {
+			return "", fmt.Errorf("expected the %s", resourceLabel)
+		}
+		return id, nil
 	case 2:
-		if strings.HasPrefix(args[0], "wrk_") {
-			return args[1], nil
+		if strings.HasPrefix(strings.TrimSpace(args[0]), "wrk_") {
+			id := strings.TrimSpace(args[1])
+			if id == "" {
+				return "", fmt.Errorf("expected the %s", resourceLabel)
+			}
+			return id, nil
 		}
 		return "", fmt.Errorf("this command takes only the %s (no workflow id); got %q and %q", resourceLabel, args[0], args[1])
 	default:

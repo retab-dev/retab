@@ -919,9 +919,15 @@ func TestScopedResourceID(t *testing.T) {
 	if got, err := scopedResourceID([]string{"run_abc"}, "run id"); err != nil || got != "run_abc" {
 		t.Fatalf("single arg = %q, %v; want run_abc, nil", got, err)
 	}
+	if _, err := scopedResourceID([]string{""}, "run id"); err == nil {
+		t.Fatal("empty single arg should error")
+	}
 	// Optional leading workflow id is tolerated and dropped.
 	if got, err := scopedResourceID([]string{"wrk_123", "run_abc"}, "run id"); err != nil || got != "run_abc" {
 		t.Fatalf("workflow-prefixed = %q, %v; want run_abc, nil", got, err)
+	}
+	if _, err := scopedResourceID([]string{"wrk_123", ""}, "run id"); err == nil {
+		t.Fatal("empty scoped resource id should error")
 	}
 	// A second arg that is NOT a workflow id is a real mistake → error.
 	if _, err := scopedResourceID([]string{"run_abc", "run_def"}, "run id"); err == nil {

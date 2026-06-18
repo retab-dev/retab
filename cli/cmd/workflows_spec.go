@@ -584,6 +584,13 @@ spec itself.`,
 		if jsonShortcut, _ := cmd.Flags().GetBool("json"); jsonShortcut && format == "yaml" {
 			format = "json"
 		}
+		// Honour the global output flag users expect every command to
+		// respect. `spec get` keeps raw YAML as the default, but an explicit
+		// `--output json` should select the JSON envelope just like
+		// `--format json`.
+		if explicitOutputJSON(cmd) && format == "yaml" {
+			format = "json"
+		}
 		if format != "yaml" && format != "json" {
 			return fmt.Errorf("invalid --format value %q (want: yaml | json)", format)
 		}

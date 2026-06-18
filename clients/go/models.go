@@ -2118,6 +2118,50 @@ type WorkflowArtifact struct {
 	Operation WorkflowArtifactOperation `json:"operation"`
 	// ID is resource identifier
 	ID string `json:"id"`
+	// AdditionalProperties captures top-level response fields not modeled explicitly.
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// UnmarshalJSON preserves additionalProperties fields from the top-level
+// response object in AdditionalProperties while decoding known fields normally.
+func (r *WorkflowArtifact) UnmarshalJSON(data []byte) error {
+	type alias WorkflowArtifact
+	var known alias
+	if err := json.Unmarshal(data, &known); err != nil {
+		return err
+	}
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	delete(raw, "id")
+	delete(raw, "operation")
+	*r = WorkflowArtifact(known)
+	if len(raw) > 0 {
+		r.AdditionalProperties = raw
+	} else {
+		r.AdditionalProperties = nil
+	}
+	return nil
+}
+
+// MarshalJSON merges AdditionalProperties back into the top-level object.
+func (r WorkflowArtifact) MarshalJSON() ([]byte, error) {
+	type alias WorkflowArtifact
+	raw, err := json.Marshal(alias(r))
+	if err != nil {
+		return nil, err
+	}
+	var obj map[string]interface{}
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return nil, err
+	}
+	for k, v := range r.AdditionalProperties {
+		if _, exists := obj[k]; !exists {
+			obj[k] = v
+		}
+	}
+	return json.Marshal(obj)
 }
 
 // WorkflowBlock public live workflow block object.

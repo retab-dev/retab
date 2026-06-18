@@ -226,6 +226,55 @@ func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
 	}
 }
 
+func TestWorkflowsExperimentsRunsListTableRendersStatusAndCounts(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/experiments/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []any{
+				map[string]any{
+					"id":                       "exprun_123",
+					"workflow_id":              "wf_123",
+					"experiment_id":            "exp_123",
+					"block_type":               "extract",
+					"lifecycle":                map[string]any{"status": "completed"},
+					"score":                    0.9444,
+					"total_document_count":     2,
+					"completed_document_count": 1,
+					"error_count":              1,
+					"timing":                   map[string]any{"created_at": "2026-06-18T05:38:15Z"},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatalf("set output: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsExperimentsRunsListCmd.RunE(workflowsExperimentsRunsListCmd, []string{"wf_123", "exp_123"}); err != nil {
+			t.Fatalf("experiment runs list: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	for _, want := range []string{"STATUS", "BLOCK_KIND", "DOCS", "DONE", "ERRORS", "SCORE", "completed", "extract", "2", "1", "0.9444"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("runs table missing %q:\n%s", want, stdout)
+		}
+	}
+}
+
 func TestWorkflowsExperimentsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

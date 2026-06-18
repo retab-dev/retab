@@ -85,6 +85,8 @@ class BaseRetab:
                 "No API key provided. You can create an API key at https://retab.com\n"
                 "Then either pass it to the client (api_key='your-key') or set the RETAB_API_KEY environment variable"
             )
+        if api_key == "":
+            raise ValueError("API key cannot be empty")
 
         if base_url is None:
             base_url = os.environ.get("RETAB_API_BASE_URL", "https://api.retab.com")

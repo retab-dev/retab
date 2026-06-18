@@ -626,14 +626,15 @@ func printWorkflowTestsRunsListResult(cmd *cobra.Command, result *retab.Paginate
 }
 
 // workflowTestResultColumns is the dedicated TableColumn spec for
-// `workflows tests results list --output table/csv`. The generic auto-renderer
-// dropped VERDICT — the single most important field of a test result
-// (passed/failed) — and mislabeled the status as TYPE.
+// `workflows tests results list --output table/csv`. Test-result rows are flat
+// (block_id/block_type/test_id), not nested target/source descriptors, so these
+// columns mirror the public result payload instead of rendering empty cells.
 var workflowTestResultColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return workflowTestCell(row, "id") }},
 	{Header: "VERDICT", Extract: func(row any) string { return workflowTestCell(row, "verdict") }},
-	{Header: "TARGET", Extract: func(row any) string { return workflowTestCell(row, "target.block_id") }},
-	{Header: "SOURCE", Extract: func(row any) string { return workflowTestCell(row, "source.type") }},
+	{Header: "TARGET", Extract: func(row any) string { return workflowTestCell(row, "block_id") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowTestCell(row, "block_type") }},
+	{Header: "TEST", Extract: func(row any) string { return workflowTestCell(row, "test_id") }},
 	{Header: "STATUS", Extract: func(row any) string { return workflowTestCell(row, "lifecycle.status") }},
 }
 

@@ -785,6 +785,53 @@ func TestWriteSpecExport_JSONFormat(t *testing.T) {
 	}
 }
 
+func TestWorkflowsSpecExportHonorsGlobalOutputJSON(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/wf_test/spec" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id":     "wf_test",
+			"yaml_definition": "metadata:\n  id: wf_test\n",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsSpecExportCmd.Flags().Set("format", "yaml"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecExportCmd.Flags().Set("format", "yaml") })
+	if err := workflowsSpecExportCmd.Flags().Set("json", "false"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecExportCmd.Flags().Set("json", "false") })
+	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	var err error
+	stdout, _ := captureStd(t, func() {
+		err = workflowsSpecExportCmd.RunE(workflowsSpecExportCmd, []string{"wf_test"})
+	})
+	if err != nil {
+		t.Fatalf("spec get: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(stdout), &decoded); err != nil {
+		t.Fatalf("--output json should produce the JSON envelope, got unparseable output: %v\n%s", err, stdout)
+	}
+	if decoded["workflow_id"] != "wf_test" || decoded["yaml_definition"] != "metadata:\n  id: wf_test\n" {
+		t.Fatalf("decoded envelope = %#v", decoded)
+	}
+}
+
 // The error path the bug report cares about: if the server returns a
 // response with no `yaml_definition` field (or an empty one), the
 // command must fail loudly. An empty file would be worse than the

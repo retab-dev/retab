@@ -31,6 +31,41 @@ func TestArtifactsList_AcceptsEnvelopeShape(t *testing.T) {
 	}
 }
 
+func TestArtifactsList_PreservesOperationSpecificFields(t *testing.T) {
+	body := `{
+		"data": [{
+			"operation": "function_invocation",
+			"id": "fninv_123",
+			"run_id": "run_xyz",
+			"step_id": "step_function",
+			"block_id": "block_function",
+			"output": {"ok": true}
+		}],
+		"list_metadata": {"before": null, "after": null}
+	}`
+	srv := newArtifactsListServer(t, body)
+	defer srv.Close()
+
+	client := newArtifactsTestClient(t, srv)
+	runID := "run_xyz"
+	got, err := client.Workflows.Artifacts.List(context.Background(),
+		&WorkflowArtifactsListParams{RunID: &runID})
+	if err != nil {
+		t.Fatalf("List against artifact response: %v", err)
+	}
+	if len(got.Data) != 1 {
+		t.Fatalf("data len = %d, want 1", len(got.Data))
+	}
+	extras := got.Data[0].AdditionalProperties
+	if extras["step_id"] != "step_function" || extras["block_id"] != "block_function" {
+		t.Fatalf("artifact extras = %#v, want provenance fields preserved", extras)
+	}
+	output, ok := extras["output"].(map[string]interface{})
+	if !ok || output["ok"] != true {
+		t.Fatalf("artifact output = %#v, want output.ok=true", extras["output"])
+	}
+}
+
 // ---- helpers ----
 
 func newArtifactsListServer(t *testing.T, jsonBody string) *httptest.Server {

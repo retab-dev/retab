@@ -39,11 +39,12 @@ func TestWorkflowTestResultsListTableRendersVerdict(t *testing.T) {
 	resource := map[string]any{
 		"data": []any{
 			map[string]any{
-				"id":        "wfnodetestrun_y",
-				"verdict":   "passed",
-				"target":    map[string]any{"type": "block", "block_id": "block_g10h"},
-				"source":    map[string]any{"type": "manual"},
-				"lifecycle": map[string]any{"status": "completed"},
+				"id":         "wfnodetestrun_y",
+				"verdict":    "passed",
+				"test_id":    "wfnodetest_abc",
+				"block_id":   "block_g10h",
+				"block_type": "extract",
+				"lifecycle":  map[string]any{"status": "completed"},
 			},
 		},
 	}
@@ -52,7 +53,7 @@ func TestWorkflowTestResultsListTableRendersVerdict(t *testing.T) {
 		t.Fatalf("RenderList: %v", err)
 	}
 	out := buf.String()
-	for _, want := range []string{"VERDICT", "TARGET", "SOURCE", "passed", "block_g10h", "manual"} {
+	for _, want := range []string{"VERDICT", "TARGET", "BLOCK_KIND", "TEST", "passed", "block_g10h", "extract", "wfnodetest_abc"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("results table missing %q:\n%s", want, out)
 		}

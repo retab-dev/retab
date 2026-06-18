@@ -296,22 +296,14 @@ def test_junk_key_raises_401_across_resources(bad_key_client: Retab, resource_na
 
 
 def test_empty_string_key_is_rejected(api_keys: Any) -> None:
-    """An empty-string API key is rejected (observed: 403 PermissionDenied, a
-    valid-but-unauthorized identity), not silently accepted.
+    """An empty-string API key is rejected before a malformed auth header is sent.
 
     Note: ``api_key=None`` is intentionally NOT tested — None falls back to the
     ``RETAB_API_KEY`` env var, which is the valid test key here, so it would not
     fail. Empty-string is the meaningful negative case.
     """
-    client = Retab(api_key="", base_url=api_keys.retab_api_base_url, max_retries=0)
-    try:
-        with pytest.raises(APIError) as excinfo:
-            client.files.list(limit=1)
-        exc = excinfo.value
-        assert exc.status_code in (401, 403)
-        assert isinstance(exc, (AuthenticationError, PermissionDeniedError))
-    finally:
-        client.close()
+    with pytest.raises(ValueError, match="API key cannot be empty"):
+        Retab(api_key="", base_url=api_keys.retab_api_base_url, max_retries=0)
 
 
 # --------------------------------------------------------------------------- #

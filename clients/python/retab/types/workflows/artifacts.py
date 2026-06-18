@@ -455,6 +455,7 @@ class WorkflowArtifact(BaseModel):
 
     operation: WorkflowArtifactOperation = Field(..., description="The operation that produced this artifact")
     id: str = Field(..., description="Resource identifier")
+    additional_properties: dict[str, Any] | None = Field(default=None, alias="additionalProperties", description="Additional properties not captured by named fields")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

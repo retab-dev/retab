@@ -450,6 +450,40 @@ func printExperimentResultsList(cmd *cobra.Command, result *retab.PaginatedList[
 	return printJSON(result)
 }
 
+// experimentRunColumns is the dedicated TableColumn spec for
+// `workflows experiments runs list --output table/csv`. The generic renderer
+// picked ID + TYPE + CREATED_AT and hid run status/counts, which are the fields
+// users need when monitoring experiment progress.
+var experimentRunColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowExperimentCell(row, "id") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "lifecycle.status") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_type") }},
+	{Header: "DOCS", Extract: experimentRunDocumentCountCell},
+	{Header: "DONE", Extract: func(row any) string { return workflowExperimentCell(row, "completed_document_count") }},
+	{Header: "ERRORS", Extract: func(row any) string { return workflowExperimentCell(row, "error_count") }},
+	{Header: "SCORE", Extract: func(row any) string { return workflowExperimentCell(row, "score") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowExperimentCell(row, "timing.created_at") }},
+}
+
+func experimentRunDocumentCountCell(row any) string {
+	if value := workflowExperimentCell(row, "total_document_count"); value != "" {
+		return value
+	}
+	return workflowExperimentCell(row, "document_count")
+}
+
+func printExperimentRunsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ExperimentRun]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, experimentRunColumns)
+			}
+		}
+	}
+	return printJSON(result)
+}
+
 var workflowsExperimentsGetCmd = &cobra.Command{
 	Use:   "get [workflow-id] <experiment-id>",
 	Short: "Get an experiment",
@@ -933,7 +967,7 @@ positional, filters are flags — same convention as the rest of the
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printExperimentRunsListResult(cmd, result)
 	}),
 }
 

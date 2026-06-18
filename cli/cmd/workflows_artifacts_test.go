@@ -53,6 +53,57 @@ func TestWorkflowsArtifactsGet(t *testing.T) {
 	}
 }
 
+func TestWorkflowsArtifactsListPreservesDereferencedFields(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/workflows/artifacts" {
+			t.Fatalf("path = %s, want /v1/workflows/artifacts", r.URL.Path)
+		}
+		if r.URL.Query().Get("run_id") != "run_xyz" {
+			t.Fatalf("run_id = %q, want run_xyz", r.URL.Query().Get("run_id"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]any{{
+				"id":        "fninv_abc",
+				"operation": "function_invocation",
+				"run_id":    "run_xyz",
+				"step_id":   "step_function",
+				"block_id":  "block_function",
+				"output":    map[string]any{"ok": true},
+			}},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsArtifactsListCmd.RunE(workflowsArtifactsListCmd, []string{"run_xyz"}); err != nil {
+			t.Fatalf("artifacts list: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"step_id": "step_function"`) {
+		t.Fatalf("expected stdout to contain step_id, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"block_id": "block_function"`) {
+		t.Fatalf("expected stdout to contain block_id, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"output": {`) || !strings.Contains(stdout, `"ok": true`) {
+		t.Fatalf("expected stdout to contain artifact output, got:\n%s", stdout)
+	}
+}
+
 // TestWorkflowsArtifactsCmdLongHasNoLeadingTabs guards Bug B: the second
 // paragraph of `workflows artifacts --help` was hard-tab-indented in the Go
 // string literal, producing a visibly broken help block. Every line of the
